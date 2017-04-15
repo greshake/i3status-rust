@@ -7,8 +7,7 @@ use self::regex::Regex;
 
 
 #[derive(Debug)]
-pub enum MouseButton
-{
+pub enum MouseButton {
     Left,
     Right,
     Middle,
@@ -28,7 +27,7 @@ impl Color {
     }
 
     pub fn to_string(&self) -> String {
-        format!("#{:X}{:X}{:X}", self.0, self.1, self.2)
+        format!("#{:02X}{:02X}{:02X}", self.0, self.1, self.2)
     }
 }
 
@@ -42,11 +41,14 @@ pub struct Theme {
     pub seperator: Color,
 }
 
-pub trait Block
-{
-    fn id(&self) -> Option<&str> { None }
+pub trait Block {
     fn get_status(&self, theme: &Theme) -> HashMap<&str, String>;
-    fn update(&self) -> Option<Duration> { None }
-    // NOTE: this function can only be called if id was specified
+    fn update(&self) -> Option<Duration> {
+        None
+    }
+
+    fn id(&self) -> Option<&str> {
+        None
+    }
     fn click(&self, button: MouseButton) {}
 }
