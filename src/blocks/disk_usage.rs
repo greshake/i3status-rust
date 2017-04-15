@@ -1,6 +1,6 @@
 extern crate nix;
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::time::Duration;
 use std::io::BufReader;
@@ -19,6 +19,7 @@ pub struct DiskUsage
     name: &'static str,
     target: &'static str,
     usage: RefCell<String>,
+    statvfs: RefCell<Statvfs>,
 
 }
 
@@ -30,7 +31,8 @@ impl DiskUsage
             {
                 name: name,
                 target: target,
-                usage: RefCell::new(String::from("Hello World")),
+                usage: RefCell::new(String::from("unknown")),
+                statvfs: RefCell::new(Statvfs::default()),
 
             }
     }
@@ -50,10 +52,18 @@ impl Block for DiskUsage
     fn get_status(&self, theme: &Theme) -> HashMap<&str, String>
     {
         let path = Path::new(self.target);
+        let statvfs = &mut *self.statvfs.borrow_mut();
+
+        statvfs.update_with_path(path);
+        let free: f64 = statvfs.f_bsize * statvfs.f_bfree;
+        let free_gb = free / (1024 * 1024 * 1024);
+
+
+        *self.usage.borrow_mut() = format!("Free space on {0}: {1:.5}", self.target, free_gb);
 
         map! {
             "full_text" => self.usage.clone().into_inner(),
-            "color"     => theme.bg.to_string()
+            "color"     => theme.fg.to_string()
         }
     }
 }

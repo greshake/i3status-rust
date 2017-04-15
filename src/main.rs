@@ -23,11 +23,12 @@ use std::collections::HashMap;
 use self::serde_json::Value;
 use std::thread;
 use std::time::Duration;
+use blocks::disk_usage::DiskUsage;
 
 fn main() {
     let time = Time::new("Time Module 1");
     let separator = Separator {};
-    //let home_usage = DiskUsage::new("home", "/home");
+    let home_usage = DiskUsage::new("home", "/home");
     let template = Template::new("test");
     let input_check_interval = Duration::new(0, 50000000); // 50ms
     let time = Time::new("t1");
@@ -39,7 +40,8 @@ fn main() {
                       &time as &Block,
                       &sep as &Block,
                       &template as &Block,
-                      &separator as &Block];
+                      &separator as &Block,
+                      &home_usage as &Block];
 
     let theme = Theme {
         bg: Color(0, 0, 0),
