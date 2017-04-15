@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
 extern crate serde_json;
 
 pub mod block;
@@ -36,16 +37,19 @@ fn main() {
                       &sep as &Block];
 
     let theme = Theme {
-        bg: Color(255, 255, 255),
-        fg: Color::from_string("#FFFFFF"),
+        bg: Color::from_string("#002b36"),
+        fg: Color::from_string("#93a1a1"),
         info: Color::from_string("#FFFFFF"),
         warn: Color::from_string("#FFFFFF"),
         crit: Color::from_string("#FFFFFF"),
     };
 
-    let template = map!{
-        "background" => theme.bg.to_string()
-    };
+    let template = json!({
+        "background": theme.bg.to_string(),
+        "color": theme.fg.to_string(),
+        "separator_block_width": 0,
+        "separator": false
+    });
 
     print!("{{\"version\": 1, \"click_events\": true}}[");
 
