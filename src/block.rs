@@ -39,6 +39,7 @@ pub struct Theme {
     pub info: Color,
     pub warn: Color,
     pub crit: Color,
+    pub seperator: Color,
 }
 
 pub trait Block

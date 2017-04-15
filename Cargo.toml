@@ -6,3 +6,4 @@ authors = ["XYunknown <developement@kai-greshake.de>"]
 [dependencies]
 chrono = "0.2"
 regex = "0.2"
+nix = "0.8.0"

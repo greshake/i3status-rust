@@ -43,7 +43,7 @@ impl Block for Time
     {
         map!{
             "full_text" => self.time.clone().into_inner(),
-            "color"     => theme.bg.to_string()
+            "color"     => theme.fg.to_string()
         }
     }
 }
