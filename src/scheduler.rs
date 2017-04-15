@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::thread;
 use std::rc::Rc;
 use std::cmp;
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 #[derive(Clone)]
@@ -68,7 +69,25 @@ impl<'a> UpdateScheduler<'a>
         }
     }
 
-    pub fn next(&mut self) {
+    pub fn schedule(&mut self, block: &'a Block, time: Instant) {
+        self.schedule.push(Task {
+            block: block,
+            update_time: time,
+        })
+    }
+
+    pub fn time_to_next_update(&self) -> Duration {
+        let next_update = self.schedule.peek().unwrap().update_time;
+        let now = Instant::now();
+
+        if next_update > now {
+            next_update - now
+        } else {
+            Duration::new(0, 0)
+        }
+    }
+
+    pub fn do_scheduled_updates(&mut self) {
         let t = self.schedule.pop().unwrap();
         let mut tasks_next = vec![t.clone()];
 
