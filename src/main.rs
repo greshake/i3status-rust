@@ -12,6 +12,7 @@ pub mod input;
 
 use blocks::time::Time;
 use blocks::separator::Separator;
+use blocks::template::Template;
 use blocks::toggle::Toggle;
 use block::{Block, Theme, Color, MouseButton};
 use std::boxed::Box;
@@ -25,8 +26,11 @@ use std::thread;
 use std::time::Duration;
 
 fn main() {
+    let time = Time::new("Time Module 1");
+    let separator = Separator {};
+    //let home_usage = DiskUsage::new("home", "/home");
+    let template = Template::new("test");
     let input_check_interval = Duration::new(0, 50000000); // 50ms
-
     let time = Time::new("t1");
     let sep = Separator {};
     let toggle = Toggle::new("test_toggle");
@@ -34,7 +38,9 @@ fn main() {
     let blocks = vec![&sep as &Block,
                       &toggle as &Block,
                       &time as &Block,
-                      &sep as &Block];
+                      &sep as &Block,
+                      &template as &Block,
+                      &separator as &Block];
 
     let theme = Theme {
         bg: Color::from_string("#002b36"),
