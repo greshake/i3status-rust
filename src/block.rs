@@ -4,6 +4,7 @@ use std::fmt::Debug;
 use std::time::Duration;
 use std::collections::HashMap;
 use self::regex::Regex;
+use serde_json::Value;
 
 
 #[derive(Debug)]
@@ -38,11 +39,10 @@ pub struct Theme {
     pub info: Color,
     pub warn: Color,
     pub crit: Color,
-    pub seperator: Color,
 }
 
 pub trait Block {
-    fn get_status(&self, theme: &Theme) -> HashMap<&str, String>;
+    fn get_status(&self, theme: &Theme) -> Value;
     fn update(&self) -> Option<Duration> {
         None
     }

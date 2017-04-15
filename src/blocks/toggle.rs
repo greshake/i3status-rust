@@ -2,6 +2,7 @@ use block::{Block, MouseButton, Theme, Color};
 use std::time::Duration;
 use std::collections::HashMap;
 use std::cell::Cell;
+use serde_json::Value;
 
 pub struct Toggle {
     pub state: Cell<bool>,
@@ -28,11 +29,10 @@ impl Block for Toggle {
         self.state.set(!s);
     }
 
-    fn get_status(&self, theme: &Theme) -> HashMap<&str, String> {
-        map! {
-            "full_text" => String::from("I can change color! Click me"),
-            "color"     => {if self.state.get() { Color(255,255,255).to_string() }
-            else { Color(255, 0, 0).to_string() }}
-        }
+    fn get_status(&self, theme: &Theme) -> Value {
+        json!({
+            "full_text": String::from("I can change color! Click me"),
+            "color"     : (if self.state.get() { Color(0,0,0).to_string() } else { Color(255, 0, 0).to_string() })
+        })
     }
 }

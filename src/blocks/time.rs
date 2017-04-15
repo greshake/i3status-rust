@@ -5,6 +5,7 @@ use self::chrono::offset::local::Local;
 use std::time::Duration;
 use std::collections::HashMap;
 use std::cell::RefCell;
+use serde_json::Value;
 
 const FORMAT: &'static str = "%a %F %T";
 
@@ -33,10 +34,10 @@ impl Block for Time {
         Some(Duration::new(1, 0))
     }
 
-    fn get_status(&self, theme: &Theme) -> HashMap<&str, String> {
-        map!{
-            "full_text" => self.time.clone().into_inner(),
-            "color"     => theme.fg.to_string()
-        }
+    fn get_status(&self, theme: &Theme) -> Value {
+        json!({
+            "full_text": self.time.clone().into_inner(),
+            "color"    : theme.bg.to_string()
+        })
     }
 }
