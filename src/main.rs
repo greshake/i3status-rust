@@ -17,7 +17,7 @@ use std::boxed::Box;
 use input::{process_events, I3barEvent};
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
-use scheduler::{UpdateScheduler};
+use scheduler::UpdateScheduler;
 use std::collections::HashMap;
 use self::serde_json::Value;
 use std::thread;

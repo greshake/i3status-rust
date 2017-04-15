@@ -7,8 +7,7 @@ use self::regex::Regex;
 
 
 #[derive(Debug)]
-pub enum MouseButton
-{
+pub enum MouseButton {
     Left,
     Right,
     Middle,
@@ -41,11 +40,14 @@ pub struct Theme {
     pub crit: Color,
 }
 
-pub trait Block
-{
+pub trait Block {
     fn get_status(&self, theme: &Theme) -> HashMap<&str, String>;
-    fn update(&self) -> Option<Duration> { None }
+    fn update(&self) -> Option<Duration> {
+        None
+    }
 
-    fn id(&self) -> Option<&str> { None }
+    fn id(&self) -> Option<&str> {
+        None
+    }
     fn click(&self, button: MouseButton) {}
 }
