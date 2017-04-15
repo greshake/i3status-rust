@@ -1,7 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::time::Duration;
-
+use serde_json::Value;
 use block::{Block, MouseButton, Theme};
 
 
@@ -38,12 +38,12 @@ impl Block for Template
         Some(Duration::new(2, 0))
     }
 
-    fn get_status(&self, theme: &Theme) -> HashMap<&str, String>
+    fn get_status(&self, theme: &Theme) -> Value
     {
-        map! {
-            "full_text" => self.value.clone().into_inner(),
-            "color"     => theme.fg.to_string()
-        }
+        json!( {
+            "full_text" : self.value.clone().into_inner(),
+            "color"     : theme.fg.to_string()
+        })
     }
 
     fn click(&self, button: MouseButton) {

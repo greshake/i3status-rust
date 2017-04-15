@@ -7,7 +7,7 @@ use std::io::BufReader;
 use std::io::BufRead;
 use std::fs::File;
 use std::path::Path;
-
+use serde_json::Value;
 use block::{Block, MouseButton, Theme};
 
 use self::nix::sys::statvfs::vfs::Statvfs;
@@ -49,21 +49,21 @@ impl Block for DiskUsage
         Some(Duration::new(5, 0))
     }
 
-    fn get_status(&self, theme: &Theme) -> HashMap<&str, String>
+    fn get_status(&self, theme: &Theme) -> Value
     {
         let path = Path::new(self.target);
         let statvfs = &mut *self.statvfs.borrow_mut();
 
         statvfs.update_with_path(path);
-        let free: f64 = statvfs.f_bsize * statvfs.f_bfree;
-        let free_gb = free / (1024 * 1024 * 1024);
+        let free: f64 = (statvfs.f_bsize  * statvfs.f_bfree) as f64;
+        let free_gb = free / (1024 * 1024 * 1024) as f64;
 
 
-        *self.usage.borrow_mut() = format!("Free space on {0}: {1:.5}", self.target, free_gb);
+        *self.usage.borrow_mut() = format!("Free space on {0}: {1:.2} GB", self.target, free_gb);
 
-        map! {
-            "full_text" => self.usage.clone().into_inner(),
-            "color"     => theme.fg.to_string()
-        }
+        json!({
+            "full_text" : self.usage.clone().into_inner(),
+            "color"     : theme.fg.to_string()
+        })
     }
 }
