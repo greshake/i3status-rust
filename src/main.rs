@@ -1,36 +1,42 @@
+#![warn(warnings)]
+
 #[macro_use]
 extern crate serde_derive;
+
 #[macro_use]
 extern crate serde_json;
 
 pub mod block;
+pub mod blocks;
+pub mod input;
+pub mod scheduler;
+
 #[macro_use]
 pub mod util;
-pub mod blocks;
-pub mod scheduler;
-pub mod input;
 
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
+
+use block::{Block, MouseButton};
+
+use blocks::disk_info::{DiskInfo, DiskInfoType};
 use blocks::time::Time;
 use blocks::template::Template;
 use blocks::toggle::Toggle;
-use blocks::cpu::Cpu;
-use block::{Block, MouseButton};
-use std::boxed::Box;
+
 use input::{process_events, I3barEvent};
-use std::sync::mpsc::{Sender, Receiver};
-use std::sync::mpsc;
 use scheduler::UpdateScheduler;
-use std::collections::HashMap;
+
 use self::serde_json::Value;
-use std::thread;
-use std::time::Duration;
-use blocks::disk_usage::{DiskUsage, Unit};
 
 fn main() {
     let input_check_interval = Duration::new(0, 50000000); // 500ms
 
     let home_usage = DiskUsage::new("/home", "~", Unit::GB);
     let root_usage = DiskUsage::new("/", "/", Unit::GB);
+    let home_usage = DiskInfo::new("/home", "~", DiskInfoType::Free);
     let time = Time::new("t1");
     let cpu = Cpu::new("cpu_mon");
     let toggle = Toggle::new("test_toggle");
@@ -88,7 +94,7 @@ fn main() {
             scheduler.do_scheduled_updates();
 
             // redraw the blocks
-            //util::print_blocks(&blocks, &theme);
+            util::print_blocks(&blocks, &theme);
         } else {
             thread::sleep(input_check_interval)
         }

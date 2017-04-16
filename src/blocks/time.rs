@@ -1,9 +1,12 @@
 extern crate chrono;
 
+use std::cell::RefCell;
+use std::time::Duration;
+
+use block::Block;
+
 use block::{Block, MouseButton};
 use self::chrono::offset::local::Local;
-use std::time::Duration;
-use std::cell::RefCell;
 use serde_json::Value;
 
 const FORMAT: &'static str = "%a %d/%m %R";

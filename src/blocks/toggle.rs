@@ -1,7 +1,7 @@
-use block::{Block, MouseButton, State};
-use std::time::Duration;
-use std::collections::HashMap;
 use std::cell::Cell;
+
+use block::{Block, MouseButton, State};
+
 use serde_json::Value;
 
 pub struct Toggle {
@@ -20,11 +20,9 @@ impl Toggle {
 
 
 impl Block for Toggle {
-    fn id(&self) -> Option<&str> {
-        Some(self.name)
-    }
+    fn id(&self) -> Option<&str> { Some(self.name) }
 
-    fn click(&self, button: MouseButton) {
+    fn click(&self, _: MouseButton) {
         let s = self.state.get();
         use self::State::*;
         self.state.set(match s {
@@ -36,13 +34,9 @@ impl Block for Toggle {
         });
     }
 
-    fn get_status(&self, theme: &Value) -> Value {
-        json!({
-            "full_text": String::from("I can cycle state! Click me"),
-        })
+    fn get_status(&self, _: &Value) -> Value {
+        json!({"full_text": String::from("I can cycle state! Click me"),})
     }
 
-    fn get_state(&self) -> State {
-        self.state.get()
-    }
+    fn get_state(&self) -> State { self.state.get() }
 }
