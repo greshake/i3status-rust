@@ -1,3 +1,5 @@
+#![warn(warnings)]
+
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -23,12 +25,12 @@ use std::collections::HashMap;
 use self::serde_json::Value;
 use std::thread;
 use std::time::Duration;
-use blocks::disk_usage::DiskUsage;
+use blocks::disk_info::{DiskInfo, DiskInfoType};
 
 fn main() {
     let input_check_interval = Duration::new(0, 50000000); // 500ms
 
-    let home_usage = DiskUsage::new("/home", "~");
+    let home_usage = DiskInfo::new("/home", "~", DiskInfoType::Free);
     let time = Time::new("t1");
     let toggle = Toggle::new("test_toggle");
     let template = Template::new("template1");
