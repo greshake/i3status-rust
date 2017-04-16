@@ -1,10 +1,7 @@
 use block::Block;
-use std::collections::{BinaryHeap, HashMap};
-use std::cell::RefCell;
+use std::collections::BinaryHeap;
 use std::thread;
-use std::rc::Rc;
 use std::cmp;
-use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 #[derive(Clone)]
