@@ -1,9 +1,8 @@
 extern crate chrono;
 
-use block::{Block, MouseButton, Theme};
+use block::Block;
 use self::chrono::offset::local::Local;
 use std::time::Duration;
-use std::collections::HashMap;
 use std::cell::RefCell;
 use serde_json::Value;
 
@@ -34,10 +33,9 @@ impl Block for Time {
         Some(Duration::new(1, 0))
     }
 
-    fn get_status(&self, theme: &Theme) -> Value {
+    fn get_status(&self, _: &Value) -> Value {
         json!({
-            "full_text": self.time.clone().into_inner(),
-            "color"    : theme.bg.to_string()
+            "full_text": self.time.clone().into_inner()
         })
     }
 }

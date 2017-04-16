@@ -1,9 +1,4 @@
-extern crate regex;
-
-use std::fmt::Debug;
 use std::time::Duration;
-use std::collections::HashMap;
-use self::regex::Regex;
 use serde_json::Value;
 
 
@@ -14,35 +9,31 @@ pub enum MouseButton {
     Middle,
 }
 
-#[derive(Debug)]
-pub struct Color(pub u8, pub u8, pub u8);
-
-impl Color {
-    pub fn from_string(string: &str) -> Color {
-        let re = Regex::new(r"^#([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$").unwrap();
-        let colors = re.captures(string).unwrap();
-
-        Color(u8::from_str_radix(colors.get(1).unwrap().as_str(), 16).unwrap(),
-              u8::from_str_radix(colors.get(2).unwrap().as_str(), 16).unwrap(),
-              u8::from_str_radix(colors.get(3).unwrap().as_str(), 16).unwrap())
-    }
-
-    pub fn to_string(&self) -> String {
-        format!("#{:02X}{:02X}{:02X}", self.0, self.1, self.2)
-    }
+#[derive(Debug, Copy, Clone)]
+pub enum State {
+    Idle,
+    Info,
+    Good,
+    Warning,
+    Critical
 }
 
-#[derive(Debug)]
-pub struct Theme {
-    pub bg: Color,
-    pub fg: Color,
-    pub info: Color,
-    pub warn: Color,
-    pub crit: Color,
+impl State {
+    pub fn theme_keys(self) -> (&'static str, &'static str) {
+        use self::State::*;
+        match self {
+            Idle => ("idle_bg", "idle_fg"),
+            Info => ("info_bg", "info_fg"),
+            Good => ("good_bg", "good_fg"),
+            Warning => ("warning_bg", "warning_fg"),
+            Critical => ("critical_bg", "critical_fg"),
+        }
+    }
 }
 
 pub trait Block {
-    fn get_status(&self, theme: &Theme) -> Value;
+    fn get_status(&self, theme: &Value) -> Value;
+    fn get_state(&self) -> State {  State::Idle  }
     fn update(&self) -> Option<Duration> {
         None
     }
@@ -50,5 +41,5 @@ pub trait Block {
     fn id(&self) -> Option<&str> {
         None
     }
-    fn click(&self, button: MouseButton) {}
+    fn click(&self, MouseButton) {}
 }

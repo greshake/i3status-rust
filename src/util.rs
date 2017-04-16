@@ -1,10 +1,9 @@
-use block::{Block, Theme};
-use std::collections::HashMap;
-use std::hash::Hash;
+use block::{Block};
+use blocks::separator::Separator;
 use serde_json::Value;
 use serde_json::map::Map;
-use serde_json::error::Error;
-use serde_json;
+
+static SEP: Separator = Separator {};
 
 macro_rules! map(
     { $($key:expr => $value:expr),+ } => {
@@ -18,7 +17,7 @@ macro_rules! map(
      };
 );
 
-fn merge_json_objects(v1: &Value, v2: &Value) -> Option<Value> {
+fn merge_json_obj(v1: &Value, v2: &Value) -> Option<Value> {
     use Value::Object;
     if let &Object(ref map1) = v1 {
         if let &Object(ref map2) = v2 {
@@ -38,20 +37,37 @@ fn merge_json_objects(v1: &Value, v2: &Value) -> Option<Value> {
     None
 }
 
-pub fn print_blocks(blocks: &Vec<&Block>, template: &Value, theme: &Theme) {
+pub fn print_blocks(blocks: &Vec<&Block>, theme: &Value) {
     print!("[");
+    let mut last_bg = Value::Null;
     for (idx, block) in blocks.iter().enumerate() {
 
         // We get the status, and then we merge the template with it
         let status = &block.get_status(theme);
 
-        let merged = merge_json_objects(template, status).unwrap();
+        let (key_bg, key_fg) = block.get_state().theme_keys();
+
+        let template = json!({
+            "background": theme[key_bg],
+            "color": theme[key_fg],
+            "separator_block_width": 0,
+            "separator": false
+        });
+
+        let merged = merge_json_obj(&template, status).unwrap();
 
         if let Value::Object(mut map) = merged {
             if let Some(id) = block.id() {
                 map.insert(String::from("name"), Value::String(String::from(id)));
             }
             let m = Value::Object(map);
+            let mut sep = merge_json_obj(&m, &SEP.get_status(theme)).unwrap();
+
+            sep["color"] = m["background"].clone();
+            sep["background"] = last_bg;
+            last_bg = m["background"].clone();
+
+            print!("{},", sep.to_string());
             print!("{}", m.to_string());
         }
 

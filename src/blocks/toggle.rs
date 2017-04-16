@@ -1,18 +1,18 @@
-use block::{Block, MouseButton, Theme, Color};
+use block::{Block, MouseButton, State};
 use std::time::Duration;
 use std::collections::HashMap;
 use std::cell::Cell;
 use serde_json::Value;
 
 pub struct Toggle {
-    pub state: Cell<bool>,
+    pub state: Cell<State>,
     pub name: &'static str,
 }
 
 impl Toggle {
     pub fn new(name: &'static str) -> Toggle {
         Toggle {
-            state: Cell::new(true),
+            state: Cell::new(State::Idle),
             name: name,
         }
     }
@@ -26,13 +26,23 @@ impl Block for Toggle {
 
     fn click(&self, button: MouseButton) {
         let s = self.state.get();
-        self.state.set(!s);
+        use self::State::*;
+        self.state.set(match s {
+            Idle => Info,
+            Info => Good,
+            Good => Warning,
+            Warning => Critical,
+            Critical => Idle
+        });
     }
 
-    fn get_status(&self, theme: &Theme) -> Value {
+    fn get_status(&self, theme: &Value) -> Value {
         json!({
-            "full_text": String::from("I can change color! Click me"),
-            "color"     : (if self.state.get() { Color(0,0,0).to_string() } else { Color(255, 0, 0).to_string() })
+            "full_text": String::from("I can cycle state! Click me"),
         })
+    }
+
+    fn get_state(&self) -> State {
+        self.state.get()
     }
 }

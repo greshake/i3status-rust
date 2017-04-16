@@ -14,7 +14,7 @@ use blocks::time::Time;
 use blocks::separator::Separator;
 use blocks::template::Template;
 use blocks::toggle::Toggle;
-use block::{Block, Theme, Color, MouseButton};
+use block::{Block, MouseButton};
 use std::boxed::Box;
 use input::{process_events, I3barEvent};
 use std::sync::mpsc::{Sender, Receiver};
@@ -27,36 +27,29 @@ use std::time::Duration;
 use blocks::disk_usage::DiskUsage;
 
 fn main() {
-    let time = Time::new("Time Module 1");
-    let separator = Separator {};
-    let home_usage = DiskUsage::new("home", "/home");
-    let template = Template::new("test");
-    let input_check_interval = Duration::new(0, 50000000); // 50ms
-    let time = Time::new("t1");
-    let sep = Separator {};
-    let toggle = Toggle::new("test_toggle");
+    let input_check_interval = Duration::new(0, 50000000); // 500ms
 
-    let blocks = vec![&sep as &Block,
-                      &toggle as &Block,
-                      &time as &Block,
-                      &sep as &Block,
+    let home_usage = DiskUsage::new("/home", "~");
+    let time = Time::new("t1");
+    let toggle = Toggle::new("test_toggle");
+    let template = Template::new("template1");
+
+    let blocks = vec![&toggle as &Block,
                       &template as &Block,
-                      &separator as &Block,
+                      &time as &Block,
                       &home_usage as &Block];
 
-    let theme = Theme {
-        bg: Color::from_string("#002b36"),
-        fg: Color::from_string("#93a1a1"),
-        info: Color::from_string("#FFFFFF"),
-        warn: Color::from_string("#FFFFFF"),
-        crit: Color::from_string("#FFFFFF"),
-    };
-
-    let template = json!({
-        "background": theme.bg.to_string(),
-        "color": theme.fg.to_string(),
-        "separator_block_width": 0,
-        "separator": false
+    let theme = json!({
+        "idle_bg": "#002b36",
+        "idle_fg": "#93a1a1",
+        "info_bg": "#586e75",
+        "info_fg": "#eee8d5",
+        "good_bg": "#859900",
+        "good_fg": "#002b36",
+        "warning_bg": "#b58900",
+        "warning_fg": "#002b36",
+        "critical_bg": "#dc322f",
+        "critical_fg": "#002b36"
     });
 
     print!("{{\"version\": 1, \"click_events\": true}}[");
@@ -69,9 +62,9 @@ fn main() {
     loop {
         // See if the user has clicked.
         if let Ok(event) = rx.try_recv() {
-            for block in &blocks {
-                if let Some(ref id) = block.id() {
-                    if let Some(ref name) = event.name {
+            if let Some(ref name) = event.name {
+                for block in &blocks {
+                    if let Some(ref id) = block.id() {
                         if id == name {
                             match event.button {
                                 1 => block.click(MouseButton::Left),
@@ -79,6 +72,8 @@ fn main() {
                                 3 => block.click(MouseButton::Right),
                                 _ => {}
                             }
+                            // redraw the blocks
+                            util::print_blocks(&blocks, &theme);
                         }
                     }
                 }
@@ -89,7 +84,7 @@ fn main() {
             scheduler.do_scheduled_updates();
 
             // redraw the blocks
-            util::print_blocks(&blocks, &template, &theme);
+            util::print_blocks(&blocks, &theme);
         } else {
             thread::sleep(input_check_interval)
         }
