@@ -11,7 +11,6 @@ pub mod scheduler;
 pub mod input;
 
 use blocks::time::Time;
-use blocks::separator::Separator;
 use blocks::template::Template;
 use blocks::toggle::Toggle;
 use block::{Block, MouseButton};
@@ -42,8 +41,8 @@ fn main() {
     let theme = json!({
         "idle_bg": "#002b36",
         "idle_fg": "#93a1a1",
-        "info_bg": "#586e75",
-        "info_fg": "#eee8d5",
+        "info_bg": "#268bd2",
+        "info_fg": "#002b36",
         "good_bg": "#859900",
         "good_fg": "#002b36",
         "warning_bg": "#b58900",

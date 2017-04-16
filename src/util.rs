@@ -1,9 +1,6 @@
-use block::{Block};
-use blocks::separator::Separator;
+use block::{Block, State};
 use serde_json::Value;
 use serde_json::map::Map;
-
-static SEP: Separator = Separator {};
 
 macro_rules! map(
     { $($key:expr => $value:expr),+ } => {
@@ -37,39 +34,47 @@ fn merge_json_obj(v1: &Value, v2: &Value) -> Option<Value> {
     None
 }
 
-pub fn print_blocks(blocks: &Vec<&Block>, theme: &Value) {
-    print!("[");
-    let mut last_bg = Value::Null;
-    for (idx, block) in blocks.iter().enumerate() {
+pub fn render(status: Value, opt_id: Option<&str>, state: State, theme: &Value) -> Value {
+    let (key_bg, key_fg) = state.theme_keys();
 
-        // We get the status, and then we merge the template with it
-        let status = &block.get_status(theme);
-
-        let (key_bg, key_fg) = block.get_state().theme_keys();
-
-        let template = json!({
+    let template = json!({
             "background": theme[key_bg],
             "color": theme[key_fg],
             "separator_block_width": 0,
             "separator": false
         });
 
-        let merged = merge_json_obj(&template, status).unwrap();
+    let mut block = merge_json_obj(&template, &status).unwrap();
 
-        if let Value::Object(mut map) = merged {
-            if let Some(id) = block.id() {
-                map.insert(String::from("name"), Value::String(String::from(id)));
-            }
-            let m = Value::Object(map);
-            let mut sep = merge_json_obj(&m, &SEP.get_status(theme)).unwrap();
+    if let Some(id) = opt_id {
+        block["name"] = Value::String(String::from(id));
+    }
 
-            sep["color"] = m["background"].clone();
-            sep["background"] = last_bg;
-            last_bg = m["background"].clone();
+    block
+}
 
-            print!("{},", sep.to_string());
-            print!("{}", m.to_string());
-        }
+pub fn print_blocks(blocks: &Vec<&Block>, theme: &Value) {
+    print!("[");
+    let mut last_bg = Value::Null;
+    for (idx, block) in blocks.iter().enumerate() {
+
+        let blo = render(block.get_status(theme),
+                         block.id(),
+                         block.get_state(),
+                         theme);
+
+        let sep = json!({
+            "full_text": "".to_string(),
+            "separator": false,
+            "separator_block_width": 0,
+            "background": last_bg,
+            "color": blo["background"].clone()
+        });
+
+        last_bg = blo["background"].clone();
+
+        print!("{},", sep.to_string());
+        print!("{}", blo.to_string());
 
         if idx != (blocks.len() - 1) {
             print!(",");

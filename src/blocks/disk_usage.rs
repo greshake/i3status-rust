@@ -46,14 +46,14 @@ impl Block for DiskUsage
 
     fn get_status(&self, _: &Value) -> Value {
         json!({
-            "full_text" : format!("{0} {1}GB", self.alias, self.free.get())
+            "full_text" : format!(" {0} {1}GB ", self.alias, self.free.get())
         })
     }
 
     fn get_state(&self) -> State {
         match self.free.get() {
-            //0. ...10. => State::Critical,
-            //10. ...20. => State::Warning,
+            0. ...10. => State::Critical,
+            10. ...20. => State::Warning,
             _ => State::Good
         }
     }
