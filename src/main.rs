@@ -21,7 +21,6 @@ use std::time::Duration;
 
 use block::{Block, MouseButton};
 
-use blocks::cpu::Cpu;
 use blocks::disk_info::{DiskInfo, DiskInfoType, Unit};
 use blocks::time::Time;
 use blocks::template::Template;
@@ -36,17 +35,13 @@ fn main() {
     let input_check_interval = Duration::new(0, 50000000); // 500ms
 
     let root_usage = DiskInfo::new("/", "/", DiskInfoType::Free, Unit::GB);
-    let home_usage = DiskInfo::new("/home", "~", DiskInfoType::Free, Unit::GB);
     let time = Time::new("t1");
-    let cpu = Cpu::new("cpu_mon");
     let toggle = Toggle::new("test_toggle");
     let template = Template::new("template1");
 
     let blocks = vec![&toggle as &Block,
                       &template as &Block,
                       &time as &Block,
-                      //&cpu as &Block,
-                      &home_usage as &Block,
                       &root_usage as &Block];
 
     let theme = json!({

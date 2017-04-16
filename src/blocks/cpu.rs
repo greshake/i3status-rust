@@ -1,10 +1,10 @@
 extern crate sysinfo;
 
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 use std::time::Duration;
 use serde_json::Value;
-use block::{Block, MouseButton, State};
-use self::sysinfo::{ProcessExt, ProcessorExt, Signal, System, SystemExt};
+use block::Block;
+use self::sysinfo::{ProcessorExt, System, SystemExt};
 
 pub struct Cpu {
     usage: Cell<f32>,
@@ -28,8 +28,7 @@ impl Block for Cpu
     }
 
     fn update(&self) -> Option<Duration> {
-        println!("{:?}", System::new().get_processor_list());
-        //self.usage.set(System::new().get_processor_list()[0].get_cpu_usage());
+        self.usage.set(System::new().get_processor_list()[0].get_cpu_usage());
         Some(Duration::new(5, 0))
     }
 

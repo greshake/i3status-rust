@@ -45,7 +45,6 @@ pub struct DiskInfo
     target: &'static str,
     value: Cell<f64>,
     info_type: DiskInfoType,
-    state: Cell<State>,
     unit: Unit,
 
 }
@@ -71,43 +70,23 @@ impl DiskInfo
                 target: target,
                 value: Cell::new(0.),
                 info_type: info_type,
-                state: Cell::new(State::Idle),
                 unit: unit,
             }
-    }
-
-    fn compute_value(&self) {
-        match self.info_type {
-            DiskInfoType::Free => {
-                let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
-
-                let free = self.unit.convert_bytes(statvfs.f_bsize * statvfs.f_bfree);
-                self.value.set(free);
-            }
-            _ => unimplemented!(),
-        }
-    }
-
-    fn get_state(&self) {
-        match self.info_type {
-            DiskInfoType::Free => {
-                // This could cause trouble: https://github.com/rust-lang/rust/issues/41255
-                self.state.set(match self.value.get() {
-                    0. ... 10. => State::Critical,
-                    10. ... 20. => State::Warning,
-                    _ => State::Good
-                });
-            }
-            _ => unimplemented!(),
-        }
     }
 }
 
 impl Block for DiskInfo
 {
-    #[inline]
     fn update(&self) -> Option<Duration> {
-        self.compute_value();
+        match self.info_type {
+            DiskInfoType::Free => {
+            let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
+
+            let free = self.unit.convert_bytes(statvfs.f_bsize * statvfs.f_bfree);
+            self.value.set(free);
+            }
+            _ => unimplemented!(),
+        }
         Some(Duration::new(5, 0))
     }
 
@@ -122,6 +101,16 @@ impl Block for DiskInfo
 
     #[inline]
     fn get_state(&self) -> State {
-        self.state.get()
+        match self.info_type {
+            DiskInfoType::Free => {
+                // This could cause trouble: https://github.com/rust-lang/rust/issues/41255
+                match self.value.get() {
+                    0. ... 10. => State::Critical,
+                    10. ... 20. => State::Warning,
+                    _ => State::Good
+                }
+            }
+            _ => unimplemented!(),
+        }
     }
 }

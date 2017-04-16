@@ -4,7 +4,6 @@ use std::cell::RefCell;
 use std::time::Duration;
 
 use block::Block;
-
 use self::chrono::offset::local::Local;
 use serde_json::Value;
 
