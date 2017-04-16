@@ -21,7 +21,8 @@ use std::time::Duration;
 
 use block::{Block, MouseButton};
 
-use blocks::disk_info::{DiskInfo, DiskInfoType};
+use blocks::cpu::Cpu;
+use blocks::disk_info::{DiskInfo, DiskInfoType, Unit};
 use blocks::time::Time;
 use blocks::template::Template;
 use blocks::toggle::Toggle;
@@ -34,9 +35,8 @@ use self::serde_json::Value;
 fn main() {
     let input_check_interval = Duration::new(0, 50000000); // 500ms
 
-    let home_usage = DiskUsage::new("/home", "~", Unit::GB);
-    let root_usage = DiskUsage::new("/", "/", Unit::GB);
-    let home_usage = DiskInfo::new("/home", "~", DiskInfoType::Free);
+    let root_usage = DiskInfo::new("/", "/", DiskInfoType::Free, Unit::GB);
+    let home_usage = DiskInfo::new("/home", "~", DiskInfoType::Free, Unit::GB);
     let time = Time::new("t1");
     let cpu = Cpu::new("cpu_mon");
     let toggle = Toggle::new("test_toggle");
@@ -45,7 +45,7 @@ fn main() {
     let blocks = vec![&toggle as &Block,
                       &template as &Block,
                       &time as &Block,
-                      &cpu as &Block,
+                      //&cpu as &Block,
                       &home_usage as &Block,
                       &root_usage as &Block];
 

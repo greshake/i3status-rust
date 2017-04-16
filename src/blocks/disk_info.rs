@@ -9,7 +9,35 @@ use block::{Block, State};
 use self::nix::sys::statvfs::vfs::Statvfs;
 use serde_json::Value;
 
-const BYTES_PER_GB: f64 = 1073741824.0;
+pub enum Unit {
+    MB,
+    GB,
+    GiB,
+    MiB
+}
+
+impl Unit {
+    fn convert_bytes(&self, bytes: u64) -> f64 {
+        use self::Unit::*;
+        match *self {
+            MB => bytes as f64 / 1000. / 1000.,
+            GB => bytes as f64 / 1000. / 1000. / 1000.,
+            MiB => bytes as f64 / 1024. / 1024.,
+            GiB => bytes as f64 / 1024. / 1024. / 1024.,
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        use self::Unit::*;
+        match *self {
+            MB => "MB",
+            GB => "GB",
+            MiB => "MiB",
+            GiB => "GiB"
+        }
+    }
+}
+
 
 pub struct DiskInfo
 {
@@ -18,6 +46,7 @@ pub struct DiskInfo
     value: Cell<f64>,
     info_type: DiskInfoType,
     state: Cell<State>,
+    unit: Unit,
 
 }
 
@@ -34,7 +63,7 @@ pub enum DiskInfoType {
 
 impl DiskInfo
 {
-    pub fn new(target: &'static str, alias: &'static str, info_type: DiskInfoType) -> DiskInfo
+    pub fn new(target: &'static str, alias: &'static str, info_type: DiskInfoType, unit: Unit) -> DiskInfo
     {
         DiskInfo
             {
@@ -43,6 +72,7 @@ impl DiskInfo
                 value: Cell::new(0.),
                 info_type: info_type,
                 state: Cell::new(State::Idle),
+                unit: unit,
             }
     }
 
@@ -51,11 +81,18 @@ impl DiskInfo
             DiskInfoType::Free => {
                 let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
 
-                let free = (statvfs.f_bsize * statvfs.f_bfree) as f64 / BYTES_PER_GB;
+                let free = self.unit.convert_bytes(statvfs.f_bsize * statvfs.f_bfree);
                 self.value.set(free);
+            }
+            _ => unimplemented!(),
+        }
+    }
 
+    fn get_state(&self) {
+        match self.info_type {
+            DiskInfoType::Free => {
                 // This could cause trouble: https://github.com/rust-lang/rust/issues/41255
-                self.state.set(match free {
+                self.state.set(match self.value.get() {
                     0. ... 10. => State::Critical,
                     10. ... 20. => State::Warning,
                     _ => State::Good
@@ -77,7 +114,7 @@ impl Block for DiskInfo
     fn get_status(&self, _: &Value) -> Value {
         match self.info_type {
             DiskInfoType::Free => {
-                json!({"full_text" : format!(" {0} {1:.2}GB ", self.alias, self.value.get())})
+                json!({"full_text" : format!(" {0} {1:.2} {2} ", self.alias, self.value.get(),self.unit.name())})
             }
             _ => unimplemented!(),
         }

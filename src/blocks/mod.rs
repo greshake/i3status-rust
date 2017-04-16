@@ -1,6 +1,5 @@
-pub mod time;
-pub mod disk_usage;
+pub mod cpu;
 pub mod disk_info;
 pub mod template;
+pub mod time;
 pub mod toggle;
-pub mod cpu;
