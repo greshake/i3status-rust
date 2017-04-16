@@ -1,16 +1,16 @@
 extern crate chrono;
 
-use block::Block;
+use block::{Block, MouseButton};
 use self::chrono::offset::local::Local;
 use std::time::Duration;
 use std::cell::RefCell;
 use serde_json::Value;
 
-const FORMAT: &'static str = "%a %F %T";
+const FORMAT: &'static str = "%a %d/%m %R";
 
 pub struct Time {
     time: RefCell<String>,
-    name: &'static str,
+    name: &'static str
 }
 
 impl Time {
@@ -29,8 +29,8 @@ impl Block for Time {
     }
 
     fn update(&self) -> Option<Duration> {
-        *self.time.borrow_mut() = format!("{}", Local::now().format(FORMAT));
-        Some(Duration::new(1, 0))
+        *self.time.borrow_mut() = format!("  {} ", Local::now().format(FORMAT));
+        Some(Duration::new(60, 0))
     }
 
     fn get_status(&self, _: &Value) -> Value {

@@ -13,6 +13,7 @@ pub mod input;
 use blocks::time::Time;
 use blocks::template::Template;
 use blocks::toggle::Toggle;
+use blocks::cpu::Cpu;
 use block::{Block, MouseButton};
 use std::boxed::Box;
 use input::{process_events, I3barEvent};
@@ -23,20 +24,24 @@ use std::collections::HashMap;
 use self::serde_json::Value;
 use std::thread;
 use std::time::Duration;
-use blocks::disk_usage::DiskUsage;
+use blocks::disk_usage::{DiskUsage, Unit};
 
 fn main() {
     let input_check_interval = Duration::new(0, 50000000); // 500ms
 
-    let home_usage = DiskUsage::new("/home", "~");
+    let home_usage = DiskUsage::new("/home", "~", Unit::GB);
+    let root_usage = DiskUsage::new("/", "/", Unit::GB);
     let time = Time::new("t1");
+    let cpu = Cpu::new("cpu_mon");
     let toggle = Toggle::new("test_toggle");
     let template = Template::new("template1");
 
     let blocks = vec![&toggle as &Block,
                       &template as &Block,
                       &time as &Block,
-                      &home_usage as &Block];
+                      &cpu as &Block,
+                      &home_usage as &Block,
+                      &root_usage as &Block];
 
     let theme = json!({
         "idle_bg": "#002b36",
@@ -83,7 +88,7 @@ fn main() {
             scheduler.do_scheduled_updates();
 
             // redraw the blocks
-            util::print_blocks(&blocks, &theme);
+            //util::print_blocks(&blocks, &theme);
         } else {
             thread::sleep(input_check_interval)
         }
