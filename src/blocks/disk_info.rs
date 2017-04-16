@@ -38,7 +38,6 @@ impl Unit {
     }
 }
 
-
 pub struct DiskInfo
 {
     alias: &'static str,
@@ -50,14 +49,10 @@ pub struct DiskInfo
 }
 
 pub enum DiskInfoType {
-    Free,
-    Used,
-    Total,
     Available,
-    PercentageFree,
-    PercentageUsedOfAvailable,
-    PercentageUsed,
-    PercentageAvailable,
+    Free,
+    Total,
+    Used,
 }
 
 impl DiskInfo
@@ -79,11 +74,15 @@ impl Block for DiskInfo
 {
     fn update(&self) -> Option<Duration> {
         match self.info_type {
+            DiskInfoType::Available => {
+                let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
+                let available = self.unit.convert_bytes(statvfs.f_bavail * statvfs.f_bsize);
+                self.value.set(available);
+            }
             DiskInfoType::Free => {
-            let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
-
-            let free = self.unit.convert_bytes(statvfs.f_bsize * statvfs.f_bfree);
-            self.value.set(free);
+                let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
+                let free = self.unit.convert_bytes(statvfs.f_bfree * statvfs.f_bsize);
+                self.value.set(free);
             }
             _ => unimplemented!(),
         }
@@ -92,22 +91,26 @@ impl Block for DiskInfo
 
     fn get_status(&self, _: &Value) -> Value {
         match self.info_type {
+            DiskInfoType::Available => {
+                json!({"full_text" : format!(" {0} avail: {1:.2} {2} ", self.alias, self.value.get(),
+                self.unit.name())})
+            }
             DiskInfoType::Free => {
-                json!({"full_text" : format!(" {0} {1:.2} {2} ", self.alias, self.value.get(),self.unit.name())})
+                json!({"full_text" : format!(" {0} free: {1:.2} {2} ", self.alias, self.value.get(),
+                self.unit.name())})
             }
             _ => unimplemented!(),
         }
     }
 
-    #[inline]
     fn get_state(&self) -> State {
         match self.info_type {
-            DiskInfoType::Free => {
+            DiskInfoType::Available | DiskInfoType::Free => {
                 // This could cause trouble: https://github.com/rust-lang/rust/issues/41255
                 match self.value.get() {
                     0. ... 10. => State::Critical,
                     10. ... 20. => State::Warning,
-                    _ => State::Good
+                    _ => State::Good,
                 }
             }
             _ => unimplemented!(),

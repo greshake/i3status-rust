@@ -34,7 +34,7 @@ use self::serde_json::Value;
 fn main() {
     let input_check_interval = Duration::new(0, 50000000); // 500ms
 
-    let root_usage = DiskInfo::new("/", "/", DiskInfoType::Free, Unit::GB);
+    let root_usage = DiskInfo::new("/", "/", DiskInfoType::Available, Unit::GB);
     let time = Time::new("t1");
     let toggle = Toggle::new("test_toggle");
     let template = Template::new("template1");
