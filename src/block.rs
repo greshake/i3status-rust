@@ -1,7 +1,6 @@
 use std::time::Duration;
 use serde_json::Value;
 
-
 #[derive(Debug)]
 pub enum MouseButton {
     Left,
@@ -33,7 +32,7 @@ impl State {
 
 pub trait Block {
     fn get_status(&self, theme: &Value) -> Value;
-    fn get_state(&self) -> State {  State::Idle  }
+    fn get_state(&self) -> State { State::Idle }
     fn update(&self) -> Option<Duration> {
         None
     }

@@ -2,28 +2,34 @@
 
 #[macro_use]
 extern crate serde_derive;
+
 #[macro_use]
 extern crate serde_json;
 
 pub mod block;
+pub mod blocks;
+pub mod input;
+pub mod scheduler;
+
 #[macro_use]
 pub mod util;
-pub mod blocks;
-pub mod scheduler;
-pub mod input;
 
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
+
+use block::{Block, MouseButton};
+
+use blocks::disk_info::{DiskInfo, DiskInfoType};
 use blocks::time::Time;
 use blocks::template::Template;
 use blocks::toggle::Toggle;
-use block::{Block, MouseButton};
+
 use input::{process_events, I3barEvent};
-use std::sync::mpsc::{Sender, Receiver};
-use std::sync::mpsc;
 use scheduler::UpdateScheduler;
+
 use self::serde_json::Value;
-use std::thread;
-use std::time::Duration;
-use blocks::disk_info::{DiskInfo, DiskInfoType};
 
 fn main() {
     let input_check_interval = Duration::new(0, 50000000); // 500ms

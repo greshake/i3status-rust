@@ -1,14 +1,15 @@
 extern crate nix;
 
-use std::cell::{Cell};
-use std::time::Duration;
+use std::cell::Cell;
 use std::path::Path;
-use serde_json::Value;
+use std::time::Duration;
+
 use block::{Block, State};
 
 use self::nix::sys::statvfs::vfs::Statvfs;
+use serde_json::Value;
 
-const BYTES_PER_BG: f64 = 1073741824.0;
+const BYTES_PER_GB: f64 = 1073741824.0;
 
 pub struct DiskInfo
 {
@@ -50,17 +51,15 @@ impl DiskInfo
             DiskInfoType::Free => {
                 let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
 
-                let free = (statvfs.f_bsize * statvfs.f_bfree) as f64 / BYTES_PER_BG;
+                let free = (statvfs.f_bsize * statvfs.f_bfree) as f64 / BYTES_PER_GB;
                 self.value.set(free);
 
                 // This could cause trouble: https://github.com/rust-lang/rust/issues/41255
-                let new_state = match free {
+                self.state.set(match free {
                     0. ... 10. => State::Critical,
                     10. ... 20. => State::Warning,
                     _ => State::Good
-                };
-
-                self.state.set(new_state);
+                });
             }
             _ => unimplemented!(),
         }

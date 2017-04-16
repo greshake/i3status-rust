@@ -42,9 +42,9 @@ impl<'a> UpdateScheduler<'a> {
         let now = Instant::now();
         for block in blocks.iter() {
             schedule.push(Task {
-                              block: *block,
-                              update_time: now.clone(),
-                          });
+                block: *block,
+                update_time: now.clone(),
+            });
         }
 
         UpdateScheduler { schedule: schedule }
@@ -53,9 +53,9 @@ impl<'a> UpdateScheduler<'a> {
     pub fn schedule(&mut self, block: &'a Block, time: Instant) {
         self.schedule
             .push(Task {
-                      block: block,
-                      update_time: time,
-                  })
+                block: block,
+                update_time: time,
+            })
     }
 
     pub fn time_to_next_update(&self) -> Duration {
@@ -74,7 +74,7 @@ impl<'a> UpdateScheduler<'a> {
         let mut tasks_next = vec![t.clone()];
 
         while !self.schedule.is_empty() &&
-              t.update_time == self.schedule.peek().unwrap().update_time {
+            t.update_time == self.schedule.peek().unwrap().update_time {
             tasks_next.push(self.schedule.pop().unwrap())
         }
 
@@ -88,9 +88,9 @@ impl<'a> UpdateScheduler<'a> {
             if let Some(dur) = task.block.update() {
                 self.schedule
                     .push(Task {
-                              block: task.block,
-                              update_time: now + dur,
-                          })
+                        block: task.block,
+                        update_time: now + dur,
+                    })
             }
         }
     }

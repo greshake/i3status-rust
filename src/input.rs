@@ -1,11 +1,10 @@
 extern crate serde_json;
 
-use std::sync::mpsc::Sender;
-use std::thread;
 use std::io;
 use std::option::Option;
 use std::string::*;
-
+use std::sync::mpsc::Sender;
+use std::thread;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct I3barEvent {

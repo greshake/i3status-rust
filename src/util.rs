@@ -2,7 +2,7 @@ use block::{Block, State};
 use serde_json::Value;
 use serde_json::map::Map;
 
-macro_rules! map(
+macro_rules! map (
     { $($key:expr => $value:expr),+ } => {
         {
             let mut m = ::std::collections::HashMap::new();
@@ -57,7 +57,6 @@ pub fn print_blocks(blocks: &Vec<&Block>, theme: &Value) {
     print!("[");
     let mut last_bg = Value::Null;
     for (idx, block) in blocks.iter().enumerate() {
-
         let blo = render(block.get_status(theme),
                          block.id(),
                          block.get_state(),

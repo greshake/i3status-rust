@@ -1,5 +1,7 @@
-use block::{Block, MouseButton, State};
 use std::cell::Cell;
+
+use block::{Block, MouseButton, State};
+
 use serde_json::Value;
 
 pub struct Toggle {
@@ -18,9 +20,7 @@ impl Toggle {
 
 
 impl Block for Toggle {
-    fn id(&self) -> Option<&str> {
-        Some(self.name)
-    }
+    fn id(&self) -> Option<&str> { Some(self.name) }
 
     fn click(&self, _: MouseButton) {
         let s = self.state.get();
@@ -35,12 +35,8 @@ impl Block for Toggle {
     }
 
     fn get_status(&self, _: &Value) -> Value {
-        json!({
-            "full_text": String::from("I can cycle state! Click me"),
-        })
+        json!({"full_text": String::from("I can cycle state! Click me"),})
     }
 
-    fn get_state(&self) -> State {
-        self.state.get()
-    }
+    fn get_state(&self) -> State { self.state.get() }
 }
