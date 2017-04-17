@@ -16,7 +16,7 @@ pub fn create_block(name: &str, config: Value) -> Box<Block> {
     match name {
         "time" => boxed!(Time::new(config)),
         _ => {
-            panic!("Ńot a registered block: {}", name);
+            panic!("Not a registered block: {}", name);
         }
     }
 }
