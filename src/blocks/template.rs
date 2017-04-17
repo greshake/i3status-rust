@@ -6,16 +6,20 @@ use block::{Block, MouseButton, State};
 use serde_json::Value;
 
 pub struct Template {
-    value: RefCell<String>,
-    name: &'static str,
+    name: String,
+    update_interval: Duration,
+
+    some_value: RefCell<String>,
     click_count: Cell<u32>,
 }
 
 impl Template {
-    pub fn new(name: &'static str) -> Template {
+    pub fn new(config: Value) -> Template {
         Template {
-            value: RefCell::new(String::from("Hello World!")),
-            name: name,
+            name: String::from(config["name"].as_str().expect("The argument 'name' in the block config is required!")),
+            update_interval: Duration::new(config["interval"].as_u64().unwrap_or(5), 0),
+
+            some_value: RefCell::new(String::from(config["hello"].as_str().unwrap_or("Hello World!"))),
             click_count: Cell::new(0),
         }
     }
@@ -25,18 +29,18 @@ impl Template {
 impl Block for Template
 {
     fn id(&self) -> Option<&str> {
-        Some(self.name)
+        Some(&self.name)
     }
 
     fn update(&self) -> Option<Duration> {
         // No need to update periodically, this Block only reacts to clicks.
         // Otherwise, return a Duration until the next update here
-        None
+        Some(self.update_interval.clone())
     }
 
     fn get_status(&self, _: &Value) -> Value {
         json!({
-            "full_text" : self.value.clone().into_inner()
+            "full_text" : self.some_value.clone().into_inner()
         })
     }
 
@@ -56,13 +60,13 @@ impl Block for Template
                 let old = self.click_count.get();
                 let new: u32 = old + 1;
                 self.click_count.set(new);
-                *self.value.borrow_mut() = format!("Click Count: {}", new);
+                *self.some_value.borrow_mut() = format!("Click Count: {}", new);
             }
             MouseButton::Right => {
                 let old = self.click_count.get();
                 let new: u32 = if old > 0 { old - 1 } else { 0 };
                 self.click_count.set(new);
-                *self.value.borrow_mut() = format!("Click Count: {}", new);
+                *self.some_value.borrow_mut() = format!("Click Count: {}", new);
             }
             _ => {}
         }
