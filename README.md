@@ -67,9 +67,9 @@ Example:
 pub fn new(config: Value) -> Template {
       Template {
             name: get_str(config, "name"),
-            update_interval: Duration::new(get_u64_default(config, "interval", 5), 0),
+            update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
 
-            some_value: RefCell::new(get_str_default(config, "hello", "Default is Hello World")),
+            some_value: RefCell::new(get_str_default!(config, "hello", "Default is Hello World")),
             click_count: Cell::new(0),
       }
 }
