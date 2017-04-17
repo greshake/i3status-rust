@@ -1,7 +1,8 @@
 use std::cell::{Cell, RefCell};
 use std::time::Duration;
 
-use block::{Block, MouseButton, State};
+use block::{Block, State};
+use input::I3barEvent;
 
 use serde_json::Value;
 
@@ -54,15 +55,15 @@ impl Block for Template
         }
     }
 
-    fn click(&self, button: MouseButton) {
-        match button {
-            MouseButton::Left => {
+    fn click(&self, event: I3barEvent) {
+        match event.button {
+            1 => {
                 let old = self.click_count.get();
                 let new: u32 = old + 1;
                 self.click_count.set(new);
                 *self.some_value.borrow_mut() = format!("Click Count: {}", new);
             }
-            MouseButton::Right => {
+            3 => {
                 let old = self.click_count.get();
                 let new: u32 = if old > 0 { old - 1 } else { 0 };
                 self.click_count.set(new);

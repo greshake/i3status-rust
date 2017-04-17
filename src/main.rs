@@ -23,7 +23,7 @@ use std::time::Duration;
 use std::fs::File;
 use std::io::Read;
 
-use block::{Block, MouseButton};
+use block::Block;
 
 use blocks::create_block;
 use input::{process_events, I3barEvent};
@@ -113,14 +113,10 @@ fn main() {
                 for block in &blocks {
                     if let Some(ref id) = block.id() {
                         if id == name {
-                            match event.button {
-                                1 => block.click(MouseButton::Left),
-                                2 => block.click(MouseButton::Middle),
-                                3 => block.click(MouseButton::Right),
-                                _ => {}
-                            }
+                            block.click(event.clone());
                             // redraw the blocks, state may have changed
                             util::print_blocks(&blocks, &theme);
+                            break;
                         }
                     }
                 }

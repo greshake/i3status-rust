@@ -6,12 +6,13 @@ use std::string::*;
 use std::sync::mpsc::Sender;
 use std::thread;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct I3barEvent {
     pub name: Option<String>,
     pub instance: Option<String>,
     pub x: u64,
     pub y: u64,
+    // Button Codes: 1 -> Left, 2 -> Middle, 3 -> Right
     pub button: u64,
 }
 

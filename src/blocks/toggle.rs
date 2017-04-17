@@ -1,6 +1,7 @@
 use std::cell::Cell;
 
-use block::{Block, MouseButton, State};
+use block::{Block, State};
+use input::I3barEvent;
 
 use serde_json::Value;
 
@@ -22,7 +23,7 @@ impl Toggle {
 impl Block for Toggle {
     fn id(&self) -> Option<&str> { Some(self.name) }
 
-    fn click(&self, _: MouseButton) {
+    fn click(&self, _: I3barEvent) {
         let s = self.state.get();
         use self::State::*;
         self.state.set(match s {

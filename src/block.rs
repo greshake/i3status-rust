@@ -1,12 +1,6 @@
 use std::time::Duration;
+use input::I3barEvent;
 use serde_json::Value;
-
-#[derive(Debug)]
-pub enum MouseButton {
-    Left,
-    Right,
-    Middle,
-}
 
 #[derive(Debug, Copy, Clone)]
 pub enum State {
@@ -40,5 +34,5 @@ pub trait Block {
     fn id(&self) -> Option<&str> {
         None
     }
-    fn click(&self, MouseButton) {}
+    fn click(&self, I3barEvent) {}
 }
