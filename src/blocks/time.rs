@@ -6,19 +6,21 @@ use std::time::Duration;
 use block::Block;
 use self::chrono::offset::local::Local;
 use serde_json::Value;
+use uuid::Uuid;
 
-const FORMAT: &'static str = "%a %d/%m %R";
 
 pub struct Time {
     time: RefCell<String>,
-    name: String
+    format: String,
+    name: String,
 }
 
 impl Time {
     pub fn new(config: Value) -> Time {
         Time {
+            format: String::from(config["format"].as_str().unwrap_or("%a %d/%m %R")),
             time: RefCell::new(String::from("")),
-            name: config["name"].as_str().expect("Name of the Block must be a string!").to_string(),
+            name: Uuid::new_v4().simple().to_string(),
         }
     }
 }
@@ -26,11 +28,11 @@ impl Time {
 
 impl Block for Time {
     fn id(&self) -> Option<&str> {
-        Some(&self.name) // Just a demonstration at this point
+        Some(&self.name)
     }
 
     fn update(&self) -> Option<Duration> {
-        *self.time.borrow_mut() = format!(" {} ", Local::now().format(FORMAT));
+        *self.time.borrow_mut() = format!(" {} ", Local::now().format(&self.format));
         Some(Duration::new(60, 0))
     }
 

@@ -1,11 +1,3 @@
 [
-  {
-    "block": "time",
-    "name": "t1"
-  },
-  {
-    "block": "template",
-    "name": "exampleblock1",
-    "hello": "world"
-  }
+  {"block": "time"}
 ]
