@@ -11,6 +11,7 @@ use uuid::Uuid;
 
 pub struct Time {
     time: RefCell<String>,
+    update_interval: Duration,
     format: String,
     name: String,
 }
@@ -21,6 +22,7 @@ impl Time {
             format: get_str_default!(config, "format", "%a %d/%m %R"),
             time: RefCell::new(String::from("")),
             name: Uuid::new_v4().simple().to_string(),
+            update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
         }
     }
 }
@@ -33,7 +35,7 @@ impl Block for Time {
 
     fn update(&self) -> Option<Duration> {
         *self.time.borrow_mut() = format!(" {} ", Local::now().format(&self.format));
-        Some(Duration::new(60, 0))
+        Some(self.update_interval.clone())
     }
 
     fn get_status(&self, theme: &Value) -> Value {
