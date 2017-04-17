@@ -6,6 +6,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 extern crate clap;
+extern crate uuid;
 
 pub mod block;
 pub mod blocks;
