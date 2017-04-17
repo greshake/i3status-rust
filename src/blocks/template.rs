@@ -16,7 +16,7 @@ impl Template {
     pub fn new(config: Value) -> Template {
         Template {
             name: Uuid::new_v4().simple().to_string(),
-            update_interval: Duration::new(config["interval"].as_u64().unwrap_or(5), 0),
+            update_interval: Duration::new(get_u64_default(config, "interval", 5), 0),
         }
     }
 }

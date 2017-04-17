@@ -18,7 +18,7 @@ pub struct Time {
 impl Time {
     pub fn new(config: Value) -> Time {
         Time {
-            format: String::from(config["format"].as_str().unwrap_or("%a %d/%m %R")),
+            format: get_str_default!(config, "format", "%a %d/%m %R"),
             time: RefCell::new(String::from("")),
             name: Uuid::new_v4().simple().to_string(),
         }

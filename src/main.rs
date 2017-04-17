@@ -8,14 +8,14 @@ extern crate serde_json;
 extern crate clap;
 extern crate uuid;
 
+#[macro_use]
+pub mod util;
 pub mod block;
 pub mod blocks;
 pub mod input;
 pub mod icons;
 pub mod themes;
 pub mod scheduler;
-#[macro_use]
-pub mod util;
 
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;

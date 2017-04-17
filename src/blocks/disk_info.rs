@@ -55,6 +55,19 @@ pub enum DiskInfoType {
     Used,
 }
 
+impl DiskInfoType {
+    fn from_str(name: &str) -> DiskInfoType {
+        use self::DiskInfoType::*;
+        match name {
+            "available" => Available,
+            "free" => Free,
+            "total" => Total,
+            "used" => Used,
+            _ => panic!("Invalid DiskInfo Type")
+        }
+    }
+}
+
 impl DiskInfo
 {
     pub fn new(target: &'static str, alias: &'static str, info_type: DiskInfoType, unit: Unit) -> DiskInfo

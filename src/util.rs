@@ -81,3 +81,17 @@ pub fn print_blocks(blocks: &Vec<&Block>, theme: &Value) {
     }
     println!("],");
 }
+
+macro_rules! get_str{
+    ($config:expr, $name:expr) => {String::from($config[$name].as_str().expect(format!("Required argument {} not found in block config!", $name)))};
+}
+macro_rules! get_str_default {
+    ($config:expr, $name:expr, $default:expr) => {String::from($config[$name].as_str().unwrap_or($default))};
+}
+
+macro_rules! get_u64 {
+    ($config:expr, $name:expr) => {$config[$name].as_u64().expect(format!("Required argument {} not found in block config!", $name))};
+}
+macro_rules! get_u64_default {
+    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_u64().unwrap_or($default)};
+}

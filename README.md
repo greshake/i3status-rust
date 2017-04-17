@@ -39,7 +39,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
             ```
 5. Reload i3: `i3 reload`
 
-# Availiable Blocks
+# Available Blocks
 ## Time
 Creates a block which display the current time. Arguments:
 
@@ -60,16 +60,16 @@ Your block needs a struct to store it's state. First, replace all the occurences
 
 ## Step 3: Implement the constructor
 
-You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value.
+You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros get_str/u64 to extract a string/ u64 and add appropriate error handeling. You can set a default value in the macro as you can see below.
 
 Example:
 ```rust
 pub fn new(config: Value) -> Template {
       Template {
-            name: String::from(config["name"].as_str().expect("The argument 'name' in the block config is required!")),
-            update_interval: Duration::new(config["interval"].as_u64().unwrap_or(5), 0),
+            name: get_str(config, "name"),
+            update_interval: Duration::new(get_u64_default(config, "interval", 5), 0),
 
-            some_value: RefCell::new(String::from(config["hello"].as_str().unwrap_or("Hello World!"))),
+            some_value: RefCell::new(get_str_default(config, "hello", "Default is Hello World")),
             click_count: Cell::new(0),
       }
 }
