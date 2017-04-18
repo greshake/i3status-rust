@@ -1,5 +1,5 @@
 use block::Block;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashMap};
 use std::thread;
 use std::cmp;
 use std::time::{Duration, Instant};
@@ -8,6 +8,11 @@ use std::time::{Duration, Instant};
 pub struct Task<'a> {
     block: &'a Block,
     update_time: Instant,
+}
+
+pub struct UpdateRequest {
+    pub id: String,
+    pub update_time: Instant
 }
 
 impl<'a> cmp::PartialEq for Task<'a> {
@@ -33,11 +38,13 @@ impl<'a> cmp::Ord for Task<'a> {
 
 pub struct UpdateScheduler<'a> {
     schedule: BinaryHeap<Task<'a>>,
+    block_map: HashMap<String, &'a Block>
 }
 
 impl<'a> UpdateScheduler<'a> {
     pub fn new(blocks: &Vec<&'a Block>) -> UpdateScheduler<'a> {
         let mut schedule = BinaryHeap::new();
+        let mut block_map = HashMap::new();
 
         let now = Instant::now();
         for block in blocks.iter() {
@@ -45,15 +52,22 @@ impl<'a> UpdateScheduler<'a> {
                 block: *block,
                 update_time: now.clone(),
             });
+
+            if let Some(id) = block.id() {
+                block_map.insert(String::from(id.clone()), *block);
+            }
         }
 
-        UpdateScheduler { schedule: schedule }
+        UpdateScheduler {
+            schedule: schedule,
+            block_map: block_map
+        }
     }
 
-    pub fn schedule(&mut self, block: &'a Block, time: Instant) {
+    pub fn schedule(&mut self, id: String, time: Instant) {
         self.schedule
             .push(Task {
-                block: block,
+                block: *self.block_map.get(&id).expect(&format!("Update Request contains invalid block id: {}", id)),
                 update_time: time,
             })
     }

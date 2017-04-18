@@ -18,6 +18,8 @@ fn solarized_dark() -> Value {
         "warning_bg": "#b58900",
         "warning_fg": "#002b36",
         "critical_bg": "#dc322f",
-        "critical_fg": "#002b36"
+        "critical_fg": "#002b36",
+        "separator": "",
+        "separator_after_block": true
     })
 }

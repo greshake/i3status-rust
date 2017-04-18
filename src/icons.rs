@@ -9,12 +9,18 @@ pub fn get_icons(name: &str) -> Value {
 
 fn no_icons() -> Value {
     json!({
-        "time": ""
+        "time": "",
+        "music": "",
+        "music_play": "  >  ",
+        "music_pause": "  ||  ",
     })
 }
 
 fn awesome_icons() -> Value {
     json!({
-        "time": "  "
+        "time": " \u{f017} ",
+        "music": " \u{f001} ",
+        "music_play": "  \u{f04b}  ",
+        "music_pause": "  \u{f04c}  ",
     })
 }

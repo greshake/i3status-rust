@@ -1,3 +1,5 @@
 [
-  {"block": "time"}
+  {"block": "time", "interval": 60},
+  {"block": "music", "player": "spotify"},
+  {"block": "music-play-button", "player": "spotify"}
 ]

@@ -63,7 +63,7 @@ pub fn print_blocks(blocks: &Vec<&Block>, theme: &Value) {
                          theme);
 
         let sep = json!({
-            "full_text": "".to_string(),
+            "full_text": String::from(theme["separator"].as_str().unwrap()),
             "separator": false,
             "separator_block_width": 0,
             "background": last_bg,
@@ -83,14 +83,14 @@ pub fn print_blocks(blocks: &Vec<&Block>, theme: &Value) {
 }
 
 macro_rules! get_str{
-    ($config:expr, $name:expr) => {String::from($config[$name].as_str().expect(format!("Required argument {} not found in block config!", $name)))};
+    ($config:expr, $name:expr) => {String::from($config[$name].as_str().expect(&format!("Required argument {} not found in block config!", $name)))};
 }
 macro_rules! get_str_default {
     ($config:expr, $name:expr, $default:expr) => {String::from($config[$name].as_str().unwrap_or($default))};
 }
 
 macro_rules! get_u64 {
-    ($config:expr, $name:expr) => {$config[$name].as_u64().expect(format!("Required argument {} not found in block config!", $name))};
+    ($config:expr, $name:expr) => {$config[$name].as_u64().expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_u64_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_u64().unwrap_or($default)};

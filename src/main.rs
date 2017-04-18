@@ -28,7 +28,7 @@ use block::Block;
 
 use blocks::create_block;
 use input::{process_events, I3barEvent};
-use scheduler::UpdateScheduler;
+use scheduler::{UpdateScheduler, UpdateRequest};
 use themes::get_theme;
 use icons::get_icons;
 
@@ -87,10 +87,13 @@ fn main() {
     let config = serde_json::from_str(&config_str).expect("Config file is not valid JSON!");
     let mut blocks_owned: Vec<Box<Block>> = Vec::new();
 
+    let (tx, rx_update_requests): (Sender<UpdateRequest>, Receiver<UpdateRequest>) = mpsc::channel();
+
     if let Value::Array(b) = config {
         for block in b {
             let name = block["block"].clone();
-            blocks_owned.push(create_block(name.as_str().expect("block name must be a string"), block))
+            blocks_owned.push(create_block(name.as_str().expect("block name must be a string"),
+                                           block, tx.clone()))
         }
     } else {
         println!("The configs outer layer must be an array! For example: []")
@@ -104,12 +107,12 @@ fn main() {
     let mut scheduler = UpdateScheduler::new(&blocks);
 
     // We wait for click events in a seperate thread, to avoid blocking to wait for stdin
-    let (tx, rx): (Sender<I3barEvent>, Receiver<I3barEvent>) = mpsc::channel();
+    let (tx, rx_clicks): (Sender<I3barEvent>, Receiver<I3barEvent>) = mpsc::channel();
     process_events(tx);
 
     loop {
         // See if the user has clicked.
-        if let Ok(event) = rx.try_recv() {
+        while let Ok(event) = rx_clicks.try_recv() {
             if let Some(ref name) = event.name {
                 for block in &blocks {
                     if let Some(ref id) = block.id() {
@@ -122,6 +125,11 @@ fn main() {
                     }
                 }
             }
+        }
+
+        // Enqueue pending update requests
+        while let Ok(request) = rx_update_requests.try_recv() {
+            scheduler.schedule(request.id, request.update_time)
         }
 
         // This interval allows us to react to click events faster,
