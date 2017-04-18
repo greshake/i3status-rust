@@ -7,6 +7,7 @@ This is a WiP replacement for i3status, aiming to provide the most feature-compl
 - icons (optional)
 - individual update intervals per block to reduce system calls
 - click actions
+- blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
 # Requirements
 i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
@@ -41,12 +42,25 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 
 # Available Blocks
 ## Time
-Creates a block which display the current time. Arguments:
+Creates a block which display the current time.
 
-name: String, Identifier for the block.
+Options:
+
 format: String, Format string. Default is "%a %d/%m %R". See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
 
-## TODO add other implemented blocks to documentation
+## Music
+Creates a block which can display the current song title and artist, in a fixed width rotating-text fashion. It uses dbus signaling to fetch new tracks, so no periodic updates are needed. It supports all Players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more.
+
+Options:
+
+player: String, e.g. "spotify"
+
+### Music Play/Pause
+Optional Play/Pause block, works similar to the Music block, displays a Play/Pause button.
+
+Options:
+
+player: String, e.g. "spotify"
 
 # How to write a Block
 
@@ -179,14 +193,17 @@ Edit `src/blocks/mod.rs` and add:
 
 # ToDo
 - further documentation in the source code
+- more caching
 
 ## Blocks to be implemented
 - CPU
 - Load
 - Battery
+- Disk Space
 - Memory
 - Pacman updates
 - Sound
   * Maybe features like click-to-mute
 - Network
+- NetworkManager with Dbus
 - open to more ideas
