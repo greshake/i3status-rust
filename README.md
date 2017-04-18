@@ -199,6 +199,7 @@ Edit `src/blocks/mod.rs` and add:
 - CPU
 - Load
 - Battery
+- Temperature
 - Disk Space
 - Memory
 - Pacman updates
