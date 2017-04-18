@@ -24,7 +24,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 
             ```
             bar {
-                  font xft:DejaVu Sans Mono for Powerline, Icons 12
+                  font pango:DejaVu Sans Mono, Icons 12
                   position top
                   status_command <PATH_TO_i3STATUS>/i3status-rs <PATH_TO_CONFIG>/config.json --icons awesome --theme solarized-dark
                   colors {
