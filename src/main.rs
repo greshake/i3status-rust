@@ -16,6 +16,8 @@ pub mod input;
 pub mod icons;
 pub mod themes;
 pub mod scheduler;
+pub mod widget;
+pub mod widgets;
 
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
@@ -93,7 +95,7 @@ fn main() {
         for block in b {
             let name = block["block"].clone();
             blocks_owned.push(create_block(name.as_str().expect("block name must be a string"),
-                                           block, tx.clone()))
+                                           block, tx.clone(), &theme))
         }
     } else {
         println!("The configs outer layer must be an array! For example: []")
@@ -113,17 +115,10 @@ fn main() {
     loop {
         // See if the user has clicked.
         while let Ok(event) = rx_clicks.try_recv() {
-            if let Some(ref name) = event.name {
-                for block in &blocks {
-                    if let Some(ref id) = block.id() {
-                        if id == name {
-                            block.click(event.clone());
-                            // redraw the blocks, state may have changed
-                            util::print_blocks(&blocks, &theme);
-                            break;
-                        }
-                    }
-                }
+            for block in &blocks {
+                block.click(&event);
+                // redraw the blocks, state may have changed
+                util::print_blocks(&blocks);
             }
         }
 
@@ -139,7 +134,7 @@ fn main() {
             scheduler.do_scheduled_updates();
 
             // redraw the blocks, state changed
-            util::print_blocks(&blocks, &theme);
+            util::print_blocks(&blocks);
         } else {
             thread::sleep(input_check_interval)
         }

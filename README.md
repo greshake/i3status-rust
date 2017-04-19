@@ -20,7 +20,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
       1. In your i3 config, put the path to the output binary as argument for 'status_command'
       2. Add the path to your config file as first argument, you can also configure theme and icon theme as arguments to i3bar-rs. See i3bar-rs --help for more.
       
-            Example of the 'bar' block in the i3 config from my personal i3 config (Requires awesome-fonts and powerline-fonts). The colors block is optional, just my taste:
+            Example of the 'bar' block in the i3 config from my personal i3 config (Requires awesome-fonts). The colors block is optional, just my taste:
 
             ```
             bar {
@@ -70,26 +70,25 @@ Create a block by copying the template: `cp src/blocks/template.rs src/blocks/<b
 
 ## Step 2: Populate the struct
 
-Your block needs a struct to store it's state. First, replace all the occurences of 'Template' in the file with the name of your block. Then edit the struct and add all Fields which you may need to store either options from the block config or state values (e.g. free disk space or current load). All Blocks use interior mutability to update their state. For primitive data types, use a field of type Cell<T>, for Strings and complex types use RefCell<T>.
+Your block needs a struct to store it's state. First, replace all the occurences of 'Template' in the file with the name of your block. Then edit the struct and add all Fields which you may need to store either options from the block config or state values (e.g. free disk space or current load). All Blocks use interior mutability to update their state. For primitive data types, use a field of type Cell<T>, for Strings and complex types use RefCell<T>. Use Widgets to display something in the i3Bar, you can have multiple Text or Button widgets on a Block. These have to be returned in the get_ui() function and they need to be updated from the update() function.
 
 ## Step 3: Implement the constructor
 
-You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros get_str/u64 to extract a string/ u64 and add appropriate error handeling. You can set a default value in the macro as you can see below.
+You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros get_str/u64 to extract a string/ u64 and add appropriate error handeling. You can set a default value in the macro as you can see below. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID.This advanced feature can be used to reduce the number of system calls by asynchrounosly waiting for events.
 
 Example:
 ```rust
-pub fn new(config: Value) -> Template {
-      Template {
-            name: get_str(config, "name"),
+pub fn new(config: Value, tx: Sender<UpdateRequest>, theme: &Value) -> Template {
+        Template {
+            name: Uuid::new_v4().simple().to_string(),
             update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-
-            some_value: RefCell::new(get_str_default!(config, "hello", "Default is Hello World")),
-            click_count: Cell::new(0),
-      }
-}
+            text: RefCell::new(Box::new(TextWidget::new(theme.clone()).with_text("I'm a Template!"))),
+            tx_update_request: tx
+        }
+    }
 ```
 
-## Step 4: Implement the Block interface
+## Step 4: Implement the Block interface (OUTDATED)
 
 All blocks are basically structs which implement the trait (interface) Block. This interface defines the following features:
 
