@@ -13,6 +13,8 @@ fn no_icons() -> Value {
         "music": "",
         "music_play": "  >  ",
         "music_pause": "  ||  ",
+        "music_next": " => ",
+        "music_prev": " <= "
     })
 }
 
@@ -22,5 +24,7 @@ fn awesome_icons() -> Value {
         "music": " \u{f001} ",
         "music_play": "  \u{f04b}  ",
         "music_pause": "  \u{f04c}  ",
+        "music_next": " \u{f061} ",
+        "music_prev": " \u{f060} "
     })
 }

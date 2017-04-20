@@ -4,11 +4,12 @@
 mod time;
 mod template;
 //pub mod toggle;
-//pub mod music;
+mod music;
 //pub mod music_play_button;
 
 use self::time::*;
 use self::template::*;
+use self::music::*;
 //use self::music::*;
 //use self::music_play_button::*;
 
@@ -26,8 +27,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<UpdateR
     match name {
         "time" => boxed!(Time::new(config, theme)),
         "template" => boxed!(Template::new(config, tx_update_request, theme)),
-        //"music" => boxed!(Music::new(config, tx_update_request)),
-        //"music-play-button" => boxed!(MusicPlayButton::new(config, tx_update_request)),
+        "music" => boxed!(Music::new(config, tx_update_request, theme)),
         _ => {
             panic!("Not a registered block: {}", name);
         }

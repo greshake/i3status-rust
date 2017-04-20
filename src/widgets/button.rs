@@ -1,4 +1,4 @@
-use block::State;
+use widget::State;
 use serde_json::Value;
 use super::super::widget::Widget;
 
@@ -14,12 +14,12 @@ pub struct ButtonWidget {
 }
 
 impl ButtonWidget {
-    pub fn new(theme: Value, id: String) -> Self {
+    pub fn new(theme: Value, id: &str) -> Self {
         ButtonWidget {
             content: None,
             icon: None,
             state: State::Idle,
-            id: id,
+            id: String::from(id),
             rendered: Value::Null,
             theme: theme,
             cached_output: None,
@@ -28,11 +28,19 @@ impl ButtonWidget {
 
     pub fn with_icon(mut self, name: &str) -> Self {
         self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
+        self.update();
         self
     }
 
     pub fn with_text(mut self, content: &str) -> Self {
         self.content = Some(String::from(content));
+        self.update();
+        self
+    }
+
+    pub fn with_state(mut self, state: State) -> Self {
+        self.state = state;
+        self.update();
         self
     }
 
@@ -41,7 +49,7 @@ impl ButtonWidget {
         self.update();
     }
 
-    pub fn set_icon(&mut self, name: String) {
+    pub fn set_icon(&mut self, name: &str) {
         self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
         self.update();
     }
@@ -55,8 +63,8 @@ impl ButtonWidget {
         let (key_bg, key_fg) = self.state.theme_keys();
 
         self.rendered = json!({
-            "full_text": format!("{} {} ",
-                                self.icon.clone().unwrap_or(String::from("")),
+            "full_text": format!("{}{} ",
+                                self.icon.clone().unwrap_or(String::from(" ")),
                                 self.content.clone().unwrap_or(String::from(""))),
             "separator": false,
             "name": self.id.clone(),

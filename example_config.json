@@ -1,4 +1,4 @@
 [
   {"block": "time", "interval": 60},
-  {"block": "template"}
+  {"block": "music", "player": "spotify", "buttons": ["play", "next"]}
 ]

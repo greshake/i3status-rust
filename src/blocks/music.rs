@@ -1,26 +1,33 @@
-use std::cell::{RefCell};
+use std::cell::{RefCell, Cell};
 use std::time::{Duration, Instant};
 use std::sync::mpsc::Sender;
 use std::thread;
 
 use scheduler::UpdateRequest;
-use block::{Block, State};
-use blocks::rotatingtext::RotatingText;
+use input::I3barEvent;
+use block::Block;
+use widgets::rotatingtext::RotatingTextWidget;
+use widgets::button::ButtonWidget;
+use widget::{State, UIElement, Widget};
 
-use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem};
+use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem, Message};
 use self::stdintf::OrgFreedesktopDBusProperties;
 use serde_json::Value;
 use uuid::Uuid;
 
 pub struct Music {
     name: String,
-    current_song: RefCell<RotatingText>,
+    current_song: RefCell<RotatingTextWidget>,
+    prev: Option<RefCell<ButtonWidget>>,
+    play: Option<RefCell<ButtonWidget>>,
+    next: Option<RefCell<ButtonWidget>>,
     dbus_conn: Connection,
+    player_avail: Cell<bool>,
     player: String,
 }
 
 impl Music {
-    pub fn new(config: Value, send: Sender<UpdateRequest>) -> Music {
+    pub fn new(config: Value, send: Sender<UpdateRequest>, theme: &Value) -> Music {
         let name: String = Uuid::new_v4().simple().to_string();
         let name_copy = name.clone();
 
@@ -45,13 +52,37 @@ impl Music {
             }
         });
 
+        let buttons = config["buttons"].as_array().expect("'buttons' must be an array of 'play', 'next' and/or 'prev'!");
+        let mut play: Option<ButtonWidget> = None;
+        let mut prev: Option<ButtonWidget> = None;
+        let mut next: Option<ButtonWidget> = None;
+        for button in buttons {
+            match button.as_str().expect("Music button identifiers must be Strings") {
+                "play" =>
+                    play = Some(ButtonWidget::new(theme.clone(), "play")
+                        .with_icon("music_play").with_state(State::Info)),
+                "next" =>
+                    next = Some(ButtonWidget::new(theme.clone(), "next")
+                        .with_icon("music_next").with_state(State::Info)),
+                "prev" =>
+                    prev = Some(ButtonWidget::new(theme.clone(), "prev")
+                        .with_icon("music_prev").with_state(State::Info)),
+                x => panic!("Unknown Music button identifier! {}", x)
+            };
+        }
+
         Music {
             name: name_copy,
-            current_song: RefCell::new(RotatingText::new(Duration::new(10, 0),
-                                                         Duration::new(0, 500000000),
-                                                         get_u64_default!(config, "max-width", 20) as usize)),
+            current_song: RefCell::new(RotatingTextWidget::new(Duration::new(10, 0),
+                                                               Duration::new(0, 500000000),
+                                                               get_u64_default!(config, "max-width", 21) as usize,
+                                                               theme.clone()).with_icon("music").with_state(State::Info)),
+            prev: if let Some(p) = prev {Some(RefCell::new(p))} else {None},
+            play: if let Some(p) = play {Some(RefCell::new(p))} else {None},
+            next: if let Some(p) = next {Some(RefCell::new(p))} else {None},
             dbus_conn: Connection::get_private(BusType::Session).unwrap(),
-            player: get_str!(config, "player")
+            player_avail: Cell::new(false),
+            player: get_str!(config, "player"),
         }
     }
 }
@@ -73,7 +104,8 @@ impl Block for Music
             let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
             if data.is_err() {
-                (*self.current_song.borrow_mut()).set_content(String::from(" "));
+                (*self.current_song.borrow_mut()).set_text(String::from(""));
+                self.player_avail.set(false);
             } else {
                 let metadata = data.unwrap();
 
@@ -98,22 +130,62 @@ impl Block for Music
                     };
                 }
 
-                (*self.current_song.borrow_mut()).set_content(format!(" {} | {} ", title, artist));
+                (*self.current_song.borrow_mut()).set_text(format!("{} | {}", title, artist));
+                self.player_avail.set(true);
+            }
+            if let Some(ref play) = self.play {
+                let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
+                if data.is_err() {
+                    (*play.borrow_mut()).set_icon("music_play")
+                } else {
+                    let state = data.unwrap().0;
+                    if state.as_str().unwrap() != "Playing" {
+                        (*play.borrow_mut()).set_icon("music_play");
+                    } else {
+                        (*play.borrow_mut()).set_icon("music_pause");
+                    }
+                }
             }
         }
         next
     }
 
-    fn get_status(&self, theme: &Value) -> Value {
-        json!({
-            "full_text" : format!("{}{}", theme["icons"]["music"].as_str().unwrap(),
-                                            self.current_song.borrow().to_string()),
-            "min_width": if self.current_song.borrow().to_string() == " " {0} else {240},
-            "align": "left"
-        })
+
+    fn click(&self, event: &I3barEvent) {
+        if event.name.is_some() {
+            let action = match &event.name.clone().unwrap() as &str {
+                "play" => "PlayPause",
+                "next" => "Next",
+                "prev" => "Previous",
+                _ => ""
+            };
+            if action != "" {
+                let m = Message::new_method_call(format!("org.mpris.MediaPlayer2.{}",
+                                                         self.player),
+                                                 "/org/mpris/MediaPlayer2",
+                                                 "org.mpris.MediaPlayer2.Player",
+                                                 action).unwrap();
+                self.dbus_conn.send(m);
+            }
+        }
     }
 
-    fn get_state(&self) -> State {
-        State::Info
+    fn get_ui(&self) -> Box<UIElement> {
+        if self.player_avail.get() {
+            let mut elements: Vec<Box<UIElement>> = Vec::new();
+            elements.push(Box::new(UIElement::WidgetWithSeparator(Box::new(self.current_song.clone().into_inner()) as Box<Widget>)));
+            if let Some(ref prev) = self.prev {
+                elements.push(Box::new(UIElement::Widget(Box::new(prev.clone().into_inner()) as Box<Widget>)));
+            }
+            if let Some(ref play) = self.play {
+                elements.push(Box::new(UIElement::Widget(Box::new(play.clone().into_inner()) as Box<Widget>)));
+            }
+            if let Some(ref next) = self.next {
+                elements.push(Box::new(UIElement::Widget(Box::new(next.clone().into_inner()) as Box<Widget>)));
+            }
+            Box::new(UIElement::Block(elements))
+        } else {
+            ui!(self.current_song)
+        }
     }
 }

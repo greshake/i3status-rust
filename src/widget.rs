@@ -67,7 +67,8 @@ impl UIElement {
                 }
             },
             Widget(ref w) => {
-                print!("{}", w.to_string());
+                print!("{}{}",if state.has_predecessor {","} else {""},
+                       w.to_string());
                 state.set_last_bg(Value::String(String::from(w.get_rendered()["background"].as_str().unwrap())));
                 state.set_predecessor(true);
             },

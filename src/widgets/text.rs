@@ -36,12 +36,18 @@ impl TextWidget {
         self
     }
 
+    pub fn with_state(mut self, state: State) -> Self {
+        self.state = state;
+        self.update();
+        self
+    }
+
     pub fn set_text(&mut self, content: String) {
         self.content = Some(content);
         self.update();
     }
 
-    pub fn set_icon(&mut self, name: String) {
+    pub fn set_icon(&mut self, name: &str) {
         self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
         self.update();
     }
@@ -55,8 +61,8 @@ impl TextWidget {
         let (key_bg, key_fg) = self.state.theme_keys();
 
         self.rendered = json!({
-            "full_text": format!("{} {} ",
-                                self.icon.clone().unwrap_or(String::from("")),
+            "full_text": format!("{}{} ",
+                                self.icon.clone().unwrap_or(String::from(" ")),
                                 self.content.clone().unwrap_or(String::from(""))),
             "separator": false,
             "separator_block_width": 0,
