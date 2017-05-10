@@ -40,7 +40,7 @@ use self::serde_json::Value;
 fn main() {
     let matches = App::new("i3status-rs")
         .version("0.1")
-        .author("Kai Greshake <developement@kai-greshake.de>, Contributors on GitHub: \\
+        .author("Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
                  https://github.com/XYunknown/i3status-rust/graphs/contributors")
         .about("Replacement for i3status for Linux, written in Rust")
         .arg(Arg::with_name("config")
