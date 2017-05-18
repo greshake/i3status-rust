@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use serde_json::Value;
 use regex::Regex;
 use std::prelude::v1::String;
-use std::error::Error;
 use std;
 use std::fmt::Display;
 
@@ -68,6 +67,8 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
     println!("],");
 }
 
+
+
 #[derive(Debug,Clone)]
 pub enum FormatTemplate {
     Str(String, Option<Box<FormatTemplate>>),
@@ -77,27 +78,37 @@ pub enum FormatTemplate {
 
 impl FormatTemplate {
     pub fn from_string(s: String) -> Result<FormatTemplate,std::string::FromUtf8Error> {
-        let mut template: FormatTemplate = FormatTemplate::Str("".to_string(), None);
         let s_as_bytes = s.clone().into_bytes();
 
         //valid var tokens: {} containing any amount of alphanumericals
-        let re = Regex::new(r"\{([a-z]|[A-Z]|[0-9])+?\}").unwrap();
+        let re = Regex::new(r"\{[a-zA-Z0-9]+?\}").unwrap();
 
-
+        let mut token_vec: Vec<FormatTemplate> =vec![];
         let mut start: usize = 0;
 
         for re_match in re.find_iter(&s) {
             if re_match.start() != start {
                 let str_vec : Vec<u8> =(&s_as_bytes)[start..re_match.start()].to_vec();
-                template = FormatTemplate::Str(String::from_utf8(str_vec)?, Some(Box::new(template)));
+                token_vec.push(FormatTemplate::Str(String::from_utf8(str_vec)?, None));
             }
-            template = FormatTemplate::Var(re_match.as_str().to_string(), Some(Box::new(template)));
+            token_vec.push(FormatTemplate::Var(re_match.as_str().to_string(), None));
             start = re_match.end();
         }
         let str_vec : Vec<u8> = (&s_as_bytes)[start..].to_vec();
-        template = FormatTemplate::Str(String::from_utf8(str_vec)?, Some(Box::new(template)));
+        token_vec.push(FormatTemplate::Str(String::from_utf8(str_vec)?,None));
+        let mut template: FormatTemplate = match token_vec.pop() {
+            Some(token) => {token},
+            _ => FormatTemplate::Str("".to_string(), None)
+        };
+        while let Some(token) = token_vec.pop() {
+            template = match token {
+                FormatTemplate::Str(s, _) => FormatTemplate::Str(s, Some(Box::new(template))),
+                FormatTemplate::Var(s, _) => FormatTemplate::Var(s, Some(Box::new(template)))
+            }
+        }
         Ok(template)
     }
+
 
     pub fn render<T: Display>(&self, vars: &HashMap<String, T>) -> String {
         use self::FormatTemplate::*;
