@@ -1,6 +1,11 @@
 use block::Block;
 use std::collections::HashMap;
 use serde_json::Value;
+use regex::Regex;
+use std::prelude::v1::String;
+use std::error::Error;
+use std;
+use std::fmt::Display;
 
 macro_rules! map (
     { $($key:expr => $value:expr),+ } => {
@@ -47,14 +52,14 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
                     "background": state.last_bg.clone(),
                     "color": color.clone()
                 });
-        print!("{}{},",if state.has_predecessor {","} else {""},
+        print!("{}{},", if state.has_predecessor { "," } else { "" },
                s.to_string());
         print!("{}", first.to_string());
         state.set_last_bg(Value::String(color));
         state.set_predecessor(true);
 
         for widget in widgets.iter().skip(1) {
-            print!("{}{}",if state.has_predecessor {","} else {""},
+            print!("{}{}", if state.has_predecessor { "," } else { "" },
                    widget.to_string());
             state.set_last_bg(Value::String(String::from(widget.get_rendered()["background"].as_str().unwrap())));
             state.set_predecessor(true);
@@ -63,18 +68,38 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
     println!("],");
 }
 
+#[derive(Debug,Clone)]
 pub enum FormatTemplate {
     Str(String, Option<Box<FormatTemplate>>),
     Var(String, Option<Box<FormatTemplate>>),
-    End
 }
 
+
 impl FormatTemplate {
-    fn from_string(s: String) -> FormatTemplate {
-        unimplemented!()
+    pub fn from_string(s: String) -> Result<FormatTemplate,std::string::FromUtf8Error> {
+        let mut template: FormatTemplate = FormatTemplate::Str("".to_string(), None);
+        let s_as_bytes = s.clone().into_bytes();
+
+        //valid var tokens: {} containing any amount of alphanumericals
+        let re = Regex::new(r"{[a-zA-Z0-9]+?}").unwrap();
+
+
+        let mut start: usize = 0;
+
+        for re_match in re.find_iter(&s) {
+            if re_match.start() != start {
+                let str_vec : Vec<u8> =(&s_as_bytes)[start..re_match.start()].to_vec();
+                template = FormatTemplate::Str(String::from_utf8(str_vec)?, Some(Box::new(template)));
+            }
+            template = FormatTemplate::Var(re_match.as_str().to_string(), Some(Box::new(template)));
+            start = re_match.end();
+        }
+        let str_vec : Vec<u8> = (&s_as_bytes)[start..].to_vec();
+        template = FormatTemplate::Str(String::from_utf8(str_vec)?, Some(Box::new(template)));
+        Ok(template)
     }
 
-    fn render(&self, vars: &HashMap<String, String>) -> String {
+    pub fn render<T: Display>(&self, vars: &HashMap<String, T>) -> String {
         use self::FormatTemplate::*;
         let mut rendered = String::new();
         match *self {
@@ -83,20 +108,19 @@ impl FormatTemplate {
                 if let Some(ref next) = *next {
                     rendered.push_str(&*next.render(vars));
                 };
-            },
+            }
             Var(ref key, ref next) => {
-                rendered.push_str(&vars.get(key).expect(&format!("Unknown placeholder in format string: {}", key)));
+                rendered.push_str(&format!("{}", &vars.get(key).expect(&format!("Unknown placeholder in format string: {}", key))));
                 if let Some(ref next) = *next {
                     rendered.push_str(&*next.render(vars));
                 };
-            },
-            _ => ()
+            }
         };
         rendered
     }
 }
 
-macro_rules! get_str{
+macro_rules! get_str {
     ($config:expr, $name:expr) => {String::from($config[$name].as_str().expect(&format!("Required argument {} not found in block config!", $name)))};
 }
 macro_rules! get_str_default {
@@ -110,9 +134,9 @@ macro_rules! get_u64_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_u64().unwrap_or($default)};
 }
 
-macro_rules! get_bool{
+macro_rules! get_bool {
     ($config:expr, $name:expr) => {$config[$name].as_bool().expect(&format!("Required argument {} not found in block config!", $name))};
 }
-macro_rules! get_bool_default{
+macro_rules! get_bool_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_bool().unwrap_or($default)};
 }
