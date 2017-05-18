@@ -15,7 +15,9 @@ fn no_icons() -> Value {
         "music_pause": "  ||  ",
         "music_next": " => ",
         "music_prev": " <= ",
-        "cogs": ""
+        "cogs": "",
+        "memory_mem": " MEM",
+        "memory_swap": " SWAP"
     })
 }
 
@@ -27,6 +29,8 @@ fn awesome_icons() -> Value {
         "music_pause": "  \u{f04c}  ",
         "music_next": " \u{f061} ",
         "music_prev": " \u{f060} ",
-        "cogs": " \u{f085} "
+        "cogs": " \u{f085} ",
+        "memory_mem": " \u{f2db}",
+        "memory_swap": " \u{f0a0}"
     })
 }
