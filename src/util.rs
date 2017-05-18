@@ -81,7 +81,7 @@ impl FormatTemplate {
         let s_as_bytes = s.clone().into_bytes();
 
         //valid var tokens: {} containing any amount of alphanumericals
-        let re = Regex::new(r"{[a-zA-Z0-9]+?}").unwrap();
+        let re = Regex::new(r"\{([a-z]|[A-Z]|[0-9])+?\}").unwrap();
 
 
         let mut start: usize = 0;
