@@ -1,4 +1,5 @@
 #![warn(warnings)]
+#![feature(conservative_impl_trait)]
 
 #[macro_use]
 extern crate serde_derive;
@@ -7,6 +8,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate clap;
 extern crate uuid;
+extern crate regex;
 
 #[macro_use]
 pub mod util;
@@ -18,6 +20,7 @@ pub mod themes;
 pub mod scheduler;
 pub mod widget;
 pub mod widgets;
+
 
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
