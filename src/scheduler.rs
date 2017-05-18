@@ -38,7 +38,7 @@ pub struct UpdateScheduler  {
 }
 
 impl UpdateScheduler {
-    pub fn new(blocks: &Vec<Rc<Box<Block>>>) -> UpdateScheduler {
+    pub fn new(blocks: &Vec<Box<Block>>) -> UpdateScheduler {
         let mut schedule = BinaryHeap::new();
 
         let now = Instant::now();
@@ -73,7 +73,7 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, Rc<Box<Block>>>) {
+    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) {
         let t = self.schedule.pop().unwrap();
         let mut tasks_next = vec![t.clone()];
 

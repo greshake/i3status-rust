@@ -25,7 +25,7 @@ use std::thread;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
-use std::fs::File;
+use std::fs::{File};
 use std::ops::DerefMut;
 use std::io::Read;
 
@@ -105,14 +105,15 @@ fn main() {
         println!("The configs outer layer must be an array! For example: []")
     }
 
-
-
-    let mut block_map: HashMap<String, Rc<Box<Block>>> = HashMap::new();
-    for block in &blocks {
-        block_map.insert(String::from(block.id()), block.clone());
-    }
+    let order = blocks.iter().map(|x| String::from(x.id())).collect();
 
     let mut scheduler = UpdateScheduler::new(&blocks);
+
+    let mut block_map: HashMap<String, &mut Block> = HashMap::new();
+
+    for block in blocks.iter_mut() {
+        block_map.insert(String::from(block.id()), (*block).deref_mut());
+    }
 
     // Now we can start to run the i3bar protocol
     print!("{{\"version\": 1, \"click_events\": true}}[");
@@ -124,11 +125,10 @@ fn main() {
     loop {
         // See if the user has clicked.
         while let Ok(event) = rx_clicks.try_recv() {
-            //for block in blocks {
-                //block.click(&event);
-                // redraw the blocks, state may have changed
-                //util::print_blocks(&blocks);
-            //}
+            for (id, block) in &mut block_map {
+                block.click(&event);
+            }
+            util::print_blocks(&order, &block_map);
         }
 
         // Enqueue pending update requests
@@ -144,7 +144,7 @@ fn main() {
                 scheduler.do_scheduled_updates(&mut block_map);
 
                 // redraw the blocks, state changed
-                util::print_blocks(&blocks);
+                util::print_blocks(&order, &block_map);
             } else {
                 thread::sleep(input_check_interval)
             }

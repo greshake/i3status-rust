@@ -14,7 +14,7 @@ use uuid::Uuid;
 pub struct Template {
     theme: Value,
     text: TextWidget,
-    name: String,
+    id: String,
     update_interval: Duration,
     tx_update_request: Sender<Task>,
 }
@@ -23,8 +23,7 @@ impl Template {
     pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Template {
         let text = TextWidget::new(theme.clone()).with_text("I'm a Template!");
         Template {
-
-            name: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().simple().to_string(),
             update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
             text: text,
             tx_update_request: tx,
@@ -44,6 +43,6 @@ impl Block for Template
     }
     fn click(&mut self, event: &I3barEvent) {}
     fn id(&self) -> &str {
-        &self.name
+        &self.id
     }
 }

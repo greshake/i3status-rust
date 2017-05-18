@@ -1,4 +1,5 @@
 use block::Block;
+use std::collections::HashMap;
 use serde_json::Value;
 use serde_json::map::Map;
 use std::rc::Rc;
@@ -30,14 +31,15 @@ impl PrintState {
     }
 }
 
-pub fn print_blocks(blocks: &Vec<Rc<Box<Block>>>) {
+pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>) {
     let mut state = PrintState {
         has_predecessor: false,
         last_bg: Value::Null
     };
 
     print!("[");
-    for block in blocks {
+    for blockId in order {
+        let ref block = *(block_map.get(blockId).unwrap());
         let widgets = block.view();
         let first = widgets[0];
         let color = String::from(first.get_rendered()["background"].as_str().unwrap());
