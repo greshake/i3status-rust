@@ -8,14 +8,7 @@ chrono = "0.2"
 serde = "0.9"
 serde_derive = "0.9"
 serde_json = "0.9"
-nix = "0.8.0"
-sysinfo = "0.3.4"
-rustc-serialize = "0.3"
 clap = "2.23.2"
 uuid = { version = "0.4", features = ["v4"] }
 dbus = "0.5.2"
 regex = "0.2"
-
-[features]
-nightly = []
-use_impl_trait = []

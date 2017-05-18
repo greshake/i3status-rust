@@ -83,7 +83,7 @@ impl Music {
             dbus_conn: Connection::get_private(BusType::Session).unwrap(),
             player_avail: false,
             player: get_str!(config, "player"),
-            marquee: get_bool_default!(config, "marquee", true)
+            marquee: get_bool_default!(config, "marquee", true),
         }
     }
 }

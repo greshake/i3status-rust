@@ -1,4 +1,5 @@
 [
   {"block": "time", "interval": 60, "format": "%a %d/%m %R"},
-  {"block": "music", "max-width": 21, "marquee": true, "player": "spotify", "buttons": ["prev", "play", "next"]}
+  {"block": "music", "max-width": 21, "marquee": true, "player": "spotify", "buttons": ["prev", "play", "next"]},
+  {"block": "load"}
 ]
