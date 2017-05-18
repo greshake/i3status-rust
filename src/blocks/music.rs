@@ -22,6 +22,7 @@ pub struct Music {
     next: Option<ButtonWidget>,
     dbus_conn: Connection,
     player_avail: bool,
+    marquee: bool,
     player: String,
 }
 
@@ -82,6 +83,7 @@ impl Music {
             dbus_conn: Connection::get_private(BusType::Session).unwrap(),
             player_avail: false,
             player: get_str!(config, "player"),
+            marquee: get_bool_default!(config, "marquee", true)
         }
     }
 }
@@ -94,7 +96,7 @@ impl Block for Music
     }
 
     fn update(&mut self) -> Option<Duration> {
-        let (rotated, next) = self.current_song.next();
+        let (rotated, next) = if self.marquee {self.current_song.next()} else {(false, None)};
 
         if !rotated {
             let c = self.dbus_conn.with_path(
@@ -146,7 +148,13 @@ impl Block for Music
                 }
             }
         }
-        Some(next.unwrap_or(Duration::new(1, 0)))
+        if next.is_none() && !self.marquee {
+            None
+        } else if next.is_none() {
+            Some(Duration::new(1, 0))
+        } else {
+            next
+        }
     }
 
 
