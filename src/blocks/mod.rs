@@ -1,18 +1,15 @@
-//mod rotatingtext;
 //pub mod cpu;
 //pub mod disk_info;
 mod time;
 mod template;
 //mod memory;
 //pub mod toggle;
-//mod music;
+mod music;
 //pub mod music_play_button;
 
 use self::time::*;
 use self::template::*;
-//use self::music::*;
-//use self::music::*;
-//use self::music_play_button::*;
+use self::music::*;
 
 use super::block::Block;
 use super::scheduler::Task;
@@ -28,7 +25,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
     match name {
         "time" => boxed!(Time::new(config, theme.clone())),
         "template" => boxed!(Template::new(config, tx_update_request, theme.clone())),
-        //"music" => boxed!(Music::new(config, tx_update_request, theme)),
+        "music" => boxed!(Music::new(config, tx_update_request, theme)),
         _ => {
             panic!("Not a registered block: {}", name);
         }
