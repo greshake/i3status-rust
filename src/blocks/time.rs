@@ -1,6 +1,5 @@
 extern crate chrono;
 
-use std::cell::RefCell;
 use std::time::Duration;
 
 use block::Block;

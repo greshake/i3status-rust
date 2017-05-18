@@ -2,9 +2,7 @@ use block::Block;
 use std::collections::{BinaryHeap, HashMap};
 use std::thread;
 use std::cmp;
-use std::rc::Rc;
 use std::time::{Duration, Instant};
-use std::sync::mpsc::Sender;
 
 #[derive(Clone)]
 pub struct Task {

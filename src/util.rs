@@ -1,9 +1,6 @@
 use block::Block;
 use std::collections::HashMap;
 use serde_json::Value;
-use serde_json::map::Map;
-use std::rc::Rc;
-use widget::*;
 
 macro_rules! map (
     { $($key:expr => $value:expr),+ } => {
@@ -38,8 +35,8 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
     };
 
     print!("[");
-    for blockId in order {
-        let ref block = *(block_map.get(blockId).unwrap());
+    for block_id in order {
+        let ref block = *(block_map.get(block_id).unwrap());
         let widgets = block.view();
         let first = widgets[0];
         let color = String::from(first.get_rendered()["background"].as_str().unwrap());
@@ -79,18 +76,3 @@ macro_rules! get_u64 {
 macro_rules! get_u64_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_u64().unwrap_or($default)};
 }
-
-// UI- single widget from Widget field
-//macro_rules! ui ( {$widget_field: expr} => { Box::new(I3BarComponent::WidgetWithSeparator(Box::new($widget_field.clone().into_inner()) as Box<Widget>)) }; );
-
-//macro_rules! ui_list ( {$($widget_field: expr), +} => {
-//        {
-//            let mut elements: Vec<Box<UIElement>> = Vec::new();
-//            $(
-//                elements.push(Box::new(I3BarComponent::WidgetWithSeparator(Box::new($widget_field.clone().into_inner()) as Box<I3BarWidget>)));
-//            )+
-//            Box::new(UIElement::Block(elements))
-//        }
-//
-//    };
-//);

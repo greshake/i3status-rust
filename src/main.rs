@@ -23,7 +23,6 @@ use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::thread;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::time::Duration;
 use std::fs::{File};
 use std::ops::DerefMut;
@@ -125,7 +124,7 @@ fn main() {
     loop {
         // See if the user has clicked.
         while let Ok(event) = rx_clicks.try_recv() {
-            for (id, block) in &mut block_map {
+            for (_, block) in &mut block_map {
                 block.click(&event);
             }
             util::print_blocks(&order, &block_map);

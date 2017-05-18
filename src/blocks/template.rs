@@ -1,21 +1,25 @@
-use std::cell::{Cell, RefCell};
 use std::time::Duration;
 use std::sync::mpsc::Sender;
 
 use block::Block;
 use widgets::text::TextWidget;
-use widget::{State, I3BarWidget};
+use widget::I3BarWidget;
 use input::I3barEvent;
 use scheduler::Task;
 
 use serde_json::Value;
 use uuid::Uuid;
 
+
 pub struct Template {
-    theme: Value,
     text: TextWidget,
     id: String,
     update_interval: Duration,
+
+    //useful, but optional
+    #[allow(dead_code)]
+    theme: Value,
+    #[allow(dead_code)]
     tx_update_request: Sender<Task>,
 }
 
@@ -41,7 +45,7 @@ impl Block for Template
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, event: &I3barEvent) {}
+    fn click(&mut self, _: &I3barEvent) {}
     fn id(&self) -> &str {
         &self.id
     }

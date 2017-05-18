@@ -3,6 +3,7 @@
 //pub mod disk_info;
 mod time;
 mod template;
+//mod memory;
 //pub mod toggle;
 //mod music;
 //pub mod music_play_button;

@@ -2,7 +2,7 @@ use widget::State;
 use serde_json::Value;
 use super::super::widget::I3BarWidget;
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct TextWidget {
     content: Option<String>,
     icon: Option<String>,
