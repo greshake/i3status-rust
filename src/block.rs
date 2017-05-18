@@ -1,12 +1,12 @@
 use std::time::Duration;
 use input::I3barEvent;
-use widget::UIElement;
+use widget::I3BarWidget;
 
 pub trait Block {
-    fn update(&self) -> Option<Duration> {
+    fn update(&mut self) -> Option<Duration> {
         None
     }
-    fn get_ui(&self) -> Box<UIElement>;
-    fn click(&self, &I3barEvent) {}
-    fn id(&self) -> Option<&str> { None }
+    fn view(&self) -> Vec<&I3BarWidget>;
+    fn click(&mut self, &I3barEvent) {}
+    fn id(&self) -> &str;
 }

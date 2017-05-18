@@ -1,5 +1,5 @@
 use std::time::{Duration, Instant};
-use widget::{State, Widget};
+use widget::{State, I3BarWidget};
 use serde_json::Value;
 
 #[derive(Clone, Debug)]
@@ -142,7 +142,7 @@ impl RotatingTextWidget {
     }
 }
 
-impl Widget for RotatingTextWidget {
+impl I3BarWidget for RotatingTextWidget {
     fn to_string(&self) -> String {
         self.cached_output.clone().unwrap_or(self.rendered.to_string())
     }

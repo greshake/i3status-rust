@@ -8,7 +8,7 @@ use input::I3barEvent;
 use block::Block;
 use widgets::rotatingtext::RotatingTextWidget;
 use widgets::button::ButtonWidget;
-use widget::{State, UIElement, Widget};
+use widget::{State, I3BarComponent, I3BarWidget};
 
 use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem, Message};
 use self::stdintf::OrgFreedesktopDBusProperties;
@@ -170,20 +170,20 @@ impl Block for Music
         }
     }
 
-    fn get_ui(&self) -> Box<UIElement> {
+    fn get_ui(&self) -> &impl I3BarComponent {
         if self.player_avail.get() {
-            let mut elements: Vec<Box<UIElement>> = Vec::new();
-            elements.push(Box::new(UIElement::WidgetWithSeparator(Box::new(self.current_song.clone().into_inner()) as Box<Widget>)));
+            let mut elements: Vec<Box<I3BarWidget>> = Vec::new();
+            elements.push(Box::new(I3BarWidget::WidgetWithSeparator(Box::new(self.current_song.clone().into_inner()) as Box<I3BarWidget>)));
             if let Some(ref prev) = self.prev {
-                elements.push(Box::new(UIElement::Widget(Box::new(prev.clone().into_inner()) as Box<Widget>)));
+                elements.push(Box::new(I3BarWidget::Widget(Box::new(prev.clone().into_inner()) as Box<I3BarWidget>)));
             }
             if let Some(ref play) = self.play {
-                elements.push(Box::new(UIElement::Widget(Box::new(play.clone().into_inner()) as Box<Widget>)));
+                elements.push(Box::new(I3BarWidget::Widget(Box::new(play.clone().into_inner()) as Box<I3BarWidget>)));
             }
             if let Some(ref next) = self.next {
-                elements.push(Box::new(UIElement::Widget(Box::new(next.clone().into_inner()) as Box<Widget>)));
+                elements.push(Box::new(I3BarWidget::Widget(Box::new(next.clone().into_inner()) as Box<I3BarWidget>)));
             }
-            Box::new(UIElement::Block(elements))
+            Box::new(I3BarWidget::Block(elements))
         } else {
             ui!(self.current_song)
         }

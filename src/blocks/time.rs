@@ -6,7 +6,7 @@ use std::time::Duration;
 use block::Block;
 use self::chrono::offset::local::Local;
 use widgets::text::TextWidget;
-use widget::{UIElement, Widget};
+use widget::{I3BarComponent, I3BarComponent};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -34,7 +34,7 @@ impl Block for Time {
         Some(self.update_interval.clone())
     }
 
-    fn get_ui(&self) -> Box<UIElement> {
+    fn get_ui(&self) -> Box<I3BarWidget> {
         ui_list!(self.time)
     }
 }
