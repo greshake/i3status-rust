@@ -20,7 +20,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 3. Edit example_config.json to your liking and put it to a sensible place (e.g. ~/.config/i3/status.json)
 4. Edit your i3 config
       1. In your i3 config, put the path to the output binary as argument for 'status_command'
-      2. Add the path to your config file as first argument, you can also configure theme and icon theme as arguments to i3bar-rs. See i3bar-rs --help for more.
+      2. Add the path to your config file as first argument, you can also configure theme and icon theme as arguments to i3status-rs. See i3status-rs --help for more.
       
             Example of the 'bar' section in the i3 config from my personal i3 config (Requires awesome-ttf-fonts). The colors block is optional, just my taste:
 
