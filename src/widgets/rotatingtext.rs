@@ -51,6 +51,12 @@ impl RotatingTextWidget {
 
     pub fn with_text(mut self, content: &str) -> Self {
         self.content = String::from(content);
+        self.rotation_pos = 0;
+        if self.content.len() > self.width {
+            self.next_rotation = Some(Instant::now() + self.rotation_interval);
+        } else {
+            self.next_rotation = None;
+        }
         self.update();
         self
     }

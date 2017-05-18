@@ -8,8 +8,8 @@ use std::sync::mpsc::Sender;
 
 #[derive(Clone)]
 pub struct Task {
-    id: String,
-    update_time: Instant,
+    pub id: String,
+    pub update_time: Instant,
 }
 
 impl cmp::PartialEq for Task {
