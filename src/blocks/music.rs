@@ -1,4 +1,3 @@
-use std::cell::{RefCell, Cell};
 use std::time::{Duration, Instant};
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -43,7 +42,7 @@ impl Music {
                                     send.send(Task {
                                         id: id.clone(),
                                         update_time: Instant::now()
-                                    });
+                                    }).unwrap();
                                 }
                             }
                         }, _ => {}
@@ -165,7 +164,7 @@ impl Block for Music
                                                  "/org/mpris/MediaPlayer2",
                                                  "org.mpris.MediaPlayer2.Player",
                                                  action).unwrap();
-                self.dbus_conn.send(m);
+                self.dbus_conn.send(m).unwrap();
             }
         }
     }
