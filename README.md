@@ -51,6 +51,7 @@ Creates a block which display the current time.
 {"block": "time", "interval": 60, "format": "%a %d/%m %R"},
 ```
 **Options**
+
 Key | Values | Required | Default
 ----|--------|----------|--------
 format | Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | %a %d/%m %R
@@ -65,6 +66,7 @@ Creates a block which can display the current song title and artist, in a fixed 
 ```
 
 **Options**
+
 Key | Values | Required | Default
 ----|--------|----------|--------
 player | Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.  | Yes | -
