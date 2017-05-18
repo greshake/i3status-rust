@@ -63,6 +63,39 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
     println!("],");
 }
 
+pub enum FormatTemplate {
+    Str(String, Option<Box<FormatTemplate>>),
+    Var(String, Option<Box<FormatTemplate>>),
+    End
+}
+
+impl FormatTemplate {
+    fn from_string(s: String) -> FormatTemplate {
+        unimplemented!()
+    }
+
+    fn render(&self, vars: &HashMap<String, String>) -> String {
+        use self::FormatTemplate::*;
+        let mut rendered = String::new();
+        match *self {
+            Str(ref s, ref next) => {
+                rendered.push_str(&s);
+                if let Some(ref next) = *next {
+                    rendered.push_str(&*next.render(vars));
+                };
+            },
+            Var(ref key, ref next) => {
+                rendered.push_str(&vars.get(key).expect(&format!("Unknown placeholder in format string: {}", key)));
+                if let Some(ref next) = *next {
+                    rendered.push_str(&*next.render(vars));
+                };
+            },
+            _ => ()
+        };
+        rendered
+    }
+}
+
 macro_rules! get_str{
     ($config:expr, $name:expr) => {String::from($config[$name].as_str().expect(&format!("Required argument {} not found in block config!", $name)))};
 }
