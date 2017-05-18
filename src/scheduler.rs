@@ -5,85 +5,73 @@ use std::cmp;
 use std::time::{Duration, Instant};
 
 #[derive(Clone)]
-pub struct Task<'a> {
-    block: &'a Block,
-    update_time: Instant,
-}
-
-pub struct UpdateRequest {
+pub struct Task {
     pub id: String,
-    pub update_time: Instant
+    pub update_time: Instant,
 }
 
-impl<'a> cmp::PartialEq for Task<'a> {
+impl cmp::PartialEq for Task {
     fn eq(&self, other: &Task) -> bool {
         self.update_time.eq(&other.update_time)
     }
 }
 
-impl<'a> cmp::Eq for Task<'a> {}
+impl cmp::Eq for Task {}
 
-impl<'a> cmp::PartialOrd for Task<'a> {
+impl cmp::PartialOrd for Task {
     fn partial_cmp(&self, other: &Task) -> Option<cmp::Ordering> {
         other.update_time.partial_cmp(&self.update_time)
     }
 }
 
-impl<'a> cmp::Ord for Task<'a> {
+impl cmp::Ord for Task {
     fn cmp(&self, other: &Task) -> cmp::Ordering {
         other.update_time.cmp(&self.update_time)
     }
 }
 
 
-pub struct UpdateScheduler<'a> {
-    schedule: BinaryHeap<Task<'a>>,
-    block_map: HashMap<String, &'a Block>
+pub struct UpdateScheduler  {
+    schedule: BinaryHeap<Task>
 }
 
-impl<'a> UpdateScheduler<'a> {
-    pub fn new(blocks: &Vec<&'a Block>) -> UpdateScheduler<'a> {
+impl UpdateScheduler {
+    pub fn new(blocks: &Vec<Box<Block>>) -> UpdateScheduler {
         let mut schedule = BinaryHeap::new();
-        let mut block_map = HashMap::new();
 
         let now = Instant::now();
         for block in blocks.iter() {
             schedule.push(Task {
-                block: *block,
+                id: String::from(block.id()),
                 update_time: now.clone(),
             });
-
-            if let Some(id) = block.id() {
-                block_map.insert(String::from(id.clone()), *block);
-            }
         }
 
         UpdateScheduler {
-            schedule: schedule,
-            block_map: block_map
+            schedule: schedule
         }
     }
 
-    pub fn schedule(&mut self, id: String, time: Instant) {
-        self.schedule
-            .push(Task {
-                block: *self.block_map.get(&id).expect(&format!("Update Request contains invalid block id: {}", id)),
-                update_time: time,
-            })
+    pub fn schedule(&mut self, task: Task) {
+        self.schedule.push(task);
     }
 
-    pub fn time_to_next_update(&self) -> Duration {
-        let next_update = self.schedule.peek().unwrap().update_time;
-        let now = Instant::now();
+    pub fn time_to_next_update(&self) -> Option<Duration> {
+        if let Some(peeked) = self.schedule.peek() {
+            let next_update = peeked.update_time;
+            let now = Instant::now();
 
-        if next_update > now {
-            next_update - now
+            if next_update > now {
+                Some(next_update - now)
+            } else {
+                Some(Duration::new(0, 0))
+            }
         } else {
-            Duration::new(0, 0)
+            None
         }
     }
 
-    pub fn do_scheduled_updates(&mut self) {
+    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) {
         let t = self.schedule.pop().unwrap();
         let mut tasks_next = vec![t.clone()];
 
@@ -99,10 +87,10 @@ impl<'a> UpdateScheduler<'a> {
         let now = Instant::now();
 
         for task in tasks_next {
-            if let Some(dur) = task.block.update() {
+            if let Some(dur) = block_map.get_mut(&task.id).unwrap().update() {
                 self.schedule
                     .push(Task {
-                        block: task.block,
+                        id: task.id,
                         update_time: now + dur,
                     })
             }

@@ -1,4 +1,6 @@
-# i3status-rust
+# i3status-rust 
+![demo1](https://raw.githubusercontent.com/XYunknown/i3status-rust/no_interior_mutability/img/time_and_music.png)
+
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
 
 # About this project
@@ -20,7 +22,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
       1. In your i3 config, put the path to the output binary as argument for 'status_command'
       2. Add the path to your config file as first argument, you can also configure theme and icon theme as arguments to i3bar-rs. See i3bar-rs --help for more.
       
-            Example of the 'bar' block in the i3 config from my personal i3 config (Requires awesome-ttf-fonts). The colors block is optional, just my taste:
+            Example of the 'bar' section in the i3 config from my personal i3 config (Requires awesome-ttf-fonts). The colors block is optional, just my taste:
 
             ```
             bar {
@@ -44,23 +46,32 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 ## Time
 Creates a block which display the current time.
 
-Options:
-
-format: String, Format string. Default is "%a %d/%m %R". See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
+**Example**
+```javascript
+{"block": "time", "interval": 60, "format": "%a %d/%m %R"},
+```
+**Options**
+Key | Values | Required | Default
+----|--------|----------|--------
+format | Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | %a %d/%m %R
+interval | Update interval in seconds | No | 5
 
 ## Music
-Creates a block which can display the current song title and artist, in a fixed width rotating-text fashion. It uses dbus signaling to fetch new tracks, so no periodic updates are needed. It supports all Players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more.
+Creates a block which can display the current song title and artist, in a fixed width marquee fashion. It uses dbus signaling to fetch new tracks, so no periodic updates are needed. It supports all Players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more. Also provides buttons for play/pause, previous and next title.
 
-Options:
+**Example**
+```javascript
+{"block": "music", "player": "spotify", "buttons": ["play", "next"]},
+```
 
-player: String, e.g. "spotify"
+**Options**
+Key | Values | Required | Default
+----|--------|----------|--------
+player | Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.  | Yes | -
+max-width | Max width of the block in characters, not including the buttons | No | 21
+marquee | Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max-width | No | true
+buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
-### Music Play/Pause
-Optional Play/Pause block, works similar to the Music block, displays a Play/Pause button.
-
-Options:
-
-player: String, e.g. "spotify"
 
 # How to write a Block
 
@@ -70,113 +81,78 @@ Create a block by copying the template: `cp src/blocks/template.rs src/blocks/<b
 
 ## Step 2: Populate the struct
 
-Your block needs a struct to store it's state. First, replace all the occurences of 'Template' in the file with the name of your block. Then edit the struct and add all Fields which you may need to store either options from the block config or state values (e.g. free disk space or current load). All Blocks use interior mutability to update their state. For primitive data types, use a field of type Cell<T>, for Strings and complex types use RefCell<T>. Use Widgets to display something in the i3Bar, you can have multiple Text or Button widgets on a Block. These have to be returned in the get_ui() function and they need to be updated from the update() function.
+Your block needs a struct to store it's state. First, replace all the occurences of 'Template' in the file with the name of your block. Then edit the struct and add all Fields which you may need to store either options from the block config or state values (e.g. free disk space or current load). Use Widgets to display something in the i3Bar, you can have multiple Text or Button widgets on a Block. These have to be returned in the view() function and they need to be updated from the update() function. They also handle icons and theming for you.
 
 ## Step 3: Implement the constructor
 
-You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros get_str/u64 to extract a string/ u64 and add appropriate error handeling. You can set a default value in the macro as you can see below. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID.This advanced feature can be used to reduce the number of system calls by asynchrounosly waiting for events.
+You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros get_str/u64/bool to extract a string/ u64 and add appropriate error handeling. You can set a default value in the macro as you can see below. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID.This advanced feature can be used to reduce the number of system calls by asynchrounosly waiting for events. A usage example can be found in the Music block, which updates only when dbus signals a new song.
 
 Example:
 ```rust
-pub fn new(config: Value, tx: Sender<UpdateRequest>, theme: &Value) -> Template {
-        Template {
-            name: Uuid::new_v4().simple().to_string(),
+pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Template {
+      let text = TextWidget::new(theme.clone()).with_text("I'm a Template!");
+      Template {
+            id: Uuid::new_v4().simple().to_string(),
             update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-            text: RefCell::new(Box::new(TextWidget::new(theme.clone()).with_text("I'm a Template!"))),
-            tx_update_request: tx
-        }
-    }
+            text: text,
+            tx_update_request: tx,
+            theme: theme,
+      }
+}
 ```
 
-## Step 4: Implement the Block interface (OUTDATED)
+## Step 4: Implement the Block interface
 
 All blocks are basically structs which implement the trait (interface) Block. This interface defines the following features:
 
-### `fn get_status(&self, theme: &Value) -> Value` (Required)
+### `fn update(&mut self) -> Option<Duration>` (Required if you don't want a static block)
 
-Use this function to render the content of your Block to a i3bar compatible json value. **Note**: Do not execute any commands/system calls here. All the heavy lifting is supposed to be done in the update() method. Also, you get access to the theme (JSON Value). Use it to extract icons or colors if needed. Otherwise, the colors will be rendered on top of the returned JSON. State colors from get_state() are also applied automatically.
+Use this function to update the internal state of your block, for example during periodic updates. Return the duration until your block wants to be updated next. For example, a clock could request only to be updated every 60 seconds by returning Some(Duration::new(60, 0)) every time. If you return None, this function will not be called again automatically.
 
 Example:
 ```rust
-fn get_status(&self, _: &Value) -> Value {
-      json!({
-            "full_text": format!("{}{}", theme["icons"]["time"].as_str().unwrap(),
-                                           self.time.clone().into_inner())
-      })
+fn update(&mut self) -> Option<Duration> {
+      self.time.set_text(format!("{}", Local::now().format(&self.format)));
+      Some(self.update_interval.clone())
 }
 ```
 
-### `fn get_state(&self) -> State` (Optional) 
+### `fn view(&self) -> Vec<&I3BarWidget>` (Required) 
 
-Use this function to return a general representation of your Block's state. This general state is then translated into color based on the current theme. Again, please don't update the internal state of the block here!
-
-Example:
-```rust
-fn get_state(&self) -> State {
-        match self.some_value.get() {
-            0 ... 10 => State::Critical,
-            10 ... 20 => State::Warning,
-            _ => State::Good,
-        }
-    }
-```
-
-### `fn update(&self) -> Option<Duration>` (Optional, but probably recommended)
-
-Use this function to update the internal state of your block in a specified interval. For example, update the free disk space. i3status-rs tries to call this method as little as possible, to avoid unnessesary system calls. If you return None, the block will not be automatically updated again. This is the default behaviour. This may be useful to blocks which are static or updating in an event guided manner (maybe from a seperate thread). Otherwise, this method will be called again after the specified duration.
+Use this function to return the widgets that comprise the UI of your component. The music block may, for example, be comprised of a text widget and multiple buttons. Use a vec to wrap the references to your view.
 
 Example:
 ```rust
-fn update(&self) -> Option<Duration> {
-      match self.info_type {
-            DiskInfoType::Available => {
-                  let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
-                  let available = self.unit.convert_bytes(statvfs.f_bavail * statvfs.f_bsize);
-                  self.value.set(available);
-            }
-            DiskInfoType::Free => {
-                  let statvfs = Statvfs::for_path(Path::new(self.target)).unwrap();
-                  let free = self.unit.convert_bytes(statvfs.f_bfree * statvfs.f_bsize);
-                  self.value.set(free);
-            }
-            _ => unimplemented!(),
-      }
-      Some(Duration::new(5, 0))
+fn view(&self) -> Vec<&I3BarWidget> {
+      vec![&self.time]
 }
 ```
 
-### `fn id(&self) -> Option<&str>` (Optional, but required if you want to react to clicks)
+### `fn id(&self) -> &str` (Required)
 
-Use this function to return a unique identifier for your block. It is required if you also implement the click funtion, because thats how i3bar identifies clicked blocks. Best practice is to return a unique identifier here, that was randomly created when the block was created, and is static over the Block's lifetime. Otherwise, you may also let it be user definable in the config; it should, however, not be required.
+You need to return a unique identifier for your block here. In the template you will already find a UUID implementation being used here. This is needed, for example, to send update requests (callbacks) from a different thread.  
 
 Example:
 ```rust
-fn id(&self) -> Option<&str> {
-      Some(&self.name)
+fn id(&self) -> &str {
+      &self.id
 }
 ```
 
-### `fn click(&self, I3barEvent)` (Optional)
 
-Here you can react to the user clicking your block. The i3barEvent instance contains all fields to describe the click action, including mouse button and location down to the pixel. You may also update the internal state here.
+### `fn click(&mut self, event: &I3barEvent)` (Optional)
+
+Here you can react to the user clicking your block. The i3barEvent instance contains all fields to describe the click action, including mouse button and location down to the pixel. You may also update the internal state here. **Note that this event is sent to every block on every click**. *To filter, use the event.name property, which corresponds to the name property on widgets!*
 
 Example:
 ```rust
-fn click(&self, event: I3barEvent) {
-      match event.button {
-      1 => { // Left mouse button
-            let old = self.click_count.get();
-            let new: u32 = old + 1;
-            self.click_count.set(new);
-            *self.some_value.borrow_mut() = format!("Click Count: {}", new);
-      }
-      3 => { // Right mouse button
-            let old = self.click_count.get();
-            let new: u32 = if old > 0 { old - 1 } else { 0 };
-            self.click_count.set(new);
-            *self.some_value.borrow_mut() = format!("Click Count: {}", new);
-      }
-      _ => {}
+if event.name.is_some() {
+            let action = match &event.name.clone().unwrap() as &str {
+                  "play" => "PlayPause",
+                  "next" => "Next",
+                  "prev" => "Previous",
+                  _ => ""
+            };
       }
 }
 ```
@@ -189,10 +165,6 @@ Edit `src/blocks/mod.rs` and add:
 3. Mapping to a name string:  `"<name>" => boxed!(<name>::new(config)),`
 
 **Congratulations** You're done. Recompile and just add the block to your config file now.
-
-# ToDo
-- further documentation in the source code
-- more caching
 
 ## Blocks to be implemented
 - CPU

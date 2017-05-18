@@ -1,8 +1,8 @@
 use widget::State;
 use serde_json::Value;
-use super::super::widget::Widget;
+use super::super::widget::I3BarWidget;
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct TextWidget {
     content: Option<String>,
     icon: Option<String>,
@@ -74,7 +74,7 @@ impl TextWidget {
     }
 }
 
-impl Widget for TextWidget {
+impl I3BarWidget for TextWidget {
     fn to_string(&self) -> String {
         self.cached_output.clone().unwrap_or(self.rendered.to_string())
     }

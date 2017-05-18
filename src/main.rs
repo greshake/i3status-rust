@@ -22,15 +22,17 @@ pub mod widgets;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 use std::thread;
+use std::collections::HashMap;
 use std::time::Duration;
-use std::fs::File;
+use std::fs::{File};
+use std::ops::DerefMut;
 use std::io::Read;
 
 use block::Block;
 
 use blocks::create_block;
 use input::{process_events, I3barEvent};
-use scheduler::{UpdateScheduler, UpdateRequest};
+use scheduler::{UpdateScheduler, Task};
 use themes::get_theme;
 use icons::get_icons;
 
@@ -87,26 +89,33 @@ fn main() {
 
     // Create the blocks specified
     let config = serde_json::from_str(&config_str).expect("Config file is not valid JSON!");
-    let mut blocks_owned: Vec<Box<Block>> = Vec::new();
 
-    let (tx, rx_update_requests): (Sender<UpdateRequest>, Receiver<UpdateRequest>) = mpsc::channel();
+    let mut blocks: Vec<Box<Block>> = Vec::new();
+
+    let (tx, rx_update_requests): (Sender<Task>, Receiver<Task>) = mpsc::channel();
 
     if let Value::Array(b) = config {
         for block in b {
             let name = block["block"].clone();
-            blocks_owned.push(create_block(name.as_str().expect("block name must be a string"),
+            blocks.push(create_block(name.as_str().expect("block name must be a string"),
                                            block, tx.clone(), &theme))
         }
     } else {
         println!("The configs outer layer must be an array! For example: []")
     }
 
-    let blocks = blocks_owned.iter().map(|x| x.as_ref()).collect();
+    let order = blocks.iter().map(|x| String::from(x.id())).collect();
+
+    let mut scheduler = UpdateScheduler::new(&blocks);
+
+    let mut block_map: HashMap<String, &mut Block> = HashMap::new();
+
+    for block in blocks.iter_mut() {
+        block_map.insert(String::from(block.id()), (*block).deref_mut());
+    }
 
     // Now we can start to run the i3bar protocol
     print!("{{\"version\": 1, \"click_events\": true}}[");
-
-    let mut scheduler = UpdateScheduler::new(&blocks);
 
     // We wait for click events in a seperate thread, to avoid blocking to wait for stdin
     let (tx, rx_clicks): (Sender<I3barEvent>, Receiver<I3barEvent>) = mpsc::channel();
@@ -115,28 +124,29 @@ fn main() {
     loop {
         // See if the user has clicked.
         while let Ok(event) = rx_clicks.try_recv() {
-            for block in &blocks {
+            for (_, block) in &mut block_map {
                 block.click(&event);
-                // redraw the blocks, state may have changed
-                util::print_blocks(&blocks);
             }
+            util::print_blocks(&order, &block_map);
         }
 
         // Enqueue pending update requests
         while let Ok(request) = rx_update_requests.try_recv() {
-            scheduler.schedule(request.id, request.update_time)
+            scheduler.schedule(request)
         }
 
         // This interval allows us to react to click events faster,
         // while still sleeping most of the time and not requiring all
         // Blocks to be Send.
-        if scheduler.time_to_next_update() < input_check_interval {
-            scheduler.do_scheduled_updates();
+        if let Some(ttnu) = scheduler.time_to_next_update() {
+            if ttnu < input_check_interval {
+                scheduler.do_scheduled_updates(&mut block_map);
 
-            // redraw the blocks, state changed
-            util::print_blocks(&blocks);
-        } else {
-            thread::sleep(input_check_interval)
+                // redraw the blocks, state changed
+                util::print_blocks(&order, &block_map);
+            } else {
+                thread::sleep(input_check_interval)
+            }
         }
     }
 }

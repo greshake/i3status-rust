@@ -1,30 +1,37 @@
-use std::cell::{Cell, RefCell};
 use std::time::Duration;
 use std::sync::mpsc::Sender;
 
 use block::Block;
 use widgets::text::TextWidget;
-use widget::{UIElement, State, Widget};
+use widget::I3BarWidget;
 use input::I3barEvent;
-use scheduler::UpdateRequest;
+use scheduler::Task;
 
 use serde_json::Value;
 use uuid::Uuid;
 
+
 pub struct Template {
-    text: RefCell<TextWidget>,
-    name: String,
+    text: TextWidget,
+    id: String,
     update_interval: Duration,
-    tx_update_request: Sender<UpdateRequest>,
+
+    //useful, but optional
+    #[allow(dead_code)]
+    theme: Value,
+    #[allow(dead_code)]
+    tx_update_request: Sender<Task>,
 }
 
 impl Template {
-    pub fn new(config: Value, tx: Sender<UpdateRequest>, theme: &Value) -> Template {
+    pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Template {
+        let text = TextWidget::new(theme.clone()).with_text("I'm a Template!");
         Template {
-            name: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().simple().to_string(),
             update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-            text: RefCell::new(TextWidget::new(theme.clone()).with_text("I'm a Template!")),
-            tx_update_request: tx
+            text: text,
+            tx_update_request: tx,
+            theme: theme,
         }
     }
 }
@@ -32,14 +39,14 @@ impl Template {
 
 impl Block for Template
 {
-    fn update(&self) -> Option<Duration> {
+    fn update(&mut self) -> Option<Duration> {
         Some(self.update_interval.clone())
     }
-    fn get_ui(&self) -> Box<UIElement> {
-        ui!(self.text)
+    fn view(&self) -> Vec<&I3BarWidget> {
+        vec![&self.text]
     }
-    fn click(&self, event: &I3barEvent) {}
-    fn id(&self) -> Option<&str> {
-        Some(&self.name)
+    fn click(&mut self, _: &I3barEvent) {}
+    fn id(&self) -> &str {
+        &self.id
     }
 }
