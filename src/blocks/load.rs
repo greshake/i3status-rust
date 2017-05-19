@@ -6,8 +6,6 @@ use widget::{I3BarWidget, State};
 use input::I3barEvent;
 
 use std::fs::OpenOptions;
-use std::fs::File;
-use std::io::Result;
 use std::io::Read;
 
 use serde_json::Value;
