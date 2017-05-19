@@ -65,6 +65,20 @@ Creates a block which can display the current song title and artist, in a fixed 
 {"block": "music", "player": "spotify", "buttons": ["play", "next"]},
 ```
 
+## Load
+Creates a block which displays the system load average.
+
+**Example**
+```javascript
+{"block": "load", "format": "{1m} {5m}", "interval": 1},
+```
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+format | Format string.<br/> You can use the placeholders 1m 5m and 15m, eg "1min avg: {1m}" | No | {1m}
+interval | Update interval in seconds | No | 3
+
 **Options**
 
 Key | Values | Required | Default

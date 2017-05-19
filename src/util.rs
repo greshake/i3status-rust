@@ -109,7 +109,7 @@ impl FormatTemplate {
         Ok(template)
     }
 
-
+    // TODO: Make this function tail-recursive for compiler optimization, also only use the version below, static_str
     pub fn render<T: Display>(&self, vars: &HashMap<String, T>) -> String {
         use self::FormatTemplate::*;
         let mut rendered = String::new();
@@ -124,6 +124,26 @@ impl FormatTemplate {
                 rendered.push_str(&format!("{}", &vars.get(key).expect(&format!("Unknown placeholder in format string: {}", key))));
                 if let Some(ref next) = *next {
                     rendered.push_str(&*next.render(vars));
+                };
+            }
+        };
+        rendered
+    }
+
+    pub fn render_static_str<T: Display>(&self, vars: &HashMap<&str, T>) -> String {
+        use self::FormatTemplate::*;
+        let mut rendered = String::new();
+        match *self {
+            Str(ref s, ref next) => {
+                rendered.push_str(&s);
+                if let Some(ref next) = *next {
+                    rendered.push_str(&*next.render_static_str(vars));
+                };
+            }
+            Var(ref key, ref next) => {
+                rendered.push_str(&format!("{}", vars.get(&**key).expect(&format!("Unknown placeholder in format string: {}", key))));
+                if let Some(ref next) = *next {
+                    rendered.push_str(&*next.render_static_str(vars));
                 };
             }
         };
