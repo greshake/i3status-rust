@@ -6,7 +6,7 @@ use widget::{I3BarWidget, State};
 use input::I3barEvent;
 use util::FormatTemplate;
 
-use std::io::{self, BufReader};
+use std::io::BufReader;
 use std::io::prelude::*;
 use std::fs::{File, OpenOptions};
 
