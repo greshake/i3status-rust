@@ -1,5 +1,5 @@
 # i3status-rust 
-![demo1](https://raw.githubusercontent.com/XYunknown/i3status-rust/no_interior_mutability/img/time_and_music.png)
+![demo1](https://raw.githubusercontent.com/XYunknown/i3status-rust/master/img/example_bar.png)
 
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
 
