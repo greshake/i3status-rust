@@ -88,6 +88,18 @@ Key | Values | Required | Default
 format | Format string.<br/> You can use the placeholders 1m 5m and 15m, eg "1min avg: {1m}" | No | {1m}
 interval | Update interval in seconds | No | 3
 
+## Cpu utilization
+Creates a block which displays the overall CPU utilization, calculated from /proc/stat.
+
+**Example**
+```javascript
+{"block": "cpu", "interval": 1},
+```
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 1
 
 # How to write a Block
 
