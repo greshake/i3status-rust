@@ -193,17 +193,3 @@ Edit `src/blocks/mod.rs` and add:
 3. Mapping to a name string:  `"<name>" => boxed!(<name>::new(config)),`
 
 **Congratulations** You're done. Recompile and just add the block to your config file now.
-
-## Blocks to be implemented
-- CPU
-- Load
-- Battery
-- Temperature
-- Disk Space
-- Memory
-- Pacman updates
-- Sound
-  * Maybe features like click-to-mute
-- Network
-- NetworkManager with Dbus
-- open to more ideas
