@@ -26,11 +26,10 @@ pub struct Template {
 impl Template {
     pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Template {
         {
-            let text = TextWidget::new(theme.clone()).with_text("Template");
-            return Template {
+            Template {
                 id: Uuid::new_v4().simple().to_string(),
                 update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-                text: text,
+                text: TextWidget::new(theme.clone()).with_text("Template"),
                 tx_update_request: tx,
                 theme: theme,
             }

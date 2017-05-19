@@ -22,13 +22,11 @@ pub struct Battery {
 impl Battery {
     pub fn new(config: Value, theme: Value) -> Battery {
         {
-            let output = TextWidget::new(theme);
-
-            return Battery {
+            Battery {
                 id: Uuid::new_v4().simple().to_string(),
                 max_charge: 0,
                 update_interval: Duration::new(get_u64_default!(config, "interval", 10), 0),
-                output: output,
+                output: TextWidget::new(theme),
                 device_path: format!("/sys/class/power_supply/BAT{}/", get_u64_default!(config, "device", 0)),
             }
         }
