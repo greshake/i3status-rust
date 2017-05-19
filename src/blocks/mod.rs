@@ -1,16 +1,15 @@
-//pub mod cpu;
-//pub mod disk_info;
+
 mod time;
 mod template;
 mod load;
 mod memory;
-//pub mod toggle;
+mod cpu;
 mod music;
-//pub mod music_play_button;
 
 use self::time::*;
 use self::template::*;
 use self::music::*;
+use self::cpu::*;
 use self::load::*;
 use self::memory::*;
 
@@ -31,6 +30,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "music" => boxed!(Music::new(config, tx_update_request, theme)),
         "load" => boxed!(Load::new(config, theme.clone())),
         "memory" => boxed!(Memory::new(config, tx_update_request, theme.clone())),
+        "cpu" => boxed!(Cpu::new(config, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);
         }

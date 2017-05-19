@@ -1,6 +1,7 @@
 [
   {"block": "time", "interval": 60, "format": "%a %d/%m %R"},
   {"block": "music", "max-width": 21, "marquee": true, "player": "spotify", "buttons": ["prev", "play", "next"]},
-  {"block": "load"},
+  {"block": "load", "interval": 1, "format": "{1m} {5m} {15m}"},
+  {"block": "cpu", "interval": 1},
   {"block": "memory", "type":"memory", "format":":{MFm}MB/{MTm}MB({Mp}%)"}
 ]

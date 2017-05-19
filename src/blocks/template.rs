@@ -5,11 +5,8 @@ use block::Block;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 use input::I3barEvent;
-use std::collections::HashMap;
-use std::fmt::Display;
 use scheduler::Task;
 
-use util::FormatTemplate;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -28,16 +25,8 @@ pub struct Template {
 
 impl Template {
     pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Template {
-        let template = FormatTemplate::from_string(String::from("Test {bla} dsfghdsfdsf {nummer}")).unwrap();
-
-        let v1 = String::from("fuuuu");
-        let v2 = 112;
         {
-            let mut vars: HashMap<String, &Display> = HashMap::new();
-        
-            vars.insert(String::from("{bla}"), &v1);
-            vars.insert(String::from("{nummer}"), &v2);
-            let text = TextWidget::new(theme.clone()).with_text(&template.render(&vars));
+            let text = TextWidget::new(theme.clone()).with_text("Template");
             return Template {
                 id: Uuid::new_v4().simple().to_string(),
                 update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),

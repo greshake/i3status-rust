@@ -1,5 +1,5 @@
 # i3status-rust 
-![demo1](https://raw.githubusercontent.com/XYunknown/i3status-rust/no_interior_mutability/img/time_and_music.png)
+![demo1](https://raw.githubusercontent.com/XYunknown/i3status-rust/master/img/example_bar.png)
 
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
 
@@ -74,6 +74,32 @@ max-width | Max width of the block in characters, not including the buttons | No
 marquee | Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max-width | No | true
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
+## Load
+Creates a block which displays the system load average.
+
+**Example**
+```javascript
+{"block": "load", "format": "{1m} {5m}", "interval": 1},
+```
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+format | Format string.<br/> You can use the placeholders 1m 5m and 15m, eg "1min avg: {1m}" | No | {1m}
+interval | Update interval in seconds | No | 3
+
+## Cpu utilization
+Creates a block which displays the overall CPU utilization, calculated from /proc/stat.
+
+**Example**
+```javascript
+{"block": "cpu", "interval": 1},
+```
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 1
 
 # How to write a Block
 
@@ -167,17 +193,3 @@ Edit `src/blocks/mod.rs` and add:
 3. Mapping to a name string:  `"<name>" => boxed!(<name>::new(config)),`
 
 **Congratulations** You're done. Recompile and just add the block to your config file now.
-
-## Blocks to be implemented
-- CPU
-- Load
-- Battery
-- Temperature
-- Disk Space
-- Memory
-- Pacman updates
-- Sound
-  * Maybe features like click-to-mute
-- Network
-- NetworkManager with Dbus
-- open to more ideas
