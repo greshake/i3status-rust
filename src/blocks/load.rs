@@ -31,6 +31,7 @@ impl Load {
         let mut logical_cores = 0;
 
         for line in f.lines().scan((), |_, x| x.ok()) {
+            // TODO: Does this value always represent the correct number of logical cores?
             if line.starts_with("siblings") {
                 let split: Vec<&str> = (&line).split(" ").collect();
                 logical_cores = split[1].parse::<u32>().expect("Invalid Cpu info format!");
