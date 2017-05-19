@@ -127,7 +127,7 @@ fn main() {
             for (_, block) in &mut block_map {
                 block.click(&event);
             }
-            util::print_blocks(&order, &block_map);
+            util::print_blocks(&order, &block_map, &theme);
         }
 
         // Enqueue pending update requests
@@ -143,7 +143,7 @@ fn main() {
                 scheduler.do_scheduled_updates(&mut block_map);
 
                 // redraw the blocks, state changed
-                util::print_blocks(&order, &block_map);
+                util::print_blocks(&order, &block_map, &theme);
             } else {
                 thread::sleep(input_check_interval)
             }

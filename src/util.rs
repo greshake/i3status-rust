@@ -6,6 +6,7 @@ use std::prelude::v1::String;
 use std;
 use std::fmt::Display;
 
+
 macro_rules! map (
     { $($key:expr => $value:expr),+ } => {
         {
@@ -32,7 +33,7 @@ impl PrintState {
     }
 }
 
-pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>) {
+pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>, theme: &Value) {
     let mut state = PrintState {
         has_predecessor: false,
         last_bg: Value::Null
@@ -44,15 +45,23 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
         let widgets = block.view();
         let first = widgets[0];
         let color = String::from(first.get_rendered()["background"].as_str().unwrap());
-        let s = json!({
-                    "full_text": "",
+
+        // clean this up
+        let tmp: Value = theme.get("separator_fg").expect("separator_fg entry is missing").clone();
+        let sep_fg:Value= if tmp.as_str().unwrap() == "auto".to_string() {Value::String(color.clone())} else {tmp};
+
+        let tmp = theme.get("separator_bg").expect("separator_bg entry is missing").clone();
+        let sep_bg = if tmp.as_str().unwrap() == "auto".to_string() {state.last_bg.clone()} else {tmp};
+
+        let separator = json!({
+                    "full_text": theme["separator"],
                     "separator": false,
                     "separator_block_width": 0,
-                    "background": state.last_bg.clone(),
-                    "color": color.clone()
+                    "background": sep_bg,
+                    "color": sep_fg
                 });
         print!("{}{},", if state.has_predecessor { "," } else { "" },
-               s.to_string());
+               separator.to_string());
         print!("{}", first.to_string());
         state.set_last_bg(Value::String(color));
         state.set_predecessor(true);
