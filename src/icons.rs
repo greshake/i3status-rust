@@ -16,8 +16,8 @@ fn no_icons() -> Value {
         "music_next": " => ",
         "music_prev": " <= ",
         "cogs": "",
-        "memory_mem": " MEM",
-        "memory_swap": " SWAP"
+        "memory_mem": " MEM ",
+        "memory_swap": " SWAP "
     })
 }
 
@@ -30,7 +30,7 @@ fn awesome_icons() -> Value {
         "music_next": " \u{f061} ",
         "music_prev": " \u{f060} ",
         "cogs": " \u{f085} ",
-        "memory_mem": " \u{f2db}",
-        "memory_swap": " \u{f0a0}"
+        "memory_mem": " \u{f2db} ",
+        "memory_swap": " \u{f0a0} "
     })
 }
