@@ -101,6 +101,20 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval in seconds | No | 1
 
+## Battery
+Creates a block which displays the current battery state (Full, Charging or Discharging) and percentage charged.
+
+**Example**
+```javascript
+{"block": "battery", "interval": 10},
+```
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 10
+device | Which BAT device in /sys/class/power_supply/ to read from. | No | 0
+
 # How to write a Block
 
 ## Step 1: Create the file

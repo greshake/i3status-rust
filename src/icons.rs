@@ -11,14 +11,18 @@ fn no_icons() -> Value {
     json!({
         "time": "",
         "music": "",
-        "music_play": " > ",
-        "music_pause": "  || ",
+        "music_play": ">",
+        "music_pause": "||",
         "music_next": " > ",
         "music_prev": " < ",
         "cogs": "",
         "memory_mem": " MEM ",
         "memory_swap": " SWAP ",
-        "cpu": ""
+        "cpu": "",
+        "bat": " BAT ",
+        "bat_full": " FULL ",
+        "bat_charging": " CHG ",
+        "bat_discharging": " DCG "
     })
 }
 
@@ -33,6 +37,10 @@ fn awesome_icons() -> Value {
         "cogs": " \u{f085} ",
         "memory_mem": " \u{f2db} ",
         "memory_swap": " \u{f0a0} ",
-        "cpu": " \u{f0e4} "
+        "cpu": " \u{f0e4} ",
+        "bat": " \u{f242} ",
+        "bat_full": " \u{f240} ",
+        "bat_charging": " \u{f1e6} ",
+        "bat_discharging": " \u{f242} "
     })
 }
