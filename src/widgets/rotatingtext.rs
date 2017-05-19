@@ -30,7 +30,13 @@ impl RotatingTextWidget {
             content: String::new(),
             icon: None,
             state: State::Idle,
-            rendered: Value::Null,
+            rendered: json!({
+                "full_text": "",
+                "separator": false,
+                "separator_block_width": 0,
+                "background": "#000000",
+                "color": "#000000"
+            }),
             cached_output: None,
             theme: theme,
             rotating: false,

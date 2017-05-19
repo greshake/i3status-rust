@@ -20,7 +20,13 @@ impl ButtonWidget {
             icon: None,
             state: State::Idle,
             id: String::from(id),
-            rendered: Value::Null,
+            rendered: json!({
+                "full_text": "",
+                "separator": false,
+                "separator_block_width": 0,
+                "background": "#000000",
+                "color": "#000000"
+            }),
             theme: theme,
             cached_output: None,
         }
