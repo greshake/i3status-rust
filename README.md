@@ -57,6 +57,48 @@ Key | Values | Required | Default
 format | Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | %a %d/%m %R
 interval | Update interval in seconds | No | 5
 
+## Memory
+Creates a block displaying memory and swap usage.
+By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({Mp}%)" (Swap values
+accordingly). That behaviour can be changed within config.json.
+This module keeps track of both Swap and Memory. By default, a click switches between them.
+
+**Example**
+
+```javascript
+{"block": "memory",
+    "format_mem": "{MFm}MB/{MTm}MB({Mp}%)", "format_swap": "{SFm}MB/{STm}MB({Sp}%)",
+    "type": "memory", "icons": "true", "clickable": "true", "interval": "5"
+},
+```
+
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+format_mem | Format string for Memory view. All format values are described below. | No | `{MFm}MB/{MTm}MB({Mp}%)`
+format_swap | Format string for Swap view. | No | `{SFm}MB/{STm}MB({Sp}%)`
+type | Default view displayed on startup. Options are <br/> memory, swap | No | memory
+icons | Whether the format string should be prepended with Icons. Options are <br/> true, false | No | true
+clickable | Whether the view should switch between memory and swap on click. Options are <br/> true, false | No | true
+interval | The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only. | No | 5
+
+### Format string specification
+
+Key | Values
+----|-------
+{MTg} | Memory total (GiB)
+{MTm} | Memory total (MiB)
+{MFg} | Memory free (GiB)
+{MFm} | Memory free (MiB)
+{Mp} | Memory used (%)
+{STg} | Swap total (GiB)
+{STm} | Swap total (MiB)
+{SFg} | Swap free (GiB)
+{SFm} | Swap free (MiB)
+{Sp} | Swap used (%)
+
 ## Music
 Creates a block which can display the current song title and artist, in a fixed width marquee fashion. It uses dbus signaling to fetch new tracks, so no periodic updates are needed. It supports all Players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more. Also provides buttons for play/pause, previous and next title.
 
