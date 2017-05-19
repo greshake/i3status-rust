@@ -5,11 +5,8 @@ use block::Block;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 use input::I3barEvent;
-use std::collections::HashMap;
-use std::fmt::Display;
 use scheduler::Task;
 
-use util::FormatTemplate;
 use serde_json::Value;
 use uuid::Uuid;
 
