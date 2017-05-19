@@ -1,6 +1,7 @@
 use std::time::{Duration, Instant};
 use std::sync::mpsc::Sender;
 use std::thread;
+use std::boxed::Box;
 
 use scheduler::Task;
 use input::I3barEvent;
@@ -9,7 +10,7 @@ use widgets::rotatingtext::RotatingTextWidget;
 use widgets::button::ButtonWidget;
 use widget::{State, I3BarWidget};
 
-use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem, Message};
+use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem, Message, arg};
 use self::stdintf::OrgFreedesktopDBusProperties;
 use serde_json::Value;
 use uuid::Uuid;
@@ -110,26 +111,7 @@ impl Block for Music
             } else {
                 let metadata = data.unwrap();
 
-                let mut title = String::new();
-                let mut artist = String::new();
-
-                let mut iter = metadata.0.as_iter().unwrap();
-
-                while let Some(key) = iter.next() {
-                    let value = iter.next().unwrap();
-                    match key.as_str().unwrap() {
-                        "xesam:artist" => {
-                            artist = String::from(value.as_iter().unwrap().nth(0).unwrap()
-                                .as_iter().unwrap().nth(0).unwrap()
-                                .as_iter().unwrap().nth(0).unwrap()
-                                .as_str().unwrap())
-                        },
-                        "xesam:title" => {
-                            title = String::from(value.as_str().unwrap())
-                        }
-                        _ => {}
-                    };
-                }
+                let (title, artist) = extract_from_metadata(metadata).unwrap_or((String::new(), String::new()));
 
                 self.current_song.set_text(format!("{} | {}", title, artist));
                 self.player_avail = true;
@@ -195,4 +177,28 @@ impl Block for Music
             vec!(&self.current_song)
         }
     }
+}
+
+fn extract_from_metadata(metadata: arg::Variant<Box<arg::RefArg>>) -> Result<(String, String), ()> {
+    let mut title = String::new();
+    let mut artist = String::new();
+
+    let mut iter = metadata.0.as_iter().ok_or(())?;
+
+    while let Some(key) = iter.next() {
+        let value = iter.next().ok_or(())?;
+        match key.as_str().ok_or(())? {
+            "xesam:artist" => {
+                artist = String::from(value.as_iter().ok_or(())?.nth(0).ok_or(())?
+                    .as_iter().ok_or(())?.nth(0).ok_or(())?
+                    .as_iter().ok_or(())?.nth(0).ok_or(())?
+                    .as_str().ok_or(())?)
+            },
+            "xesam:title" => {
+                title = String::from(value.as_str().ok_or(())?)
+            }
+            _ => {}
+        };
+    }
+    Ok((title, artist))
 }
