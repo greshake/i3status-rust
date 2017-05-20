@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 //! ##Memory
 //! Creates a block displaying memory and swap usage.
 //!
@@ -24,27 +23,31 @@
 //! icons | Whether the format string should be prepended with Icons. Options are <br/> true, false | No | true
 //! clickable | Whether the view should switch between memory and swap on click. Options are <br/> true, false | No | true
 //! interval | The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only. | No | 5
+//! warning_mem | Percentage of memory usage, where state is set to warning | No | 80.0
+//! warning_swap | Percentage of swap usage, where state is set to warning | No | 80.0
+//! critical_mem | Percentage of memory usage, where state is set to critical | No | 95.0
+//! critical_swap | Percentage of swap usage, where state is set to critical | No | 95.0
 //!
 //! ###Format string specification
 //! Key | Value
 //! ----|-------
 //! {MTg} | Memory total (GiB)
 //! {MTm} | Memory total (MiB)
-//! {MAg} | Available Memory, including cached memory and buffers (GiB)
-//! {MAm} | Available Memory, including cached memory and buffers (MiB)
-//! {MAp} | Available Memory, including cached memory and buffers (%)
+//! {MAg} | Available emory, including cached memory and buffers (GiB)
+//! {MAm} | Available memory, including cached memory and buffers (MiB)
+//! {MAp} | Available memory, including cached memory and buffers (%)
 //! {MFg} | Memory free (GiB)
 //! {MFm} | Memory free (MiB)
 //! {MFp} | Memory free (%)
 //! {Mug} | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB)
 //! {Mum} | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB)
 //! {Mup} | Memory used, excluding cached memory and buffers; similar to htop's green bar (%)
-//! {MUg} | Total Memory used (GiB)
-//! {MUm} | Total Memory used (MiB)
-//! {MUp} | Total Memory used (%)
-//! {Cg}  | Cached Memory, similar to htop's yellow bar (GiB)
-//! {Cm}  | Cached Memory, similar to htop's yellow bar (MiB)
-//! {Cp}  | Cached Memory, similar to htop's yellow bar (%)
+//! {MUg} | Total memory used (GiB)
+//! {MUm} | Total memory used (MiB)
+//! {MUp} | Total memory used (%)
+//! {Cg}  | Cached memory, similar to htop's yellow bar (GiB)
+//! {Cm}  | Cached memory, similar to htop's yellow bar (MiB)
+//! {Cp}  | Cached memory, similar to htop's yellow bar (%)
 //! {Bg}  | Buffers, similar to htop's blue bar (GiB)
 //! {Bm}  | Buffers, similar to htop's blue bar (MiB)
 //! {Bp}  | Buffers, similar to htop's blue bar (%)
@@ -74,8 +77,12 @@ use std::fmt;
 
 
 use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
+use widget::{State,I3BarWidget};
 use scheduler::Task;
+
+
+use std::io::Write;
+use std::fs::OpenOptions;
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -93,7 +100,7 @@ impl Memtype {
     }
 }
 
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy)]
 enum Unit {
     MiB(u64),
     GiB(f32),
@@ -108,7 +115,6 @@ impl fmt::Display for Unit {
             Unit::GiB(n) => n.fmt(f),
         }
     }
-
 }
 
 impl Unit {
@@ -120,31 +126,35 @@ impl Unit {
     }
     fn gib(&self) -> Unit {
         match *self {
-            Unit::KiB(n) => Unit::GiB((n as f32)/1024f32.powi(2)),
-            Unit::MiB(n) => Unit::GiB((n as f32)/1024f32),
+            Unit::KiB(n) => Unit::GiB((n as f32) / 1024f32.powi(2)),
+            Unit::MiB(n) => Unit::GiB((n as f32) / 1024f32),
             Unit::GiB(n) => Unit::GiB(n),
         }
     }
     fn mib(&self) -> Unit {
         match *self {
-            Unit::KiB(n) => Unit::MiB(n/1024),
+            Unit::KiB(n) => Unit::MiB(n / 1024),
             Unit::MiB(n) => Unit::MiB(n),
-            Unit::GiB(n) => Unit::MiB((n*1024f32) as u64 ),
+            Unit::GiB(n) => Unit::MiB((n * 1024f32) as u64),
         }
     }
     fn kib(&self) -> Unit {
         match *self {
             Unit::KiB(n) => Unit::KiB(n),
-            Unit::MiB(n) => Unit::KiB(n*1024),
-            Unit::GiB(n) => Unit::KiB((n*1024f32.powi(2)) as u64),
+            Unit::MiB(n) => Unit::KiB(n * 1024),
+            Unit::GiB(n) => Unit::KiB((n * 1024f32.powi(2)) as u64),
         }
     }
-    fn percent(&self, reference: Unit) -> f32{
-        (self.n() as f32) / (reference.n() as f32)
+    fn percent(&self, reference: Unit) -> f32 {
+        if reference.n()<1 {
+            100f32
+        } else {
+            (self.n() as f32) / (reference.n() as f32) * 100f32
+        }
     }
 }
 
-#[derive(Clone,Copy, Debug)]
+#[derive(Clone, Copy, Debug)]
 // Not following naming convention, because of naming in /proc/meminfo
 struct Memstate {
     mem_total: (u64, bool),
@@ -156,17 +166,18 @@ struct Memstate {
     swap_total: (u64, bool),
     swap_free: (u64, bool)
 }
+
 impl Memstate {
-    fn mem_total(&self) -> u64 {self.mem_total.0}
-    fn mem_free(&self) -> u64 {self.mem_free.0}
-    fn buffers(&self) -> u64 {self.buffers.0}
-    fn cached(&self) -> u64 {self.cached.0}
-    fn s_reclaimable(&self) -> u64 {self.s_reclaimable.0}
-    fn shmem(&self) -> u64 {self.shmem.0}
-    fn swap_total(&self) -> u64 {self.swap_total.0}
-    fn swap_free(&self) -> u64 {self.swap_free.0}
+    fn mem_total(&self) -> u64 { self.mem_total.0 }
+    fn mem_free(&self) -> u64 { self.mem_free.0 }
+    fn buffers(&self) -> u64 { self.buffers.0 }
+    fn cached(&self) -> u64 { self.cached.0 }
+    fn s_reclaimable(&self) -> u64 { self.s_reclaimable.0 }
+    fn shmem(&self) -> u64 { self.shmem.0 }
+    fn swap_total(&self) -> u64 { self.swap_total.0 }
+    fn swap_free(&self) -> u64 { self.swap_free.0 }
     fn new() -> Self {
-        Memstate{
+        Memstate {
             mem_total: (0, false),
             mem_free: (0, false),
             buffers: (0, false),
@@ -177,31 +188,19 @@ impl Memstate {
             swap_free: (0, false)
         }
     }
-    fn reset(& mut self) {
-        self.mem_total.1 = false;
-        self.mem_free.1 = false;
-        self.buffers.1 = false;
-        self.cached.1 = false;
-        self.s_reclaimable.1 = false;
-        self.shmem.1 = false;
-        self.swap_total.1 = false;
-        self.swap_free.1 = false;
-    }
-
     fn done(&self) -> bool {
         self.mem_total.1 &&
-        self.mem_free.1 &&
-        self.buffers.1 &&
-        self.cached.1 &&
-        self.s_reclaimable.1 &&
-        self.shmem.1 &&
-        self.swap_total.1 &&
-        self.swap_free.1
-
+            self.mem_free.1 &&
+            self.buffers.1 &&
+            self.cached.1 &&
+            self.s_reclaimable.1 &&
+            self.shmem.1 &&
+            self.swap_total.1 &&
+            self.swap_free.1
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Memory {
     name: String,
     memtype: Memtype,
@@ -210,21 +209,24 @@ pub struct Memory {
     format: (FormatTemplate, FormatTemplate),
     update_interval: Duration,
     tx_update_request: Sender<Task>,
-    values: HashMap<String, String>
+    values: HashMap<String, String>,
+    warning: (f64,f64),
+    critical: (f64,f64)
 }
 
 
 impl Memory {
     fn format_insert_values(&mut self, mem_state: Memstate) -> String {
+
         let mem_total = Unit::KiB(mem_state.mem_total());
         let mem_free = Unit::KiB(mem_state.mem_free());
         let swap_total = Unit::KiB(mem_state.swap_total());
         let swap_free = Unit::KiB(mem_state.swap_free());
-        let swap_used = Unit::KiB(mem_state.swap_total()-mem_state.swap_free());
-        let mem_total_used = Unit::KiB(mem_total.n()-mem_free.n());
+        let swap_used = Unit::KiB(mem_state.swap_total() - mem_state.swap_free());
+        let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
         let buffers = Unit::KiB(mem_state.buffers());
-        let cached = Unit::KiB(mem_state.cached());
-        let mem_used = Unit::KiB(mem_total_used.n()- (buffers.n() + cached.n()));
+        let cached = Unit::KiB(mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem());
+        let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
         let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
 
 
@@ -256,6 +258,32 @@ impl Memory {
         self.values.insert("{Cg}".to_string(), format!("{:.1}", cached.gib()));
         self.values.insert("{Cm}".to_string(), format!("{}", cached.mib()));
         self.values.insert("{Cp}".to_string(), format!("{:.2}", cached.percent(mem_total)));
+
+
+
+
+        match self.memtype {
+            Memtype::MEMORY => self.output.0.set_state(
+                match mem_used.percent(mem_total) {
+                    x if x as f64 > self.critical.0 => State::Critical,
+                    x if x as f64 > self.warning.0 => State::Warning,
+                    _ => State::Good,
+                }
+            ),
+            Memtype::SWAP => self.output.1.set_state(
+                match swap_used.percent(swap_total) {
+                    x if x as f64 > self.critical.1 => State::Critical,
+                    x if x as f64 > self.warning.1 => State::Warning,
+                    _ => State::Good,
+                }
+            )
+        };
+
+        if_debug!({
+            let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
+            writeln!(f, "Inserted values: {:?}", self.values);
+        });
+
         match self.memtype {
             Memtype::MEMORY => self.format.0.render(&self.values),
             Memtype::SWAP => self.format.1.render(&self.values)
@@ -264,6 +292,7 @@ impl Memory {
 
 
     pub fn switch(&mut self) {
+
         let old: Memtype = self.memtype.clone();
         self.memtype = match old {
             Memtype::MEMORY => Memtype::SWAP,
@@ -271,10 +300,10 @@ impl Memory {
         };
     }
     pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Memory {
-        let memtype: String = get_str_default!(config, "type", "memory");
+        let memtype: String = get_str_default!(config, "type", "swap");
         let icons: bool = get_bool_default!(config, "icons", true);
         let widget = ButtonWidget::new(theme.clone(), "memory").with_text("");
-        Memory {
+        let memory = Memory {
             name: Uuid::new_v4().simple().to_string(),
             memtype: match memtype.as_ref() {
                 "memory" => Memtype::MEMORY,
@@ -293,18 +322,22 @@ impl Memory {
                 Value::String(ref e) => {
                     FormatTemplate::from_string(e.clone()).unwrap()
                 }
-                _ => FormatTemplate::from_string("{MFm}MB/{MTm}MB({MFp}%)".to_string()).unwrap()
+                _ => FormatTemplate::from_string("{Mum}MB/{MTm}MB({Mup}%)".to_string()).unwrap()
             }, match config["format_swap"] {
                 Value::String(ref e) => {
                     FormatTemplate::from_string(e.clone()).unwrap()
                 }
-                _ => FormatTemplate::from_string("{SFm}MB/{STm}MB({SFp}%)".to_string()).unwrap()
+                _ => FormatTemplate::from_string("{SUm}MB/{STm}MB({SUp}%)".to_string()).unwrap()
             }
             ),
             update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
             tx_update_request: tx,
-            values: HashMap::<String, String>::new()
-        }
+            values: HashMap::<String, String>::new(),
+            warning: (get_f64_default!(config, "warning_mem", 80f64), get_f64_default!(config, "warning_swap", 80f64)),
+            critical: (get_f64_default!(config, "critical_mem", 95f64), get_f64_default!(config, "critical_swap", 95f64)),
+        };
+        memory
+
     }
 }
 
@@ -316,15 +349,21 @@ impl Block for Memory
     }
 
     fn update(&mut self) -> Option<Duration> {
+
         let f = File::open("/proc/meminfo").expect("/proc/meminfo does not exist. \
                                                     Are we on a linux system?");
         let f = BufReader::new(f);
 
         let mut mem_state = Memstate::new();
 
+
         for line in f.lines() {
+            if_debug!({
+            let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
+            writeln!(f, "Updated: {:?}", mem_state);
+        });
             // stop reading if all values are already present
-            if mem_state.done(){
+            if mem_state.done() {
                 break
             }
 
@@ -336,28 +375,36 @@ impl Block for Memory
 
 
             match line[0] {
-                "MemTotal:" => {mem_state.mem_total = (u64::from_str(line[1]).unwrap(), true);
+                "MemTotal:" => {
+                    mem_state.mem_total = (u64::from_str(line[1]).unwrap(), true);
                     continue;
                 }
-                "MemFree:" => {mem_state.mem_free = (u64::from_str(line[1]).unwrap(), true);
+                "MemFree:" => {
+                    mem_state.mem_free = (u64::from_str(line[1]).unwrap(), true);
                     continue;
                 }
-                "Buffers:" => {mem_state.buffers = (u64::from_str(line[1]).unwrap(), true);
+                "Buffers:" => {
+                    mem_state.buffers = (u64::from_str(line[1]).unwrap(), true);
                     continue;
                 }
-                "Cached:" => {mem_state.cached = (u64::from_str(line[1]).unwrap(), true);
+                "Cached:" => {
+                    mem_state.cached = (u64::from_str(line[1]).unwrap(), true);
                     continue;
                 }
-                "SReclaimable:" => {mem_state.s_reclaimable = (u64::from_str(line[1]).unwrap(), true);
+                "SReclaimable:" => {
+                    mem_state.s_reclaimable = (u64::from_str(line[1]).unwrap(), true);
                     continue;
                 }
-                "Shmem:" => {mem_state.shmem = (u64::from_str(line[1]).unwrap(), true);
+                "Shmem:" => {
+                    mem_state.shmem = (u64::from_str(line[1]).unwrap(), true);
                     continue;
                 }
-                "SwapTotal:" => {mem_state.swap_total = (u64::from_str(line[1]).unwrap(), true);
+                "SwapTotal:" => {
+                    mem_state.swap_total = (u64::from_str(line[1]).unwrap(), true);
                     continue;
                 }
-                "SwapFree:" => {mem_state.swap_free = (u64::from_str(line[1]).unwrap(), true);
+                "SwapFree:" => {
+                    mem_state.swap_free = (u64::from_str(line[1]).unwrap(), true);
                     continue;
                 }
                 _ => { continue; }
@@ -365,19 +412,30 @@ impl Block for Memory
         }
 
         // Now, create the string to be shown
-
         let output_text = self.format_insert_values(mem_state);
+
         match self.memtype {
             Memtype::MEMORY => self.output.0.set_text(output_text),
             Memtype::SWAP => self.output.1.set_text(output_text),
         }
+
+        if_debug!({
+            let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
+            writeln!(f, "Updated: {:?}", self);
+        });
         Some(self.update_interval.clone())
     }
 
 
     fn click(&mut self, event: &I3barEvent) {
+
+        if_debug!({
+            let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
+            writeln!(f, "Click received: {:?}", event);
+        });
+
         if let Some(ref s) = event.name {
-            if self.clickable && event.button == 1 && *s == self.name {
+            if self.clickable && event.button == 1 && *s == "memory".to_string() {
                 self.switch();
                 self.update();
                 self.tx_update_request.send(Task {
@@ -386,6 +444,8 @@ impl Block for Memory
                 }).ok();
             }
         }
+
+
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
