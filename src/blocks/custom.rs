@@ -52,7 +52,7 @@ impl Custom {
             return custom
         };
 
-        if let Some(command) = config["command"].as_str() {
+        if let Some(command) = config["content"].as_str() {
             custom.command = Some(command.to_string())
         };
 
@@ -98,7 +98,7 @@ impl Block for Custom {
         if let Some(ref on_click) = self.on_click {
             Command::new("sh")
                 .args(&["-c", on_click])
-                .spawn().ok();
+                .output().ok();
             update = true;
         }
 
