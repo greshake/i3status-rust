@@ -38,6 +38,10 @@ impl Custom {
             tx_update_request: tx,
         };
 
+        if let Some(on_click) = config["on_click"].as_str() {
+            custom.on_click = Some(on_click.to_string())
+        };
+
         if let Some(cycle) = config["cycle"].as_array() {
             custom.cycle = Some(cycle.into_iter()
                                 .map(|s| s.as_str().expect("'cycle' should be an array of strings").to_string())
@@ -45,11 +49,6 @@ impl Custom {
                                 .into_iter()
                                 .cycle()
                                 .peekable());
-
-            if let Some(on_click) = config["on_click"].as_str() {
-                custom.on_click = Some(on_click.to_string())
-            };
-
             return custom
         };
 
@@ -94,14 +93,21 @@ impl Block for Custom {
             return
         }
 
+        let mut update = false;
+
         if let Some(ref on_click) = self.on_click {
             Command::new("sh")
                 .args(&["-c", on_click])
-                .spawn().unwrap();
+                .spawn().ok();
+            update = true;
         }
 
         if let Some(ref mut cycle) = self.cycle {
             cycle.next();
+            update = true;
+        }
+
+        if update {
             self.tx_update_request.send(Task { id: self.id.clone(), update_time: Instant::now() }).ok();
         }
     }
