@@ -36,7 +36,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "memory" => boxed!(Memory::new(config, tx_update_request, theme.clone())),
         "cpu" => boxed!(Cpu::new(config, theme.clone())),
         "battery" => boxed!(Battery::new(config, theme.clone())),
-        "script" => boxed!(Script::new(config, theme.clone())),
+        "script" => boxed!(Script::new(config, tx_update_request, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);
         }
