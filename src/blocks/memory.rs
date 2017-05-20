@@ -1,4 +1,5 @@
-//! ##Memory
+//! ## Memory
+//!
 //! Creates a block displaying memory and swap usage.
 //!
 //! By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({Mp}%)" (Swap values
@@ -6,15 +7,18 @@
 //!
 //! This module keeps track of both Swap and Memory. By default, a click switches between them.
 //!
+//!
 //! **Example**
 //! ```javascript
 //! {"block": "memory",
-//!     "format_mem": "{MFm}MB/{MTm}MB({Mp}%)", "format_swap": "{SFm}MB/{STm}MB({Sp}%)",
-//!     "type": "memory", "icons": "true", "clickable": "true", "interval": "5"
+//!     "format_mem": "{Mum}MB/{MTm}MB({Mup}%)", "format_swap": "{Sum}MB/{STm}MB({Sup}%)",
+//!     "type": "memory", "icons": "true", "clickable": "true", "interval": "5",
+//!     "warning_mem": 80, "warning_swap": 80, "critical_mem": 95, "critical_swap": 95
 //! },
 //! ```
 //!
 //! **Options**
+//!
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
 //! format_mem | Format string for Memory view. All format values are described below. | No | {MFm}MB/{MTm}MB({Mp}%)
@@ -28,7 +32,8 @@
 //! critical_mem | Percentage of memory usage, where state is set to critical | No | 95.0
 //! critical_swap | Percentage of swap usage, where state is set to critical | No | 95.0
 //!
-//! ###Format string specification
+//! ### Format string specification
+//!
 //! Key | Value
 //! ----|-------
 //! {MTg} | Memory total (GiB)
