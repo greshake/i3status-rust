@@ -6,6 +6,7 @@ mod memory;
 mod cpu;
 mod music;
 mod battery;
+mod script;
 
 use self::time::*;
 use self::template::*;
@@ -14,6 +15,7 @@ use self::cpu::*;
 use self::load::*;
 use self::memory::*;
 use self::battery::*;
+use self::script::*;
 
 use super::block::Block;
 use super::scheduler::Task;
@@ -34,6 +36,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "memory" => boxed!(Memory::new(config, tx_update_request, theme.clone())),
         "cpu" => boxed!(Cpu::new(config, theme.clone())),
         "battery" => boxed!(Battery::new(config, theme.clone())),
+        "script" => boxed!(Script::new(config, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);
         }
