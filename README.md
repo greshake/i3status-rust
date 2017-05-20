@@ -112,7 +112,7 @@ Creates a block which can display the current song title and artist, in a fixed 
 Key | Values | Required | Default
 ----|--------|----------|--------
 player | Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.  | Yes | -
-max-width | Max width of the block in characters, not including the buttons | No | 21
+max_width | Max width of the block in characters, not including the buttons | No | 21
 marquee | Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max-width | No | true
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
