@@ -272,14 +272,14 @@ impl Memory {
                 match mem_used.percent(mem_total) {
                     x if x as f64 > self.critical.0 => State::Critical,
                     x if x as f64 > self.warning.0 => State::Warning,
-                    _ => State::Good,
+                    _ => State::Idle,
                 }
             ),
             Memtype::SWAP => self.output.1.set_state(
                 match swap_used.percent(swap_total) {
                     x if x as f64 > self.critical.1 => State::Critical,
                     x if x as f64 > self.warning.1 => State::Warning,
-                    _ => State::Good,
+                    _ => State::Idle,
                 }
             )
         };
