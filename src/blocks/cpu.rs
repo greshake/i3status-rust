@@ -63,8 +63,16 @@ impl Block for Cpu
                 let prev_total = self.prev_idle + self.prev_non_idle;
                 let total = idle + non_idle;
 
-                let total_delta = total - prev_total;
-                let idle_delta = idle - self.prev_idle;
+                let mut total_delta = 1;
+                let mut idle_delta = 1;
+
+                // This check is needed because the new values may be reset, for
+                // example after hibernation.
+                if prev_total < total && self.prev_idle < idle {
+                    total_delta = total - prev_total;
+                    idle_delta = idle - self.prev_idle;
+                }
+
 
                 utilization = (((total_delta - idle_delta) as f64 / total_delta as f64) * 100.) as u64;
 
