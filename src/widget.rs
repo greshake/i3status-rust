@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 use serde_json::Value;
 
 #[derive(Debug, Copy, Clone)]
