@@ -3,6 +3,6 @@
   {"block": "music", "max-width": 21, "marquee": true, "player": "spotify", "buttons": ["prev", "play", "next"]},
   {"block": "load", "interval": 1, "format": "{1m} {5m} {15m}"},
   {"block": "cpu", "interval": 1},
-  {"block": "custom", "command": "uname -s", "on_click": "echo lololol >> /tmp/i3bar-rs-click"},
+  {"block": "custom", "content": "uname -s", "on_click": "echo Click Triggered"},
   {"block": "memory", "type":"memory", "format":":{MFm}MB/{MTm}MB({Mp}%)"}
 ]
