@@ -169,7 +169,7 @@ Creates a block which displays the pending updates available on pacman.
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-interval | Update interval in seconds | No | 1
+interval | Update interval in seconds | No | 600 (10min)
 
 # How to write a Block
 
