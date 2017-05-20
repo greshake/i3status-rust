@@ -24,7 +24,8 @@ fn no_icons() -> Value {
         "bat": " BAT ",
         "bat_full": " FULL ",
         "bat_charging": " CHG ",
-        "bat_discharging": " DCG "
+        "bat_discharging": " DCG ",
+        "update": " UPD "
     })
 }
 
@@ -43,6 +44,7 @@ fn awesome_icons() -> Value {
         "bat": " \u{f242} ",
         "bat_full": " \u{f240} ",
         "bat_charging": " \u{f1e6} ",
-        "bat_discharging": " \u{f242} "
+        "bat_discharging": " \u{f242} ",
+        "update": " \u{f062} "
     })
 }

@@ -157,6 +157,20 @@ Key | Values | Required | Default
 interval | Update interval in seconds | No | 10
 device | Which BAT device in /sys/class/power_supply/ to read from. | No | 0
 
+## Pacman
+Creates a block which displays the pending updates available on pacman.
+
+**Example**
+```javascript
+{"block": "pacman", "interval": 10},
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 1
+
 # How to write a Block
 
 ## Step 1: Create the file
