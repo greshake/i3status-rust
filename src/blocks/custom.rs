@@ -14,8 +14,6 @@ use scheduler::Task;
 use serde_json::Value;
 use uuid::Uuid;
 
-const CUSTOM_BLOCK_NAME: &'static str = "custom";
-
 pub struct Custom {
     id: String,
     update_interval: Duration,
@@ -31,12 +29,13 @@ impl Custom {
         let mut custom = Custom {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: Duration::new(get_u64_default!(config, "interval", 10), 0),
-            output: ButtonWidget::new(theme, CUSTOM_BLOCK_NAME),
+            output: ButtonWidget::new(theme.clone(), ""),
             command: None,
             on_click: None,
             cycle: None,
             tx_update_request: tx,
         };
+        custom.output = ButtonWidget::new(theme, &custom.id);
 
         if let Some(on_click) = config["on_click"].as_str() {
             custom.on_click = Some(on_click.to_string())
@@ -86,7 +85,7 @@ impl Block for Custom {
 
     fn click(&mut self, event: &I3barEvent) {
         if let Some(ref name) = event.name {
-            if name != CUSTOM_BLOCK_NAME {
+            if name != &self.id {
                 return
             }
         } else {
