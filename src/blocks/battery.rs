@@ -53,6 +53,7 @@ impl Block for Battery
 
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
+        // We only need to read max_charge once, shouldn't change
         if self.max_charge == 0 {
             self.max_charge = read_file(&format!("{}charge_full", self.device_path)).parse::<u64>().unwrap();
         }
