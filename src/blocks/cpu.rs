@@ -48,17 +48,21 @@ impl Block for Cpu
 
         for line in f.lines().scan((), |_, x| x.ok()) {
             if line.starts_with("cpu ") {
-                let split: Vec<&str> = (&line).split(" ").collect();
+                let data: Vec<u64> = (&line)
+                                        .split(" ")
+                                        .collect::<Vec<&str>>()
+                                        .iter().skip(2)
+                                        .filter_map(|x| x.parse::<u64>().ok())
+                                        .collect::<Vec<_>>();
 
                 // idle = idle + iowait
-                let idle =  split[5].parse::<u64>().unwrap() +
-                            split[6].parse::<u64>().unwrap();
-                let non_idle =   split[2].parse::<u64>().unwrap() + // user
-                                split[3].parse::<u64>().unwrap() + // nice
-                                split[4].parse::<u64>().unwrap() + // system
-                                split[7].parse::<u64>().unwrap() + // irq
-                                split[8].parse::<u64>().unwrap() + // softirq
-                                split[9].parse::<u64>().unwrap();  // steal
+                let idle =  data[3] + data[4];
+                let non_idle =  data[0] + // user
+                                data[1] + // nice
+                                data[2] + // system
+                                data[5] + // irq
+                                data[6] + // softirq
+                                data[7];  // steal
 
                 let prev_total = self.prev_idle + self.prev_non_idle;
                 let total = idle + non_idle;
