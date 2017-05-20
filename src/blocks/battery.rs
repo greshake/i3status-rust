@@ -50,6 +50,9 @@ impl Block for Battery
 {
     fn update(&mut self) -> Option<Duration> {
         // TODO: Check if charge_ always contains the right values, might be energy_ depending on firmware
+
+        // TODO: Maybe use dbus to immediately signal when the battery state changes.
+
         if self.max_charge == 0 {
             self.max_charge = read_file(&format!("{}charge_full", self.device_path)).parse::<u64>().unwrap();
         }
@@ -58,11 +61,15 @@ impl Block for Battery
         let current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.) as u64;
         let current_percentage = match current_percentage {
             0 ... 100 => current_percentage,
+            // We need to cap it at 100, because the kernel may report
+            // charge_now same as charge_full_design when the battery
+            // is full, leading to >100% charge.
             _ => 100
         };
 
         let state = read_file(&format!("{}status", self.device_path));
 
+        // Don't need to display a percentage when the battery is full
         if current_percentage != 100 && state != "Full" {
             self.output.set_text(format!("{}%", current_percentage));
         } else {
