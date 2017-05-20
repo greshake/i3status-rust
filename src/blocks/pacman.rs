@@ -20,11 +20,10 @@ impl Pacman {
         {
             Pacman {
                 id: Uuid::new_v4().simple().to_string(),
-                update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-                text: TextWidget::new(theme.clone()).with_text(""),
+                update_interval: Duration::new(get_u64_default!(config, "interval", 600), 0),
+                text: TextWidget::new(theme.clone()).with_icon("update"),
             }
         }
-        
     }
 }
 
@@ -41,7 +40,6 @@ impl Block for Pacman
             ).expect("Something is wrong with the pacman output.");
         let count = output.lines().count() - 1;
         self.text.set_text(format!("{}", count));
-        self.text.set_icon("update");
         Some(self.update_interval.clone())
     }
     fn view(&self) -> Vec<&I3BarWidget> {
