@@ -162,11 +162,14 @@ Creates a block which displays the pending updates available on pacman.
 
 **Example**
 ```javascript
-{"block": "pacman"},
+{"block": "pacman", "interval": 10},
 ```
 
 **Options**
-There are no options available yet. If you need a specific option, file an issue.
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 1
 
 # How to write a Block
 
