@@ -169,6 +169,8 @@ Creates a block that display the output of custom commands
 {"block": "custom", "interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "toggle something"}
 ```
 
+Note that `content` and `cycle` are mutually exclusive.
+
 Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval in seconds | No | 10
