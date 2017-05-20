@@ -21,7 +21,7 @@ impl Script {
     pub fn new(config: Value, theme: Value) -> Script {
         Script {
             id: Uuid::new_v4().simple().to_string(),
-            file: get_str!(config, "file"),
+            file: get_str!(config, "command"),
             update_interval: Duration::new(get_u64_default!(config, "interval", 10), 0),
             output: TextWidget::new(theme),
         }
