@@ -13,8 +13,6 @@ pub struct Pacman {
     text: TextWidget,
     id: String,
     update_interval: Duration,
-
-    theme: Value,
 }
 
 impl Pacman {
@@ -24,8 +22,6 @@ impl Pacman {
                 id: Uuid::new_v4().simple().to_string(),
                 update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
                 text: TextWidget::new(theme.clone()).with_text(""),
-                tx_update_request: tx,
-                theme: theme,
             }
         }
         
