@@ -1,4 +1,4 @@
-# i3status-rust 
+# i3status-rust
 ![demo1](https://raw.githubusercontent.com/XYunknown/i3status-rust/master/img/example_bar.png)
 
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
@@ -21,7 +21,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 4. Edit your i3 config
       1. In your i3 config, put the path to the output binary as argument for 'status_command'
       2. Add the path to your config file as first argument, you can also configure theme and icon theme as arguments to i3status-rs. See i3status-rs --help for more.
-      
+
             Example of the 'bar' section in the i3 config from my personal i3 config (Requires awesome-ttf-fonts). The colors block is optional, just my taste:
 
             ```
@@ -157,6 +157,26 @@ Key | Values | Required | Default
 interval | Update interval in seconds | No | 10
 device | Which BAT device in /sys/class/power_supply/ to read from. | No | 0
 
+## Custom
+Creates a block that display the output of custom commands
+
+**Example**
+```json
+{"block": "custom", "interval": 1, "content": "date", "on_click": "echo Click triggered"}
+```
+
+```json
+{"block": "custom", "interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "toggle something"}
+```
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 10
+content | Command to execute | No | ""
+on_click | Command to execute when the button is clicked | No | Nothing
+cycle | Commands to execute and change when the button is clicked | No | ""
+
+
 # How to write a Block
 
 ## Step 1: Create the file
@@ -201,7 +221,7 @@ fn update(&mut self) -> Option<Duration> {
 }
 ```
 
-### `fn view(&self) -> Vec<&I3BarWidget>` (Required) 
+### `fn view(&self) -> Vec<&I3BarWidget>` (Required)
 
 Use this function to return the widgets that comprise the UI of your component. The music block may, for example, be comprised of a text widget and multiple buttons. Use a vec to wrap the references to your view.
 
@@ -214,7 +234,7 @@ fn view(&self) -> Vec<&I3BarWidget> {
 
 ### `fn id(&self) -> &str` (Required)
 
-You need to return a unique identifier for your block here. In the template you will already find a UUID implementation being used here. This is needed, for example, to send update requests (callbacks) from a different thread.  
+You need to return a unique identifier for your block here. In the template you will already find a UUID implementation being used here. This is needed, for example, to send update requests (callbacks) from a different thread.
 
 Example:
 ```rust
