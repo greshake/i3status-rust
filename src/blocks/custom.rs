@@ -14,9 +14,9 @@ use scheduler::Task;
 use serde_json::Value;
 use uuid::Uuid;
 
-const SCRIPT_BLOCK_NAME: &'static str = "script";
+const CUSTOM_BLOCK_NAME: &'static str = "custom";
 
-pub struct Script {
+pub struct Custom {
     id: String,
     update_interval: Duration,
     output: ButtonWidget,
@@ -26,12 +26,12 @@ pub struct Script {
     tx_update_request: Sender<Task>,
 }
 
-impl Script {
-    pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Script {
-        let mut script = Script {
+impl Custom {
+    pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Custom {
+        let mut custom = Custom {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: Duration::new(get_u64_default!(config, "interval", 10), 0),
-            output: ButtonWidget::new(theme, SCRIPT_BLOCK_NAME),
+            output: ButtonWidget::new(theme, CUSTOM_BLOCK_NAME),
             command: None,
             on_click: None,
             cycle: None,
@@ -39,7 +39,7 @@ impl Script {
         };
 
         if let Some(cycle) = config["cycle"].as_array() {
-            script.cycle = Some(cycle.into_iter()
+            custom.cycle = Some(cycle.into_iter()
                                 .map(|s| s.as_str().expect("'cycle' should be an array of strings").to_string())
                                 .collect::<Vec<_>>()
                                 .into_iter()
@@ -47,21 +47,21 @@ impl Script {
                                 .peekable());
 
             if let Some(on_click) = config["on_click"].as_str() {
-                script.on_click = Some(on_click.to_string())
+                custom.on_click = Some(on_click.to_string())
             };
 
-            return script
+            return custom
         };
 
         if let Some(command) = config["command"].as_str() {
-            script.command = Some(command.to_string())
+            custom.command = Some(command.to_string())
         };
 
-        script
+        custom
     }
 }
 
-impl Block for Script {
+impl Block for Custom {
     fn update(&mut self) -> Option<Duration> {
         let command_str = self
             .cycle
@@ -87,7 +87,7 @@ impl Block for Script {
 
     fn click(&mut self, event: &I3barEvent) {
         if let Some(ref name) = event.name {
-            if name != SCRIPT_BLOCK_NAME {
+            if name != CUSTOM_BLOCK_NAME {
                 return
             }
         } else {
