@@ -115,7 +115,7 @@ fn main() {
     }
 
     // Now we can start to run the i3bar protocol
-    print!("{{\"version\": 1, \"click_events\": true}}[");
+    print!("{{\"version\": 1, \"click_events\": true}}\n[");
 
     // We wait for click events in a seperate thread, to avoid blocking to wait for stdin
     let (tx, rx_clicks): (Sender<I3barEvent>, Receiver<I3barEvent>) = mpsc::channel();
