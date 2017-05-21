@@ -8,6 +8,7 @@ mod battery;
 mod custom;
 mod disk_info;
 mod pacman;
+mod toggle;
 
 use self::time::*;
 use self::template::*;
@@ -19,6 +20,7 @@ use self::battery::*;
 use self::custom::*;
 use self::disk_info::*;
 use self::pacman::*;
+use self::toggle::*;
 
 use super::block::Block;
 use super::scheduler::Task;
@@ -43,6 +45,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "battery" => boxed!(Battery::new(config, theme.clone())),
         "custom" => boxed!(Custom::new(config, tx_update_request, theme.clone())),
         "disk_info" => boxed!(DiskInfo::new(config, theme.clone())),
+        "toggle" => boxed!(Toggle::new(config, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);
         }

@@ -17,15 +17,17 @@ fn no_icons() -> Value {
         "music_pause": "||",
         "music_next": " > ",
         "music_prev": " < ",
-        "cogs": "",
+        "cogs": " LOAD ",
         "memory_mem": " MEM ",
         "memory_swap": " SWAP ",
-        "cpu": "",
+        "cpu": " CPU ",
         "bat": " BAT ",
         "bat_full": " FULL ",
         "bat_charging": " CHG ",
         "bat_discharging": " DCG ",
-        "update": " UPD "
+        "update": " UPD ",
+        "toggle_off": " OFF ",
+        "toggle_on": " ON "
     })
 }
 
@@ -45,6 +47,8 @@ fn awesome_icons() -> Value {
         "bat_full": " \u{f240} ",
         "bat_charging": " \u{f1e6} ",
         "bat_discharging": " \u{f242} ",
-        "update": " \u{f062} "
+        "update": " \u{f062} ",
+        "toggle_off": " \u{f204} ",
+        "toggle_on": " \u{f205} "
     })
 }

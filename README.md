@@ -205,6 +205,29 @@ command | Shell Command to execute & display | No | None
 on_click | Command to execute when the button is clicked | No | None
 cycle | Commands to execute and change when the button is clicked | No | None
 
+## Toggle
+Creates a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`).
+You also need to specify a command to determine the (initial) state of the toggle (`command_state`). When the command outputs nothing, the toggle is disabled, otherwise enabled.
+By specifying the `interval` property you can let the `command_state` be executed continuously.
+
+**Example**
+This is what I use to toggle my external monitor configuration:
+```json
+{"block": "toggle",
+"text": "4k",
+"command_state": "xrandr | grep DP1\\ connected\\ 38 | grep -v eDP1",
+"command_on": "~/.screenlayout/4kmon_default.sh",
+"command_off": "~/.screenlayout/builtin.sh",
+"interval": 5}
+```
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | Never
+command_on | Shell Command to enable the toggle | Yes | None
+command_off | Shell Command to disable the toggle | Yes | None
+command_state | Shell Command to determine toggle state. <br/>Empty output => off. Any output => on.| Yes | None
+
 
 ## Pacman
 Creates a block which displays the pending updates available on pacman.
