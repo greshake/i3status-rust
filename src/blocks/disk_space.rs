@@ -112,29 +112,26 @@ impl DiskSpace {
 
 impl Block for DiskSpace {
     fn update(&mut self) -> Option<Duration> {
+        let statvfs = Statvfs::for_path(Path::new(self.path.as_str())).unwrap();
+        let result;
+        let converted;
+
         match self.info_type {
             InfoType::Available => {
-                let statvfs = Statvfs::for_path(Path::new(self.path.as_str())).unwrap();
-                let available_bytes = statvfs.f_bavail * statvfs.f_bsize;
-
-                let available = Unit::bytes_in_unit(self.unit, available_bytes);
-                self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, available, self.unit.name()));
-
-                let state = self.compute_state(available_bytes);
-                self.disk_space.set_state(state);
+                result = statvfs.f_bavail * statvfs.f_bsize;
+                converted = Unit::bytes_in_unit(self.unit, result);
             }
             InfoType::Free => {
-                let statvfs = Statvfs::for_path(Path::new(self.path.as_str())).unwrap();
-                let free_bytes = statvfs.f_bfree * statvfs.f_bsize;
-
-                let free = Unit::bytes_in_unit(self.unit, free_bytes);
-                self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, free, self.unit.name()));
-
-                let state = self.compute_state(free_bytes);
-                self.disk_space.set_state(state);
+                result = statvfs.f_bfree * statvfs.f_bsize;
+                converted = Unit::bytes_in_unit(self.unit, result);
             }
             InfoType::Total | InfoType::Used => unimplemented!(),
         }
+
+        self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, converted, self.unit.name()));
+
+        let state = self.compute_state(result);
+        self.disk_space.set_state(state);
 
         Some(self.update_interval.clone())
     }
