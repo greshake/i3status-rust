@@ -5,6 +5,7 @@ mod memory;
 mod cpu;
 mod music;
 mod battery;
+mod custom;
 mod disk_info;
 mod pacman;
 
@@ -15,6 +16,7 @@ use self::cpu::*;
 use self::load::*;
 use self::memory::*;
 use self::battery::*;
+use self::custom::*;
 use self::disk_info::*;
 use self::pacman::*;
 
@@ -39,6 +41,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "cpu" => boxed!(Cpu::new(config, theme.clone())),
         "pacman" => boxed!(Pacman::new(config, theme.clone())),
         "battery" => boxed!(Battery::new(config, theme.clone())),
+        "custom" => boxed!(Custom::new(config, tx_update_request, theme.clone())),
         "disk_info" => boxed!(DiskInfo::new(config, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);
