@@ -118,7 +118,7 @@ impl Block for DiskSpace {
                 let available_bytes = statvfs.f_bavail * statvfs.f_bsize;
 
                 let available = Unit::bytes_in_unit(self.unit, available_bytes);
-                self.disk_space.set_text(format!("{0}: {1:.2} {2}", self.alias, available, self.unit.name()));
+                self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, available, self.unit.name()));
 
                 let state = self.compute_state(available_bytes);
                 self.disk_space.set_state(state);
@@ -128,7 +128,7 @@ impl Block for DiskSpace {
                 let free_bytes = statvfs.f_bfree * statvfs.f_bsize;
 
                 let free = Unit::bytes_in_unit(self.unit, free_bytes);
-                self.disk_space.set_text(format!("{0}: {1:.2} {2}", self.alias, free, self.unit.name()));
+                self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, free, self.unit.name()));
 
                 let state = self.compute_state(free_bytes);
                 self.disk_space.set_state(state);
