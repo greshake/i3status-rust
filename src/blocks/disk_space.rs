@@ -102,7 +102,7 @@ impl DiskSpace {
                     State::Critical
                 } else if 10. <= value && value < 20. {
                     State::Warning
-                } else { State::Good }
+                } else { State::Idle }
             }
             InfoType::Total | InfoType::Used => unimplemented!(),
         }
