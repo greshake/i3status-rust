@@ -3,6 +3,6 @@
   {"block": "music", "max_width": 21, "marquee": true, "player": "spotify", "buttons": ["prev", "play", "next"]},
   {"block": "load", "interval": 1, "format": "{1m} {5m} {15m}"},
   {"block": "cpu", "interval": 1},
-  {"block": "custom", "content": "uname -s", "on_click": "echo 'clicked' > /dev/null"},
+  {"block": "custom", "command": "uname -s", "on_click": "echo 'clicked' > /dev/null"},
   {"block": "memory", "type":"memory", "format":":{MFm}MB/{MTm}MB({Mp}%)"}
 ]
