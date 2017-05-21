@@ -263,6 +263,20 @@ unit | Unit that is used to display disk space. Options are MB, MiB, GB and GiB 
 interval | Update interval in seconds | No | 20
 
 
+## Sound
+Creates a block which displays the current Master volume (currently based on amixer output). Click to toggle mute.
+
+**Example**
+```json
+{"block": "sound", "interval": 10},
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 2
+
 # How to write a Block
 
 ## Step 1: Create the file
