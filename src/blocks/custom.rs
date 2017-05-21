@@ -51,7 +51,7 @@ impl Custom {
             return custom
         };
 
-        if let Some(command) = config["content"].as_str() {
+        if let Some(command) = config["command"].as_str() {
             custom.command = Some(command.to_string())
         };
 
