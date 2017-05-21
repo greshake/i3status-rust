@@ -6,7 +6,7 @@ mod cpu;
 mod music;
 mod battery;
 mod custom;
-mod disk_info;
+mod disk_space;
 mod pacman;
 mod toggle;
 
@@ -18,7 +18,7 @@ use self::load::*;
 use self::memory::*;
 use self::battery::*;
 use self::custom::*;
-use self::disk_info::*;
+use self::disk_space::*;
 use self::pacman::*;
 use self::toggle::*;
 
@@ -44,7 +44,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "pacman" => boxed!(Pacman::new(config, theme.clone())),
         "battery" => boxed!(Battery::new(config, theme.clone())),
         "custom" => boxed!(Custom::new(config, tx_update_request, theme.clone())),
-        "disk_info" => boxed!(DiskInfo::new(config, theme.clone())),
+        "disk_space" => boxed!(DiskSpace::new(config, theme.clone())),
         "toggle" => boxed!(Toggle::new(config, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);

@@ -4,7 +4,7 @@
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
 
 # About this project
-This is a WiP replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol availiable. We are currently looking for help in implementing more Blocks. It supports:
+This is a WiP replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol available. We are currently looking for help in implementing more Blocks. It supports:
 - flexibility through theming
 - icons (optional)
 - individual update intervals per block to reduce system calls
@@ -242,6 +242,26 @@ Creates a block which displays the pending updates available on pacman.
 Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval in seconds | No | 600 (10min)
+
+
+## Disk Space
+Creates a block which displays disk space information.
+
+**Example**
+```javascript
+{"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+path | Path to collect information from | No | /
+alias | Alias that is displayed for path | No | /
+type | Currently supported options are available and free | No | available
+unit | Unit that is used to display disk space. Options are MB, MiB, GB and GiB | No | GB
+interval | Update interval in seconds | No | 20
+
 
 # How to write a Block
 
