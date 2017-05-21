@@ -162,11 +162,11 @@ Creates a block that display the output of custom commands
 
 **Example**
 ```json
-{"block": "custom", "interval": 1, "content": "date", "on_click": "echo Click triggered"}
+{"block": "custom", "interval": 100, "command": "uname"}
 ```
 
 ```json
-{"block": "custom", "interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "toggle something"}
+{"block": "custom", "interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "<command>"}
 ```
 
 Note that `content` and `cycle` are mutually exclusive.
@@ -174,9 +174,9 @@ Note that `content` and `cycle` are mutually exclusive.
 Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval in seconds | No | 10
-content | Command to execute | No | ""
-on_click | Command to execute when the button is clicked | No | Nothing
-cycle | Commands to execute and change when the button is clicked | No | ""
+command | Shell Command to execute & display | No | None
+on_click | Command to execute when the button is clicked | No | None
+cycle | Commands to execute and change when the button is clicked | No | None
 
 
 # How to write a Block
