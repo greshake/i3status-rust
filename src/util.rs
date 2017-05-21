@@ -46,7 +46,7 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
         let first = widgets[0];
         let color = String::from(first.get_rendered()["background"].as_str().unwrap());
 
-        // clean this up
+        // TODO: clean this up
         let tmp: Value = theme.get("separator_fg").expect("separator_fg entry is missing").clone();
         let sep_fg:Value= if tmp.as_str().unwrap() == "auto".to_string() {Value::String(color.clone())} else {tmp};
 
@@ -174,9 +174,22 @@ macro_rules! get_u64_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_u64().unwrap_or($default)};
 }
 
+macro_rules! get_f64 {
+    ($config:expr, $name:expr) => {$config[$name].as_f64().expect(&format!("Required argument {} not found in block config!", $name))};
+}
+macro_rules! get_f64_default {
+    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_f64().unwrap_or($default)};
+}
+
+
+
 macro_rules! get_bool {
     ($config:expr, $name:expr) => {$config[$name].as_bool().expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_bool_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_bool().unwrap_or($default)};
+}
+
+macro_rules! if_debug {
+    ($x:block) => (if cfg!(debug_assertions) $x)
 }

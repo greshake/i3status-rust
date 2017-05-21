@@ -76,7 +76,7 @@ impl Music {
             id: id_copy,
             current_song: RotatingTextWidget::new(Duration::new(10, 0),
                                                                Duration::new(0, 500000000),
-                                                               get_u64_default!(config, "max-width", 21) as usize,
+                                                               get_u64_default!(config, "max_width", 21) as usize,
                                                                theme.clone()).with_icon("music").with_state(State::Info),
             prev: prev,
             play: play,

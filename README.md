@@ -57,47 +57,74 @@ Key | Values | Required | Default
 format | Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | %a %d/%m %R
 interval | Update interval in seconds | No | 5
 
+
 ## Memory
+
 Creates a block displaying memory and swap usage.
+
 By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({Mp}%)" (Swap values
 accordingly). That behaviour can be changed within config.json.
+
 This module keeps track of both Swap and Memory. By default, a click switches between them.
 
-**Example**
 
+**Example**
 ```javascript
 {"block": "memory",
-    "format_mem": "{MFm}MB/{MTm}MB({Mp}%)", "format_swap": "{SFm}MB/{STm}MB({Sp}%)",
-    "type": "memory", "icons": "true", "clickable": "true", "interval": "5"
+    "format_mem": "{Mum}MB/{MTm}MB({Mup}%)", "format_swap": "{Sum}MB/{STm}MB({Sup}%)",
+    "type": "memory", "icons": "true", "clickable": "true", "interval": "5",
+    "warning_mem": 80, "warning_swap": 80, "critical_mem": 95, "critical_swap": 95
 },
 ```
-
 
 **Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-format_mem | Format string for Memory view. All format values are described below. | No | `{MFm}MB/{MTm}MB({Mp}%)`
-format_swap | Format string for Swap view. | No | `{SFm}MB/{STm}MB({Sp}%)`
+format_mem | Format string for Memory view. All format values are described below. | No | {MFm}MB/{MTm}MB({Mp}%)
+format_swap | Format string for Swap view. | No | {SFm}MB/{STm}MB({Sp}%)
 type | Default view displayed on startup. Options are <br/> memory, swap | No | memory
 icons | Whether the format string should be prepended with Icons. Options are <br/> true, false | No | true
 clickable | Whether the view should switch between memory and swap on click. Options are <br/> true, false | No | true
 interval | The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only. | No | 5
+warning_mem | Percentage of memory usage, where state is set to warning | No | 80.0
+warning_swap | Percentage of swap usage, where state is set to warning | No | 80.0
+critical_mem | Percentage of memory usage, where state is set to critical | No | 95.0
+critical_swap | Percentage of swap usage, where state is set to critical | No | 95.0
 
 ### Format string specification
 
-Key | Values
+Key | Value
 ----|-------
 {MTg} | Memory total (GiB)
 {MTm} | Memory total (MiB)
+{MAg} | Available emory, including cached memory and buffers (GiB)
+{MAm} | Available memory, including cached memory and buffers (MiB)
+{MAp} | Available memory, including cached memory and buffers (%)
 {MFg} | Memory free (GiB)
 {MFm} | Memory free (MiB)
-{Mp} | Memory used (%)
+{MFp} | Memory free (%)
+{Mug} | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB)
+{Mum} | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB)
+{Mup} | Memory used, excluding cached memory and buffers; similar to htop's green bar (%)
+{MUg} | Total memory used (GiB)
+{MUm} | Total memory used (MiB)
+{MUp} | Total memory used (%)
+{Cg}  | Cached memory, similar to htop's yellow bar (GiB)
+{Cm}  | Cached memory, similar to htop's yellow bar (MiB)
+{Cp}  | Cached memory, similar to htop's yellow bar (%)
+{Bg}  | Buffers, similar to htop's blue bar (GiB)
+{Bm}  | Buffers, similar to htop's blue bar (MiB)
+{Bp}  | Buffers, similar to htop's blue bar (%)
 {STg} | Swap total (GiB)
 {STm} | Swap total (MiB)
 {SFg} | Swap free (GiB)
 {SFm} | Swap free (MiB)
-{Sp} | Swap used (%)
+{SFp} | Swap free (%)
+{SUg} | Swap used (GiB)
+{SUm} | Swap used (MiB)
+{SUp} | Swap used (%)
+
 
 ## Music
 Creates a block which can display the current song title and artist, in a fixed width marquee fashion. It uses dbus signaling to fetch new tracks, so no periodic updates are needed. It supports all Players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more. Also provides buttons for play/pause, previous and next title.
@@ -112,7 +139,7 @@ Creates a block which can display the current song title and artist, in a fixed 
 Key | Values | Required | Default
 ----|--------|----------|--------
 player | Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.  | Yes | -
-max-width | Max width of the block in characters, not including the buttons | No | 21
+max_width | Max width of the block in characters, not including the buttons | No | 21
 marquee | Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max-width | No | true
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
@@ -178,6 +205,20 @@ command | Shell Command to execute & display | No | None
 on_click | Command to execute when the button is clicked | No | None
 cycle | Commands to execute and change when the button is clicked | No | None
 
+
+## Pacman
+Creates a block which displays the pending updates available on pacman.
+
+**Example**
+```javascript
+{"block": "pacman", "interval": 10},
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 600 (10min)
 
 # How to write a Block
 
