@@ -43,12 +43,13 @@ fn run_command(var: &str) {
         
 
 fn get_update_count() -> usize {
-    let tmp_dir = get_sys_variable("TMPDIR");
+    let tmp_dir = "/tmp";
     let tmp_dir = tmp_dir.trim();
     let user = get_sys_variable("USER");
     let user = user.trim();
     let updates_db = format!("{}/checkup-db-{}", tmp_dir, user);
     
+    run_command("trap 'rm -f $CHECKUPDATES_DB/db.lck' INT TERM EXIT");
     let db_path = "/var/lib/pacman/";
     run_command("awk -F' *= *' '$1 ~ /DBPATH/ { print $1 \"=\" 2 }' /etc/pacman.conf");
     run_command(&format!("mkdir -p \"{}\"", updates_db));
