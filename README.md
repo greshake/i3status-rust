@@ -1,10 +1,10 @@
-# i3status-rust 
+# i3status-rust
 ![demo1](https://raw.githubusercontent.com/XYunknown/i3status-rust/master/img/example_bar.png)
 
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
 
 # About this project
-This is a WiP replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol availiable. We are currently looking for help in implementing more Blocks. It supports:
+This is a WiP replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol available. We are currently looking for help in implementing more Blocks. It supports:
 - flexibility through theming
 - icons (optional)
 - individual update intervals per block to reduce system calls
@@ -21,7 +21,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 4. Edit your i3 config
       1. In your i3 config, put the path to the output binary as argument for 'status_command'
       2. Add the path to your config file as first argument, you can also configure theme and icon theme as arguments to i3status-rs. See i3status-rs --help for more.
-      
+
             Example of the 'bar' section in the i3 config from my personal i3 config (Requires awesome-ttf-fonts). The colors block is optional, just my taste:
 
             ```
@@ -57,47 +57,74 @@ Key | Values | Required | Default
 format | Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | %a %d/%m %R
 interval | Update interval in seconds | No | 5
 
+
 ## Memory
+
 Creates a block displaying memory and swap usage.
+
 By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({Mp}%)" (Swap values
 accordingly). That behaviour can be changed within config.json.
+
 This module keeps track of both Swap and Memory. By default, a click switches between them.
 
-**Example**
 
+**Example**
 ```javascript
 {"block": "memory",
-    "format_mem": "{MFm}MB/{MTm}MB({Mp}%)", "format_swap": "{SFm}MB/{STm}MB({Sp}%)",
-    "type": "memory", "icons": "true", "clickable": "true", "interval": "5"
+    "format_mem": "{Mum}MB/{MTm}MB({Mup}%)", "format_swap": "{SUm}MB/{STm}MB({SUp}%)",
+    "type": "memory", "icons": "true", "clickable": "true", "interval": "5",
+    "warning_mem": 80, "warning_swap": 80, "critical_mem": 95, "critical_swap": 95
 },
 ```
-
 
 **Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-format_mem | Format string for Memory view. All format values are described below. | No | `{MFm}MB/{MTm}MB({Mp}%)`
-format_swap | Format string for Swap view. | No | `{SFm}MB/{STm}MB({Sp}%)`
+format_mem | Format string for Memory view. All format values are described below. | No | {MFm}MB/{MTm}MB({Mp}%)
+format_swap | Format string for Swap view. | No | {SFm}MB/{STm}MB({Sp}%)
 type | Default view displayed on startup. Options are <br/> memory, swap | No | memory
 icons | Whether the format string should be prepended with Icons. Options are <br/> true, false | No | true
 clickable | Whether the view should switch between memory and swap on click. Options are <br/> true, false | No | true
 interval | The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only. | No | 5
+warning_mem | Percentage of memory usage, where state is set to warning | No | 80.0
+warning_swap | Percentage of swap usage, where state is set to warning | No | 80.0
+critical_mem | Percentage of memory usage, where state is set to critical | No | 95.0
+critical_swap | Percentage of swap usage, where state is set to critical | No | 95.0
 
 ### Format string specification
 
-Key | Values
+Key | Value
 ----|-------
 {MTg} | Memory total (GiB)
 {MTm} | Memory total (MiB)
+{MAg} | Available emory, including cached memory and buffers (GiB)
+{MAm} | Available memory, including cached memory and buffers (MiB)
+{MAp} | Available memory, including cached memory and buffers (%)
 {MFg} | Memory free (GiB)
 {MFm} | Memory free (MiB)
-{Mp} | Memory used (%)
+{MFp} | Memory free (%)
+{Mug} | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB)
+{Mum} | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB)
+{Mup} | Memory used, excluding cached memory and buffers; similar to htop's green bar (%)
+{MUg} | Total memory used (GiB)
+{MUm} | Total memory used (MiB)
+{MUp} | Total memory used (%)
+{Cg}  | Cached memory, similar to htop's yellow bar (GiB)
+{Cm}  | Cached memory, similar to htop's yellow bar (MiB)
+{Cp}  | Cached memory, similar to htop's yellow bar (%)
+{Bg}  | Buffers, similar to htop's blue bar (GiB)
+{Bm}  | Buffers, similar to htop's blue bar (MiB)
+{Bp}  | Buffers, similar to htop's blue bar (%)
 {STg} | Swap total (GiB)
 {STm} | Swap total (MiB)
 {SFg} | Swap free (GiB)
 {SFm} | Swap free (MiB)
-{Sp} | Swap used (%)
+{SFp} | Swap free (%)
+{SUg} | Swap used (GiB)
+{SUm} | Swap used (MiB)
+{SUp} | Swap used (%)
+
 
 ## Music
 Creates a block which can display the current song title and artist, in a fixed width marquee fashion. It uses dbus signaling to fetch new tracks, so no periodic updates are needed. It supports all Players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more. Also provides buttons for play/pause, previous and next title.
@@ -157,16 +184,98 @@ Key | Values | Required | Default
 interval | Update interval in seconds | No | 10
 device | Which BAT device in /sys/class/power_supply/ to read from. | No | 0
 
+## Custom
+Creates a block that display the output of custom commands
+
+**Example**
+```json
+{"block": "custom", "interval": 100, "command": "uname"}
+```
+
+```json
+{"block": "custom", "interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "<command>"}
+```
+
+Note that `content` and `cycle` are mutually exclusive.
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 10
+command | Shell Command to execute & display | No | None
+on_click | Command to execute when the button is clicked | No | None
+cycle | Commands to execute and change when the button is clicked | No | None
+
+## Toggle
+Creates a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`).
+You also need to specify a command to determine the (initial) state of the toggle (`command_state`). When the command outputs nothing, the toggle is disabled, otherwise enabled.
+By specifying the `interval` property you can let the `command_state` be executed continuously.
+
+**Example**
+This is what I use to toggle my external monitor configuration:
+```json
+{"block": "toggle",
+"text": "4k",
+"command_state": "xrandr | grep DP1\\ connected\\ 38 | grep -v eDP1",
+"command_on": "~/.screenlayout/4kmon_default.sh",
+"command_off": "~/.screenlayout/builtin.sh",
+"interval": 5}
+```
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | Never
+command_on | Shell Command to enable the toggle | Yes | None
+command_off | Shell Command to disable the toggle | Yes | None
+command_state | Shell Command to determine toggle state. <br/>Empty output => off. Any output => on.| Yes | None
+
+
 ## Pacman
 Creates a block which displays the pending updates available on pacman.
 
 **Example**
 ```javascript
-{"block": "pacman"},
+{"block": "pacman", "interval": 10},
 ```
 
 **Options**
-There are no options available yet. If you need a specific option, file an issue.
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 600 (10min)
+
+
+## Disk Space
+Creates a block which displays disk space information.
+
+**Example**
+```javascript
+{"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+path | Path to collect information from | No | /
+alias | Alias that is displayed for path | No | /
+type | Currently supported options are available and free | No | available
+unit | Unit that is used to display disk space. Options are MB, MiB, GB and GiB | No | GB
+interval | Update interval in seconds | No | 20
+
+
+## Sound
+Creates a block which displays the current Master volume (currently based on amixer output). Click to toggle mute.
+
+**Example**
+```json
+{"block": "sound", "interval": 10},
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 2
 
 # How to write a Block
 
@@ -212,7 +321,7 @@ fn update(&mut self) -> Option<Duration> {
 }
 ```
 
-### `fn view(&self) -> Vec<&I3BarWidget>` (Required) 
+### `fn view(&self) -> Vec<&I3BarWidget>` (Required)
 
 Use this function to return the widgets that comprise the UI of your component. The music block may, for example, be comprised of a text widget and multiple buttons. Use a vec to wrap the references to your view.
 
@@ -225,7 +334,7 @@ fn view(&self) -> Vec<&I3BarWidget> {
 
 ### `fn id(&self) -> &str` (Required)
 
-You need to return a unique identifier for your block here. In the template you will already find a UUID implementation being used here. This is needed, for example, to send update requests (callbacks) from a different thread.  
+You need to return a unique identifier for your block here. In the template you will already find a UUID implementation being used here. This is needed, for example, to send update requests (callbacks) from a different thread.
 
 Example:
 ```rust

@@ -1,8 +1,8 @@
 [
-  {"block": "time", "interval": 60, "format": "%a %d/%m %R"},
-  {"block": "music", "max_width": 21, "marquee": true, "player": "spotify", "buttons": ["prev", "play", "next"]},
-  {"block": "load", "interval": 1, "format": "{1m} {5m} {15m}"},
+  {"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+  {"block": "memory", "type":"memory", "format_mem":"{Mup}%", "format_swap":"{SUp}%"},
   {"block": "cpu", "interval": 1},
-  {"block": "memory", "type":"memory", "format":":{MFm}MB/{MTm}MB({Mp}%)"},
-  {"block": "battery"}
+  {"block": "load", "interval": 1, "format": "{1m}"},
+  {"block": "sound"},
+  {"block": "time", "interval": 60, "format": "%a %d/%m %R"}
 ]

@@ -1,3 +1,6 @@
+// This is needed because apparently the large json! macro in the icons.rs file explodes at compile time...
+#![recursion_limit="128"]
+
 #[macro_use]
 extern crate serde_derive;
 
@@ -52,7 +55,7 @@ fn main() {
             .index(1))
         .arg(Arg::with_name("theme")
             .help("which theme to use")
-            .default_value("solarized-dark")
+            .default_value("plain")
             .short("t")
             .long("theme"))
         .arg(Arg::with_name("icons")

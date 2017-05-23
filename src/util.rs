@@ -174,9 +174,22 @@ macro_rules! get_u64_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_u64().unwrap_or($default)};
 }
 
+macro_rules! get_f64 {
+    ($config:expr, $name:expr) => {$config[$name].as_f64().expect(&format!("Required argument {} not found in block config!", $name))};
+}
+macro_rules! get_f64_default {
+    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_f64().unwrap_or($default)};
+}
+
+
+
 macro_rules! get_bool {
     ($config:expr, $name:expr) => {$config[$name].as_bool().expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_bool_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_bool().unwrap_or($default)};
+}
+
+macro_rules! if_debug {
+    ($x:block) => (if cfg!(debug_assertions) $x)
 }
