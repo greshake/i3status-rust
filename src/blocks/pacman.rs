@@ -27,18 +27,48 @@ impl Pacman {
     }
 }
 
+fn get_sys_variable(var: &str) -> String{
+    String::from_utf8(Command::new("sh")
+        .args(&["-c", &format!("echo ${}", var)])
+        .output().expect("Something is wrong with your system")
+        .stdout
+        ).expect("That variable couldn't be parsed properly")
+}
+
+fn run_command(var: &str) {
+    Command::new("sh")
+        .args(&["-c", var])
+        .spawn();
+}
+        
+
+fn get_update_count() -> usize {
+    let tmp_dir = get_sys_variable("TMPDIR");
+    let tmp_dir = tmp_dir.trim();
+    let user = get_sys_variable("USER");
+    let user = user.trim();
+    let updates_db = format!("{}/checkup-db-{}", tmp_dir, user);
+    
+    let db_path = "/var/lib/pacman/";
+    run_command("awk -F' *= *' '$1 ~ /DBPATH/ { print $1 \"=\" 2 }' /etc/pacman.conf");
+    run_command(&format!("mkdir -p \"{}\"", updates_db));
+    run_command(&format!("ln -s \"{}/local\" \"{}\" &> /dev/null", db_path, updates_db));
+    run_command(&format!("fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null &> /dev/null", updates_db));
+    String::from_utf8(
+    Command::new("sh")
+        .args(&["-c", &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db)])
+        .output().expect("There was a problem running the pacman commands")
+        .stdout).expect("there was a problem parsing the output")
+        .lines().count() - 1
+}
+            
+
+    
+
 impl Block for Pacman
 {
     fn update(&mut self) -> Option<Duration> {
-        let output = String::from_utf8(
-            Command::new("sh")
-                .arg("-c")
-                .arg("pacman -Sup 2>/dev/null")
-                .output()
-                .expect("You need to have pacman set up")
-                .stdout
-            ).expect("Something is wrong with the pacman output.");
-        let count = output.lines().count() - 1;
+        let count = get_update_count();
         self.text.set_text(format!("{}", count));
         Some(self.update_interval.clone())
     }
