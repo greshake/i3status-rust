@@ -277,6 +277,21 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval in seconds | No | 2
 
+## Temperature
+Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). Currently, you can only adjust these thresholds in source code. **Depends on lm_sensors being installed and configured!**
+
+**Example**
+```json
+{"block": "temperature", "interval": 10, "collapsed": false},
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds | No | 5
+collapsed | Collapsed by default? | No | true
+
 # How to write a Block
 
 ## Step 1: Create the file
