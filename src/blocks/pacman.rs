@@ -1,5 +1,6 @@
 use std::time::Duration;
 use std::process::Command;
+use std::env;
 
 use block::Block;
 use widgets::text::TextWidget;
@@ -27,14 +28,6 @@ impl Pacman {
     }
 }
 
-fn get_sys_variable(var: &str) -> String{
-    String::from_utf8(Command::new("sh")
-        .args(&["-c", &format!("echo ${}", var)])
-        .output().expect("Something is wrong with your system")
-        .stdout
-        ).expect("That variable couldn't be parsed properly")
-}
-
 fn run_command(var: &str) {
     Command::new("sh")
         .args(&["-c", var])
@@ -43,14 +36,25 @@ fn run_command(var: &str) {
         
 
 fn get_update_count() -> usize {
-    let tmp_dir = "/tmp";
-    let tmp_dir = tmp_dir.trim();
-    let user = get_sys_variable("USER");
-    let user = user.trim();
-    let updates_db = format!("{}/checkup-db-{}", tmp_dir, user);
+    let tmp_dir = env::temp_dir().into_os_string().into_string()
+        .expect("There's something wrong with your $TMP variable");
+    let user = match env::var_os("USER") {
+        Some(var) => var.into_string()
+            .expect("There's something wrong with your $USER"),
+        None => String::from("")
+    };
+    let updates_db = match env::var_os("CHECKUPDATES_DB") {
+        Some(var) => var.into_string()
+            .expect("There's a problem with your $CHECKUPDATES_DB"),
+        None => format!("{}/checkup-db-{}", tmp_dir, user)
+    };
     
     run_command(&format!("trap 'rm -f {}/db.lck' INT TERM EXIT", updates_db));
-    let db_path = "/var/lib/pacman/";
+    let db_path = match env::var_os("DBPath") {
+        Some(var) => var.into_string()
+            .expect("There's something wrong with your $DBPath"),
+        None => String::from("/var/lib/pacman/")
+    };
     run_command("awk -F' *= *' '$1 ~ /DBPATH/ { print $1 \"=\" 2 }' /etc/pacman.conf");
     run_command(&format!("mkdir -p \"{}\"", updates_db));
     run_command(&format!("ln -s \"{}/local\" \"{}\" &> /dev/null", db_path, updates_db));
