@@ -34,9 +34,22 @@ fn run_command(var: &str) {
         .args(&["-c", var])
         .spawn();
 }
+
+fn has_fake_root() -> bool {
+    match String::from_utf8(
+        Command::new("sh")
+            .args(&["-c", "type -P fakeroot"])
+            .output().unwrap().stdout).unwrap().trim() {
+        "" => return false,
+        _ => return true,
+    }
+}
         
 
 fn get_update_count() -> usize {
+    if !has_fake_root() {
+        return 0 as usize
+    }
     let tmp_dir = env::temp_dir().into_os_string().into_string()
         .expect("There's something wrong with your $TMP variable");
     let user = env::var_os("USER").unwrap_or(OsString::from("")).into_string()
