@@ -189,7 +189,13 @@ macro_rules! get_f64_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_f64().unwrap_or($default)};
 }
 
-
+// any uses should be replaced with eprintln! once it is on stable
+macro_rules! printeln {
+    ($fmt:expr, $($arg:tt)*) => {
+        use ::std::io::Write;
+        writeln!(&mut ::std::io::stderr(), $fmt, $($arg)*);
+    };
+}
 
 macro_rules! get_bool {
     ($config:expr, $name:expr) => {$config[$name].as_bool().expect(&format!("Required argument {} not found in block config!", $name))};
