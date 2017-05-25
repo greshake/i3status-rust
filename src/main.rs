@@ -27,9 +27,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::collections::HashMap;
 use std::time::Duration;
-use std::fs::{File};
 use std::ops::DerefMut;
-use std::io::Read;
 
 use block::Block;
 
@@ -38,6 +36,8 @@ use input::{process_events, I3barEvent};
 use scheduler::{UpdateScheduler, Task};
 use themes::get_theme;
 use icons::get_icons;
+
+use util::get_file;
 
 use self::clap::{Arg, App};
 use self::serde_json::Value;
@@ -85,10 +85,7 @@ fn main() {
     theme["icons"] = icons;
 
     // Load the config file
-    let mut config_str = String::new();
-    let mut config_file = File::open(matches.value_of("config").unwrap())
-        .expect("Unable to open config file");
-    config_file.read_to_string(&mut config_str).expect("Unable to read config file");
+    let config_str = get_file(matches.value_of("config").unwrap());
 
     // Create the blocks specified
     let config = serde_json::from_str(&config_str).expect("Config file is not valid JSON!");
