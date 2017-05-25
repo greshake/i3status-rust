@@ -1,6 +1,7 @@
 use std::time::Duration;
 use std::process::Command;
 use std::env;
+use std::ffi::OsString;
 
 use block::Block;
 use widgets::text::TextWidget;
@@ -38,23 +39,15 @@ fn run_command(var: &str) {
 fn get_update_count() -> usize {
     let tmp_dir = env::temp_dir().into_os_string().into_string()
         .expect("There's something wrong with your $TMP variable");
-    let user = match env::var_os("USER") {
-        Some(var) => var.into_string()
-            .expect("There's something wrong with your $USER"),
-        None => String::from("")
-    };
-    let updates_db = match env::var_os("CHECKUPDATES_DB") {
-        Some(var) => var.into_string()
-            .expect("There's a problem with your $CHECKUPDATES_DB"),
-        None => format!("{}/checkup-db-{}", tmp_dir, user)
-    };
+    let user = env::var_os("USER").unwrap_or(OsString::from("")).into_string()
+        .expect("There's a problem with your $USER");
+    let updates_db = env::var_os("CHECKUPDATES_DB")
+        .unwrap_or(OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
+        .into_string().expect("There's a problem with your $CHECKUPDATES_DB");
     
     run_command(&format!("trap 'rm -f {}/db.lck' INT TERM EXIT", updates_db));
-    let db_path = match env::var_os("DBPath") {
-        Some(var) => var.into_string()
-            .expect("There's something wrong with your $DBPath"),
-        None => String::from("/var/lib/pacman/")
-    };
+    let db_path = env::var_os("DBPath").unwrap_or(OsString::from("/var/lib/pacman/"))
+        .into_string().expect("There's a problem with your $DBPath");
     run_command("awk -F' *= *' '$1 ~ /DBPATH/ { print $1 \"=\" 2 }' /etc/pacman.conf");
     run_command(&format!("mkdir -p \"{}\"", updates_db));
     run_command(&format!("ln -s \"{}/local\" \"{}\" &> /dev/null", db_path, updates_db));
