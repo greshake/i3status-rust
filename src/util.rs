@@ -5,7 +5,15 @@ use regex::Regex;
 use std::prelude::v1::String;
 use std;
 use std::fmt::Display;
+use std::fs::File;
+use std::io::Read;
 
+pub fn get_file(name: &str) -> String {
+    let mut file_contents = String::new();
+    let mut file = File::open(name).expect(&format!("Unable to open {}", name));
+    file.read_to_string(&mut file_contents).expect(&format!("Unable to read {}", name));
+    file_contents
+}
 
 macro_rules! map (
     { $($key:expr => $value:expr),+ } => {
