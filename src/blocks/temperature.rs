@@ -31,7 +31,7 @@ impl Temperature {
                 id,
             }
         }
-        
+
     }
 }
 
@@ -56,7 +56,9 @@ impl Block for Temperature
                     .collect::<Vec<_>>();
 
                 if rest[1].starts_with("input") {
-                    temperatures.push(rest[2].parse::<u64>().unwrap());
+                    if let Some(t) = rest[2].parse::<u64>().ok() {
+                        temperatures.push(t);
+                    }
                 }
             }
         }
