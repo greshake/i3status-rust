@@ -2,11 +2,13 @@
 
 
 use serde_json::Value;
+use util::get_file;
 
 pub fn get_icons(name: &str) -> Value {
     match name {
         "awesome" => awesome_icons(),
-        _ => no_icons()
+        "none" => no_icons(),
+        s => ::serde_json::from_str(&get_file(s)).expect("Icon file is not valid JSON!"),
     }
 }
 

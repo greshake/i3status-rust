@@ -1,12 +1,13 @@
 #![warn(missing_docs)]
 
 use serde_json::Value;
+use util::get_file;
 
 pub fn get_theme(name: &str) -> Option<Value> {
     match name {
         "solarized-dark" => Some(solarized_dark()),
         "plain" => Some(plain()),
-        _ => None
+        s => ::serde_json::from_str(&get_file(s)).ok(),
     }
 }
 
