@@ -11,6 +11,8 @@ mod pacman;
 mod temperature;
 mod toggle;
 mod sound;
+#[cfg(feature = "weather")]
+mod weather;
 
 use self::time::*;
 use self::template::*;
@@ -25,6 +27,8 @@ use self::pacman::*;
 use self::sound::*;
 use self::toggle::*;
 use self::temperature::*;
+#[cfg(feature = "weather")]
+use self::weather::*;
 
 use super::block::Block;
 use super::scheduler::Task;
@@ -52,6 +56,8 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "toggle" => boxed!(Toggle::new(config, theme.clone())),
         "sound" => boxed!(Sound::new(config, theme.clone())),
         "temperature" => boxed!(Temperature::new(config, theme.clone())),
+        #[cfg(feature = "weather")]
+        "weather" => boxed!(Weather::new(config, tx_update_request, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);
         }
