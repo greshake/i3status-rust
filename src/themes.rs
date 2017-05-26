@@ -1,5 +1,3 @@
-#![warn(missing_docs)]
-
 use serde_json::Value;
 use util::get_file;
 

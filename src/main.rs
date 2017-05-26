@@ -21,6 +21,12 @@ pub mod scheduler;
 pub mod widget;
 pub mod widgets;
 
+#[cfg(debug_assertions)]
+extern crate cpuprofiler;
+#[cfg(debug_assertions)]
+use cpuprofiler::PROFILER;
+#[cfg(debug_assertions)]
+extern crate progress;
 
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
@@ -43,10 +49,10 @@ use self::clap::{Arg, App};
 use self::serde_json::Value;
 
 fn main() {
-    let matches = App::new("i3status-rs")
+    let mut builder = App::new("i3status-rs")
         .version("0.1")
         .author("Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
-                 https://github.com/XYunknown/i3status-rust/graphs/contributors")
+                 https://github.com/greshake/i3status-rust/graphs/contributors")
         .about("Replacement for i3status for Linux, written in Rust")
         .arg(Arg::with_name("config")
             .value_name("CONFIG_FILE")
@@ -70,8 +76,22 @@ fn main() {
             .help("Prints debug information"))
         .arg(Arg::with_name("input-check-interval")
             .help("max. delay to react to clicking, in ms")
-            .default_value("50"))
-        .get_matches();
+            .default_value("50"));
+
+    if_debug!({
+        builder = builder
+        .arg(Arg::with_name("profile")
+            .long("profile")
+            .takes_value(true)
+            .help("A block to be profiled. Analyze block.profile with pprof"))
+        .arg(Arg::with_name("profile-runs")
+            .long("profile-runs")
+            .takes_value(true)
+            .default_value("10000")
+            .help("How many times to execute update when profiling."));;
+    });
+
+    let matches = builder.get_matches();
 
     // Load all arguments
     let input_check_interval = Duration::new(0, matches.value_of("input-check-interval")
@@ -90,9 +110,27 @@ fn main() {
     // Create the blocks specified
     let config = serde_json::from_str(&config_str).expect("Config file is not valid JSON!");
 
-    let mut blocks: Vec<Box<Block>> = Vec::new();
-
     let (tx, rx_update_requests): (Sender<Task>, Receiver<Task>) = mpsc::channel();
+
+    #[cfg(debug_assertions)]
+    if_debug!({
+        if matches.value_of("profile").is_some() {
+            if let Value::Array(ref b) = config {
+            for block in b {
+                let name = block["block"].clone().as_str().expect("block name must be a string").to_owned();
+                if name == matches.value_of("profile").unwrap() {
+                    let mut block = create_block(&name, block.clone(), tx.clone(), &theme);
+                    profile(matches.value_of("profile-runs").unwrap().parse::<i32>().unwrap(), &name, block.deref_mut());
+                    return;
+                }
+            }
+            } else {
+                println!("The configs outer layer must be an array! For example: []")
+            }
+        }
+    });
+
+    let mut blocks: Vec<Box<Block>> = Vec::new();
 
     if let Value::Array(b) = config {
         for block in b {
@@ -149,4 +187,22 @@ fn main() {
             }
         }
     }
+}
+
+#[cfg(debug_assertions)]
+fn profile(iterations: i32, name: &str, block: &mut Block) {
+    let mut bar = progress::Bar::new();
+    println!("Now profiling the {0} block by executing {1} updates.\n \
+              Use pprof to analyze {0}.profile later.", name, iterations);
+
+    PROFILER.lock().unwrap().start(format!("./{}.profile", name)).unwrap();
+
+    bar.set_job_title("Profiling...");
+
+    for i in 0..iterations {
+        block.update();
+        bar.reach_percent(((i as f64 / iterations as f64) * 100.).round() as i32);
+    }
+
+    PROFILER.lock().unwrap().stop().unwrap();
 }

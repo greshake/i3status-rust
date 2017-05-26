@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 
 use std::time::Duration;
 use input::I3barEvent;
