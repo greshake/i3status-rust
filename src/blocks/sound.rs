@@ -47,7 +47,8 @@ impl Block for Sound
         if let Ok(output) = output {
             let last = (&output).lines()
                 .into_iter().last().unwrap()
-                .split_whitespace().into_iter().skip(4)
+                .split_whitespace().into_iter()
+                .filter(|x| x.starts_with('[') && !x.contains("dB"))
                 .map(|s| s.trim_matches(FILTER))
                 .collect::<Vec<&str>>();
 
