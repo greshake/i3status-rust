@@ -13,6 +13,7 @@ uuid = { version = "0.4", features = ["v4"] }
 dbus = "0.5.2"
 regex = "0.2"
 nix = "0.8.1"
+i3ipc = "0.4.2"
 # Used only in debug build mode
 # for profiling blocks
 cpuprofiler = "0.0.3"

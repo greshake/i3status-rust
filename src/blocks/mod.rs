@@ -11,6 +11,7 @@ mod pacman;
 mod temperature;
 mod toggle;
 mod sound;
+mod focused_window;
 
 use self::time::*;
 use self::template::*;
@@ -24,6 +25,7 @@ use self::disk_space::*;
 use self::pacman::*;
 use self::sound::*;
 use self::toggle::*;
+use self::focused_window::*;
 use self::temperature::*;
 
 use super::block::Block;
@@ -52,6 +54,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "toggle" => boxed!(Toggle::new(config, theme.clone())),
         "sound" => boxed!(Sound::new(config, theme.clone())),
         "temperature" => boxed!(Temperature::new(config, theme.clone())),
+        "focused_window" => boxed!(FocusedWindow::new(config, tx_update_request, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);
         }
