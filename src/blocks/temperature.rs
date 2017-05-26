@@ -31,7 +31,7 @@ impl Temperature {
                 id,
             }
         }
-        
+
     }
 }
 
@@ -45,7 +45,7 @@ impl Block for Temperature
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.description().to_owned());
 
-        let mut temperatures: Vec<u64> = Vec::new();
+        let mut temperatures: Vec<i64> = Vec::new();
 
         for line in output.lines() {
             if line.starts_with("  temp") {
@@ -56,15 +56,25 @@ impl Block for Temperature
                     .collect::<Vec<_>>();
 
                 if rest[1].starts_with("input") {
-                    temperatures.push(rest[2].parse::<u64>().unwrap());
+                    match rest[2].parse::<i64>() {
+                        Ok(t) if t > -101 && t < 151 => {
+                            temperatures.push(t);
+                        }
+                        Ok(t) => {
+                            eprintln!("Temperature ({}) outside range of -100 C to 150 C", t);
+                        }
+                        Err(e) => {
+                            eprintln!("Temperature not a i64!:\n{}", e);
+                        }
+                    }
                 }
             }
         }
 
         if !temperatures.is_empty() {
-            let max: u64 = *temperatures.iter().max().unwrap();
-            let avg: u64 = (temperatures.iter().sum::<u64>() as f64 /
-                temperatures.len() as f64).round() as u64;
+            let max: i64 = *temperatures.iter().max().unwrap();
+            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 /
+                temperatures.len() as f64).round() as i64;
 
             self.output = format!("{}° avg, {}° max", avg, max);
             if !self.collapsed {
