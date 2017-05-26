@@ -80,8 +80,9 @@ impl UpdateScheduler {
             tasks_next.push(self.schedule.pop().unwrap())
         }
 
-        if t.update_time > Instant::now() {
-            thread::sleep(t.update_time - Instant::now());
+        let now = Instant::now();
+        if t.update_time > now {
+            thread::sleep(t.update_time - now);
         }
 
         let now = Instant::now();
