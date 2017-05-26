@@ -9,6 +9,8 @@ extern crate serde_json;
 extern crate clap;
 extern crate uuid;
 extern crate regex;
+#[cfg(feature = "weather")]
+extern crate darksky;
 
 #[macro_use]
 pub mod util;

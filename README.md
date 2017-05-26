@@ -292,6 +292,26 @@ Key | Values | Required | Default
 interval | Update interval in seconds | No | 5
 collapsed | Collapsed by default? | No | true
 
+## Weather
+Weather block displays temperature information. The weather block is powered by
+darksky.net and requires an API key to function. An API key can be obtained from
+the web site.
+
+**Example**
+```json
+{"block": "weather", "latitude": 40.712784, "longitude": -74.005941, "units": "SI", "interval": 15, "token": "your-API-key-here"},
+```
+
+**Options**
+
+Key | Values | Required | Default
+--- | --- | --- | ---
+token | API key | Yes | -
+latitude | Latitude as a floating point number | Yes | -
+longitude | Longitude for the location | Yes | -
+units | SI or US | No | SI
+interval | Update interval in minutes | No | 30
+
 # How to write a Block
 
 ## Step 1: Create the file

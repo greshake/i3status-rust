@@ -10,7 +10,7 @@ pub fn get_icons(name: &str) -> Value {
 }
 
 fn no_icons() -> Value {
-    json!({
+    let mut icons = json!({
         "": "",
         "time": " ",
         "music": " ",
@@ -34,12 +34,29 @@ fn no_icons() -> Value {
         "volume_empty": " VOL ",
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
         "volume_muted": "MUTED",
-        "thermometer": " TEMP "
-    })
+        "thermometer": " TEMP ",
+    });
+
+    if cfg!(feature = "weather") {
+        let mut icons = icons.as_object_mut().unwrap();
+        let weather = [
+            ("weather_sun", " OUT "),
+            ("weather_snow", " OUT "),
+            ("weather_thunder", " OUT "),
+            ("weather_clouds", " OUT "),
+            ("weather_rain", " OUT "),
+            ("weather_default", " OUT ")
+        ];
+        for &(name, value) in weather.into_iter() {
+            icons.insert(name.to_owned(), json!(value));
+        }
+    }
+
+    icons
 }
 
 fn awesome_icons() -> Value {
-    json!({
+    let mut icons = json!({
         "": "",
         "time": " \u{f017} ",
         "music": " \u{f001} ",
@@ -64,5 +81,23 @@ fn awesome_icons() -> Value {
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
         "volume_muted": "\u{f00d}",
         "thermometer": " \u{f2c8} "
-    })
+    });
+
+    if cfg!(feature = "weather") {
+        let mut icons = icons.as_object_mut().unwrap();
+        let weather = [
+            ("weather_sun", " \u{f185} "),
+            ("weather_snow", " \u{f2dc} "),
+            ("weather_thunder", " \u{f0e7} "),
+            ("weather_clouds", " \u{f0c2} "),
+            ("weather_rain", " \u{f043} "),
+            // Cloud symbol as default
+            ("weather_default", " \u{f02c} ")
+        ];
+        for &(name, value) in weather.into_iter() {
+            icons.insert(name.to_owned(), json!(value));
+        }
+    }
+
+    icons
 }
