@@ -398,3 +398,6 @@ Edit `src/blocks/mod.rs` and add:
 3. Mapping to a name string:  `"<name>" => boxed!(<name>::new(config)),`
 
 **Congratulations** You're done. Recompile and just add the block to your config file now.
+
+## Optional Step 6: Profile your block
+Use this feature to optimize the performance of your block. Use it by compiling debug with `cargo build`, then call ` target/debug/i3status-rs <your config with your block> --profile <name of your block>`. It will output a file with profiling data from your block, analyze it with pprof.
