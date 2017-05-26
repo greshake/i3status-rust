@@ -36,7 +36,13 @@ lazy_static! {
         "backlight_partial1" => " BRIGHT ",
         "backlight_partial2" => " BRIGHT ",
         "backlight_partial3" => " BRIGHT ",
-        "backlight_full" => " BRIGHT "
+        "backlight_full" => " BRIGHT ",
+        "weather_sun" => " OUT ",
+        "weather_snow" => " OUT ",
+        "weather_thunder" => " OUT ",
+        "weather_clouds" => " OUT ",
+        "weather_rain" => " OUT ",
+        "weather_default" => " OUT "
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
@@ -74,7 +80,14 @@ lazy_static! {
         "backlight_partial1" => " \u{1f314} ",
         "backlight_partial2" => " \u{1f313} ",
         "backlight_partial3" => " \u{1f312} ",
-        "backlight_full" => " \u{1f311} "
+        "backlight_full" => " \u{1f311} ",
+        "weather_sun" => " \u{f185} ",
+        "weather_snow" => " \u{f2dc} ",
+        "weather_thunder" => " \u{f0e7} ",
+        "weather_clouds" => " \u{f0c2} ",
+        "weather_rain" => " \u{f043} ",
+        // Cloud symbol as default
+        "weather_default" => " \u{f0c2} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
