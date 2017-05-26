@@ -61,10 +61,10 @@ impl Block for Temperature
                             temperatures.push(t);
                         }
                         Ok(t) => {
-                            printeln!("Temperature ({}) outside range of -100 C to 150 C", t);
+                            eprintln!("Temperature ({}) outside range of -100 C to 150 C", t);
                         }
                         Err(e) => {
-                            printeln!("Temperature not a i64!:\n{}", e);
+                            eprintln!("Temperature not a i64!:\n{}", e);
                         }
                     }
                 }
