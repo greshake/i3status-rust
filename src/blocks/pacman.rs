@@ -5,14 +5,14 @@ use std::ffi::OsString;
 
 use block::Block;
 use widgets::text::TextWidget;
-use widget::I3BarWidget;
+use widget::{I3BarWidget, State};
 
 use serde_json::Value;
 use uuid::Uuid;
 
 
 pub struct Pacman {
-    text: TextWidget,
+    output: TextWidget,
     id: String,
     update_interval: Duration,
 }
@@ -23,7 +23,7 @@ impl Pacman {
             Pacman {
                 id: Uuid::new_v4().simple().to_string(),
                 update_interval: Duration::new(get_u64_default!(config, "interval", 600), 0),
-                text: TextWidget::new(theme.clone()).with_icon("update"),
+                output: TextWidget::new(theme.clone()).with_icon("update"),
             }
         }
     }
@@ -44,7 +44,7 @@ fn has_fake_root() -> bool {
         _ => return true,
     }
 }
-        
+
 
 fn get_update_count() -> usize {
     if !has_fake_root() {
@@ -57,7 +57,7 @@ fn get_update_count() -> usize {
     let updates_db = env::var_os("CHECKUPDATES_DB")
         .unwrap_or(OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
         .into_string().expect("There's a problem with your $CHECKUPDATES_DB");
-    
+
     run_command(&format!("trap 'rm -f {}/db.lck' INT TERM EXIT", updates_db));
     let db_path = env::var_os("DBPath").unwrap_or(OsString::from("/var/lib/pacman/"))
         .into_string().expect("There's a problem with your $DBPath");
@@ -72,19 +72,21 @@ fn get_update_count() -> usize {
         .stdout).expect("there was a problem parsing the output")
         .lines().count() - 1
 }
-            
 
-    
 
 impl Block for Pacman
 {
     fn update(&mut self) -> Option<Duration> {
         let count = get_update_count();
-        self.text.set_text(format!("{}", count));
+        self.output.set_text(format!("{}", count));
+        self.output.set_state(match count {
+            0 => State::Idle,
+            _ => State::Info
+        });
         Some(self.update_interval.clone())
     }
     fn view(&self) -> Vec<&I3BarWidget> {
-        vec![&self.text]
+        vec![&self.output]
     }
     fn id(&self) -> &str {
         &self.id
