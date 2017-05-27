@@ -72,7 +72,7 @@ impl Block for Cpu
 
                 // This check is needed because the new values may be reset, for
                 // example after hibernation.
-                if prev_total < total || self.prev_idle < idle {
+                if prev_total < total && self.prev_idle <= idle {
                     total_delta = total - prev_total;
                     idle_delta = idle - self.prev_idle;
                 }
