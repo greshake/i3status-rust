@@ -12,6 +12,7 @@ mod temperature;
 mod toggle;
 mod sound;
 mod focused_window;
+mod xrandr;
 
 use self::time::*;
 use self::template::*;
@@ -27,6 +28,7 @@ use self::sound::*;
 use self::toggle::*;
 use self::focused_window::*;
 use self::temperature::*;
+use self::xrandr::*;
 
 use super::block::Block;
 use super::scheduler::Task;
@@ -55,6 +57,7 @@ pub fn create_block(name: &str, config: Value, tx_update_request: Sender<Task>, 
         "sound" => boxed!(Sound::new(config, theme.clone())),
         "temperature" => boxed!(Temperature::new(config, theme.clone())),
         "focused_window" => boxed!(FocusedWindow::new(config, tx_update_request, theme.clone())),
+        "xrandr" => boxed!(Xrandr::new(config, theme.clone())),
         _ => {
             panic!("Not a registered block: {}", name);
         }
