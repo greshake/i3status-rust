@@ -1,15 +1,13 @@
 use std::time::Duration;
 use std::process::Command;
-use std::sync::mpsc::Sender;
 use std::str::FromStr;
 
 use util::FormatTemplate;
 
 use block::Block;
-use widgets::text::TextWidget;
+use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3barEvent;
-use scheduler::Task;
 
 use serde_json::Value;
 use uuid::Uuid;
@@ -31,7 +29,7 @@ impl Monitor {
 }
 
 pub struct Xrandr {
-    text: TextWidget,
+    text: ButtonWidget,
     id: String,
     update_interval: Duration,
     monitors: Vec<Monitor>,
@@ -56,9 +54,10 @@ macro_rules! unwrap_or_continue {
 impl Xrandr {
     pub fn new(config: Value, theme: Value) -> Xrandr {
         {
+            let id = Uuid::new_v4().simple().to_string();
             Xrandr {
-                text: TextWidget::new(theme.clone()).with_text("Template"),
-                id: Uuid::new_v4().simple().to_string(),
+                text: ButtonWidget::new(theme.clone(), &id).with_text("Template"),
+                id: id,
                 update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
                 current_idx: 0,
                 icons: get_bool_default!(config, "icons", true),
@@ -137,6 +136,36 @@ impl Xrandr {
             return Some(monitor_metrics);
         }
     }
+
+    fn display(&mut self) {
+        if let Some(m) = self.monitors.get(self.current_idx) {
+            let brightness_str = m.brightness.to_string();
+            let values = map!("{display}" => m.name.clone(),
+                                "{brightness}" => brightness_str,
+                                "{resolution}" => m.resolution.clone());
+
+            self.text.set_icon("xrandr");
+            let format_str: &str;
+            if self.resolution {
+                if self.icons {
+                    format_str = "{display} \u{f185} {brightness} \u{f096} {resolution}";
+                } else {
+                    format_str = "{display}: {brightness} [{resolution}]";
+                }
+            } else {
+                if self.icons {
+                    format_str = "{display} \u{f185}{brightness}";
+                } else {
+                    format_str = "{display}: {brightness}";
+                }
+            }
+
+            if let Ok(fmt_template) = FormatTemplate::from_string(String::from(format_str)) {
+                self.text.set_text(fmt_template.render_static_str(&values));
+            }
+        }
+    }
+
 }
 
 impl Block for Xrandr
@@ -145,32 +174,7 @@ impl Block for Xrandr
         if let Some(am) = Xrandr::get_active_monitors() {
             if let Some(mm) = Xrandr::get_monitor_metrics(&am) {
                 self.monitors = mm;
-                if let Some(m) = self.monitors.get(self.current_idx) {
-                    let brightness_str = m.brightness.to_string();
-                    let values = map!("{display}" => m.name.clone(),
-                                      "{brightness}" => brightness_str,
-                                      "{resolution}" => m.resolution.clone());
-
-                    self.text.set_icon("xrandr");
-                    let mut format_str: &str = "";
-                    if self.resolution {
-                        if self.icons {
-                            format_str = "{display} \u{f185} {brightness} \u{f096} {resolution}";
-                        } else {
-                            format_str = "{display}: {brightness} [{resolution}]";
-                        }
-                    } else {
-                        if self.icons {
-                            format_str = "{display} \u{f185}{brightness}";
-                        } else {
-                            format_str = "{display}: {brightness}";
-                        }
-                    }
-
-                    if let Ok(fmt_template) = FormatTemplate::from_string(String::from(format_str)) {
-                        self.text.set_text(fmt_template.render_static_str(&values));
-                    }
-                }
+                self.display();
             }
         }
         Some(self.update_interval.clone())
@@ -184,6 +188,7 @@ impl Block for Xrandr
         } else {
             self.current_idx = 0;
         }
+        self.display();
     }
     fn id(&self) -> &str {
         &self.id
