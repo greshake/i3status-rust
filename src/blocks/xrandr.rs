@@ -56,7 +56,7 @@ impl Xrandr {
         {
             let id = Uuid::new_v4().simple().to_string();
             Xrandr {
-                text: ButtonWidget::new(theme.clone(), &id).with_text("Template"),
+                text: ButtonWidget::new(theme.clone(), &id).with_icon("xrandr"),
                 id: id,
                 update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
                 current_idx: 0,
@@ -182,13 +182,17 @@ impl Block for Xrandr
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, _: &I3barEvent) {
-        if self.current_idx < self.monitors.len() - 1 {
-            self.current_idx += 1;
-        } else {
-            self.current_idx = 0;
+    fn click(&mut self, e: &I3barEvent) {
+        if let Some(ref name) = e.name {
+            if name.as_str() == self.id {
+                if self.current_idx < self.monitors.len() - 1 {
+                    self.current_idx += 1;
+                } else {
+                    self.current_idx = 0;
+                }
+                self.display();
+            }
         }
-        self.display();
     }
     fn id(&self) -> &str {
         &self.id
