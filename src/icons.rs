@@ -34,7 +34,8 @@ fn no_icons() -> Value {
         "volume_empty": " VOL ",
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
         "volume_muted": "MUTED",
-        "thermometer": " TEMP "
+        "thermometer": " TEMP ",
+        "xrandr": " SCREEN "
     })
 }
 
@@ -63,6 +64,7 @@ fn awesome_icons() -> Value {
         "volume_empty": " \u{f026} ",
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
         "volume_muted": "\u{f00d}",
-        "thermometer": " \u{f2c8} "
+        "thermometer": " \u{f2c8} ",
+        "xrandr": " \u{f26c} "
     })
 }
