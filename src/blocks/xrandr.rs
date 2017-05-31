@@ -37,7 +37,6 @@ pub struct Xrandr {
     resolution: bool,
     current_idx: usize,
 
-    //useful, but optional
     #[allow(dead_code)]
     theme: Value,
 }
@@ -74,21 +73,20 @@ impl Xrandr {
                 .args(&["-c", "xrandr --listactivemonitors | grep \\/"])
                 .output().expect("There was a problem collecting active xrandr monitors.")
                 .stdout)
-        .expect("There was a problem while parsing xrandr monitors.");
+            .expect("There was a problem while parsing xrandr monitors.");
         let monitors: Vec<&str> = active_montiors_cli.split('\n').collect();
         let mut active_monitors: Vec<String> = Vec::new();
         for monitor in monitors {
             if let Some((name, _)) = monitor.split_whitespace()
-                                               .collect::<Vec<&str>>()
-                                               .split_last() {
+                                            .collect::<Vec<&str>>()
+                                            .split_last() {
                 active_monitors.push(String::from(*name));
             }
         }
-        if active_monitors.is_empty() {
-            None
-        } else {
-            Some(active_monitors)
+        if !active_monitors.is_empty() {
+            return Some(active_monitors);
         }
+        None
     }
 
     fn get_monitor_metrics(monitor_names: &Vec<String>) -> Option<Vec<Monitor>> {
@@ -100,7 +98,7 @@ impl Xrandr {
                 .args(&["-c", grep_arg.as_str()])
                 .output().expect("There was a problem collecting monitor info.")
                 .stdout)
-        .expect("There was a problem while parsing monitor info.");
+            .expect("There was a problem while parsing monitor info.");
 
         let monitor_infos: Vec<&str> = monitor_info_cli.split('\n').collect();
         for i in 0..monitor_infos.len() {
@@ -115,34 +113,35 @@ impl Xrandr {
             if let Some(name) = mi_line_args.get(0) {
                 display = name.trim();
                 if let Some(brightness_raw) = b_line.split(':')
-                                                    .collect::<Vec<&str>>().get(1) {
+                                                    .collect::<Vec<&str>>()
+                                                    .get(1) {
                     brightness = (f32::from_str(brightness_raw.trim())
-                                        .expect("Unable to parse brightness string to int.") * 100.0)
-                                    .floor() as u32;
+                                      .expect("Unable to parse brightness string to int.") * 100.0)
+                                 .floor() as u32;
                 }
             }
             if let Some(res) = mi_line_args.get(2) {
                 if let Some(resolution) = res.split('+')
-                                          .collect::<Vec<&str>>().get(0) {
+                                             .collect::<Vec<&str>>()
+                                             .get(0) {
                     monitor_metrics.push(Monitor::new(display,
                                                       brightness,
                                                       resolution.trim()));
                 }
             }
         }
-        if monitor_metrics.is_empty() {
-            return None;
-        } else {
+        if !monitor_metrics.is_empty() {
             return Some(monitor_metrics);
         }
+        None
     }
 
     fn display(&mut self) {
         if let Some(m) = self.monitors.get(self.current_idx) {
             let brightness_str = m.brightness.to_string();
             let values = map!("{display}" => m.name.clone(),
-                                "{brightness}" => brightness_str,
-                                "{resolution}" => m.resolution.clone());
+                              "{brightness}" => brightness_str,
+                              "{resolution}" => m.resolution.clone());
 
             self.text.set_icon("xrandr");
             let format_str: &str;
@@ -154,7 +153,7 @@ impl Xrandr {
                 }
             } else {
                 if self.icons {
-                    format_str = "{display} \u{f185}{brightness}";
+                    format_str = "{display} \u{f185} {brightness}";
                 } else {
                     format_str = "{display}: {brightness}";
                 }
@@ -165,7 +164,6 @@ impl Xrandr {
             }
         }
     }
-
 }
 
 impl Block for Xrandr
@@ -179,9 +177,11 @@ impl Block for Xrandr
         }
         Some(self.update_interval.clone())
     }
+
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
+
     fn click(&mut self, e: &I3barEvent) {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
@@ -194,6 +194,7 @@ impl Block for Xrandr
             }
         }
     }
+
     fn id(&self) -> &str {
         &self.id
     }
