@@ -63,7 +63,7 @@ impl Block for Toggle
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, e: &I3barEvent) {
+    fn click_left(&mut self, e: &I3barEvent) {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 let cmd = match self.toggled {

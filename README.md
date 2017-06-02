@@ -389,7 +389,11 @@ fn id(&self) -> &str {
 ```
 
 
-### `fn click(&mut self, event: &I3barEvent)` (Optional)
+### `fn click_left(&mut self, event: &I3barEvent)` (Optional)
+### `fn click_center(&mut self, event: &I3barEvent)` (Optional)
+### `fn click_right(&mut self, event: &I3barEvent)` (Optional)
+### `fn scroll_up(&mut self, event: &I3barEvent)` (Optional)
+### `fn scroll_down(&mut self, event: &I3barEvent)` (Optional)
 
 Here you can react to the user clicking your block. The i3barEvent instance contains all fields to describe the click action, including mouse button and location down to the pixel. You may also update the internal state here. **Note that this event is sent to every block on every click**. *To filter, use the event.name property, which corresponds to the name property on widgets!*
 

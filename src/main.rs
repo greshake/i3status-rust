@@ -163,7 +163,14 @@ fn main() {
         // See if the user has clicked.
         while let Ok(event) = rx_clicks.try_recv() {
             for (_, block) in &mut block_map {
-                block.click(&event);
+                match event.button {
+                    1 => block.click_left(&event),
+                    2 => block.click_center(&event),
+                    3 => block.click_right(&event),
+                    4 => block.scroll_up(&event),
+                    5 => block.scroll_down(&event),
+                    _ => {}
+                }
             }
             util::print_blocks(&order, &block_map, &theme);
         }
