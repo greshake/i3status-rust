@@ -98,7 +98,7 @@ Key | Value
 ----|-------
 {MTg} | Memory total (GiB)
 {MTm} | Memory total (MiB)
-{MAg} | Available emory, including cached memory and buffers (GiB)
+{MAg} | Available memory, including cached memory and buffers (GiB)
 {MAm} | Available memory, including cached memory and buffers (MiB)
 {MAp} | Available memory, including cached memory and buffers (%)
 {MFg} | Memory free (GiB)
@@ -154,7 +154,7 @@ Creates a block which displays the system load average.
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-format | Format string.<br/> You can use the placeholders 1m 5m and 15m, eg "1min avg: {1m}" | No | {1m}
+format | Format string.<br/> You can use the placeholders 1m 5m and 15m, e.g. "1min avg: {1m}" | No | {1m}
 interval | Update interval in seconds | No | 3
 
 ## Cpu utilization
@@ -330,11 +330,11 @@ Create a block by copying the template: `cp src/blocks/template.rs src/blocks/<b
 
 ## Step 2: Populate the struct
 
-Your block needs a struct to store it's state. First, replace all the occurences of 'Template' in the file with the name of your block. Then edit the struct and add all Fields which you may need to store either options from the block config or state values (e.g. free disk space or current load). Use Widgets to display something in the i3Bar, you can have multiple Text or Button widgets on a Block. These have to be returned in the view() function and they need to be updated from the update() function. They also handle icons and theming for you.
+Your block needs a struct to store it's state. First, replace all the occurrences of 'Template' in the file with the name of your block. Then edit the struct and add all Fields which you may need to store either options from the block config or state values (e.g. free disk space or current load). Use Widgets to display something in the i3Bar, you can have multiple Text or Button widgets on a Block. These have to be returned in the view() function and they need to be updated from the update() function. They also handle icons and theming for you.
 
 ## Step 3: Implement the constructor
 
-You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros get_str/u64/bool to extract a string/ u64 and add appropriate error handeling. You can set a default value in the macro as you can see below. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID.This advanced feature can be used to reduce the number of system calls by asynchrounosly waiting for events. A usage example can be found in the Music block, which updates only when dbus signals a new song.
+You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros get_str/u64/bool to extract a string/ u64 and add appropriate error handling. You can set a default value in the macro as you can see below. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID.This advanced feature can be used to reduce the number of system calls by asynchronously waiting for events. A usage example can be found in the Music block, which updates only when dbus signals a new song.
 
 Example:
 ```rust
