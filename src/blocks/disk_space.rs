@@ -139,7 +139,7 @@ impl Block for DiskSpace {
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.disk_space]
     }
-    fn click(&mut self, _: &I3barEvent) {}
+    fn click_left(&mut self, _: &I3barEvent) {}
     fn id(&self) -> &str {
         &self.id
     }
