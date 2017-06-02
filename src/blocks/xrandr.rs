@@ -120,7 +120,10 @@ impl Xrandr {
                                  .floor() as u32;
                 }
             }
-            if let Some(res) = mi_line_args.get(2) {
+            if let Some(mut res) = mi_line_args.get(2) {
+                if res.find('+').is_none() {
+                    res = unwrap_or_continue!(mi_line_args.get(3));
+                }
                 if let Some(resolution) = res.split('+')
                                              .collect::<Vec<&str>>()
                                              .get(0) {
