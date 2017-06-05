@@ -5,7 +5,7 @@ rust:
   - nightly
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y dbus
+  - sudo apt-get install -y dbus dbus-1-dbg
 os:
   - linux
 matrix:
