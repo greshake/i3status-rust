@@ -1,3 +1,4 @@
+dist: zesty
 language: rust
 rust:
   - stable
