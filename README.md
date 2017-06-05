@@ -144,7 +144,7 @@ marquee | Bool to specify if a marquee style rotation should be used every<br/>1
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
 ## Load
-Creates a block which displays the system load average.
+Creates a block which displays the system load average. 
 
 **Example**
 ```javascript
