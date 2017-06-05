@@ -1,0 +1,13 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+os:
+  - linux
+matrix:
+  allow_failures:
+    - rust: nightly
+script:
+  - cargo build -v
+  - cargo test
