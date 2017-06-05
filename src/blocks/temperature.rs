@@ -5,7 +5,7 @@ use std::error::Error;
 use block::Block;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
-use input::I3barEvent;
+use input::I3BarEvent;
 
 use serde_json::Value;
 use uuid::Uuid;
@@ -95,7 +95,7 @@ impl Block for Temperature
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, e: &I3barEvent) {
+    fn click(&mut self, e: &I3BarEvent) {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 self.collapsed = !self.collapsed;

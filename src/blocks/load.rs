@@ -3,7 +3,7 @@ use std::time::Duration;
 use block::Block;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
-use input::I3barEvent;
+use input::I3BarEvent;
 use util::FormatTemplate;
 
 use std::io::BufReader;
@@ -81,7 +81,7 @@ impl Block for Load
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, _: &I3barEvent) {}
+    fn click(&mut self, _: &I3BarEvent) {}
     fn id(&self) -> &str {
         &self.id
     }

@@ -8,7 +8,7 @@ use std::sync::mpsc::Sender;
 use block::Block;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
-use input::I3barEvent;
+use input::I3BarEvent;
 use scheduler::Task;
 
 use serde_json::Value;
@@ -83,7 +83,7 @@ impl Block for Custom {
         vec![&self.output]
     }
 
-    fn click(&mut self, event: &I3barEvent) {
+    fn click(&mut self, event: &I3BarEvent) {
         if let Some(ref name) = event.name {
             if name != &self.id {
                 return

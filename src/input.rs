@@ -7,7 +7,7 @@ use std::sync::mpsc::Sender;
 use std::thread;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct I3barEvent {
+pub struct I3BarEvent {
     pub name: Option<String>,
     pub instance: Option<String>,
     pub x: u64,
@@ -16,7 +16,7 @@ pub struct I3barEvent {
     pub button: u64,
 }
 
-pub fn process_events(sender: Sender<I3barEvent>) {
+pub fn process_events(sender: Sender<I3BarEvent>) {
     thread::spawn(move || loop {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
@@ -24,7 +24,7 @@ pub fn process_events(sender: Sender<I3barEvent>) {
         if input.starts_with(",") {
             let input = input.split_off(1);
 
-            let e: I3barEvent = serde_json::from_str(&input).unwrap();
+            let e: I3BarEvent = serde_json::from_str(&input).unwrap();
 
             sender.send(e).unwrap();
         }

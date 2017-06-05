@@ -4,7 +4,7 @@ use std::thread;
 use std::boxed::Box;
 
 use scheduler::Task;
-use input::I3barEvent;
+use input::I3BarEvent;
 use block::Block;
 use widgets::rotatingtext::RotatingTextWidget;
 use widgets::button::ButtonWidget;
@@ -140,7 +140,7 @@ impl Block for Music
     }
 
 
-    fn click(&mut self, event: &I3barEvent) {
+    fn click(&mut self, event: &I3BarEvent) {
         if event.name.is_some() {
             let action = match &event.name.clone().unwrap() as &str {
                 "play" => "PlayPause",

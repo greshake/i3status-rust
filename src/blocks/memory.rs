@@ -74,7 +74,7 @@ use std::sync::mpsc::Sender;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 use block::Block;
-use input::I3barEvent;
+use input::I3BarEvent;
 use std::str::FromStr;
 use serde_json::Value;
 use uuid::Uuid;
@@ -432,7 +432,7 @@ impl Block for Memory
     }
 
 
-    fn click(&mut self, event: &I3barEvent) {
+    fn click(&mut self, event: &I3BarEvent) {
 
         if_debug!({
             let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();

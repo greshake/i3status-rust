@@ -1,6 +1,6 @@
 
 use std::time::Duration;
-use input::I3barEvent;
+use input::I3BarEvent;
 use widget::I3BarWidget;
 
 pub trait Block {
@@ -14,7 +14,7 @@ pub trait Block {
     #[allow(unused_variables)]
     /// This function is called on every block for every click.
     /// Filter events by using the event.name property (matches the ButtonWidget name)
-    fn click(&mut self, event: &I3barEvent) {}
+    fn click(&mut self, event: &I3BarEvent) {}
 
     /// This function returns a unique id.
     fn id(&self) -> &str;
