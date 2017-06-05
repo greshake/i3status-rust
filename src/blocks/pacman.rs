@@ -1,7 +1,10 @@
+use std::fs;
+use std::path::Path;
+use std::os::unix::fs::symlink;
 use std::time::Duration;
 use std::process::Command;
 use std::env;
-use std::ffi::OsString; 
+use std::ffi::OsString;
 
 use block::Block;
 use input::{I3BarEvent, MouseButton};
@@ -33,7 +36,10 @@ impl Pacman {
 fn run_command(var: &str) {
     Command::new("sh")
         .args(&["-c", var])
-        .spawn();
+        .spawn()
+        .expect(&format!("Failed to run command '{}'", var))
+        .wait()
+        .expect(&format!("Failed to wait for command '{}'", var));
 }
 
 fn has_fake_root() -> bool {
@@ -59,19 +65,34 @@ fn get_update_count() -> usize {
         .unwrap_or(OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
         .into_string().expect("There's a problem with your $CHECKUPDATES_DB");
 
-    run_command(&format!("trap 'rm -f {}/db.lck' INT TERM EXIT", updates_db));
-    let db_path = env::var_os("DBPath").unwrap_or(OsString::from("/var/lib/pacman/"))
-        .into_string().expect("There's a problem with your $DBPath");
-    run_command("awk -F' *= *' '$1 ~ /DBPATH/ { print $1 \"=\" 2 }' /etc/pacman.conf");
-    run_command(&format!("mkdir -p \"{}\"", updates_db));
-    run_command(&format!("ln -s \"{}/local\" \"{}\" &> /dev/null", db_path, updates_db));
+    // Determine pacman database path
+    let db_path = env::var_os("DBPath")
+        .map(Into::into)
+        .unwrap_or(Path::new("/var/lib/pacman/").to_path_buf());
+
+    // Create the determined `checkup-db` path recursively
+    fs::create_dir_all(&updates_db)
+        .expect(&format!("Failed to create checkup-db path '{}'", updates_db));
+
+    // Create symlink to local cache in `checkup-db` if required
+    let local_cache = Path::new(&updates_db).join("local");
+    if !local_cache.exists() {
+        symlink(db_path.join("local"), local_cache)
+            .expect("Failed to created required symlink");
+    }
+
+    // Update database
     run_command(&format!("fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null &> /dev/null", updates_db));
+
+    // Get update count
     String::from_utf8(
-    Command::new("sh")
-        .args(&["-c", &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db)])
-        .output().expect("There was a problem running the pacman commands")
-        .stdout).expect("there was a problem parsing the output")
-        .lines().count() - 1
+        Command::new("sh")
+            .args(&["-c", &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db)])
+            .output().expect("There was a problem running the pacman commands")
+            .stdout)
+        .expect("there was a problem parsing the output")
+        .lines()
+        .count() - 1
 }
 
 
