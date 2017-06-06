@@ -1,9 +1,10 @@
 use std::time::Duration;
 use std::process::Command;
 use std::env;
-use std::ffi::OsString;
+use std::ffi::OsString; 
 
 use block::Block;
+use input::I3barEvent;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 
@@ -90,5 +91,14 @@ impl Block for Pacman
     }
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn click(&mut self, event: &I3barEvent) {
+        if event.name
+            .as_ref()
+            .map(|s| s == "pacman")
+            .unwrap_or(false) && event.button == 1 /* left mouse button */ {
+            self.update();
+        }
     }
 }
