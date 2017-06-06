@@ -81,6 +81,7 @@ use uuid::Uuid;
 use std::fmt;
 
 
+use config::Config;
 use widgets::button::ButtonWidget;
 use widget::{State,I3BarWidget};
 use scheduler::Task;
@@ -295,10 +296,10 @@ impl Memory {
             _ => Memtype::MEMORY
         };
     }
-    pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Memory {
-        let memtype: String = get_str_default!(config, "type", "swap");
-        let icons: bool = get_bool_default!(config, "icons", true);
-        let widget = ButtonWidget::new(theme.clone(), "memory").with_text("");
+    pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> Memory {
+        let memtype: String = get_str_default!(block_config, "type", "swap");
+        let icons: bool = get_bool_default!(block_config, "icons", true);
+        let widget = ButtonWidget::new(config, "memory").with_text("");
         let memory = Memory {
             name: Uuid::new_v4().simple().to_string(),
             memtype: match memtype.as_ref() {
@@ -313,24 +314,24 @@ impl Memory {
                 (widget.clone(), widget)
             }
             ,
-            clickable: get_bool_default!(config, "clickable", true),
-            format: (match config["format_mem"] {
+            clickable: get_bool_default!(block_config, "clickable", true),
+            format: (match block_config["format_mem"] {
                 Value::String(ref e) => {
                     FormatTemplate::from_string(e.clone()).unwrap()
                 }
                 _ => FormatTemplate::from_string("{Mum}MB/{MTm}MB({Mup}%)".to_string()).unwrap()
-            }, match config["format_swap"] {
+            }, match block_config["format_swap"] {
                 Value::String(ref e) => {
                     FormatTemplate::from_string(e.clone()).unwrap()
                 }
                 _ => FormatTemplate::from_string("{SUm}MB/{STm}MB({SUp}%)".to_string()).unwrap()
             }
             ),
-            update_interval: duration_from_f64!(get_f64_default!(config, "interval", 5f64)),
+            update_interval: duration_from_f64!(get_f64_default!(block_config, "interval", 5f64)),
             tx_update_request: tx,
             values: HashMap::<String, String>::new(),
-            warning: (get_f64_default!(config, "warning_mem", 80f64), get_f64_default!(config, "warning_swap", 80f64)),
-            critical: (get_f64_default!(config, "critical_mem", 95f64), get_f64_default!(config, "critical_swap", 95f64)),
+            warning: (get_f64_default!(block_config, "warning_mem", 80f64), get_f64_default!(block_config, "warning_swap", 80f64)),
+            critical: (get_f64_default!(block_config, "critical_mem", 95f64), get_f64_default!(block_config, "critical_swap", 95f64)),
         };
         memory
 

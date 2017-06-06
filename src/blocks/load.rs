@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use block::Block;
+use config::Config;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -22,8 +23,8 @@ pub struct Load {
 }
 
 impl Load {
-    pub fn new(config: Value, theme: Value) -> Load {
-        let text = TextWidget::new(theme.clone()).with_icon("cogs").with_state(State::Info);
+    pub fn new(block_config: Value, config: Config) -> Load {
+        let text = TextWidget::new(config).with_icon("cogs").with_state(State::Info);
 
         let f = File::open("/proc/cpuinfo").expect("Your system doesn't support /proc/cpuinfo");
         let f = BufReader::new(f);
@@ -42,8 +43,8 @@ impl Load {
         Load {
             id: Uuid::new_v4().simple().to_string(),
             logical_cores: logical_cores,
-            update_interval: Duration::new(get_u64_default!(config, "interval", 3), 0),
-            format: FormatTemplate::from_string(get_str_default!(config, "format", "{1m}")).expect("Invalid format specified for load"),
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 3), 0),
+            format: FormatTemplate::from_string(get_str_default!(block_config, "format", "{1m}")).expect("Invalid format specified for load"),
             text: text
         }
     }

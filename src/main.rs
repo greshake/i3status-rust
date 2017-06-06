@@ -2,6 +2,8 @@
 #![recursion_limit="128"]
 
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate serde_derive;
 extern crate serde;
 
@@ -15,6 +17,7 @@ extern crate regex;
 pub mod util;
 pub mod block;
 pub mod blocks;
+pub mod config;
 pub mod input;
 pub mod icons;
 pub mod themes;
@@ -39,15 +42,13 @@ use std::ops::DerefMut;
 use block::Block;
 
 use blocks::create_block;
+use config::Config;
 use input::{process_events, I3BarEvent};
 use scheduler::{UpdateScheduler, Task};
-use themes::get_theme;
-use icons::get_icons;
 
-use util::get_file;
+use util::deserialize_file;
 
 use self::clap::{Arg, App};
-use self::serde_json::Value;
 
 fn main() {
     let mut builder = App::new("i3status-rs")
@@ -60,16 +61,6 @@ fn main() {
             .help("sets a json config file")
             .required(true)
             .index(1))
-        .arg(Arg::with_name("theme")
-            .help("which theme to use, can be a builtin theme or file.\nBuiltin themes: solarized-dark, plain")
-            .default_value("plain")
-            .short("t")
-            .long("theme"))
-        .arg(Arg::with_name("icons")
-            .help("which icons to use, can be a builtin set or file.\nBuiltin sets: awesome, none (textual)")
-            .default_value("none")
-            .short("i")
-            .long("icons"))
         .arg(Arg::with_name("debug")
             .short("d")
             .long("debug")
@@ -94,53 +85,33 @@ fn main() {
 
     let matches = builder.get_matches();
 
+    let config: Config = deserialize_file(matches.value_of("config").unwrap());
+
     // Load all arguments
     let input_check_interval = Duration::new(0, matches.value_of("input-check-interval")
                                                 .unwrap()
                                                 .parse::<u32>()
                                                 .expect("Not a valid integer as interval") * 1000000);
 
-    // Merge the selected icons and color theme
-    let icons = get_icons(matches.value_of("icons").unwrap());
-    let mut theme = get_theme(matches.value_of("theme").unwrap()).expect("Not a valid theme!");
-    theme["icons"] = icons;
-
-    // Load the config file
-    let config_str = get_file(matches.value_of("config").unwrap());
-
-    // Create the blocks specified
-    let config = serde_json::from_str(&config_str).expect("Config file is not valid JSON!");
-
     let (tx, rx_update_requests): (Sender<Task>, Receiver<Task>) = mpsc::channel();
 
     #[cfg(debug_assertions)]
     if_debug!({
         if matches.value_of("profile").is_some() {
-            if let Value::Array(ref b) = config {
-            for block in b {
-                let name = block["block"].clone().as_str().expect("block name must be a string").to_owned();
-                if name == matches.value_of("profile").unwrap() {
-                    let mut block = create_block(&name, block.clone(), tx.clone(), &theme);
-                    profile(matches.value_of("profile-runs").unwrap().parse::<i32>().unwrap(), &name, block.deref_mut());
+            for (block_name, block_config) in &config.blocks {
+                if block_name == matches.value_of("profile").unwrap() {
+                    let mut block = create_block(&block_name, block_config.clone(), config.clone(), tx.clone());
+                    profile(matches.value_of("profile-runs").unwrap().parse::<i32>().unwrap(), &block_name, block.deref_mut());
                     return;
                 }
-            }
-            } else {
-                println!("The configs outer layer must be an array! For example: []")
             }
         }
     });
 
     let mut blocks: Vec<Box<Block>> = Vec::new();
 
-    if let Value::Array(b) = config {
-        for block in b {
-            let name = block["block"].clone();
-            blocks.push(create_block(name.as_str().expect("block name must be a string"),
-                                           block, tx.clone(), &theme))
-        }
-    } else {
-        println!("The configs outer layer must be an array! For example: []")
+    for (block_name, block_config) in &config.blocks {
+        blocks.push(create_block(block_name, block_config.clone(), config.clone(), tx.clone()))
     }
 
     let order = blocks.iter().map(|x| String::from(x.id())).collect();
@@ -166,7 +137,7 @@ fn main() {
             for (_, block) in &mut block_map {
                 block.click(&event);
             }
-            util::print_blocks(&order, &block_map, &theme);
+            util::print_blocks(&order, &block_map, &config);
         }
 
         // Enqueue pending update requests
@@ -182,7 +153,7 @@ fn main() {
                 scheduler.do_scheduled_updates(&mut block_map);
 
                 // redraw the blocks, state changed
-                util::print_blocks(&order, &block_map, &theme);
+                util::print_blocks(&order, &block_map, &config);
             } else {
                 thread::sleep(input_check_interval)
             }

@@ -1,3 +1,4 @@
+use config::Config;
 use std::time::{Duration, Instant};
 use widget::{State, I3BarWidget};
 use serde_json::Value;
@@ -14,13 +15,13 @@ pub struct RotatingTextWidget {
     state: State,
     rendered: Value,
     cached_output: Option<String>,
-    theme: Value,
+    config: Config,
     pub rotating: bool
 }
 
 
 impl RotatingTextWidget {
-    pub fn new(interval: Duration, speed: Duration, width: usize, theme: Value) -> RotatingTextWidget {
+    pub fn new(interval: Duration, speed: Duration, width: usize, config: Config) -> RotatingTextWidget {
         RotatingTextWidget {
             rotation_pos: 0,
             width: width,
@@ -38,13 +39,13 @@ impl RotatingTextWidget {
                 "color": "#000000"
             }),
             cached_output: None,
-            theme: theme,
+            config: config,
             rotating: false,
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
+        self.icon = self.config.icons.get(name).cloned();
         self.update();
         self
     }
@@ -73,7 +74,7 @@ impl RotatingTextWidget {
     }
 
     pub fn set_icon(&mut self, name: &str) {
-        self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
+        self.icon = self.config.icons.get(name).cloned();
         self.update();
     }
 
@@ -101,14 +102,14 @@ impl RotatingTextWidget {
                 avail.push_str(&self.content.chars().take(missing - 1).collect::<String>());
                 avail
             }
-            
+
         } else {
             self.content.clone()
         }
     }
 
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys();
+        let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
         self.rendered = json!({
             "full_text": format!("{}{} ",
@@ -118,8 +119,8 @@ impl RotatingTextWidget {
             "separator_block_width": 0,
             "min_width": if self.content == "" {0} else {240},
             "align": "left",
-            "background": self.theme[key_bg],
-            "color": self.theme[key_fg]
+            "background": key_bg,
+            "color": key_fg
         });
 
         self.cached_output = Some(self.rendered.to_string());

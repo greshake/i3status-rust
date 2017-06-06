@@ -7,6 +7,7 @@ use std::env;
 use std::ffi::OsString;
 
 use block::Block;
+use config::Config;
 use input::{I3BarEvent, MouseButton};
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
@@ -22,13 +23,11 @@ pub struct Pacman {
 }
 
 impl Pacman {
-    pub fn new(config: Value, theme: Value) -> Pacman {
-        {
-            Pacman {
-                id: Uuid::new_v4().simple().to_string(),
-                update_interval: Duration::new(get_u64_default!(config, "interval", 600), 0),
-                output: TextWidget::new(theme.clone()).with_icon("update"),
-            }
+    pub fn new(block_config: Value, config: Config) -> Pacman {
+        Pacman {
+            id: Uuid::new_v4().simple().to_string(),
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 600), 0),
+            output: TextWidget::new(config).with_icon("update"),
         }
     }
 }

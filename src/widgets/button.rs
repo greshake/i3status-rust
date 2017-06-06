@@ -1,3 +1,4 @@
+use config::Config;
 use widget::State;
 use serde_json::Value;
 use super::super::widget::I3BarWidget;
@@ -10,11 +11,11 @@ pub struct ButtonWidget {
     id: String,
     rendered: Value,
     cached_output: Option<String>,
-    theme: Value,
+    config: Config,
 }
 
 impl ButtonWidget {
-    pub fn new(theme: Value, id: &str) -> Self {
+    pub fn new(config: Config, id: &str) -> Self {
         ButtonWidget {
             content: None,
             icon: None,
@@ -27,13 +28,13 @@ impl ButtonWidget {
                 "background": "#000000",
                 "color": "#000000"
             }),
-            theme: theme,
+            config: config,
             cached_output: None,
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
+        self.icon = self.config.icons.get(name).cloned();
         self.update();
         self
     }
@@ -56,7 +57,7 @@ impl ButtonWidget {
     }
 
     pub fn set_icon(&mut self, name: &str) {
-        self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
+        self.icon = self.config.icons.get(name).cloned();
         self.update();
     }
 
@@ -66,7 +67,7 @@ impl ButtonWidget {
     }
 
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys();
+        let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
         self.rendered = json!({
             "full_text": format!("{}{} ",
@@ -75,8 +76,8 @@ impl ButtonWidget {
             "separator": false,
             "name": self.id.clone(),
             "separator_block_width": 0,
-            "background": self.theme[key_bg],
-            "color": self.theme[key_fg]
+            "background": key_bg,
+            "color": key_fg
         });
 
         self.cached_output = Some(self.rendered.to_string());

@@ -3,6 +3,7 @@ extern crate chrono;
 use std::time::Duration;
 
 use block::Block;
+use config::Config;
 use self::chrono::offset::local::Local;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget};
@@ -18,12 +19,12 @@ pub struct Time {
 }
 
 impl Time {
-    pub fn new(config: Value, theme: Value) -> Time {
+    pub fn new(block_config: Value, config: Config) -> Time {
         Time {
             id: Uuid::new_v4().simple().to_string(),
-            format: get_str_default!(config, "format", "%a %d/%m %R"),
-            time: TextWidget::new(theme).with_text("").with_icon("time"),
-            update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
+            format: get_str_default!(block_config, "format", "%a %d/%m %R"),
+            time: TextWidget::new(config).with_text("").with_icon("time"),
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 5), 0),
         }
     }
 }

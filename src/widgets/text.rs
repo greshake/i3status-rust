@@ -1,3 +1,4 @@
+use config::Config;
 use widget::State;
 use serde_json::Value;
 use super::super::widget::I3BarWidget;
@@ -9,11 +10,11 @@ pub struct TextWidget {
     state: State,
     rendered: Value,
     cached_output: Option<String>,
-    theme: Value,
+    config: Config,
 }
 
 impl TextWidget {
-    pub fn new(theme: Value) -> Self {
+    pub fn new(config: Config) -> Self {
         TextWidget {
             content: None,
             icon: None,
@@ -25,13 +26,13 @@ impl TextWidget {
                 "background": "#000000",
                 "color": "#000000"
             }),
-            theme: theme,
+            config: config,
             cached_output: None
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
+        self.icon = self.config.icons.get(name).cloned();
         self.update();
         self
     }
@@ -54,7 +55,7 @@ impl TextWidget {
     }
 
     pub fn set_icon(&mut self, name: &str) {
-        self.icon = Some(String::from(self.theme["icons"][name].as_str().expect("Wrong icon identifier!")));
+        self.icon = self.config.icons.get(name).cloned();
         self.update();
     }
 
@@ -64,7 +65,7 @@ impl TextWidget {
     }
 
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys();
+        let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
         self.rendered = json!({
             "full_text": format!("{}{} ",
@@ -72,8 +73,8 @@ impl TextWidget {
                                 self.content.clone().unwrap_or(String::from(""))),
             "separator": false,
             "separator_block_width": 0,
-            "background": self.theme[key_bg],
-            "color": self.theme[key_fg]
+            "background": key_bg.to_owned(),
+            "color": key_fg.to_owned()
         });
 
         self.cached_output = Some(self.rendered.to_string());

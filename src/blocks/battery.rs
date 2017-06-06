@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use block::Block;
+use config::Config;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -20,17 +21,14 @@ pub struct Battery {
 }
 
 impl Battery {
-    pub fn new(config: Value, theme: Value) -> Battery {
-        {
-            Battery {
-                id: Uuid::new_v4().simple().to_string(),
-                max_charge: 0,
-                update_interval: Duration::new(get_u64_default!(config, "interval", 10), 0),
-                output: TextWidget::new(theme),
-                device_path: format!("/sys/class/power_supply/BAT{}/", get_u64_default!(config, "device", 0)),
-            }
+    pub fn new(block_config: Value, config: Config) -> Battery {
+        Battery {
+            id: Uuid::new_v4().simple().to_string(),
+            max_charge: 0,
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 10), 0),
+            output: TextWidget::new(config),
+            device_path: format!("/sys/class/power_supply/BAT{}/", get_u64_default!(block_config, "device", 0)),
         }
-        
     }
 }
 

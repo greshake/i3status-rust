@@ -1,4 +1,13 @@
 {
+    "blocks": {
+         "disk_space": {"path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+         "memory": {"type":"memory", "format_mem":"{Mup}%", "format_swap":"{SUp}%"},
+         "cpu": {"interval": 1},
+         "load": {"interval": 1, "format": "{1m}"},
+         "time": {"interval": 60, "format": "%a %d/%m %R"}
+    },
+    "theme": "solarized-dark",
+    "icons": {
         "": "",
         "time": " \uf017 ",
         "music": " \uf001 ",
@@ -22,4 +31,5 @@
         "volume_empty": " \uf026 ",
         "volume_muted": "\uf00d",
         "thermometer": " \uf2c8 "
+    }
 }
