@@ -27,11 +27,13 @@ impl Monitor {
         }
     }
 
-    fn set_brightness(&self, brightness: f32) {
+    fn set_brightness(&mut self, step: i32) {
         Command::new("sh")
             .args(&["-c", format!("xrandr --output {} --brightness {}",
                                   self.name,
-                                  brightness).as_str()]);
+                                  (self.brightness as i32 + step) as f32 / 100.0).as_str()])
+            .spawn().expect("Failed to set xrandr output.");
+        self.brightness = (self.brightness as i32 + step) as u32;
     }
 }
 
@@ -202,7 +204,7 @@ impl Block for Xrandr
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 match e.button {
-                    MouseButton::LeftClick => {
+                    MouseButton::Left => {
                         if self.current_idx < self.monitors.len() - 1 {
                             self.current_idx += 1;
                         } else {
@@ -210,16 +212,16 @@ impl Block for Xrandr
                         }
                     },
                     MouseButton::WheelUp => {
-                        if let Some(monitor) = self.monitors.get(self.current_idx) {
+                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
                             if monitor.brightness <= (100 - self.step_width) {
-                                monitor.set_brightness((monitor.brightness + self.step_width) as f32 / 100.0);
+                                monitor.set_brightness(self.step_width as i32);
                             }
                         }
                     },
                     MouseButton::WheelDown => {
-                        if let Some(monitor) = self.monitors.get(self.current_idx) {
+                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
                             if monitor.brightness >= self.step_width {
-                                monitor.set_brightness((monitor.brightness - self.step_width) as f32 / 100.0);
+                                monitor.set_brightness(- (self.step_width as i32));
                             }
                         }
                     }
