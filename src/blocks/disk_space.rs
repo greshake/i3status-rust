@@ -2,7 +2,7 @@ use std::time::Duration;
 use std::path::Path;
 
 use block::Block;
-use input::I3barEvent;
+use input::I3BarEvent;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 
@@ -139,7 +139,7 @@ impl Block for DiskSpace {
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.disk_space]
     }
-    fn click(&mut self, _: &I3barEvent) {}
+    fn click(&mut self, _: &I3BarEvent) {}
     fn id(&self) -> &str {
         &self.id
     }

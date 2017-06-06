@@ -5,9 +5,9 @@ authors = ["XYunknown <developement@kai-greshake.de>"]
 
 [dependencies]
 chrono = "0.2"
-serde = "0.9"
-serde_derive = "0.9"
-serde_json = "0.9"
+serde = "^1.0"
+serde_derive = "^1.0"
+serde_json = "^1.0"
 clap = "2.23.2"
 uuid = { version = "0.4", features = ["v4"] }
 dbus = "0.5.2"

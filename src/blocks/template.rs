@@ -4,7 +4,7 @@ use std::sync::mpsc::Sender;
 use block::Block;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
-use input::I3barEvent;
+use input::I3BarEvent;
 use scheduler::Task;
 
 use serde_json::Value;
@@ -47,7 +47,7 @@ impl Block for Template
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, _: &I3barEvent) {}
+    fn click(&mut self, _: &I3BarEvent) {}
     fn id(&self) -> &str {
         &self.id
     }

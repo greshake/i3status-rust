@@ -3,6 +3,7 @@
 
 #[macro_use]
 extern crate serde_derive;
+extern crate serde;
 
 #[macro_use]
 extern crate serde_json;
@@ -38,7 +39,7 @@ use std::ops::DerefMut;
 use block::Block;
 
 use blocks::create_block;
-use input::{process_events, I3barEvent};
+use input::{process_events, I3BarEvent};
 use scheduler::{UpdateScheduler, Task};
 use themes::get_theme;
 use icons::get_icons;
@@ -156,7 +157,7 @@ fn main() {
     print!("{{\"version\": 1, \"click_events\": true}}\n[");
 
     // We wait for click events in a seperate thread, to avoid blocking to wait for stdin
-    let (tx, rx_clicks): (Sender<I3barEvent>, Receiver<I3barEvent>) = mpsc::channel();
+    let (tx, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = mpsc::channel();
     process_events(tx);
 
     loop {

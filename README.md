@@ -11,7 +11,7 @@ This is a WiP replacement for i3status, aiming to provide the most feature-compl
 - click actions
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
-# Requirements
+# Requirements 
 i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
 
 # How to use it
@@ -389,7 +389,7 @@ fn id(&self) -> &str {
 ```
 
 
-### `fn click(&mut self, event: &I3barEvent)` (Optional)
+### `fn click(&mut self, event: &I3BarEvent)` (Optional)
 
 Here you can react to the user clicking your block. The i3barEvent instance contains all fields to describe the click action, including mouse button and location down to the pixel. You may also update the internal state here. **Note that this event is sent to every block on every click**. *To filter, use the event.name property, which corresponds to the name property on widgets!*
 
