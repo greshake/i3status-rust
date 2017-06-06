@@ -4,9 +4,12 @@ rust:
   - stable
   - beta
   - nightly
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y dbus=1.6.18 dbus-1-dbg=1.6.18 libdbus-1-dev=1.6.18
+addons:
+  apt:
+    sources:
+      - chef-current-trusty
+    packages:
+      - libdbus-1-dev=1.6.18
 os:
   - linux
 matrix:
