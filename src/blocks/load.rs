@@ -81,7 +81,7 @@ impl Block for Load
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, _: &I3barEvent) {}
+    fn click_left(&mut self, _: &I3barEvent) {}
     fn id(&self) -> &str {
         &self.id
     }

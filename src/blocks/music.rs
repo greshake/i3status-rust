@@ -140,7 +140,7 @@ impl Block for Music
     }
 
 
-    fn click(&mut self, event: &I3barEvent) {
+    fn click_left(&mut self, event: &I3barEvent) {
         if event.name.is_some() {
             let action = match &event.name.clone().unwrap() as &str {
                 "play" => "PlayPause",
