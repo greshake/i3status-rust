@@ -87,6 +87,7 @@ impl Block for Sound
     }
     fn click(&mut self, e: &I3BarEvent) {
         if let Some(ref name) = e.name {
+            // TODO: Change volume by scrolling
             if name.as_str() == self.id {
                 Command::new("amixer")
                 .args(&["set", "Master", "toggle"])

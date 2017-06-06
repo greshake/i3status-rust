@@ -9,11 +9,14 @@ use std::thread;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MouseButton {
-    LeftClick,
-    RightClick,
-    MiddleClick,
+    Left,
+    Middle,
+    Right,
     WheelUp,
     WheelDown,
+    Forward, // On my mouse, these map to forward and back
+    Back,
+    Unknown
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -60,13 +63,16 @@ where
         where
             E: de::Error
         {
+            eprintln!("{}", value);
             Ok(match value {
-                   1 => MouseButton::LeftClick,
-                   2 => MouseButton::RightClick,
-                   3 => MouseButton::MiddleClick,
+                   1 => MouseButton::Left,
+                   2 => MouseButton::Middle,
+                   3 => MouseButton::Right,
                    4 => MouseButton::WheelUp,
                    5 => MouseButton::WheelDown,
-                   _ => return Err(de::Error::custom("unknown mouse button")),
+                   9 => MouseButton::Forward,
+                   8 => MouseButton::Back,
+                   _ => MouseButton::Unknown,
                })
         }
     }

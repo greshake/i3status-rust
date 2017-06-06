@@ -118,7 +118,7 @@ impl Block for Pacman
         if event.name
             .as_ref()
             .map(|s| s == "pacman")
-            .unwrap_or(false) && event.button == MouseButton::LeftClick {
+            .unwrap_or(false) && event.button == MouseButton::Left {
             self.update();
         }
     }

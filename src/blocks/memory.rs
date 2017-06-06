@@ -440,7 +440,7 @@ impl Block for Memory
         });
 
         if let Some(ref s) = event.name {
-            if self.clickable && event.button == MouseButton::LeftClick && *s == "memory".to_string() {
+            if self.clickable && event.button == MouseButton::Left && *s == "memory".to_string() {
                 self.switch();
                 self.update();
                 self.tx_update_request.send(Task {
