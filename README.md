@@ -307,7 +307,7 @@ Key | Values | Required | Default
 max-width | Truncates titles if longer than max-width | No | 21
 
 ## Xrandr
-Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens.
+Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brighntess.
 
 Example
 ```json
