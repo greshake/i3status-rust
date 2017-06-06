@@ -1,13 +1,21 @@
 use block::Block;
+use errors::*;
 use std::collections::{BinaryHeap, HashMap};
+use std::fmt;
 use std::thread;
 use std::cmp;
 use std::time::{Duration, Instant};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Task {
     pub id: String,
     pub update_time: Instant,
+}
+
+impl fmt::Display for Task {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl cmp::PartialEq for Task {
@@ -71,13 +79,13 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) {
-        let t = self.schedule.pop().unwrap();
+    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) -> Result<()> {
+        let t = self.schedule.pop().internal_error("scheduler", "schedule is empty")?;
         let mut tasks_next = vec![t.clone()];
 
         while !self.schedule.is_empty() &&
-            t.update_time == self.schedule.peek().unwrap().update_time {
-            tasks_next.push(self.schedule.pop().unwrap())
+            t.update_time == self.schedule.peek().internal_error("scheduler", "schedule is empty")?.update_time {
+            tasks_next.push(self.schedule.pop().internal_error("scheduler", "schedule is empty")?)
         }
 
         let now = Instant::now();
@@ -88,7 +96,10 @@ impl UpdateScheduler {
         let now = Instant::now();
 
         for task in tasks_next {
-            if let Some(dur) = block_map.get_mut(&task.id).unwrap().update() {
+            if let Some(dur) = block_map
+                .get_mut(&task.id)
+                .internal_error("scheduler", "could not get required block")?
+                .update()? {
                 self.schedule
                     .push(Task {
                         id: task.id,
@@ -96,5 +107,7 @@ impl UpdateScheduler {
                     })
             }
         }
+
+        Ok(())
     }
 }

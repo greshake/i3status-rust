@@ -1,6 +1,5 @@
 use std::time::{Duration, Instant};
 use std::process::Command;
-use std::error::Error;
 use std::iter::{Cycle, Peekable};
 use std::vec;
 use std::sync::mpsc::Sender;
@@ -8,6 +7,7 @@ use std::sync::mpsc::Sender;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
@@ -51,7 +51,7 @@ impl CustomConfig {
 impl ConfigBlock for Custom {
     type Config = CustomConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Self {
+    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let mut custom = Custom {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
@@ -71,19 +71,19 @@ impl ConfigBlock for Custom {
             custom.cycle = Some(cycle.into_iter()
                                 .cycle()
                                 .peekable());
-            return custom
+            return Ok(custom)
         };
 
         if let Some(command) = block_config.command {
             custom.command = Some(command.to_string())
         };
 
-        custom
+        Ok(custom)
     }
 }
 
 impl Block for Custom {
-    fn update(&mut self) -> Option<Duration> {
+    fn update(&mut self) -> Result<Option<Duration>> {
         let command_str = self
             .cycle
             .as_mut()
@@ -97,22 +97,22 @@ impl Block for Custom {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.description().to_owned());
 
-        self.output.set_text(output);
+        self.output.set_text(output)?;
 
-        Some(self.update_interval.clone())
+        Ok(Some(self.update_interval.clone()))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.output]
     }
 
-    fn click(&mut self, event: &I3BarEvent) {
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
             if name != &self.id {
-                return
+                return Ok(())
             }
         } else {
-            return
+            return Ok(())
         }
 
         let mut update = false;
@@ -130,8 +130,10 @@ impl Block for Custom {
         }
 
         if update {
-            self.tx_update_request.send(Task { id: self.id.clone(), update_time: Instant::now() }).ok();
+            self.tx_update_request.send(Task { id: self.id.clone(), update_time: Instant::now() })?;
         }
+
+        Ok(())
     }
 
     fn id(&self) -> &str {

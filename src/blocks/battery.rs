@@ -5,6 +5,7 @@ use scheduler::Task;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -47,42 +48,46 @@ impl BatteryConfig {
 impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
-        Battery {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        Ok(Battery {
             id: Uuid::new_v4().simple().to_string(),
             max_charge: 0,
             update_interval: block_config.interval,
             output: TextWidget::new(config),
             device_path: format!("/sys/class/power_supply/BAT{}/", block_config.device),
-        }
+        })
     }
 }
 
-fn read_file(path: &str) -> String {
+fn read_file(path: &str) -> Result<String> {
     let mut f = OpenOptions::new()
         .read(true)
         .open(path)
-        .expect(&format!("Your system does not support reading {}", path));
+        .block_error("battery", &format!("failed to open file {}", path))?;
     let mut content = String::new();
-    f.read_to_string(&mut content).expect(&format!("Failed to read {}", path));
+    f.read_to_string(&mut content).block_error("battery", &format!("failed to read {}", path))?;
     // Removes trailing newline
     content.pop();
-    content
+    Ok(content)
 }
 
 impl Block for Battery
 {
-    fn update(&mut self) -> Option<Duration> {
+    fn update(&mut self) -> Result<Option<Duration>> {
         // TODO: Check if charge_ always contains the right values, might be energy_ depending on firmware
 
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
         // We only need to read max_charge once, shouldn't change
         if self.max_charge == 0 {
-            self.max_charge = read_file(&format!("{}charge_full", self.device_path)).parse::<u64>().unwrap();
+            self.max_charge = read_file(&format!("{}charge_full", self.device_path))?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse charge_full")?;
         }
 
-        let current_charge = read_file(&format!("{}charge_now", self.device_path)).parse::<u64>().unwrap();
+        let current_charge = read_file(&format!("{}charge_now", self.device_path))?
+            .parse::<u64>()
+            .block_error("battery", "failed to parse charge_now")?;
         let current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.) as u64;
         let current_percentage = match current_percentage {
             0 ... 100 => current_percentage,
@@ -92,13 +97,13 @@ impl Block for Battery
             _ => 100
         };
 
-        let state = read_file(&format!("{}status", self.device_path));
+        let state = read_file(&format!("{}status", self.device_path))?;
 
         // Don't need to display a percentage when the battery is full
         if current_percentage != 100 && state != "Full" {
-            self.output.set_text(format!("{}%", current_percentage));
+            self.output.set_text(format!("{}%", current_percentage))?;
         } else {
-            self.output.set_text(String::from(""));
+            self.output.set_text(String::from(""))?;
         }
 
         self.output.set_icon(match state.as_str() {
@@ -106,21 +111,23 @@ impl Block for Battery
             "Discharging" => "bat_discharging",
             "Charging" => "bat_charging",
             _ => "bat"
-        });
+        })?;
 
         self.output.set_state(match current_percentage {
             0 ... 15 => State::Critical,
             15 ... 30 => State::Warning,
             30 ... 60 => State::Info,
             _ => State::Good
-        });
+        })?;
 
-        Some(self.update_interval.clone())
+        Ok(Some(self.update_interval.clone()))
     }
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.output]
     }
-    fn click(&mut self, _: &I3BarEvent) {}
+    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+        Ok(())
+    }
     fn id(&self) -> &str {
         &self.id
     }

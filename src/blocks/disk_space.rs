@@ -6,6 +6,7 @@ use scheduler::Task;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use input::I3BarEvent;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
@@ -150,22 +151,23 @@ impl DiskSpace {
 impl ConfigBlock for DiskSpace {
     type Config = DiskSpaceConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
-        DiskSpace {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        Ok(DiskSpace {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            disk_space: TextWidget::new(config).with_text("DiskSpace"),
+            disk_space: TextWidget::new(config).with_text("DiskSpace")?,
             alias: block_config.alias,
             path: block_config.path,
             info_type: InfoType::from_str(&block_config.info_type),
             unit: Unit::from_str(&block_config.unit),
-        }
+        })
     }
 }
 
 impl Block for DiskSpace {
-    fn update(&mut self) -> Option<Duration> {
-        let statvfs = Statvfs::for_path(Path::new(self.path.as_str())).unwrap();
+    fn update(&mut self) -> Result<Option<Duration>> {
+        let statvfs = Statvfs::for_path(Path::new(self.path.as_str()))
+            .block_error("disk_space", "failed to retrieve statvfs")?;
         let result;
         let converted;
 
@@ -181,18 +183,20 @@ impl Block for DiskSpace {
             //InfoType::Total | InfoType::Used => unimplemented!(),
         }
 
-        self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, converted, self.unit.name()));
+        self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, converted, self.unit.name()))?;
 
         let state = self.compute_state(result);
-        self.disk_space.set_state(state);
+        self.disk_space.set_state(state)?;
 
-        Some(self.update_interval.clone())
+        Ok(Some(self.update_interval.clone()))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.disk_space]
     }
-    fn click(&mut self, _: &I3BarEvent) {}
+    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+        Ok(())
+    }
     fn id(&self) -> &str {
         &self.id
     }

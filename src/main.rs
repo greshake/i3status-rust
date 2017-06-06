@@ -21,6 +21,7 @@ pub mod util;
 pub mod block;
 pub mod blocks;
 pub mod config;
+mod errors;
 pub mod input;
 pub mod icons;
 pub mod themes;
@@ -46,14 +47,17 @@ use block::Block;
 
 use blocks::create_block;
 use config::Config;
+use errors::*;
 use input::{process_events, I3BarEvent};
 use scheduler::{UpdateScheduler, Task};
+use widget::{I3BarWidget, State};
+use widgets::text::TextWidget;
 
 use util::deserialize_file;
 
 use self::clap::{Arg, App};
 
-fn main() {
+fn run() -> Result<()> {
     let mut builder = App::new("i3status-rs")
         .version("0.1")
         .author("Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
@@ -88,13 +92,13 @@ fn main() {
 
     let matches = builder.get_matches();
 
-    let config: Config = deserialize_file(matches.value_of("config").unwrap());
+    let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Load all arguments
     let input_check_interval = Duration::new(0, matches.value_of("input-check-interval")
                                                 .unwrap()
                                                 .parse::<u32>()
-                                                .expect("Not a valid integer as interval") * 1000000);
+                                                .internal_error("main", "Not a valid integer as interval")? * 1000000);
 
     let (tx, rx_update_requests): (Sender<Task>, Receiver<Task>) = mpsc::channel();
 
@@ -103,9 +107,9 @@ fn main() {
         if matches.value_of("profile").is_some() {
             for &(ref block_name, ref block_config) in &config.blocks {
                 if block_name == matches.value_of("profile").unwrap() {
-                    let mut block = create_block(&block_name, block_config.clone(), config.clone(), tx.clone());
+                    let mut block = create_block(&block_name, block_config.clone(), config.clone(), tx.clone())?;
                     profile(matches.value_of("profile-runs").unwrap().parse::<i32>().unwrap(), &block_name, block.deref_mut());
-                    return;
+                    return Ok(());
                 }
             }
         }
@@ -114,7 +118,7 @@ fn main() {
     let mut blocks: Vec<Box<Block>> = Vec::new();
 
     for &(ref block_name, ref block_config) in &config.blocks {
-        blocks.push(create_block(&block_name, block_config.clone(), config.clone(), tx.clone()))
+        blocks.push(create_block(&block_name, block_config.clone(), config.clone(), tx.clone())?)
     }
 
     let order = blocks.iter().map(|x| String::from(x.id())).collect();
@@ -138,9 +142,9 @@ fn main() {
         // See if the user has clicked.
         while let Ok(event) = rx_clicks.try_recv() {
             for (_, block) in &mut block_map {
-                block.click(&event);
+                block.click(&event)?;
             }
-            util::print_blocks(&order, &block_map, &config);
+            util::print_blocks(&order, &block_map, &config)?;
         }
 
         // Enqueue pending update requests
@@ -153,13 +157,31 @@ fn main() {
         // Blocks to be Send.
         if let Some(ttnu) = scheduler.time_to_next_update() {
             if ttnu < input_check_interval {
-                scheduler.do_scheduled_updates(&mut block_map);
+                scheduler.do_scheduled_updates(&mut block_map)?;
 
                 // redraw the blocks, state changed
-                util::print_blocks(&order, &block_map, &config);
+                util::print_blocks(&order, &block_map, &config)?;
             } else {
                 thread::sleep(input_check_interval)
             }
+        }
+    }
+}
+
+fn main() {
+    // TODO: add CLI parameter to exit on error, move CLI matching here
+
+    // Run `run`, match for potential error
+    if let Err(e) = run() {
+        let error_widget = TextWidget::new(Default::default())
+            .with_state(State::Critical).expect("failed to set widget state")
+            .with_text(&format!("{}", e)).expect("failed to set widget text");
+        let error_rendered = error_widget.get_rendered();
+        println!("{}", serde_json::to_string(&[error_rendered]).expect("failed to serialize error message"));
+
+        // Do nothing, so the error message keeps displayed
+        loop {
+            ::std::thread::sleep(Duration::from_secs(10));
         }
     }
 }
@@ -175,7 +197,7 @@ fn profile(iterations: i32, name: &str, block: &mut Block) {
     bar.set_job_title("Profiling...");
 
     for i in 0..iterations {
-        block.update();
+        block.update().expect("block update failed");
         bar.reach_percent(((i as f64 / iterations as f64) * 100.).round() as i32);
     }
 

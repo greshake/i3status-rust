@@ -1,4 +1,5 @@
 use config::Config;
+use errors::*;
 use std::time::{Duration, Instant};
 use widget::{State, I3BarWidget};
 use serde_json::value::Value;
@@ -44,19 +45,19 @@ impl RotatingTextWidget {
         }
     }
 
-    pub fn with_icon(mut self, name: &str) -> Self {
+    pub fn with_icon(mut self, name: &str) -> Result<Self> {
         self.icon = self.config.icons.get(name).cloned();
-        self.update();
-        self
+        self.update()?;
+        Ok(self)
     }
 
-    pub fn with_state(mut self, state: State) -> Self {
+    pub fn with_state(mut self, state: State) -> Result<Self> {
         self.state = state;
-        self.update();
-        self
+        self.update()?;
+        Ok(self)
     }
 
-    pub fn with_text(mut self, content: &str) -> Self {
+    pub fn with_text(mut self, content: &str) -> Result<Self> {
         self.content = String::from(content);
         self.rotation_pos = 0;
         if self.content.len() > self.width {
@@ -64,21 +65,21 @@ impl RotatingTextWidget {
         } else {
             self.next_rotation = None;
         }
-        self.update();
-        self
+        self.update()?;
+        Ok(self)
     }
 
-    pub fn set_state(&mut self, state: State) {
+    pub fn set_state(&mut self, state: State) -> Result<()> {
         self.state = state;
-        self.update();
+        self.update()
     }
 
-    pub fn set_icon(&mut self, name: &str) {
+    pub fn set_icon(&mut self, name: &str) -> Result<()> {
         self.icon = self.config.icons.get(name).cloned();
-        self.update();
+        self.update()
     }
 
-    pub fn set_text(&mut self, content: String) {
+    pub fn set_text(&mut self, content: String) -> Result<()> {
         if self.content != content{
             self.content = content;
             self.rotation_pos = 0;
@@ -88,7 +89,7 @@ impl RotatingTextWidget {
                 self.next_rotation = None;
             }
         }
-        self.update();
+        self.update()
     }
 
     fn get_rotated_content(&self) -> String {
@@ -108,7 +109,7 @@ impl RotatingTextWidget {
         }
     }
 
-    fn update(&mut self) {
+    fn update(&mut self) -> Result<()> {
         let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
         self.rendered = json!({
@@ -124,33 +125,34 @@ impl RotatingTextWidget {
         });
 
         self.cached_output = Some(self.rendered.to_string());
+        Ok(())
     }
 
-    pub fn next(&mut self) -> (bool, Option<Duration>) {
+    pub fn next(&mut self) -> Result<(bool, Option<Duration>)> {
         if let Some(next_rotation) = self.next_rotation {
             if next_rotation > Instant::now() {
-                (false, Some(next_rotation - Instant::now()))
+                Ok((false, Some(next_rotation - Instant::now())))
             } else {
                 if self.rotating {
                     if self.rotation_pos < self.content.len() {
                         self.rotation_pos += 1;
                         self.next_rotation = Some(Instant::now() + self.rotation_speed);
-                        self.update();
-                        (true, Some(self.rotation_speed))
+                        self.update()?;
+                        Ok((true, Some(self.rotation_speed)))
                     } else {
                         self.rotation_pos = 0;
                         self.rotating = false;
                         self.next_rotation = Some(Instant::now() + self.rotation_interval);
-                        self.update();
-                        (true, Some(self.rotation_interval))
+                        self.update()?;
+                        Ok((true, Some(self.rotation_interval)))
                     }
                 } else {
                     self.rotating = true;
-                    (true, Some(self.rotation_speed))
+                    Ok((true, Some(self.rotation_speed)))
                 }
             }
         } else {
-            (false, None)
+            Ok((false, None))
         }
     }
 }

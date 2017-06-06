@@ -5,6 +5,7 @@ use std::time::Duration;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use self::chrono::offset::local::Local;
 use scheduler::Task;
 use std::sync::mpsc::Sender;
@@ -45,20 +46,20 @@ impl TimeConfig {
 impl ConfigBlock for Time {
     type Config = TimeConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
-        Time {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        Ok(Time {
             id: Uuid::new_v4().simple().to_string(),
             format: block_config.format,
-            time: TextWidget::new(config).with_text("").with_icon("time"),
+            time: TextWidget::new(config).with_text("")?.with_icon("time")?,
             update_interval: block_config.interval,
-        }
+        })
     }
 }
 
 impl Block for Time {
-    fn update(&mut self) -> Option<Duration> {
-        self.time.set_text(format!("{}", Local::now().format(&self.format)));
-        Some(self.update_interval.clone())
+    fn update(&mut self) -> Result<Option<Duration>> {
+        self.time.set_text(format!("{}", Local::now().format(&self.format)))?;
+        Ok(Some(self.update_interval.clone()))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {

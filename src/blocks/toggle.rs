@@ -1,12 +1,12 @@
 use std::time::Duration;
 use std::process::Command;
-use std::error::Error;
 use std::sync::mpsc::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_opt_duration;
+use errors::*;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
@@ -47,25 +47,25 @@ pub struct ToggleConfig {
 impl ConfigBlock for Toggle {
     type Config = ToggleConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
-        Toggle {
+        Ok(Toggle {
             text: ButtonWidget::new(config, &id)
-                .with_text(&block_config.text),
+                .with_text(&block_config.text)?,
             command_on: block_config.command_on,
             command_off: block_config.command_off,
             command_state: block_config.command_state,
             id,
             toggled: false,
             update_interval: block_config.interval,
-        }
+        })
     }
 }
 
 
 impl Block for Toggle
 {
-    fn update(&mut self) -> Option<Duration> {
+    fn update(&mut self) -> Result<Option<Duration>> {
         let output = Command::new("sh")
             .args(&["-c", &self.command_state])
             .output()
@@ -75,34 +75,37 @@ impl Block for Toggle
         self.text.set_icon(match output.trim_left() {
             "" => {self.toggled = false; "toggle_off"},
             _ => {self.toggled = true; "toggle_on"}
-        });
+        })?;
 
-        self.update_interval
+        Ok(self.update_interval)
     }
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, e: &I3BarEvent) {
+    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 let cmd = match self.toggled {
                     true => {
                         self.toggled = false;
-                        self.text.set_icon("toggle_off");
+                        self.text.set_icon("toggle_off")?;
                         &self.command_off
                     },
                     false => {
                         self.toggled = true;
-                        self.text.set_icon("toggle_on");
+                        self.text.set_icon("toggle_on")?;
                         &self.command_on
                     }
                 };
 
                 Command::new("sh")
                     .args(&["-c", cmd])
-                    .output().ok();
+                    .output()
+                    .block_error("toggle", "failed to run toggle command")?;
             }
         }
+
+        Ok(())
     }
     fn id(&self) -> &str {
         &self.id

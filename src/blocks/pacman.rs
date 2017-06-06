@@ -11,6 +11,7 @@ use scheduler::Task;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use input::{I3BarEvent, MouseButton};
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
@@ -41,46 +42,49 @@ impl PacmanConfig {
 impl ConfigBlock for Pacman {
     type Config = PacmanConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
-        Pacman {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        Ok(Pacman {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            output: TextWidget::new(config).with_icon("update"),
-        }
+            output: TextWidget::new(config).with_icon("update")?,
+        })
     }
 }
 
-fn run_command(var: &str) {
+fn run_command(var: &str) -> Result<()> {
     Command::new("sh")
         .args(&["-c", var])
         .spawn()
-        .expect(&format!("Failed to run command '{}'", var))
+        .block_error("pacman", &format!("Failed to run command '{}'", var))?
         .wait()
-        .expect(&format!("Failed to wait for command '{}'", var));
+        .block_error("pacman", &format!("Failed to wait for command '{}'", var))
+        .map(|_| ())
 }
 
-fn has_fake_root() -> bool {
-    match String::from_utf8(
+fn has_fake_root() -> Result<bool> {
+    Ok(match String::from_utf8(
         Command::new("sh")
             .args(&["-c", "type -P fakeroot"])
-            .output().unwrap().stdout).unwrap().trim() {
-        "" => return false,
-        _ => return true,
-    }
+            .output().block_error("pacman", "failed to start command to check for fakeroot")?.stdout)
+        .block_error("pacman", "failed to check for fakeroot")?.trim() {
+        "" => false,
+        _ => true,
+    })
 }
 
 
-fn get_update_count() -> usize {
-    if !has_fake_root() {
-        return 0 as usize
+fn get_update_count() -> Result<usize> {
+    if !has_fake_root()? {
+        return Ok(0 as usize)
     }
     let tmp_dir = env::temp_dir().into_os_string().into_string()
-        .expect("There's something wrong with your $TMP variable");
+        .block_error("pacman", "There's something wrong with your $TMP variable")?;
     let user = env::var_os("USER").unwrap_or(OsString::from("")).into_string()
-        .expect("There's a problem with your $USER");
+        .block_error("pacman", "There's a problem with your $USER")?;
     let updates_db = env::var_os("CHECKUPDATES_DB")
         .unwrap_or(OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
-        .into_string().expect("There's a problem with your $CHECKUPDATES_DB");
+        .into_string()
+        .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
 
     // Determine pacman database path
     let db_path = env::var_os("DBPath")
@@ -89,40 +93,41 @@ fn get_update_count() -> usize {
 
     // Create the determined `checkup-db` path recursively
     fs::create_dir_all(&updates_db)
-        .expect(&format!("Failed to create checkup-db path '{}'", updates_db));
+        .block_error("pacman", &format!("Failed to create checkup-db path '{}'", updates_db))?;
 
     // Create symlink to local cache in `checkup-db` if required
     let local_cache = Path::new(&updates_db).join("local");
     if !local_cache.exists() {
         symlink(db_path.join("local"), local_cache)
-            .expect("Failed to created required symlink");
+            .block_error("pacman", "Failed to created required symlink")?;
     }
 
     // Update database
-    run_command(&format!("fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null &> /dev/null", updates_db));
+    run_command(&format!("fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null &> /dev/null", updates_db))?;
 
     // Get update count
-    String::from_utf8(
+    Ok(String::from_utf8(
         Command::new("sh")
             .args(&["-c", &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db)])
-            .output().expect("There was a problem running the pacman commands")
+            .output().block_error("pacman", "There was a problem running the pacman commands")?
             .stdout)
-        .expect("there was a problem parsing the output")
+        .block_error("pacman", "there was a problem parsing the output")?
         .lines()
-        .count() - 1
+        .count() - 1)
 }
 
 
 impl Block for Pacman
 {
-    fn update(&mut self) -> Option<Duration> {
-        let count = get_update_count();
-        self.output.set_text(format!("{}", count));
+    fn update(&mut self) -> Result<Option<Duration>> {
+        let count = get_update_count()?;
+        self.output.set_text(format!("{}", count))?;
         self.output.set_state(match count {
             0 => State::Idle,
             _ => State::Info
-        });
-        Some(self.update_interval.clone())
+        })?;
+        Ok(Some(self.update_interval.clone()))
+
     }
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.output]
@@ -131,12 +136,14 @@ impl Block for Pacman
         &self.id
     }
 
-    fn click(&mut self, event: &I3BarEvent) {
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if event.name
             .as_ref()
             .map(|s| s == "pacman")
             .unwrap_or(false) && event.button == MouseButton::Left {
-            self.update();
+            self.update()?;
         }
+
+        Ok(())
     }
 }

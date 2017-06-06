@@ -1,12 +1,12 @@
 use std::time::Duration;
 use std::process::Command;
-use std::error::Error;
 use std::sync::mpsc::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -47,22 +47,22 @@ impl TemperatureConfig {
 impl ConfigBlock for Temperature {
     type Config = TemperatureConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
-        Temperature {
+        Ok(Temperature {
             update_interval: block_config.interval,
-            text: ButtonWidget::new(config, &id).with_icon("thermometer"),
+            text: ButtonWidget::new(config, &id).with_icon("thermometer")?,
             output: String::new(),
             collapsed: block_config.collapsed,
             id,
-        }
+        })
     }
 }
 
 
 impl Block for Temperature
 {
-    fn update(&mut self) -> Option<Duration> {
+    fn update(&mut self) -> Result<Option<Duration>> {
         let output = Command::new("sensors")
             .args(&["-u"])
             .output()
@@ -83,26 +83,27 @@ impl Block for Temperature
                     match rest[2].parse::<i64>() {
                         Ok(t) if t > -101 && t < 151 => {
                             temperatures.push(t);
+                            Ok(())
                         }
-                        Ok(t) => {
-                            eprintln!("Temperature ({}) outside range of -100 C to 150 C", t);
+                        Ok(_) => {
+                            Err(BlockError("temperature".to_owned(), "Temperature ({}) outside of range ([-100, 150])".to_owned()))
                         }
-                        Err(e) => {
-                            eprintln!("Temperature not a i64!:\n{}", e);
+                        Err(_) => {
+                            Err(BlockError("temperature".to_owned(), "failed to parse temperature as an integer".to_owned()))
                         }
-                    }
+                    }?
                 }
             }
         }
 
         if !temperatures.is_empty() {
-            let max: i64 = *temperatures.iter().max().unwrap();
+            let max: i64 = *temperatures.iter().max().block_error("temperature", "failed to get max temperature")?;
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 /
                 temperatures.len() as f64).round() as i64;
 
             self.output = format!("{}° avg, {}° max", avg, max);
             if !self.collapsed {
-                self.text.set_text(self.output.clone());
+                self.text.set_text(self.output.clone())?;
             }
 
             self.text.set_state(match max {
@@ -111,25 +112,27 @@ impl Block for Temperature
                 45 ... 60 => State::Info,
                 60 ... 80 => State::Warning,
                 _ => State::Critical
-            })
+            })?;
         }
 
-        Some(self.update_interval.clone())
+        Ok(Some(self.update_interval.clone()))
     }
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, e: &I3BarEvent) {
+    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 self.collapsed = !self.collapsed;
                 if self.collapsed {
-                    self.text.set_text(String::new());
+                    self.text.set_text(String::new())?;
                 } else {
-                    self.text.set_text(self.output.clone());
+                    self.text.set_text(self.output.clone())?;
                 }
             }
         }
+
+        Ok(())
     }
     fn id(&self) -> &str {
         &self.id
