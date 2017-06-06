@@ -1,7 +1,7 @@
 use std::time::Duration;
 use std::process::Command;
 use std::env;
-use std::ffi::OsString;
+use std::ffi::OsString; 
 
 use block::Block;
 use input::I3barEvent;
