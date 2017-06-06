@@ -3,7 +3,7 @@ use std::time::Duration;
 use block::Block;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
-use input::I3barEvent;
+use input::I3BarEvent;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
@@ -96,7 +96,7 @@ impl Block for Battery
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.output]
     }
-    fn click_left(&mut self, _: &I3barEvent) {}
+    fn click(&mut self, _: &I3BarEvent) {}
     fn id(&self) -> &str {
         &self.id
     }
