@@ -432,7 +432,7 @@ impl Block for Memory
     }
 
 
-    fn click(&mut self, event: &I3barEvent) {
+    fn click_left(&mut self, event: &I3barEvent) {
 
         if_debug!({
             let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
@@ -440,7 +440,7 @@ impl Block for Memory
         });
 
         if let Some(ref s) = event.name {
-            if self.clickable && event.button == 1 && *s == "memory".to_string() {
+            if self.clickable && *s == "memory".to_string() {
                 self.switch();
                 self.update();
                 self.tx_update_request.send(Task {

@@ -83,7 +83,7 @@ impl Block for Custom {
         vec![&self.output]
     }
 
-    fn click(&mut self, event: &I3barEvent) {
+    fn click_left(&mut self, event: &I3barEvent) {
         if let Some(ref name) = event.name {
             if name != &self.id {
                 return

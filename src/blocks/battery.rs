@@ -96,7 +96,7 @@ impl Block for Battery
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.output]
     }
-    fn click(&mut self, _: &I3barEvent) {}
+    fn click_left(&mut self, _: &I3barEvent) {}
     fn id(&self) -> &str {
         &self.id
     }

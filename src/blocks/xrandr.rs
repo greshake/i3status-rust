@@ -185,7 +185,7 @@ impl Block for Xrandr
         vec![&self.text]
     }
 
-    fn click(&mut self, e: &I3barEvent) {
+    fn click_left(&mut self, e: &I3barEvent) {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 if self.current_idx < self.monitors.len() - 1 {
