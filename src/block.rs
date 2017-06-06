@@ -12,7 +12,7 @@ pub trait Block {
     fn view(&self) -> Vec<&I3BarWidget>;
 
     #[allow(unused_variables)]
-    /// This function is called on every block for every left click.
+    /// This function is called on every block for every click.
     /// Filter events by using the event.name property (matches the ButtonWidget name)
     fn click(&mut self, event: &I3BarEvent) {}
 

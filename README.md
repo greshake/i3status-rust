@@ -321,6 +321,7 @@ Key | Values | Required | Default
 interval | Update interval in seconds | No | 5
 icons | Show icons for brightness and resolution (needs awesome fonts support) | No | true
 resolution | Shows the screens resolution | No | false
+step\_width | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | 5
 
 # How to write a Block
 
