@@ -4,7 +4,7 @@ use std::env;
 use std::ffi::OsString; 
 
 use block::Block;
-use input::I3barEvent;
+use input::{I3BarEvent, MouseButton};
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 
@@ -93,11 +93,11 @@ impl Block for Pacman
         &self.id
     }
 
-    fn click(&mut self, event: &I3barEvent) {
+    fn click(&mut self, event: &I3BarEvent) {
         if event.name
             .as_ref()
             .map(|s| s == "pacman")
-            .unwrap_or(false) && event.button == 1 /* left mouse button */ {
+            .unwrap_or(false) && event.button == MouseButton::LeftClick {
             self.update();
         }
     }
