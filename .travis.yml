@@ -2,19 +2,19 @@ dist: trusty
 language: rust
 rust:
   - stable
-  - beta
   - nightly
 addons:
   apt:
     sources:
       - chef-current-trusty
     packages:
-      - libdbus-1-dev=1.6.18
+      - libdbus-1-dev
+      - libgoogle-perftools-dev
 os:
   - linux
 matrix:
   allow_failures:
     - rust: nightly
 script:
-  - cargo build -v
+  - cargo build
   - cargo test
