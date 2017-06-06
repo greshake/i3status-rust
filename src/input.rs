@@ -32,9 +32,10 @@ pub fn process_events(sender: Sender<I3BarEvent>) {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
 
-        if input.starts_with(",") {
-            let input = input.split_off(1);
-
+        if !input.starts_with("[") {
+            if input.starts_with(",") {
+                input = input.split_off(1);
+            }
             let e: I3BarEvent = serde_json::from_str(&input).unwrap();
 
             sender.send(e).unwrap();
