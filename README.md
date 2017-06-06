@@ -11,7 +11,7 @@ This is a WiP replacement for i3status, aiming to provide the most feature-compl
 - click actions
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
-# Requirements
+# Requirements 
 i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
 
 # How to use it
