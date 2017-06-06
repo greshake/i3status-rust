@@ -17,18 +17,18 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 # How to use it
 1. Clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
 2. run `cd i3status-rust && cargo build --release`
-3. Edit example_config.json to your liking and put it to a sensible place (e.g. ~/.config/i3/status.json)
+3. Edit `example_config.json` to your liking and put it to a sensible place (e.g. `~/.config/i3/status.json`)
 4. Edit your i3 config
-      1. In your i3 config, put the path to the output binary as argument for 'status_command'
-      2. Add the path to your config file as first argument, you can also configure theme and icon theme as arguments to i3status-rs. See i3status-rs --help for more. **NOTE: You need to specify *font* in the bar section manually to use iconic fonts!**
+      1. In your i3 config, put the path to the output binary as argument for `status_command`
+      2. Add the path to your config file as first and only argument to i3status-rs. See `i3status-rs --help` for more. **NOTE: You need to specify *font* in the bar section manually to use iconic fonts!**
 
-            Example of the 'bar' section in the i3 config from my personal i3 config (Requires awesome-ttf-fonts). The colors block is optional, just my taste:
+            Example of the `bar` section in the i3 config from my personal i3 config (Requires awesome-ttf-fonts). The colors block is optional, just my taste:
 
             ```
             bar {
                   font pango:DejaVu Sans Mono, Icons 12
                   position top
-                  status_command <PATH_TO_i3STATUS>/i3status-rs <PATH_TO_CONFIG>/config.json --icons awesome --theme solarized-dark
+                  status_command <PATH_TO_i3STATUS>/i3status-rs <PATH_TO_CONFIG>/config.json
                   colors {
                         separator #666666
                         background #222222
@@ -42,13 +42,42 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
             ```
 5. Reload i3: `i3 reload`
 
+# Breaking changes
+
+`i3status-rs` is very much still in development, so breaking changes before a 1.0.0 release will occur. Following are guides on hoe to update your configurations to match breaking changes.
+
+## Configuration changed ([9a7501b][])
+
+With [9a7501b][] the configuration has been changed to include all three configuration components: blocks, theme and icons.
+As part of this change the command-line arguments `--theme` and `--icons` have been removed.
+
+Update your configuration to match the structure of the current [`example_config.json`](https://github.com/greshake/i3status-rust/blob/9a7501b15f377dd8d84918b5d07c78881eeb6001/example_config.json):
+
+```json
+{
+    "blocks": {
+         "disk_space": {"path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+         "memory": {"type":"memory", "format_mem":"{Mup}%", "format_swap":"{SUp}%"},
+         "cpu": {"interval": 1},
+         "load": {"interval": 1, "format": "{1m}"},
+         "time": {"interval": 60, "format": "%a %d/%m %R"}
+    },
+    "theme": "solarized-dark",
+    "icons": "awesome"
+}
+```
+
+Both `theme` and `icons` can be defined as dicts containing what was `example_theme.json` and `example_icon.json`.
+
+[9a7501b]: https://github.com/greshake/i3status-rust/tree/9a7501b15f377dd8d84918b5d07c78881eeb6001
+
 # Available Blocks
 ## Time
 Creates a block which display the current time.
 
 **Example**
 ```javascript
-{"block": "time", "interval": 60, "format": "%a %d/%m %R"},
+"time": {"interval": 60, "format": "%a %d/%m %R"},
 ```
 **Options**
 
@@ -70,10 +99,17 @@ This module keeps track of both Swap and Memory. By default, a click switches be
 
 **Example**
 ```javascript
-{"block": "memory",
-    "format_mem": "{Mum}MB/{MTm}MB({Mup}%)", "format_swap": "{SUm}MB/{STm}MB({SUp}%)",
-    "type": "memory", "icons": true, "clickable": true, "interval": 5,
-    "warning_mem": 80, "warning_swap": 80, "critical_mem": 95, "critical_swap": 95
+"memory": {
+    "format_mem": "{Mum}MB/{MTm}MB({Mup}%)",
+    "format_swap": "{SUm}MB/{STm}MB({SUp}%)",
+    "type": "memory",
+    "icons": true,
+    "clickable": true,
+    "interval": 5,
+    "warning_mem": 80,
+    "warning_swap": 80,
+    "critical_mem": 95,
+    "critical_swap": 95
 },
 ```
 
@@ -131,7 +167,7 @@ Creates a block which can display the current song title and artist, in a fixed 
 
 **Example**
 ```javascript
-{"block": "music", "player": "spotify", "buttons": ["play", "next"]},
+"music": {"player": "spotify", "buttons": ["play", "next"]},
 ```
 
 **Options**
@@ -148,7 +184,7 @@ Creates a block which displays the system load average.
 
 **Example**
 ```javascript
-{"block": "load", "format": "{1m} {5m}", "interval": 1},
+"load": {"format": "{1m} {5m}", "interval": 1},
 ```
 **Options**
 
@@ -162,7 +198,7 @@ Creates a block which displays the overall CPU utilization, calculated from /pro
 
 **Example**
 ```javascript
-{"block": "cpu", "interval": 1},
+"cpu": {"interval": 1},
 ```
 **Options**
 
@@ -175,7 +211,7 @@ Creates a block which displays the current battery state (Full, Charging or Disc
 
 **Example**
 ```javascript
-{"block": "battery", "interval": 10},
+"battery": {"interval": 10},
 ```
 **Options**
 
@@ -189,11 +225,11 @@ Creates a block that display the output of custom commands
 
 **Example**
 ```json
-{"block": "custom", "interval": 100, "command": "uname"}
+"custom": {"interval": 100, "command": "uname"}
 ```
 
 ```json
-{"block": "custom", "interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "<command>"}
+"custom": {"interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "<command>"}
 ```
 
 Note that `content` and `cycle` are mutually exclusive.
@@ -213,12 +249,13 @@ By specifying the `interval` property you can let the `command_state` be execute
 **Example**
 This is what I use to toggle my external monitor configuration:
 ```json
-{"block": "toggle",
-"text": "4k",
-"command_state": "xrandr | grep DP1\\ connected\\ 38 | grep -v eDP1",
-"command_on": "~/.screenlayout/4kmon_default.sh",
-"command_off": "~/.screenlayout/builtin.sh",
-"interval": 5}
+"toggle": {
+    "text": "4k",
+    "command_state": "xrandr | grep DP1\\ connected\\ 38 | grep -v eDP1",
+    "command_on": "~/.screenlayout/4kmon_default.sh",
+    "command_off": "~/.screenlayout/builtin.sh",
+    "interval": 5
+},
 ```
 
 Key | Values | Required | Default
@@ -234,7 +271,7 @@ Creates a block which displays the pending updates available on pacman.
 
 **Example**
 ```javascript
-{"block": "pacman", "interval": 10},
+"pacman": {"interval": 10},
 ```
 
 **Options**
@@ -249,7 +286,7 @@ Creates a block which displays disk space information.
 
 **Example**
 ```javascript
-{"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+"disk_space": {"path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
 ```
 
 **Options**
@@ -268,7 +305,7 @@ Creates a block which displays the current Master volume (currently based on ami
 
 **Example**
 ```json
-{"block": "sound", "interval": 10},
+"sound": {"interval": 10},
 ```
 
 **Options**
@@ -284,7 +321,7 @@ Creates a block which displays the system temperature, based on lm_sensors' `sen
 
 **Example**
 ```json
-{"block": "temperature", "interval": 10, "collapsed": false},
+"temperature": {"interval": 10, "collapsed": false},
 ```
 
 **Options**
@@ -299,7 +336,7 @@ Creates a block which displays the title of the currently focused window. Uses p
 
 **Example**
 ```json
-{"block": "focused_window", "max-width": 21},
+"focused_window": {"max-width": 21},
 ```
 
 **Options**
@@ -313,7 +350,7 @@ Creates a block which shows screen information (name, brightness, resolution). W
 
 Example
 ```json
-{"block": "xrandr", "interval": 2, "icons": true, "resolution": true},
+"xrandr": {"interval": 2, "icons": true, "resolution": true},
 ```
 
 Options
@@ -329,7 +366,7 @@ step\_width | The steps brightness is in/decreased for the selected screen (When
 
 ## Step 1: Create the file
 
-Create a block by copying the template: `cp src/blocks/template.rs src/blocks/<block_name>.rs` Obviously, you have to be in the main repo directory and replace <block_name> with the name of your block.
+Create a block by copying the template: `cp src/blocks/template.rs src/blocks/<block_name>.rs` Obviously, you have to be in the main repo directory and replace `<block_name>` with the name of your block.
 
 ## Step 2: Populate the struct
 
@@ -337,25 +374,24 @@ Your block needs a struct to store it's state. First, replace all the occurrence
 
 ## Step 3: Implement the constructor
 
-You now need to write a constructor (new()) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with config["name"], then use .as_str() or as_u64() to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros get_str/u64/bool to extract a string/ u64 and add appropriate error handling. You can set a default value in the macro as you can see below. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID.This advanced feature can be used to reduce the number of system calls by asynchronously waiting for events. A usage example can be found in the Music block, which updates only when dbus signals a new song.
+You now need to write a constructor (`new()`) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with `block_config["name"]`, then use `.as_str()` or `as_u64()` to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros `get_str`/`u64`/`bool` to extract a `string`/`u64` and add appropriate error handling. You can set a default value in the macro as you can see below. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID. This advanced feature can be used to reduce the number of system calls by asynchronously waiting for events. A usage example can be found in the Music block, which updates only when dbus signals a new song.
 
 Example:
 ```rust
-pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Template {
-      let text = TextWidget::new(theme.clone()).with_text("I'm a Template!");
-      Template {
-            id: Uuid::new_v4().simple().to_string(),
-            update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-            text: text,
-            tx_update_request: tx,
-            theme: theme,
-      }
+pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> Template {
+    Template {
+        id: Uuid::new_v4().simple().to_string(),
+        update_interval: Duration::new(get_u64_default!(block_config, "interval", 5), 0),
+        text: TextWidget::new(config.clone()).with_text("Template"),
+        tx_update_request: tx,
+        config: config,
+    }
 }
 ```
 
 ## Step 4: Implement the Block interface
 
-All blocks are basically structs which implement the trait (interface) Block. This interface defines the following features:
+All blocks are basically structs which implement the trait (interface) `Block`. This interface defines the following features:
 
 ### `fn update(&mut self) -> Option<Duration>` (Required if you don't want a static block)
 
