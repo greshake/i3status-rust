@@ -7,29 +7,10 @@
          "time": {"interval": 60, "format": "%a %d/%m %R"}
     },
     "theme": "solarized-dark",
-    "icons": {
-        "": "",
-        "time": " \uf017 ",
-        "music": " \uf001 ",
-        "music_play": "  \uf04b  ",
-        "music_pause": "  \uf04c  ",
-        "music_next": " \uf061 ",
-        "music_prev": " \uf060 ",
-        "cogs": " \uf085 ",
-        "memory_mem": " \uf2db ",
-        "memory_swap": " \uf0a0 ",
-        "cpu": " \uf0e4 ",
-        "bat": " \uf242 ",
-        "bat_full": " \uf240 ",
-        "bat_charging": " \uf1e6 ",
-        "bat_discharging": " \uf242 ",
-        "update": " \uf062 ",
-        "toggle_off": " \uf204 ",
-        "toggle_on": " \uf205 ",
-        "volume_full": " \uf028 ",
-        "volume_half": " \uf027 ",
-        "volume_empty": " \uf026 ",
-        "volume_muted": "\uf00d",
-        "thermometer": " \uf2c8 "
-    }
+    "icons": ["awesome", {
+        "bat": " | | ",
+        "bat_full": " |X| ",
+        "bat_charging": " |^| ",
+        "bat_discharging": " |v| "
+    }]
 }

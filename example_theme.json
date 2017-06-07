@@ -6,20 +6,9 @@
          "load": {"interval": 1, "format": "{1m}"},
          "time": {"interval": 60, "format": "%a %d/%m %R"}
     },
-    "theme": {
-        "idle_bg": "#002b36",
-        "idle_fg": "#93a1a1",
-        "info_bg": "#268bd2",
-        "info_fg": "#002b36",
-        "good_bg": "#859900",
-        "good_fg": "#002b36",
-        "warning_bg": "#b58900",
-        "warning_fg": "#002b36",
-        "critical_bg": "#dc322f",
-        "critical_fg": "#002b36",
-        "separator": "",
-        "separator_bg": "auto",
-        "separator_fg": "auto"
-    },
+    "theme": ["solarized-dark", {
+        "idle_bg": "#123456",
+        "idle_fg": "#abcdef"
+    }],
     "icons": "awesome"
 }
