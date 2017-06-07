@@ -34,21 +34,24 @@ lazy_static! {
     };
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-pub struct Theme {
-    pub idle_bg: String,
-    pub idle_fg: String,
-    pub info_bg: String,
-    pub info_fg: String,
-    pub good_bg: String,
-    pub good_fg: String,
-    pub warning_bg: String,
-    pub warning_fg: String,
-    pub critical_bg: String,
-    pub critical_fg: String,
-    pub separator: String,
-    pub separator_bg: String,
-    pub separator_fg: String,
+mapped_struct! {
+    #[derive(Deserialize, Debug, Default, Clone)]
+    #[serde(deny_unknown_fields)]
+    pub struct Theme: String {
+        pub idle_bg,
+        pub idle_fg,
+        pub info_bg,
+        pub info_fg,
+        pub good_bg,
+        pub good_fg,
+        pub warning_bg,
+        pub warning_fg,
+        pub critical_bg,
+        pub critical_fg,
+        pub separator,
+        pub separator_bg,
+        pub separator_fg
+    }
 }
 
 impl FromStr for Theme {
