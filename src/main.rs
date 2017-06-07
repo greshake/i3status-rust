@@ -55,43 +55,9 @@ use widgets::text::TextWidget;
 
 use util::deserialize_file;
 
-use self::clap::{Arg, App};
+use self::clap::{Arg, ArgMatches, App};
 
-fn run() -> Result<()> {
-    let mut builder = App::new("i3status-rs")
-        .version("0.1")
-        .author("Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
-                 https://github.com/greshake/i3status-rust/graphs/contributors")
-        .about("Replacement for i3status for Linux, written in Rust")
-        .arg(Arg::with_name("config")
-            .value_name("CONFIG_FILE")
-            .help("sets a json config file")
-            .required(true)
-            .index(1))
-        .arg(Arg::with_name("debug")
-            .short("d")
-            .long("debug")
-            .takes_value(false)
-            .help("Prints debug information"))
-        .arg(Arg::with_name("input-check-interval")
-            .help("max. delay to react to clicking, in ms")
-            .default_value("50"));
-
-    if_debug!({
-        builder = builder
-        .arg(Arg::with_name("profile")
-            .long("profile")
-            .takes_value(true)
-            .help("A block to be profiled. Analyze block.profile with pprof"))
-        .arg(Arg::with_name("profile-runs")
-            .long("profile-runs")
-            .takes_value(true)
-            .default_value("10000")
-            .help("How many times to execute update when profiling."));;
-    });
-
-    let matches = builder.get_matches();
-
+fn run(matches: ArgMatches) -> Result<()> {
     let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Load all arguments
@@ -169,10 +135,61 @@ fn run() -> Result<()> {
 }
 
 fn main() {
-    // TODO: add CLI parameter to exit on error, move CLI matching here
+    let mut builder = App::new("i3status-rs")
+        .version("0.1")
+        .author("Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
+                 https://github.com/greshake/i3status-rust/graphs/contributors")
+        .about("Replacement for i3status for Linux, written in Rust")
+        .arg(Arg::with_name("config")
+            .value_name("CONFIG_FILE")
+            .help("sets a json config file")
+            .required(true)
+            .index(1))
+        .arg(Arg::with_name("theme")
+            .help("which theme to use, can be a builtin theme or file.\nBuiltin themes: solarized-dark, plain")
+            .default_value("plain")
+            .short("t")
+            .long("theme"))
+        .arg(Arg::with_name("icons")
+            .help("which icons to use, can be a builtin set or file.\nBuiltin sets: awesome, none (textual)")
+            .default_value("none")
+            .short("i")
+            .long("icons"))
+        .arg(Arg::with_name("debug")
+            .short("d")
+            .long("debug")
+            .takes_value(false)
+            .help("Prints debug information"))
+        .arg(Arg::with_name("input-check-interval")
+            .help("max. delay to react to clicking, in ms")
+            .default_value("50"))
+        .arg(Arg::with_name("exit-on-error")
+             .help("exit on error rather than printing the error to i3bar and keep running")
+             .long("exit-on-error")
+             .takes_value(false));
 
-    // Run `run`, match for potential error
-    if let Err(e) = run() {
+    if_debug!({
+        builder = builder
+        .arg(Arg::with_name("profile")
+            .long("profile")
+            .takes_value(true)
+            .help("A block to be profiled. Analyze block.profile with pprof"))
+        .arg(Arg::with_name("profile-runs")
+            .long("profile-runs")
+            .takes_value(true)
+            .default_value("10000")
+            .help("How many times to execute update when profiling."));;
+    });
+
+    let matches = builder.get_matches();
+    let exit_on_error = matches.is_present("exit-on-error");
+
+    // Run and match for potential error
+    if let Err(e) = run(matches) {
+        if exit_on_error {
+            ::std::process::exit(1);
+        }
+
         let error_widget = TextWidget::new(Default::default())
             .with_state(State::Critical).expect("failed to set widget state")
             .with_text(&format!("{}", e)).expect("failed to set widget text");
