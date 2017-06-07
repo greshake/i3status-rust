@@ -7,7 +7,7 @@ use util::FormatTemplate;
 use block::Block;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
-use input::I3BarEvent;
+use input::{I3BarEvent, MouseButton};
 
 use serde_json::Value;
 use uuid::Uuid;
@@ -26,6 +26,15 @@ impl Monitor {
             resolution: String::from(resolution),
         }
     }
+
+    fn set_brightness(&mut self, step: i32) {
+        Command::new("sh")
+            .args(&["-c", format!("xrandr --output {} --brightness {}",
+                                  self.name,
+                                  (self.brightness as i32 + step) as f32 / 100.0).as_str()])
+            .spawn().expect("Failed to set xrandr output.");
+        self.brightness = (self.brightness as i32 + step) as u32;
+    }
 }
 
 pub struct Xrandr {
@@ -35,6 +44,7 @@ pub struct Xrandr {
     monitors: Vec<Monitor>,
     icons: bool,
     resolution: bool,
+    step_width: u32,
     current_idx: usize,
 
     #[allow(dead_code)]
@@ -54,6 +64,10 @@ impl Xrandr {
     pub fn new(config: Value, theme: Value) -> Xrandr {
         {
             let id = Uuid::new_v4().simple().to_string();
+            let mut step_width = get_u64_default!(config, "step_width", 5) as u32;
+            if step_width > 50 {
+                step_width = 50;
+            }
             Xrandr {
                 text: ButtonWidget::new(theme.clone(), &id).with_icon("xrandr"),
                 id: id,
@@ -61,6 +75,7 @@ impl Xrandr {
                 current_idx: 0,
                 icons: get_bool_default!(config, "icons", true),
                 resolution: get_bool_default!(config, "resolution", false),
+                step_width: step_width,
                 monitors: Vec::new(),
                 theme: theme,
             }
@@ -188,10 +203,29 @@ impl Block for Xrandr
     fn click(&mut self, e: &I3BarEvent) {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                if self.current_idx < self.monitors.len() - 1 {
-                    self.current_idx += 1;
-                } else {
-                    self.current_idx = 0;
+                match e.button {
+                    MouseButton::Left => {
+                        if self.current_idx < self.monitors.len() - 1 {
+                            self.current_idx += 1;
+                        } else {
+                            self.current_idx = 0;
+                        }
+                    },
+                    MouseButton::WheelUp => {
+                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                            if monitor.brightness <= (100 - self.step_width) {
+                                monitor.set_brightness(self.step_width as i32);
+                            }
+                        }
+                    },
+                    MouseButton::WheelDown => {
+                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                            if monitor.brightness >= self.step_width {
+                                monitor.set_brightness(- (self.step_width as i32));
+                            }
+                        }
+                    }
+                    _ => {}
                 }
                 self.display();
             }
