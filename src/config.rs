@@ -1,9 +1,11 @@
+use de::*;
 use icons;
 use serde::de::{self, Deserialize, Deserializer};
 use serde_json::Value;
 use std::collections::HashMap as Map;
 use std::fmt;
 use std::marker::PhantomData;
+use std::ops::Deref;
 use std::str::FromStr;
 use themes::{self, Theme};
 
@@ -21,32 +23,10 @@ fn deserialize_icons<'de, D>(deserializer: D) -> Result<Map<String, String>, D::
 where
     D: Deserializer<'de>
 {
-    struct Icons;
+    map_type!(Icons, String, String;
+              s => Ok(Icons(icons::get_icons(s).ok_or_else(|| "cannot find specified icons")?)));
 
-    impl<'de> de::Visitor<'de> for Icons {
-        type Value = Map<String, String>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("string or map")
-        }
-
-        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-        where
-            E: de::Error
-        {
-            icons::get_icons(value)
-                .ok_or_else(|| de::Error::custom("couldn't deserialize icons"))
-        }
-
-        fn visit_map<M>(self, visitor: M) -> Result<Self::Value, M::Error>
-        where
-            M: de::MapAccess<'de>
-        {
-            Deserialize::deserialize(de::value::MapAccessDeserializer::new(visitor))
-        }
-    }
-
-    deserializer.deserialize_any(Icons)
+    deserializer.deserialize_any(MapType::<Icons, String, String>(PhantomData, PhantomData, PhantomData))
 }
 
 fn deserialize_string_or_struct<'de, T, D>(deserializer: D) -> Result<T, D::Error>

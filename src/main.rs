@@ -14,6 +14,8 @@ extern crate uuid;
 extern crate regex;
 
 #[macro_use]
+mod de;
+#[macro_use]
 pub mod util;
 pub mod block;
 pub mod blocks;
