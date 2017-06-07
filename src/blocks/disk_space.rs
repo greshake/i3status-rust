@@ -55,8 +55,9 @@ impl Unit {
 pub enum InfoType {
     Available,
     Free,
-    Total,
-    Used,
+    // TODO: implement
+    //Total,
+    //Used,
 }
 
 impl InfoType {
@@ -104,7 +105,7 @@ impl DiskSpace {
                     State::Warning
                 } else { State::Idle }
             }
-            InfoType::Total | InfoType::Used => unimplemented!(),
+            //InfoType::Total | InfoType::Used => unimplemented!(),
         }
     }
 }
@@ -125,7 +126,7 @@ impl Block for DiskSpace {
                 result = statvfs.f_bfree * statvfs.f_bsize;
                 converted = Unit::bytes_in_unit(self.unit, result);
             }
-            InfoType::Total | InfoType::Used => unimplemented!(),
+            //InfoType::Total | InfoType::Used => unimplemented!(),
         }
 
         self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, converted, self.unit.name()));

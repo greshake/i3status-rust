@@ -7,7 +7,6 @@ use std;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::Read;
-use std::time::Duration;
 
 pub fn get_file(name: &str) -> String {
     let mut file_contents = String::new();
