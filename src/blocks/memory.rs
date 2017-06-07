@@ -12,7 +12,7 @@
 //! ```javascript
 //! {"block": "memory",
 //!     "format_mem": "{Mum}MB/{MTm}MB({Mup}%)", "format_swap": "{SUm}MB/{STm}MB({SUp}%)",
-//!     "type": "memory", "icons": "true", "clickable": "true", "interval": "5",
+//!     "type": "memory", "icons": true, "clickable": true, "interval": 5,
 //!     "warning_mem": 80, "warning_swap": 80, "critical_mem": 95, "critical_swap": 95
 //! },
 //! ```
@@ -94,15 +94,6 @@ use std::fs::OpenOptions;
 enum Memtype {
     SWAP,
     MEMORY
-}
-
-impl Memtype {
-    fn num(&self) -> usize {
-        match *self {
-            Memtype::MEMORY => 0,
-            Memtype::SWAP => 1
-        }
-    }
 }
 
 #[derive(Clone, Copy)]
@@ -286,7 +277,7 @@ impl Memory {
 
         if_debug!({
             let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
-            writeln!(f, "Inserted values: {:?}", self.values);
+            writeln!(f, "Inserted values: {:?}", self.values).unwrap();
         });
 
         match self.memtype {
@@ -335,7 +326,7 @@ impl Memory {
                 _ => FormatTemplate::from_string("{SUm}MB/{STm}MB({SUp}%)".to_string()).unwrap()
             }
             ),
-            update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
+            update_interval: duration_from_f64!(get_f64_default!(config, "interval", 5f64)),
             tx_update_request: tx,
             values: HashMap::<String, String>::new(),
             warning: (get_f64_default!(config, "warning_mem", 80f64), get_f64_default!(config, "warning_swap", 80f64)),
@@ -365,7 +356,7 @@ impl Block for Memory
         for line in f.lines() {
             if_debug!({
             let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
-            writeln!(f, "Updated: {:?}", mem_state);
+            writeln!(f, "Updated: {:?}", mem_state).unwrap();
         });
             // stop reading if all values are already present
             if mem_state.done() {
@@ -426,7 +417,7 @@ impl Block for Memory
 
         if_debug!({
             let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
-            writeln!(f, "Updated: {:?}", self);
+            writeln!(f, "Updated: {:?}", self).unwrap();
         });
         Some(self.update_interval.clone())
     }
@@ -436,7 +427,7 @@ impl Block for Memory
 
         if_debug!({
             let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
-            writeln!(f, "Click received: {:?}", event);
+            writeln!(f, "Click received: {:?}", event).unwrap();
         });
 
         if let Some(ref s) = event.name {

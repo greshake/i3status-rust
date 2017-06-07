@@ -72,7 +72,7 @@ This module keeps track of both Swap and Memory. By default, a click switches be
 ```javascript
 {"block": "memory",
     "format_mem": "{Mum}MB/{MTm}MB({Mup}%)", "format_swap": "{SUm}MB/{STm}MB({SUp}%)",
-    "type": "memory", "icons": "true", "clickable": "true", "interval": "5",
+    "type": "memory", "icons": true, "clickable": true, "interval": 5,
     "warning_mem": 80, "warning_swap": 80, "critical_mem": 95, "critical_swap": 95
 },
 ```

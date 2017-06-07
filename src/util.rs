@@ -7,6 +7,7 @@ use std;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::Read;
+use std::time::Duration;
 
 pub fn get_file(name: &str) -> String {
     let mut file_contents = String::new();
@@ -14,6 +15,8 @@ pub fn get_file(name: &str) -> String {
     file.read_to_string(&mut file_contents).expect(&format!("Unable to read {}", name));
     file_contents
 }
+
+
 
 macro_rules! map (
     { $($key:expr => $value:expr),+ } => {
@@ -189,6 +192,10 @@ macro_rules! get_f64_default {
     ($config:expr, $name:expr, $default:expr) => {$config[$name].as_f64().unwrap_or($default)};
 }
 
+macro_rules! duration_from_f64 {
+    ($seconds:expr) => {{let val: u64 = ($seconds * 1000f64.powi(3)) as u64;
+                        Duration::new(val/1000u64.pow(3), (val % 1000u64.pow(3)) as u32)}};
+}
 // any uses should be replaced with eprintln! once it is on stable
 macro_rules! eprintln {
     ($fmt:expr, $($arg:tt)*) => {
