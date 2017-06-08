@@ -1,7 +1,7 @@
 use de::*;
 use icons;
 use serde::de::{self, Deserialize, Deserializer};
-use serde_json::Value;
+use serde_json::value;
 use std::collections::HashMap as Map;
 use std::marker::PhantomData;
 use std::ops::Deref;
@@ -10,11 +10,29 @@ use themes::{self, Theme};
 
 #[derive(Deserialize, Debug, Default, Clone)]
 pub struct Config {
-    pub blocks: Map<String, Value>,
+    #[serde(deserialize_with = "deserialize_blocks")]
+    pub blocks: Vec<(String, value::Value)>,
     #[serde(default = "icons::default", deserialize_with = "deserialize_icons")]
     pub icons: Map<String, String>,
     #[serde(default = "themes::default", deserialize_with = "deserialize_themes")]
     pub theme: Theme,
+}
+
+fn deserialize_blocks<'de, D>(deserializer: D) -> Result<Vec<(String, value::Value)>, D::Error>
+where
+    D: Deserializer<'de>
+{
+    let mut blocks: Vec<(String, value::Value)> = Vec::new();
+    let raw_blocks: Vec<value::Map<String, value::Value>> = Deserialize::deserialize(deserializer)?;
+    for mut entry in raw_blocks {
+        if let Some(name) = entry.remove("block") {
+            if name.is_string() {
+                blocks.push((name.as_str().unwrap().to_owned(), value::Value::Object(entry)))
+            }
+        }
+    }
+
+    Ok(blocks)
 }
 
 fn deserialize_icons<'de, D>(deserializer: D) -> Result<Map<String, String>, D::Error>

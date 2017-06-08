@@ -100,7 +100,7 @@ fn main() {
     #[cfg(debug_assertions)]
     if_debug!({
         if matches.value_of("profile").is_some() {
-            for (block_name, block_config) in &config.blocks {
+            for &(ref block_name, ref block_config) in &config.blocks {
                 if block_name == matches.value_of("profile").unwrap() {
                     let mut block = create_block(&block_name, block_config.clone(), config.clone(), tx.clone());
                     profile(matches.value_of("profile-runs").unwrap().parse::<i32>().unwrap(), &block_name, block.deref_mut());
@@ -112,8 +112,8 @@ fn main() {
 
     let mut blocks: Vec<Box<Block>> = Vec::new();
 
-    for (block_name, block_config) in &config.blocks {
-        blocks.push(create_block(block_name, block_config.clone(), config.clone(), tx.clone()))
+    for &(ref block_name, ref block_config) in &config.blocks {
+        blocks.push(create_block(&block_name, block_config.clone(), config.clone(), tx.clone()))
     }
 
     let order = blocks.iter().map(|x| String::from(x.id())).collect();

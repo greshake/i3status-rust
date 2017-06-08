@@ -55,19 +55,24 @@ Update your configuration to match the structure of the current [`example_config
 
 ```json
 {
-    "blocks": {
-         "disk_space": {"path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
-         "memory": {"type":"memory", "format_mem":"{Mup}%", "format_swap":"{SUp}%"},
-         "cpu": {"interval": 1},
-         "load": {"interval": 1, "format": "{1m}"},
-         "time": {"interval": 60, "format": "%a %d/%m %R"}
-    },
+    "blocks": [
+        {"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+        {"block": "disk_space", "path": "/mnt/media", "alias": "/mnt/media", "type": "available", "unit": "GB", "interval": 20},
+        {"block": "memory", "type":"memory", "format_mem":"{Mup}%", "format_swap":"{SUp}%"},
+        {"block": "cpu", "interval": 1},
+        {"block": "load", "interval": 1, "format": "{1m}"},
+        {"block": "sound"},
+        {"block": "time", "interval": 60, "format": "%a %d/%m %R"}
+    ],
     "theme": "solarized-dark",
     "icons": "awesome"
 }
 ```
 
-Both `theme` and `icons` can be defined as dicts containing what was `example_theme.json` and `example_icon.json`.
+Things to note:
+
+* Every value in `blocks` can be either a JSON-object, or an array of JSON-objects (compare `disk_space` and `memory`).
+* Both `theme` and `icons` can be defined as dicts containing what was `example_theme.json` and `example_icon.json`.
 
 [9a7501b]: https://github.com/greshake/i3status-rust/tree/9a7501b15f377dd8d84918b5d07c78881eeb6001
 
@@ -77,7 +82,7 @@ Creates a block which display the current time.
 
 **Example**
 ```javascript
-"time": {"interval": 60, "format": "%a %d/%m %R"},
+{"block": "time", "interval": 60, "format": "%a %d/%m %R"},
 ```
 **Options**
 
@@ -99,7 +104,7 @@ This module keeps track of both Swap and Memory. By default, a click switches be
 
 **Example**
 ```javascript
-"memory": {
+{"block": "memory",
     "format_mem": "{Mum}MB/{MTm}MB({Mup}%)",
     "format_swap": "{SUm}MB/{STm}MB({SUp}%)",
     "type": "memory",
@@ -167,7 +172,7 @@ Creates a block which can display the current song title and artist, in a fixed 
 
 **Example**
 ```javascript
-"music": {"player": "spotify", "buttons": ["play", "next"]},
+{"block": "music", "player": "spotify", "buttons": ["play", "next"]},
 ```
 
 **Options**
@@ -184,7 +189,7 @@ Creates a block which displays the system load average.
 
 **Example**
 ```javascript
-"load": {"format": "{1m} {5m}", "interval": 1},
+{"block": "load", "format": "{1m} {5m}", "interval": 1},
 ```
 **Options**
 
@@ -198,7 +203,7 @@ Creates a block which displays the overall CPU utilization, calculated from /pro
 
 **Example**
 ```javascript
-"cpu": {"interval": 1},
+{"block": "cpu", "interval": 1},
 ```
 **Options**
 
@@ -211,7 +216,7 @@ Creates a block which displays the current battery state (Full, Charging or Disc
 
 **Example**
 ```javascript
-"battery": {"interval": 10},
+{"block": "battery", "interval": 10},
 ```
 **Options**
 
@@ -225,11 +230,11 @@ Creates a block that display the output of custom commands
 
 **Example**
 ```json
-"custom": {"interval": 100, "command": "uname"}
+{"block": "custom", "interval": 100, "command": "uname"}
 ```
 
 ```json
-"custom": {"interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "<command>"}
+{"block": "custom", "interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "<command>"}
 ```
 
 Note that `content` and `cycle` are mutually exclusive.
@@ -249,7 +254,7 @@ By specifying the `interval` property you can let the `command_state` be execute
 **Example**
 This is what I use to toggle my external monitor configuration:
 ```json
-"toggle": {
+{"block": "toggle",
     "text": "4k",
     "command_state": "xrandr | grep DP1\\ connected\\ 38 | grep -v eDP1",
     "command_on": "~/.screenlayout/4kmon_default.sh",
@@ -271,7 +276,7 @@ Creates a block which displays the pending updates available on pacman.
 
 **Example**
 ```javascript
-"pacman": {"interval": 10},
+{"block": "pacman", "interval": 10},
 ```
 
 **Options**
@@ -286,7 +291,7 @@ Creates a block which displays disk space information.
 
 **Example**
 ```javascript
-"disk_space": {"path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+{"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
 ```
 
 **Options**
@@ -305,7 +310,7 @@ Creates a block which displays the current Master volume (currently based on ami
 
 **Example**
 ```json
-"sound": {"interval": 10},
+{"block": "sound", "interval": 10},
 ```
 
 **Options**
@@ -321,7 +326,7 @@ Creates a block which displays the system temperature, based on lm_sensors' `sen
 
 **Example**
 ```json
-"temperature": {"interval": 10, "collapsed": false},
+{"block": "temperature", "interval": 10, "collapsed": false},
 ```
 
 **Options**
@@ -336,7 +341,7 @@ Creates a block which displays the title of the currently focused window. Uses p
 
 **Example**
 ```json
-"focused_window": {"max-width": 21},
+{"block": "focused_window", "max-width": 21},
 ```
 
 **Options**
@@ -350,7 +355,7 @@ Creates a block which shows screen information (name, brightness, resolution). W
 
 Example
 ```json
-"xrandr": {"interval": 2, "icons": true, "resolution": true},
+{"block": "xrandr", "interval": 2, "icons": true, "resolution": true},
 ```
 
 Options
