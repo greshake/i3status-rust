@@ -1,6 +1,6 @@
 use config::Config;
 use widget::State;
-use serde_json::Value;
+use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
 
 #[derive(Clone,Debug)]

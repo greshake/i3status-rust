@@ -13,7 +13,7 @@ use widget::{State, I3BarWidget};
 
 use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem, Message, arg};
 use self::stdintf::OrgFreedesktopDBusProperties;
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 pub struct Music {

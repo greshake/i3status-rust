@@ -1,7 +1,7 @@
 use config::Config;
 use std::time::{Duration, Instant};
 use widget::{State, I3BarWidget};
-use serde_json::Value;
+use serde_json::value::Value;
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {

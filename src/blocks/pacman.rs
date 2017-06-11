@@ -12,7 +12,7 @@ use input::{I3BarEvent, MouseButton};
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 

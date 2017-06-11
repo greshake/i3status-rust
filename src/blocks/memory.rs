@@ -76,7 +76,7 @@ use std::io::{BufReader, BufRead};
 use block::Block;
 use input::{I3BarEvent, MouseButton};
 use std::str::FromStr;
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 use std::fmt;
 

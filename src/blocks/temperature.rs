@@ -8,7 +8,7 @@ use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 

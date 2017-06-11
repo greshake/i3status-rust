@@ -9,6 +9,7 @@ extern crate serde;
 
 #[macro_use]
 extern crate serde_json;
+extern crate toml;
 extern crate clap;
 extern crate uuid;
 extern crate regex;

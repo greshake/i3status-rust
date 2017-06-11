@@ -10,7 +10,7 @@ use std::io::BufReader;
 use std::io::prelude::*;
 use std::fs::{File};
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 

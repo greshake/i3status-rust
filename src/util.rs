@@ -2,7 +2,8 @@ use block::Block;
 use config::Config;
 use std::collections::HashMap;
 use serde::de::DeserializeOwned;
-use serde_json::{self, Value};
+use serde_json::value::Value;
+use toml;
 use regex::Regex;
 use std::prelude::v1::String;
 use std;
@@ -18,7 +19,7 @@ where
     let mut contents = String::new();
     let mut file = BufReader::new(File::open(file).expect("failed to open file"));
     file.read_to_string(&mut contents).expect("failed to read file");
-    serde_json::from_str(&contents).expect("failed to parse JSON from file contents")
+    toml::from_str(&contents).expect("failed to parse TOML from file contents")
 }
 
 pub fn get_file(name: &str) -> String {
@@ -201,24 +202,24 @@ impl FormatTemplate {
 }
 
 macro_rules! get_str {
-    ($config:expr, $name:expr) => {String::from($config[$name].as_str().expect(&format!("Required argument {} not found in block config!", $name)))};
+    ($config:expr, $name:expr) => {String::from($config.get($name).and_then(|v| v.as_str()).expect(&format!("Required argument {} not found in block config!", $name)))};
 }
 macro_rules! get_str_default {
-    ($config:expr, $name:expr, $default:expr) => {String::from($config[$name].as_str().unwrap_or($default))};
+    ($config:expr, $name:expr, $default:expr) => {String::from($config.get($name).and_then(|v| v.as_str()).unwrap_or($default))};
 }
 
 macro_rules! get_u64 {
-    ($config:expr, $name:expr) => {$config[$name].as_u64().expect(&format!("Required argument {} not found in block config!", $name))};
+    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_u64()).expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_u64_default {
-    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_u64().unwrap_or($default)};
+    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_integer()).unwrap_or($default) as u64};
 }
 
 macro_rules! get_f64 {
-    ($config:expr, $name:expr) => {$config[$name].as_f64().expect(&format!("Required argument {} not found in block config!", $name))};
+    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_f64()).expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_f64_default {
-    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_f64().unwrap_or($default)};
+    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_float()).unwrap_or($default)};
 }
 
 macro_rules! duration_from_f64 {
@@ -234,10 +235,10 @@ macro_rules! eprintln {
 }
 
 macro_rules! get_bool {
-    ($config:expr, $name:expr) => {$config[$name].as_bool().expect(&format!("Required argument {} not found in block config!", $name))};
+    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_bool()).expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_bool_default {
-    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_bool().unwrap_or($default)};
+    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_bool()).unwrap_or($default)};
 }
 
 macro_rules! if_debug {

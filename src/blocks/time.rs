@@ -7,7 +7,7 @@ use config::Config;
 use self::chrono::offset::local::Local;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget};
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 

@@ -10,7 +10,7 @@ use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 extern crate i3ipc;

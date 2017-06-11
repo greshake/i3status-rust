@@ -8,7 +8,7 @@ use input::I3BarEvent;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 //TODO: Add remaining time

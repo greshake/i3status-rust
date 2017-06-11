@@ -34,10 +34,9 @@ use self::xrandr::*;
 use super::block::Block;
 use super::scheduler::Task;
 
-extern crate serde_json;
 extern crate dbus;
 
-use serde_json::Value;
+use toml::value::Value;
 use std::sync::mpsc::Sender;
 
 macro_rules! boxed ( { $b:expr } => { Box::new($b) as Box<Block> }; );
