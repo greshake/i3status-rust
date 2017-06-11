@@ -17,7 +17,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 # How to use it
 1. Clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
 2. run `cd i3status-rust && cargo build --release`
-3. Edit `example_config.json` to your liking and put it to a sensible place (e.g. `~/.config/i3/status.json`)
+3. Edit `example_config.toml` to your liking and put it to a sensible place (e.g. `~/.config/i3/status.toml`)
 4. Edit your i3 config
       1. In your i3 config, put the path to the output binary as argument for `status_command`
       2. Add the path to your config file as first and only argument to i3status-rs. See `i3status-rs --help` for more. **NOTE: You need to specify *font* in the bar section manually to use iconic fonts!**
@@ -28,7 +28,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
             bar {
                   font pango:DejaVu Sans Mono, Icons 12
                   position top
-                  status_command <PATH_TO_i3STATUS>/i3status-rs <PATH_TO_CONFIG>/config.json
+                  status_command <PATH_TO_i3STATUS>/i3status-rs <PATH_TO_CONFIG>/config.toml
                   colors {
                         separator #666666
                         background #222222
@@ -46,43 +46,68 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 
 `i3status-rs` is very much still in development, so breaking changes before a 1.0.0 release will occur. Following are guides on hoe to update your configurations to match breaking changes.
 
-## Configuration changed ([9a7501b][])
+## Configuration changed
 
-With [9a7501b][] the configuration has been changed to include all three configuration components: blocks, theme and icons.
-As part of this change the command-line arguments `--theme` and `--icons` have been removed.
+Recently, the configuration has been changed:
 
-Update your configuration to match the structure of the current [`example_config.json`](https://github.com/greshake/i3status-rust/blob/9a7501b15f377dd8d84918b5d07c78881eeb6001/example_config.json):
+* Switched from JSON to TOML
+* Inlined the themes and icons configurations into the new main configuration
+* Removed the command-line arguments `--theme` and `--icons`
 
-```json
-{
-    "blocks": [
-        {"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
-        {"block": "disk_space", "path": "/mnt/media", "alias": "/mnt/media", "type": "available", "unit": "GB", "interval": 20},
-        {"block": "memory", "type":"memory", "format_mem":"{Mup}%", "format_swap":"{SUp}%"},
-        {"block": "cpu", "interval": 1},
-        {"block": "load", "interval": 1, "format": "{1m}"},
-        {"block": "sound"},
-        {"block": "time", "interval": 60, "format": "%a %d/%m %R"}
-    ],
-    "theme": "solarized-dark",
-    "icons": "awesome"
-}
+Update your configuration to match the structure of the current [`example_config.toml`](https://github.com/greshake/i3status-rust/blob/master/example_config.toml):
+
+```toml
+theme = "solarized-dark"
+icons = "awesome"
+
+[[block]]
+block = "disk_space"
+path = "/"
+alias = "/"
+type = "available"
+unit = "GB"
+interval = 20
+
+[[block]]
+block = "memory"
+type = "memory"
+format_mem = "{Mup}%"
+format_swap = "{SUp}%"
+
+[[block]]
+block = "cpu"
+interval = 1
+
+[[block]]
+block = "load"
+interval = 1
+format = "{1m}"
+
+[[block]]
+block = "sound"
+
+[[block]]
+block = "time"
+interval = 60
+format = "%a %d/%m %R"
 ```
 
 Things to note:
 
-* Every value in `blocks` can be either a JSON-object, or an array of JSON-objects (compare `disk_space` and `memory`).
-* Both `theme` and `icons` can be defined as dicts containing what was `example_theme.json` and `example_icon.json`.
-
-[9a7501b]: https://github.com/greshake/i3status-rust/tree/9a7501b15f377dd8d84918b5d07c78881eeb6001
+* Every `blocks` has to contain a `block`-field to identify the block to create
+* Both `theme` and `icons` can be defined as tables to, see [`example_theme.toml`](https://github.com/greshake/i3status-rust/blob/master/example_theme.toml) and [`example_icons.toml`](https://github.com/greshake/i3status-rust/blob/master/example_icons.toml)
 
 # Available Blocks
 ## Time
 Creates a block which display the current time.
 
 **Example**
-```javascript
-{"block": "time", "interval": 60, "format": "%a %d/%m %R"},
+```toml
+[[block]]
+block = "time"
+
+interval = 60
+format = "%a %d/%m %R"
 ```
 **Options**
 
@@ -97,25 +122,26 @@ interval | Update interval in seconds | No | 5
 Creates a block displaying memory and swap usage.
 
 By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({Mp}%)" (Swap values
-accordingly). That behaviour can be changed within config.json.
+accordingly). That behaviour can be changed within your config.
 
 This module keeps track of both Swap and Memory. By default, a click switches between them.
 
 
 **Example**
-```javascript
-{"block": "memory",
-    "format_mem": "{Mum}MB/{MTm}MB({Mup}%)",
-    "format_swap": "{SUm}MB/{STm}MB({SUp}%)",
-    "type": "memory",
-    "icons": true,
-    "clickable": true,
-    "interval": 5,
-    "warning_mem": 80,
-    "warning_swap": 80,
-    "critical_mem": 95,
-    "critical_swap": 95
-},
+```toml
+[[block]]
+block = "memory"
+
+format_mem = "{Mum}MB/{MTm}MB({Mup}%)"
+format_swap = "{SUm}MB/{STm}MB({SUp}%)"
+type = "memory"
+icons = true
+clickable = true
+interval = 5
+warning_mem = 80
+warning_swap = 80
+critical_mem = 95
+critical_swap = 95
 ```
 
 **Options**
@@ -171,8 +197,12 @@ Key | Value
 Creates a block which can display the current song title and artist, in a fixed width marquee fashion. It uses dbus signaling to fetch new tracks, so no periodic updates are needed. It supports all Players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more. Also provides buttons for play/pause, previous and next title.
 
 **Example**
-```javascript
-{"block": "music", "player": "spotify", "buttons": ["play", "next"]},
+```toml
+[[block]]
+block = "music"
+
+player = "spotify"
+buttons = ["play", "next"]
 ```
 
 **Options**
@@ -188,8 +218,12 @@ buttons | Array of control buttons to be displayed. Options are<br/>prev (previo
 Creates a block which displays the system load average. 
 
 **Example**
-```javascript
-{"block": "load", "format": "{1m} {5m}", "interval": 1},
+```toml
+[[block]]
+block = "load"
+
+format = "{1m} {5m}"
+interval = 1
 ```
 **Options**
 
@@ -202,8 +236,11 @@ interval | Update interval in seconds | No | 3
 Creates a block which displays the overall CPU utilization, calculated from /proc/stat.
 
 **Example**
-```javascript
-{"block": "cpu", "interval": 1},
+```toml
+[[block]]
+block = "cpu"
+
+internal = 1
 ```
 **Options**
 
@@ -215,8 +252,11 @@ interval | Update interval in seconds | No | 1
 Creates a block which displays the current battery state (Full, Charging or Discharging) and percentage charged.
 
 **Example**
-```javascript
-{"block": "battery", "interval": 10},
+```toml
+[[block]]
+block = "battery"
+
+interval = 10
 ```
 **Options**
 
@@ -229,12 +269,21 @@ device | Which BAT device in /sys/class/power_supply/ to read from. | No | 0
 Creates a block that display the output of custom commands
 
 **Example**
-```json
-{"block": "custom", "interval": 100, "command": "uname"}
+```toml
+[[block]]
+block = "custom"
+
+interval = 100
+command = "uname"
 ```
 
-```json
-{"block": "custom", "interval": 1, "cycle": ["echo ON", "echo OFF"], "on_click": "<command>"}
+```toml
+[[block]]
+block = "custom"
+
+interval = 1
+cycle = ["echo ON", "echo OFF"]
+on_click = "<command>"
 ```
 
 Note that `content` and `cycle` are mutually exclusive.
@@ -253,14 +302,15 @@ By specifying the `interval` property you can let the `command_state` be execute
 
 **Example**
 This is what I use to toggle my external monitor configuration:
-```json
-{"block": "toggle",
-    "text": "4k",
-    "command_state": "xrandr | grep DP1\\ connected\\ 38 | grep -v eDP1",
-    "command_on": "~/.screenlayout/4kmon_default.sh",
-    "command_off": "~/.screenlayout/builtin.sh",
-    "interval": 5
-},
+```toml
+[[block]]
+block = "toggle"
+
+text = "4k"
+command_state = "xrandr | grep DP1\\ connected\\ 38 | grep -v eDP1"
+command_on = "~/.screenlayout/4kmon_default.sh"
+command_off = "~/.screenlayout/builtin.sh"
+interval = 5
 ```
 
 Key | Values | Required | Default
@@ -275,8 +325,11 @@ command_state | Shell Command to determine toggle state. <br/>Empty output => of
 Creates a block which displays the pending updates available on pacman.
 
 **Example**
-```javascript
-{"block": "pacman", "interval": 10},
+```toml
+[[block]]
+block = "pacman"
+
+interval = 10
 ```
 
 **Options**
@@ -290,8 +343,16 @@ interval | Update interval in seconds | No | 600 (10min)
 Creates a block which displays disk space information.
 
 **Example**
-```javascript
-{"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
+```toml
+[[block]]
+block = "disk_space"
+
+
+path = "/"
+alias = "/"
+type = "available"
+unit = "GB"
+interval = 20
 ```
 
 **Options**
@@ -309,8 +370,11 @@ interval | Update interval in seconds | No | 20
 Creates a block which displays the current Master volume (currently based on amixer output). Right click to toggle mute, scroll to adjust volume.
 
 **Example**
-```json
-{"block": "sound", "interval": 10},
+```toml
+[[block]]
+block = "sound"
+
+interval = 10
 ```
 
 **Options**
@@ -325,8 +389,12 @@ step\_width | The steps volume is in/decreased for the selected audio device (Wh
 Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). Currently, you can only adjust these thresholds in source code. **Depends on lm_sensors being installed and configured!**
 
 **Example**
-```json
-{"block": "temperature", "interval": 10, "collapsed": false},
+```toml
+[[block]]
+block = "temperature"
+
+interval = 10
+collapsed = false
 ```
 
 **Options**
@@ -340,8 +408,11 @@ collapsed | Collapsed by default? | No | true
 Creates a block which displays the title of the currently focused window. Uses push updates from i3 IPC, so no need to worry about resource usage. The block only updates when the focused window changes title or the focus changes.
 
 **Example**
-```json
-{"block": "focused_window", "max-width": 21},
+```toml
+[[block]]
+block = "focused_window"
+
+max-width = 21
 ```
 
 **Options**
@@ -354,8 +425,13 @@ max-width | Truncates titles if longer than max-width | No | 21
 Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brighntess.
 
 Example
-```json
-{"block": "xrandr", "interval": 2, "icons": true, "resolution": true},
+```toml
+[[block]]
+block = "xrandr"
+
+interval = 2
+icons = true
+resolution = true
 ```
 
 Options
