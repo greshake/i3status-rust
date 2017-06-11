@@ -83,6 +83,52 @@ pub struct DiskSpace {
     unit: Unit,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct DiskSpaceConfig {
+    /// Path to collect information from
+    #[serde(default = "DiskSpaceConfig::default_path")]
+    pub path: String,
+
+    /// Alias that is displayed for path
+    #[serde(default = "DiskSpaceConfig::default_alias")]
+    pub alias: String,
+
+    /// Currently supported options are available and free
+    #[serde(default = "DiskSpaceConfig::default_info_type")]
+    pub info_type: String,
+
+    /// Unit that is used to display disk space. Options are MB, MiB, GB and GiB
+    #[serde(default = "DiskSpaceConfig::default_unit")]
+    pub unit: String,
+
+    /// Update interval in seconds
+    #[serde(default = "DiskSpaceConfig::default_interval")]
+    pub interval: Duration,
+}
+
+impl DiskSpaceConfig {
+    fn default_path() -> String {
+        "/".to_owned()
+    }
+
+    fn default_alias() -> String {
+        "/".to_owned()
+    }
+
+    fn default_info_type() -> String {
+        "available".to_owned()
+    }
+
+    fn default_unit() -> String {
+        "GB".to_owned()
+    }
+
+    fn default_interval() -> Duration {
+        Duration::from_secs(20)
+    }
+}
+
 impl DiskSpace {
     pub fn new(block_config: Value, config: Config) -> DiskSpace {
         DiskSpace {

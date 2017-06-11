@@ -20,6 +20,28 @@ pub struct Battery {
     device_path: String
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct BatteryConfig {
+    /// Update interval in seconds
+    #[serde(default = "BatteryConfig::default_interval")]
+    pub interval: Duration,
+
+    /// Which BAT device in /sys/class/power_supply/ to read from.
+    #[serde(default = "BatteryConfig::default_device")]
+    pub device: usize,
+}
+
+impl BatteryConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(10)
+    }
+
+    fn default_device() -> usize {
+        0
+    }
+}
+
 impl Battery {
     pub fn new(block_config: Value, config: Config) -> Battery {
         Battery {

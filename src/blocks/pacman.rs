@@ -22,6 +22,20 @@ pub struct Pacman {
     update_interval: Duration,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct PacmanConfig {
+    /// Update interval in seconds
+    #[serde(default = "PacmanConfig::default_interval")]
+    pub interval: Duration,
+}
+
+impl PacmanConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(60 * 10)
+    }
+}
+
 impl Pacman {
     pub fn new(block_config: Value, config: Config) -> Pacman {
         Pacman {

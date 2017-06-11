@@ -27,6 +27,21 @@ pub struct FocusedWindow {
     id: String,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct FocusedWindowConfig {
+    /// Truncates titles if longer than max-width
+    #[serde(default = "FocusedWindowConfig::default_max_width")]
+    pub max_width: usize,
+}
+
+impl FocusedWindowConfig {
+    fn default_max_width() -> usize {
+        21
+    }
+}
+
+
 impl FocusedWindow {
     pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> FocusedWindow {
         let id = Uuid::new_v4().simple().to_string();

@@ -20,6 +20,28 @@ pub struct Temperature {
     update_interval: Duration,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct TemperatureConfig {
+    /// Update interval in seconds
+    #[serde(default = "TemperatureConfig::default_interval")]
+    pub interval: Duration,
+
+    /// Collapsed by default?
+    #[serde(default = "TemperatureConfig::default_collapsed")]
+    pub collapsed: bool,
+}
+
+impl TemperatureConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(5)
+    }
+
+    fn default_collapsed() -> bool {
+        true
+    }
+}
+
 impl Temperature {
     pub fn new(block_config: Value, config: Config) -> Temperature {
         let id = Uuid::new_v4().simple().to_string();

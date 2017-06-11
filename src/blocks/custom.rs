@@ -25,6 +25,29 @@ pub struct Custom {
     tx_update_request: Sender<Task>,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct CustomConfig {
+    /// Update interval in seconds
+    #[serde(default = "CustomConfig::default_interval")]
+    pub interval: Duration,
+
+    /// Shell Command to execute & display
+    pub command: Option<String>,
+
+    /// Command to execute when the button is clicked
+    pub on_click: Option<String>,
+
+    /// Commands to execute and change when the button is clicked
+    pub cycle: Option<Vec<String>>,
+}
+
+impl CustomConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(10)
+    }
+}
+
 impl Custom {
     pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> Custom {
         let mut custom = Custom {

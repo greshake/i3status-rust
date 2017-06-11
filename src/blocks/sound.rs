@@ -97,6 +97,28 @@ pub struct Sound {
     config: Config,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct SoundConfig {
+    /// Update interval in seconds
+    #[serde(default = "SoundConfig::default_interval")]
+    pub interval: Duration,
+
+    /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
+    #[serde(default = "SoundConfig::default_step_width")]
+    pub step_width: u32,
+}
+
+impl SoundConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(2)
+    }
+
+    fn default_step_width() -> u32 {
+        5
+    }
+}
+
 impl Sound {
     pub fn new(block_config: Value, config: Config) -> Sound {
         let id = Uuid::new_v4().simple().to_string();

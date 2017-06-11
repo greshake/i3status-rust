@@ -18,6 +18,28 @@ pub struct Time {
     format: String
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct TimeConfig {
+    /// Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
+    #[serde(default = "TimeConfig::default_format")]
+    pub format: String,
+
+    /// Update interval in seconds
+    #[serde(default = "TimeConfig::default_interval")]
+    pub interval: Duration,
+}
+
+impl TimeConfig {
+    fn default_format() -> String {
+        "%a %d/%m %R".to_owned()
+    }
+
+    fn default_interval() -> Duration {
+        Duration::from_secs(5)
+    }
+}
+
 impl Time {
     pub fn new(block_config: Value, config: Config) -> Time {
         Time {

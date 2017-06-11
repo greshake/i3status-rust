@@ -22,6 +22,22 @@ pub struct Toggle {
     id: String,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct ToggleConfig {
+    /// Update interval in seconds
+    pub interval: Option<Duration>,
+
+    /// Shell Command to enable the toggle
+    pub command_on: Option<String>,
+
+    /// Shell Command to disable the toggle
+    pub command_off: Option<String>,
+
+    /// Shell Command to determine toggle state. <br/>Empty output => off. Any output => on.
+    pub command_state: Option<String>,
+}
+
 impl Toggle {
     pub fn new(block_config: Value, config: Config) -> Toggle {
         let id = Uuid::new_v4().simple().to_string();

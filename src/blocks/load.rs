@@ -22,6 +22,25 @@ pub struct Load {
     update_interval: Duration,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct LoadConfig {
+    #[serde(default = "LoadConfig::default_format")]
+    pub format: String,
+    #[serde(default = "LoadConfig::default_interval")]
+    pub interval: Duration,
+}
+
+impl LoadConfig {
+    fn default_format() -> String {
+        "{1m}".to_owned()
+    }
+
+    fn default_interval() -> Duration {
+        Duration::from_secs(5)
+    }
+}
+
 impl Load {
     pub fn new(block_config: Value, config: Config) -> Load {
         let text = TextWidget::new(config).with_icon("cogs").with_state(State::Info);

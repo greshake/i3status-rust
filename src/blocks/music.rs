@@ -28,6 +28,39 @@ pub struct Music {
     player: String,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct MusicConfig {
+    /// Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.
+    pub player: String,
+
+    /// Max width of the block in characters, not including the buttons
+    #[serde(default = "MusicConfig::default_max_width")]
+    pub max_width: usize,
+
+    /// Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max-width
+    #[serde(default = "MusicConfig::default_marquee")]
+    pub marquee: bool,
+
+    /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
+    #[serde(default = "MusicConfig::default_buttons")]
+    pub buttons: Vec<String>,
+}
+
+impl MusicConfig {
+    fn default_max_width() -> usize {
+        21
+    }
+
+    fn default_marquee() -> bool {
+        true
+    }
+
+    fn default_buttons() -> Vec<String> {
+        vec![]
+    }
+}
+
 impl Music {
     pub fn new(block_config: Value, config: Config, send: Sender<Task>) -> Music {
         let id: String = Uuid::new_v4().simple().to_string();

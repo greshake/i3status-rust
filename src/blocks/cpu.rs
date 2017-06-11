@@ -22,6 +22,20 @@ pub struct Cpu {
     update_interval: Duration,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct CpuConfig {
+    /// Update interval in seconds
+    #[serde(default = "CpuConfig::default_interval")]
+    pub interval: Duration,
+}
+
+impl CpuConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(1)
+    }
+}
+
 impl Cpu {
     pub fn new(block_config: Value, config: Config) -> Cpu {
         let text = TextWidget::new(config).with_icon("cpu");
