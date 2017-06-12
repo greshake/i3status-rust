@@ -1,4 +1,6 @@
-
+use config::Config;
+use scheduler::Task;
+use std::sync::mpsc::Sender;
 use std::time::Duration;
 use input::I3BarEvent;
 use widget::I3BarWidget;
@@ -18,4 +20,10 @@ pub trait Block {
 
     /// This function returns a unique id.
     fn id(&self) -> &str;
+}
+
+pub trait ConfigBlock: Block {
+    type Config;
+
+    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Self;
 }

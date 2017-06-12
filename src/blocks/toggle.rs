@@ -29,13 +29,16 @@ pub struct ToggleConfig {
     pub interval: Option<Duration>,
 
     /// Shell Command to enable the toggle
-    pub command_on: Option<String>,
+    pub command_on: String,
 
     /// Shell Command to disable the toggle
-    pub command_off: Option<String>,
+    pub command_off: String,
 
     /// Shell Command to determine toggle state. <br/>Empty output => off. Any output => on.
-    pub command_state: Option<String>,
+    pub command_state: String,
+
+    /// Text to display in i3bar for this block
+    pub text: String,
 }
 
 impl Toggle {

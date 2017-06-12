@@ -31,7 +31,7 @@ use self::focused_window::*;
 use self::temperature::*;
 use self::xrandr::*;
 
-use super::block::Block;
+use super::block::{Block, ConfigBlock};
 use super::scheduler::Task;
 
 extern crate dbus;
@@ -41,6 +41,13 @@ use std::sync::mpsc::Sender;
 use toml::value::Value;
 
 macro_rules! boxed ( { $b:expr } => { Box::new($b) as Box<Block> }; );
+
+macro_rules! block {
+    ($block_type:ident, $block_config:expr, $config:expr, $tx_update_request:expr) => {{
+        let block_config: <$block_type as ConfigBlock>::Config = <$block_type as ConfigBlock>::Config::deserialize($block_config).unwrap();
+        Box::new($block_type::new(block_config, $config, $tx_update_request)) as Box<Block>
+    }}
+}
 
 pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_request: Sender<Task>) -> Box<Block> {
     match name {
