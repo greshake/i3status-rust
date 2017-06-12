@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -28,7 +29,7 @@ pub struct Load {
 pub struct LoadConfig {
     #[serde(default = "LoadConfig::default_format")]
     pub format: String,
-    #[serde(default = "LoadConfig::default_interval")]
+    #[serde(default = "LoadConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 

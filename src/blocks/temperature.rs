@@ -6,6 +6,7 @@ use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -25,7 +26,7 @@ pub struct Temperature {
 #[serde(deny_unknown_fields)]
 pub struct TemperatureConfig {
     /// Update interval in seconds
-    #[serde(default = "TemperatureConfig::default_interval")]
+    #[serde(default = "TemperatureConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Collapsed by default?

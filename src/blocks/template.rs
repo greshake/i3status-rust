@@ -3,6 +3,7 @@ use std::sync::mpsc::Sender;
 
 use config::Config;
 use block::{Block, ConfigBlock};
+use de::deserialize_duration;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
@@ -27,7 +28,7 @@ pub struct Template {
 #[serde(deny_unknown_fields)]
 pub struct TemplateConfig {
     /// Update interval in seconds
-    #[serde(default = "TemplateConfig::default_interval")]
+    #[serde(default = "TemplateConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 

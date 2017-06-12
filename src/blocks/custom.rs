@@ -7,6 +7,7 @@ use std::sync::mpsc::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
@@ -28,7 +29,7 @@ pub struct Custom {
 #[serde(deny_unknown_fields)]
 pub struct CustomConfig {
     /// Update interval in seconds
-    #[serde(default = "CustomConfig::default_interval")]
+    #[serde(default = "CustomConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Shell Command to execute & display

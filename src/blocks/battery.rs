@@ -4,6 +4,7 @@ use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -25,7 +26,7 @@ pub struct Battery {
 #[serde(deny_unknown_fields)]
 pub struct BatteryConfig {
     /// Update interval in seconds
-    #[serde(default = "BatteryConfig::default_interval")]
+    #[serde(default = "BatteryConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Which BAT device in /sys/class/power_supply/ to read from.

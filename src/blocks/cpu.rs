@@ -4,6 +4,7 @@ use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -27,7 +28,7 @@ pub struct Cpu {
 #[serde(deny_unknown_fields)]
 pub struct CpuConfig {
     /// Update interval in seconds
-    #[serde(default = "CpuConfig::default_interval")]
+    #[serde(default = "CpuConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 

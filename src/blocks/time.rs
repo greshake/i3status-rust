@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use self::chrono::offset::local::Local;
 use scheduler::Task;
 use std::sync::mpsc::Sender;
@@ -27,7 +28,7 @@ pub struct TimeConfig {
     pub format: String,
 
     /// Update interval in seconds
-    #[serde(default = "TimeConfig::default_interval")]
+    #[serde(default = "TimeConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 

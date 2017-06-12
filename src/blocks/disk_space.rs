@@ -5,6 +5,7 @@ use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use input::I3BarEvent;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
@@ -104,7 +105,7 @@ pub struct DiskSpaceConfig {
     pub unit: String,
 
     /// Update interval in seconds
-    #[serde(default = "DiskSpaceConfig::default_interval")]
+    #[serde(default = "DiskSpaceConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 

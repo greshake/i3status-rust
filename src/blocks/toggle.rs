@@ -6,6 +6,7 @@ use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_opt_duration;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
@@ -27,6 +28,7 @@ pub struct Toggle {
 #[serde(deny_unknown_fields)]
 pub struct ToggleConfig {
     /// Update interval in seconds
+    #[serde(default, deserialize_with = "deserialize_opt_duration")]
     pub interval: Option<Duration>,
 
     /// Shell Command to enable the toggle

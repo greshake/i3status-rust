@@ -5,6 +5,7 @@ use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
@@ -102,7 +103,7 @@ pub struct Sound {
 #[serde(deny_unknown_fields)]
 pub struct SoundConfig {
     /// Update interval in seconds
-    #[serde(default = "SoundConfig::default_interval")]
+    #[serde(default = "SoundConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)

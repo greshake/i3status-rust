@@ -81,6 +81,7 @@ use std::fmt;
 
 
 use config::Config;
+use de::deserialize_duration;
 use widgets::button::ButtonWidget;
 use widget::{State,I3BarWidget};
 use scheduler::Task;
@@ -233,7 +234,7 @@ pub struct MemoryConfig {
     pub clickable: bool,
 
     /// The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only.
-    #[serde(default = "MemoryConfig::default_interval")]
+    #[serde(default = "MemoryConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Percentage of memory usage, where state is set to warning

@@ -10,6 +10,7 @@ use scheduler::Task;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use input::{I3BarEvent, MouseButton};
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
@@ -27,7 +28,7 @@ pub struct Pacman {
 #[serde(deny_unknown_fields)]
 pub struct PacmanConfig {
     /// Update interval in seconds
-    #[serde(default = "PacmanConfig::default_interval")]
+    #[serde(default = "PacmanConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 

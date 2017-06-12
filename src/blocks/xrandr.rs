@@ -8,6 +8,7 @@ use util::FormatTemplate;
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::{I3BarEvent, MouseButton};
@@ -57,7 +58,7 @@ pub struct Xrandr {
 #[serde(deny_unknown_fields)]
 pub struct XrandrConfig {
     /// Update interval in seconds
-    #[serde(default = "XrandrConfig::default_interval")]
+    #[serde(default = "XrandrConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Show icons for brightness and resolution (needs awesome fonts support)
