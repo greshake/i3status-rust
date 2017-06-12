@@ -5,14 +5,13 @@ use std::iter::{Cycle, Peekable};
 use std::vec;
 use std::sync::mpsc::Sender;
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
 
-use toml::value::Value;
 use uuid::Uuid;
 
 pub struct Custom {
@@ -48,11 +47,13 @@ impl CustomConfig {
     }
 }
 
-impl Custom {
-    pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> Custom {
+impl ConfigBlock for Custom {
+    type Config = CustomConfig;
+
+    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Self {
         let mut custom = Custom {
             id: Uuid::new_v4().simple().to_string(),
-            update_interval: Duration::new(get_u64_default!(block_config, "interval", 10), 0),
+            update_interval: block_config.interval,
             output: ButtonWidget::new(config.clone(), ""),
             command: None,
             on_click: None,
@@ -61,21 +62,18 @@ impl Custom {
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
-        if let Some(on_click) = block_config.get("on_click").and_then(|s| s.as_str()) {
+        if let Some(on_click) = block_config.on_click {
             custom.on_click = Some(on_click.to_string())
         };
 
-        if let Some(cycle) = block_config.get("cycle").and_then(|s| s.as_array()) {
+        if let Some(cycle) = block_config.cycle {
             custom.cycle = Some(cycle.into_iter()
-                                .map(|s| s.as_str().expect("'cycle' should be an array of strings").to_string())
-                                .collect::<Vec<_>>()
-                                .into_iter()
                                 .cycle()
                                 .peekable());
             return custom
         };
 
-        if let Some(command) = block_config.get("command").and_then(|s| s.as_str()) {
+        if let Some(command) = block_config.command {
             custom.command = Some(command.to_string())
         };
 

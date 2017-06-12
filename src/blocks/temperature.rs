@@ -1,14 +1,15 @@
 use std::time::Duration;
 use std::process::Command;
 use std::error::Error;
+use std::sync::mpsc::Sender;
+use scheduler::Task;
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
 
-use toml::value::Value;
 use uuid::Uuid;
 
 
@@ -42,14 +43,16 @@ impl TemperatureConfig {
     }
 }
 
-impl Temperature {
-    pub fn new(block_config: Value, config: Config) -> Temperature {
+impl ConfigBlock for Temperature {
+    type Config = TemperatureConfig;
+
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
         let id = Uuid::new_v4().simple().to_string();
         Temperature {
-            update_interval: Duration::new(get_u64_default!(block_config, "interval", 5), 0),
+            update_interval: block_config.interval,
             text: ButtonWidget::new(config, &id).with_icon("thermometer"),
             output: String::new(),
-            collapsed: get_bool_default!(block_config, "collapsed", true),
+            collapsed: block_config.collapsed,
             id,
         }
     }

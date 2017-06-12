@@ -1,13 +1,14 @@
 use std::time::Duration;
 use std::process::Command;
+use std::sync::mpsc::Sender;
+use scheduler::Task;
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
 
-use toml::value::Value;
 use uuid::Uuid;
 
 struct SoundDevice {
@@ -120,26 +121,6 @@ impl SoundConfig {
 }
 
 impl Sound {
-    pub fn new(block_config: Value, config: Config) -> Sound {
-        let id = Uuid::new_v4().simple().to_string();
-        let mut step_width = get_u64_default!(block_config, "step_width", 5) as u32;
-        if step_width > 50 {
-            step_width = 50;
-        }
-
-        let mut sound = Sound {
-            text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
-            id: id,
-            devices: Vec::new(),
-            update_interval: Duration::new(get_u64_default!(block_config, "interval", 2), 0),
-            step_width: step_width,
-            current_idx: 0,
-            config: config,
-        };
-        sound.devices.push(SoundDevice::new("Master"));
-        sound
-    }
-
     fn display(&mut self) {
         if let Some(device) = self.devices.get_mut(self.current_idx) {
             if device.get_info() {
@@ -164,6 +145,31 @@ impl Sound {
             }
         }
     }
+}
+
+impl ConfigBlock for Sound {
+    type Config = SoundConfig;
+
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
+        let id = Uuid::new_v4().simple().to_string();
+        let mut step_width = block_config.step_width;
+        if step_width > 50 {
+            step_width = 50;
+        }
+
+        let mut sound = Sound {
+            text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
+            id: id,
+            devices: Vec::new(),
+            update_interval: block_config.interval,
+            step_width: step_width,
+            current_idx: 0,
+            config: config,
+        };
+        sound.devices.push(SoundDevice::new("Master"));
+        sound
+    }
+
 }
 
 // To filter [100%] output from amixer into 100

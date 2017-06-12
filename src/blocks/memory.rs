@@ -73,10 +73,9 @@ use util::*;
 use std::sync::mpsc::Sender;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
-use block::Block;
+use block::{Block, ConfigBlock};
 use input::{I3BarEvent, MouseButton};
 use std::str::FromStr;
-use toml::value::Value;
 use uuid::Uuid;
 use std::fmt;
 
@@ -212,7 +211,6 @@ pub struct Memory {
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
 pub struct MemoryConfig {
     /// Format string for Memory view. All format values are described below.
     #[serde(default = "MemoryConfig::default_format_mem")]
@@ -381,9 +379,14 @@ impl Memory {
             _ => Memtype::MEMORY
         };
     }
-    pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> Memory {
-        let memtype: String = get_str_default!(block_config, "type", "swap");
-        let icons: bool = get_bool_default!(block_config, "icons", true);
+}
+
+impl ConfigBlock for Memory {
+    type Config = MemoryConfig;
+
+    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Self {
+        let memtype: String = block_config.display_type;
+        let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, "memory").with_text("");
         let memory = Memory {
             name: Uuid::new_v4().simple().to_string(),
@@ -399,18 +402,14 @@ impl Memory {
                 (widget.clone(), widget)
             }
             ,
-            clickable: get_bool_default!(block_config, "clickable", true),
-            format: (FormatTemplate::from_string(
-                        get_str_default!(block_config, "format_mem", "{Mum}MB/{MTm}MB({Mup}%)"))
-                        .unwrap(),
-                     FormatTemplate::from_string(
-                        get_str_default!(block_config, "format_swap", "{SUm}MB/{STm}MB({SUp}%)"))
-                        .unwrap()),
-            update_interval: duration_from_f64!(get_f64_default!(block_config, "interval", 5f64)),
+            clickable: block_config.clickable,
+            format: (FormatTemplate::from_string(block_config.format_mem).unwrap(),
+                     FormatTemplate::from_string(block_config.format_swap).unwrap()),
+            update_interval: block_config.interval,
             tx_update_request: tx,
             values: HashMap::<String, String>::new(),
-            warning: (get_f64_default!(block_config, "warning_mem", 80f64), get_f64_default!(block_config, "warning_swap", 80f64)),
-            critical: (get_f64_default!(block_config, "critical_mem", 95f64), get_f64_default!(block_config, "critical_swap", 95f64)),
+            warning: (block_config.warning_mem, block_config.warning_swap),
+            critical: (block_config.critical_mem, block_config.critical_swap),
         };
         memory
 

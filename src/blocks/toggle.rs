@@ -1,14 +1,15 @@
 use std::time::Duration;
 use std::process::Command;
 use std::error::Error;
+use std::sync::mpsc::Sender;
+use scheduler::Task;
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
 
-use toml::value::Value;
 use uuid::Uuid;
 
 
@@ -41,21 +42,20 @@ pub struct ToggleConfig {
     pub text: String,
 }
 
-impl Toggle {
-    pub fn new(block_config: Value, config: Config) -> Toggle {
+impl ConfigBlock for Toggle {
+    type Config = ToggleConfig;
+
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
         let id = Uuid::new_v4().simple().to_string();
-        let interval = get_f64_default!(block_config, "interval", -1.);
         Toggle {
             text: ButtonWidget::new(config, &id)
-                .with_text(&get_str!(block_config, "text")),
-            command_on: get_str!(block_config, "command_on"),
-            command_off: get_str!(block_config, "command_off"),
-            command_state: get_str!(block_config, "command_state"),
+                .with_text(&block_config.text),
+            command_on: block_config.command_on,
+            command_off: block_config.command_off,
+            command_state: block_config.command_state,
             id,
             toggled: false,
-            update_interval: if interval < 0.
-                {None} else
-            {Some(Duration::new(interval as u64, 0))},
+            update_interval: block_config.interval,
         }
     }
 }

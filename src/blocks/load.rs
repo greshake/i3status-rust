@@ -1,17 +1,18 @@
 use std::time::Duration;
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
 use util::FormatTemplate;
+use std::sync::mpsc::Sender;
+use scheduler::Task;
 
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::fs::{File, OpenOptions};
 
-use toml::value::Value;
 use uuid::Uuid;
 
 pub struct Load {
@@ -41,8 +42,10 @@ impl LoadConfig {
     }
 }
 
-impl Load {
-    pub fn new(block_config: Value, config: Config) -> Load {
+impl ConfigBlock for Load {
+    type Config = LoadConfig;
+
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
         let text = TextWidget::new(config).with_icon("cogs").with_state(State::Info);
 
         let f = File::open("/proc/cpuinfo").expect("Your system doesn't support /proc/cpuinfo");
@@ -62,8 +65,8 @@ impl Load {
         Load {
             id: Uuid::new_v4().simple().to_string(),
             logical_cores: logical_cores,
-            update_interval: Duration::new(get_u64_default!(block_config, "interval", 3), 0),
-            format: FormatTemplate::from_string(get_str_default!(block_config, "format", "{1m}")).expect("Invalid format specified for load"),
+            update_interval: block_config.interval,
+            format: FormatTemplate::from_string(block_config.format).expect("Invalid format specified for load"),
             text: text
         }
     }

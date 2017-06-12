@@ -201,44 +201,12 @@ impl FormatTemplate {
     }
 }
 
-macro_rules! get_str {
-    ($config:expr, $name:expr) => {String::from($config.get($name).and_then(|v| v.as_str()).expect(&format!("Required argument {} not found in block config!", $name)))};
-}
-macro_rules! get_str_default {
-    ($config:expr, $name:expr, $default:expr) => {String::from($config.get($name).and_then(|v| v.as_str()).unwrap_or($default))};
-}
-
-macro_rules! get_u64 {
-    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_u64()).expect(&format!("Required argument {} not found in block config!", $name))};
-}
-macro_rules! get_u64_default {
-    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_integer()).unwrap_or($default) as u64};
-}
-
-macro_rules! get_f64 {
-    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_f64()).expect(&format!("Required argument {} not found in block config!", $name))};
-}
-macro_rules! get_f64_default {
-    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_float()).unwrap_or($default)};
-}
-
-macro_rules! duration_from_f64 {
-    ($seconds:expr) => {{let val: u64 = ($seconds * 1000f64.powi(3)) as u64;
-                        Duration::new(val/1000u64.pow(3), (val % 1000u64.pow(3)) as u32)}};
-}
 // any uses should be replaced with eprintln! once it is on stable
 macro_rules! eprintln {
     ($fmt:expr, $($arg:tt)*) => {
         use ::std::io::Write;
         writeln!(&mut ::std::io::stderr(), $fmt, $($arg)*).ok();
     };
-}
-
-macro_rules! get_bool {
-    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_bool()).expect(&format!("Required argument {} not found in block config!", $name))};
-}
-macro_rules! get_bool_default {
-    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_bool()).unwrap_or($default)};
 }
 
 macro_rules! if_debug {
