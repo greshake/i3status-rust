@@ -38,11 +38,11 @@ impl Custom {
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
-        if let Some(on_click) = block_config["on_click"].as_str() {
+        if let Some(on_click) = block_config.get("on_click").and_then(|s| s.as_str()) {
             custom.on_click = Some(on_click.to_string())
         };
 
-        if let Some(cycle) = block_config["cycle"].as_array() {
+        if let Some(cycle) = block_config.get("cycle").and_then(|s| s.as_array()) {
             custom.cycle = Some(cycle.into_iter()
                                 .map(|s| s.as_str().expect("'cycle' should be an array of strings").to_string())
                                 .collect::<Vec<_>>()
@@ -52,7 +52,7 @@ impl Custom {
             return custom
         };
 
-        if let Some(command) = block_config["command"].as_str() {
+        if let Some(command) = block_config.get("command").and_then(|s| s.as_str()) {
             custom.command = Some(command.to_string())
         };
 

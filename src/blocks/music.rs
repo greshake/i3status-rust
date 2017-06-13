@@ -54,23 +54,25 @@ impl Music {
             }
         });
 
-        let buttons = block_config["buttons"].as_array().expect("'buttons' must be an array of 'play', 'next' and/or 'prev'!");
+        let buttons = block_config.get("buttons").and_then(|b| b.as_array());
         let mut play: Option<ButtonWidget> = None;
         let mut prev: Option<ButtonWidget> = None;
         let mut next: Option<ButtonWidget> = None;
-        for button in buttons {
-            match button.as_str().expect("Music button identifiers must be Strings") {
-                "play" =>
-                    play = Some(ButtonWidget::new(config.clone(), "play")
-                        .with_icon("music_play").with_state(State::Info)),
-                "next" =>
-                    next = Some(ButtonWidget::new(config.clone(), "next")
-                        .with_icon("music_next").with_state(State::Info)),
-                "prev" =>
-                    prev = Some(ButtonWidget::new(config.clone(), "prev")
-                        .with_icon("music_prev").with_state(State::Info)),
-                x => panic!("Unknown Music button identifier! {}", x)
-            };
+        if let Some(buttons) = buttons {
+            for button in buttons {
+                match button.as_str().expect("Music button identifiers must be Strings") {
+                    "play" =>
+                        play = Some(ButtonWidget::new(config.clone(), "play")
+                            .with_icon("music_play").with_state(State::Info)),
+                    "next" =>
+                        next = Some(ButtonWidget::new(config.clone(), "next")
+                            .with_icon("music_next").with_state(State::Info)),
+                    "prev" =>
+                        prev = Some(ButtonWidget::new(config.clone(), "prev")
+                            .with_icon("music_prev").with_state(State::Info)),
+                    x => panic!("Unknown Music button identifier! {}", x)
+                };
+            }
         }
 
         Music {

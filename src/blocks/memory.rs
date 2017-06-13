@@ -315,18 +315,12 @@ impl Memory {
             }
             ,
             clickable: get_bool_default!(block_config, "clickable", true),
-            format: (match block_config["format_mem"] {
-                Value::String(ref e) => {
-                    FormatTemplate::from_string(e.clone()).unwrap()
-                }
-                _ => FormatTemplate::from_string("{Mum}MB/{MTm}MB({Mup}%)".to_string()).unwrap()
-            }, match block_config["format_swap"] {
-                Value::String(ref e) => {
-                    FormatTemplate::from_string(e.clone()).unwrap()
-                }
-                _ => FormatTemplate::from_string("{SUm}MB/{STm}MB({SUp}%)".to_string()).unwrap()
-            }
-            ),
+            format: (FormatTemplate::from_string(
+                        get_str_default!(block_config, "format_mem", "{Mum}MB/{MTm}MB({Mup}%)"))
+                        .unwrap(),
+                     FormatTemplate::from_string(
+                        get_str_default!(block_config, "format_swap", "{SUm}MB/{STm}MB({SUp}%)"))
+                        .unwrap()),
             update_interval: duration_from_f64!(get_f64_default!(block_config, "interval", 5f64)),
             tx_update_request: tx,
             values: HashMap::<String, String>::new(),
