@@ -286,7 +286,7 @@ cycle = ["echo ON", "echo OFF"]
 on_click = "<command>"
 ```
 
-Note that `content` and `cycle` are mutually exclusive.
+Note that `command` and `cycle` are mutually exclusive.
 
 Key | Values | Required | Default
 ----|--------|----------|--------
