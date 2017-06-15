@@ -44,7 +44,7 @@ i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icon
 
 # Breaking changes
 
-`i3status-rs` is very much still in development, so breaking changes before a 1.0.0 release will occur. Following are guides on hoe to update your configurations to match breaking changes.
+`i3status-rs` is very much still in development, so breaking changes before a 1.0.0 release will occur. Following are guides on how to update your configurations to match breaking changes.
 
 ## Configuration changed
 
