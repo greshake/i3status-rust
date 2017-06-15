@@ -1,13 +1,14 @@
 use std::time::Duration;
 use std::sync::mpsc::Sender;
 
+use config::Config;
 use block::Block;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 
@@ -18,23 +19,20 @@ pub struct Template {
 
     //useful, but optional
     #[allow(dead_code)]
-    theme: Value,
+    config: Config,
     #[allow(dead_code)]
     tx_update_request: Sender<Task>,
 }
 
 impl Template {
-    pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Template {
-        {
-            Template {
-                id: Uuid::new_v4().simple().to_string(),
-                update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-                text: TextWidget::new(theme.clone()).with_text("Template"),
-                tx_update_request: tx,
-                theme: theme,
-            }
+    pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> Template {
+        Template {
+            id: Uuid::new_v4().simple().to_string(),
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 5), 0),
+            text: TextWidget::new(config.clone()).with_text("Template"),
+            tx_update_request: tx,
+            config: config,
         }
-        
     }
 }
 

@@ -2,11 +2,12 @@ use std::time::Duration;
 use std::path::Path;
 
 use block::Block;
+use config::Config;
 use input::I3BarEvent;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 extern crate nix;
@@ -83,15 +84,15 @@ pub struct DiskSpace {
 }
 
 impl DiskSpace {
-    pub fn new(config: Value, theme: Value) -> DiskSpace {
+    pub fn new(block_config: Value, config: Config) -> DiskSpace {
         DiskSpace {
             id: Uuid::new_v4().simple().to_string(),
-            update_interval: Duration::new(get_u64_default!(config, "interval", 20), 0),
-            disk_space: TextWidget::new(theme.clone()).with_text("DiskSpace"),
-            alias: get_str_default!(config, "alias", "/"),
-            path: get_str_default!(config, "path","/"),
-            info_type: InfoType::from_str(get_str_default!(config, "type", "available").as_str()),
-            unit: Unit::from_str(get_str_default!(config, "unit", "GB").as_str()),
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 20), 0),
+            disk_space: TextWidget::new(config).with_text("DiskSpace"),
+            alias: get_str_default!(block_config, "alias", "/"),
+            path: get_str_default!(block_config, "path","/"),
+            info_type: InfoType::from_str(get_str_default!(block_config, "type", "available").as_str()),
+            unit: Unit::from_str(get_str_default!(block_config, "unit", "GB").as_str()),
         }
     }
 

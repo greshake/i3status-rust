@@ -3,11 +3,12 @@ use std::process::Command;
 use std::error::Error;
 
 use block::Block;
+use config::Config;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 
@@ -20,18 +21,15 @@ pub struct Temperature {
 }
 
 impl Temperature {
-    pub fn new(config: Value, theme: Value) -> Temperature {
-        {
-            let id = Uuid::new_v4().simple().to_string();
-            Temperature {
-                update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-                text: ButtonWidget::new(theme.clone(), &id).with_icon("thermometer"),
-                output: String::new(),
-                collapsed: get_bool_default!(config, "collapsed", true),
-                id,
-            }
+    pub fn new(block_config: Value, config: Config) -> Temperature {
+        let id = Uuid::new_v4().simple().to_string();
+        Temperature {
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 5), 0),
+            text: ButtonWidget::new(config, &id).with_icon("thermometer"),
+            output: String::new(),
+            collapsed: get_bool_default!(block_config, "collapsed", true),
+            id,
         }
-
     }
 }
 

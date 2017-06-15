@@ -2,11 +2,12 @@ use std::time::Duration;
 use std::process::Command;
 
 use block::Block;
+use config::Config;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 struct SoundDevice {
@@ -93,29 +94,28 @@ pub struct Sound {
     update_interval: Duration,
     step_width: u32,
     current_idx: usize,
-    theme: Value
+    config: Config,
 }
 
 impl Sound {
-    pub fn new(config: Value, theme: Value) -> Sound {
-        {
-            let id = Uuid::new_v4().simple().to_string();
-            let mut step_width = get_u64_default!(config, "step_width", 5) as u32;
-            if step_width > 50 {
-                step_width = 50;
-            }
-            let mut sound = Sound {
-                text: ButtonWidget::new(theme.clone(), &id).with_icon("volume_empty"),
-                id,
-                devices: Vec::new(),
-                update_interval: Duration::new(get_u64_default!(config, "interval", 2), 0),
-                step_width: step_width,
-                current_idx: 0,
-                theme,
-            };
-            sound.devices.push(SoundDevice::new("Master"));
-            sound
+    pub fn new(block_config: Value, config: Config) -> Sound {
+        let id = Uuid::new_v4().simple().to_string();
+        let mut step_width = get_u64_default!(block_config, "step_width", 5) as u32;
+        if step_width > 50 {
+            step_width = 50;
         }
+
+        let mut sound = Sound {
+            text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
+            id: id,
+            devices: Vec::new(),
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 2), 0),
+            step_width: step_width,
+            current_idx: 0,
+            config: config,
+        };
+        sound.devices.push(SoundDevice::new("Master"));
+        sound
     }
 
     fn display(&mut self) {
@@ -123,8 +123,7 @@ impl Sound {
             if device.get_info() {
                 if device.muted {
                     self.text.set_icon("volume_empty");
-                    self.text.set_text(self.theme["icons"]["volume_muted"]
-                             .as_str().expect("Wrong icon identifier!").to_owned());
+                    self.text.set_text(self.config.icons["volume_muted"].as_str().to_owned());
                     self.text.set_state(State::Warning);
                 } else {
                     self.text.set_icon(match device.volume {

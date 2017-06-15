@@ -3,6 +3,7 @@ use std::sync::mpsc::Sender;
 use std::thread;
 use std::boxed::Box;
 
+use config::Config;
 use scheduler::Task;
 use input::I3BarEvent;
 use block::Block;
@@ -12,7 +13,7 @@ use widget::{State, I3BarWidget};
 
 use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem, Message, arg};
 use self::stdintf::OrgFreedesktopDBusProperties;
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 pub struct Music {
@@ -28,7 +29,7 @@ pub struct Music {
 }
 
 impl Music {
-    pub fn new(config: Value, send: Sender<Task>, theme: &Value) -> Music {
+    pub fn new(block_config: Value, config: Config, send: Sender<Task>) -> Music {
         let id: String = Uuid::new_v4().simple().to_string();
         let id_copy = id.clone();
 
@@ -53,38 +54,40 @@ impl Music {
             }
         });
 
-        let buttons = config["buttons"].as_array().expect("'buttons' must be an array of 'play', 'next' and/or 'prev'!");
+        let buttons = block_config.get("buttons").and_then(|b| b.as_array());
         let mut play: Option<ButtonWidget> = None;
         let mut prev: Option<ButtonWidget> = None;
         let mut next: Option<ButtonWidget> = None;
-        for button in buttons {
-            match button.as_str().expect("Music button identifiers must be Strings") {
-                "play" =>
-                    play = Some(ButtonWidget::new(theme.clone(), "play")
-                        .with_icon("music_play").with_state(State::Info)),
-                "next" =>
-                    next = Some(ButtonWidget::new(theme.clone(), "next")
-                        .with_icon("music_next").with_state(State::Info)),
-                "prev" =>
-                    prev = Some(ButtonWidget::new(theme.clone(), "prev")
-                        .with_icon("music_prev").with_state(State::Info)),
-                x => panic!("Unknown Music button identifier! {}", x)
-            };
+        if let Some(buttons) = buttons {
+            for button in buttons {
+                match button.as_str().expect("Music button identifiers must be Strings") {
+                    "play" =>
+                        play = Some(ButtonWidget::new(config.clone(), "play")
+                            .with_icon("music_play").with_state(State::Info)),
+                    "next" =>
+                        next = Some(ButtonWidget::new(config.clone(), "next")
+                            .with_icon("music_next").with_state(State::Info)),
+                    "prev" =>
+                        prev = Some(ButtonWidget::new(config.clone(), "prev")
+                            .with_icon("music_prev").with_state(State::Info)),
+                    x => panic!("Unknown Music button identifier! {}", x)
+                };
+            }
         }
 
         Music {
             id: id_copy,
             current_song: RotatingTextWidget::new(Duration::new(10, 0),
                                                                Duration::new(0, 500000000),
-                                                               get_u64_default!(config, "max_width", 21) as usize,
-                                                               theme.clone()).with_icon("music").with_state(State::Info),
+                                                               get_u64_default!(block_config, "max_width", 21) as usize,
+                                                               config.clone()).with_icon("music").with_state(State::Info),
             prev: prev,
             play: play,
             next: next,
             dbus_conn: Connection::get_private(BusType::Session).unwrap(),
             player_avail: false,
-            player: get_str!(config, "player"),
-            marquee: get_bool_default!(config, "marquee", true),
+            player: get_str!(block_config, "player"),
+            marquee: get_bool_default!(block_config, "marquee", true),
         }
     }
 }

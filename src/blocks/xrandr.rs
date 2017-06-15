@@ -5,11 +5,12 @@ use std::str::FromStr;
 use util::FormatTemplate;
 
 use block::Block;
+use config::Config;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::{I3BarEvent, MouseButton};
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 struct Monitor {
@@ -48,7 +49,7 @@ pub struct Xrandr {
     current_idx: usize,
 
     #[allow(dead_code)]
-    theme: Value,
+    config: Config,
 }
 
 macro_rules! unwrap_or_continue {
@@ -61,24 +62,22 @@ macro_rules! unwrap_or_continue {
 }
 
 impl Xrandr {
-    pub fn new(config: Value, theme: Value) -> Xrandr {
-        {
-            let id = Uuid::new_v4().simple().to_string();
-            let mut step_width = get_u64_default!(config, "step_width", 5) as u32;
-            if step_width > 50 {
-                step_width = 50;
-            }
-            Xrandr {
-                text: ButtonWidget::new(theme.clone(), &id).with_icon("xrandr"),
-                id: id,
-                update_interval: Duration::new(get_u64_default!(config, "interval", 5), 0),
-                current_idx: 0,
-                icons: get_bool_default!(config, "icons", true),
-                resolution: get_bool_default!(config, "resolution", false),
-                step_width: step_width,
-                monitors: Vec::new(),
-                theme: theme,
-            }
+    pub fn new(block_config: Value, config: Config) -> Xrandr {
+        let id = Uuid::new_v4().simple().to_string();
+        let mut step_width = get_u64_default!(block_config, "step_width", 5) as u32;
+        if step_width > 50 {
+            step_width = 50;
+        }
+        Xrandr {
+            text: ButtonWidget::new(config.clone(), &id).with_icon("xrandr"),
+            id: id,
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 5), 0),
+            current_idx: 0,
+            icons: get_bool_default!(block_config, "icons", true),
+            resolution: get_bool_default!(block_config, "resolution", false),
+            step_width: step_width,
+            monitors: Vec::new(),
+            config: config,
         }
     }
 

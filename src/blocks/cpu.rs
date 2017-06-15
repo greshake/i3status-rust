@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use block::Block;
+use config::Config;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -9,7 +10,7 @@ use std::io::BufReader;
 use std::io::prelude::*;
 use std::fs::{File};
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 
@@ -22,18 +23,15 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(config: Value, theme: Value) -> Cpu {
-        {
-            let text = TextWidget::new(theme.clone()).with_icon("cpu");
-            return Cpu {
-                id: Uuid::new_v4().simple().to_string(),
-                update_interval: Duration::new(get_u64_default!(config, "interval", 1), 0),
-                utilization: text,
-                prev_idle: 0,
-                prev_non_idle: 0,
-            }
+    pub fn new(block_config: Value, config: Config) -> Cpu {
+        let text = TextWidget::new(config).with_icon("cpu");
+        return Cpu {
+            id: Uuid::new_v4().simple().to_string(),
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 1), 0),
+            utilization: text,
+            prev_idle: 0,
+            prev_non_idle: 0,
         }
-        
     }
 }
 

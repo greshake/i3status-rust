@@ -1,8 +1,0 @@
-[
-  {"block": "disk_space", "path": "/", "alias": "/", "type": "available", "unit": "GB", "interval": 20},
-  {"block": "memory", "type":"memory", "format_mem":"{Mup}%", "format_swap":"{SUp}%"},
-  {"block": "cpu", "interval": 1},
-  {"block": "load", "interval": 1, "format": "{1m}"},
-  {"block": "sound"},
-  {"block": "time", "interval": 60, "format": "%a %d/%m %R"}
-]

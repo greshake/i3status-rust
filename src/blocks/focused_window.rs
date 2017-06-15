@@ -4,12 +4,13 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 
 use block::Block;
+use config::Config;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 extern crate i3ipc;
@@ -27,7 +28,7 @@ pub struct FocusedWindow {
 }
 
 impl FocusedWindow {
-    pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> FocusedWindow {
+    pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> FocusedWindow {
         let id = Uuid::new_v4().simple().to_string();
         let id_clone = id.clone();
 
@@ -71,15 +72,12 @@ impl FocusedWindow {
             }
         });
 
-        {
-            FocusedWindow {
-                id,
-                text: TextWidget::new(theme.clone()),
-                max_width: get_u64_default!(config, "max-width", 21) as usize,
-                title
-            }
+        FocusedWindow {
+            id,
+            text: TextWidget::new(config),
+            max_width: get_u64_default!(block_config, "max-width", 21) as usize,
+            title
         }
-        
     }
 }
 

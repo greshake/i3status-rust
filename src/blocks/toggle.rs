@@ -3,11 +3,12 @@ use std::process::Command;
 use std::error::Error;
 
 use block::Block;
+use config::Config;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 
@@ -22,24 +23,21 @@ pub struct Toggle {
 }
 
 impl Toggle {
-    pub fn new(config: Value, theme: Value) -> Toggle {
-        {
-            let id = Uuid::new_v4().simple().to_string();
-            let interval = get_f64_default!(config, "interval", -1.);
-            Toggle {
-                text: ButtonWidget::new(theme.clone(), &id)
-                    .with_text(&get_str!(config, "text")),
-                command_on: get_str!(config, "command_on"),
-                command_off: get_str!(config, "command_off"),
-                command_state: get_str!(config, "command_state"),
-                id,
-                toggled: false,
-                update_interval: if interval < 0.
-                    {None} else
-                {Some(Duration::new(interval as u64, 0))},
-            }
+    pub fn new(block_config: Value, config: Config) -> Toggle {
+        let id = Uuid::new_v4().simple().to_string();
+        let interval = get_f64_default!(block_config, "interval", -1.);
+        Toggle {
+            text: ButtonWidget::new(config, &id)
+                .with_text(&get_str!(block_config, "text")),
+            command_on: get_str!(block_config, "command_on"),
+            command_off: get_str!(block_config, "command_off"),
+            command_state: get_str!(block_config, "command_state"),
+            id,
+            toggled: false,
+            update_interval: if interval < 0.
+                {None} else
+            {Some(Duration::new(interval as u64, 0))},
         }
-        
     }
 }
 

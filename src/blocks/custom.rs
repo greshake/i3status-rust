@@ -6,12 +6,13 @@ use std::vec;
 use std::sync::mpsc::Sender;
 
 use block::Block;
+use config::Config;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
 
-use serde_json::Value;
+use toml::value::Value;
 use uuid::Uuid;
 
 pub struct Custom {
@@ -25,23 +26,23 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new(config: Value, tx: Sender<Task>, theme: Value) -> Custom {
+    pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> Custom {
         let mut custom = Custom {
             id: Uuid::new_v4().simple().to_string(),
-            update_interval: Duration::new(get_u64_default!(config, "interval", 10), 0),
-            output: ButtonWidget::new(theme.clone(), ""),
+            update_interval: Duration::new(get_u64_default!(block_config, "interval", 10), 0),
+            output: ButtonWidget::new(config.clone(), ""),
             command: None,
             on_click: None,
             cycle: None,
             tx_update_request: tx,
         };
-        custom.output = ButtonWidget::new(theme, &custom.id);
+        custom.output = ButtonWidget::new(config, &custom.id);
 
-        if let Some(on_click) = config["on_click"].as_str() {
+        if let Some(on_click) = block_config.get("on_click").and_then(|s| s.as_str()) {
             custom.on_click = Some(on_click.to_string())
         };
 
-        if let Some(cycle) = config["cycle"].as_array() {
+        if let Some(cycle) = block_config.get("cycle").and_then(|s| s.as_array()) {
             custom.cycle = Some(cycle.into_iter()
                                 .map(|s| s.as_str().expect("'cycle' should be an array of strings").to_string())
                                 .collect::<Vec<_>>()
@@ -51,7 +52,7 @@ impl Custom {
             return custom
         };
 
-        if let Some(command) = config["command"].as_str() {
+        if let Some(command) = block_config.get("command").and_then(|s| s.as_str()) {
             custom.command = Some(command.to_string())
         };
 

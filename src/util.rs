@@ -1,12 +1,26 @@
 use block::Block;
+use config::Config;
 use std::collections::HashMap;
-use serde_json::Value;
+use serde::de::DeserializeOwned;
+use serde_json::value::Value;
+use toml;
 use regex::Regex;
 use std::prelude::v1::String;
 use std;
 use std::fmt::Display;
 use std::fs::File;
-use std::io::Read;
+use std::io::BufReader;
+use std::io::prelude::*;
+
+pub fn deserialize_file<T>(file: &str) -> T
+where
+    T: DeserializeOwned
+{
+    let mut contents = String::new();
+    let mut file = BufReader::new(File::open(file).expect("failed to open file"));
+    file.read_to_string(&mut contents).expect("failed to read file");
+    toml::from_str(&contents).expect("failed to parse TOML from file contents")
+}
 
 pub fn get_file(name: &str) -> String {
     let mut file_contents = String::new();
@@ -29,24 +43,36 @@ macro_rules! map (
      };
 );
 
+macro_rules! map_to_owned (
+    { $($key:expr => $value:expr),+ } => {
+        {
+            let mut m = ::std::collections::HashMap::new();
+            $(
+                m.insert($key.to_owned(), $value.to_owned());
+            )+
+            m
+        }
+     };
+);
+
 struct PrintState {
-    pub last_bg: Value,
+    pub last_bg: Option<String>,
     pub has_predecessor: bool
 }
 
 impl PrintState {
-    fn set_last_bg(&mut self, bg: Value) {
-        self.last_bg = bg;
+    fn set_last_bg(&mut self, bg: String) {
+        self.last_bg = Some(bg);
     }
     fn set_predecessor(&mut self, pre: bool) {
         self.has_predecessor = pre;
     }
 }
 
-pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>, theme: &Value) {
+pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>, config: &Config) {
     let mut state = PrintState {
         has_predecessor: false,
-        last_bg: Value::Null
+        last_bg: None,
     };
 
     print!("[");
@@ -54,32 +80,37 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
         let ref block = *(block_map.get(block_id).unwrap());
         let widgets = block.view();
         let first = widgets[0];
-        let color = String::from(first.get_rendered()["background"].as_str().unwrap());
+        let color = first.get_rendered()["background"].as_str().unwrap();
 
-        // TODO: clean this up
-        let tmp: Value = theme.get("separator_fg").expect("separator_fg entry is missing").clone();
-        let sep_fg:Value= if tmp.as_str().unwrap() == "auto".to_string() {Value::String(color.clone())} else {tmp};
+        let sep_fg = if config.theme.separator_fg == "auto" {
+            color
+        } else {
+            &config.theme.separator_fg
+        };
 
-        let tmp = theme.get("separator_bg").expect("separator_bg entry is missing").clone();
-        let sep_bg = if tmp.as_str().unwrap() == "auto".to_string() {state.last_bg.clone()} else {tmp};
+        let sep_bg = if config.theme.separator_bg == "auto" {
+            state.last_bg.clone()
+        } else {
+            Some(config.theme.separator_bg.clone())
+        };
 
         let separator = json!({
-                    "full_text": theme["separator"],
+                    "full_text": config.theme.separator,
                     "separator": false,
                     "separator_block_width": 0,
-                    "background": sep_bg,
+                    "background": if sep_bg.is_some() { Value::String(sep_bg.unwrap()) } else { Value::Null },
                     "color": sep_fg
                 });
         print!("{}{},", if state.has_predecessor { "," } else { "" },
                separator.to_string());
         print!("{}", first.to_string());
-        state.set_last_bg(Value::String(color));
+        state.set_last_bg(color.to_owned());
         state.set_predecessor(true);
 
         for widget in widgets.iter().skip(1) {
             print!("{}{}", if state.has_predecessor { "," } else { "" },
                    widget.to_string());
-            state.set_last_bg(Value::String(String::from(widget.get_rendered()["background"].as_str().unwrap())));
+            state.set_last_bg(String::from(widget.get_rendered()["background"].as_str().unwrap()));
             state.set_predecessor(true);
         }
     }
@@ -171,24 +202,24 @@ impl FormatTemplate {
 }
 
 macro_rules! get_str {
-    ($config:expr, $name:expr) => {String::from($config[$name].as_str().expect(&format!("Required argument {} not found in block config!", $name)))};
+    ($config:expr, $name:expr) => {String::from($config.get($name).and_then(|v| v.as_str()).expect(&format!("Required argument {} not found in block config!", $name)))};
 }
 macro_rules! get_str_default {
-    ($config:expr, $name:expr, $default:expr) => {String::from($config[$name].as_str().unwrap_or($default))};
+    ($config:expr, $name:expr, $default:expr) => {String::from($config.get($name).and_then(|v| v.as_str()).unwrap_or($default))};
 }
 
 macro_rules! get_u64 {
-    ($config:expr, $name:expr) => {$config[$name].as_u64().expect(&format!("Required argument {} not found in block config!", $name))};
+    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_u64()).expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_u64_default {
-    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_u64().unwrap_or($default)};
+    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_integer()).unwrap_or($default) as u64};
 }
 
 macro_rules! get_f64 {
-    ($config:expr, $name:expr) => {$config[$name].as_f64().expect(&format!("Required argument {} not found in block config!", $name))};
+    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_f64()).expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_f64_default {
-    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_f64().unwrap_or($default)};
+    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_float()).unwrap_or($default)};
 }
 
 macro_rules! duration_from_f64 {
@@ -204,12 +235,35 @@ macro_rules! eprintln {
 }
 
 macro_rules! get_bool {
-    ($config:expr, $name:expr) => {$config[$name].as_bool().expect(&format!("Required argument {} not found in block config!", $name))};
+    ($config:expr, $name:expr) => {$config.get($name).and_then(|v| v.as_bool()).expect(&format!("Required argument {} not found in block config!", $name))};
 }
 macro_rules! get_bool_default {
-    ($config:expr, $name:expr, $default:expr) => {$config[$name].as_bool().unwrap_or($default)};
+    ($config:expr, $name:expr, $default:expr) => {$config.get($name).and_then(|v| v.as_bool()).unwrap_or($default)};
 }
 
 macro_rules! if_debug {
     ($x:block) => (if cfg!(debug_assertions) $x)
+}
+
+macro_rules! mapped_struct {
+    ($( #[$attr:meta] )* pub struct $name:ident : $fieldtype:ty { $( pub $fname:ident ),* }) => {
+        $( #[$attr] )*
+        pub struct $name {
+            $( pub $fname : $fieldtype ),*
+        }
+
+        impl $name {
+            pub fn map(&self) -> ::std::collections::HashMap<&'static str, &$fieldtype> {
+                let mut m = ::std::collections::HashMap::new();
+                $( m.insert(stringify!($fname), &self.$fname); )*
+                m
+            }
+
+            pub fn owned_map(&self) -> ::std::collections::HashMap<String, $fieldtype> {
+                let mut m = ::std::collections::HashMap::new();
+                $( m.insert(stringify!($fname).to_owned(), self.$fname.to_owned()); )*
+                m
+            }
+        }
+    }
 }
