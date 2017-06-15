@@ -94,7 +94,7 @@ format = "%a %d/%m %R"
 
 Things to note:
 
-* Every `blocks` has to contain a `block`-field to identify the block to create
+* Every `[[block]]` has to contain a `block`-field to identify the block to create
 * Both `theme` and `icons` can be defined as tables to, see [`example_theme.toml`](https://github.com/greshake/i3status-rust/blob/master/example_theme.toml) and [`example_icons.toml`](https://github.com/greshake/i3status-rust/blob/master/example_icons.toml)
 
 # Available Blocks
