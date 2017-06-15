@@ -191,8 +191,8 @@ fn main() {
         }
 
         let error_widget = TextWidget::new(Default::default())
-            .with_state(State::Critical).expect("failed to set widget state")
-            .with_text(&format!("{}", e)).expect("failed to set widget text");
+            .with_state(State::Critical)
+            .with_text(&format!("{}", e));
         let error_rendered = error_widget.get_rendered();
         println!("{}", serde_json::to_string(&[error_rendered]).expect("failed to serialize error message"));
 

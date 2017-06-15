@@ -51,7 +51,7 @@ impl ConfigBlock for Temperature {
         let id = Uuid::new_v4().simple().to_string();
         Ok(Temperature {
             update_interval: block_config.interval,
-            text: ButtonWidget::new(config, &id).with_icon("thermometer")?,
+            text: ButtonWidget::new(config, &id).with_icon("thermometer"),
             output: String::new(),
             collapsed: block_config.collapsed,
             id,
@@ -103,7 +103,7 @@ impl Block for Temperature
 
             self.output = format!("{}° avg, {}° max", avg, max);
             if !self.collapsed {
-                self.text.set_text(self.output.clone())?;
+                self.text.set_text(self.output.clone());
             }
 
             self.text.set_state(match max {
@@ -112,7 +112,7 @@ impl Block for Temperature
                 45 ... 60 => State::Info,
                 60 ... 80 => State::Warning,
                 _ => State::Critical
-            })?;
+            });
         }
 
         Ok(Some(self.update_interval.clone()))
@@ -125,9 +125,9 @@ impl Block for Temperature
             if name.as_str() == self.id {
                 self.collapsed = !self.collapsed;
                 if self.collapsed {
-                    self.text.set_text(String::new())?;
+                    self.text.set_text(String::new());
                 } else {
-                    self.text.set_text(self.output.clone())?;
+                    self.text.set_text(self.output.clone());
                 }
             }
         }

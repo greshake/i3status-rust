@@ -48,7 +48,7 @@ impl ConfigBlock for Load {
     type Config = LoadConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let text = TextWidget::new(config).with_icon("cogs")?.with_state(State::Info)?;
+        let text = TextWidget::new(config).with_icon("cogs").with_state(State::Info);
 
         let f = File::open("/proc/cpuinfo").block_error("load", "Your system doesn't support /proc/cpuinfo")?;
         let f = BufReader::new(f);
@@ -97,9 +97,9 @@ impl Block for Load
                 0.3 ... 0.6 => State::Info,
                 0.6 ... 0.9 => State::Warning,
                 _ => State::Critical
-        })?;
+        });
 
-        self.text.set_text(self.format.render_static_str(&values)?)?;
+        self.text.set_text(self.format.render_static_str(&values)?);
 
         Ok(Some(self.update_interval.clone()))
     }

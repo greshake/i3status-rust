@@ -350,14 +350,14 @@ impl Memory {
                     x if x as f64 > self.warning.0 => State::Warning,
                     _ => State::Idle,
                 }
-            )?,
+            ),
             Memtype::SWAP => self.output.1.set_state(
                 match swap_used.percent(swap_total) {
                     x if x as f64 > self.critical.1 => State::Critical,
                     x if x as f64 > self.warning.1 => State::Warning,
                     _ => State::Idle,
                 }
-            )?
+            )
         };
 
         if_debug!({
@@ -393,7 +393,7 @@ impl ConfigBlock for Memory {
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let memtype: String = block_config.display_type;
         let icons: bool = block_config.icons;
-        let widget = ButtonWidget::new(config, "memory").with_text("")?;
+        let widget = ButtonWidget::new(config, "memory").with_text("");
         let memory = Memory {
             name: Uuid::new_v4().simple().to_string(),
             memtype: match memtype.as_ref() {
@@ -403,7 +403,7 @@ impl ConfigBlock for Memory {
             },
             output:
             if icons {
-                (widget.clone().with_icon("memory_mem")?, widget.with_icon("memory_swap")?)
+                (widget.clone().with_icon("memory_mem"), widget.with_icon("memory_swap"))
             } else {
                 (widget.clone(), widget)
             }
@@ -502,8 +502,8 @@ impl Block for Memory
         let output_text = self.format_insert_values(mem_state)?;
 
         match self.memtype {
-            Memtype::MEMORY => self.output.0.set_text(output_text)?,
-            Memtype::SWAP => self.output.1.set_text(output_text)?,
+            Memtype::MEMORY => self.output.0.set_text(output_text),
+            Memtype::SWAP => self.output.1.set_text(output_text),
         }
 
         if_debug!({

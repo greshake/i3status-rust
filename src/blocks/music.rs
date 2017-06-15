@@ -96,13 +96,13 @@ impl ConfigBlock for Music {
             match &*button {
                 "play" =>
                     play = Some(ButtonWidget::new(config.clone(), "play")
-                        .with_icon("music_play")?.with_state(State::Info)?),
+                        .with_icon("music_play").with_state(State::Info)),
                 "next" =>
                     next = Some(ButtonWidget::new(config.clone(), "next")
-                        .with_icon("music_next")?.with_state(State::Info)?),
+                        .with_icon("music_next").with_state(State::Info)),
                 "prev" =>
                     prev = Some(ButtonWidget::new(config.clone(), "prev")
-                        .with_icon("music_prev")?.with_state(State::Info)?),
+                        .with_icon("music_prev").with_state(State::Info)),
                 x => Err(BlockError("music".to_owned(), format!("unknown music button identifier: '{}'", x)))?
             };
         }
@@ -113,8 +113,8 @@ impl ConfigBlock for Music {
                                                   Duration::new(0, 500000000),
                                                   block_config.max_width,
                                                   config.clone())
-                              .with_icon("music")?
-                              .with_state(State::Info)?,
+                              .with_icon("music")
+                              .with_state(State::Info),
             prev: prev,
             play: play,
             next: next,
@@ -143,26 +143,26 @@ impl Block for Music
             let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
             if data.is_err() {
-                self.current_song.set_text(String::from(""))?;
+                self.current_song.set_text(String::from(""));
                 self.player_avail = false;
             } else {
                 let metadata = data.unwrap();
 
                 let (title, artist) = extract_from_metadata(metadata).unwrap_or((String::new(), String::new()));
 
-                self.current_song.set_text(format!("{} | {}", title, artist))?;
+                self.current_song.set_text(format!("{} | {}", title, artist));
                 self.player_avail = true;
             }
             if let Some(ref mut play) = self.play {
                 let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
                 match data {
-                    Err(_) => play.set_icon("music_play")?,
+                    Err(_) => play.set_icon("music_play"),
                     Ok(data) => {
                         let state = data.0;
                         if state.as_str().map(|s| s != "Playing").unwrap_or(false) {
-                            play.set_icon("music_play")?
+                            play.set_icon("music_play")
                         } else {
-                            play.set_icon("music_pause")?
+                            play.set_icon("music_pause")
                         }
                     }
                 }

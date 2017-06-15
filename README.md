@@ -467,7 +467,7 @@ impl ConfigBlock for Template {
         Ok(Template {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            text: TextWidget::new(config.clone()).with_text("Template")?,
+            text: TextWidget::new(config.clone()).with_text("Template"),
             tx_update_request: tx_update_request,
             config: config,
         })

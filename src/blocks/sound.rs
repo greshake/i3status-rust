@@ -131,18 +131,18 @@ impl Sound {
         device.get_info()?;
 
         if device.muted {
-            self.text.set_icon("volume_empty")?;
+            self.text.set_icon("volume_empty");
             self.text.set_text(self.config.icons.get("volume_muted")
-                     .block_error("sound", "cannot find icon")?.to_owned())?;
-            self.text.set_state(State::Warning)?;
+                     .block_error("sound", "cannot find icon")?.to_owned());
+            self.text.set_state(State::Warning);
         } else {
             self.text.set_icon(match device.volume {
                 0 ... 20 => "volume_empty",
                 20 ... 70 => "volume_half",
                 _ => "volume_full"
-            })?;
-            self.text.set_text(format!("{:02}%", device.volume))?;
-            self.text.set_state(State::Info)?;
+            });
+            self.text.set_text(format!("{:02}%", device.volume));
+            self.text.set_state(State::Info);
         }
 
         Ok(())
@@ -160,7 +160,7 @@ impl ConfigBlock for Sound {
         }
 
         let mut sound = Sound {
-            text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty")?,
+            text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id,
             devices: Vec::new(),
             update_interval: block_config.interval,

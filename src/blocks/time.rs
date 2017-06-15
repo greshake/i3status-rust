@@ -50,7 +50,7 @@ impl ConfigBlock for Time {
         Ok(Time {
             id: Uuid::new_v4().simple().to_string(),
             format: block_config.format,
-            time: TextWidget::new(config).with_text("")?.with_icon("time")?,
+            time: TextWidget::new(config).with_text("").with_icon("time"),
             update_interval: block_config.interval,
         })
     }
@@ -58,7 +58,7 @@ impl ConfigBlock for Time {
 
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Duration>> {
-        self.time.set_text(format!("{}", Local::now().format(&self.format)))?;
+        self.time.set_text(format!("{}", Local::now().format(&self.format)));
         Ok(Some(self.update_interval.clone()))
     }
 

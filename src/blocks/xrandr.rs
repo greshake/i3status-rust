@@ -185,7 +185,7 @@ impl Xrandr {
                               "{brightness}" => brightness_str,
                               "{resolution}" => m.resolution.clone());
 
-            self.text.set_icon("xrandr")?;
+            self.text.set_icon("xrandr");
             let format_str: &str;
             if self.resolution {
                 if self.icons {
@@ -202,7 +202,7 @@ impl Xrandr {
             }
 
             if let Ok(fmt_template) = FormatTemplate::from_string(String::from(format_str)) {
-                self.text.set_text(fmt_template.render_static_str(&values)?)?;
+                self.text.set_text(fmt_template.render_static_str(&values)?);
             }
         }
 
@@ -220,7 +220,7 @@ impl ConfigBlock for Xrandr {
             step_width = 50;
         }
         Ok(Xrandr {
-            text: ButtonWidget::new(config.clone(), &id).with_icon("xrandr")?,
+            text: ButtonWidget::new(config.clone(), &id).with_icon("xrandr"),
             id: id,
             update_interval: block_config.interval,
             current_idx: 0,

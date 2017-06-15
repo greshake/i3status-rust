@@ -155,7 +155,7 @@ impl ConfigBlock for DiskSpace {
         Ok(DiskSpace {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            disk_space: TextWidget::new(config).with_text("DiskSpace")?,
+            disk_space: TextWidget::new(config).with_text("DiskSpace"),
             alias: block_config.alias,
             path: block_config.path,
             info_type: InfoType::from_str(&block_config.info_type),
@@ -183,10 +183,10 @@ impl Block for DiskSpace {
             //InfoType::Total | InfoType::Used => unimplemented!(),
         }
 
-        self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, converted, self.unit.name()))?;
+        self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, converted, self.unit.name()));
 
         let state = self.compute_state(result);
-        self.disk_space.set_state(state)?;
+        self.disk_space.set_state(state);
 
         Ok(Some(self.update_interval.clone()))
     }

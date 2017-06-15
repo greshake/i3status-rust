@@ -45,19 +45,19 @@ impl RotatingTextWidget {
         }
     }
 
-    pub fn with_icon(mut self, name: &str) -> Result<Self> {
+    pub fn with_icon(mut self, name: &str) -> Self {
         self.icon = self.config.icons.get(name).cloned();
-        self.update()?;
-        Ok(self)
+        self.update();
+        self
     }
 
-    pub fn with_state(mut self, state: State) -> Result<Self> {
+    pub fn with_state(mut self, state: State) -> Self {
         self.state = state;
-        self.update()?;
-        Ok(self)
+        self.update();
+        self
     }
 
-    pub fn with_text(mut self, content: &str) -> Result<Self> {
+    pub fn with_text(mut self, content: &str) -> Self {
         self.content = String::from(content);
         self.rotation_pos = 0;
         if self.content.len() > self.width {
@@ -65,21 +65,21 @@ impl RotatingTextWidget {
         } else {
             self.next_rotation = None;
         }
-        self.update()?;
-        Ok(self)
+        self.update();
+        self
     }
 
-    pub fn set_state(&mut self, state: State) -> Result<()> {
+    pub fn set_state(&mut self, state: State) {
         self.state = state;
-        self.update()
+        self.update();
     }
 
-    pub fn set_icon(&mut self, name: &str) -> Result<()> {
+    pub fn set_icon(&mut self, name: &str) {
         self.icon = self.config.icons.get(name).cloned();
-        self.update()
+        self.update();
     }
 
-    pub fn set_text(&mut self, content: String) -> Result<()> {
+    pub fn set_text(&mut self, content: String) {
         if self.content != content{
             self.content = content;
             self.rotation_pos = 0;
@@ -109,7 +109,7 @@ impl RotatingTextWidget {
         }
     }
 
-    fn update(&mut self) -> Result<()> {
+    fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
         self.rendered = json!({
@@ -125,7 +125,6 @@ impl RotatingTextWidget {
         });
 
         self.cached_output = Some(self.rendered.to_string());
-        Ok(())
     }
 
     pub fn next(&mut self) -> Result<(bool, Option<Duration>)> {
@@ -137,13 +136,13 @@ impl RotatingTextWidget {
                     if self.rotation_pos < self.content.len() {
                         self.rotation_pos += 1;
                         self.next_rotation = Some(Instant::now() + self.rotation_speed);
-                        self.update()?;
+                        self.update();
                         Ok((true, Some(self.rotation_speed)))
                     } else {
                         self.rotation_pos = 0;
                         self.rotating = false;
                         self.next_rotation = Some(Instant::now() + self.rotation_interval);
-                        self.update()?;
+                        self.update();
                         Ok((true, Some(self.rotation_interval)))
                     }
                 } else {

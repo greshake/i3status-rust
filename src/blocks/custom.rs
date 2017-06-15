@@ -97,7 +97,7 @@ impl Block for Custom {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.description().to_owned());
 
-        self.output.set_text(output)?;
+        self.output.set_text(output);
 
         Ok(Some(self.update_interval.clone()))
     }

@@ -104,7 +104,7 @@ impl Block for FocusedWindow
     fn update(&mut self) -> Result<Option<Duration>> {
         let mut string = (*self.title.lock().block_error("focused_window", "failed to acquire lock")?).clone();
         string.truncate(self.max_width);
-        self.text.set_text(string)?;
+        self.text.set_text(string);
         Ok(None)
     }
     fn view(&self) -> Vec<&I3BarWidget> {

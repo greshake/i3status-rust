@@ -101,9 +101,9 @@ impl Block for Battery
 
         // Don't need to display a percentage when the battery is full
         if current_percentage != 100 && state != "Full" {
-            self.output.set_text(format!("{}%", current_percentage))?;
+            self.output.set_text(format!("{}%", current_percentage));
         } else {
-            self.output.set_text(String::from(""))?;
+            self.output.set_text(String::from(""));
         }
 
         self.output.set_icon(match state.as_str() {
@@ -111,14 +111,14 @@ impl Block for Battery
             "Discharging" => "bat_discharging",
             "Charging" => "bat_charging",
             _ => "bat"
-        })?;
+        });
 
         self.output.set_state(match current_percentage {
             0 ... 15 => State::Critical,
             15 ... 30 => State::Warning,
             30 ... 60 => State::Info,
             _ => State::Good
-        })?;
+        });
 
         Ok(Some(self.update_interval.clone()))
     }

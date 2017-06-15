@@ -46,7 +46,7 @@ impl ConfigBlock for Pacman {
         Ok(Pacman {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            output: TextWidget::new(config).with_icon("update")?,
+            output: TextWidget::new(config).with_icon("update"),
         })
     }
 }
@@ -121,11 +121,11 @@ impl Block for Pacman
 {
     fn update(&mut self) -> Result<Option<Duration>> {
         let count = get_update_count()?;
-        self.output.set_text(format!("{}", count))?;
+        self.output.set_text(format!("{}", count));
         self.output.set_state(match count {
             0 => State::Idle,
             _ => State::Info
-        })?;
+        });
         Ok(Some(self.update_interval.clone()))
 
     }

@@ -50,8 +50,7 @@ impl ConfigBlock for Toggle {
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         Ok(Toggle {
-            text: ButtonWidget::new(config, &id)
-                .with_text(&block_config.text)?,
+            text: ButtonWidget::new(config, &id).with_text(&block_config.text),
             command_on: block_config.command_on,
             command_off: block_config.command_off,
             command_state: block_config.command_state,
@@ -75,7 +74,7 @@ impl Block for Toggle
         self.text.set_icon(match output.trim_left() {
             "" => {self.toggled = false; "toggle_off"},
             _ => {self.toggled = true; "toggle_on"}
-        })?;
+        });
 
         Ok(self.update_interval)
     }
@@ -88,12 +87,12 @@ impl Block for Toggle
                 let cmd = match self.toggled {
                     true => {
                         self.toggled = false;
-                        self.text.set_icon("toggle_off")?;
+                        self.text.set_icon("toggle_off");
                         &self.command_off
                     },
                     false => {
                         self.toggled = true;
-                        self.text.set_icon("toggle_on")?;
+                        self.text.set_icon("toggle_on");
                         &self.command_on
                     }
                 };
