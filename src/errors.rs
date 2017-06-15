@@ -6,18 +6,26 @@ pub use self::Error::{BlockError, InternalError};
 /// Result type returned from functions that can have our `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-pub trait ResultExt<T, E> {
+pub trait ResultExtBlock<T, E> {
     fn block_error(self, block: &str, message: &str) -> Result<T>;
+}
+
+pub trait ResultExtInternal<T, E> {
     fn internal_error(self, context: &str, message: &str) -> Result<T>;
 }
 
-impl<T, E> ResultExt<T, E> for ::std::result::Result<T, E> {
+impl<T, E> ResultExtBlock<T, E> for ::std::result::Result<T, E> {
     fn block_error(self, block: &str, message: &str) -> Result<T> {
         self.map_err(|_| BlockError(block.to_owned(), message.to_owned()))
     }
+}
 
+impl<T, E> ResultExtInternal<T, E> for ::std::result::Result<T, E>
+where
+    E: fmt::Display + fmt::Debug
+{
     fn internal_error(self, context: &str, message: &str) -> Result<T> {
-        self.map_err(|_| InternalError(context.to_owned(), message.to_owned()))
+        self.map_err(|e| InternalError(context.to_owned(), message.to_owned(), Some((format!("{}", e), format!("{:?}", e)))))
     }
 }
 
@@ -33,22 +41,31 @@ impl<T> OptionExt<T> for ::std::option::Option<T>
     }
 
     fn internal_error(self, context: &str, message: &str) -> Result<T> {
-        self.ok_or_else(|| InternalError(context.to_owned(), message.to_owned()))
+        self.ok_or_else(|| InternalError(context.to_owned(), message.to_owned(), None))
     }
 }
 
 /// A set of errors that can occur during the runtime of i3status-rs.
-#[derive(Debug)]
 pub enum Error {
     BlockError(String, String),
-    InternalError(String, String),
+    InternalError(String, String, Option<(String, String)>),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             BlockError(ref block, ref message) => f.write_str(&format!("Error in block '{}': {}", block, message)),
-            InternalError(ref context, ref message) => f.write_str(&format!("Internal error in context '{}': {}", context, message)),
+            InternalError(ref context, ref message, _) => f.write_str(&format!("Internal error in context '{}': {}", context, message)),
+        }
+    }
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            BlockError(ref block, ref message) => f.write_str(&format!("Error in block '{}': {}", block, message)),
+            InternalError(ref context, ref message, Some((ref cause, _))) => f.write_str(&format!("Internal error in context '{}': {}.\nCause: {}", context, message, cause)),
+            InternalError(ref context, ref message, None) => f.write_str(&format!("Internal error in context '{}': {}", context, message)),
         }
     }
 }
@@ -56,8 +73,8 @@ impl fmt::Display for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            BlockError(_, _) => "Block error occured",
-            InternalError(_, _) => "Internal error occured",
+            BlockError(_, _) => "Block error occured in block '{}'",
+            InternalError(_, _, _) => "Internal error occured",
         }
     }
 
@@ -70,9 +87,9 @@ impl StdError for Error {
 
 impl<T> From<::std::sync::mpsc::SendError<T>> for Error
 where
-    T: fmt::Display
+    T: fmt::Display + Send
 {
     fn from(err: ::std::sync::mpsc::SendError<T>) -> Error {
-        InternalError("unknown".to_owned(), format!("send error for '{}'", err.0))
+        InternalError("unknown".to_owned(), format!("send error for '{}'", err.0), None)
     }
 }

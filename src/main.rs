@@ -185,14 +185,15 @@ fn main() {
     let exit_on_error = matches.is_present("exit-on-error");
 
     // Run and match for potential error
-    if let Err(e) = run(matches) {
+    if let Err(error) = run(matches) {
         if exit_on_error {
+            eprintln!("{:?}", error);
             ::std::process::exit(1);
         }
 
         let error_widget = TextWidget::new(Default::default())
             .with_state(State::Critical)
-            .with_text(&format!("{}", e));
+            .with_text(&format!("{}", error));
         let error_rendered = error_widget.get_rendered();
         println!("{}", serde_json::to_string(&[error_rendered]).expect("failed to serialize error message"));
 
