@@ -11,7 +11,7 @@ interval = 20
 
 [[block]]
 block = "memory"
-type = "memory"
+display_type = "memory"
 format_mem = "{Mup}%"
 format_swap = "{SUp}%"
 

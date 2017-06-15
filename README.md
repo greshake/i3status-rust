@@ -64,13 +64,13 @@ icons = "awesome"
 block = "disk_space"
 path = "/"
 alias = "/"
-type = "available"
+info_type = "available"
 unit = "GB"
 interval = 20
 
 [[block]]
 block = "memory"
-type = "memory"
+display_type = "memory"
 format_mem = "{Mup}%"
 format_swap = "{SUp}%"
 
@@ -134,7 +134,7 @@ block = "memory"
 
 format_mem = "{Mum}MB/{MTm}MB({Mup}%)"
 format_swap = "{SUm}MB/{STm}MB({SUp}%)"
-type = "memory"
+display_type = "memory"
 icons = true
 clickable = true
 interval = 5
@@ -150,7 +150,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 format_mem | Format string for Memory view. All format values are described below. | No | {MFm}MB/{MTm}MB({Mp}%)
 format_swap | Format string for Swap view. | No | {SFm}MB/{STm}MB({Sp}%)
-type | Default view displayed on startup. Options are <br/> memory, swap | No | memory
+display_type | Default view displayed on startup. Options are <br/> memory, swap | No | memory
 icons | Whether the format string should be prepended with Icons. Options are <br/> true, false | No | true
 clickable | Whether the view should switch between memory and swap on click. Options are <br/> true, false | No | true
 interval | The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only. | No | 5
@@ -211,7 +211,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 player | Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.  | Yes | -
 max_width | Max width of the block in characters, not including the buttons | No | 21
-marquee | Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max-width | No | true
+marquee | Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max_width | No | true
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
 ## Load
@@ -350,7 +350,7 @@ block = "disk_space"
 
 path = "/"
 alias = "/"
-type = "available"
+info_type = "available"
 unit = "GB"
 interval = 20
 ```
@@ -361,7 +361,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 path | Path to collect information from | No | /
 alias | Alias that is displayed for path | No | /
-type | Currently supported options are available and free | No | available
+info_type | Currently supported options are available and free | No | available
 unit | Unit that is used to display disk space. Options are MB, MiB, GB and GiB | No | GB
 interval | Update interval in seconds | No | 20
 
@@ -412,14 +412,14 @@ Creates a block which displays the title of the currently focused window. Uses p
 [[block]]
 block = "focused_window"
 
-max-width = 21
+max_width = 21
 ```
 
 **Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-max-width | Truncates titles if longer than max-width | No | 21
+max_width | Truncates titles if longer than max_width | No | 21
 
 ## Xrandr
 Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brighntess.
@@ -453,26 +453,33 @@ Create a block by copying the template: `cp src/blocks/template.rs src/blocks/<b
 
 Your block needs a struct to store it's state. First, replace all the occurrences of 'Template' in the file with the name of your block. Then edit the struct and add all Fields which you may need to store either options from the block config or state values (e.g. free disk space or current load). Use Widgets to display something in the i3Bar, you can have multiple Text or Button widgets on a Block. These have to be returned in the view() function and they need to be updated from the update() function. They also handle icons and theming for you.
 
-## Step 3: Implement the constructor
+## Step 3: Implement the `ConfigBlock` trait
 
-You now need to write a constructor (`new()`) to create your Block from a piece of JSON (from the config file section of your block). Access values from the config here with `block_config["name"]`, then use `.as_str()` or `as_u64()` to convert the argument to the right type, and unwrap it with expect() or unwrap_or() to give it a default value. Alternatively, you can use the helper macros `get_str`/`u64`/`bool` to extract a `string`/`u64` and add appropriate error handling. You can set a default value in the macro as you can see below. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID. This advanced feature can be used to reduce the number of system calls by asynchronously waiting for events. A usage example can be found in the Music block, which updates only when dbus signals a new song.
+The `ConfigBlock` trait combines a constructor (`new(...)`) and an associated configuration type to form a block that can be instantiated from a piece of TOML (from the block configuration). The associated type has to be a deserializable struct, which you can then use to get your configurations from. The template shows you how to instantiate a simple Text widget. For more info on how to use widgets, just look into other Blocks. More documentation to come. The sender object can be used to send asynchronous update request for any block from a separate thread, provide you know the Block's ID. This advanced feature can be used to reduce the number of system calls by asynchronously waiting for events. A usage example can be found in the Music block, which updates only when dbus signals a new song.
 
 Example:
+
 ```rust
-pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> Template {
-    Template {
-        id: Uuid::new_v4().simple().to_string(),
-        update_interval: Duration::new(get_u64_default!(block_config, "interval", 5), 0),
-        text: TextWidget::new(config.clone()).with_text("Template"),
-        tx_update_request: tx,
-        config: config,
+impl ConfigBlock for Template {
+    type Config = TemplateConfig;
+
+    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Self {
+        Template {
+            id: Uuid::new_v4().simple().to_string(),
+            update_interval: block_config.interval,
+            text: TextWidget::new(config.clone()).with_text("Template"),
+            tx_update_request: tx_update_request,
+            config: config,
+        }
     }
 }
 ```
 
-## Step 4: Implement the Block interface
+## Step 4: Implement the `Block` trait
 
-All blocks are basically structs which implement the trait (interface) `Block`. This interface defines the following features:
+This is required in addition to the `ConfigBlock` trait and is used to interact with a block after it has been instantiated from `ConfigBlock`.
+
+This trait defines the following features:
 
 ### `fn update(&mut self) -> Option<Duration>` (Required if you don't want a static block)
 
@@ -531,7 +538,7 @@ if event.name.is_some() {
 Edit `src/blocks/mod.rs` and add:
 1. A module export line:      `pub mod <name>;`
 2. A use directive:           `use self::<name>::*;`
-3. Mapping to a name string:  `"<name>" => boxed!(<name>::new(config)),`
+3. Add a string-mapping to the `blocks!` macro: `"<name>" => <name>,`
 
 **Congratulations** You're done. Recompile and just add the block to your config file now.
 

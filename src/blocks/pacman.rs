@@ -5,14 +5,16 @@ use std::time::Duration;
 use std::process::Command;
 use std::env;
 use std::ffi::OsString;
+use std::sync::mpsc::Sender;
+use scheduler::Task;
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use input::{I3BarEvent, MouseButton};
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 
-use toml::value::Value;
 use uuid::Uuid;
 
 
@@ -22,11 +24,27 @@ pub struct Pacman {
     update_interval: Duration,
 }
 
-impl Pacman {
-    pub fn new(block_config: Value, config: Config) -> Pacman {
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct PacmanConfig {
+    /// Update interval in seconds
+    #[serde(default = "PacmanConfig::default_interval", deserialize_with = "deserialize_duration")]
+    pub interval: Duration,
+}
+
+impl PacmanConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(60 * 10)
+    }
+}
+
+impl ConfigBlock for Pacman {
+    type Config = PacmanConfig;
+
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
         Pacman {
             id: Uuid::new_v4().simple().to_string(),
-            update_interval: Duration::new(get_u64_default!(block_config, "interval", 600), 0),
+            update_interval: block_config.interval,
             output: TextWidget::new(config).with_icon("update"),
         }
     }

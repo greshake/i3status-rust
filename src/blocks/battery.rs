@@ -1,14 +1,16 @@
 use std::time::Duration;
+use std::sync::mpsc::Sender;
+use scheduler::Task;
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
-use toml::value::Value;
 use uuid::Uuid;
 
 //TODO: Add remaining time
@@ -20,14 +22,38 @@ pub struct Battery {
     device_path: String
 }
 
-impl Battery {
-    pub fn new(block_config: Value, config: Config) -> Battery {
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct BatteryConfig {
+    /// Update interval in seconds
+    #[serde(default = "BatteryConfig::default_interval", deserialize_with = "deserialize_duration")]
+    pub interval: Duration,
+
+    /// Which BAT device in /sys/class/power_supply/ to read from.
+    #[serde(default = "BatteryConfig::default_device")]
+    pub device: usize,
+}
+
+impl BatteryConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(10)
+    }
+
+    fn default_device() -> usize {
+        0
+    }
+}
+
+impl ConfigBlock for Battery {
+    type Config = BatteryConfig;
+
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
         Battery {
             id: Uuid::new_v4().simple().to_string(),
             max_charge: 0,
-            update_interval: Duration::new(get_u64_default!(block_config, "interval", 10), 0),
+            update_interval: block_config.interval,
             output: TextWidget::new(config),
-            device_path: format!("/sys/class/power_supply/BAT{}/", get_u64_default!(block_config, "device", 0)),
+            device_path: format!("/sys/class/power_supply/BAT{}/", block_config.device),
         }
     }
 }

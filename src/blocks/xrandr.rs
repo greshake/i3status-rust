@@ -1,16 +1,18 @@
 use std::time::Duration;
 use std::process::Command;
 use std::str::FromStr;
+use std::sync::mpsc::Sender;
+use scheduler::Task;
 
 use util::FormatTemplate;
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
+use de::deserialize_duration;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::{I3BarEvent, MouseButton};
 
-use toml::value::Value;
 use uuid::Uuid;
 
 struct Monitor {
@@ -52,6 +54,44 @@ pub struct Xrandr {
     config: Config,
 }
 
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct XrandrConfig {
+    /// Update interval in seconds
+    #[serde(default = "XrandrConfig::default_interval", deserialize_with = "deserialize_duration")]
+    pub interval: Duration,
+
+    /// Show icons for brightness and resolution (needs awesome fonts support)
+    #[serde(default = "XrandrConfig::default_icons")]
+    pub icons: bool,
+
+    /// Shows the screens resolution
+    #[serde(default = "XrandrConfig::default_resolution")]
+    pub resolution: bool,
+
+    /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
+    #[serde(default = "XrandrConfig::default_step_width")]
+    pub step_width: u32,
+}
+
+impl XrandrConfig {
+    fn default_interval() -> Duration {
+        Duration::from_secs(5)
+    }
+
+    fn default_icons() -> bool {
+        true
+    }
+
+    fn default_resolution() -> bool {
+        false
+    }
+
+    fn default_step_width() -> u32 {
+        5 as u32
+    }
+}
+
 macro_rules! unwrap_or_continue {
     ($e: expr) => (
         match $e {
@@ -62,25 +102,6 @@ macro_rules! unwrap_or_continue {
 }
 
 impl Xrandr {
-    pub fn new(block_config: Value, config: Config) -> Xrandr {
-        let id = Uuid::new_v4().simple().to_string();
-        let mut step_width = get_u64_default!(block_config, "step_width", 5) as u32;
-        if step_width > 50 {
-            step_width = 50;
-        }
-        Xrandr {
-            text: ButtonWidget::new(config.clone(), &id).with_icon("xrandr"),
-            id: id,
-            update_interval: Duration::new(get_u64_default!(block_config, "interval", 5), 0),
-            current_idx: 0,
-            icons: get_bool_default!(block_config, "icons", true),
-            resolution: get_bool_default!(block_config, "resolution", false),
-            step_width: step_width,
-            monitors: Vec::new(),
-            config: config,
-        }
-    }
-
     fn get_active_monitors() -> Option<Vec<String>> {
         let active_montiors_cli = String::from_utf8(
             Command::new("sh")
@@ -183,6 +204,28 @@ impl Xrandr {
     }
 }
 
+impl ConfigBlock for Xrandr {
+    type Config = XrandrConfig;
+
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
+        let id = Uuid::new_v4().simple().to_string();
+        let mut step_width = block_config.step_width;
+        if step_width > 50 {
+            step_width = 50;
+        }
+        Xrandr {
+            text: ButtonWidget::new(config.clone(), &id).with_icon("xrandr"),
+            id: id,
+            update_interval: block_config.interval,
+            current_idx: 0,
+            icons: block_config.icons,
+            resolution: block_config.resolution,
+            step_width: step_width,
+            monitors: Vec::new(),
+            config: config,
+        }
+    }
+}
 impl Block for Xrandr
 {
     fn update(&mut self) -> Option<Duration> {

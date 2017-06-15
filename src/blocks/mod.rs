@@ -31,33 +31,48 @@ use self::focused_window::*;
 use self::temperature::*;
 use self::xrandr::*;
 
-use super::block::Block;
+use super::block::{Block, ConfigBlock};
 use super::scheduler::Task;
 
 extern crate dbus;
 
-use toml::value::Value;
+use serde::de::Deserialize;
 use std::sync::mpsc::Sender;
+use toml::value::Value;
 
-macro_rules! boxed ( { $b:expr } => { Box::new($b) as Box<Block> }; );
+macro_rules! block {
+    ($block_type:ident, $block_config:expr, $config:expr, $tx_update_request:expr) => {{
+        let block_config: <$block_type as ConfigBlock>::Config = <$block_type as ConfigBlock>::Config::deserialize($block_config).unwrap();
+        Box::new($block_type::new(block_config, $config, $tx_update_request)) as Box<Block>
+    }}
+}
+
+macro_rules! blocks {
+    ( $name:ident, $block_config:ident, $config:ident, $tx_update_request:ident ; $( $block_name:expr => $block_type:ident ),+ ) => {
+        match $name {
+            $(
+                $block_name => block!($block_type, $block_config, $config, $tx_update_request),
+             )*
+            _ => panic!("Not a registered block: {}", $name),
+        }
+    }
+}
 
 pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_request: Sender<Task>) -> Box<Block> {
-    match name {
-        "time" => boxed!(Time::new(block_config, config)),
-        "template" => boxed!(Template::new(block_config, config, tx_update_request)),
-        "music" => boxed!(Music::new(block_config, config, tx_update_request)),
-        "load" => boxed!(Load::new(block_config, config)),
-        "memory" => boxed!(Memory::new(block_config, config, tx_update_request)),
-        "cpu" => boxed!(Cpu::new(block_config, config)),
-        "pacman" => boxed!(Pacman::new(block_config, config)),
-        "battery" => boxed!(Battery::new(block_config, config)),
-        "custom" => boxed!(Custom::new(block_config, config, tx_update_request)),
-        "disk_space" => boxed!(DiskSpace::new(block_config, config)),
-        "toggle" => boxed!(Toggle::new(block_config, config)),
-        "sound" => boxed!(Sound::new(block_config, config)),
-        "temperature" => boxed!(Temperature::new(block_config, config)),
-        "focused_window" => boxed!(FocusedWindow::new(block_config, config, tx_update_request)),
-        "xrandr" => boxed!(Xrandr::new(block_config, config)),
-        _ => panic!("Not a registered block: {}", name),
-    }
+    blocks!(name, block_config, config, tx_update_request;
+            "time" => Time,
+            "template" => Template,
+            "music" => Music,
+            "load" => Load,
+            "memory" => Memory,
+            "cpu" => Cpu,
+            "pacman" => Pacman,
+            "battery" => Battery,
+            "custom" => Custom,
+            "disk_space" => DiskSpace,
+            "toggle" => Toggle,
+            "sound" => Sound,
+            "temperature" => Temperature,
+            "focused_window" => FocusedWindow,
+            "xrandr" => Xrandr)
 }

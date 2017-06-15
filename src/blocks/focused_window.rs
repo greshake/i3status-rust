@@ -3,14 +3,13 @@ use std::sync::mpsc::Sender;
 use std::thread;
 use std::sync::{Arc, Mutex};
 
-use block::Block;
+use block::{Block, ConfigBlock};
 use config::Config;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
 
-use toml::value::Value;
 use uuid::Uuid;
 
 extern crate i3ipc;
@@ -27,8 +26,25 @@ pub struct FocusedWindow {
     id: String,
 }
 
-impl FocusedWindow {
-    pub fn new(block_config: Value, config: Config, tx: Sender<Task>) -> FocusedWindow {
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct FocusedWindowConfig {
+    /// Truncates titles if longer than max-width
+    #[serde(default = "FocusedWindowConfig::default_max_width")]
+    pub max_width: usize,
+}
+
+impl FocusedWindowConfig {
+    fn default_max_width() -> usize {
+        21
+    }
+}
+
+
+impl ConfigBlock for FocusedWindow {
+    type Config = FocusedWindowConfig;
+
+    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Self {
         let id = Uuid::new_v4().simple().to_string();
         let id_clone = id.clone();
 
@@ -75,7 +91,7 @@ impl FocusedWindow {
         FocusedWindow {
             id,
             text: TextWidget::new(config),
-            max_width: get_u64_default!(block_config, "max-width", 21) as usize,
+            max_width: block_config.max_width,
             title
         }
     }
