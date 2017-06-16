@@ -1,7 +1,7 @@
 pub use std::error::Error as StdError;
 use std::fmt;
 
-pub use self::Error::{BlockError, InternalError};
+pub use self::Error::{BlockError, ConfigurationError, InternalError};
 
 /// Result type returned from functions that can have our `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -11,6 +11,7 @@ pub trait ResultExtBlock<T, E> {
 }
 
 pub trait ResultExtInternal<T, E> {
+    fn configuration_error(self, message: &str) -> Result<T>;
     fn internal_error(self, context: &str, message: &str) -> Result<T>;
 }
 
@@ -24,6 +25,10 @@ impl<T, E> ResultExtInternal<T, E> for ::std::result::Result<T, E>
 where
     E: fmt::Display + fmt::Debug
 {
+    fn configuration_error(self, message: &str) -> Result<T> {
+        self.map_err(|e| ConfigurationError(message.to_owned(), (format!("{}", e), format!("{:?}", e))))
+    }
+
     fn internal_error(self, context: &str, message: &str) -> Result<T> {
         self.map_err(|e| InternalError(context.to_owned(), message.to_owned(), Some((format!("{}", e), format!("{:?}", e)))))
     }
@@ -48,6 +53,7 @@ impl<T> OptionExt<T> for ::std::option::Option<T>
 /// A set of errors that can occur during the runtime of i3status-rs.
 pub enum Error {
     BlockError(String, String),
+    ConfigurationError(String, (String, String)),
     InternalError(String, String, Option<(String, String)>),
 }
 
@@ -55,6 +61,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             BlockError(ref block, ref message) => f.write_str(&format!("Error in block '{}': {}", block, message)),
+            ConfigurationError(ref message, _) => f.write_str(&format!("Configuration error: {}", message)),
             InternalError(ref context, ref message, _) => f.write_str(&format!("Internal error in context '{}': {}", context, message)),
         }
     }
@@ -64,6 +71,7 @@ impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             BlockError(ref block, ref message) => f.write_str(&format!("Error in block '{}': {}", block, message)),
+            ConfigurationError(ref message, (ref cause, _)) => f.write_str(&format!("Configuration error: {}.\nCause: {}", message, cause)),
             InternalError(ref context, ref message, Some((ref cause, _))) => f.write_str(&format!("Internal error in context '{}': {}.\nCause: {}", context, message, cause)),
             InternalError(ref context, ref message, None) => f.write_str(&format!("Internal error in context '{}': {}", context, message)),
         }
@@ -74,6 +82,7 @@ impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
             BlockError(_, _) => "Block error occured in block '{}'",
+            ConfigurationError(_, _) => "Configuration error occured",
             InternalError(_, _, _) => "Internal error occured",
         }
     }

@@ -44,7 +44,7 @@ use toml::value::Value;
 macro_rules! block {
     ($block_type:ident, $block_config:expr, $config:expr, $tx_update_request:expr) => {{
         let block_config: <$block_type as ConfigBlock>::Config = <$block_type as ConfigBlock>::Config::deserialize($block_config)
-            .internal_error("blocks", "failed to deserialize block config")?;
+            .configuration_error("failed to deserialize block config")?;
         Ok(Box::new($block_type::new(block_config, $config, $tx_update_request)?) as Box<Block>)
     }}
 }
