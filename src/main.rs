@@ -197,6 +197,7 @@ fn main() {
         let error_rendered = error_widget.get_rendered();
         println!("{}", serde_json::to_string(&[error_rendered]).expect("failed to serialize error message"));
 
+        eprintln!("\n\n{:?}", error);
         // Do nothing, so the error message keeps displayed
         loop {
             ::std::thread::sleep(Duration::from_secs(10));
