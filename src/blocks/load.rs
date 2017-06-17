@@ -74,6 +74,8 @@ impl ConfigBlock for Load {
     }
 }
 
+
+
 impl Block for Load
 {
     fn update(&mut self) -> Result<Option<Duration>> {
@@ -92,12 +94,11 @@ impl Block for Load
 
         let used_perc = values["{1m}"].parse::<f32>().block_error("load", "failed to parse float percentage")? / self.logical_cores as f32;
         self.text.set_state(
-            match  used_perc {
-                0. ... 0.3 => State::Idle,
-                0.3 ... 0.6 => State::Info,
-                0.6 ... 0.9 => State::Warning,
-                _ => State::Critical
-        });
+            match_range!(used_perc default: (State::Idle) {
+                0. ; 0.3 => State::Idle,
+                0.3 ; 0.6 => State::Info,
+                0.6 ; 0.9 => State::Warning
+        }));
 
         self.text.set_text(self.format.render_static_str(&values)?);
 

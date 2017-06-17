@@ -31,7 +31,16 @@ pub fn get_file(name: &str) -> Result<String> {
     Ok(file_contents)
 }
 
-
+macro_rules! match_range {
+    ($a:ident default: ($default:expr) {$($lower:expr ; $upper:expr => $e:expr),+}) => (
+        match $a {
+            $(
+                t if t >= $lower && t <= $upper => { $e },
+            )+
+            _ => { $default }
+        }
+    )
+}
 
 macro_rules! map (
     { $($key:expr => $value:expr),+ } => {
