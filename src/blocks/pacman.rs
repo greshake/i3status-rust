@@ -18,7 +18,6 @@ use widget::{I3BarWidget, State};
 
 use uuid::Uuid;
 
-
 pub struct Pacman {
     output: TextWidget,
     id: String,
@@ -62,24 +61,29 @@ fn run_command(var: &str) -> Result<()> {
 }
 
 fn has_fake_root() -> Result<bool> {
-    Ok(match String::from_utf8(
-        Command::new("sh")
-            .args(&["-c", "type -P fakeroot"])
-            .output().block_error("pacman", "failed to start command to check for fakeroot")?.stdout)
-        .block_error("pacman", "failed to check for fakeroot")?.trim() {
-        "" => false,
-        _ => true,
-    })
+    Ok(
+        String::from_utf8(
+            Command::new("sh")
+                .args(&["-c", "type -P fakeroot"])
+                .output()
+                .block_error("pacman", "failed to start command to check for fakeroot")?
+                .stdout,
+        ).block_error("pacman", "failed to check for fakeroot")?
+            .trim() != "",
+    )
 }
-
 
 fn get_update_count() -> Result<usize> {
     if !has_fake_root()? {
-        return Ok(0 as usize)
+        return Ok(0 as usize);
     }
-    let tmp_dir = env::temp_dir().into_os_string().into_string()
-        .block_error("pacman", "There's something wrong with your $TMP variable")?;
-    let user = env::var_os("USER").unwrap_or(OsString::from("")).into_string()
+    let tmp_dir = env::temp_dir().into_os_string().into_string().block_error(
+        "pacman",
+        "There's something wrong with your $TMP variable",
+    )?;
+    let user = env::var_os("USER")
+        .unwrap_or(OsString::from(""))
+        .into_string()
         .block_error("pacman", "There's a problem with your $USER")?;
     let updates_db = env::var_os("CHECKUPDATES_DB")
         .unwrap_or(OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
@@ -92,55 +96,68 @@ fn get_update_count() -> Result<usize> {
         .unwrap_or(Path::new("/var/lib/pacman/").to_path_buf());
 
     // Create the determined `checkup-db` path recursively
-    fs::create_dir_all(&updates_db)
-        .block_error("pacman", &format!("Failed to create checkup-db path '{}'", updates_db))?;
+    fs::create_dir_all(&updates_db).block_error(
+        "pacman",
+        &format!("Failed to create checkup-db path '{}'", updates_db),
+    )?;
 
     // Create symlink to local cache in `checkup-db` if required
     let local_cache = Path::new(&updates_db).join("local");
     if !local_cache.exists() {
-        symlink(db_path.join("local"), local_cache)
-            .block_error("pacman", "Failed to created required symlink")?;
+        symlink(db_path.join("local"), local_cache).block_error(
+            "pacman",
+            "Failed to created required symlink",
+        )?;
     }
 
     // Update database
-    run_command(&format!("fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null &> /dev/null", updates_db))?;
+    run_command(&format!(
+        "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null &> /dev/null",
+        updates_db
+    ))?;
 
     // Get update count
-    Ok(String::from_utf8(
-        Command::new("sh")
-            .args(&["-c", &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db)])
-            .output().block_error("pacman", "There was a problem running the pacman commands")?
-            .stdout)
-        .block_error("pacman", "there was a problem parsing the output")?
-        .lines()
-        .count() - 1)
+    Ok(
+        String::from_utf8(
+            Command::new("sh")
+                .args(
+                    &[
+                        "-c",
+                        &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db),
+                    ],
+                )
+                .output()
+                .block_error("pacman", "There was a problem running the pacman commands")?
+                .stdout,
+        ).block_error("pacman", "there was a problem parsing the output")?
+            .lines()
+            .count() - 1,
+    )
 }
 
 
-impl Block for Pacman
-{
+impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
         let count = get_update_count()?;
         self.output.set_text(format!("{}", count));
         self.output.set_state(match count {
             0 => State::Idle,
-            _ => State::Info
+            _ => State::Info,
         });
-        Ok(Some(self.update_interval.clone()))
+        Ok(Some(self.update_interval))
 
     }
+
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.output]
     }
+
     fn id(&self) -> &str {
         &self.id
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name
-            .as_ref()
-            .map(|s| s == "pacman")
-            .unwrap_or(false) && event.button == MouseButton::Left {
+        if event.name.as_ref().map(|s| s == "pacman").unwrap_or(false) && event.button == MouseButton::Left {
             self.update()?;
         }
 

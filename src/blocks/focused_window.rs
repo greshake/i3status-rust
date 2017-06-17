@@ -8,7 +8,6 @@ use config::Config;
 use errors::*;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
-use input::I3BarEvent;
 use scheduler::Task;
 
 use uuid::Uuid;
@@ -18,7 +17,6 @@ use self::i3ipc::I3EventListener;
 use self::i3ipc::Subscription;
 use self::i3ipc::event::Event;
 use self::i3ipc::event::inner::WindowChange;
-
 
 pub struct FocusedWindow {
     text: TextWidget,
@@ -40,7 +38,6 @@ impl FocusedWindowConfig {
         21
     }
 }
-
 
 impl ConfigBlock for FocusedWindow {
     type Config = FocusedWindowConfig;
@@ -66,25 +63,31 @@ impl ConfigBlock for FocusedWindow {
                     Event::WindowEvent(e) => {
                         match e.change {
                             WindowChange::Focus => {
-                                    if let Some(name) = e.container.name {
-                                        let mut title = title_original.lock().unwrap();
-                                        *title = name;
-                                        tx.send(Task {id: id_clone.clone(), update_time: Instant::now()}).unwrap();
-                                    }
-                                },
+                                if let Some(name) = e.container.name {
+                                    let mut title = title_original.lock().unwrap();
+                                    *title = name;
+                                    tx.send(Task {
+                                        id: id_clone.clone(),
+                                        update_time: Instant::now(),
+                                    }).unwrap();
+                                }
+                            }
                             WindowChange::Title => {
                                 if e.container.focused {
                                     if let Some(name) = e.container.name {
                                         let mut title = title_original.lock().unwrap();
                                         *title = name;
-                                        tx.send(Task {id: id_clone.clone(), update_time: Instant::now()}).unwrap();
+                                        tx.send(Task {
+                                            id: id_clone.clone(),
+                                            update_time: Instant::now(),
+                                        }).unwrap();
                                     }
                                 }
                             }
                             _ => {}
                         };
                     }
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }
             }
         });
@@ -93,26 +96,27 @@ impl ConfigBlock for FocusedWindow {
             id,
             text: TextWidget::new(config),
             max_width: block_config.max_width,
-            title
+            title,
         })
     }
 }
 
 
-impl Block for FocusedWindow
-{
+impl Block for FocusedWindow {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let mut string = (*self.title.lock().block_error("focused_window", "failed to acquire lock")?).clone();
+        let mut string = (*self.title.lock().block_error(
+            "focused_window",
+            "failed to acquire lock",
+        )?).clone();
         string.truncate(self.max_width);
         self.text.set_text(string);
         Ok(None)
     }
+
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
+
     fn id(&self) -> &str {
         &self.id
     }

@@ -7,7 +7,6 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use input::I3BarEvent;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 
@@ -22,7 +21,7 @@ pub enum Unit {
     MB,
     GB,
     GiB,
-    MiB
+    MiB,
 }
 
 impl Unit {
@@ -40,7 +39,7 @@ impl Unit {
             Unit::MB => "MB",
             Unit::GB => "GB",
             Unit::MiB => "MiB",
-            Unit::GiB => "GiB"
+            Unit::GiB => "GiB",
         }
     }
 
@@ -54,7 +53,6 @@ impl Unit {
         }
     }
 }
-
 
 pub enum InfoType {
     Available,
@@ -71,7 +69,7 @@ impl InfoType {
             "free" => InfoType::Free,
             "total" => unimplemented!(), // SpaceType::Total,
             "used" => unimplemented!(), // SpaceType::Used,
-            _ => panic!("Invalid InfoType")
+            _ => panic!("Invalid InfoType"),
         }
     }
 }
@@ -141,7 +139,9 @@ impl DiskSpace {
                     State::Critical
                 } else if 10. <= value && value < 20. {
                     State::Warning
-                } else { State::Idle }
+                } else {
+                    State::Idle
+                }
             }
             //InfoType::Total | InfoType::Used => unimplemented!(),
         }
@@ -183,20 +183,23 @@ impl Block for DiskSpace {
             //InfoType::Total | InfoType::Used => unimplemented!(),
         }
 
-        self.disk_space.set_text(format!("{0} {1:.2} {2}", self.alias, converted, self.unit.name()));
+        self.disk_space.set_text(format!(
+            "{0} {1:.2} {2}",
+            self.alias,
+            converted,
+            self.unit.name()
+        ));
 
         let state = self.compute_state(result);
         self.disk_space.set_state(state);
 
-        Ok(Some(self.update_interval.clone()))
+        Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.disk_space]
     }
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
+
     fn id(&self) -> &str {
         &self.id
     }

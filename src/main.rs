@@ -61,10 +61,14 @@ fn run(matches: ArgMatches) -> Result<()> {
     let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Load all arguments
-    let input_check_interval = Duration::new(0, matches.value_of("input-check-interval")
-                                                .unwrap()
-                                                .parse::<u32>()
-                                                .internal_error("main", "Not a valid integer as interval")? * 1000000);
+    let input_check_interval = Duration::new(
+        0,
+        matches
+            .value_of("input-check-interval")
+            .unwrap()
+            .parse::<u32>()
+            .internal_error("main", "Not a valid integer as interval")? * 1000000,
+    );
 
     let (tx, rx_update_requests): (Sender<Task>, Receiver<Task>) = mpsc::channel();
 
@@ -73,8 +77,21 @@ fn run(matches: ArgMatches) -> Result<()> {
         if matches.value_of("profile").is_some() {
             for &(ref block_name, ref block_config) in &config.blocks {
                 if block_name == matches.value_of("profile").unwrap() {
-                    let mut block = create_block(&block_name, block_config.clone(), config.clone(), tx.clone())?;
-                    profile(matches.value_of("profile-runs").unwrap().parse::<i32>().unwrap(), &block_name, block.deref_mut());
+                    let mut block = create_block(
+                        &block_name,
+                        block_config.clone(),
+                        config.clone(),
+                        tx.clone(),
+                    )?;
+                    profile(
+                        matches
+                            .value_of("profile-runs")
+                            .unwrap()
+                            .parse::<i32>()
+                            .unwrap(),
+                        &block_name,
+                        block.deref_mut(),
+                    );
                     return Ok(());
                 }
             }
@@ -84,7 +101,12 @@ fn run(matches: ArgMatches) -> Result<()> {
     let mut blocks: Vec<Box<Block>> = Vec::new();
 
     for &(ref block_name, ref block_config) in &config.blocks {
-        blocks.push(create_block(&block_name, block_config.clone(), config.clone(), tx.clone())?)
+        blocks.push(create_block(
+            block_name,
+            block_config.clone(),
+            config.clone(),
+            tx.clone(),
+        )?)
     }
 
     let order = blocks.iter().map(|x| String::from(x.id())).collect();
@@ -93,7 +115,7 @@ fn run(matches: ArgMatches) -> Result<()> {
 
     let mut block_map: HashMap<String, &mut Block> = HashMap::new();
 
-    for block in blocks.iter_mut() {
+    for block in &mut blocks {
         block_map.insert(String::from(block.id()), (*block).deref_mut());
     }
 
@@ -107,7 +129,7 @@ fn run(matches: ArgMatches) -> Result<()> {
     loop {
         // See if the user has clicked.
         while let Ok(event) = rx_clicks.try_recv() {
-            for (_, block) in &mut block_map {
+            for block in block_map.values_mut() {
                 block.click(&event)?;
             }
             util::print_blocks(&order, &block_map, &config)?;
@@ -137,48 +159,72 @@ fn run(matches: ArgMatches) -> Result<()> {
 fn main() {
     let mut builder = App::new("i3status-rs")
         .version("0.1")
-        .author("Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
-                 https://github.com/greshake/i3status-rust/graphs/contributors")
+        .author(
+            "Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
+                 https://github.com/greshake/i3status-rust/graphs/contributors",
+        )
         .about("Replacement for i3status for Linux, written in Rust")
-        .arg(Arg::with_name("config")
-            .value_name("CONFIG_FILE")
-            .help("sets a json config file")
-            .required(true)
-            .index(1))
-        .arg(Arg::with_name("theme")
-            .help("which theme to use, can be a builtin theme or file.\nBuiltin themes: solarized-dark, plain")
-            .default_value("plain")
-            .short("t")
-            .long("theme"))
-        .arg(Arg::with_name("icons")
-            .help("which icons to use, can be a builtin set or file.\nBuiltin sets: awesome, none (textual)")
-            .default_value("none")
-            .short("i")
-            .long("icons"))
-        .arg(Arg::with_name("debug")
-            .short("d")
-            .long("debug")
-            .takes_value(false)
-            .help("Prints debug information"))
-        .arg(Arg::with_name("input-check-interval")
-            .help("max. delay to react to clicking, in ms")
-            .default_value("50"))
-        .arg(Arg::with_name("exit-on-error")
-             .help("exit on error rather than printing the error to i3bar and keep running")
-             .long("exit-on-error")
-             .takes_value(false));
+        .arg(
+            Arg::with_name("config")
+                .value_name("CONFIG_FILE")
+                .help("sets a json config file")
+                .required(true)
+                .index(1),
+        )
+        .arg(
+            Arg::with_name("theme")
+                .help(
+                    "which theme to use, can be a builtin theme or file.\nBuiltin themes: solarized-dark, plain",
+                )
+                .default_value("plain")
+                .short("t")
+                .long("theme"),
+        )
+        .arg(
+            Arg::with_name("icons")
+                .help(
+                    "which icons to use, can be a builtin set or file.\nBuiltin sets: awesome, none (textual)",
+                )
+                .default_value("none")
+                .short("i")
+                .long("icons"),
+        )
+        .arg(
+            Arg::with_name("debug")
+                .short("d")
+                .long("debug")
+                .takes_value(false)
+                .help("Prints debug information"),
+        )
+        .arg(
+            Arg::with_name("input-check-interval")
+                .help("max. delay to react to clicking, in ms")
+                .default_value("50"),
+        )
+        .arg(
+            Arg::with_name("exit-on-error")
+                .help(
+                    "exit on error rather than printing the error to i3bar and keep running",
+                )
+                .long("exit-on-error")
+                .takes_value(false),
+        );
 
     if_debug!({
         builder = builder
-        .arg(Arg::with_name("profile")
-            .long("profile")
-            .takes_value(true)
-            .help("A block to be profiled. Analyze block.profile with pprof"))
-        .arg(Arg::with_name("profile-runs")
-            .long("profile-runs")
-            .takes_value(true)
-            .default_value("10000")
-            .help("How many times to execute update when profiling."));;
+            .arg(
+                Arg::with_name("profile")
+                    .long("profile")
+                    .takes_value(true)
+                    .help("A block to be profiled. Analyze block.profile with pprof"),
+            )
+            .arg(
+                Arg::with_name("profile-runs")
+                    .long("profile-runs")
+                    .takes_value(true)
+                    .default_value("10000")
+                    .help("How many times to execute update when profiling."),
+            );;
     });
 
     let matches = builder.get_matches();
@@ -195,7 +241,10 @@ fn main() {
             .with_state(State::Critical)
             .with_text(&format!("{}", error));
         let error_rendered = error_widget.get_rendered();
-        println!("{}", serde_json::to_string(&[error_rendered]).expect("failed to serialize error message"));
+        println!(
+            "{}",
+            serde_json::to_string(&[error_rendered]).expect("failed to serialize error message")
+        );
 
         // Do nothing, so the error message keeps displayed
         loop {
@@ -207,10 +256,18 @@ fn main() {
 #[cfg(debug_assertions)]
 fn profile(iterations: i32, name: &str, block: &mut Block) {
     let mut bar = progress::Bar::new();
-    println!("Now profiling the {0} block by executing {1} updates.\n \
-              Use pprof to analyze {0}.profile later.", name, iterations);
+    println!(
+        "Now profiling the {0} block by executing {1} updates.\n \
+              Use pprof to analyze {0}.profile later.",
+        name,
+        iterations
+    );
 
-    PROFILER.lock().unwrap().start(format!("./{}.profile", name)).unwrap();
+    PROFILER
+        .lock()
+        .unwrap()
+        .start(format!("./{}.profile", name))
+        .unwrap();
 
     bar.set_job_title("Profiling...");
 

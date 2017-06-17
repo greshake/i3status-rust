@@ -13,7 +13,6 @@ use input::I3BarEvent;
 
 use uuid::Uuid;
 
-
 pub struct Toggle {
     text: ButtonWidget,
     command_on: String,
@@ -61,9 +60,7 @@ impl ConfigBlock for Toggle {
     }
 }
 
-
-impl Block for Toggle
-{
+impl Block for Toggle {
     fn update(&mut self) -> Result<Option<Duration>> {
         let output = Command::new("sh")
             .args(&["-c", &self.command_state])
@@ -72,15 +69,23 @@ impl Block for Toggle
             .unwrap_or_else(|e| e.description().to_owned());
 
         self.text.set_icon(match output.trim_left() {
-            "" => {self.toggled = false; "toggle_off"},
-            _ => {self.toggled = true; "toggle_on"}
+            "" => {
+                self.toggled = false;
+                "toggle_off"
+            }
+            _ => {
+                self.toggled = true;
+                "toggle_on"
+            }
         });
 
         Ok(self.update_interval)
     }
+
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
+
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
@@ -89,7 +94,7 @@ impl Block for Toggle
                         self.toggled = false;
                         self.text.set_icon("toggle_off");
                         &self.command_off
-                    },
+                    }
                     false => {
                         self.toggled = true;
                         self.text.set_icon("toggle_on");
@@ -97,15 +102,16 @@ impl Block for Toggle
                     }
                 };
 
-                Command::new("sh")
-                    .args(&["-c", cmd])
-                    .output()
-                    .block_error("toggle", "failed to run toggle command")?;
+                Command::new("sh").args(&["-c", cmd]).output().block_error(
+                    "toggle",
+                    "failed to run toggle command",
+                )?;
             }
         }
 
         Ok(())
     }
+
     fn id(&self) -> &str {
         &self.id
     }
