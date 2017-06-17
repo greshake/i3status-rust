@@ -5,6 +5,7 @@ use scheduler::Task;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
@@ -41,23 +42,24 @@ impl CpuConfig {
 impl ConfigBlock for Cpu {
     type Config = CpuConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let text = TextWidget::new(config).with_icon("cpu");
-        return Cpu {
+        Ok(Cpu {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             utilization: text,
             prev_idle: 0,
             prev_non_idle: 0,
-        }
+        })
     }
 }
 
 
 impl Block for Cpu
 {
-    fn update(&mut self) -> Option<Duration> {
-        let f = File::open("/proc/stat").expect("Your system doesn't support /proc/stat");
+    fn update(&mut self) -> Result<Option<Duration>> {
+        let f = File::open("/proc/stat")
+            .block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
         let mut utilization = 0;
@@ -110,12 +112,14 @@ impl Block for Cpu
 
         self.utilization.set_text(format!("{:02}%", utilization));
 
-        Some(self.update_interval.clone())
+        Ok(Some(self.update_interval.clone()))
     }
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.utilization]
     }
-    fn click(&mut self, _: &I3BarEvent) {}
+    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+        Ok(())
+    }
     fn id(&self) -> &str {
         &self.id
     }

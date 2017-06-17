@@ -463,14 +463,14 @@ Example:
 impl ConfigBlock for Template {
     type Config = TemplateConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Self {
-        Template {
+    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+        Ok(Template {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone()).with_text("Template"),
             tx_update_request: tx_update_request,
             config: config,
-        }
+        })
     }
 }
 ```
@@ -481,13 +481,13 @@ This is required in addition to the `ConfigBlock` trait and is used to interact 
 
 This trait defines the following features:
 
-### `fn update(&mut self) -> Option<Duration>` (Required if you don't want a static block)
+### `fn update(&mut self) -> Result<Option<Duration>>` (Required if you don't want a static block)
 
 Use this function to update the internal state of your block, for example during periodic updates. Return the duration until your block wants to be updated next. For example, a clock could request only to be updated every 60 seconds by returning Some(Duration::new(60, 0)) every time. If you return None, this function will not be called again automatically.
 
 Example:
 ```rust
-fn update(&mut self) -> Option<Duration> {
+fn update(&mut self) -> Result<Option<Duration>> {
       self.time.set_text(format!("{}", Local::now().format(&self.format)));
       Some(self.update_interval.clone())
 }
@@ -516,20 +516,22 @@ fn id(&self) -> &str {
 ```
 
 
-### `fn click(&mut self, event: &I3BarEvent)` (Optional)
+### `fn click(&mut self, event: &I3BarEvent) -> Result<()>` (Optional)
 
-Here you can react to the user clicking your block. The i3barEvent instance contains all fields to describe the click action, including mouse button and location down to the pixel. You may also update the internal state here. **Note that this event is sent to every block on every click**. *To filter, use the event.name property, which corresponds to the name property on widgets!*
+Here you can react to the user clicking your block. The I3BarEvent instance contains all fields to describe the click action, including mouse button and location down to the pixel. You may also update the internal state here. **Note that this event is sent to every block on every click**. *To filter, use the event.name property, which corresponds to the name property on widgets!*
 
 Example:
 ```rust
-if event.name.is_some() {
-            let action = match &event.name.clone().unwrap() as &str {
-                  "play" => "PlayPause",
-                  "next" => "Next",
-                  "prev" => "Previous",
-                  _ => ""
-            };
-      }
+fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+    if event.name.is_some() {
+        let action = match &event.name.clone().unwrap() as &str {
+              "play" => "PlayPause",
+              "next" => "Next",
+              "prev" => "Previous",
+              _ => ""
+        };
+    }
+    Ok(())
 }
 ```
 

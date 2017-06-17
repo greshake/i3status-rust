@@ -9,6 +9,7 @@ use util::FormatTemplate;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::{I3BarEvent, MouseButton};
@@ -102,13 +103,14 @@ macro_rules! unwrap_or_continue {
 }
 
 impl Xrandr {
-    fn get_active_monitors() -> Option<Vec<String>> {
+
+    fn get_active_monitors() -> Result<Option<Vec<String>>> {
         let active_montiors_cli = String::from_utf8(
             Command::new("sh")
                 .args(&["-c", "xrandr --listactivemonitors | grep \\/"])
-                .output().expect("There was a problem collecting active xrandr monitors.")
+                .output().block_error("xrandr", "couldn't collect active xrandr monitors")?
                 .stdout)
-            .expect("There was a problem while parsing xrandr monitors.");
+            .block_error("xrandr", "couldn't parse xrandr monitor list")?;
         let monitors: Vec<&str> = active_montiors_cli.split('\n').collect();
         let mut active_monitors: Vec<String> = Vec::new();
         for monitor in monitors {
@@ -119,21 +121,22 @@ impl Xrandr {
             }
         }
         if !active_monitors.is_empty() {
-            return Some(active_monitors);
+            Ok(Some(active_monitors))
+        } else {
+            Ok(None)
         }
-        None
     }
 
-    fn get_monitor_metrics(monitor_names: &Vec<String>) -> Option<Vec<Monitor>> {
+    fn get_monitor_metrics(monitor_names: &Vec<String>) -> Result<Option<Vec<Monitor>>> {
         let mut monitor_metrics: Vec<Monitor> = Vec::new();
         let grep_arg = format!("xrandr --verbose | grep -w '{} connected\\|Brightness'",
                                monitor_names.join(" connected\\|"));
         let monitor_info_cli = String::from_utf8(
             Command::new("sh")
                 .args(&["-c", grep_arg.as_str()])
-                .output().expect("There was a problem collecting monitor info.")
+                .output().block_error("xrandr", "couldn't collect xrandr monitor info")?
                 .stdout)
-            .expect("There was a problem while parsing monitor info.");
+            .block_error("xrandr", "couldn't parse xrandr monitor info")?;
 
         let monitor_infos: Vec<&str> = monitor_info_cli.split('\n').collect();
         for i in 0..monitor_infos.len() {
@@ -151,7 +154,7 @@ impl Xrandr {
                                                     .collect::<Vec<&str>>()
                                                     .get(1) {
                     brightness = (f32::from_str(brightness_raw.trim())
-                                      .expect("Unable to parse brightness string to int.") * 100.0)
+                                      .block_error("xrandr", "unable to parse brightness")? * 100.0)
                                  .floor() as u32;
                 }
             }
@@ -169,12 +172,13 @@ impl Xrandr {
             }
         }
         if !monitor_metrics.is_empty() {
-            return Some(monitor_metrics);
+            Ok(Some(monitor_metrics))
+        } else {
+            Ok(None)
         }
-        None
     }
 
-    fn display(&mut self) {
+    fn display(&mut self) -> Result<()> {
         if let Some(m) = self.monitors.get(self.current_idx) {
             let brightness_str = m.brightness.to_string();
             let values = map!("{display}" => m.name.clone(),
@@ -198,22 +202,24 @@ impl Xrandr {
             }
 
             if let Ok(fmt_template) = FormatTemplate::from_string(String::from(format_str)) {
-                self.text.set_text(fmt_template.render_static_str(&values));
+                self.text.set_text(fmt_template.render_static_str(&values)?);
             }
         }
+
+        Ok(())
     }
 }
 
 impl ConfigBlock for Xrandr {
     type Config = XrandrConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Self {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         let mut step_width = block_config.step_width;
         if step_width > 50 {
             step_width = 50;
         }
-        Xrandr {
+        Ok(Xrandr {
             text: ButtonWidget::new(config.clone(), &id).with_icon("xrandr"),
             id: id,
             update_interval: block_config.interval,
@@ -223,26 +229,28 @@ impl ConfigBlock for Xrandr {
             step_width: step_width,
             monitors: Vec::new(),
             config: config,
-        }
+        })
     }
 }
+
 impl Block for Xrandr
 {
-    fn update(&mut self) -> Option<Duration> {
-        if let Some(am) = Xrandr::get_active_monitors() {
-            if let Some(mm) = Xrandr::get_monitor_metrics(&am) {
+    fn update(&mut self) -> Result<Option<Duration>> {
+        if let Some(am) = Xrandr::get_active_monitors()? {
+            if let Some(mm) = Xrandr::get_monitor_metrics(&am)? {
                 self.monitors = mm;
-                self.display();
+                self.display()?;
             }
         }
-        Some(self.update_interval.clone())
+
+        Ok(Some(self.update_interval.clone()))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
 
-    fn click(&mut self, e: &I3BarEvent) {
+    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 match e.button {
@@ -269,9 +277,11 @@ impl Block for Xrandr
                     }
                     _ => {}
                 }
-                self.display();
+                self.display()?;
             }
         }
+
+        Ok(())
     }
 
     fn id(&self) -> &str {

@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use block::{Block, ConfigBlock};
 use config::Config;
+use errors::*;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
@@ -44,7 +45,7 @@ impl FocusedWindowConfig {
 impl ConfigBlock for FocusedWindow {
     type Config = FocusedWindowConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Self {
+    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         let id_clone = id.clone();
 
@@ -88,28 +89,30 @@ impl ConfigBlock for FocusedWindow {
             }
         });
 
-        FocusedWindow {
+        Ok(FocusedWindow {
             id,
             text: TextWidget::new(config),
             max_width: block_config.max_width,
             title
-        }
+        })
     }
 }
 
 
 impl Block for FocusedWindow
 {
-    fn update(&mut self) -> Option<Duration> {
-        let mut string = (*self.title.lock().unwrap()).clone();
+    fn update(&mut self) -> Result<Option<Duration>> {
+        let mut string = (*self.title.lock().block_error("focused_window", "failed to acquire lock")?).clone();
         string.truncate(self.max_width);
         self.text.set_text(string);
-        None
+        Ok(None)
     }
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
-    fn click(&mut self, _: &I3BarEvent) {}
+    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+        Ok(())
+    }
     fn id(&self) -> &str {
         &self.id
     }

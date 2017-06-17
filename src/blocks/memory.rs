@@ -79,9 +79,9 @@ use std::str::FromStr;
 use uuid::Uuid;
 use std::fmt;
 
-
 use config::Config;
 use de::deserialize_duration;
+use errors::*;
 use widgets::button::ButtonWidget;
 use widget::{State,I3BarWidget};
 use scheduler::Task;
@@ -297,7 +297,7 @@ impl MemoryConfig {
 }
 
 impl Memory {
-    fn format_insert_values(&mut self, mem_state: Memstate) -> String {
+    fn format_insert_values(&mut self, mem_state: Memstate) -> Result<String> {
 
         let mem_total = Unit::KiB(mem_state.mem_total());
         let mem_free = Unit::KiB(mem_state.mem_free());
@@ -361,14 +361,19 @@ impl Memory {
         };
 
         if_debug!({
-            let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
-            writeln!(f, "Inserted values: {:?}", self.values).unwrap();
+            let mut f = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("/tmp/i3log")
+                .block_error("memory", "can't open /tmp/i3log")?;
+            writeln!(f, "Inserted values: {:?}", self.values)
+                .block_error("memory", "failed to write to /tmp/i3log")?;
         });
 
-        match self.memtype {
+        Ok(match self.memtype {
             Memtype::MEMORY => self.format.0.render(&self.values),
             Memtype::SWAP => self.format.1.render(&self.values)
-        }
+        })
     }
 
 
@@ -385,7 +390,7 @@ impl Memory {
 impl ConfigBlock for Memory {
     type Config = MemoryConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Self {
+    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let memtype: String = block_config.display_type;
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, "memory").with_text("");
@@ -404,15 +409,15 @@ impl ConfigBlock for Memory {
             }
             ,
             clickable: block_config.clickable,
-            format: (FormatTemplate::from_string(block_config.format_mem).unwrap(),
-                     FormatTemplate::from_string(block_config.format_swap).unwrap()),
+            format: (FormatTemplate::from_string(block_config.format_mem)?,
+                     FormatTemplate::from_string(block_config.format_swap)?),
             update_interval: block_config.interval,
             tx_update_request: tx,
             values: HashMap::<String, String>::new(),
             warning: (block_config.warning_mem, block_config.warning_swap),
             critical: (block_config.critical_mem, block_config.critical_swap),
         };
-        memory
+        Ok(memory)
 
     }
 }
@@ -424,10 +429,10 @@ impl Block for Memory
         &self.name
     }
 
-    fn update(&mut self) -> Option<Duration> {
+    fn update(&mut self) -> Result<Option<Duration>> {
 
-        let f = File::open("/proc/meminfo").expect("/proc/meminfo does not exist. \
-                                                    Are we on a linux system?");
+        let f = File::open("/proc/meminfo")
+            .block_error("memory", "/proc/meminfo does not exist")?;
         let f = BufReader::new(f);
 
         let mut mem_state = Memstate::new();
@@ -435,9 +440,15 @@ impl Block for Memory
 
         for line in f.lines() {
             if_debug!({
-            let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
-            writeln!(f, "Updated: {:?}", mem_state).unwrap();
-        });
+                let mut f = OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open("/tmp/i3log")
+                    .block_error("memory", "can't open /tmp/i3log")?;
+                writeln!(f, "Updated: {:?}", mem_state)
+                    .block_error("memory", "failed to write to /tmp/i3log")?;
+            });
+
             // stop reading if all values are already present
             if mem_state.done() {
                 break
@@ -452,35 +463,35 @@ impl Block for Memory
 
             match line[0] {
                 "MemTotal:" => {
-                    mem_state.mem_total = (u64::from_str(line[1]).unwrap(), true);
+                    mem_state.mem_total = (u64::from_str(line[1]).block_error("memory", "failed to parse mem_total")?, true);
                     continue;
                 }
                 "MemFree:" => {
-                    mem_state.mem_free = (u64::from_str(line[1]).unwrap(), true);
+                    mem_state.mem_free = (u64::from_str(line[1]).block_error("memory", "failed to parse mem_free")?, true);
                     continue;
                 }
                 "Buffers:" => {
-                    mem_state.buffers = (u64::from_str(line[1]).unwrap(), true);
+                    mem_state.buffers = (u64::from_str(line[1]).block_error("memory", "failed to parse buffers")?, true);
                     continue;
                 }
                 "Cached:" => {
-                    mem_state.cached = (u64::from_str(line[1]).unwrap(), true);
+                    mem_state.cached = (u64::from_str(line[1]).block_error("memory", "failed to parse cached")?, true);
                     continue;
                 }
                 "SReclaimable:" => {
-                    mem_state.s_reclaimable = (u64::from_str(line[1]).unwrap(), true);
+                    mem_state.s_reclaimable = (u64::from_str(line[1]).block_error("memory", "failed to parse s_reclaimable")?, true);
                     continue;
                 }
                 "Shmem:" => {
-                    mem_state.shmem = (u64::from_str(line[1]).unwrap(), true);
+                    mem_state.shmem = (u64::from_str(line[1]).block_error("memory", "failed to parse shmem")?, true);
                     continue;
                 }
                 "SwapTotal:" => {
-                    mem_state.swap_total = (u64::from_str(line[1]).unwrap(), true);
+                    mem_state.swap_total = (u64::from_str(line[1]).block_error("memory", "failed to parse swap_total")?, true);
                     continue;
                 }
                 "SwapFree:" => {
-                    mem_state.swap_free = (u64::from_str(line[1]).unwrap(), true);
+                    mem_state.swap_free = (u64::from_str(line[1]).block_error("memory", "failed to parse swap_free")?, true);
                     continue;
                 }
                 _ => { continue; }
@@ -488,7 +499,7 @@ impl Block for Memory
         }
 
         // Now, create the string to be shown
-        let output_text = self.format_insert_values(mem_state);
+        let output_text = self.format_insert_values(mem_state)?;
 
         match self.memtype {
             Memtype::MEMORY => self.output.0.set_text(output_text),
@@ -496,32 +507,42 @@ impl Block for Memory
         }
 
         if_debug!({
-            let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
-            writeln!(f, "Updated: {:?}", self).unwrap();
+            let mut f = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("/tmp/i3log")
+                .block_error("memory", "failed to open /tmp/i3log")?;
+            writeln!(f, "Updated: {:?}", self)
+                .block_error("memory", "failed to write to /tmp/i3log")?;
         });
-        Some(self.update_interval.clone())
+        Ok(Some(self.update_interval.clone()))
     }
 
 
-    fn click(&mut self, event: &I3BarEvent) {
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
 
         if_debug!({
-            let mut f = OpenOptions::new().create(true).append(true).open("/tmp/i3log").unwrap();
-            writeln!(f, "Click received: {:?}", event).unwrap();
+            let mut f = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("/tmp/i3log")
+                .block_error("memory", "failed to open /tmp/i3log")?;
+            writeln!(f, "Click received: {:?}", event)
+                .block_error("memory", "failed to write to /tmp/i3log")?;
         });
 
         if let Some(ref s) = event.name {
             if self.clickable && event.button == MouseButton::Left && *s == "memory".to_string() {
                 self.switch();
-                self.update();
+                self.update()?;
                 self.tx_update_request.send(Task {
                     id: self.name.clone(),
                     update_time: Instant::now()
-                }).ok();
+                })?;
             }
         }
 
-
+        Ok(())
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {

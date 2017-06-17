@@ -1,4 +1,5 @@
 use config::Config;
+use errors::*;
 use std::time::{Duration, Instant};
 use widget::{State, I3BarWidget};
 use serde_json::value::Value;
@@ -88,7 +89,7 @@ impl RotatingTextWidget {
                 self.next_rotation = None;
             }
         }
-        self.update();
+        self.update()
     }
 
     fn get_rotated_content(&self) -> String {
@@ -126,31 +127,31 @@ impl RotatingTextWidget {
         self.cached_output = Some(self.rendered.to_string());
     }
 
-    pub fn next(&mut self) -> (bool, Option<Duration>) {
+    pub fn next(&mut self) -> Result<(bool, Option<Duration>)> {
         if let Some(next_rotation) = self.next_rotation {
             if next_rotation > Instant::now() {
-                (false, Some(next_rotation - Instant::now()))
+                Ok((false, Some(next_rotation - Instant::now())))
             } else {
                 if self.rotating {
                     if self.rotation_pos < self.content.len() {
                         self.rotation_pos += 1;
                         self.next_rotation = Some(Instant::now() + self.rotation_speed);
                         self.update();
-                        (true, Some(self.rotation_speed))
+                        Ok((true, Some(self.rotation_speed)))
                     } else {
                         self.rotation_pos = 0;
                         self.rotating = false;
                         self.next_rotation = Some(Instant::now() + self.rotation_interval);
                         self.update();
-                        (true, Some(self.rotation_interval))
+                        Ok((true, Some(self.rotation_interval)))
                     }
                 } else {
                     self.rotating = true;
-                    (true, Some(self.rotation_speed))
+                    Ok((true, Some(self.rotation_speed)))
                 }
             }
         } else {
-            (false, None)
+            Ok((false, None))
         }
     }
 }

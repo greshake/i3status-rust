@@ -8,7 +8,7 @@ use std::ops::Deref;
 use std::str::FromStr;
 use themes::{self, Theme};
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     #[serde(default = "icons::default", deserialize_with = "deserialize_icons")]
     pub icons: Map<String, String>,
@@ -16,6 +16,16 @@ pub struct Config {
     pub theme: Theme,
     #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
     pub blocks: Vec<(String, value::Value)>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            icons: icons::default(),
+            theme: themes::default(),
+            blocks: Vec::new(),
+        }
+    }
 }
 
 fn deserialize_blocks<'de, D>(deserializer: D) -> Result<Vec<(String, value::Value)>, D::Error>
