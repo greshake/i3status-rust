@@ -58,8 +58,7 @@ impl FromStr for Theme {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        get_theme(s)
-            .ok_or_else(|| "unknown theme".into())
+        get_theme(s).ok_or_else(|| "unknown theme".into())
     }
 }
 

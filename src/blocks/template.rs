@@ -12,7 +12,6 @@ use scheduler::Task;
 
 use uuid::Uuid;
 
-
 pub struct Template {
     text: TextWidget,
     id: String,
@@ -53,17 +52,19 @@ impl ConfigBlock for Template {
     }
 }
 
-impl Block for Template
-{
+impl Block for Template {
     fn update(&mut self) -> Result<Option<Duration>> {
-        Ok(Some(self.update_interval.clone()))
+        Ok(Some(self.update_interval))
     }
+
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
+
     fn click(&mut self, _: &I3BarEvent) -> Result<()> {
         Ok(())
     }
+
     fn id(&self) -> &str {
         &self.id
     }

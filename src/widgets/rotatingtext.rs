@@ -17,7 +17,7 @@ pub struct RotatingTextWidget {
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
-    pub rotating: bool
+    pub rotating: bool,
 }
 
 
@@ -80,7 +80,7 @@ impl RotatingTextWidget {
     }
 
     pub fn set_text(&mut self, content: String) {
-        if self.content != content{
+        if self.content != content {
             self.content = content;
             self.rotation_pos = 0;
             if self.content.len() > self.width {
@@ -96,9 +96,17 @@ impl RotatingTextWidget {
         if self.content.len() > self.width {
             let missing = (self.rotation_pos + self.width).saturating_sub(self.content.len());
             if missing == 0 {
-                self.content.chars().skip(self.rotation_pos).take(self.width).collect()
+                self.content
+                    .chars()
+                    .skip(self.rotation_pos)
+                    .take(self.width)
+                    .collect()
             } else {
-                let mut avail: String = self.content.chars().skip(self.rotation_pos).take(self.width).collect();
+                let mut avail: String = self.content
+                    .chars()
+                    .skip(self.rotation_pos)
+                    .take(self.width)
+                    .collect();
                 avail.push_str("|");
                 avail.push_str(&self.content.chars().take(missing - 1).collect::<String>());
                 avail
@@ -158,7 +166,9 @@ impl RotatingTextWidget {
 
 impl I3BarWidget for RotatingTextWidget {
     fn to_string(&self) -> String {
-        self.cached_output.clone().unwrap_or(self.rendered.to_string())
+        self.cached_output
+            .clone()
+            .unwrap_or(self.rendered.to_string())
     }
 
     fn get_rendered(&self) -> &Value {
