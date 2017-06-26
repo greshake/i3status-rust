@@ -77,10 +77,9 @@ impl UpdateScheduler {
     }
 
     pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) -> Result<()> {
-        let t = self.schedule.pop().internal_error(
-            "scheduler",
-            "schedule is empty",
-        )?;
+        let t = self.schedule
+            .pop()
+            .internal_error("scheduler", "schedule is empty")?;
         let mut tasks_next = vec![t.clone()];
 
         while !self.schedule.is_empty() &&
@@ -90,10 +89,9 @@ impl UpdateScheduler {
                     .internal_error("scheduler", "schedule is empty")?
                     .update_time
         {
-            tasks_next.push(self.schedule.pop().internal_error(
-                "scheduler",
-                "schedule is empty",
-            )?)
+            tasks_next.push(self.schedule
+                .pop()
+                .internal_error("scheduler", "schedule is empty")?)
         }
 
         let now = Instant::now();

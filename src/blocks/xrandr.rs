@@ -164,10 +164,8 @@ impl Xrandr {
             if let Some(name) = mi_line_args.get(0) {
                 display = name.trim();
                 if let Some(brightness_raw) = b_line.split(':').collect::<Vec<&str>>().get(1) {
-                    brightness = (f32::from_str(brightness_raw.trim()).block_error(
-                        "xrandr",
-                        "unable to parse brightness",
-                    )? * 100.0)
+                    brightness = (f32::from_str(brightness_raw.trim())
+                                      .block_error("xrandr", "unable to parse brightness")? * 100.0)
                         .floor() as u32;
                 }
             }
@@ -190,8 +188,7 @@ impl Xrandr {
     fn display(&mut self) -> Result<()> {
         if let Some(m) = self.monitors.get(self.current_idx) {
             let brightness_str = m.brightness.to_string();
-            let values =
-                map!("{display}" => m.name.clone(),
+            let values = map!("{display}" => m.name.clone(),
                               "{brightness}" => brightness_str,
                               "{resolution}" => m.resolution.clone());
 

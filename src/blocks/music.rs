@@ -136,10 +136,8 @@ impl ConfigBlock for Music {
             prev: prev,
             play: play,
             next: next,
-            dbus_conn: Connection::get_private(BusType::Session).block_error(
-                "music",
-                "failed to establish D-Bus connection",
-            )?,
+            dbus_conn: Connection::get_private(BusType::Session)
+                .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
             player: block_config.player,
             marquee: block_config.marquee,
@@ -175,9 +173,8 @@ impl Block for Music {
 
                 let (title, artist) = extract_from_metadata(metadata).unwrap_or((String::new(), String::new()));
 
-                self.current_song.set_text(
-                    format!("{} | {}", title, artist),
-                );
+                self.current_song
+                    .set_text(format!("{} | {}", title, artist));
                 self.player_avail = true;
             }
             if let Some(ref mut play) = self.play {
@@ -253,20 +250,16 @@ fn extract_from_metadata(metadata: arg::Variant<Box<arg::RefArg>>) -> Result<(St
     let mut title = String::new();
     let mut artist = String::new();
 
-    let mut iter = metadata.0.as_iter().block_error(
-        "music",
-        "failed to extract metadata",
-    )?;
+    let mut iter = metadata
+        .0
+        .as_iter()
+        .block_error("music", "failed to extract metadata")?;
 
     while let Some(key) = iter.next() {
-        let value = iter.next().block_error(
-            "music",
-            "failed to extract metadata",
-        )?;
-        match key.as_str().block_error(
-            "music",
-            "failed to extract metadata",
-        )? {
+        let value = iter.next()
+            .block_error("music", "failed to extract metadata")?;
+        match key.as_str()
+            .block_error("music", "failed to extract metadata")? {
             "xesam:artist" => {
                 artist = String::from(value
                     .as_iter()
@@ -285,10 +278,9 @@ fn extract_from_metadata(metadata: arg::Variant<Box<arg::RefArg>>) -> Result<(St
                     .block_error("music", "failed to extract metadata")?)
             }
             "xesam:title" => {
-                title = String::from(value.as_str().block_error(
-                    "music",
-                    "failed to extract metadata",
-                )?)
+                title = String::from(value
+                    .as_str()
+                    .block_error("music", "failed to extract metadata")?)
             }
             _ => {}
         };

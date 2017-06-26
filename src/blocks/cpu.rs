@@ -53,10 +53,8 @@ impl ConfigBlock for Cpu {
 
 impl Block for Cpu {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let f = File::open("/proc/stat").block_error(
-            "cpu",
-            "Your system doesn't support /proc/stat",
-        )?;
+        let f = File::open("/proc/stat")
+            .block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
         let mut utilization = 0;

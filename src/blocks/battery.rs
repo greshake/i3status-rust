@@ -59,21 +59,13 @@ impl ConfigBlock for Battery {
 }
 
 fn read_file(path: &str) -> Result<String> {
-    let mut f = OpenOptions::new().read(true).open(path).block_error(
-        "battery",
-        &format!(
-            "failed to open file {}",
-            path
-        ),
-    )?;
+    let mut f = OpenOptions::new()
+        .read(true)
+        .open(path)
+        .block_error("battery", &format!("failed to open file {}", path))?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error(
-        "battery",
-        &format!(
-            "failed to read {}",
-            path
-        ),
-    )?;
+    f.read_to_string(&mut content)
+        .block_error("battery", &format!("failed to read {}", path))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
