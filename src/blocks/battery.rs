@@ -20,6 +20,7 @@ pub struct Battery {
     max_charge: u64,
     update_interval: Duration,
     device_path: String,
+    optional: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -32,6 +33,10 @@ pub struct BatteryConfig {
     /// Which BAT device in /sys/class/power_supply/ to read from.
     #[serde(default = "BatteryConfig::default_device")]
     pub device: usize,
+
+    /// Is the block allowed to fail?
+    #[serde(default = "BatteryConfig::default_optional")]
+    pub optional: bool,
 }
 
 impl BatteryConfig {
@@ -41,6 +46,10 @@ impl BatteryConfig {
 
     fn default_device() -> usize {
         0
+    }
+
+    fn default_optional() -> bool {
+        false
     }
 }
 
@@ -54,20 +63,19 @@ impl ConfigBlock for Battery {
             update_interval: block_config.interval,
             output: TextWidget::new(config),
             device_path: format!("/sys/class/power_supply/BAT{}/", block_config.device),
+            optional: block_config.optional,
         })
     }
 }
 
 fn read_file(path: &str) -> Result<String> {
-    let mut f = OpenOptions::new().read(true).open(path).block_error(
-        "battery",
-        &format!("failed to open file {}", path),
-    )?;
+    let mut f = OpenOptions::new()
+        .read(true)
+        .open(path)
+        .block_error("battery", &format!("failed to open file {}", path))?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error(
-        "battery",
-        &format!("failed to read {}", path),
-    )?;
+    f.read_to_string(&mut content)
+        .block_error("battery", &format!("failed to read {}", path))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
@@ -130,5 +138,9 @@ impl Block for Battery {
 
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn optional(&self) -> bool {
+        self.optional
     }
 }
