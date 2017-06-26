@@ -110,7 +110,6 @@ impl UpdateScheduler {
                 .get(&task.id)
                 .internal_error("scheduler", "could not get required block")?
                 .optional();
-
             match (update, optional) {
                 (Ok(Some(dur)), _) => {
                     self.schedule.push(Task {
