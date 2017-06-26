@@ -36,7 +36,10 @@ pub fn get_file(name: &str) -> Result<String> {
     )?;
     file.read_to_string(&mut file_contents).internal_error(
         "util",
-        &format!("Unable to read {}", name),
+        &format!(
+            "Unable to read {}",
+            name
+        ),
     )?;
     Ok(file_contents)
 }

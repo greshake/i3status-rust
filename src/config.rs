@@ -62,11 +62,12 @@ where
     map_type!(ThemeIntermediary, String;
               s => Ok(ThemeIntermediary(themes::get_theme(s).ok_or_else(|| "cannot find specified theme")?.owned_map())));
 
-    let intermediary: Map<String, String> = deserializer
-        .deserialize_any(MapType::<ThemeIntermediary, String>(
+    let intermediary: Map<String, String> = deserializer.deserialize_any(
+        MapType::<ThemeIntermediary, String>(
             PhantomData,
             PhantomData,
-        ))?;
+        ),
+    )?;
 
     Deserialize::deserialize(de::value::MapDeserializer::new(intermediary.into_iter()))
 }

@@ -175,8 +175,9 @@ impl Block for Music {
 
                 let (title, artist) = extract_from_metadata(metadata).unwrap_or((String::new(), String::new()));
 
-                self.current_song
-                    .set_text(format!("{} | {}", title, artist));
+                self.current_song.set_text(
+                    format!("{} | {}", title, artist),
+                );
                 self.player_avail = true;
             }
             if let Some(ref mut play) = self.play {

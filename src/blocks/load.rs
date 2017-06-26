@@ -47,9 +47,9 @@ impl ConfigBlock for Load {
     type Config = LoadConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let text = TextWidget::new(config)
-            .with_icon("cogs")
-            .with_state(State::Info);
+        let text = TextWidget::new(config).with_icon("cogs").with_state(
+            State::Info,
+        );
 
         let f = File::open("/proc/cpuinfo").block_error(
             "load",
