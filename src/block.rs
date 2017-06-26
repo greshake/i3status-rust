@@ -23,6 +23,12 @@ pub trait Block {
 
     /// This function returns a unique id.
     fn id(&self) -> &str;
+
+    /// Is the block allowed to raise errors without
+    /// crashing the whole bar?
+    fn optional(&self) -> bool {
+        false
+    }
 }
 
 pub trait ConfigBlock: Block {

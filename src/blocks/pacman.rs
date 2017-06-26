@@ -22,6 +22,7 @@ pub struct Pacman {
     output: TextWidget,
     id: String,
     update_interval: Duration,
+    optional: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -30,11 +31,19 @@ pub struct PacmanConfig {
     /// Update interval in seconds
     #[serde(default = "PacmanConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+
+    /// Is the block allowed to fail?
+    #[serde(default = "PacmanConfig::default_optional")]
+    pub optional: bool,
 }
 
 impl PacmanConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(60 * 10)
+    }
+
+    fn default_optional() -> bool {
+        false
     }
 }
 
@@ -46,6 +55,7 @@ impl ConfigBlock for Pacman {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             output: TextWidget::new(config).with_icon("update"),
+            optional: block_config.optional,
         })
     }
 }
@@ -77,10 +87,10 @@ fn get_update_count() -> Result<usize> {
     if !has_fake_root()? {
         return Ok(0 as usize);
     }
-    let tmp_dir = env::temp_dir().into_os_string().into_string().block_error(
-        "pacman",
-        "There's something wrong with your $TMP variable",
-    )?;
+    let tmp_dir = env::temp_dir()
+        .into_os_string()
+        .into_string()
+        .block_error("pacman", "There's something wrong with your $TMP variable")?;
     let user = env::var_os("USER")
         .unwrap_or(OsString::from(""))
         .into_string()
@@ -104,10 +114,8 @@ fn get_update_count() -> Result<usize> {
     // Create symlink to local cache in `checkup-db` if required
     let local_cache = Path::new(&updates_db).join("local");
     if !local_cache.exists() {
-        symlink(db_path.join("local"), local_cache).block_error(
-            "pacman",
-            "Failed to created required symlink",
-        )?;
+        symlink(db_path.join("local"), local_cache)
+            .block_error("pacman", "Failed to created required symlink")?;
     }
 
     // Update database
@@ -162,5 +170,9 @@ impl Block for Pacman {
         }
 
         Ok(())
+    }
+
+    fn optional(&self) -> bool {
+        self.optional
     }
 }

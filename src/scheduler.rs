@@ -43,14 +43,14 @@ pub struct UpdateScheduler {
 }
 
 impl UpdateScheduler {
-    pub fn new(blocks: &Vec<Box<Block>>) -> UpdateScheduler {
+    pub fn new(blocks: &[Box<Block>]) -> UpdateScheduler {
         let mut schedule = BinaryHeap::new();
 
         let now = Instant::now();
         for block in blocks.iter() {
             schedule.push(Task {
                 id: String::from(block.id()),
-                update_time: now.clone(),
+                update_time: now,
             });
         }
 
@@ -77,10 +77,9 @@ impl UpdateScheduler {
     }
 
     pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) -> Result<()> {
-        let t = self.schedule.pop().internal_error(
-            "scheduler",
-            "schedule is empty",
-        )?;
+        let t = self.schedule
+            .pop()
+            .internal_error("scheduler", "schedule is empty")?;
         let mut tasks_next = vec![t.clone()];
 
         while !self.schedule.is_empty() &&
@@ -90,10 +89,9 @@ impl UpdateScheduler {
                     .internal_error("scheduler", "schedule is empty")?
                     .update_time
         {
-            tasks_next.push(self.schedule.pop().internal_error(
-                "scheduler",
-                "schedule is empty",
-            )?)
+            tasks_next.push(self.schedule
+                .pop()
+                .internal_error("scheduler", "schedule is empty")?)
         }
 
         let now = Instant::now();
@@ -104,15 +102,26 @@ impl UpdateScheduler {
         let now = Instant::now();
 
         for task in tasks_next {
-            if let Some(dur) = block_map
+            let update = block_map
                 .get_mut(&task.id)
                 .internal_error("scheduler", "could not get required block")?
-                .update()?
-            {
-                self.schedule.push(Task {
-                    id: task.id,
-                    update_time: now + dur,
-                })
+                .update();
+            let optional = block_map
+                .get(&task.id)
+                .internal_error("scheduler", "could not get required block")?
+                .optional();
+
+            match (update, optional) {
+                (Ok(Some(dur)), _) => {
+                    self.schedule.push(Task {
+                        id: task.id,
+                        update_time: now + dur,
+                    })
+                }
+                (Err(e), false) => {
+                    return Err(e);
+                }
+                (Err(_), true) | _ => {}
             }
         }
 
