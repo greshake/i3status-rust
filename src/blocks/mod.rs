@@ -13,6 +13,7 @@ mod toggle;
 mod sound;
 mod focused_window;
 mod xrandr;
+mod net;
 
 use config::Config;
 use self::time::*;
@@ -30,6 +31,7 @@ use self::toggle::*;
 use self::focused_window::*;
 use self::temperature::*;
 use self::xrandr::*;
+use self::net::*;
 
 use super::block::{Block, ConfigBlock};
 use errors::*;
@@ -76,5 +78,6 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "sound" => Sound,
             "temperature" => Temperature,
             "focused_window" => FocusedWindow,
-            "xrandr" => Xrandr)
+            "xrandr" => Xrandr,
+            "net" => Net)
 }
