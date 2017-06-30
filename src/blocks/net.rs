@@ -71,21 +71,43 @@ fn read_file(path: &str) -> Result<String> {
     Ok(content)
 }
 
+fn convert_speed(speed: u64) -> (f64, &'static str) {
+    // the values for the match are so the speed doesn't go above 3 characters
+    let (speed, unit) = match speed {
+        x if x > 1047527424 => {(speed as f64 / 1073741824.0, "G")},
+        x if x > 1022976 => {(speed as f64 / 1048576.0, "M")},
+        x if x > 999 => {(speed as f64 / 1024.0, "K")},
+        _ => (speed as f64, "B"),
+    };
+    (speed, unit)
+}
+
+fn make_graph(values: &Vec<u64>) -> &'static str{
+    let bars = ["_","▁","▂","▃","▄","▅","▆","▇","█"];
+    let min = values.iter().min().unwrap();
+    let max = values.iter().max().unwrap();
+    let extant = (max - min) as usize;
+    let bar = values.into_iter()
+                    .map(|x| bars[(x - min) as usize / (extant * (bars.len() - 1))])
+                    .collect::<Vec<&'static str>>()
+                    .concat();
+    bars[0]
+}
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
         let current_rx = read_file(&format!("{}rx_bytes", self.device_path))?
             .parse::<u64>()
             .block_error("net", "failed to parse rx_bytes")?;
-        let rx = (current_rx - self.rx_bytes) as f64 / 1024.0 / 1024.0;
+        let (rx_speed, rx_unit) = convert_speed((current_rx - self.rx_bytes) / self.update_interval.as_secs());
         self.rx_bytes = current_rx;
 
         let current_tx = read_file(&format!("{}tx_bytes", self.device_path))?
             .parse::<u64>()
             .block_error("net", "failed to parse tx_bytes")?;
-        let tx = (current_tx - self.tx_bytes) as f64 / 1024.0 / 1024.0;
+        let (tx_speed, tx_unit) = convert_speed((current_tx - self.tx_bytes) / self.update_interval.as_secs());
         self.tx_bytes = current_tx;
 
-        self.output.set_text(format!("⬆ {:.1} ⬇ {:.1}", tx, rx));
+        self.output.set_text(format!("⬆ {:6.1}{} ⬇ {:6.1}{}", tx_speed, tx_unit, rx_speed, rx_unit));
         Ok(Some(self.update_interval))
     }
 
