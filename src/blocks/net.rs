@@ -19,6 +19,8 @@ pub struct Net {
     id: String,
     update_interval: Duration,
     device_path: String,
+    rx_buff: Vec<u64>,
+    tx_buff: Vec<u64>,
     rx_bytes: u64,
     tx_bytes: u64,
 }
@@ -50,6 +52,8 @@ impl ConfigBlock for Net {
             update_interval: block_config.interval,
             output: TextWidget::new(config.clone()).with_text("Net"),
             device_path: format!("/sys/class/net/{}/statistics/", block_config.device),
+            rx_buff: vec![0,0,0,0,0,0,0,0,0,0],
+            tx_buff: vec![0,0,0,0,0,0,0,0,0,0],
             rx_bytes: 0,
             tx_bytes: 0,
         })
@@ -93,23 +97,33 @@ fn make_graph(values: &Vec<u64>) -> String {
                     .concat();
     bar
 }
+
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
         let current_rx = read_file(&format!("{}rx_bytes", self.device_path))?
             .parse::<u64>()
             .block_error("net", "failed to parse rx_bytes")?;
-        let (rx_speed, rx_unit) = convert_speed((current_rx - self.rx_bytes) / self.update_interval.as_secs());
+        let rx_bytes = (current_rx - self.rx_bytes) / self.update_interval.as_secs();
+        let (rx_speed, rx_unit) = convert_speed(rx_bytes);
         self.rx_bytes = current_rx;
 
         let current_tx = read_file(&format!("{}tx_bytes", self.device_path))?
             .parse::<u64>()
             .block_error("net", "failed to parse tx_bytes")?;
-        let (tx_speed, tx_unit) = convert_speed((current_tx - self.tx_bytes) / self.update_interval.as_secs());
+        let tx_bytes = (current_tx - self.tx_bytes) / self.update_interval.as_secs();
+        let (tx_speed, tx_unit) = convert_speed(tx_bytes);
         self.tx_bytes = current_tx;
 
-        let bar = make_graph(&vec![10,20,30,40,50,60]);
+        self.rx_buff.remove(0);
+        self.rx_buff.push(rx_bytes);
 
-        self.output.set_text(format!("⬆ {:6.1}{} ⬇ {:6.1}{} {}", tx_speed, tx_unit, rx_speed, rx_unit, bar));
+        self.tx_buff.remove(0);
+        self.tx_buff.push(tx_bytes);
+
+        let rx_bar = make_graph(&self.rx_buff);
+        let tx_bar = make_graph(&self.tx_buff);
+
+        self.output.set_text(format!("⬆ {} {:5.1}{} ⬇ {} {:5.1}{}", tx_bar, tx_speed, tx_unit, rx_bar, rx_speed, rx_unit));
         Ok(Some(self.update_interval))
     }
 
