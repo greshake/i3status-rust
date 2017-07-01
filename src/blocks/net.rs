@@ -14,6 +14,10 @@ use std::io::prelude::*;
 
 use uuid::Uuid;
 
+trait Graphable {
+    fn make_graph(&self) -> String;
+}
+
 pub struct Net {
     output: TextWidget,
     id: String,
@@ -86,16 +90,18 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
     (speed, unit)
 }
 
-fn make_graph(values: &Vec<u64>) -> String {
-    let bars = ["_","▁","▂","▃","▄","▅","▆","▇","█"];
-    let min = values.iter().min().unwrap().to_owned() as f64;
-    let max = values.iter().max().unwrap().to_owned() as f64;
-    let extant = max - min;
-    let bar = values.into_iter()
-                    .map(|x| bars[((x.to_owned() as f64 - min) / extant * (bars.len() as f64 - 1.0)) as usize])
-                    .collect::<Vec<&'static str>>()
-                    .concat();
-    bar
+impl Graphable for Vec<u64>{
+    fn make_graph(&self) -> String {
+        let bars = ["_","▁","▂","▃","▄","▅","▆","▇","█"];
+        let min = self.iter().min().unwrap().to_owned() as f64;
+        let max = self.iter().max().unwrap().to_owned() as f64;
+        let extant = max - min;
+        let bar = self.into_iter()
+                        .map(|x| bars[((x.to_owned() as f64 - min) / extant * (bars.len() as f64 - 1.0)) as usize])
+                        .collect::<Vec<&'static str>>()
+                        .concat();
+        bar
+    }
 }
 
 impl Block for Net {
@@ -120,8 +126,8 @@ impl Block for Net {
         self.tx_buff.remove(0);
         self.tx_buff.push(tx_bytes);
 
-        let rx_bar = make_graph(&self.rx_buff);
-        let tx_bar = make_graph(&self.tx_buff);
+        let rx_bar = self.rx_buff.make_graph();
+        let tx_bar = self.tx_buff.make_graph();
 
         self.output.set_text(format!("⬆ {} {:5.1}{} ⬇ {} {:5.1}{}", tx_bar, tx_speed, tx_unit, rx_bar, rx_speed, rx_unit));
         Ok(Some(self.update_interval))
