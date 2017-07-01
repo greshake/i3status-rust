@@ -82,16 +82,16 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
     (speed, unit)
 }
 
-fn make_graph(values: &Vec<u64>) -> &'static str{
+fn make_graph(values: &Vec<u64>) -> String {
     let bars = ["_","▁","▂","▃","▄","▅","▆","▇","█"];
-    let min = values.iter().min().unwrap();
-    let max = values.iter().max().unwrap();
-    let extant = (max - min) as usize;
+    let min = values.iter().min().unwrap().to_owned() as f64;
+    let max = values.iter().max().unwrap().to_owned() as f64;
+    let extant = max - min;
     let bar = values.into_iter()
-                    .map(|x| bars[(x - min) as usize / (extant * (bars.len() - 1))])
+                    .map(|x| bars[((x.to_owned() as f64 - min) / extant * (bars.len() as f64 - 1.0)) as usize])
                     .collect::<Vec<&'static str>>()
                     .concat();
-    bars[0]
+    bar
 }
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
@@ -107,7 +107,9 @@ impl Block for Net {
         let (tx_speed, tx_unit) = convert_speed((current_tx - self.tx_bytes) / self.update_interval.as_secs());
         self.tx_bytes = current_tx;
 
-        self.output.set_text(format!("⬆ {:6.1}{} ⬇ {:6.1}{}", tx_speed, tx_unit, rx_speed, rx_unit));
+        let bar = make_graph(&vec![10,20,30,40,50,60]);
+
+        self.output.set_text(format!("⬆ {:6.1}{} ⬇ {:6.1}{} {}", tx_speed, tx_unit, rx_speed, rx_unit, bar));
         Ok(Some(self.update_interval))
     }
 
