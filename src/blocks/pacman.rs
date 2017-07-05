@@ -118,12 +118,13 @@ fn get_update_count() -> Result<usize> {
     Ok(
         String::from_utf8(
             Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db),
-                    ],
-                )
+                .args(&[
+                    "-c",
+                    &format!(
+                        "fakeroot pacman -Su -p --dbpath \"{}\"",
+                        updates_db
+                    ),
+                ])
                 .output()
                 .block_error("pacman", "There was a problem running the pacman commands")?
                 .stdout,

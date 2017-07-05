@@ -33,16 +33,14 @@ impl Monitor {
 
     fn set_brightness(&mut self, step: i32) {
         Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    format!(
-                        "xrandr --output {} --brightness {}",
-                        self.name,
-                        (self.brightness as i32 + step) as f32 / 100.0
-                    ).as_str(),
-                ],
-            )
+            .args(&[
+                "-c",
+                format!(
+                    "xrandr --output {} --brightness {}",
+                    self.name,
+                    (self.brightness as i32 + step) as f32 / 100.0
+                ).as_str(),
+            ])
             .spawn()
             .expect("Failed to set xrandr output.");
         self.brightness = (self.brightness as i32 + step) as u32;

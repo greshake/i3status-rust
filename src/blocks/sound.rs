@@ -63,16 +63,14 @@ impl SoundDevice {
 
     fn set_volume(&mut self, step: i32) -> Result<()> {
         Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    format!(
-                        "amixer set {} {}%",
-                        self.name,
-                        (self.volume as i32 + step) as u32
-                    ).as_str(),
-                ],
-            )
+            .args(&[
+                "-c",
+                format!(
+                    "amixer set {} {}%",
+                    self.name,
+                    (self.volume as i32 + step) as u32
+                ).as_str(),
+            ])
             .output()
             .block_error("sound", "failed to set volume")?;
 
