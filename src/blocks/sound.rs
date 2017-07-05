@@ -38,10 +38,11 @@ impl SoundDevice {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .block_error("sound", "could not run amixer to get sound info")?;
 
-        let last_line = &output.lines().into_iter().last().block_error(
-            "sound",
-            "could not get sound info",
-        )?;
+        let last_line = &output
+            .lines()
+            .into_iter()
+            .last()
+            .block_error("sound", "could not get sound info")?;
 
         let last = last_line
             .split_whitespace()
@@ -62,16 +63,14 @@ impl SoundDevice {
 
     fn set_volume(&mut self, step: i32) -> Result<()> {
         Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    format!(
-                        "amixer set {} {}%",
-                        self.name,
-                        (self.volume as i32 + step) as u32
-                    ).as_str(),
-                ],
-            )
+            .args(&[
+                "-c",
+                format!(
+                    "amixer set {} {}%",
+                    self.name,
+                    (self.volume as i32 + step) as u32
+                ).as_str(),
+            ])
             .output()
             .block_error("sound", "failed to set volume")?;
 
@@ -128,10 +127,9 @@ impl SoundConfig {
 
 impl Sound {
     fn display(&mut self) -> Result<()> {
-        let mut device = self.devices.get_mut(self.current_idx).block_error(
-            "sound",
-            "failed to get device",
-        )?;
+        let mut device = self.devices
+            .get_mut(self.current_idx)
+            .block_error("sound", "failed to get device")?;
         device.get_info()?;
 
         if device.muted {
@@ -198,10 +196,9 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 {
                     // Additional scope to not keep mutably borrowed device for too long
-                    let mut device = self.devices.get_mut(self.current_idx).block_error(
-                        "sound",
-                        "failed to get device",
-                    )?;
+                    let mut device = self.devices
+                        .get_mut(self.current_idx)
+                        .block_error("sound", "failed to get device")?;
 
                     match e.button {
                         MouseButton::Right => device.toggle()?,
