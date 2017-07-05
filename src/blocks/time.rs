@@ -6,7 +6,7 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use self::chrono::offset::local::Local;
+use self::chrono::offset::Local;
 use scheduler::Task;
 use std::sync::mpsc::Sender;
 use widgets::text::TextWidget;
