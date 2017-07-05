@@ -162,7 +162,7 @@ fn main() {
         .version("0.1")
         .author(
             "Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
-                 https://github.com/greshake/i3status-rust/graphs/contributors",
+             https://github.com/greshake/i3status-rust/graphs/contributors",
         )
         .about("Replacement for i3status for Linux, written in Rust")
         .arg(
@@ -259,7 +259,7 @@ fn profile(iterations: i32, name: &str, block: &mut Block) {
     let mut bar = progress::Bar::new();
     println!(
         "Now profiling the {0} block by executing {1} updates.\n \
-              Use pprof to analyze {0}.profile later.",
+         Use pprof to analyze {0}.profile later.",
         name,
         iterations
     );

@@ -46,22 +46,27 @@ impl GraphWidget {
     }
 
     pub fn set_values<T>(&mut self, content: &[T], min: Option<T>, max: Option<T>)
-        where T: Ord + ToPrimitive {
-        let bars = ["_","▁","▂","▃","▄","▅","▆","▇","█"];
+    where
+        T: Ord + ToPrimitive,
+    {
+        let bars = ["_", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
         let min: f64 = match min {
             Some(x) => x.to_f64().unwrap(),
-            None => content.iter().min().unwrap().to_f64().unwrap()
+            None => content.iter().min().unwrap().to_f64().unwrap(),
         };
         let max: f64 = match max {
             Some(x) => x.to_f64().unwrap(),
-            None => content.iter().max().unwrap().to_f64().unwrap()
+            None => content.iter().max().unwrap().to_f64().unwrap(),
         };
         let extant = max - min;
         let length = bars.len() as f64 - 1.0;
-        let bar = content.iter()
-                        .map(|x| bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize])
-                        .collect::<Vec<&'static str>>()
-                        .concat();
+        let bar = content
+            .iter()
+            .map(|x| {
+                bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
+            })
+            .collect::<Vec<&'static str>>()
+            .concat();
         self.content = Some(bar);
         self.update();
     }
