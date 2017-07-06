@@ -1,0 +1,106 @@
+extern crate num;
+use config::Config;
+use widget::State;
+use serde_json::value::Value;
+use super::super::widget::I3BarWidget;
+use num::{ToPrimitive, clamp};
+
+#[derive(Clone, Debug)]
+pub struct GraphWidget {
+    content: Option<String>,
+    icon: Option<String>,
+    state: State,
+    rendered: Value,
+    cached_output: Option<String>,
+    config: Config,
+}
+
+impl GraphWidget {
+    pub fn new(config: Config) -> Self {
+        GraphWidget {
+            content: None,
+            icon: None,
+            state: State::Idle,
+            rendered: json!({
+                "full_text": "",
+                "separator": false,
+                "separator_block_width": 0,
+                "background": "#000000",
+                "color": "#000000"
+            }),
+            config: config,
+            cached_output: None,
+        }
+    }
+
+    pub fn with_icon(mut self, name: &str) -> Self {
+        self.icon = self.config.icons.get(name).cloned();
+        self.update();
+        self
+    }
+
+    pub fn with_state(mut self, state: State) -> Self {
+        self.state = state;
+        self.update();
+        self
+    }
+
+    pub fn set_values<T>(&mut self, content: &[T], min: Option<T>, max: Option<T>)
+        where T: Ord + ToPrimitive {
+        let bars = ["_","▁","▂","▃","▄","▅","▆","▇","█"];
+        let min: f64 = match min {
+            Some(x) => x.to_f64().unwrap(),
+            None => content.iter().min().unwrap().to_f64().unwrap()
+        };
+        let max: f64 = match max {
+            Some(x) => x.to_f64().unwrap(),
+            None => content.iter().max().unwrap().to_f64().unwrap()
+        };
+        let extant = max - min;
+        let length = bars.len() as f64 - 1.0;
+        let bar = content.iter()
+                        .map(|x| bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize])
+                        .collect::<Vec<&'static str>>()
+                        .concat();
+        self.content = Some(bar);
+        self.update();
+    }
+
+    pub fn set_icon(&mut self, name: &str) {
+        self.icon = self.config.icons.get(name).cloned();
+        self.update();
+    }
+
+    pub fn set_state(&mut self, state: State) {
+        self.state = state;
+        self.update();
+    }
+
+    fn update(&mut self) {
+        let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
+
+        self.rendered = json!({
+            "full_text": format!("{}{} ",
+                                self.icon.clone().unwrap_or(String::from(" ")),
+                                self.content.clone().unwrap_or(String::from(""))),
+            "separator": false,
+            "separator_block_width": 0,
+            "background": key_bg.to_owned(),
+            "color": key_fg.to_owned()
+        });
+
+        self.cached_output = Some(self.rendered.to_string());
+    }
+}
+
+impl I3BarWidget for GraphWidget {
+    fn to_string(&self) -> String {
+        self.cached_output
+            .clone()
+            .unwrap_or(self.rendered.to_string())
+    }
+
+    fn get_rendered(&self) -> &Value {
+        &self.rendered
+    }
+}
