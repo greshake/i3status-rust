@@ -90,7 +90,7 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
     (speed, unit)
 }
 
-impl Graphable for Vec<u64>{
+impl<'a> Graphable for &'a [u64]{
     fn make_graph(&self) -> String {
         let bars = ["_","▁","▂","▃","▄","▅","▆","▇","█"];
         let min = self.iter().min().unwrap().to_owned() as f64;
@@ -126,8 +126,8 @@ impl Block for Net {
         self.tx_buff.remove(0);
         self.tx_buff.push(tx_bytes);
 
-        let rx_bar = self.rx_buff.make_graph();
-        let tx_bar = self.tx_buff.make_graph();
+        let rx_bar = self.rx_buff.as_slice().make_graph();
+        let tx_bar = self.tx_buff.as_slice().make_graph();
 
         self.output.set_text(format!("⬆ {} {:5.1}{} ⬇ {} {:5.1}{}", tx_bar, tx_speed, tx_unit, rx_bar, rx_speed, rx_unit));
         Ok(Some(self.update_interval))
