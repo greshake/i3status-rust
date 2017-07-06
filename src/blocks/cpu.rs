@@ -7,6 +7,7 @@ use config::Config;
 use de::deserialize_duration;
 use errors::*;
 use widgets::text::TextWidget;
+use widgets::graph::GraphWidget;
 use widget::{I3BarWidget, State};
 
 use std::io::BufReader;
@@ -17,8 +18,10 @@ use uuid::Uuid;
 
 pub struct Cpu {
     utilization: TextWidget,
+    graph: GraphWidget,
     prev_idle: u64,
     prev_non_idle: u64,
+    util_buf: Vec<u64>,
     id: String,
     update_interval: Duration,
 }
@@ -44,9 +47,11 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            utilization: TextWidget::new(config).with_icon("cpu"),
+            utilization: TextWidget::new(config.clone()).with_icon("cpu"),
+            graph: GraphWidget::new(config),
             prev_idle: 0,
             prev_non_idle: 0,
+            util_buf: vec![0,0,0,0,0,0,0,0,0,0],
         })
     }
 }
@@ -108,13 +113,23 @@ impl Block for Cpu {
             _ => State::Critical,
         });
 
+        self.graph.set_state(match utilization {
+            0...30 => State::Idle,
+            30...60 => State::Info,
+            60...90 => State::Warning,
+            _ => State::Critical,
+        });
+
+        self.util_buf.remove(0);
+        self.util_buf.push(utilization);
         self.utilization.set_text(format!("{:02}%", utilization));
+        self.graph.set_values(&self.util_buf, Some(0), Some(100));
 
         Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        vec![&self.utilization]
+        vec![&self.utilization, &self.graph]
     }
 
     fn id(&self) -> &str {

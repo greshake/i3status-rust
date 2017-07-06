@@ -13,6 +13,7 @@ extern crate toml;
 extern crate clap;
 extern crate uuid;
 extern crate regex;
+extern crate num;
 
 #[macro_use]
 mod de;
