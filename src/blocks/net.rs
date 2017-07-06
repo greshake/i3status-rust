@@ -6,6 +6,7 @@ use config::Config;
 use de::deserialize_duration;
 use errors::*;
 use widgets::text::TextWidget;
+use widgets::graph::GraphWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
@@ -14,12 +15,11 @@ use std::io::prelude::*;
 
 use uuid::Uuid;
 
-trait Graphable {
-    fn make_graph(&self) -> String;
-}
-
 pub struct Net {
-    output: TextWidget,
+    output_rx: TextWidget,
+    graph_rx: GraphWidget,
+    output_tx: TextWidget,
+    graph_tx: GraphWidget,
     id: String,
     update_interval: Duration,
     device_path: String,
@@ -27,6 +27,7 @@ pub struct Net {
     tx_buff: Vec<u64>,
     rx_bytes: u64,
     tx_bytes: u64,
+    graph: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -39,6 +40,7 @@ pub struct NetConfig {
     /// Which interface in /sys/class/net/ to read from.
     //#[serde(default = "NetConfig::default_device")]
     pub device: String,
+    pub graph: bool,
 }
 
 impl NetConfig {
@@ -54,12 +56,16 @@ impl ConfigBlock for Net {
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            output: TextWidget::new(config.clone()).with_text("Net"),
+            output_tx: TextWidget::new(config.clone()).with_icon("net_up"),
+            graph_tx: GraphWidget::new(config.clone()),
+            output_rx: TextWidget::new(config.clone()).with_icon("net_down"),
+            graph_rx: GraphWidget::new(config.clone()),
             device_path: format!("/sys/class/net/{}/statistics/", block_config.device),
             rx_buff: vec![0,0,0,0,0,0,0,0,0,0],
             tx_buff: vec![0,0,0,0,0,0,0,0,0,0],
             rx_bytes: 0,
             tx_bytes: 0,
+            graph: block_config.graph,
         })
     }
 }
@@ -90,20 +96,6 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
     (speed, unit)
 }
 
-impl<'a> Graphable for &'a [u64]{
-    fn make_graph(&self) -> String {
-        let bars = ["_","▁","▂","▃","▄","▅","▆","▇","█"];
-        let min = self.iter().min().unwrap().to_owned() as f64;
-        let max = self.iter().max().unwrap().to_owned() as f64;
-        let extant = max - min;
-        let bar = self.into_iter()
-                        .map(|x| bars[((x.to_owned() as f64 - min) / extant * (bars.len() as f64 - 1.0)) as usize])
-                        .collect::<Vec<&'static str>>()
-                        .concat();
-        bar
-    }
-}
-
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
         let current_rx = read_file(&format!("{}rx_bytes", self.device_path))?
@@ -120,21 +112,27 @@ impl Block for Net {
         let (tx_speed, tx_unit) = convert_speed(tx_bytes);
         self.tx_bytes = current_tx;
 
-        self.rx_buff.remove(0);
-        self.rx_buff.push(rx_bytes);
+        if self.graph {
+            self.rx_buff.remove(0);
+            self.rx_buff.push(rx_bytes);
 
-        self.tx_buff.remove(0);
-        self.tx_buff.push(tx_bytes);
+            self.tx_buff.remove(0);
+            self.tx_buff.push(tx_bytes);
 
-        let rx_bar = self.rx_buff.as_slice().make_graph();
-        let tx_bar = self.tx_buff.as_slice().make_graph();
+            self.graph_tx.set_values(&self.tx_buff, None, None);
+            self.graph_rx.set_values(&self.rx_buff, None, None);
+        }
 
-        self.output.set_text(format!("⬆ {} {:5.1}{} ⬇ {} {:5.1}{}", tx_bar, tx_speed, tx_unit, rx_bar, rx_speed, rx_unit));
+        self.output_tx.set_text(format!("{:5.1}{}", tx_speed, tx_unit));
+        self.output_rx.set_text(format!("{:5.1}{}", rx_speed, rx_unit));
         Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        vec![&self.output]
+        if self.graph {
+            return vec![&self.output_tx, &self.graph_tx, &self.output_rx, &self.graph_rx]
+        }
+        vec![&self.output_tx, &self.output_rx]
     }
 
     fn click(&mut self, _: &I3BarEvent) -> Result<()> {

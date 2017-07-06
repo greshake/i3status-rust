@@ -26,7 +26,9 @@ lazy_static! {
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
         "volume_muted" => "MUTED",
         "thermometer" => " TEMP ",
-        "xrandr" => " SCREEN "
+        "xrandr" => " SCREEN ",
+        "net_up" => " UP ",
+        "net_down" => " DOWN "
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
@@ -54,7 +56,9 @@ lazy_static! {
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
         "volume_muted" => "\u{f00d}",
         "thermometer" => " \u{f2c8} ",
-        "xrandr" => " \u{f26c} "
+        "xrandr" => " \u{f26c} ",
+        "net_up" => " \u{2b06} ",
+        "net_down" => " \u{2b07} "
     };
 }
 
