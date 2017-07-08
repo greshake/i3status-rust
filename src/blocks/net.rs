@@ -8,7 +8,6 @@ use errors::*;
 use widgets::text::TextWidget;
 use widgets::graph::GraphWidget;
 use widget::I3BarWidget;
-use input::I3BarEvent;
 use scheduler::Task;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -133,10 +132,6 @@ impl Block for Net {
             return vec![&self.output_tx, &self.graph_tx, &self.output_rx, &self.graph_rx]
         }
         vec![&self.output_tx, &self.output_rx]
-    }
-
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
     }
 
     fn id(&self) -> &str {
