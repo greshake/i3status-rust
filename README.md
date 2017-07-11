@@ -240,7 +240,7 @@ Creates a block which displays the overall CPU utilization, calculated from /pro
 [[block]]
 block = "cpu"
 
-internal = 1
+interval = 1
 ```
 **Options**
 
