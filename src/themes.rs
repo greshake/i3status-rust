@@ -1,6 +1,22 @@
 use std::str::FromStr;
 
 lazy_static! {
+    pub static ref SLICK: Theme = Theme {
+        idle_bg: "#424242de".to_owned(),
+        idle_fg: "#ffffff".to_owned(),
+        info_bg: "#2196f3de".to_owned(),
+        info_fg: "#ffffff".to_owned(),
+        good_bg: "#8bc34ade".to_owned(),
+        good_fg: "#000000de".to_owned(),
+        warning_bg: "#ffc107de".to_owned(),
+        warning_fg: "#000000de".to_owned(),
+        critical_bg: "#f44336de".to_owned(),
+        critical_fg: "#ffffff".to_owned(),
+        separator: "\u{e0b2}".to_owned(),
+        separator_bg: "auto".to_owned(),
+        separator_fg: "auto".to_owned(),
+    };
+
     pub static ref SOLARIZED_DARK: Theme = Theme {
         idle_bg: "#002b36".to_owned(),
         idle_fg: "#93a1a1".to_owned(),
@@ -12,7 +28,7 @@ lazy_static! {
         warning_fg: "#002b36".to_owned(),
         critical_bg: "#dc322f".to_owned(),
         critical_fg: "#002b36".to_owned(),
-        separator: "".to_owned(),
+        separator: "\u{e0b2}".to_owned(),
         separator_bg: "auto".to_owned(),
         separator_fg: "auto".to_owned(),
     };
@@ -64,6 +80,7 @@ impl FromStr for Theme {
 
 pub fn get_theme(name: &str) -> Option<Theme> {
     match name {
+        "slick" => Some(SLICK.clone()),
         "solarized-dark" => Some(SOLARIZED_DARK.clone()),
         "plain" => Some(PLAIN.clone()),
         _ => None,
