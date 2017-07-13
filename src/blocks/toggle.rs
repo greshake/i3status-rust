@@ -102,10 +102,10 @@ impl Block for Toggle {
                     }
                 };
 
-                Command::new("sh").args(&["-c", cmd]).output().block_error(
-                    "toggle",
-                    "failed to run toggle command",
-                )?;
+                Command::new("sh")
+                    .args(&["-c", cmd])
+                    .output()
+                    .block_error("toggle", "failed to run toggle command")?;
             }
         }
 

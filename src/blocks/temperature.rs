@@ -99,10 +99,10 @@ impl Block for Temperature {
         }
 
         if !temperatures.is_empty() {
-            let max: i64 = *temperatures.iter().max().block_error(
-                "temperature",
-                "failed to get max temperature",
-            )?;
+            let max: i64 = *temperatures
+                .iter()
+                .max()
+                .block_error("temperature", "failed to get max temperature")?;
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
 
             self.output = format!("{}° avg, {}° max", avg, max);
