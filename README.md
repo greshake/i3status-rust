@@ -15,7 +15,7 @@ This is a WiP replacement for i3status, aiming to provide the most feature-compl
 i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR. For dev builds, you need to install gperftools (the block profiler uses it).
 
 # How to use it
-1. Clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
+1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
 2. run `cd i3status-rust && cargo build --release`
 3. Edit `example_config.toml` to your liking and put it to a sensible place (e.g. `~/.config/i3/status.toml`)
 4. Edit your i3 config
