@@ -17,28 +17,31 @@ where
     T: DeserializeOwned,
 {
     let mut contents = String::new();
-    let mut file = BufReader::new(File::open(file).internal_error(
-        "util",
-        "failed to open file",
-    )?);
-    file.read_to_string(&mut contents).internal_error(
-        "util",
-        "failed to read file",
-    )?;
+    let mut file = BufReader::new(File::open(file)
+        .internal_error("util", "failed to open file")?);
+    file.read_to_string(&mut contents)
+        .internal_error("util", "failed to read file")?;
     toml::from_str(&contents).configuration_error("failed to parse TOML from file contents")
 }
 
 pub fn get_file(name: &str) -> Result<String> {
     let mut file_contents = String::new();
-    let mut file = File::open(name).internal_error(
-        "util",
-        &format!("Unable to open {}", name),
-    )?;
-    file.read_to_string(&mut file_contents).internal_error(
-        "util",
-        &format!("Unable to read {}", name),
-    )?;
+    let mut file = File::open(name)
+        .internal_error("util", &format!("Unable to open {}", name))?;
+    file.read_to_string(&mut file_contents)
+        .internal_error("util", &format!("Unable to read {}", name))?;
     Ok(file_contents)
+}
+
+macro_rules! match_range {
+    ($a:ident default: ($default:expr) {$($lower:expr ; $upper:expr => $e:expr),+}) => (
+        match $a {
+            $(
+                t if t >= $lower && t <= $upper => { $e },
+            )+
+            _ => { $default }
+        }
+    )
 }
 
 macro_rules! map (
@@ -87,16 +90,14 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
 
     print!("[");
     for block_id in order {
-        let ref block = *(block_map.get(block_id).internal_error(
-            "util",
-            "couldn't get block by id",
-        )?);
+        let ref block = *(block_map
+                              .get(block_id)
+                              .internal_error("util", "couldn't get block by id")?);
         let widgets = block.view();
         let first = widgets[0];
-        let color = first.get_rendered()["background"].as_str().internal_error(
-            "util",
-            "couldn't get background color",
-        )?;
+        let color = first.get_rendered()["background"]
+            .as_str()
+            .internal_error("util", "couldn't get background color")?;
 
         let sep_fg = if config.theme.separator_fg == "auto" {
             color
@@ -150,10 +151,8 @@ impl FormatTemplate {
         let s_as_bytes = s.clone().into_bytes();
 
         //valid var tokens: {} containing any amount of alphanumericals
-        let re = Regex::new(r"\{[a-zA-Z0-9]+?\}").internal_error(
-            "util",
-            "invalid regex",
-        )?;
+        let re = Regex::new(r"\{[a-zA-Z0-9]+?\}")
+            .internal_error("util", "invalid regex")?;
 
         let mut token_vec: Vec<FormatTemplate> = vec![];
         let mut start: usize = 0;
@@ -162,10 +161,8 @@ impl FormatTemplate {
             if re_match.start() != start {
                 let str_vec: Vec<u8> = (&s_as_bytes)[start..re_match.start()].to_vec();
                 token_vec.push(FormatTemplate::Str(
-                    String::from_utf8(str_vec).internal_error(
-                        "util",
-                        "failed to convert string from UTF8",
-                    )?,
+                    String::from_utf8(str_vec)
+                        .internal_error("util", "failed to convert string from UTF8")?,
                     None,
                 ));
             }
@@ -174,10 +171,8 @@ impl FormatTemplate {
         }
         let str_vec: Vec<u8> = (&s_as_bytes)[start..].to_vec();
         token_vec.push(FormatTemplate::Str(
-            String::from_utf8(str_vec).internal_error(
-                "util",
-                "failed to convert string from UTF8",
-            )?,
+            String::from_utf8(str_vec)
+                .internal_error("util", "failed to convert string from UTF8")?,
             None,
         ));
         let mut template: FormatTemplate = match token_vec.pop() {

@@ -59,6 +59,9 @@ use util::deserialize_file;
 use self::clap::{Arg, ArgMatches, App};
 
 fn run(matches: ArgMatches) -> Result<()> {
+    // Now we can start to run the i3bar protocol
+    print!("{{\"version\": 1, \"click_events\": true}}\n[");
+
     let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Load all arguments
@@ -99,6 +102,7 @@ fn run(matches: ArgMatches) -> Result<()> {
         }
     });
 
+
     let mut blocks: Vec<Box<Block>> = Vec::new();
 
     for &(ref block_name, ref block_config) in &config.blocks {
@@ -119,9 +123,6 @@ fn run(matches: ArgMatches) -> Result<()> {
     for block in &mut blocks {
         block_map.insert(String::from(block.id()), (*block).deref_mut());
     }
-
-    // Now we can start to run the i3bar protocol
-    print!("{{\"version\": 1, \"click_events\": true}}\n[");
 
     // We wait for click events in a seperate thread, to avoid blocking to wait for stdin
     let (tx, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = mpsc::channel();
@@ -162,7 +163,7 @@ fn main() {
         .version("0.1")
         .author(
             "Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
-                 https://github.com/greshake/i3status-rust/graphs/contributors",
+             https://github.com/greshake/i3status-rust/graphs/contributors",
         )
         .about("Replacement for i3status for Linux, written in Rust")
         .arg(
@@ -247,6 +248,7 @@ fn main() {
             serde_json::to_string(&[error_rendered]).expect("failed to serialize error message")
         );
 
+        eprintln!("\n\n{:?}", error);
         // Do nothing, so the error message keeps displayed
         loop {
             ::std::thread::sleep(Duration::from_secs(10));
@@ -259,7 +261,7 @@ fn profile(iterations: i32, name: &str, block: &mut Block) {
     let mut bar = progress::Bar::new();
     println!(
         "Now profiling the {0} block by executing {1} updates.\n \
-              Use pprof to analyze {0}.profile later.",
+         Use pprof to analyze {0}.profile later.",
         name,
         iterations
     );

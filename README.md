@@ -12,10 +12,10 @@ This is a WiP replacement for i3status, aiming to provide the most feature-compl
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
 # Requirements 
-i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
+i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR. For dev builds, you need to install gperftools (the block profiler uses it).
 
 # How to use it
-1. Clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
+1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
 2. run `cd i3status-rust && cargo build --release`
 3. Edit `example_config.toml` to your liking and put it to a sensible place (e.g. `~/.config/i3/status.toml`)
 4. Edit your i3 config
@@ -95,7 +95,7 @@ format = "%a %d/%m %R"
 Things to note:
 
 * Every `[[block]]` has to contain a `block`-field to identify the block to create
-* Both `theme` and `icons` can be defined as tables to, see [`example_theme.toml`](https://github.com/greshake/i3status-rust/blob/master/example_theme.toml) and [`example_icons.toml`](https://github.com/greshake/i3status-rust/blob/master/example_icons.toml)
+* Both `theme` and `icons` can be defined as tables, see [`example_theme.toml`](https://github.com/greshake/i3status-rust/blob/master/example_theme.toml) and [`example_icon.toml`](https://github.com/greshake/i3status-rust/blob/master/example_icon.toml)
 
 # Available Blocks
 ## Time
@@ -240,7 +240,7 @@ Creates a block which displays the overall CPU utilization, calculated from /pro
 [[block]]
 block = "cpu"
 
-internal = 1
+interval = 1
 ```
 **Options**
 
