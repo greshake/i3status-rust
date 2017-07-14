@@ -87,7 +87,7 @@ fn read_file(path: &str) -> Result<String> {
 fn convert_speed(speed: u64) -> (f64, &'static str) {
     // the values for the match are so the speed doesn't go above 3 characters
     let (speed, unit) = match speed {
-        x if x > 1047527424 => {(speed as f64 / 1073741824.0, "G")},
+        x if x > 104752742 => {(speed as f64 / 1073741824.0, "G")},
         x if x > 1022976 => {(speed as f64 / 1048576.0, "M")},
         x if x > 999 => {(speed as f64 / 1024.0, "K")},
         _ => (speed as f64, "B"),
@@ -100,14 +100,15 @@ impl Block for Net {
         let current_rx = read_file(&format!("{}rx_bytes", self.device_path))?
             .parse::<u64>()
             .block_error("net", "failed to parse rx_bytes")?;
-        let rx_bytes = (current_rx - self.rx_bytes) / self.update_interval.as_secs();
+        let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1000000000.0);
+        let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
         let (rx_speed, rx_unit) = convert_speed(rx_bytes);
         self.rx_bytes = current_rx;
 
         let current_tx = read_file(&format!("{}tx_bytes", self.device_path))?
             .parse::<u64>()
             .block_error("net", "failed to parse tx_bytes")?;
-        let tx_bytes = (current_tx - self.tx_bytes) / self.update_interval.as_secs();
+        let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
         let (tx_speed, tx_unit) = convert_speed(tx_bytes);
         self.tx_bytes = current_tx;
 
