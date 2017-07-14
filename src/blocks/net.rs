@@ -110,7 +110,7 @@ impl Block for Net {
         let current_rx = read_file(&format!("{}rx_bytes", self.device_path))?
             .parse::<u64>()
             .block_error("net", "failed to parse rx_bytes")?;
-        let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1000000000.0);
+        let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
         let (rx_speed, rx_unit) = convert_speed(rx_bytes);
         self.rx_bytes = current_rx;

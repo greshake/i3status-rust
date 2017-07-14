@@ -57,12 +57,19 @@ impl GraphWidget {
             None => content.iter().max().unwrap().to_f64().unwrap()
         };
         let extant = max - min;
-        let length = bars.len() as f64 - 1.0;
-        let bar = content.iter()
+        if extant.is_normal() {
+            let length = bars.len() as f64 - 1.0;
+            let bar = content.iter()
                         .map(|x| bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize])
                         .collect::<Vec<&'static str>>()
                         .concat();
-        self.content = Some(bar);
+            self.content = Some(bar);
+        } else {
+            let bar = (0..content.len() - 1).map(|_| bars[0])
+                        .collect::<Vec<&'static str>>()
+                        .concat();
+            self.content = Some(bar);
+        }
         self.update();
     }
 
