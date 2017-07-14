@@ -55,7 +55,7 @@ macro_rules! blocks {
             $(
                 $block_name => block!($block_type, $block_config, $config, $tx_update_request),
              )*
-            _ => panic!("Not a registered block: {}", $name),
+            _ => Err(BlockError($name.to_string(), "Unknown block!".to_string())),
         }
     }
 }

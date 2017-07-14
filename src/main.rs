@@ -59,6 +59,9 @@ use util::deserialize_file;
 use self::clap::{Arg, ArgMatches, App};
 
 fn run(matches: ArgMatches) -> Result<()> {
+    // Now we can start to run the i3bar protocol
+    print!("{{\"version\": 1, \"click_events\": true}}\n[");
+
     let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Load all arguments
@@ -99,6 +102,7 @@ fn run(matches: ArgMatches) -> Result<()> {
         }
     });
 
+
     let mut blocks: Vec<Box<Block>> = Vec::new();
 
     for &(ref block_name, ref block_config) in &config.blocks {
@@ -119,9 +123,6 @@ fn run(matches: ArgMatches) -> Result<()> {
     for block in &mut blocks {
         block_map.insert(String::from(block.id()), (*block).deref_mut());
     }
-
-    // Now we can start to run the i3bar protocol
-    print!("{{\"version\": 1, \"click_events\": true}}\n[");
 
     // We wait for click events in a seperate thread, to avoid blocking to wait for stdin
     let (tx, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = mpsc::channel();

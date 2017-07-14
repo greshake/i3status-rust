@@ -12,7 +12,7 @@ This is a WiP replacement for i3status, aiming to provide the most feature-compl
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
 # Requirements 
-i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
+i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR. For dev builds, you need to install gperftools (the block profiler uses it).
 
 # How to use it
 1. Clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
