@@ -444,7 +444,7 @@ resolution | Shows the screens resolution | No | false
 step\_width | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | 5
 
 ## Net
-Creates a block which displays the upload and download throughput for a network interface.
+Creates a block which displays the upload and download throughput for a network interface. Units are in bits per second (kbps, Mbps, etc).
 
 **Example**
 ```toml

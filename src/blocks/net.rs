@@ -97,9 +97,9 @@ fn read_file(path: &str) -> Result<String> {
 fn convert_speed(speed: u64) -> (f64, &'static str) {
     // the values for the match are so the speed doesn't go above 3 characters
     let (speed, unit) = match speed {
-        x if x > 104752742 => {(speed as f64 / 1073741824.0, "G")},
-        x if x > 1022976 => {(speed as f64 / 1048576.0, "M")},
-        x if x > 999 => {(speed as f64 / 1024.0, "K")},
+        x if x > 999_999_999 => {(speed as f64 / 1_000_000_000.0, "G")},
+        x if x > 999_999 => {(speed as f64 / 1_000_000.0, "M")},
+        x if x > 999 => {(speed as f64 / 1_000.0, "k")},
         _ => (speed as f64, "B"),
     };
     (speed, unit)
