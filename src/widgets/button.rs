@@ -3,7 +3,7 @@ use widget::State;
 use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct ButtonWidget {
     content: Option<String>,
     icon: Option<String>,
@@ -86,7 +86,9 @@ impl ButtonWidget {
 
 impl I3BarWidget for ButtonWidget {
     fn to_string(&self) -> String {
-        self.cached_output.clone().unwrap_or(self.rendered.to_string())
+        self.cached_output
+            .clone()
+            .unwrap_or(self.rendered.to_string())
     }
 
     fn get_rendered(&self) -> &Value {

@@ -68,10 +68,8 @@ impl ConfigBlock for Custom {
         };
 
         if let Some(cycle) = block_config.cycle {
-            custom.cycle = Some(cycle.into_iter()
-                                .cycle()
-                                .peekable());
-            return Ok(custom)
+            custom.cycle = Some(cycle.into_iter().cycle().peekable());
+            return Ok(custom);
         };
 
         if let Some(command) = block_config.command {
@@ -84,8 +82,7 @@ impl ConfigBlock for Custom {
 
 impl Block for Custom {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let command_str = self
-            .cycle
+        let command_str = self.cycle
             .as_mut()
             .map(|c| c.peek().cloned().unwrap_or("".to_owned()))
             .or(self.command.clone())
@@ -99,7 +96,7 @@ impl Block for Custom {
 
         self.output.set_text(output);
 
-        Ok(Some(self.update_interval.clone()))
+        Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
@@ -109,18 +106,16 @@ impl Block for Custom {
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
             if name != &self.id {
-                return Ok(())
+                return Ok(());
             }
         } else {
-            return Ok(())
+            return Ok(());
         }
 
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new("sh")
-                .args(&["-c", on_click])
-                .output().ok();
+            Command::new("sh").args(&["-c", on_click]).output().ok();
             update = true;
         }
 
@@ -130,7 +125,10 @@ impl Block for Custom {
         }
 
         if update {
-            self.tx_update_request.send(Task { id: self.id.clone(), update_time: Instant::now() })?;
+            self.tx_update_request.send(Task {
+                id: self.id.clone(),
+                update_time: Instant::now(),
+            })?;
         }
 
         Ok(())

@@ -1,10 +1,12 @@
+extern crate num;
 use config::Config;
 use widget::State;
 use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
+use num::{ToPrimitive, clamp};
 
 #[derive(Clone, Debug)]
-pub struct TextWidget {
+pub struct GraphWidget {
     content: Option<String>,
     icon: Option<String>,
     state: State,
@@ -13,9 +15,9 @@ pub struct TextWidget {
     config: Config,
 }
 
-impl TextWidget {
+impl GraphWidget {
     pub fn new(config: Config) -> Self {
-        TextWidget {
+        GraphWidget {
             content: None,
             icon: None,
             state: State::Idle,
@@ -37,20 +39,35 @@ impl TextWidget {
         self
     }
 
-    pub fn with_text(mut self, content: &str) -> Self {
-        self.content = Some(String::from(content));
-        self.update();
-        self
-    }
-
     pub fn with_state(mut self, state: State) -> Self {
         self.state = state;
         self.update();
         self
     }
 
-    pub fn set_text(&mut self, content: String) {
-        self.content = Some(content);
+    pub fn set_values<T>(&mut self, content: &[T], min: Option<T>, max: Option<T>)
+    where
+        T: Ord + ToPrimitive,
+    {
+        let bars = ["_", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
+        let min: f64 = match min {
+            Some(x) => x.to_f64().unwrap(),
+            None => content.iter().min().unwrap().to_f64().unwrap(),
+        };
+        let max: f64 = match max {
+            Some(x) => x.to_f64().unwrap(),
+            None => content.iter().max().unwrap().to_f64().unwrap(),
+        };
+        let extant = max - min;
+        let length = bars.len() as f64 - 1.0;
+        let bar = content
+            .iter()
+            .map(|x| {
+                bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
+            })
+            .collect::<Vec<&'static str>>()
+            .concat();
+        self.content = Some(bar);
         self.update();
     }
 
@@ -81,7 +98,7 @@ impl TextWidget {
     }
 }
 
-impl I3BarWidget for TextWidget {
+impl I3BarWidget for GraphWidget {
     fn to_string(&self) -> String {
         self.cached_output
             .clone()

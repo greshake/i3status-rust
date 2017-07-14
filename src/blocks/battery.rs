@@ -8,7 +8,6 @@ use de::deserialize_duration;
 use errors::*;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
-use input::I3BarEvent;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
@@ -20,7 +19,7 @@ pub struct Battery {
     id: String,
     max_charge: u64,
     update_interval: Duration,
-    device_path: String
+    device_path: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -65,14 +64,14 @@ fn read_file(path: &str) -> Result<String> {
         .open(path)
         .block_error("battery", &format!("failed to open file {}", path))?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error("battery", &format!("failed to read {}", path))?;
+    f.read_to_string(&mut content)
+        .block_error("battery", &format!("failed to read {}", path))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
 }
 
-impl Block for Battery
-{
+impl Block for Battery {
     fn update(&mut self) -> Result<Option<Duration>> {
         // TODO: Check if charge_ always contains the right values, might be energy_ depending on firmware
 
@@ -88,13 +87,13 @@ impl Block for Battery
         let current_charge = read_file(&format!("{}charge_now", self.device_path))?
             .parse::<u64>()
             .block_error("battery", "failed to parse charge_now")?;
-        let current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.) as u64;
+        let current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.0) as u64;
         let current_percentage = match current_percentage {
-            0 ... 100 => current_percentage,
+            0...100 => current_percentage,
             // We need to cap it at 100, because the kernel may report
             // charge_now same as charge_full_design when the battery
             // is full, leading to >100% charge.
-            _ => 100
+            _ => 100,
         };
 
         let state = read_file(&format!("{}status", self.device_path))?;
@@ -110,24 +109,23 @@ impl Block for Battery
             "Full" => "bat_full",
             "Discharging" => "bat_discharging",
             "Charging" => "bat_charging",
-            _ => "bat"
+            _ => "bat",
         });
 
         self.output.set_state(match current_percentage {
-            0 ... 15 => State::Critical,
-            15 ... 30 => State::Warning,
-            30 ... 60 => State::Info,
-            _ => State::Good
+            0...15 => State::Critical,
+            15...30 => State::Warning,
+            30...60 => State::Info,
+            _ => State::Good,
         });
 
-        Ok(Some(self.update_interval.clone()))
+        Ok(Some(self.update_interval))
     }
+
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.output]
     }
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
+
     fn id(&self) -> &str {
         &self.id
     }

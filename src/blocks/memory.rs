@@ -65,8 +65,6 @@
 //! {SUm} | Swap used (MiB)
 //! {SUp} | Swap used (%)
 //!
-//!
-
 use std::time::{Instant, Duration};
 use std::collections::HashMap;
 use util::*;
@@ -83,18 +81,16 @@ use config::Config;
 use de::deserialize_duration;
 use errors::*;
 use widgets::button::ButtonWidget;
-use widget::{State,I3BarWidget};
+use widget::{State, I3BarWidget};
 use scheduler::Task;
-
 
 use std::io::Write;
 use std::fs::OpenOptions;
 
-
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum Memtype {
     SWAP,
-    MEMORY
+    MEMORY,
 }
 
 #[derive(Clone, Copy)]
@@ -118,9 +114,10 @@ impl Unit {
     fn n(&self) -> u64 {
         match self.kib() {
             Unit::KiB(n) => n,
-            _ => 0
+            _ => 0,
         }
     }
+
     fn gib(&self) -> Unit {
         match *self {
             Unit::KiB(n) => Unit::GiB((n as f32) / 1024f32.powi(2)),
@@ -128,6 +125,7 @@ impl Unit {
             Unit::GiB(n) => Unit::GiB(n),
         }
     }
+
     fn mib(&self) -> Unit {
         match *self {
             Unit::KiB(n) => Unit::MiB(n / 1024),
@@ -135,6 +133,7 @@ impl Unit {
             Unit::GiB(n) => Unit::MiB((n * 1024f32) as u64),
         }
     }
+
     fn kib(&self) -> Unit {
         match *self {
             Unit::KiB(n) => Unit::KiB(n),
@@ -142,8 +141,9 @@ impl Unit {
             Unit::GiB(n) => Unit::KiB((n * 1024f32.powi(2)) as u64),
         }
     }
+
     fn percent(&self, reference: Unit) -> f32 {
-        if reference.n()<1 {
+        if reference.n() < 1 {
             100f32
         } else {
             (self.n() as f32) / (reference.n() as f32) * 100f32
@@ -161,18 +161,42 @@ struct Memstate {
     s_reclaimable: (u64, bool),
     shmem: (u64, bool),
     swap_total: (u64, bool),
-    swap_free: (u64, bool)
+    swap_free: (u64, bool),
 }
 
 impl Memstate {
-    fn mem_total(&self) -> u64 { self.mem_total.0 }
-    fn mem_free(&self) -> u64 { self.mem_free.0 }
-    fn buffers(&self) -> u64 { self.buffers.0 }
-    fn cached(&self) -> u64 { self.cached.0 }
-    fn s_reclaimable(&self) -> u64 { self.s_reclaimable.0 }
-    fn shmem(&self) -> u64 { self.shmem.0 }
-    fn swap_total(&self) -> u64 { self.swap_total.0 }
-    fn swap_free(&self) -> u64 { self.swap_free.0 }
+    fn mem_total(&self) -> u64 {
+        self.mem_total.0
+    }
+
+    fn mem_free(&self) -> u64 {
+        self.mem_free.0
+    }
+
+    fn buffers(&self) -> u64 {
+        self.buffers.0
+    }
+
+    fn cached(&self) -> u64 {
+        self.cached.0
+    }
+
+    fn s_reclaimable(&self) -> u64 {
+        self.s_reclaimable.0
+    }
+
+    fn shmem(&self) -> u64 {
+        self.shmem.0
+    }
+
+    fn swap_total(&self) -> u64 {
+        self.swap_total.0
+    }
+
+    fn swap_free(&self) -> u64 {
+        self.swap_free.0
+    }
+
     fn new() -> Self {
         Memstate {
             mem_total: (0, false),
@@ -182,24 +206,18 @@ impl Memstate {
             s_reclaimable: (0, false),
             shmem: (0, false),
             swap_total: (0, false),
-            swap_free: (0, false)
+            swap_free: (0, false),
         }
     }
+
     fn done(&self) -> bool {
-        self.mem_total.1 &&
-            self.mem_free.1 &&
-            self.buffers.1 &&
-            self.cached.1 &&
-            self.s_reclaimable.1 &&
-            self.shmem.1 &&
-            self.swap_total.1 &&
-            self.swap_free.1
+        self.mem_total.1 && self.mem_free.1 && self.buffers.1 && self.cached.1 && self.s_reclaimable.1 && self.shmem.1 && self.swap_total.1 && self.swap_free.1
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Memory {
-    name: String,
+    id: String,
     memtype: Memtype,
     output: (ButtonWidget, ButtonWidget),
     clickable: bool,
@@ -207,8 +225,8 @@ pub struct Memory {
     update_interval: Duration,
     tx_update_request: Sender<Task>,
     values: HashMap<String, String>,
-    warning: (f64,f64),
-    critical: (f64,f64)
+    warning: (f64, f64),
+    critical: (f64, f64),
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -298,7 +316,6 @@ impl MemoryConfig {
 
 impl Memory {
     fn format_insert_values(&mut self, mem_state: Memstate) -> Result<String> {
-
         let mem_total = Unit::KiB(mem_state.mem_total());
         let mem_free = Unit::KiB(mem_state.mem_free());
         let swap_total = Unit::KiB(mem_state.swap_total());
@@ -306,58 +323,102 @@ impl Memory {
         let swap_used = Unit::KiB(mem_state.swap_total() - mem_state.swap_free());
         let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
         let buffers = Unit::KiB(mem_state.buffers());
-        let cached = Unit::KiB(mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem());
+        let cached = Unit::KiB(
+            mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem(),
+        );
         let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
         let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
 
-
-        self.values.insert("{MTg}".to_string(), format!("{:.1}", mem_total.gib()));
-        self.values.insert("{MTm}".to_string(), format!("{}", mem_total.mib()));
-        self.values.insert("{MFg}".to_string(), format!("{:.1}", mem_free.gib()));
-        self.values.insert("{MFm}".to_string(), format!("{}", mem_free.mib()));
-        self.values.insert("{MFp}".to_string(), format!("{:.2}", mem_free.percent(mem_total)));
-        self.values.insert("{MUg}".to_string(), format!("{:.1}", mem_total_used.gib()));
-        self.values.insert("{MUm}".to_string(), format!("{}", mem_total_used.mib()));
-        self.values.insert("{MUp}".to_string(), format!("{:.2}", mem_total_used.percent(mem_total)));
-        self.values.insert("{Mug}".to_string(), format!("{:.1}", mem_used.gib()));
-        self.values.insert("{Mum}".to_string(), format!("{}", mem_used.mib()));
-        self.values.insert("{Mup}".to_string(), format!("{:.2}", mem_used.percent(mem_total)));
-        self.values.insert("{MAg}".to_string(), format!("{:.1}", mem_avail.gib()));
-        self.values.insert("{MAm}".to_string(), format!("{}", mem_avail.mib()));
-        self.values.insert("{MAp}".to_string(), format!("{:.2}", mem_avail.percent(mem_total)));
-        self.values.insert("{STg}".to_string(), format!("{:.1}", swap_total.gib()));
-        self.values.insert("{STm}".to_string(), format!("{}", swap_total.mib()));
-        self.values.insert("{SFg}".to_string(), format!("{:.1}", swap_free.gib()));
-        self.values.insert("{SFm}".to_string(), format!("{}", swap_free.mib()));
-        self.values.insert("{SFp}".to_string(), format!("{:.2}", swap_free.percent(swap_total)));
-        self.values.insert("{SUg}".to_string(), format!("{:.1}", swap_used.gib()));
-        self.values.insert("{SUm}".to_string(), format!("{}", swap_used.mib()));
-        self.values.insert("{SUp}".to_string(), format!("{:.2}", swap_used.percent(swap_total)));
-        self.values.insert("{Bg}".to_string(), format!("{:.1}", buffers.gib()));
-        self.values.insert("{Bm}".to_string(), format!("{}", buffers.mib()));
-        self.values.insert("{Bp}".to_string(), format!("{:.2}", buffers.percent(mem_total)));
-        self.values.insert("{Cg}".to_string(), format!("{:.1}", cached.gib()));
-        self.values.insert("{Cm}".to_string(), format!("{}", cached.mib()));
-        self.values.insert("{Cp}".to_string(), format!("{:.2}", cached.percent(mem_total)));
-
-
-
+        self.values
+            .insert("{MTg}".to_string(), format!("{:.1}", mem_total.gib()));
+        self.values
+            .insert("{MTm}".to_string(), format!("{}", mem_total.mib()));
+        self.values
+            .insert("{MFg}".to_string(), format!("{:.1}", mem_free.gib()));
+        self.values
+            .insert("{MFm}".to_string(), format!("{}", mem_free.mib()));
+        self.values.insert(
+            "{MFp}".to_string(),
+            format!("{:.2}", mem_free.percent(mem_total)),
+        );
+        self.values
+            .insert("{MUg}".to_string(), format!("{:.1}", mem_total_used.gib()));
+        self.values
+            .insert("{MUm}".to_string(), format!("{}", mem_total_used.mib()));
+        self.values.insert(
+            "{MUp}".to_string(),
+            format!("{:.2}", mem_total_used.percent(mem_total)),
+        );
+        self.values
+            .insert("{Mug}".to_string(), format!("{:.1}", mem_used.gib()));
+        self.values
+            .insert("{Mum}".to_string(), format!("{}", mem_used.mib()));
+        self.values.insert(
+            "{Mup}".to_string(),
+            format!("{:.2}", mem_used.percent(mem_total)),
+        );
+        self.values
+            .insert("{MAg}".to_string(), format!("{:.1}", mem_avail.gib()));
+        self.values
+            .insert("{MAm}".to_string(), format!("{}", mem_avail.mib()));
+        self.values.insert(
+            "{MAp}".to_string(),
+            format!("{:.2}", mem_avail.percent(mem_total)),
+        );
+        self.values
+            .insert("{STg}".to_string(), format!("{:.1}", swap_total.gib()));
+        self.values
+            .insert("{STm}".to_string(), format!("{}", swap_total.mib()));
+        self.values
+            .insert("{SFg}".to_string(), format!("{:.1}", swap_free.gib()));
+        self.values
+            .insert("{SFm}".to_string(), format!("{}", swap_free.mib()));
+        self.values.insert(
+            "{SFp}".to_string(),
+            format!("{:.2}", swap_free.percent(swap_total)),
+        );
+        self.values
+            .insert("{SUg}".to_string(), format!("{:.1}", swap_used.gib()));
+        self.values
+            .insert("{SUm}".to_string(), format!("{}", swap_used.mib()));
+        self.values.insert(
+            "{SUp}".to_string(),
+            format!("{:.2}", swap_used.percent(swap_total)),
+        );
+        self.values
+            .insert("{Bg}".to_string(), format!("{:.1}", buffers.gib()));
+        self.values
+            .insert("{Bm}".to_string(), format!("{}", buffers.mib()));
+        self.values.insert(
+            "{Bp}".to_string(),
+            format!("{:.2}", buffers.percent(mem_total)),
+        );
+        self.values
+            .insert("{Cg}".to_string(), format!("{:.1}", cached.gib()));
+        self.values
+            .insert("{Cm}".to_string(), format!("{}", cached.mib()));
+        self.values.insert(
+            "{Cp}".to_string(),
+            format!("{:.2}", cached.percent(mem_total)),
+        );
 
         match self.memtype {
-            Memtype::MEMORY => self.output.0.set_state(
-                match mem_used.percent(mem_total) {
+            Memtype::MEMORY => {
+                self.output.0.set_state(match mem_used.percent(mem_total) {
                     x if x as f64 > self.critical.0 => State::Critical,
                     x if x as f64 > self.warning.0 => State::Warning,
                     _ => State::Idle,
-                }
-            ),
-            Memtype::SWAP => self.output.1.set_state(
-                match swap_used.percent(swap_total) {
-                    x if x as f64 > self.critical.1 => State::Critical,
-                    x if x as f64 > self.warning.1 => State::Warning,
-                    _ => State::Idle,
-                }
-            )
+                })
+            }
+            Memtype::SWAP => {
+                self.output.1.set_state(
+                    match swap_used.percent(swap_total) {
+                        x if x as f64 > self.critical.1 => State::Critical,
+                        x if x as f64 > self.warning.1 => State::Warning,
+                        _ => State::Idle,
+                    },
+                )
+            }
         };
 
         if_debug!({
@@ -372,17 +433,15 @@ impl Memory {
 
         Ok(match self.memtype {
             Memtype::MEMORY => self.format.0.render(&self.values),
-            Memtype::SWAP => self.format.1.render(&self.values)
+            Memtype::SWAP => self.format.1.render(&self.values),
         })
     }
 
-
     pub fn switch(&mut self) {
-
         let old: Memtype = self.memtype.clone();
         self.memtype = match old {
             Memtype::MEMORY => Memtype::SWAP,
-            _ => Memtype::MEMORY
+            _ => Memtype::MEMORY,
         };
     }
 }
@@ -394,49 +453,47 @@ impl ConfigBlock for Memory {
         let memtype: String = block_config.display_type;
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, "memory").with_text("");
-        let memory = Memory {
-            name: Uuid::new_v4().simple().to_string(),
+        Ok(Memory {
+            id: Uuid::new_v4().simple().to_string(),
             memtype: match memtype.as_ref() {
                 "memory" => Memtype::MEMORY,
                 "swap" => Memtype::SWAP,
-                _ => panic!(format!("Invalid Memory type: {}", memtype))
+                _ => panic!(format!("Invalid Memory type: {}", memtype)),
             },
-            output:
-            if icons {
-                (widget.clone().with_icon("memory_mem"), widget.with_icon("memory_swap"))
+            output: if icons {
+                (
+                    widget.clone().with_icon("memory_mem"),
+                    widget.with_icon("memory_swap"),
+                )
             } else {
                 (widget.clone(), widget)
-            }
-            ,
+            },
             clickable: block_config.clickable,
-            format: (FormatTemplate::from_string(block_config.format_mem)?,
-                     FormatTemplate::from_string(block_config.format_swap)?),
+            format: (
+                FormatTemplate::from_string(block_config.format_mem)?,
+                FormatTemplate::from_string(block_config.format_swap)?,
+            ),
             update_interval: block_config.interval,
             tx_update_request: tx,
             values: HashMap::<String, String>::new(),
             warning: (block_config.warning_mem, block_config.warning_swap),
             critical: (block_config.critical_mem, block_config.critical_swap),
-        };
-        Ok(memory)
-
+        })
     }
 }
 
 
-impl Block for Memory
-{
+impl Block for Memory {
     fn id(&self) -> &str {
-        &self.name
+        &self.id
     }
 
     fn update(&mut self) -> Result<Option<Duration>> {
-
         let f = File::open("/proc/meminfo")
             .block_error("memory", "/proc/meminfo does not exist")?;
         let f = BufReader::new(f);
 
         let mut mem_state = Memstate::new();
-
 
         for line in f.lines() {
             if_debug!({
@@ -451,50 +508,83 @@ impl Block for Memory
 
             // stop reading if all values are already present
             if mem_state.done() {
-                break
+                break;
             }
 
             let line = match line {
                 Ok(s) => s,
-                _ => { continue }
+                _ => continue,
             };
             let line = line.split_whitespace().collect::<Vec<&str>>();
 
-
             match line[0] {
                 "MemTotal:" => {
-                    mem_state.mem_total = (u64::from_str(line[1]).block_error("memory", "failed to parse mem_total")?, true);
+                    mem_state.mem_total = (
+                        u64::from_str(line[1])
+                            .block_error("memory", "failed to parse mem_total")?,
+                        true,
+                    );
                     continue;
                 }
                 "MemFree:" => {
-                    mem_state.mem_free = (u64::from_str(line[1]).block_error("memory", "failed to parse mem_free")?, true);
+                    mem_state.mem_free = (
+                        u64::from_str(line[1])
+                            .block_error("memory", "failed to parse mem_free")?,
+                        true,
+                    );
                     continue;
                 }
                 "Buffers:" => {
-                    mem_state.buffers = (u64::from_str(line[1]).block_error("memory", "failed to parse buffers")?, true);
+                    mem_state.buffers = (
+                        u64::from_str(line[1])
+                            .block_error("memory", "failed to parse buffers")?,
+                        true,
+                    );
                     continue;
                 }
                 "Cached:" => {
-                    mem_state.cached = (u64::from_str(line[1]).block_error("memory", "failed to parse cached")?, true);
+                    mem_state.cached = (
+                        u64::from_str(line[1])
+                            .block_error("memory", "failed to parse cached")?,
+                        true,
+                    );
                     continue;
                 }
                 "SReclaimable:" => {
-                    mem_state.s_reclaimable = (u64::from_str(line[1]).block_error("memory", "failed to parse s_reclaimable")?, true);
+                    mem_state.s_reclaimable = (
+                        u64::from_str(line[1])
+                            .block_error("memory", "failed to parse s_reclaimable")?,
+                        true,
+                    );
                     continue;
                 }
                 "Shmem:" => {
-                    mem_state.shmem = (u64::from_str(line[1]).block_error("memory", "failed to parse shmem")?, true);
+                    mem_state.shmem = (
+                        u64::from_str(line[1])
+                            .block_error("memory", "failed to parse shmem")?,
+                        true,
+                    );
                     continue;
                 }
                 "SwapTotal:" => {
-                    mem_state.swap_total = (u64::from_str(line[1]).block_error("memory", "failed to parse swap_total")?, true);
+                    mem_state.swap_total = (
+                        u64::from_str(line[1])
+                            .block_error("memory", "failed to parse swap_total")?,
+                        true,
+                    );
                     continue;
                 }
                 "SwapFree:" => {
-                    mem_state.swap_free = (u64::from_str(line[1]).block_error("memory", "failed to parse swap_free")?, true);
+                    mem_state.swap_free = (
+                        u64::from_str(line[1])
+                            .block_error("memory", "failed to parse swap_free")?,
+                        true,
+                    );
                     continue;
                 }
-                _ => { continue; }
+                _ => {
+                    continue;
+                }
             }
         }
 
@@ -515,12 +605,10 @@ impl Block for Memory
             writeln!(f, "Updated: {:?}", self)
                 .block_error("memory", "failed to write to /tmp/i3log")?;
         });
-        Ok(Some(self.update_interval.clone()))
+        Ok(Some(self.update_interval))
     }
 
-
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-
         if_debug!({
             let mut f = OpenOptions::new()
                 .create(true)
@@ -536,8 +624,8 @@ impl Block for Memory
                 self.switch();
                 self.update()?;
                 self.tx_update_request.send(Task {
-                    id: self.name.clone(),
-                    update_time: Instant::now()
+                    id: self.id.clone(),
+                    update_time: Instant::now(),
                 })?;
             }
         }
@@ -546,9 +634,11 @@ impl Block for Memory
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        vec![match self.memtype {
-            Memtype::MEMORY => &self.output.0,
-            Memtype::SWAP => &self.output.1,
-        }]
+        vec![
+            match self.memtype {
+                Memtype::MEMORY => &self.output.0,
+                Memtype::SWAP => &self.output.1,
+            },
+        ]
     }
 }

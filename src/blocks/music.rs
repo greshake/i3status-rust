@@ -70,20 +70,20 @@ impl ConfigBlock for Music {
 
         thread::spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
-            c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'").unwrap();
+            c.add_match(
+                "interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'",
+            ).unwrap();
             loop {
                 for ci in c.iter(100000) {
-                    match ci {
-                        ConnectionItem::Signal(msg) => {
-                            if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" {
-                                if &*msg.member().unwrap() == "PropertiesChanged" {
-                                    send.send(Task {
-                                        id: id.clone(),
-                                        update_time: Instant::now()
-                                    }).unwrap();
-                                }
+                    if let ConnectionItem::Signal(msg) = ci {
+                        if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" {
+                            if &*msg.member().unwrap() == "PropertiesChanged" {
+                                send.send(Task {
+                                    id: id.clone(),
+                                    update_time: Instant::now(),
+                                }).unwrap();
                             }
-                        }, _ => {}
+                        }
                     }
                 }
             }
@@ -94,31 +94,50 @@ impl ConfigBlock for Music {
         let mut next: Option<ButtonWidget> = None;
         for button in block_config.buttons {
             match &*button {
-                "play" =>
-                    play = Some(ButtonWidget::new(config.clone(), "play")
-                        .with_icon("music_play").with_state(State::Info)),
-                "next" =>
-                    next = Some(ButtonWidget::new(config.clone(), "next")
-                        .with_icon("music_next").with_state(State::Info)),
-                "prev" =>
-                    prev = Some(ButtonWidget::new(config.clone(), "prev")
-                        .with_icon("music_prev").with_state(State::Info)),
-                x => Err(BlockError("music".to_owned(), format!("unknown music button identifier: '{}'", x)))?
+                "play" => {
+                    play = Some(
+                        ButtonWidget::new(config.clone(), "play")
+                            .with_icon("music_play")
+                            .with_state(State::Info),
+                    )
+                }
+                "next" => {
+                    next = Some(
+                        ButtonWidget::new(config.clone(), "next")
+                            .with_icon("music_next")
+                            .with_state(State::Info),
+                    )
+                }
+                "prev" => {
+                    prev = Some(
+                        ButtonWidget::new(config.clone(), "prev")
+                            .with_icon("music_prev")
+                            .with_state(State::Info),
+                    )
+                }
+                x => {
+                    Err(BlockError(
+                        "music".to_owned(),
+                        format!("unknown music button identifier: '{}'", x),
+                    ))?
+                }
             };
         }
 
         Ok(Music {
             id: id_copy,
-            current_song: RotatingTextWidget::new(Duration::new(10, 0),
-                                                  Duration::new(0, 500000000),
-                                                  block_config.max_width,
-                                                  config.clone())
-                              .with_icon("music")
-                              .with_state(State::Info),
+            current_song: RotatingTextWidget::new(
+                Duration::new(10, 0),
+                Duration::new(0, 500000000),
+                block_config.max_width,
+                config.clone(),
+            ).with_icon("music")
+                .with_state(State::Info),
             prev: prev,
             play: play,
             next: next,
-            dbus_conn: Connection::get_private(BusType::Session).block_error("music", "failed to establish D-Bus connection")?,
+            dbus_conn: Connection::get_private(BusType::Session)
+                .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
             player: block_config.player,
             marquee: block_config.marquee,
@@ -126,20 +145,24 @@ impl ConfigBlock for Music {
     }
 }
 
-
-impl Block for Music
-{
+impl Block for Music {
     fn id(&self) -> &str {
         &self.id
     }
 
     fn update(&mut self) -> Result<Option<Duration>> {
-        let (rotated, next) = if self.marquee {self.current_song.next()?} else {(false, None)};
+        let (rotated, next) = if self.marquee {
+            self.current_song.next()?
+        } else {
+            (false, None)
+        };
 
         if !rotated {
             let c = self.dbus_conn.with_path(
-            format!("org.mpris.MediaPlayer2.{}", self.player),
-            "/org/mpris/MediaPlayer2", 1000);
+                format!("org.mpris.MediaPlayer2.{}", self.player),
+                "/org/mpris/MediaPlayer2",
+                1000,
+            );
             let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
             if data.is_err() {
@@ -150,7 +173,8 @@ impl Block for Music
 
                 let (title, artist) = extract_from_metadata(metadata).unwrap_or((String::new(), String::new()));
 
-                self.current_song.set_text(format!("{} | {}", title, artist));
+                self.current_song
+                    .set_text(format!("{} | {}", title, artist));
                 self.player_avail = true;
             }
             if let Some(ref mut play) = self.play {
@@ -169,12 +193,11 @@ impl Block for Music
             }
         }
         Ok(match (next, self.marquee) {
-               (Some(_), _) => next,
-               (None, true) => Some(Duration::new(1, 0)),
-               (None, false) => None,
-           })
+            (Some(_), _) => next,
+            (None, true) => Some(Duration::new(1, 0)),
+            (None, false) => None,
+        })
     }
-
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
@@ -182,15 +205,15 @@ impl Block for Music
                 "play" => "PlayPause",
                 "next" => "Next",
                 "prev" => "Previous",
-                _ => ""
+                _ => "",
             };
             if action != "" {
-                let m = Message::new_method_call(format!("org.mpris.MediaPlayer2.{}",
-                                                         self.player),
-                                                 "/org/mpris/MediaPlayer2",
-                                                 "org.mpris.MediaPlayer2.Player",
-                                                 action)
-                    .block_error("music", "failed to create D-Bus method call")?;
+                let m = Message::new_method_call(
+                    format!("org.mpris.MediaPlayer2.{}", self.player),
+                    "/org/mpris/MediaPlayer2",
+                    "org.mpris.MediaPlayer2.Player",
+                    action,
+                ).block_error("music", "failed to create D-Bus method call")?;
                 self.dbus_conn
                     .send(m)
                     .block_error("music", "failed to call method via D-Bus")
@@ -218,7 +241,7 @@ impl Block for Music
             }
             elements
         } else {
-            vec!(&self.current_song)
+            vec![&self.current_song]
         }
     }
 }
@@ -227,40 +250,37 @@ fn extract_from_metadata(metadata: arg::Variant<Box<arg::RefArg>>) -> Result<(St
     let mut title = String::new();
     let mut artist = String::new();
 
-    let mut iter = metadata.0
+    let mut iter = metadata
+        .0
         .as_iter()
         .block_error("music", "failed to extract metadata")?;
 
     while let Some(key) = iter.next() {
-        let value = iter
-            .next()
+        let value = iter.next()
             .block_error("music", "failed to extract metadata")?;
-        match key
-            .as_str()
+        match key.as_str()
             .block_error("music", "failed to extract metadata")? {
             "xesam:artist" => {
-                artist = String::from(
-                    value
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_str()
-                        .block_error("music", "failed to extract metadata")?)
-            },
+                artist = String::from(value
+                    .as_iter()
+                    .block_error("music", "failed to extract metadata")?
+                    .nth(0)
+                    .block_error("music", "failed to extract metadata")?
+                    .as_iter()
+                    .block_error("music", "failed to extract metadata")?
+                    .nth(0)
+                    .block_error("music", "failed to extract metadata")?
+                    .as_iter()
+                    .block_error("music", "failed to extract metadata")?
+                    .nth(0)
+                    .block_error("music", "failed to extract metadata")?
+                    .as_str()
+                    .block_error("music", "failed to extract metadata")?)
+            }
             "xesam:title" => {
-                title = String::from(
-                    value
-                        .as_str()
-                        .block_error("music", "failed to extract metadata")?)
+                title = String::from(value
+                    .as_str()
+                    .block_error("music", "failed to extract metadata")?)
             }
             _ => {}
         };

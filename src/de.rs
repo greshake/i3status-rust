@@ -86,14 +86,14 @@ macro_rules! map_type {
 
 impl<'de, T, V> DeserializeSeed<'de> for MapType<T, V>
 where
-    T: Deserialize<'de> + Default + FromStr<Err = String> + From<Map<String, V>> + Deref<Target=Map<String, V>>,
+    T: Deserialize<'de> + Default + FromStr<Err = String> + From<Map<String, V>> + Deref<Target = Map<String, V>>,
     V: Deserialize<'de> + Clone,
 {
     type Value = Map<String, V>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
-        D: Deserializer<'de>
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_any(self)
     }
@@ -101,7 +101,7 @@ where
 
 impl<'de, T, V> de::Visitor<'de> for MapType<T, V>
 where
-    T: Deserialize<'de> + Default + FromStr<Err = String> + From<Map<String, V>> + Deref<Target=Map<String, V>>,
+    T: Deserialize<'de> + Default + FromStr<Err = String> + From<Map<String, V>> + Deref<Target = Map<String, V>>,
     V: Deserialize<'de> + Clone,
 {
     type Value = Map<String, V>;
@@ -112,7 +112,7 @@ where
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
-        E: de::Error
+        E: de::Error,
     {
         let t: T = FromStr::from_str(value).map_err(de::Error::custom)?;
         Ok(t.clone())
@@ -120,10 +120,12 @@ where
 
     fn visit_seq<A>(self, mut visitor: A) -> Result<Self::Value, A::Error>
     where
-        A: de::SeqAccess<'de>
+        A: de::SeqAccess<'de>,
     {
         let mut vec: Vec<Self::Value> = Vec::new();
-        while let Some(element) = visitor.next_element_seed(MapType::<T, V>(PhantomData, PhantomData))? {
+        while let Some(element) = visitor
+            .next_element_seed(MapType::<T, V>(PhantomData, PhantomData))?
+        {
             vec.push(element);
         }
 
@@ -153,14 +155,17 @@ where
     /// the deserialization of `name` delivered.
     fn visit_map<A>(self, visitor: A) -> Result<Self::Value, A::Error>
     where
-        A: de::MapAccess<'de>
+        A: de::MapAccess<'de>,
     {
         let mut map: BTreeMap<String, value::Value> = Deserialize::deserialize(de::value::MapAccessDeserializer::new(visitor))?;
         let mut combined: Map<String, V> = Map::new();
 
         if let Some(raw_names) = map.remove("name") {
-            combined.extend(raw_names.deserialize_any(MapType::<T, V>(PhantomData, PhantomData))
-                .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?);
+            combined.extend(
+                raw_names
+                    .deserialize_any(MapType::<T, V>(PhantomData, PhantomData))
+                    .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?,
+            );
         }
         if let Some(raw_overrides) = map.remove("overrides") {
             let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides)
@@ -169,7 +174,9 @@ where
         }
 
         if combined.is_empty() {
-            Err(de::Error::custom("missing all fields (`name`, `overrides`)"))
+            Err(de::Error::custom(
+                "missing all fields (`name`, `overrides`)",
+            ))
         } else {
             Ok(combined)
         }

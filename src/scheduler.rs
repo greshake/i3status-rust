@@ -38,9 +38,8 @@ impl cmp::Ord for Task {
     }
 }
 
-
-pub struct UpdateScheduler  {
-    schedule: BinaryHeap<Task>
+pub struct UpdateScheduler {
+    schedule: BinaryHeap<Task>,
 }
 
 impl UpdateScheduler {
@@ -55,9 +54,7 @@ impl UpdateScheduler {
             });
         }
 
-        UpdateScheduler {
-            schedule: schedule
-        }
+        UpdateScheduler { schedule: schedule }
     }
 
     pub fn schedule(&mut self, task: Task) {
@@ -80,12 +77,21 @@ impl UpdateScheduler {
     }
 
     pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) -> Result<()> {
-        let t = self.schedule.pop().internal_error("scheduler", "schedule is empty")?;
+        let t = self.schedule
+            .pop()
+            .internal_error("scheduler", "schedule is empty")?;
         let mut tasks_next = vec![t.clone()];
 
         while !self.schedule.is_empty() &&
-            t.update_time == self.schedule.peek().internal_error("scheduler", "schedule is empty")?.update_time {
-            tasks_next.push(self.schedule.pop().internal_error("scheduler", "schedule is empty")?)
+            t.update_time ==
+                self.schedule
+                    .peek()
+                    .internal_error("scheduler", "schedule is empty")?
+                    .update_time
+        {
+            tasks_next.push(self.schedule
+                .pop()
+                .internal_error("scheduler", "schedule is empty")?)
         }
 
         let now = Instant::now();
@@ -99,12 +105,12 @@ impl UpdateScheduler {
             if let Some(dur) = block_map
                 .get_mut(&task.id)
                 .internal_error("scheduler", "could not get required block")?
-                .update()? {
-                self.schedule
-                    .push(Task {
-                        id: task.id,
-                        update_time: now + dur,
-                    })
+                .update()?
+            {
+                self.schedule.push(Task {
+                    id: task.id,
+                    update_time: now + dur,
+                })
             }
         }
 

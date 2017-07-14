@@ -30,7 +30,7 @@ impl Default for Config {
 
 fn deserialize_blocks<'de, D>(deserializer: D) -> Result<Vec<(String, value::Value)>, D::Error>
 where
-    D: Deserializer<'de>
+    D: Deserializer<'de>,
 {
     let mut blocks: Vec<(String, value::Value)> = Vec::new();
     let raw_blocks: Vec<value::Table> = Deserialize::deserialize(deserializer)?;
@@ -47,7 +47,7 @@ where
 
 fn deserialize_icons<'de, D>(deserializer: D) -> Result<Map<String, String>, D::Error>
 where
-    D: Deserializer<'de>
+    D: Deserializer<'de>,
 {
     map_type!(Icons, String;
               s => Ok(Icons(icons::get_icons(s).ok_or_else(|| "cannot find specified icons")?)));
@@ -57,12 +57,16 @@ where
 
 fn deserialize_themes<'de, D>(deserializer: D) -> Result<Theme, D::Error>
 where
-    D: Deserializer<'de>
+    D: Deserializer<'de>,
 {
     map_type!(ThemeIntermediary, String;
               s => Ok(ThemeIntermediary(themes::get_theme(s).ok_or_else(|| "cannot find specified theme")?.owned_map())));
 
-    let intermediary: Map<String, String> = deserializer.deserialize_any(MapType::<ThemeIntermediary, String>(PhantomData, PhantomData))?;
+    let intermediary: Map<String, String> = deserializer
+        .deserialize_any(MapType::<ThemeIntermediary, String>(
+            PhantomData,
+            PhantomData,
+        ))?;
 
     Deserialize::deserialize(de::value::MapDeserializer::new(intermediary.into_iter()))
 }

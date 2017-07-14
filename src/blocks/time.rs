@@ -6,19 +6,18 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use self::chrono::offset::local::Local;
+use self::chrono::offset::Local;
 use scheduler::Task;
 use std::sync::mpsc::Sender;
 use widgets::text::TextWidget;
-use widget::{I3BarWidget};
+use widget::I3BarWidget;
 use uuid::Uuid;
-
 
 pub struct Time {
     time: TextWidget,
     id: String,
     update_interval: Duration,
-    format: String
+    format: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -58,8 +57,9 @@ impl ConfigBlock for Time {
 
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Duration>> {
-        self.time.set_text(format!("{}", Local::now().format(&self.format)));
-        Ok(Some(self.update_interval.clone()))
+        self.time
+            .set_text(format!("{}", Local::now().format(&self.format)));
+        Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {

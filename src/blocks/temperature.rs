@@ -13,7 +13,6 @@ use input::I3BarEvent;
 
 use uuid::Uuid;
 
-
 pub struct Temperature {
     text: ButtonWidget,
     output: String,
@@ -59,9 +58,7 @@ impl ConfigBlock for Temperature {
     }
 }
 
-
-impl Block for Temperature
-{
+impl Block for Temperature {
     fn update(&mut self) -> Result<Option<Duration>> {
         let output = Command::new("sensors")
             .args(&["-u"])
@@ -85,11 +82,16 @@ impl Block for Temperature
                             temperatures.push(t);
                             Ok(())
                         }
-                        Ok(_) => {
-                            Err(BlockError("temperature".to_owned(), "Temperature ({}) outside of range ([-100, 150])".to_owned()))
+                        Ok(t) => {
+                            // This error is recoverable and therefore should not stop the program
+                            eprintln!("Temperature ({}) outside of range ([-100, 150])", t);
+                            Ok(())
                         }
                         Err(_) => {
-                            Err(BlockError("temperature".to_owned(), "failed to parse temperature as an integer".to_owned()))
+                            Err(BlockError(
+                                "temperature".to_owned(),
+                                "failed to parse temperature as an integer".to_owned(),
+                            ))
                         }
                     }?
                 }
@@ -97,9 +99,11 @@ impl Block for Temperature
         }
 
         if !temperatures.is_empty() {
-            let max: i64 = *temperatures.iter().max().block_error("temperature", "failed to get max temperature")?;
-            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 /
-                temperatures.len() as f64).round() as i64;
+            let max: i64 = *temperatures
+                .iter()
+                .max()
+                .block_error("temperature", "failed to get max temperature")?;
+            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
 
             self.output = format!("{}° avg, {}° max", avg, max);
             if !self.collapsed {
@@ -107,19 +111,21 @@ impl Block for Temperature
             }
 
             self.text.set_state(match max {
-                0 ... 20 => State::Good,
-                20 ... 45 => State::Idle,
-                45 ... 60 => State::Info,
-                60 ... 80 => State::Warning,
-                _ => State::Critical
+                0...20 => State::Good,
+                20...45 => State::Idle,
+                45...60 => State::Info,
+                60...80 => State::Warning,
+                _ => State::Critical,
             });
         }
 
-        Ok(Some(self.update_interval.clone()))
+        Ok(Some(self.update_interval))
     }
+
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.text]
     }
+
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
@@ -134,6 +140,7 @@ impl Block for Temperature
 
         Ok(())
     }
+
     fn id(&self) -> &str {
         &self.id
     }

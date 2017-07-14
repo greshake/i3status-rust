@@ -4,18 +4,19 @@ version = "0.1.0"
 authors = ["XYunknown <developement@kai-greshake.de>"]
 
 [dependencies]
-chrono = "0.2"
-lazy_static = "^0.2"
-serde = "^1.0"
-serde_derive = "^1.0"
-serde_json = "^1.0"
-toml = "^0.4"
-clap = "2.23.2"
-uuid = { version = "0.4", features = ["v4"] }
-dbus = "0.5.2"
+chrono = "0.4"
+lazy_static = "0.2"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+toml = "0.4"
+clap = "2.25"
+uuid = { version = "0.5", features = ["v4"] }
+dbus = "0.5.3"
 regex = "0.2"
 nix = "0.8.1"
 i3ipc = "0.4.2"
+num = "0.1.39"
 # Used only in debug build mode
 # for profiling blocks
 cpuprofiler = "0.0.3"
