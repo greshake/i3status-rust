@@ -4,7 +4,7 @@
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
 
 # About this project
-This is a WiP replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol available. We are currently looking for help in implementing more Blocks. It supports:
+This is a replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol available. We are currently looking for help in implementing more Blocks and Themes! It supports:
 - flexibility through theming
 - icons (optional)
 - individual update intervals per block to reduce system calls
