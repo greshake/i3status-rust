@@ -37,14 +37,24 @@ pub struct NetConfig {
     pub interval: Duration,
 
     /// Which interface in /sys/class/net/ to read from.
-    //#[serde(default = "NetConfig::default_device")]
+    #[serde(default = "NetConfig::default_device")]
     pub device: String,
+
+    #[serde(default = "NetConfig::default_graph")]
     pub graph: bool,
 }
 
 impl NetConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(1)
+    }
+
+    fn default_device() -> String {
+        "lo".to_string()
+    }
+
+    fn default_graph() -> bool {
+        false
     }
 }
 
