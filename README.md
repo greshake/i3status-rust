@@ -443,6 +443,25 @@ icons | Show icons for brightness and resolution (needs awesome fonts support) |
 resolution | Shows the screens resolution | No | false
 step\_width | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | 5
 
+## Net
+Creates a block which displays the upload and download throughput for a network interface. Units are in bits per second (kbps, Mbps, etc).
+
+**Example**
+```toml
+[[block]]
+block = "net"
+device = "eno1"
+interval = 5
+graph = true
+```
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+device | network interface to moniter (name from /sys/class/net) | Yes | lo (loopback interface)
+interval | Update interval in seconds | No | 1
+graph | display a bar graph | no | false
+
 # How to write a Block
 
 ## Step 1: Create the file
