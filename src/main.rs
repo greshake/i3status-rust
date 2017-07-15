@@ -58,7 +58,7 @@ use util::deserialize_file;
 
 use self::clap::{Arg, ArgMatches, App};
 
-fn run(matches: ArgMatches) -> Result<()> {
+fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
     print!("{{\"version\": 1, \"click_events\": true}}\n[");
 
@@ -82,7 +82,7 @@ fn run(matches: ArgMatches) -> Result<()> {
             for &(ref block_name, ref block_config) in &config.blocks {
                 if block_name == matches.value_of("profile").unwrap() {
                     let mut block = create_block(
-                        &block_name,
+                        block_name,
                         block_config.clone(),
                         config.clone(),
                         tx.clone(),
@@ -93,7 +93,7 @@ fn run(matches: ArgMatches) -> Result<()> {
                             .unwrap()
                             .parse::<i32>()
                             .unwrap(),
-                        &block_name,
+                        block_name,
                         block.deref_mut(),
                     );
                     return Ok(());
@@ -233,7 +233,7 @@ fn main() {
     let exit_on_error = matches.is_present("exit-on-error");
 
     // Run and match for potential error
-    if let Err(error) = run(matches) {
+    if let Err(error) = run(&matches) {
         if exit_on_error {
             eprintln!("{:?}", error);
             ::std::process::exit(1);
