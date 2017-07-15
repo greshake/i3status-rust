@@ -12,7 +12,13 @@ This is a replacement for i3status, aiming to provide the most feature-complete 
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
 # Requirements 
-i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR. For dev builds, you need to install gperftools (the block profiler uses it).
+i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux.
+
+Optional:
+* `alsa-utils` For the volume block
+* `lm_sensors` For the temperature block
+* `ttf-font-awesome` For the awesome icons. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
+* `gperftools` For dev builds, needed to profile block performance and bottlenecks.
 
 # How to use it
 1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
