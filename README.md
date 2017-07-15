@@ -4,7 +4,7 @@
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
 
 # About this project
-This is a WiP replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol available. We are currently looking for help in implementing more Blocks. It supports:
+This is a replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol available. We are currently looking for help in implementing more Blocks and Themes! It supports:
 - flexibility through theming
 - icons (optional)
 - individual update intervals per block to reduce system calls
@@ -12,10 +12,16 @@ This is a WiP replacement for i3status, aiming to provide the most feature-compl
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
 # Requirements 
-i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR. For dev builds, you need to install gperftools (the block profiler uses it).
+i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux.
+
+Optional:
+* `alsa-utils` For the volume block
+* `lm_sensors` For the temperature block
+* `ttf-font-awesome` For the awesome icons. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
+* `gperftools` For dev builds, needed to profile block performance and bottlenecks.
 
 # How to use it
-1. Clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
+1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
 2. run `cd i3status-rust && cargo build --release`
 3. Edit `example_config.toml` to your liking and put it to a sensible place (e.g. `~/.config/i3/status.toml`)
 4. Edit your i3 config
@@ -444,7 +450,7 @@ resolution | Shows the screens resolution | No | false
 step\_width | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | 5
 
 ## Net
-Creates a block which displays the upload and download throughput for a network interface. Units are in bits per second (kbps, Mbps, etc).
+Creates a block which displays the upload and download throughput for a network interface. Units are in bytes per second (kB/s, MB/s, etc).
 
 **Example**
 ```toml

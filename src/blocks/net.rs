@@ -70,8 +70,8 @@ impl ConfigBlock for Net {
             output_rx: TextWidget::new(config.clone()).with_icon("net_down"),
             graph_rx: GraphWidget::new(config.clone()),
             device_path: format!("/sys/class/net/{}/statistics/", block_config.device),
-            rx_buff: vec![0,0,0,0,0,0,0,0,0,0],
-            tx_buff: vec![0,0,0,0,0,0,0,0,0,0],
+            rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: 0,
             tx_bytes: 0,
             graph: block_config.graph,
@@ -82,12 +82,18 @@ impl ConfigBlock for Net {
 fn read_file(path: &str) -> Result<String> {
     let mut f = OpenOptions::new().read(true).open(path).block_error(
         "net",
-        &format!("failed to open file {}", path),
+        &format!(
+            "failed to open file {}",
+            path
+        ),
     )?;
     let mut content = String::new();
     f.read_to_string(&mut content).block_error(
         "net",
-        &format!("failed to read {}", path),
+        &format!(
+            "failed to read {}",
+            path
+        ),
     )?;
     // Removes trailing newline
     content.pop();
@@ -97,9 +103,9 @@ fn read_file(path: &str) -> Result<String> {
 fn convert_speed(speed: u64) -> (f64, &'static str) {
     // the values for the match are so the speed doesn't go above 3 characters
     let (speed, unit) = match speed {
-        x if x > 999_999_999 => {(speed as f64 / 1_000_000_000.0, "G")},
-        x if x > 999_999 => {(speed as f64 / 1_000_000.0, "M")},
-        x if x > 999 => {(speed as f64 / 1_000.0, "k")},
+        x if x > 999_999_999 => (speed as f64 / 1_000_000_000.0, "G"),
+        x if x > 999_999 => (speed as f64 / 1_000_000.0, "M"),
+        x if x > 999 => (speed as f64 / 1_000.0, "k"),
         _ => (speed as f64, "B"),
     };
     (speed, unit)
@@ -133,14 +139,23 @@ impl Block for Net {
             self.graph_rx.set_values(&self.rx_buff, None, None);
         }
 
-        self.output_tx.set_text(format!("{:5.1}{}", tx_speed, tx_unit));
-        self.output_rx.set_text(format!("{:5.1}{}", rx_speed, rx_unit));
+        self.output_tx.set_text(
+            format!("{:5.1}{}", tx_speed, tx_unit),
+        );
+        self.output_rx.set_text(
+            format!("{:5.1}{}", rx_speed, rx_unit),
+        );
         Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
         if self.graph {
-            return vec![&self.output_tx, &self.graph_tx, &self.output_rx, &self.graph_rx]
+            return vec![
+                &self.output_tx,
+                &self.graph_tx,
+                &self.output_rx,
+                &self.graph_rx,
+            ];
         }
         vec![&self.output_tx, &self.output_rx]
     }
