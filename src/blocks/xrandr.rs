@@ -1,7 +1,7 @@
 use std::time::Duration;
 use std::process::Command;
 use std::str::FromStr;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use scheduler::Task;
 
 use util::FormatTemplate;

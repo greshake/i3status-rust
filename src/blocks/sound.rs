@@ -1,6 +1,6 @@
 use std::time::Duration;
 use std::process::Command;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};

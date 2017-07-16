@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 use std::process::Command;
 use std::iter::{Cycle, Peekable};
 use std::vec;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;
@@ -128,7 +128,7 @@ impl Block for Custom {
             self.tx_update_request.send(Task {
                 id: self.id.clone(),
                 update_time: Instant::now(),
-            })?;
+            });
         }
 
         Ok(())

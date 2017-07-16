@@ -40,7 +40,7 @@ use super::scheduler::Task;
 extern crate dbus;
 
 use serde::de::Deserialize;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use toml::value::Value;
 
 macro_rules! block {

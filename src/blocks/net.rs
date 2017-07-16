@@ -1,5 +1,5 @@
 use std::time::Duration;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;
@@ -80,21 +80,13 @@ impl ConfigBlock for Net {
 }
 
 fn read_file(path: &str) -> Result<String> {
-    let mut f = OpenOptions::new().read(true).open(path).block_error(
-        "net",
-        &format!(
-            "failed to open file {}",
-            path
-        ),
-    )?;
+    let mut f = OpenOptions::new()
+        .read(true)
+        .open(path)
+        .block_error("net", &format!("failed to open file {}", path))?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error(
-        "net",
-        &format!(
-            "failed to read {}",
-            path
-        ),
-    )?;
+    f.read_to_string(&mut content)
+        .block_error("net", &format!("failed to read {}", path))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
@@ -139,12 +131,10 @@ impl Block for Net {
             self.graph_rx.set_values(&self.rx_buff, None, None);
         }
 
-        self.output_tx.set_text(
-            format!("{:5.1}{}", tx_speed, tx_unit),
-        );
-        self.output_rx.set_text(
-            format!("{:5.1}{}", rx_speed, rx_unit),
-        );
+        self.output_tx
+            .set_text(format!("{:5.1}{}", tx_speed, tx_unit));
+        self.output_rx
+            .set_text(format!("{:5.1}{}", rx_speed, rx_unit));
         Ok(Some(self.update_interval))
     }
 

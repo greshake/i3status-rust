@@ -4,7 +4,7 @@ use std::fmt;
 use std::io;
 use std::option::Option;
 use std::string::*;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use std::thread;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -41,7 +41,7 @@ pub fn process_events(sender: Sender<I3BarEvent>) {
             }
             let e: I3BarEvent = serde_json::from_str(&input).unwrap();
 
-            sender.send(e).unwrap();
+            sender.send(e);
         }
     });
 }

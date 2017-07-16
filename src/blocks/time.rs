@@ -8,7 +8,7 @@ use de::deserialize_duration;
 use errors::*;
 use self::chrono::offset::Local;
 use scheduler::Task;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 use uuid::Uuid;

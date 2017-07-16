@@ -1,5 +1,5 @@
 use std::time::{Instant, Duration};
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use std::thread;
 use std::sync::{Arc, Mutex};
 
@@ -69,7 +69,7 @@ impl ConfigBlock for FocusedWindow {
                                     tx.send(Task {
                                         id: id_clone.clone(),
                                         update_time: Instant::now(),
-                                    }).unwrap();
+                                    });
                                 }
                             }
                             WindowChange::Title => {
@@ -80,7 +80,7 @@ impl ConfigBlock for FocusedWindow {
                                         tx.send(Task {
                                             id: id_clone.clone(),
                                             update_time: Instant::now(),
-                                        }).unwrap();
+                                        });
                                     }
                                 }
                             }

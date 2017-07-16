@@ -68,7 +68,7 @@
 use std::time::{Instant, Duration};
 use std::collections::HashMap;
 use util::*;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 use block::{Block, ConfigBlock};
@@ -626,7 +626,7 @@ impl Block for Memory {
                 self.tx_update_request.send(Task {
                     id: self.id.clone(),
                     update_time: Instant::now(),
-                })?;
+                });
             }
         }
 

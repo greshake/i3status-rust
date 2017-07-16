@@ -1,5 +1,5 @@
 use std::time::{Duration, Instant};
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use std::thread;
 use std::boxed::Box;
 
@@ -81,7 +81,7 @@ impl ConfigBlock for Music {
                                 send.send(Task {
                                     id: id.clone(),
                                     update_time: Instant::now(),
-                                }).unwrap();
+                                });
                             }
                         }
                     }
