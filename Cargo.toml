@@ -1,7 +1,8 @@
 [package]
 name = "i3status-rs"
 version = "0.9.0"
-authors = ["XYunknown <development@kai-greshake.de>"]
+authors = ["Kai Greshake <development@kai-greshake.de>",
+           "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
 
 [dependencies]
 chrono = "0.4"
