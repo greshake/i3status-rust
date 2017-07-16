@@ -71,8 +71,8 @@ impl ButtonWidget {
 
         self.rendered = json!({
             "full_text": format!("{}{} ",
-                                self.icon.clone().unwrap_or(String::from(" ")),
-                                self.content.clone().unwrap_or(String::from(""))),
+                                self.icon.clone().unwrap_or_else(|| String::from(" ")),
+                                self.content.clone().unwrap_or_else(|| String::from(""))),
             "separator": false,
             "name": self.id.clone(),
             "separator_block_width": 0,
@@ -88,7 +88,7 @@ impl I3BarWidget for ButtonWidget {
     fn to_string(&self) -> String {
         self.cached_output
             .clone()
-            .unwrap_or(self.rendered.to_string())
+            .unwrap_or_else(|| self.rendered.to_string())
     }
 
     fn get_rendered(&self) -> &Value {
