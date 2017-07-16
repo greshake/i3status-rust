@@ -56,7 +56,7 @@ use self::chan::{Receiver, Sender};
 
 fn main() {
     let mut builder = App::new("i3status-rs")
-        .version("0.1")
+        .version("0.9")
         .author(
             "Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
              https://github.com/greshake/i3status-rust/graphs/contributors",

@@ -20,7 +20,7 @@ pub struct RotatingTextWidget {
     pub rotating: bool,
 }
 
-
+#[allow(dead_code)]
 impl RotatingTextWidget {
     pub fn new(interval: Duration, speed: Duration, width: usize, config: Config) -> RotatingTextWidget {
         RotatingTextWidget {

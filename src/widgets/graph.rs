@@ -14,7 +14,7 @@ pub struct GraphWidget {
     cached_output: Option<String>,
     config: Config,
 }
-
+#[allow(dead_code)]
 impl GraphWidget {
     pub fn new(config: Config) -> Self {
         GraphWidget {

@@ -24,6 +24,7 @@ where
     toml::from_str(&contents).configuration_error("failed to parse TOML from file contents")
 }
 
+#[allow(dead_code)]
 pub fn get_file(name: &str) -> Result<String> {
     let mut file_contents = String::new();
     let mut file = File::open(name)
@@ -254,6 +255,7 @@ macro_rules! mapped_struct {
         }
 
         impl $name {
+            #[allow(dead_code)]
             pub fn map(&self) -> ::std::collections::HashMap<&'static str, &$fieldtype> {
                 let mut m = ::std::collections::HashMap::new();
                 $( m.insert(stringify!($fname), &self.$fname); )*
