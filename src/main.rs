@@ -99,7 +99,7 @@ fn main() {
     let exit_on_error = matches.is_present("exit-on-error");
 
     // Run and match for potential error
-    if let Err(error) = run(matches) {
+    if let Err(error) = run(&matches) {
         if exit_on_error {
             eprintln!("{:?}", error);
             ::std::process::exit(1);
@@ -122,7 +122,7 @@ fn main() {
     }
 }
 
-fn run(matches: ArgMatches) -> Result<()> {
+fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
     print!("{{\"version\": 1, \"click_events\": true}}\n[");
 
