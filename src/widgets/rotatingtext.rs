@@ -122,7 +122,7 @@ impl RotatingTextWidget {
 
         self.rendered = json!({
             "full_text": format!("{}{} ",
-                                self.icon.clone().unwrap_or(String::from(" ")),
+                                self.icon.clone().unwrap_or_else(|| String::from(" ")),
                                 self.get_rotated_content()),
             "separator": false,
             "separator_block_width": 0,
@@ -139,24 +139,22 @@ impl RotatingTextWidget {
         if let Some(next_rotation) = self.next_rotation {
             if next_rotation > Instant::now() {
                 Ok((false, Some(next_rotation - Instant::now())))
-            } else {
-                if self.rotating {
-                    if self.rotation_pos < self.content.len() {
-                        self.rotation_pos += 1;
-                        self.next_rotation = Some(Instant::now() + self.rotation_speed);
-                        self.update();
-                        Ok((true, Some(self.rotation_speed)))
-                    } else {
-                        self.rotation_pos = 0;
-                        self.rotating = false;
-                        self.next_rotation = Some(Instant::now() + self.rotation_interval);
-                        self.update();
-                        Ok((true, Some(self.rotation_interval)))
-                    }
-                } else {
-                    self.rotating = true;
+            } else if self.rotating {
+                if self.rotation_pos < self.content.len() {
+                    self.rotation_pos += 1;
+                    self.next_rotation = Some(Instant::now() + self.rotation_speed);
+                    self.update();
                     Ok((true, Some(self.rotation_speed)))
+                } else {
+                    self.rotation_pos = 0;
+                    self.rotating = false;
+                    self.next_rotation = Some(Instant::now() + self.rotation_interval);
+                    self.update();
+                    Ok((true, Some(self.rotation_interval)))
                 }
+            } else {
+                self.rotating = true;
+                Ok((true, Some(self.rotation_speed)))
             }
         } else {
             Ok((false, None))
@@ -168,7 +166,7 @@ impl I3BarWidget for RotatingTextWidget {
     fn to_string(&self) -> String {
         self.cached_output
             .clone()
-            .unwrap_or(self.rendered.to_string())
+            .unwrap_or_else(|| self.rendered.to_string())
     }
 
     fn get_rendered(&self) -> &Value {

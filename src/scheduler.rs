@@ -43,14 +43,14 @@ pub struct UpdateScheduler {
 }
 
 impl UpdateScheduler {
-    pub fn new(blocks: &Vec<Box<Block>>) -> UpdateScheduler {
+    pub fn new(blocks: &[Box<Block>]) -> UpdateScheduler {
         let mut schedule = BinaryHeap::new();
 
         let now = Instant::now();
         for block in blocks.iter() {
             schedule.push(Task {
                 id: String::from(block.id()),
-                update_time: now.clone(),
+                update_time: now,
             });
         }
 

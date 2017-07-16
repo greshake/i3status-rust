@@ -82,18 +82,18 @@ fn get_update_count() -> Result<usize> {
         .into_string()
         .block_error("pacman", "There's something wrong with your $TMP variable")?;
     let user = env::var_os("USER")
-        .unwrap_or(OsString::from(""))
+        .unwrap_or_else(|| OsString::from(""))
         .into_string()
         .block_error("pacman", "There's a problem with your $USER")?;
     let updates_db = env::var_os("CHECKUPDATES_DB")
-        .unwrap_or(OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
+        .unwrap_or_else(|| OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
         .into_string()
         .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
 
     // Determine pacman database path
     let db_path = env::var_os("DBPath")
         .map(Into::into)
-        .unwrap_or(Path::new("/var/lib/pacman/").to_path_buf());
+        .unwrap_or_else(|| Path::new("/var/lib/pacman/").to_path_buf());
 
     // Create the determined `checkup-db` path recursively
     fs::create_dir_all(&updates_db).block_error(

@@ -112,9 +112,9 @@ impl Block for Temperature {
 
             self.text.set_state(match max {
                 0...20 => State::Good,
-                20...45 => State::Idle,
-                45...60 => State::Info,
-                60...80 => State::Warning,
+                21...45 => State::Idle,
+                46...60 => State::Info,
+                61...80 => State::Warning,
                 _ => State::Critical,
             });
         }

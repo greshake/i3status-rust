@@ -145,7 +145,7 @@ impl Sound {
         } else {
             self.text.set_icon(match device.volume {
                 0...20 => "volume_empty",
-                20...70 => "volume_half",
+                21...70 => "volume_half",
                 _ => "volume_full",
             });
             self.text.set_text(format!("{:02}%", device.volume));

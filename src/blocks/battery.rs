@@ -114,8 +114,8 @@ impl Block for Battery {
 
         self.output.set_state(match current_percentage {
             0...15 => State::Critical,
-            15...30 => State::Warning,
-            30...60 => State::Info,
+            16...30 => State::Warning,
+            31...60 => State::Info,
             _ => State::Good,
         });
 

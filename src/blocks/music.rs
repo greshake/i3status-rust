@@ -76,13 +76,11 @@ impl ConfigBlock for Music {
             loop {
                 for ci in c.iter(100000) {
                     if let ConnectionItem::Signal(msg) = ci {
-                        if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" {
-                            if &*msg.member().unwrap() == "PropertiesChanged" {
-                                send.send(Task {
-                                    id: id.clone(),
-                                    update_time: Instant::now(),
-                                });
-                            }
+                        if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" && &*msg.member().unwrap() == "PropertiesChanged" {
+                            send.send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            });
                         }
                     }
                 }
@@ -171,7 +169,7 @@ impl Block for Music {
             } else {
                 let metadata = data.unwrap();
 
-                let (title, artist) = extract_from_metadata(metadata).unwrap_or((String::new(), String::new()));
+                let (title, artist) = extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
                 self.current_song
                     .set_text(format!("{} | {}", title, artist));
@@ -246,7 +244,7 @@ impl Block for Music {
     }
 }
 
-fn extract_from_metadata(metadata: arg::Variant<Box<arg::RefArg>>) -> Result<(String, String)> {
+fn extract_from_metadata(metadata: &arg::Variant<Box<arg::RefArg>>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();
 

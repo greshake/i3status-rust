@@ -81,16 +81,14 @@ impl Block for Cpu {
                 let prev_total = self.prev_idle + self.prev_non_idle;
                 let total = idle + non_idle;
 
-                let mut total_delta = 1;
-                let mut idle_delta = 1;
-
                 // This check is needed because the new values may be reset, for
                 // example after hibernation.
-                if prev_total < total && self.prev_idle <= idle {
-                    total_delta = total - prev_total;
-                    idle_delta = idle - self.prev_idle;
-                }
 
+                let (total_delta, idle_delta) = if prev_total < total && self.prev_idle <= idle {
+                    (total - prev_total, idle - self.prev_idle)
+                } else {
+                    (1, 1)
+                };
 
                 utilization = (((total_delta - idle_delta) as f64 / total_delta as f64) * 100.) as u64;
 
@@ -101,8 +99,8 @@ impl Block for Cpu {
 
         self.utilization.set_state(match utilization {
             0...30 => State::Idle,
-            30...60 => State::Info,
-            60...90 => State::Warning,
+            31...60 => State::Info,
+            61...90 => State::Warning,
             _ => State::Critical,
         });
 

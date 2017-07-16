@@ -135,7 +135,7 @@ impl Xrandr {
         }
     }
 
-    fn get_monitor_metrics(monitor_names: &Vec<String>) -> Result<Option<Vec<Monitor>>> {
+    fn get_monitor_metrics(monitor_names: &[String]) -> Result<Option<Vec<Monitor>>> {
         let mut monitor_metrics: Vec<Monitor> = Vec::new();
         let grep_arg = format!(
             "xrandr --verbose | grep -w '{} connected\\|Brightness'",
@@ -198,13 +198,12 @@ impl Xrandr {
                 } else {
                     format_str = "{display}: {brightness} [{resolution}]";
                 }
-            } else {
-                if self.icons {
+            } else if self.icons {
                     format_str = "{display} \u{f185} {brightness}";
-                } else {
-                    format_str = "{display}: {brightness}";
-                }
+            } else {
+                format_str = "{display}: {brightness}";
             }
+
 
             if let Ok(fmt_template) = FormatTemplate::from_string(String::from(format_str)) {
                 self.text.set_text(fmt_template.render_static_str(&values)?);
