@@ -193,7 +193,7 @@ impl Block for Music {
         Ok(match (next, self.marquee) {
             (Some(_), _) => next,
             (None, true) => Some(Duration::new(1, 0)),
-            (None, false) => None,
+            (None, false) => Some(Duration::new(1, 0)),
         })
     }
 
