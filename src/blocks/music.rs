@@ -171,9 +171,15 @@ impl Block for Music {
 
                 let (title, artist) = extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
-                self.current_song
-                    .set_text(format!("{} | {}", title, artist));
-                self.player_avail = true;
+                if title.is_empty() && artist.is_empty() {
+                    self.player_avail = false;
+                    self.current_song
+                        .set_text(String::new());
+                } else {
+                    self.player_avail = true;
+                    self.current_song
+                        .set_text(format!("{} | {}", title, artist));
+                }
             }
             if let Some(ref mut play) = self.play {
                 let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
