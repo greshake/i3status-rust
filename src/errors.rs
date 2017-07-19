@@ -71,13 +71,11 @@ impl fmt::Display for Error {
         match *self {
             BlockError(ref block, ref message) => f.write_str(&format!("Error in block '{}': {}", block, message)),
             ConfigurationError(ref message, _) => f.write_str(&format!("Configuration error: {}", message)),
-            InternalError(ref context, ref message, _) => {
-                f.write_str(&format!(
-                    "Internal error in context '{}': {}",
-                    context,
-                    message
-                ))
-            }
+            InternalError(ref context, ref message, _) => f.write_str(&format!(
+                "Internal error in context '{}': {}",
+                context,
+                message
+            )),
         }
     }
 }
@@ -86,28 +84,22 @@ impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             BlockError(ref block, ref message) => f.write_str(&format!("Error in block '{}': {}", block, message)),
-            ConfigurationError(ref message, (ref cause, _)) => {
-                f.write_str(&format!(
-                    "Configuration error: {}.\nCause: {}",
-                    message,
-                    cause
-                ))
-            }
-            InternalError(ref context, ref message, Some((ref cause, _))) => {
-                f.write_str(&format!(
-                    "Internal error in context '{}': {}.\nCause: {}",
-                    context,
-                    message,
-                    cause
-                ))
-            }
-            InternalError(ref context, ref message, None) => {
-                f.write_str(&format!(
-                    "Internal error in context '{}': {}",
-                    context,
-                    message
-                ))
-            }
+            ConfigurationError(ref message, (ref cause, _)) => f.write_str(&format!(
+                "Configuration error: {}.\nCause: {}",
+                message,
+                cause
+            )),
+            InternalError(ref context, ref message, Some((ref cause, _))) => f.write_str(&format!(
+                "Internal error in context '{}': {}.\nCause: {}",
+                context,
+                message,
+                cause
+            )),
+            InternalError(ref context, ref message, None) => f.write_str(&format!(
+                "Internal error in context '{}': {}",
+                context,
+                message
+            )),
         }
     }
 }

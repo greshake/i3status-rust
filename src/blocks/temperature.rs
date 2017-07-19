@@ -87,12 +87,10 @@ impl Block for Temperature {
                             eprintln!("Temperature ({}) outside of range ([-100, 150])", t);
                             Ok(())
                         }
-                        Err(_) => {
-                            Err(BlockError(
-                                "temperature".to_owned(),
-                                "failed to parse temperature as an integer".to_owned(),
-                            ))
-                        }
+                        Err(_) => Err(BlockError(
+                            "temperature".to_owned(),
+                            "failed to parse temperature as an integer".to_owned(),
+                        )),
                     }?
                 }
             }

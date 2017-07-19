@@ -134,15 +134,13 @@ impl DiskSpace {
     fn compute_state(&self, bytes: u64) -> State {
         let value = Unit::bytes_in_unit(Unit::GB, bytes);
         match self.info_type {
-            InfoType::Available | InfoType::Free => {
-                if 0. <= value && value < 10. {
-                    State::Critical
-                } else if 10. <= value && value < 20. {
-                    State::Warning
-                } else {
-                    State::Idle
-                }
-            }
+            InfoType::Available | InfoType::Free => if 0. <= value && value < 10. {
+                State::Critical
+            } else if 10. <= value && value < 20. {
+                State::Warning
+            } else {
+                State::Idle
+            },
             //InfoType::Total | InfoType::Used => unimplemented!(),
         }
     }

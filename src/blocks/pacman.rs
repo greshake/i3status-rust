@@ -86,7 +86,9 @@ fn get_update_count() -> Result<usize> {
         .into_string()
         .block_error("pacman", "There's a problem with your $USER")?;
     let updates_db = env::var_os("CHECKUPDATES_DB")
-        .unwrap_or_else(|| OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
+        .unwrap_or_else(|| {
+            OsString::from(format!("{}/checkup-db-{}", tmp_dir, user))
+        })
         .into_string()
         .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
 

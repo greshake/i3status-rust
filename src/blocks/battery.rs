@@ -87,12 +87,12 @@ impl Block for Battery {
         if file_exists(&format!("{}capacity", self.device_path)) {
             current_percentage = match read_file(&format!("{}capacity", self.device_path))?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse capacity")? {
+                .block_error("battery", "failed to parse capacity")?
+            {
                 capacity if capacity < 100 => capacity,
-                _ => 100
+                _ => 100,
             }
-        } else if file_exists(&format!("{}charge_full", self.device_path)) &&
-                  file_exists(&format!("{}charge_now", self.device_path)) {
+        } else if file_exists(&format!("{}charge_full", self.device_path)) && file_exists(&format!("{}charge_now", self.device_path)) {
             // We only need to read max_charge once, shouldn't change
             if self.max_charge == 0 {
                 self.max_charge = read_file(&format!("{}charge_full", self.device_path))?
@@ -112,8 +112,10 @@ impl Block for Battery {
                 _ => 100,
             };
         } else {
-            return Err(BlockError("battery".to_string(),
-                                  "Device does not support reading capacity or charge".to_string()));
+            return Err(BlockError(
+                "battery".to_string(),
+                "Device does not support reading capacity or charge".to_string(),
+            ));
         }
 
         let state = read_file(&format!("{}status", self.device_path))?;

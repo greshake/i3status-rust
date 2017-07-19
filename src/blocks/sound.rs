@@ -202,16 +202,12 @@ impl Block for Sound {
 
                     match e.button {
                         MouseButton::Right => device.toggle()?,
-                        MouseButton::WheelUp => {
-                            if device.volume <= (100 - self.step_width) {
-                                device.set_volume(self.step_width as i32)?;
-                            }
-                        }
-                        MouseButton::WheelDown => {
-                            if device.volume >= self.step_width {
-                                device.set_volume(-(self.step_width as i32))?;
-                            }
-                        }
+                        MouseButton::WheelUp => if device.volume <= (100 - self.step_width) {
+                            device.set_volume(self.step_width as i32)?;
+                        },
+                        MouseButton::WheelDown => if device.volume >= self.step_width {
+                            device.set_volume(-(self.step_width as i32))?;
+                        },
                         _ => {}
                     }
                 }
