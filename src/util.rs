@@ -262,14 +262,6 @@ impl FormatTemplate {
     }
 }
 
-// any uses should be replaced with eprintln! once it is on stable
-macro_rules! eprintln {
-    ($fmt:expr, $($arg:tt)*) => {
-        use ::std::io::Write;
-        writeln!(&mut ::std::io::stderr(), $fmt, $($arg)*).ok();
-    };
-}
-
 macro_rules! if_debug {
     ($x:block) => (if cfg!(debug_assertions) $x)
 }
