@@ -33,6 +33,22 @@ lazy_static! {
         separator_fg: "auto".to_owned(),
     };
 
+    pub static ref MODERN: Theme = Theme {
+        idle_bg: "#222D32".to_owned(),
+        idle_fg: "#CFD8DC".to_owned(),
+        info_bg: "#449CDB".to_owned(),
+        info_fg: "#1D1F21".to_owned(),
+        good_bg: "#99b938".to_owned(),
+        good_fg: "#1D1F21".to_owned(),
+        warning_bg: "#FE7E29".to_owned(),
+        warning_fg: "#1D1F21".to_owned(),
+        critical_bg: "#ff5252".to_owned(),
+        critical_fg: "#1D1F21".to_owned(),
+        separator: "\u{e0b2}".to_owned(),
+        separator_bg: "auto".to_owned(),
+        separator_fg: "auto".to_owned(),
+    };
+
     pub static ref PLAIN: Theme = Theme {
         idle_bg: "#000000".to_owned(),
         idle_fg: "#93a1a1".to_owned(),
@@ -83,6 +99,7 @@ pub fn get_theme(name: &str) -> Option<Theme> {
         "slick" => Some(SLICK.clone()),
         "solarized-dark" => Some(SOLARIZED_DARK.clone()),
         "plain" => Some(PLAIN.clone()),
+        "modern" => Some(MODERN.clone()),
         _ => None,
     }
 }
