@@ -16,7 +16,7 @@ extern crate i3ipc;
 use self::i3ipc::I3EventListener;
 use self::i3ipc::Subscription;
 use self::i3ipc::event::Event;
-use self::i3ipc::event::inner::WindowChange;
+use self::i3ipc::event::inner::{WindowChange, WorkspaceChange};
 
 pub struct FocusedWindow {
     text: TextWidget,
@@ -54,7 +54,7 @@ impl ConfigBlock for FocusedWindow {
             let mut listener = I3EventListener::connect().unwrap();
 
             // subscribe to a couple events.
-            let subs = [Subscription::Window];
+            let subs = [Subscription::Window, Subscription::Workspace];
             listener.subscribe(&subs).unwrap();
 
             // handle them
@@ -83,7 +83,32 @@ impl ConfigBlock for FocusedWindow {
                                         });
                                     }
                                 }
+                            },
+                            WindowChange::Close => {
+                                if let Some(name) = e.container.name {
+                                    let mut title = title_original.lock().unwrap();
+                                    if name == *title {
+                                        *title = String::from("");
+                                        tx.send(Task {
+                                            id: id_clone.clone(),
+                                            update_time: Instant::now(),
+                                        });
+                                    }
+                                }
                             }
+                            _ => {}
+                        };
+                    },
+                    Event::WorkspaceEvent(e) => {
+                        match e.change {
+                            WorkspaceChange::Init => {
+                                let mut title = title_original.lock().unwrap();
+                                *title = String::from("");
+                                tx.send(Task {
+                                    id: id_clone.clone(),
+                                    update_time: Instant::now(),
+                                });
+                            },
                             _ => {}
                         };
                     }
@@ -114,7 +139,12 @@ impl Block for FocusedWindow {
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        vec![&self.text]
+        let title = &*self.title.lock().unwrap();
+        if String::is_empty(title) {
+            vec![]
+        } else {
+            vec![&self.text]
+        }
     }
 
     fn id(&self) -> &str {

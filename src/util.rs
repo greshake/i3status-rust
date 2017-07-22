@@ -95,6 +95,9 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
                               .get(block_id)
                               .internal_error("util", "couldn't get block by id")?));
         let widgets = block.view();
+        if widgets.len() == 0 {
+            continue;
+        }
         let first = widgets[0];
         let color = first.get_rendered()["background"]
             .as_str()
