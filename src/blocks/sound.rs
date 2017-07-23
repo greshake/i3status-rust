@@ -149,7 +149,7 @@ impl Sound {
                 _ => "volume_full",
             });
             self.text.set_text(format!("{:02}%", device.volume));
-            self.text.set_state(State::Info);
+            self.text.set_state(State::Idle);
         }
 
         Ok(())

@@ -15,6 +15,8 @@ lazy_static! {
         separator: "\u{e0b2}".to_owned(),
         separator_bg: "auto".to_owned(),
         separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
     };
 
     pub static ref SOLARIZED_DARK: Theme = Theme {
@@ -31,6 +33,8 @@ lazy_static! {
         separator: "\u{e0b2}".to_owned(),
         separator_bg: "auto".to_owned(),
         separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
     };
 
     pub static ref MODERN: Theme = Theme {
@@ -47,6 +51,8 @@ lazy_static! {
         separator: "\u{e0b2}".to_owned(),
         separator_bg: "auto".to_owned(),
         separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
     };
 
     pub static ref PLAIN: Theme = Theme {
@@ -60,9 +66,11 @@ lazy_static! {
         warning_fg: "#b58900".to_owned(),
         critical_bg: "#000000".to_owned(),
         critical_fg: "#dc322f".to_owned(),
-        separator: "|".to_owned(),
+        separator: "| ".to_owned(),
         separator_bg: "#000000".to_owned(),
         separator_fg: "#a9a9a9".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
     };
 }
 
@@ -82,7 +90,9 @@ mapped_struct! {
         pub critical_fg,
         pub separator,
         pub separator_bg,
-        pub separator_fg
+        pub separator_fg,
+        pub alternating_tint_bg,
+        pub alternating_tint_fg
     }
 }
 
