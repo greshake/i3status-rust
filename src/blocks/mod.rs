@@ -11,6 +11,7 @@ mod pacman;
 mod temperature;
 mod toggle;
 mod sound;
+mod speedtest;
 mod focused_window;
 mod xrandr;
 mod net;
@@ -27,6 +28,7 @@ use self::custom::*;
 use self::disk_space::*;
 use self::pacman::*;
 use self::sound::*;
+use self::speedtest::*;
 use self::toggle::*;
 use self::focused_window::*;
 use self::temperature::*;
@@ -76,6 +78,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "disk_space" => DiskSpace,
             "toggle" => Toggle,
             "sound" => Sound,
+            "speedtest" => SpeedTest,
             "temperature" => Temperature,
             "focused_window" => FocusedWindow,
             "xrandr" => Xrandr,

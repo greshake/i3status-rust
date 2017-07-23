@@ -65,12 +65,12 @@
 //! {SUm} | Swap used (MiB)
 //! {SUp} | Swap used (%)
 //!
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use util::*;
 use chan::Sender;
 use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
 use block::{Block, ConfigBlock};
 use input::{I3BarEvent, MouseButton};
 use std::str::FromStr;
@@ -81,7 +81,7 @@ use config::Config;
 use de::deserialize_duration;
 use errors::*;
 use widgets::button::ButtonWidget;
-use widget::{State, I3BarWidget};
+use widget::{I3BarWidget, State};
 use scheduler::Task;
 
 use std::io::Write;
@@ -403,22 +403,18 @@ impl Memory {
         );
 
         match self.memtype {
-            Memtype::MEMORY => {
-                self.output.0.set_state(match mem_used.percent(mem_total) {
-                    x if x as f64 > self.critical.0 => State::Critical,
-                    x if x as f64 > self.warning.0 => State::Warning,
+            Memtype::MEMORY => self.output.0.set_state(match mem_used.percent(mem_total) {
+                x if x as f64 > self.critical.0 => State::Critical,
+                x if x as f64 > self.warning.0 => State::Warning,
+                _ => State::Idle,
+            }),
+            Memtype::SWAP => self.output.1.set_state(
+                match swap_used.percent(swap_total) {
+                    x if x as f64 > self.critical.1 => State::Critical,
+                    x if x as f64 > self.warning.1 => State::Warning,
                     _ => State::Idle,
-                })
-            }
-            Memtype::SWAP => {
-                self.output.1.set_state(
-                    match swap_used.percent(swap_total) {
-                        x if x as f64 > self.critical.1 => State::Critical,
-                        x if x as f64 > self.warning.1 => State::Warning,
-                        _ => State::Idle,
-                    },
-                )
-            }
+                },
+            ),
         };
 
         if_debug!({

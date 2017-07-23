@@ -3,7 +3,7 @@ use config::Config;
 use widget::State;
 use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
-use num::{ToPrimitive, clamp};
+use num::{clamp, ToPrimitive};
 
 #[derive(Clone, Debug)]
 pub struct GraphWidget {
@@ -108,9 +108,9 @@ impl GraphWidget {
 
 impl I3BarWidget for GraphWidget {
     fn to_string(&self) -> String {
-        self.cached_output.clone().unwrap_or_else(||
-            self.rendered.to_string(),
-        )
+        self.cached_output
+            .clone()
+            .unwrap_or_else(|| self.rendered.to_string())
     }
 
     fn get_rendered(&self) -> &Value {

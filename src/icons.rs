@@ -28,7 +28,8 @@ lazy_static! {
         "thermometer" => " TEMP ",
         "xrandr" => " SCREEN ",
         "net_up" => " UP ",
-        "net_down" => " DOWN "
+        "net_down" => " DOWN ",
+        "ping" => " PING "
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
@@ -58,7 +59,8 @@ lazy_static! {
         "thermometer" => " \u{f2c8} ",
         "xrandr" => " \u{f26c} ",
         "net_up" => " \u{2b06} ",
-        "net_down" => " \u{2b07} "
+        "net_down" => " \u{2b07} ",
+        "ping" => " \u{21ba} "
     };
 }
 

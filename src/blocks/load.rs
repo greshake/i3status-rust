@@ -102,8 +102,8 @@ impl Block for Load {
             .parse::<f32>()
             .block_error("load", "failed to parse float percentage")? / self.logical_cores as f32;
         self.text.set_state(
-            match_range!(used_perc default: (State::Idle) {
-                0. ; 0.3 => State::Idle,
+            match_range!(used_perc, default: (State::Idle) {
+                0.0 ; 0.3 => State::Idle,
                 0.3 ; 0.6 => State::Info,
                 0.6 ; 0.9 => State::Warning
         }),

@@ -45,13 +45,13 @@ use blocks::create_block;
 use config::Config;
 use errors::*;
 use input::{process_events, I3BarEvent};
-use scheduler::{UpdateScheduler, Task};
+use scheduler::{Task, UpdateScheduler};
 use widget::{I3BarWidget, State};
 use widgets::text::TextWidget;
 
 use util::deserialize_file;
 
-use self::clap::{Arg, ArgMatches, App};
+use self::clap::{App, Arg, ArgMatches};
 use self::chan::{Receiver, Sender};
 
 fn main() {
@@ -194,7 +194,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         blocks.push(create_block(
             block_name,
             block_config.clone(),
-            if alternator {config_alternating_tint.clone()} else {config.clone()},
+            if alternator {
+                config_alternating_tint.clone()
+            } else {
+                config.clone()
+            },
             tx_update_requests.clone(),
         )?);
         alternator = !alternator;

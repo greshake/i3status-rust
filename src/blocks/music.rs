@@ -10,9 +10,9 @@ use input::I3BarEvent;
 use block::{Block, ConfigBlock};
 use widgets::rotatingtext::RotatingTextWidget;
 use widgets::button::ButtonWidget;
-use widget::{State, I3BarWidget};
+use widget::{I3BarWidget, State};
 
-use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem, Message, arg};
+use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
 use self::stdintf::OrgFreedesktopDBusProperties;
 use uuid::Uuid;
 
@@ -113,12 +113,10 @@ impl ConfigBlock for Music {
                             .with_state(State::Info),
                     )
                 }
-                x => {
-                    Err(BlockError(
-                        "music".to_owned(),
-                        format!("unknown music button identifier: '{}'", x),
-                    ))?
-                }
+                x => Err(BlockError(
+                    "music".to_owned(),
+                    format!("unknown music button identifier: '{}'", x),
+                ))?,
             };
         }
 
@@ -173,8 +171,7 @@ impl Block for Music {
 
                 if title.is_empty() && artist.is_empty() {
                     self.player_avail = false;
-                    self.current_song
-                        .set_text(String::new());
+                    self.current_song.set_text(String::new());
                 } else {
                     self.player_avail = true;
                     self.current_song
@@ -263,7 +260,8 @@ fn extract_from_metadata(metadata: &arg::Variant<Box<arg::RefArg>>) -> Result<(S
         let value = iter.next()
             .block_error("music", "failed to extract metadata")?;
         match key.as_str()
-            .block_error("music", "failed to extract metadata")? {
+            .block_error("music", "failed to extract metadata")?
+        {
             "xesam:artist" => {
                 artist = String::from(value
                     .as_iter()

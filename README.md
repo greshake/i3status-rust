@@ -11,12 +11,13 @@ This is a replacement for i3status, aiming to provide the most feature-complete 
 - click actions
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
-# Requirements 
+# Requirements
 i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux.
 
 Optional:
 * `alsa-utils` For the volume block
 * `lm_sensors` For the temperature block
+* [`speedtest-cli`](https://github.com/sivel/speedtest-cli) For the speedtest block
 * `ttf-font-awesome` For the awesome icons. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
 * `gperftools` For dev builds, needed to profile block performance and bottlenecks.
 
@@ -115,6 +116,7 @@ block = "time"
 interval = 60
 format = "%a %d/%m %R"
 ```
+
 **Options**
 
 Key | Values | Required | Default
@@ -221,7 +223,7 @@ marquee | Bool to specify if a marquee style rotation should be used every<br/>1
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
 ## Load
-Creates a block which displays the system load average. 
+Creates a block which displays the system load average.
 
 **Example**
 ```toml
@@ -231,6 +233,7 @@ block = "load"
 format = "{1m} {5m}"
 interval = 1
 ```
+
 **Options**
 
 Key | Values | Required | Default
@@ -248,6 +251,7 @@ block = "cpu"
 
 interval = 1
 ```
+
 **Options**
 
 Key | Values | Required | Default
@@ -264,6 +268,7 @@ block = "battery"
 
 interval = 10
 ```
+
 **Options**
 
 Key | Values | Required | Default
@@ -292,6 +297,8 @@ cycle = ["echo ON", "echo OFF"]
 on_click = "<command>"
 ```
 
+**Options**
+
 Note that `command` and `cycle` are mutually exclusive.
 
 Key | Values | Required | Default
@@ -318,6 +325,8 @@ command_on = "~/.screenlayout/4kmon_default.sh"
 command_off = "~/.screenlayout/builtin.sh"
 interval = 5
 ```
+
+**Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -440,7 +449,7 @@ icons = true
 resolution = true
 ```
 
-Options
+**Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -460,6 +469,7 @@ device = "eno1"
 interval = 5
 graph = true
 ```
+
 **Options**
 
 Key | Values | Required | Default
@@ -467,6 +477,25 @@ Key | Values | Required | Default
 device | network interface to moniter (name from /sys/class/net) | Yes | lo (loopback interface)
 interval | Update interval in seconds | No | 1
 graph | display a bar graph | no | false
+
+## Speed Test
+Creates a block which uses [`speedtest-cli`](https://github.com/sivel/speedtest-cli) to measure your ping, download, and upload speeds.
+
+**Example**
+```toml
+[[block]]
+block = "speedtest"
+
+bytes = true
+interval = 1800
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+bytes | weather to use bytes or bits in the display.<br>(true for bytes, false for bits) | No | false
+interval | Update interval in seconds | No | 1800
 
 # How to write a Block
 

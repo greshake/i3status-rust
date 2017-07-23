@@ -1,7 +1,7 @@
 use config::Config;
 use errors::*;
 use std::time::{Duration, Instant};
-use widget::{State, I3BarWidget};
+use widget::{I3BarWidget, State};
 use serde_json::value::Value;
 
 #[derive(Clone, Debug)]
