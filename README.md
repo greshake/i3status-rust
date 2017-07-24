@@ -20,6 +20,7 @@ Optional:
 * [`speedtest-cli`](https://github.com/sivel/speedtest-cli) For the speedtest block
 * `ttf-font-awesome` For the awesome icons. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
 * `gperftools` For dev builds, needed to profile block performance and bottlenecks.
+* [`powerline-fonts`](https://www.archlinux.org/packages/community/i686/powerline-fonts/) For all themes using the powerline arrow char. Recommended. See [`powerline on GitHub`](https://github.com/powerline/powerline/tree/develop/font)
 
 # How to use it
 1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
