@@ -258,6 +258,9 @@ interval = 1
 Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval in seconds | No | 1
+info | Minimum usage, where state is set to info | No | 30
+warning | Minimum usage, where state is set to warning | No | 60
+critical | Minimum usage, where state is set to critical | No | 90
 
 ## Battery
 Creates a block which displays the current battery state (Full, Charging or Discharging) and percentage charged.

@@ -21,6 +21,9 @@ pub struct Cpu {
     prev_non_idle: u64,
     id: String,
     update_interval: Duration,
+    minimum_info: u64,
+    minimum_warning: u64,
+    minimum_critical: u64,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -29,11 +32,35 @@ pub struct CpuConfig {
     /// Update interval in seconds
     #[serde(default = "CpuConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+
+    /// Minimum usage, where state is set to info
+    #[serde(default = "CpuConfig::default_info")]
+    pub info: u64,
+
+    /// Minimum usage, where state is set to warning
+    #[serde(default = "CpuConfig::default_warning")]
+    pub warning: u64,
+
+    /// Minimum usage, where state is set to critical
+    #[serde(default = "CpuConfig::default_critical")]
+    pub critical: u64,
 }
 
 impl CpuConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(1)
+    }
+
+    fn default_info() -> u64 {
+        30
+    }
+
+    fn default_warning() -> u64 {
+        60
+    }
+
+    fn default_critical() -> u64 {
+        90
     }
 }
 
@@ -47,6 +74,9 @@ impl ConfigBlock for Cpu {
             utilization: TextWidget::new(config).with_icon("cpu"),
             prev_idle: 0,
             prev_non_idle: 0,
+            minimum_info: block_config.info,
+            minimum_warning: block_config.warning,
+            minimum_critical: block_config.critical,
         })
     }
 }
@@ -98,10 +128,10 @@ impl Block for Cpu {
         }
 
         self.utilization.set_state(match utilization {
-            0...30 => State::Idle,
-            31...60 => State::Info,
-            61...90 => State::Warning,
-            _ => State::Critical,
+            x if x > self.minimum_critical => State::Critical,
+            x if x > self.minimum_warning => State::Warning,
+            x if x > self.minimum_info => State::Info,
+            _ => State::Idle,
         });
 
         self.utilization.set_text(format!("{:02}%", utilization));
