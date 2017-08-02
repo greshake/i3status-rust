@@ -72,6 +72,24 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
+
+    pub static ref BAD_WOLF: Theme = Theme {
+        idle_bg: "#444444".to_owned(),
+        idle_fg: "#f5f5f5".to_owned(),
+        info_bg: "#626262".to_owned(),
+        info_fg: "#ffd680".to_owned(),
+        good_bg: "#afff00".to_owned(),
+        good_fg: "#000000".to_owned(),
+        warning_bg: "#ffaf00".to_owned(),
+        warning_fg: "#000000".to_owned(),
+        critical_bg: "#d70000".to_owned(),
+        critical_fg: "#000000".to_owned(),
+        separator: "\u{e0b2}".to_owned(),
+        separator_bg: "auto".to_owned(),
+        separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
+    };
 }
 
 mapped_struct! {
@@ -110,6 +128,7 @@ pub fn get_theme(name: &str) -> Option<Theme> {
         "solarized-dark" => Some(SOLARIZED_DARK.clone()),
         "plain" => Some(PLAIN.clone()),
         "modern" => Some(MODERN.clone()),
+        "bad-wolf" => Some(BAD_WOLF.clone()),
         _ => None,
     }
 }
