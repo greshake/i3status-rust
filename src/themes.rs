@@ -90,6 +90,42 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
+
+    pub static ref GRUVBOX_LIGHT: Theme = Theme {
+        idle_bg: "#fbf1c7".to_owned(),
+        idle_fg: "#3c3836".to_owned(),
+        info_bg: "#458588".to_owned(),
+        info_fg: "#fbf1c7".to_owned(),
+        good_bg: "#98971a".to_owned(),
+        good_fg: "#fbf1c7".to_owned(),
+        warning_bg: "#d79921".to_owned(),
+        warning_fg: "#fbf1c7".to_owned(),
+        critical_bg: "#cc241d".to_owned(),
+        critical_fg: "#fbf1c7".to_owned(),
+        separator: "\u{e0b2}".to_owned(),
+        separator_bg: "auto".to_owned(),
+        separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
+    };
+
+    pub static ref GRUVBOX_DARK: Theme = Theme {
+        idle_bg: "#282828".to_owned(),
+        idle_fg: "#ebdbb2".to_owned(),
+        info_bg: "#458588".to_owned(),
+        info_fg: "#282828".to_owned(),
+        good_bg: "#98971a".to_owned(),
+        good_fg: "#282828".to_owned(),
+        warning_bg: "#d79921".to_owned(),
+        warning_fg: "#282828".to_owned(),
+        critical_bg: "#cc241d".to_owned(),
+        critical_fg: "#282828".to_owned(),
+        separator: "\u{e0b2}".to_owned(),
+        separator_bg: "auto".to_owned(),
+        separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
+    };
 }
 
 mapped_struct! {
@@ -129,6 +165,8 @@ pub fn get_theme(name: &str) -> Option<Theme> {
         "plain" => Some(PLAIN.clone()),
         "modern" => Some(MODERN.clone()),
         "bad-wolf" => Some(BAD_WOLF.clone()),
+        "gruvbox-light" => Some(GRUVBOX_LIGHT.clone()),
+        "gruvbox-dark" => Some(GRUVBOX_DARK.clone()),
         _ => None,
     }
 }
