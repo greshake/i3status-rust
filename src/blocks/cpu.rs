@@ -1,5 +1,5 @@
 use std::time::Duration;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};
@@ -21,6 +21,9 @@ pub struct Cpu {
     prev_non_idle: u64,
     id: String,
     update_interval: Duration,
+    minimum_info: u64,
+    minimum_warning: u64,
+    minimum_critical: u64,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -29,11 +32,35 @@ pub struct CpuConfig {
     /// Update interval in seconds
     #[serde(default = "CpuConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+
+    /// Minimum usage, where state is set to info
+    #[serde(default = "CpuConfig::default_info")]
+    pub info: u64,
+
+    /// Minimum usage, where state is set to warning
+    #[serde(default = "CpuConfig::default_warning")]
+    pub warning: u64,
+
+    /// Minimum usage, where state is set to critical
+    #[serde(default = "CpuConfig::default_critical")]
+    pub critical: u64,
 }
 
 impl CpuConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(1)
+    }
+
+    fn default_info() -> u64 {
+        30
+    }
+
+    fn default_warning() -> u64 {
+        60
+    }
+
+    fn default_critical() -> u64 {
+        90
     }
 }
 
@@ -47,16 +74,17 @@ impl ConfigBlock for Cpu {
             utilization: TextWidget::new(config).with_icon("cpu"),
             prev_idle: 0,
             prev_non_idle: 0,
+            minimum_info: block_config.info,
+            minimum_warning: block_config.warning,
+            minimum_critical: block_config.critical,
         })
     }
 }
 
 impl Block for Cpu {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let f = File::open("/proc/stat").block_error(
-            "cpu",
-            "Your system doesn't support /proc/stat",
-        )?;
+        let f = File::open("/proc/stat")
+            .block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
         let mut utilization = 0;
@@ -83,16 +111,14 @@ impl Block for Cpu {
                 let prev_total = self.prev_idle + self.prev_non_idle;
                 let total = idle + non_idle;
 
-                let mut total_delta = 1;
-                let mut idle_delta = 1;
-
                 // This check is needed because the new values may be reset, for
                 // example after hibernation.
-                if prev_total < total && self.prev_idle <= idle {
-                    total_delta = total - prev_total;
-                    idle_delta = idle - self.prev_idle;
-                }
 
+                let (total_delta, idle_delta) = if prev_total < total && self.prev_idle <= idle {
+                    (total - prev_total, idle - self.prev_idle)
+                } else {
+                    (1, 1)
+                };
 
                 utilization = (((total_delta - idle_delta) as f64 / total_delta as f64) * 100.) as u64;
 
@@ -102,10 +128,10 @@ impl Block for Cpu {
         }
 
         self.utilization.set_state(match utilization {
-            0...30 => State::Idle,
-            30...60 => State::Info,
-            60...90 => State::Warning,
-            _ => State::Critical,
+            x if x > self.minimum_critical => State::Critical,
+            x if x > self.minimum_warning => State::Warning,
+            x if x > self.minimum_info => State::Info,
+            _ => State::Idle,
         });
 
         self.utilization.set_text(format!("{:02}%", utilization));

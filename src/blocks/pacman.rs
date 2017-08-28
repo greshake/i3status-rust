@@ -5,7 +5,7 @@ use std::time::Duration;
 use std::process::Command;
 use std::env;
 use std::ffi::OsString;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};
@@ -77,23 +77,25 @@ fn get_update_count() -> Result<usize> {
     if !has_fake_root()? {
         return Ok(0 as usize);
     }
-    let tmp_dir = env::temp_dir().into_os_string().into_string().block_error(
-        "pacman",
-        "There's something wrong with your $TMP variable",
-    )?;
+    let tmp_dir = env::temp_dir()
+        .into_os_string()
+        .into_string()
+        .block_error("pacman", "There's something wrong with your $TMP variable")?;
     let user = env::var_os("USER")
-        .unwrap_or(OsString::from(""))
+        .unwrap_or_else(|| OsString::from(""))
         .into_string()
         .block_error("pacman", "There's a problem with your $USER")?;
     let updates_db = env::var_os("CHECKUPDATES_DB")
-        .unwrap_or(OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
+        .unwrap_or_else(|| {
+            OsString::from(format!("{}/checkup-db-{}", tmp_dir, user))
+        })
         .into_string()
         .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
 
     // Determine pacman database path
     let db_path = env::var_os("DBPath")
         .map(Into::into)
-        .unwrap_or(Path::new("/var/lib/pacman/").to_path_buf());
+        .unwrap_or_else(|| Path::new("/var/lib/pacman/").to_path_buf());
 
     // Create the determined `checkup-db` path recursively
     fs::create_dir_all(&updates_db).block_error(
@@ -104,10 +106,8 @@ fn get_update_count() -> Result<usize> {
     // Create symlink to local cache in `checkup-db` if required
     let local_cache = Path::new(&updates_db).join("local");
     if !local_cache.exists() {
-        symlink(db_path.join("local"), local_cache).block_error(
-            "pacman",
-            "Failed to created required symlink",
-        )?;
+        symlink(db_path.join("local"), local_cache)
+            .block_error("pacman", "Failed to created required symlink")?;
     }
 
     // Update database
@@ -120,12 +120,10 @@ fn get_update_count() -> Result<usize> {
     Ok(
         String::from_utf8(
             Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db),
-                    ],
-                )
+                .args(&[
+                    "-c",
+                    &format!("fakeroot pacman -Su -p --dbpath \"{}\"", updates_db),
+                ])
                 .output()
                 .block_error("pacman", "There was a problem running the pacman commands")?
                 .stdout,

@@ -1,6 +1,6 @@
 use std::time::Duration;
 use std::process::Command;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};
@@ -87,22 +87,20 @@ impl Block for Temperature {
                             eprintln!("Temperature ({}) outside of range ([-100, 150])", t);
                             Ok(())
                         }
-                        Err(_) => {
-                            Err(BlockError(
-                                "temperature".to_owned(),
-                                "failed to parse temperature as an integer".to_owned(),
-                            ))
-                        }
+                        Err(_) => Err(BlockError(
+                            "temperature".to_owned(),
+                            "failed to parse temperature as an integer".to_owned(),
+                        )),
                     }?
                 }
             }
         }
 
         if !temperatures.is_empty() {
-            let max: i64 = *temperatures.iter().max().block_error(
-                "temperature",
-                "failed to get max temperature",
-            )?;
+            let max: i64 = *temperatures
+                .iter()
+                .max()
+                .block_error("temperature", "failed to get max temperature")?;
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
 
             self.output = format!("{}° avg, {}° max", avg, max);
@@ -112,9 +110,9 @@ impl Block for Temperature {
 
             self.text.set_state(match max {
                 0...20 => State::Good,
-                20...45 => State::Idle,
-                45...60 => State::Info,
-                60...80 => State::Warning,
+                21...45 => State::Idle,
+                46...60 => State::Info,
+                61...80 => State::Warning,
                 _ => State::Critical,
             });
         }

@@ -1,5 +1,5 @@
-use std::time::{Instant, Duration};
-use std::sync::mpsc::Sender;
+use std::time::{Duration, Instant};
+use chan::Sender;
 use std::thread;
 use std::sync::{Arc, Mutex};
 
@@ -16,7 +16,7 @@ extern crate i3ipc;
 use self::i3ipc::I3EventListener;
 use self::i3ipc::Subscription;
 use self::i3ipc::event::Event;
-use self::i3ipc::event::inner::WindowChange;
+use self::i3ipc::event::inner::{WindowChange, WorkspaceChange};
 
 pub struct FocusedWindow {
     text: TextWidget,
@@ -54,7 +54,7 @@ impl ConfigBlock for FocusedWindow {
             let mut listener = I3EventListener::connect().unwrap();
 
             // subscribe to a couple events.
-            let subs = [Subscription::Window];
+            let subs = [Subscription::Window, Subscription::Workspace];
             listener.subscribe(&subs).unwrap();
 
             // handle them
@@ -62,27 +62,46 @@ impl ConfigBlock for FocusedWindow {
                 match event.unwrap() {
                     Event::WindowEvent(e) => {
                         match e.change {
-                            WindowChange::Focus => {
+                            WindowChange::Focus => if let Some(name) = e.container.name {
+                                let mut title = title_original.lock().unwrap();
+                                *title = name;
+                                tx.send(Task {
+                                    id: id_clone.clone(),
+                                    update_time: Instant::now(),
+                                });
+                            },
+                            WindowChange::Title => if e.container.focused {
                                 if let Some(name) = e.container.name {
                                     let mut title = title_original.lock().unwrap();
                                     *title = name;
                                     tx.send(Task {
                                         id: id_clone.clone(),
                                         update_time: Instant::now(),
-                                    }).unwrap();
+                                    });
                                 }
-                            }
-                            WindowChange::Title => {
-                                if e.container.focused {
-                                    if let Some(name) = e.container.name {
-                                        let mut title = title_original.lock().unwrap();
-                                        *title = name;
-                                        tx.send(Task {
-                                            id: id_clone.clone(),
-                                            update_time: Instant::now(),
-                                        }).unwrap();
-                                    }
+                            },
+                            WindowChange::Close => if let Some(name) = e.container.name {
+                                let mut title = title_original.lock().unwrap();
+                                if name == *title {
+                                    *title = String::from("");
+                                    tx.send(Task {
+                                        id: id_clone.clone(),
+                                        update_time: Instant::now(),
+                                    });
                                 }
+                            },
+                            _ => {}
+                        };
+                    }
+                    Event::WorkspaceEvent(e) => {
+                        match e.change {
+                            WorkspaceChange::Init => {
+                                let mut title = title_original.lock().unwrap();
+                                *title = String::from("");
+                                tx.send(Task {
+                                    id: id_clone.clone(),
+                                    update_time: Instant::now(),
+                                });
                             }
                             _ => {}
                         };
@@ -104,17 +123,22 @@ impl ConfigBlock for FocusedWindow {
 
 impl Block for FocusedWindow {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let mut string = (*self.title.lock().block_error(
-            "focused_window",
-            "failed to acquire lock",
-        )?).clone();
+        let mut string = (*self.title
+            .lock()
+            .block_error("focused_window", "failed to acquire lock")?)
+            .clone();
         string.truncate(self.max_width);
         self.text.set_text(string);
         Ok(None)
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        vec![&self.text]
+        let title = &*self.title.lock().unwrap();
+        if String::is_empty(title) {
+            vec![]
+        } else {
+            vec![&self.text]
+        }
     }
 
     fn id(&self) -> &str {

@@ -1,4 +1,4 @@
-use serde::de::{self, Deserialize, Deserializer, DeserializeSeed};
+use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use std::collections::{BTreeMap, HashMap as Map};
 use std::error::Error;
 use std::fmt;

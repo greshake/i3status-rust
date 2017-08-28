@@ -4,18 +4,26 @@
 Very resourcefriendly and feature-rich replacement for i3status, written in pure Rust
 
 # About this project
-This is a WiP replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol available. We are currently looking for help in implementing more Blocks. It supports:
+This is a replacement for i3status, aiming to provide the most feature-complete and resource friendly implementation of the i3bar protocol available. We are currently looking for help in implementing more Blocks and Themes! It supports:
 - flexibility through theming
 - icons (optional)
 - individual update intervals per block to reduce system calls
 - click actions
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
-# Requirements 
-i3, rustc and cargo. Only tested on Arch Linux. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
+# Requirements
+i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux.
+
+Optional:
+* `alsa-utils` For the volume block
+* `lm_sensors` For the temperature block
+* [`speedtest-cli`](https://github.com/sivel/speedtest-cli) For the speedtest block
+* `ttf-font-awesome` For the awesome icons. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
+* `gperftools` For dev builds, needed to profile block performance and bottlenecks.
+* [`powerline-fonts`](https://www.archlinux.org/packages/community/i686/powerline-fonts/) For all themes using the powerline arrow char. Recommended. See [`powerline on GitHub`](https://github.com/powerline/powerline/tree/develop/font)
 
 # How to use it
-1. Clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
+1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
 2. run `cd i3status-rust && cargo build --release`
 3. Edit `example_config.toml` to your liking and put it to a sensible place (e.g. `~/.config/i3/status.toml`)
 4. Edit your i3 config
@@ -95,7 +103,7 @@ format = "%a %d/%m %R"
 Things to note:
 
 * Every `[[block]]` has to contain a `block`-field to identify the block to create
-* Both `theme` and `icons` can be defined as tables to, see [`example_theme.toml`](https://github.com/greshake/i3status-rust/blob/master/example_theme.toml) and [`example_icons.toml`](https://github.com/greshake/i3status-rust/blob/master/example_icons.toml)
+* Both `theme` and `icons` can be defined as tables, see [`example_theme.toml`](https://github.com/greshake/i3status-rust/blob/master/example_theme.toml) and [`example_icon.toml`](https://github.com/greshake/i3status-rust/blob/master/example_icon.toml)
 
 # Available Blocks
 ## Time
@@ -109,6 +117,7 @@ block = "time"
 interval = 60
 format = "%a %d/%m %R"
 ```
+
 **Options**
 
 Key | Values | Required | Default
@@ -215,7 +224,7 @@ marquee | Bool to specify if a marquee style rotation should be used every<br/>1
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
 ## Load
-Creates a block which displays the system load average. 
+Creates a block which displays the system load average.
 
 **Example**
 ```toml
@@ -225,6 +234,7 @@ block = "load"
 format = "{1m} {5m}"
 interval = 1
 ```
+
 **Options**
 
 Key | Values | Required | Default
@@ -240,13 +250,17 @@ Creates a block which displays the overall CPU utilization, calculated from /pro
 [[block]]
 block = "cpu"
 
-internal = 1
+interval = 1
 ```
+
 **Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval in seconds | No | 1
+info | Minimum usage, where state is set to info | No | 30
+warning | Minimum usage, where state is set to warning | No | 60
+critical | Minimum usage, where state is set to critical | No | 90
 
 ## Battery
 Creates a block which displays the current battery state (Full, Charging or Discharging) and percentage charged.
@@ -258,6 +272,7 @@ block = "battery"
 
 interval = 10
 ```
+
 **Options**
 
 Key | Values | Required | Default
@@ -286,6 +301,8 @@ cycle = ["echo ON", "echo OFF"]
 on_click = "<command>"
 ```
 
+**Options**
+
 Note that `command` and `cycle` are mutually exclusive.
 
 Key | Values | Required | Default
@@ -312,6 +329,8 @@ command_on = "~/.screenlayout/4kmon_default.sh"
 command_off = "~/.screenlayout/builtin.sh"
 interval = 5
 ```
+
+**Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -434,7 +453,7 @@ icons = true
 resolution = true
 ```
 
-Options
+**Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -442,6 +461,45 @@ interval | Update interval in seconds | No | 5
 icons | Show icons for brightness and resolution (needs awesome fonts support) | No | true
 resolution | Shows the screens resolution | No | false
 step\_width | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | 5
+
+## Net
+Creates a block which displays the upload and download throughput for a network interface. Units are in bytes per second (kB/s, MB/s, etc).
+
+**Example**
+```toml
+[[block]]
+block = "net"
+device = "eno1"
+interval = 5
+graph = true
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+device | network interface to moniter (name from /sys/class/net) | Yes | lo (loopback interface)
+interval | Update interval in seconds | No | 1
+graph | display a bar graph | no | false
+
+## Speed Test
+Creates a block which uses [`speedtest-cli`](https://github.com/sivel/speedtest-cli) to measure your ping, download, and upload speeds.
+
+**Example**
+```toml
+[[block]]
+block = "speedtest"
+
+bytes = true
+interval = 1800
+```
+
+**Options**
+
+Key | Values | Required | Default
+----|--------|----------|--------
+bytes | weather to use bytes or bits in the display.<br>(true for bytes, false for bits) | No | false
+interval | Update interval in seconds | No | 1800
 
 # Theming & Icons
 The bar can be themed either by specifying a pre-complied theme or overwriting defaults in the configuration. We differentiate between themes and icon sets.

@@ -1,5 +1,5 @@
 use std::time::Duration;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;

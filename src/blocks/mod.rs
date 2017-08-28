@@ -11,8 +11,10 @@ mod pacman;
 mod temperature;
 mod toggle;
 mod sound;
+mod speedtest;
 mod focused_window;
 mod xrandr;
+mod net;
 
 use config::Config;
 use self::time::*;
@@ -26,10 +28,12 @@ use self::custom::*;
 use self::disk_space::*;
 use self::pacman::*;
 use self::sound::*;
+use self::speedtest::*;
 use self::toggle::*;
 use self::focused_window::*;
 use self::temperature::*;
 use self::xrandr::*;
+use self::net::*;
 
 use super::block::{Block, ConfigBlock};
 use errors::*;
@@ -38,7 +42,7 @@ use super::scheduler::Task;
 extern crate dbus;
 
 use serde::de::Deserialize;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use toml::value::Value;
 
 macro_rules! block {
@@ -55,7 +59,7 @@ macro_rules! blocks {
             $(
                 $block_name => block!($block_type, $block_config, $config, $tx_update_request),
              )*
-            _ => panic!("Not a registered block: {}", $name),
+            _ => Err(BlockError($name.to_string(), "Unknown block!".to_string())),
         }
     }
 }
@@ -74,7 +78,9 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "disk_space" => DiskSpace,
             "toggle" => Toggle,
             "sound" => Sound,
+            "speedtest" => SpeedTest,
             "temperature" => Temperature,
             "focused_window" => FocusedWindow,
-            "xrandr" => Xrandr)
+            "xrandr" => Xrandr,
+            "net" => Net)
 }

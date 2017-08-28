@@ -1,5 +1,5 @@
 use std::time::{Duration, Instant};
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use std::thread;
 use std::boxed::Box;
 
@@ -10,9 +10,9 @@ use input::I3BarEvent;
 use block::{Block, ConfigBlock};
 use widgets::rotatingtext::RotatingTextWidget;
 use widgets::button::ButtonWidget;
-use widget::{State, I3BarWidget};
+use widget::{I3BarWidget, State};
 
-use blocks::dbus::{Connection, BusType, stdintf, ConnectionItem, Message, arg};
+use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
 use self::stdintf::OrgFreedesktopDBusProperties;
 use uuid::Uuid;
 
@@ -76,13 +76,11 @@ impl ConfigBlock for Music {
             loop {
                 for ci in c.iter(100000) {
                     if let ConnectionItem::Signal(msg) = ci {
-                        if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" {
-                            if &*msg.member().unwrap() == "PropertiesChanged" {
-                                send.send(Task {
-                                    id: id.clone(),
-                                    update_time: Instant::now(),
-                                }).unwrap();
-                            }
+                        if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" && &*msg.member().unwrap() == "PropertiesChanged" {
+                            send.send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            });
                         }
                     }
                 }
@@ -115,12 +113,10 @@ impl ConfigBlock for Music {
                             .with_state(State::Info),
                     )
                 }
-                x => {
-                    Err(BlockError(
-                        "music".to_owned(),
-                        format!("unknown music button identifier: '{}'", x),
-                    ))?
-                }
+                x => Err(BlockError(
+                    "music".to_owned(),
+                    format!("unknown music button identifier: '{}'", x),
+                ))?,
             };
         }
 
@@ -136,10 +132,8 @@ impl ConfigBlock for Music {
             prev: prev,
             play: play,
             next: next,
-            dbus_conn: Connection::get_private(BusType::Session).block_error(
-                "music",
-                "failed to establish D-Bus connection",
-            )?,
+            dbus_conn: Connection::get_private(BusType::Session)
+                .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
             player: block_config.player,
             marquee: block_config.marquee,
@@ -173,11 +167,16 @@ impl Block for Music {
             } else {
                 let metadata = data.unwrap();
 
-                let (title, artist) = extract_from_metadata(metadata).unwrap_or((String::new(), String::new()));
+                let (title, artist) = extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
-                self.current_song
-                    .set_text(format!("{} | {}", title, artist));
-                self.player_avail = true;
+                if title.is_empty() && artist.is_empty() {
+                    self.player_avail = false;
+                    self.current_song.set_text(String::new());
+                } else {
+                    self.player_avail = true;
+                    self.current_song
+                        .set_text(format!("{} | {}", title, artist));
+                }
             }
             if let Some(ref mut play) = self.play {
                 let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
@@ -197,7 +196,7 @@ impl Block for Music {
         Ok(match (next, self.marquee) {
             (Some(_), _) => next,
             (None, true) => Some(Duration::new(1, 0)),
-            (None, false) => None,
+            (None, false) => Some(Duration::new(1, 0)),
         })
     }
 
@@ -248,24 +247,21 @@ impl Block for Music {
     }
 }
 
-fn extract_from_metadata(metadata: arg::Variant<Box<arg::RefArg>>) -> Result<(String, String)> {
+fn extract_from_metadata(metadata: &arg::Variant<Box<arg::RefArg>>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();
 
-    let mut iter = metadata.0.as_iter().block_error(
-        "music",
-        "failed to extract metadata",
-    )?;
+    let mut iter = metadata
+        .0
+        .as_iter()
+        .block_error("music", "failed to extract metadata")?;
 
     while let Some(key) = iter.next() {
-        let value = iter.next().block_error(
-            "music",
-            "failed to extract metadata",
-        )?;
-        match key.as_str().block_error(
-            "music",
-            "failed to extract metadata",
-        )? {
+        let value = iter.next()
+            .block_error("music", "failed to extract metadata")?;
+        match key.as_str()
+            .block_error("music", "failed to extract metadata")?
+        {
             "xesam:artist" => {
                 artist = String::from(value
                     .as_iter()
@@ -284,10 +280,9 @@ fn extract_from_metadata(metadata: arg::Variant<Box<arg::RefArg>>) -> Result<(St
                     .block_error("music", "failed to extract metadata")?)
             }
             "xesam:title" => {
-                title = String::from(value.as_str().block_error(
-                    "music",
-                    "failed to extract metadata",
-                )?)
+                title = String::from(value
+                    .as_str()
+                    .block_error("music", "failed to extract metadata")?)
             }
             _ => {}
         };

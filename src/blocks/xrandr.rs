@@ -1,7 +1,7 @@
 use std::time::Duration;
 use std::process::Command;
 use std::str::FromStr;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use scheduler::Task;
 
 use util::FormatTemplate;
@@ -33,16 +33,14 @@ impl Monitor {
 
     fn set_brightness(&mut self, step: i32) {
         Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    format!(
-                        "xrandr --output {} --brightness {}",
-                        self.name,
-                        (self.brightness as i32 + step) as f32 / 100.0
-                    ).as_str(),
-                ],
-            )
+            .args(&[
+                "-c",
+                format!(
+                    "xrandr --output {} --brightness {}",
+                    self.name,
+                    (self.brightness as i32 + step) as f32 / 100.0
+                ).as_str(),
+            ])
             .spawn()
             .expect("Failed to set xrandr output.");
         self.brightness = (self.brightness as i32 + step) as u32;
@@ -137,7 +135,7 @@ impl Xrandr {
         }
     }
 
-    fn get_monitor_metrics(monitor_names: &Vec<String>) -> Result<Option<Vec<Monitor>>> {
+    fn get_monitor_metrics(monitor_names: &[String]) -> Result<Option<Vec<Monitor>>> {
         let mut monitor_metrics: Vec<Monitor> = Vec::new();
         let grep_arg = format!(
             "xrandr --verbose | grep -w '{} connected\\|Brightness'",
@@ -164,10 +162,8 @@ impl Xrandr {
             if let Some(name) = mi_line_args.get(0) {
                 display = name.trim();
                 if let Some(brightness_raw) = b_line.split(':').collect::<Vec<&str>>().get(1) {
-                    brightness = (f32::from_str(brightness_raw.trim()).block_error(
-                        "xrandr",
-                        "unable to parse brightness",
-                    )? * 100.0)
+                    brightness = (f32::from_str(brightness_raw.trim())
+                        .block_error("xrandr", "unable to parse brightness")? * 100.0)
                         .floor() as u32;
                 }
             }
@@ -190,8 +186,7 @@ impl Xrandr {
     fn display(&mut self) -> Result<()> {
         if let Some(m) = self.monitors.get(self.current_idx) {
             let brightness_str = m.brightness.to_string();
-            let values =
-                map!("{display}" => m.name.clone(),
+            let values = map!("{display}" => m.name.clone(),
                               "{brightness}" => brightness_str,
                               "{resolution}" => m.resolution.clone());
 
@@ -203,13 +198,12 @@ impl Xrandr {
                 } else {
                     format_str = "{display}: {brightness} [{resolution}]";
                 }
+            } else if self.icons {
+                format_str = "{display} \u{f185} {brightness}";
             } else {
-                if self.icons {
-                    format_str = "{display} \u{f185} {brightness}";
-                } else {
-                    format_str = "{display}: {brightness}";
-                }
+                format_str = "{display}: {brightness}";
             }
+
 
             if let Ok(fmt_template) = FormatTemplate::from_string(String::from(format_str)) {
                 self.text.set_text(fmt_template.render_static_str(&values)?);
@@ -263,27 +257,21 @@ impl Block for Xrandr {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 match e.button {
-                    MouseButton::Left => {
-                        if self.current_idx < self.monitors.len() - 1 {
-                            self.current_idx += 1;
-                        } else {
-                            self.current_idx = 0;
+                    MouseButton::Left => if self.current_idx < self.monitors.len() - 1 {
+                        self.current_idx += 1;
+                    } else {
+                        self.current_idx = 0;
+                    },
+                    MouseButton::WheelUp => if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                        if monitor.brightness <= (100 - self.step_width) {
+                            monitor.set_brightness(self.step_width as i32);
                         }
-                    }
-                    MouseButton::WheelUp => {
-                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                            if monitor.brightness <= (100 - self.step_width) {
-                                monitor.set_brightness(self.step_width as i32);
-                            }
+                    },
+                    MouseButton::WheelDown => if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                        if monitor.brightness >= self.step_width {
+                            monitor.set_brightness(-(self.step_width as i32));
                         }
-                    }
-                    MouseButton::WheelDown => {
-                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                            if monitor.brightness >= self.step_width {
-                                monitor.set_brightness(-(self.step_width as i32));
-                            }
-                        }
-                    }
+                    },
                     _ => {}
                 }
                 self.display()?;

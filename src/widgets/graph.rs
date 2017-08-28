@@ -1,26 +1,26 @@
+extern crate num;
 use config::Config;
 use widget::State;
 use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
+use num::{clamp, ToPrimitive};
 
 #[derive(Clone, Debug)]
-pub struct ButtonWidget {
+pub struct GraphWidget {
     content: Option<String>,
     icon: Option<String>,
     state: State,
-    id: String,
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
 }
-
-impl ButtonWidget {
-    pub fn new(config: Config, id: &str) -> Self {
-        ButtonWidget {
+#[allow(dead_code)]
+impl GraphWidget {
+    pub fn new(config: Config) -> Self {
+        GraphWidget {
             content: None,
             icon: None,
             state: State::Idle,
-            id: String::from(id),
             rendered: json!({
                 "full_text": "",
                 "separator": false,
@@ -39,20 +39,43 @@ impl ButtonWidget {
         self
     }
 
-    pub fn with_text(mut self, content: &str) -> Self {
-        self.content = Some(String::from(content));
-        self.update();
-        self
-    }
-
     pub fn with_state(mut self, state: State) -> Self {
         self.state = state;
         self.update();
         self
     }
 
-    pub fn set_text(&mut self, content: String) {
-        self.content = Some(content);
+    pub fn set_values<T>(&mut self, content: &[T], min: Option<T>, max: Option<T>)
+    where
+        T: Ord + ToPrimitive,
+    {
+        let bars = ["_", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
+        let min: f64 = match min {
+            Some(x) => x.to_f64().unwrap(),
+            None => content.iter().min().unwrap().to_f64().unwrap(),
+        };
+        let max: f64 = match max {
+            Some(x) => x.to_f64().unwrap(),
+            None => content.iter().max().unwrap().to_f64().unwrap(),
+        };
+        let extant = max - min;
+        if extant.is_normal() {
+            let length = bars.len() as f64 - 1.0;
+            let bar = content
+                .iter()
+                .map(|x| {
+                    bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
+                })
+                .collect::<Vec<&'static str>>()
+                .concat();
+            self.content = Some(bar);
+        } else {
+            let bar = (0..content.len() - 1)
+                .map(|_| bars[0])
+                .collect::<Vec<&'static str>>()
+                .concat();
+            self.content = Some(bar);
+        }
         self.update();
     }
 
@@ -74,17 +97,16 @@ impl ButtonWidget {
                                 self.icon.clone().unwrap_or_else(|| String::from(" ")),
                                 self.content.clone().unwrap_or_else(|| String::from(""))),
             "separator": false,
-            "name": self.id.clone(),
             "separator_block_width": 0,
-            "background": key_bg,
-            "color": key_fg
+            "background": key_bg.to_owned(),
+            "color": key_fg.to_owned()
         });
 
         self.cached_output = Some(self.rendered.to_string());
     }
 }
 
-impl I3BarWidget for ButtonWidget {
+impl I3BarWidget for GraphWidget {
     fn to_string(&self) -> String {
         self.cached_output
             .clone()

@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 use std::process::Command;
 use std::iter::{Cycle, Peekable};
 use std::vec;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;
@@ -84,9 +84,9 @@ impl Block for Custom {
     fn update(&mut self) -> Result<Option<Duration>> {
         let command_str = self.cycle
             .as_mut()
-            .map(|c| c.peek().cloned().unwrap_or("".to_owned()))
-            .or(self.command.clone())
-            .unwrap_or("".to_owned());
+            .map(|c| c.peek().cloned().unwrap_or_else(|| "".to_owned()))
+            .or_else(|| self.command.clone())
+            .unwrap_or_else(|| "".to_owned());
 
         let output = Command::new("sh")
             .args(&["-c", &command_str])
@@ -128,7 +128,7 @@ impl Block for Custom {
             self.tx_update_request.send(Task {
                 id: self.id.clone(),
                 update_time: Instant::now(),
-            })?;
+            });
         }
 
         Ok(())

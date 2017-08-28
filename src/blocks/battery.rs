@@ -1,5 +1,5 @@
 use std::time::Duration;
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};
@@ -59,44 +59,64 @@ impl ConfigBlock for Battery {
 }
 
 fn read_file(path: &str) -> Result<String> {
-    let mut f = OpenOptions::new().read(true).open(path).block_error(
-        "battery",
-        &format!("failed to open file {}", path),
-    )?;
+    let mut f = OpenOptions::new()
+        .read(true)
+        .open(path)
+        .block_error("battery", &format!("failed to open file {}", path))?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error(
-        "battery",
-        &format!("failed to read {}", path),
-    )?;
+    f.read_to_string(&mut content)
+        .block_error("battery", &format!("failed to read {}", path))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
 }
 
+fn file_exists(path: &str) -> bool {
+    ::std::path::Path::new(path).exists()
+}
+
 impl Block for Battery {
     fn update(&mut self) -> Result<Option<Duration>> {
-        // TODO: Check if charge_ always contains the right values, might be energy_ depending on firmware
-
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
-        // We only need to read max_charge once, shouldn't change
-        if self.max_charge == 0 {
-            self.max_charge = read_file(&format!("{}charge_full", self.device_path))?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse charge_full")?;
-        }
+        // This annotation is needed temporarily due to a bug in the compiler warnings of
+        // the nightly compiler 1.20.0-nightly (086eaa78e 2017-07-15)
+        #[allow(unused_assignments)]
+        let mut current_percentage = 0;
 
-        let current_charge = read_file(&format!("{}charge_now", self.device_path))?
-            .parse::<u64>()
-            .block_error("battery", "failed to parse charge_now")?;
-        let current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.0) as u64;
-        let current_percentage = match current_percentage {
-            0...100 => current_percentage,
-            // We need to cap it at 100, because the kernel may report
-            // charge_now same as charge_full_design when the battery
-            // is full, leading to >100% charge.
-            _ => 100,
-        };
+        if file_exists(&format!("{}capacity", self.device_path)) {
+            current_percentage = match read_file(&format!("{}capacity", self.device_path))?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse capacity")?
+            {
+                capacity if capacity < 100 => capacity,
+                _ => 100,
+            }
+        } else if file_exists(&format!("{}charge_full", self.device_path)) && file_exists(&format!("{}charge_now", self.device_path)) {
+            // We only need to read max_charge once, shouldn't change
+            if self.max_charge == 0 {
+                self.max_charge = read_file(&format!("{}charge_full", self.device_path))?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse charge_full")?;
+            }
+
+            let current_charge = read_file(&format!("{}charge_now", self.device_path))?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse charge_now")?;
+            current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.0) as u64;
+            current_percentage = match current_percentage {
+                0...100 => current_percentage,
+                // We need to cap it at 100, because the kernel may report
+                // charge_now same as charge_full_design when the battery
+                // is full, leading to >100% charge.
+                _ => 100,
+            };
+        } else {
+            return Err(BlockError(
+                "battery".to_string(),
+                "Device does not support reading capacity or charge".to_string(),
+            ));
+        }
 
         let state = read_file(&format!("{}status", self.device_path))?;
 
@@ -116,8 +136,8 @@ impl Block for Battery {
 
         self.output.set_state(match current_percentage {
             0...15 => State::Critical,
-            15...30 => State::Warning,
-            30...60 => State::Info,
+            16...30 => State::Warning,
+            31...60 => State::Info,
             _ => State::Good,
         });
 
