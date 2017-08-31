@@ -11,7 +11,7 @@ use de::deserialize_duration;
 use errors::*;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
-use input::I3BarEvent;
+use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
 
 use uuid::Uuid;
@@ -22,6 +22,7 @@ pub struct Custom {
     output: ButtonWidget,
     command: Option<String>,
     on_click: Option<String>,
+    on_set_clicks: Option<Vec<(MouseButton, String)>>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
     tx_update_request: Sender<Task>,
 }
@@ -37,9 +38,13 @@ pub struct CustomConfig {
     pub command: Option<String>,
 
     /// Command to execute when the button is clicked
+    /// **This will be run on _EVERY_ type of mouse click**
     pub on_click: Option<String>,
 
-    /// Commands to execute and change when the button is clicked
+    /// Commands to execute when their specified button is clicked
+    pub on_set_clicks: Option<Vec<(MouseButton, String)>>,
+
+    /// Commands to execute and change when any mouse button is clicked
     pub cycle: Option<Vec<String>>,
 }
 
@@ -53,31 +58,22 @@ impl ConfigBlock for Custom {
     type Config = CustomConfig;
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let mut custom = Custom {
-            id: Uuid::new_v4().simple().to_string(),
+        let id = Uuid::new_v4().simple().to_string();
+        
+        Ok(Custom {
+            output: ButtonWidget::new(config, &id),
+            id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(config.clone(), ""),
-            command: None,
-            on_click: None,
-            cycle: None,
+            on_click: block_config.on_click,
+            on_set_clicks: block_config.on_set_clicks,
+            command: if block_config.cycle.is_none() {
+                block_config.command
+            } else { None },
+            cycle: if let Some(cycle) = block_config.cycle {
+                Some(cycle.into_iter().cycle().peekable())
+            } else { None },
             tx_update_request: tx,
-        };
-        custom.output = ButtonWidget::new(config, &custom.id);
-
-        if let Some(on_click) = block_config.on_click {
-            custom.on_click = Some(on_click.to_string())
-        };
-
-        if let Some(cycle) = block_config.cycle {
-            custom.cycle = Some(cycle.into_iter().cycle().peekable());
-            return Ok(custom);
-        };
-
-        if let Some(command) = block_config.command {
-            custom.command = Some(command.to_string())
-        };
-
-        Ok(custom)
+        })
     }
 }
 
@@ -85,9 +81,9 @@ impl Block for Custom {
     fn update(&mut self) -> Result<Option<Duration>> {
         let command_str = self.cycle
             .as_mut()
-            .map(|c| c.peek().cloned().unwrap_or_else(|| "".to_owned()))
-            .or_else(|| self.command.clone())
-            .unwrap_or_else(|| "".to_owned());
+            .map(|c| c.peek().cloned().unwrap_or(String::new()))
+            .or(self.command.clone())
+            .unwrap_or(String::new());
 
         let output = Command::new("sh")
             .args(&["-c", &command_str])
@@ -106,31 +102,35 @@ impl Block for Custom {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
-            if name != &self.id {
-                return Ok(());
+            if name == &self.id {
+                let mut update = false;
+
+                if let Some(ref on_click) = self.on_click {
+                    Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                            .args(&["-c", on_click]).output().ok();
+                    update = true;
+                }
+
+                if let Some(ref possible_clicks) = self.on_set_clicks {
+                    for &(_, ref cmd) in possible_clicks.iter().filter(|v| v.0 == event.button) {
+                        Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                                .args(&["-c", &cmd]).output().ok();
+                        update = true;
+                    }
+                }
+
+                if let Some(ref mut cycle) = self.cycle {
+                    cycle.next();
+                    update = true;
+                }
+
+                if update {
+                    self.tx_update_request.send(Task {
+                        id: self.id.clone(),
+                        update_time: Instant::now(),
+                    });
+                }
             }
-        } else {
-            return Ok(());
-        }
-
-        let mut update = false;
-
-        if let Some(ref on_click) = self.on_click {
-            Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
-                    .args(&["-c", on_click]).output().ok();
-            update = true;
-        }
-
-        if let Some(ref mut cycle) = self.cycle {
-            cycle.next();
-            update = true;
-        }
-
-        if update {
-            self.tx_update_request.send(Task {
-                id: self.id.clone(),
-                update_time: Instant::now(),
-            });
         }
 
         Ok(())
