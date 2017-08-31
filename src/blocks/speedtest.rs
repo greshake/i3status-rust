@@ -117,10 +117,10 @@ impl ConfigBlock for SpeedTest {
                     .with_icon("ping")
                     .with_text("0ms"),
                 ButtonWidget::new(config.clone(), &id)
-                    .with_icon("net-down")
+                    .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
                 ButtonWidget::new(config.clone(), &id)
-                    .with_icon("net-up")
+                    .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
             ],
             id,
