@@ -62,10 +62,39 @@ lazy_static! {
         "net_down" => " \u{2b07} ",
         "ping" => " \u{21ba} "
     };
+
+    pub static ref MATERIAL: Map<String, String> = map_to_owned! {
+        "" => "",
+        "time" => " \u{e192} ",
+        "music" => " \u{e405} ",
+        "music_play" => "  \u{e037}  ",
+        "music_pause" => "  \u{e034}  ",
+        "music_next" => " \u{e044} ",
+        "music_prev" => " \u{e045} ",
+        "cogs" => " \u{e8b8} ",
+        "memory_mem" => " \u{e322} ",
+        "memory_swap" => " \u{e8d4} ",
+        "cpu" => " \u{e640} ",
+        "bat" => " \u{e1a5} ",
+        "bat_full" => " \u{e1a4} ",
+        "bat_charging" => " \u{e1a3} ",
+        "bat_discharging" => " \u{e19c} ",
+        "update" => " \u{e8d7} ",
+        "toggle_off" => " \u{e836} ",
+        "toggle_on" => " \u{e837} ",
+        "volume_full" => " \u{e050} ",
+        "volume_half" => " \u{e04d} ",
+        "volume_empty" => " \u{e04e} ",
+        // This icon has no spaces around it because it is manually set as text. (sound.rs)
+        "volume_muted" => "\u{e04f}",
+        "thermometer" => " \u{f2c8} ", // TODO
+        "xrandr" => " \u{e31e} "
+    };
 }
 
 pub fn get_icons(name: &str) -> Option<Map<String, String>> {
     match name {
+        "material" => Some(MATERIAL.clone()),
         "awesome" => Some(AWESOME.clone()),
         "none" => Some(NONE.clone()),
         _ => None,
