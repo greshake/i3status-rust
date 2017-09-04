@@ -31,7 +31,7 @@ pub struct BatteryConfig {
 
     /// Which BAT device in /sys/class/power_supply/ to read from.
     #[serde(default = "BatteryConfig::default_device")]
-    pub device: usize,
+    pub device: String,
 }
 
 impl BatteryConfig {
@@ -39,8 +39,8 @@ impl BatteryConfig {
         Duration::from_secs(10)
     }
 
-    fn default_device() -> usize {
-        0
+    fn default_device() -> String {
+        "BAT0".to_string()
     }
 }
 
@@ -53,7 +53,7 @@ impl ConfigBlock for Battery {
             max_charge: 0,
             update_interval: block_config.interval,
             output: TextWidget::new(config),
-            device_path: format!("/sys/class/power_supply/BAT{}/", block_config.device),
+            device_path: format!("/sys/class/power_supply/{}/", block_config.device),
         })
     }
 }
