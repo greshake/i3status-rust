@@ -1,4 +1,3 @@
-extern crate num;
 use config::Config;
 use widget::State;
 use serde_json::value::Value;

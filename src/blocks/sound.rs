@@ -127,7 +127,7 @@ impl SoundConfig {
 
 impl Sound {
     fn display(&mut self) -> Result<()> {
-        let mut device = self.devices
+        let device = self.devices
             .get_mut(self.current_idx)
             .block_error("sound", "failed to get device")?;
         device.get_info()?;
@@ -196,7 +196,7 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 {
                     // Additional scope to not keep mutably borrowed device for too long
-                    let mut device = self.devices
+                    let device = self.devices
                         .get_mut(self.current_idx)
                         .block_error("sound", "failed to get device")?;
 

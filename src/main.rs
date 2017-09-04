@@ -107,7 +107,7 @@ fn main() {
 
         let error_widget = TextWidget::new(Default::default())
             .with_state(State::Critical)
-            .with_text(&format!("{}", error));
+            .with_text(&format!("{:?}", error));
         let error_rendered = error_widget.get_rendered();
         println!(
             "{}",
