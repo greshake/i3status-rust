@@ -56,6 +56,10 @@ Optional:
 
 `i3status-rs` is very much still in development, so breaking changes before a 1.0.0 release will occur. Following are guides on how to update your configurations to match breaking changes.
 
+## Battery block changed
+
+The battery block now uses the device name (*usually* BAT0) instead of the number after 'BAT'. This makes the block compatible with device names not starting with 'BAT'. To see your battery device(s) execute `ls /sys/class/power_supply`
+
 ## Configuration changed
 
 Recently, the configuration has been changed:
