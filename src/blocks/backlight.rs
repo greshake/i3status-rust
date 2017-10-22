@@ -18,20 +18,23 @@ use uuid::Uuid;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
-    let mut file = try!(OpenOptions::new()
-        .read(true)
-        .open(device_file)
-        .block_error("backlight",
-                     "Failed to open brightness file"));
+    let mut file = try!(
+        OpenOptions::new()
+            .read(true)
+            .open(device_file)
+            .block_error("backlight", "Failed to open brightness file")
+    );
     let mut content = String::new();
-    try!(file.read_to_string(&mut content)
-         .block_error("backlight",
-                      "Failed to read brightness file"));
+    try!(file.read_to_string(&mut content).block_error(
+        "backlight",
+        "Failed to read brightness file",
+    ));
     // Removes trailing newline.
     content.pop();
-    content.parse::<u64>()
-        .block_error("backlight",
-                     "Failed to read value from brightness file")
+    content.parse::<u64>().block_error(
+        "backlight",
+        "Failed to read value from brightness file",
+    )
 }
 
 pub struct BacklitDevice {
@@ -43,26 +46,33 @@ impl BacklitDevice {
     /// Use the default backlit device, i.e. the first one found in the
     /// `/sys/class/backlight` directory.
     pub fn default() -> Result<Self> {
-        let devices = try!(Path::new("/sys/class/backlight")
+        let devices = try!(
+            Path::new("/sys/class/backlight")
                            .read_dir() // Iterate over entries in the directory.
                            .block_error("backlight",
-                                        "Failed to read backlight device directory"));
+                                        "Failed to read backlight device directory")
+        );
 
         let first_device = try!(match devices.take(1).next() {
-            None => Err(BlockError("backlight".to_string(),
-                                   "No backlit devices found".to_string())),
-            Some(device) => device.map_err(|_| {
-                BlockError("backlight".to_string(),
-                           "Failed to read default device file".to_string())
-            }),
+            None => Err(BlockError(
+                "backlight".to_string(),
+                "No backlit devices found".to_string(),
+            )),
+            Some(device) => {
+                device.map_err(|_| {
+                    BlockError(
+                        "backlight".to_string(),
+                        "Failed to read default device file".to_string(),
+                    )
+                })
+            }
         });
 
-        let max_brightness = try!(read_brightness(&first_device.path()
-                                                  .join("max_brightness")));
+        let max_brightness = try!(read_brightness(&first_device.path().join("max_brightness")));
 
         Ok(BacklitDevice {
             max_brightness: max_brightness,
-            device_path: first_device.path()
+            device_path: first_device.path(),
         })
     }
 
@@ -71,13 +81,16 @@ impl BacklitDevice {
     pub fn from_device(device: String) -> Result<Self> {
         let device_path = Path::new("/sys/class/backlight").join(device);
         if !device_path.exists() {
-            return Err(BlockError("backlight".to_string(),
-                                  format!("Backlight device '{}' does not exist",
-                                          device_path.to_string_lossy())));
+            return Err(BlockError(
+                "backlight".to_string(),
+                format!(
+                    "Backlight device '{}' does not exist",
+                    device_path.to_string_lossy()
+                ),
+            ));
         }
 
-        let max_brightness = try!(read_brightness(&device_path
-                                                  .join("max_brightness")));
+        let max_brightness = try!(read_brightness(&device_path.join("max_brightness")));
 
         Ok(BacklitDevice {
             max_brightness: max_brightness,
@@ -137,20 +150,21 @@ impl ConfigBlock for Backlight {
         // Spin up a thread to watch for changes to the brightness file for the
         // device, and schedule an update if needed.
         thread::spawn(move || {
-            let mut notify = Inotify::init()
-                .expect("Failed to start inotify");
-            notify.add_watch(brightness_file, WatchMask::MODIFY)
+            let mut notify = Inotify::init().expect("Failed to start inotify");
+            notify
+                .add_watch(brightness_file, WatchMask::MODIFY)
                 .expect("Failed to watch brightness file");
 
             let mut buffer = [0; 1024];
             loop {
-                let mut events = notify.read_events_blocking(&mut buffer)
-                    .expect("Error while reading inotify events");
+                let mut events = notify.read_events_blocking(&mut buffer).expect(
+                    "Error while reading inotify events",
+                );
 
                 if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
                     tx_update_request.send(Task {
                         id: id.clone(),
-                        update_time: Instant::now()
+                        update_time: Instant::now(),
                     });
                 }
             }
