@@ -15,12 +15,86 @@ use scheduler::Task;
 
 use uuid::Uuid;
 
+/// Read a brightness value from the given path.
+fn read_brightness(device_file: &Path) -> Result<u64> {
+    let mut file = try!(OpenOptions::new()
+        .read(true)
+        .open(device_file)
+        .block_error("backlight",
+                     "Failed to open brightness file"));
+    let mut content = String::new();
+    try!(file.read_to_string(&mut content)
+         .block_error("backlight",
+                      "Failed to read brightness file"));
+    // Removes trailing newline.
+    content.pop();
+    content.parse::<u64>()
+        .block_error("backlight",
+                     "Failed to read value from brightness file")
+}
+
+pub struct BacklitDevice {
+    pub max_brightness: u64,
+    device_path: PathBuf,
+}
+
+impl BacklitDevice {
+    /// Use the default backlit device, i.e. the first one found in the
+    /// `/sys/class/backlight` directory.
+    pub fn default() -> Result<Self> {
+        let devices = try!(Path::new("/sys/class/backlight")
+                           .read_dir() // Iterate over entries in the directory.
+                           .block_error("backlight",
+                                        "Failed to read backlight device directory"));
+
+        let first_device = try!(match devices.take(1).next() {
+            None => Err(BlockError("backlight".to_string(),
+                                   "No backlit devices found".to_string())),
+            Some(device) => device.map_err(|_| {
+                BlockError("backlight".to_string(),
+                           "Failed to read default device file".to_string())
+            }),
+        });
+
+        let max_brightness = try!(read_brightness(&first_device.path()
+                                                  .join("max_brightness")));
+
+        Ok(BacklitDevice {
+            max_brightness: max_brightness,
+            device_path: first_device.path()
+        })
+    }
+
+    /// Use the backlit device `device`. Raises an error if a directory for that
+    /// device is not found.
+    pub fn from_device(device: String) -> Result<Self> {
+        let device_path = Path::new("/sys/class/backlight").join(device);
+        if !device_path.exists() {
+            return Err(BlockError("backlight".to_string(),
+                                  format!("Backlight device '{}' does not exist",
+                                          device_path.to_string_lossy())));
+        }
+
+        let max_brightness = try!(read_brightness(&device_path
+                                                  .join("max_brightness")));
+
+        Ok(BacklitDevice {
+            max_brightness: max_brightness,
+            device_path: device_path,
+        })
+    }
+
+    /// Query the brightness value for this backlit device.
+    pub fn brightness(&self) -> Result<u64> {
+        read_brightness(&self.device_path.join("brightness"))
+    }
+}
+
 pub struct Backlight {
-    output: TextWidget,
     id: String,
     update_interval: Duration,
-    max_brightness: u64,
-    device_path: PathBuf,
+    output: TextWidget,
+    device: BacklitDevice,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -45,76 +119,32 @@ impl BacklightConfig {
     }
 }
 
-fn get_default_device() -> Result<PathBuf> {
-    let devices = try!(Path::new("/sys/class/backlight")
-        .read_dir()
-        .block_error("backlight",
-                     "Failed to read backlight device directory"));
-
-    let first_device = try!(match devices.take(1).next() {
-        None => Err(BlockError("backlight".to_string(),
-                               "No backlit devices found".to_string())),
-        Some(device) => device.map_err(|_| {
-            BlockError("backlight".to_string(),
-                       "Failed to read default device file".to_string())
-        }),
-    });
-
-   Ok(first_device.path())
-}
-
-fn read_brightness(device_file: &Path) -> Result<u64> {
-    let mut file = try!(OpenOptions::new()
-        .read(true)
-        .open(device_file)
-        .block_error("backlight",
-                     "Failed to open brightness file"));
-    let mut content = String::new();
-    try!(file.read_to_string(&mut content)
-         .block_error("backlight",
-                      "Failed to read brightness file"));
-    // Removes trailing newline.
-    content.pop();
-    content.parse::<u64>()
-        .block_error("backlight",
-                     "Failed to read value from brightness file")
-}
-
 impl ConfigBlock for Backlight {
     type Config = BacklightConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        let device = try!(match block_config.device {
+            Some(path) => BacklitDevice::from_device(path),
+            None => BacklitDevice::default(),
+        });
+
         let mut backlight = Backlight {
             output: TextWidget::new(config),
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            max_brightness: 0,
-            device_path: match block_config.device {
-                Some(path) => Path::new("/sys/class/backlight").join(path),
-                None => try!(get_default_device()),
-            },
+            device: device,
         };
 
-        if !backlight.device_path.exists() {
-            return Err(BlockError("backlight".to_string(),
-                                  format!("Backlight device '{}' does not exist",
-                                          backlight.device_path.to_string_lossy())));
-        }
-
-        backlight.max_brightness = try!(read_brightness(
-            &backlight.device_path.join("max_brightness")
-        ));
-
+        backlight.output.set_icon("xrandr");
         Ok(backlight)
     }
 }
 
 impl Block for Backlight {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let brightness = try!(read_brightness(&self.device_path.join("brightness")));
-        let display = ((brightness as f64 / self.max_brightness as f64) * 100.0) as u64;
+        let brightness = try!(self.device.brightness());
+        let display = ((brightness as f64 / self.device.max_brightness as f64) * 100.0) as u64;
         self.output.set_text(format!("{}%", display));
-        self.output.set_icon("xrandr");
         Ok(Some(self.update_interval))
     }
 
