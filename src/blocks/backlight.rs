@@ -1,12 +1,13 @@
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::thread;
+use std::time::{Duration, Instant};
 use chan::Sender;
+use inotify::{EventMask, Inotify, WatchMask};
 
 use block::{Block, ConfigBlock};
 use config::Config;
-use de::deserialize_duration;
 use errors::*;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
@@ -86,13 +87,17 @@ impl BacklitDevice {
 
     /// Query the brightness value for this backlit device.
     pub fn brightness(&self) -> Result<u64> {
-        read_brightness(&self.device_path.join("brightness"))
+        read_brightness(&self.brightness_file())
+    }
+
+    /// The brightness file itself.
+    pub fn brightness_file(&self) -> PathBuf {
+        self.device_path.join("brightness")
     }
 }
 
 pub struct Backlight {
     id: String,
-    update_interval: Duration,
     output: TextWidget,
     device: BacklitDevice,
 }
@@ -100,20 +105,12 @@ pub struct Backlight {
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BacklightConfig {
-    /// The update interval, in seconds.
-    #[serde(default = "BacklightConfig::default_interval", deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-
     /// The backlight device in `/sys/class/backlight/` to read brightness from.
     #[serde(default = "BacklightConfig::default_device")]
     pub device: Option<String>,
 }
 
 impl BacklightConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
     fn default_device() -> Option<String> {
         None
     }
@@ -122,18 +119,42 @@ impl BacklightConfig {
 impl ConfigBlock for Backlight {
     type Config = BacklightConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
         let device = try!(match block_config.device {
             Some(path) => BacklitDevice::from_device(path),
             None => BacklitDevice::default(),
         });
 
+        let id = Uuid::new_v4().simple().to_string();
+        let brightness_file = device.brightness_file();
+
         let mut backlight = Backlight {
             output: TextWidget::new(config),
-            id: Uuid::new_v4().simple().to_string(),
-            update_interval: block_config.interval,
+            id: id.clone(),
             device: device,
         };
+
+        // Spin up a thread to watch for changes to the brightness file for the
+        // device, and schedule an update if needed.
+        thread::spawn(move || {
+            let mut notify = Inotify::init()
+                .expect("Failed to start inotify");
+            notify.add_watch(brightness_file, WatchMask::MODIFY)
+                .expect("Failed to watch brightness file");
+
+            let mut buffer = [0; 1024];
+            loop {
+                let mut events = notify.read_events_blocking(&mut buffer)
+                    .expect("Error while reading inotify events");
+
+                if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
+                    tx_update_request.send(Task {
+                        id: id.clone(),
+                        update_time: Instant::now()
+                    });
+                }
+            }
+        });
 
         backlight.output.set_icon("xrandr");
         Ok(backlight)
@@ -145,7 +166,7 @@ impl Block for Backlight {
         let brightness = try!(self.device.brightness());
         let display = ((brightness as f64 / self.device.max_brightness as f64) * 100.0) as u64;
         self.output.set_text(format!("{}%", display));
-        Ok(Some(self.update_interval))
+        Ok(None)
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
