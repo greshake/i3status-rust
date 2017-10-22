@@ -141,7 +141,7 @@ impl ConfigBlock for Backlight {
         let id = Uuid::new_v4().simple().to_string();
         let brightness_file = device.brightness_file();
 
-        let mut backlight = Backlight {
+        let backlight = Backlight {
             output: TextWidget::new(config),
             id: id.clone(),
             device: device,
@@ -170,7 +170,6 @@ impl ConfigBlock for Backlight {
             }
         });
 
-        backlight.output.set_icon("xrandr");
         Ok(backlight)
     }
 }
@@ -180,6 +179,13 @@ impl Block for Backlight {
         let brightness = try!(self.device.brightness());
         let display = ((brightness as f64 / self.device.max_brightness as f64) * 100.0) as u64;
         self.output.set_text(format!("{}%", display));
+        match display {
+            0...19 => self.output.set_icon("backlight_empty"),
+            20...39 => self.output.set_icon("backlight_partial1"),
+            40...59 => self.output.set_icon("backlight_partial2"),
+            60...79 => self.output.set_icon("backlight_partial3"),
+            _ => self.output.set_icon("backlight_full"),
+        }
         Ok(None)
     }
 
