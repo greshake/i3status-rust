@@ -15,6 +15,7 @@ mod speedtest;
 mod focused_window;
 mod xrandr;
 mod net;
+mod backlight;
 
 use config::Config;
 use self::time::*;
@@ -34,6 +35,7 @@ use self::focused_window::*;
 use self::temperature::*;
 use self::xrandr::*;
 use self::net::*;
+use self::backlight::*;
 
 use super::block::{Block, ConfigBlock};
 use errors::*;
@@ -82,5 +84,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "temperature" => Temperature,
             "focused_window" => FocusedWindow,
             "xrandr" => Xrandr,
-            "net" => Net)
+            "net" => Net,
+            "backlight" => Backlight
+    )
 }

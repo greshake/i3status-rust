@@ -12,6 +12,7 @@ extern crate clap;
 extern crate uuid;
 extern crate regex;
 extern crate num;
+extern crate inotify;
 
 #[macro_use]
 mod de;

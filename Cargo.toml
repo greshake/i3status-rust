@@ -19,6 +19,7 @@ nix = "0.8.1"
 i3ipc = "0.4.2"
 num = "0.1.39"
 chan = "0.1.19"
+inotify = "0.5.0"
 # Used only in debug build mode
 # for profiling blocks
 cpuprofiler = "0.0.3"
