@@ -82,6 +82,8 @@ pub struct DiskSpace {
     path: String,
     info_type: InfoType,
     unit: Unit,
+    warning: f64,
+    alert: f64,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -106,6 +108,15 @@ pub struct DiskSpaceConfig {
     /// Update interval in seconds
     #[serde(default = "DiskSpaceConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+
+    /// Diskspace warning in GiB (yellow)
+    #[serde(default = "DiskSpaceConfig::default_warning")]
+    pub warning: f64,
+
+    /// Diskspace alert in GiB (red)
+    #[serde(default = "DiskSpaceConfig::default_alert")]
+    pub alert: f64,
+
 }
 
 impl DiskSpaceConfig {
@@ -128,15 +139,23 @@ impl DiskSpaceConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(20)
     }
+
+    fn default_warning() -> f64 {
+        20.
+    }
+
+    fn default_alert() -> f64 {
+        10.
+    }
 }
 
 impl DiskSpace {
-    fn compute_state(&self, bytes: u64) -> State {
+    fn compute_state(&self, bytes: u64, warning: f64, alert: f64) -> State {
         let value = Unit::bytes_in_unit(Unit::GB, bytes);
         match self.info_type {
-            InfoType::Available | InfoType::Free => if 0. <= value && value < 10. {
+            InfoType::Available | InfoType::Free => if 0. <= value && value < alert {
                 State::Critical
-            } else if 10. <= value && value < 20. {
+            } else if alert <= value && value < warning {
                 State::Warning
             } else {
                 State::Idle
@@ -158,6 +177,8 @@ impl ConfigBlock for DiskSpace {
             path: block_config.path,
             info_type: InfoType::from_str(&block_config.info_type),
             unit: Unit::from_str(&block_config.unit),
+            warning: block_config.warning,
+            alert: block_config.alert,
         })
     }
 }
@@ -188,7 +209,7 @@ impl Block for DiskSpace {
             self.unit.name()
         ));
 
-        let state = self.compute_state(result);
+        let state = self.compute_state(result, self.warning, self.alert);
         self.disk_space.set_state(state);
 
         Ok(Some(self.update_interval))
