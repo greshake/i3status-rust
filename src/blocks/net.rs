@@ -46,6 +46,13 @@ impl NetworkDevice {
         })
     }
 
+    /// Check whether this network device is in the `up` state. Note that a
+    /// device that is not `up` is not necessarily `down`.
+    pub fn is_up(&self) -> Result<bool> {
+        let operstate = try!(read_file(&self.device_path.join("operstate")));
+        Ok(operstate == "up")
+    }
+
     /// Query the device for the current `tx_bytes` statistic.
     pub fn tx_bytes(&self) -> Result<u64> {
         try!(read_file(&self.device_path.join("statistics/tx_bytes")))
@@ -166,6 +173,13 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
 
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
+        // Skip displaying tx/rx if device is not up.
+        let is_up = try!(self.device.is_up());
+        if !is_up {
+            self.output_tx.set_text("x".to_string());
+            self.output_rx.set_text("x".to_string());
+            return Ok(Some(self.update_interval));
+        }
         let current_rx = self.device.rx_bytes()?;
         let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
@@ -198,7 +212,12 @@ impl Block for Net {
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        if self.graph {
+        // Since we can't error here, report errors as non-up.
+        let is_up = match self.device.is_up() {
+            Ok(status) => status,
+            Err(_) => false,
+        };
+        if self.graph && is_up {
             return vec![
                 &self.output_tx,
                 &self.graph_tx,
