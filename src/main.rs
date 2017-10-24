@@ -123,6 +123,7 @@ fn main() {
     }
 }
 
+#[allow(unused_mut)] // TODO: Remove when fixed in chan_select
 fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
     print!("{{\"version\": 1, \"click_events\": true}}\n[");
@@ -228,6 +229,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     loop {
         // We use the message passing concept of channel selection
         // to avoid busy wait
+
         chan_select! {
             // Receive click events
             rx_clicks.recv() -> res => match res {

@@ -127,7 +127,7 @@ impl Block for FocusedWindow {
             .lock()
             .block_error("focused_window", "failed to acquire lock")?)
             .clone();
-        string.truncate(self.max_width);
+        string = string.chars().take(self.max_width).collect();
         self.text.set_text(string);
         Ok(None)
     }
