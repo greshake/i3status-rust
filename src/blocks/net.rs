@@ -1,6 +1,7 @@
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::Duration;
 use chan::Sender;
 
@@ -71,9 +72,46 @@ impl NetworkDevice {
     pub fn is_wireless(&self) -> bool {
         self.wireless
     }
+
+    /// Queries the wireless SSID of this device (using `iw`), if it is
+    /// connected to one.
+    pub fn ssid(&self) -> Result<Option<String>> {
+        let up = try!(self.is_up());
+        if !self.wireless || !up {
+            return Err(BlockError(
+                "net".to_string(),
+                "SSIDs are only available for connected wireless devices."
+                    .to_string(),
+            ));
+        }
+        let mut iw_output = try!(
+            Command::new("sh")
+                .args(
+                    &[
+                        "-c",
+                        &format!(
+                            "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
+                            self.device
+                        ),
+                    ],
+                )
+                .output()
+                .block_error("net", "Failed to exectute SSID query.")
+        ).stdout;
+
+        if iw_output.len() == 0 {
+            Ok(None)
+        } else {
+            iw_output.pop(); // Remove trailing newline.
+            String::from_utf8(iw_output)
+                .block_error("net", "Non-UTF8 SSID.")
+                .map(|s| Some(s))
+        }
+    }
 }
 
 pub struct Net {
+    network: TextWidget,
     output_rx: TextWidget,
     graph_rx: GraphWidget,
     output_tx: TextWidget,
@@ -86,6 +124,9 @@ pub struct Net {
     rx_bytes: u64,
     tx_bytes: u64,
     graph: bool,
+    show_down: bool,
+    ssid: Option<String>,
+    show_ssid: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -101,6 +142,14 @@ pub struct NetConfig {
 
     #[serde(default = "NetConfig::default_graph")]
     pub graph: bool,
+
+    /// Whether to show networks that are down.
+    #[serde(default = "NetConfig::default_show_down")]
+    pub show_down: bool,
+
+    /// Whether to show the SSID of active wireless networks.
+    #[serde(default = "NetConfig::default_show_ssid")]
+    pub show_ssid: bool,
 }
 
 impl NetConfig {
@@ -115,6 +164,14 @@ impl NetConfig {
     fn default_graph() -> bool {
         false
     }
+
+    fn default_show_down() -> bool {
+        true
+    }
+
+    fn default_show_ssid() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Net {
@@ -122,9 +179,14 @@ impl ConfigBlock for Net {
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let device = try!(NetworkDevice::from_device(block_config.device));
+        let wireless = device.is_wireless();
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
+            network: TextWidget::new(config.clone()).with_icon(match wireless {
+                true => "net_wireless",
+                false => "net_wired",
+            }),
             output_tx: TextWidget::new(config.clone()).with_icon("net_up"),
             graph_tx: GraphWidget::new(config.clone()),
             output_rx: TextWidget::new(config.clone()).with_icon("net_down"),
@@ -135,6 +197,9 @@ impl ConfigBlock for Net {
             rx_bytes: 0,
             tx_bytes: 0,
             graph: block_config.graph,
+            show_down: block_config.show_down,
+            ssid: None,
+            show_ssid: block_config.show_ssid && wireless,
         })
     }
 }
@@ -176,10 +241,24 @@ impl Block for Net {
         // Skip displaying tx/rx if device is not up.
         let is_up = try!(self.device.is_up());
         if !is_up {
+            // Remove any residual SSID.
+            if self.ssid.is_some() {
+                self.ssid = None
+            }
+            self.network.set_text("down".to_string());
             self.output_tx.set_text("x".to_string());
             self.output_rx.set_text("x".to_string());
             return Ok(Some(self.update_interval));
+        } else if self.ssid.is_none() && self.device.is_wireless() && self.show_ssid {
+            // Only retreive the SSID when the network status changes from down
+            // to up, since this request is expensive.
+            let ssid = try!(self.device.ssid());
+            if ssid.is_some() {
+                self.network.set_text(ssid.clone().unwrap());
+            }
+            self.ssid = ssid;
         }
+
         let current_rx = self.device.rx_bytes()?;
         let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
@@ -219,13 +298,19 @@ impl Block for Net {
         };
         if self.graph && is_up {
             return vec![
+                &self.network,
                 &self.output_tx,
                 &self.graph_tx,
                 &self.output_rx,
                 &self.graph_rx,
             ];
+        } else if is_up {
+            vec![&self.network, &self.output_tx, &self.output_rx]
+        } else if self.show_down {
+            vec![&self.network]
+        } else {
+            vec![]
         }
-        vec![&self.output_tx, &self.output_rx]
     }
 
     fn id(&self) -> &str {
