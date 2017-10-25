@@ -108,10 +108,41 @@ impl NetworkDevice {
                 .map(|s| Some(s))
         }
     }
+
+    /// Queries the inet IP of this device (using `ip`).
+    pub fn ip_addr(&self) -> Result<Option<String>> {
+        if !self.is_up()? {
+            return Ok(None);
+        }
+        let mut ip_output = try!(
+            Command::new("sh")
+                .args(
+                    &[
+                        "-c",
+                        &format!(
+                            "ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"",
+                            self.device
+                        ),
+                    ],
+                )
+                .output()
+                .block_error("net", "Failed to exectute IP address query.")
+        ).stdout;
+
+        if ip_output.len() == 0 {
+            Ok(None)
+        } else {
+            ip_output.pop(); // Remove trailing newline.
+            String::from_utf8(ip_output)
+                .block_error("net", "Non-UTF8 IP address.")
+                .map(|s| Some(s))
+        }
+    }
 }
 
 pub struct Net {
     network: TextWidget,
+    ip: TextWidget,
     output_rx: TextWidget,
     graph_rx: GraphWidget,
     output_tx: TextWidget,
@@ -127,6 +158,8 @@ pub struct Net {
     show_down: bool,
     ssid: Option<String>,
     show_ssid: bool,
+    ip_addr: Option<String>,
+    show_ip: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -150,6 +183,10 @@ pub struct NetConfig {
     /// Whether to show the SSID of active wireless networks.
     #[serde(default = "NetConfig::default_show_ssid")]
     pub show_ssid: bool,
+
+    /// Whether to show the IP address of active networks.
+    #[serde(default = "NetConfig::default_show_ip")]
+    pub show_ip: bool,
 }
 
 impl NetConfig {
@@ -172,6 +209,10 @@ impl NetConfig {
     fn default_show_ssid() -> bool {
         false
     }
+
+    fn default_show_ip() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Net {
@@ -187,6 +228,7 @@ impl ConfigBlock for Net {
                 true => "net_wireless",
                 false => "net_wired",
             }),
+            ip: TextWidget::new(config.clone()),
             output_tx: TextWidget::new(config.clone()).with_icon("net_up"),
             graph_tx: GraphWidget::new(config.clone()),
             output_rx: TextWidget::new(config.clone()).with_icon("net_down"),
@@ -200,6 +242,8 @@ impl ConfigBlock for Net {
             show_down: block_config.show_down,
             ssid: None,
             show_ssid: block_config.show_ssid && wireless,
+            ip_addr: None,
+            show_ip: block_config.show_ip,
         })
     }
 }
@@ -241,22 +285,34 @@ impl Block for Net {
         // Skip displaying tx/rx if device is not up.
         let is_up = try!(self.device.is_up());
         if !is_up {
-            // Remove any residual SSID.
+            // Remove any residual SSID and IP address.
             if self.ssid.is_some() {
-                self.ssid = None
+                self.ssid = None;
+            }
+            if self.ip_addr.is_some() {
+                self.ip_addr = None;
             }
             self.network.set_text("down".to_string());
             self.output_tx.set_text("x".to_string());
             self.output_rx.set_text("x".to_string());
             return Ok(Some(self.update_interval));
-        } else if self.ssid.is_none() && self.device.is_wireless() && self.show_ssid {
-            // Only retreive the SSID when the network status changes from down
-            // to up, since this request is expensive.
+        }
+
+        // Only retreive the SSID & IP address when the network status changes
+        // from down to up, since this request is expensive.
+        if self.ssid.is_none() && self.device.is_wireless() && self.show_ssid {
             let ssid = try!(self.device.ssid());
             if ssid.is_some() {
                 self.network.set_text(ssid.clone().unwrap());
             }
             self.ssid = ssid;
+        }
+        if self.ip_addr.is_none() && self.show_ip {
+            let ip_addr = try!(self.device.ip_addr());
+            if ip_addr.is_some() {
+                self.ip.set_text(ip_addr.clone().unwrap());
+            }
+            self.ip_addr = ip_addr;
         }
 
         let current_rx = self.device.rx_bytes()?;
@@ -296,16 +352,23 @@ impl Block for Net {
             Ok(status) => status,
             Err(_) => false,
         };
-        if self.graph && is_up {
-            return vec![
-                &self.network,
-                &self.output_tx,
-                &self.graph_tx,
-                &self.output_rx,
-                &self.graph_rx,
-            ];
-        } else if is_up {
-            vec![&self.network, &self.output_tx, &self.output_rx]
+        if is_up {
+            let mut widgets: Vec<&I3BarWidget> = Vec::with_capacity(6);
+            widgets.push(&self.network);
+            if self.show_ip {
+                widgets.push(&self.ip);
+            }
+            if self.graph {
+                widgets.append(&mut vec![
+                    &self.output_tx,
+                    &self.graph_tx,
+                    &self.output_rx,
+                    &self.graph_rx,
+                ]);
+            } else {
+                widgets.append(&mut vec![&self.output_tx, &self.output_rx]);
+            }
+            widgets
         } else if self.show_down {
             vec![&self.network]
         } else {
