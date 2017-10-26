@@ -68,7 +68,7 @@ lazy_static! {
         "net_up" => " \u{2b06} ",
         "net_down" => " \u{2b07} ",
         "net_wireless" => " \u{f1eb} ",
-        "net_wired" => " \u{f0c1} ",
+        "net_wired" => " \u{f0ac} ",
         "ping" => " \u{21ba} ",
         "backlight_empty" => " \u{1f315} ",
         "backlight_partial1" => " \u{1f314} ",

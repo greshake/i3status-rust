@@ -292,9 +292,9 @@ impl Block for Net {
             if self.ip_addr.is_some() {
                 self.ip_addr = None;
             }
-            self.network.set_text("down".to_string());
-            self.output_tx.set_text("x".to_string());
-            self.output_rx.set_text("x".to_string());
+            self.network.set_text("×".to_string());
+            self.output_tx.set_text("×".to_string());
+            self.output_rx.set_text("×".to_string());
             return Ok(Some(self.update_interval));
         }
 
