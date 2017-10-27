@@ -188,10 +188,12 @@ impl Block for Net {
             self.graph_rx.set_values(&self.rx_buff, None, None);
         }
 
-        self.output_tx
-            .set_text(format!("{:5.1}{}", tx_speed, tx_unit));
-        self.output_rx
-            .set_text(format!("{:5.1}{}", rx_speed, rx_unit));
+        self.output_tx.set_text(
+            format!("{:5.1}{}", tx_speed, tx_unit),
+        );
+        self.output_rx.set_text(
+            format!("{:5.1}{}", rx_speed, rx_unit),
+        );
         Ok(Some(self.update_interval))
     }
 
