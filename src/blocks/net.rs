@@ -1,3 +1,6 @@
+use std::fs::OpenOptions;
+use std::io::prelude::*;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 use chan::Sender;
 
@@ -9,10 +12,59 @@ use widgets::text::TextWidget;
 use widgets::graph::GraphWidget;
 use widget::I3BarWidget;
 use scheduler::Task;
-use std::fs::OpenOptions;
-use std::io::prelude::*;
 
 use uuid::Uuid;
+
+pub struct NetworkDevice {
+    device: String,
+    device_path: PathBuf,
+    wireless: bool,
+}
+
+impl NetworkDevice {
+    /// Use the network device `device`. Raises an error if a directory for that
+    /// device is not found.
+    pub fn from_device(device: String) -> Result<Self> {
+        let device_path = Path::new("/sys/class/net").join(device.clone());
+        if !device_path.exists() {
+            return Err(BlockError(
+                "net".to_string(),
+                format!(
+                    "Network device '{}' does not exist",
+                    device_path.to_string_lossy()
+                ),
+            ));
+        }
+
+        // I don't believe that this should ever change, so set it now:
+        let wireless = device_path.join("wireless").exists();
+
+        Ok(NetworkDevice {
+            device: device,
+            device_path: device_path,
+            wireless: wireless,
+        })
+    }
+
+    /// Query the device for the current `tx_bytes` statistic.
+    pub fn tx_bytes(&self) -> Result<u64> {
+        try!(read_file(&self.device_path.join("statistics/tx_bytes")))
+            .parse::<u64>()
+            .block_error("net", "Failed to parse tx_bytes")
+    }
+
+    /// Query the device for the current `rx_bytes` statistic.
+    pub fn rx_bytes(&self) -> Result<u64> {
+        try!(read_file(&self.device_path.join("statistics/rx_bytes")))
+            .parse::<u64>()
+            .block_error("net", "Failed to parse rx_bytes")
+    }
+
+    /// Checks whether this device is wireless.
+    pub fn is_wireless(&self) -> bool {
+        self.wireless
+    }
+}
 
 pub struct Net {
     output_rx: TextWidget,
@@ -21,7 +73,7 @@ pub struct Net {
     graph_tx: GraphWidget,
     id: String,
     update_interval: Duration,
-    device_path: String,
+    device: NetworkDevice,
     rx_buff: Vec<u64>,
     tx_buff: Vec<u64>,
     rx_bytes: u64,
@@ -62,6 +114,7 @@ impl ConfigBlock for Net {
     type Config = NetConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        let device = try!(NetworkDevice::from_device(block_config.device));
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
@@ -69,7 +122,7 @@ impl ConfigBlock for Net {
             graph_tx: GraphWidget::new(config.clone()),
             output_rx: TextWidget::new(config.clone()).with_icon("net_down"),
             graph_rx: GraphWidget::new(config.clone()),
-            device_path: format!("/sys/class/net/{}/statistics/", block_config.device),
+            device: device,
             rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: 0,
@@ -79,14 +132,22 @@ impl ConfigBlock for Net {
     }
 }
 
-fn read_file(path: &str) -> Result<String> {
-    let mut f = OpenOptions::new()
-        .read(true)
-        .open(path)
-        .block_error("net", &format!("failed to open file {}", path))?;
+fn read_file(path: &Path) -> Result<String> {
+    let mut f = OpenOptions::new().read(true).open(path).block_error(
+        "net",
+        &format!(
+            "failed to open file {}",
+            path.to_string_lossy()
+        ),
+    )?;
     let mut content = String::new();
-    f.read_to_string(&mut content)
-        .block_error("net", &format!("failed to read {}", path))?;
+    f.read_to_string(&mut content).block_error(
+        "net",
+        &format!(
+            "failed to read {}",
+            path.to_string_lossy()
+        ),
+    )?;
     // Removes trailing newline
     content.pop();
     Ok(content)
@@ -105,17 +166,13 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
 
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let current_rx = read_file(&format!("{}rx_bytes", self.device_path))?
-            .parse::<u64>()
-            .block_error("net", "failed to parse rx_bytes")?;
+        let current_rx = self.device.rx_bytes()?;
         let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
         let (rx_speed, rx_unit) = convert_speed(rx_bytes);
         self.rx_bytes = current_rx;
 
-        let current_tx = read_file(&format!("{}tx_bytes", self.device_path))?
-            .parse::<u64>()
-            .block_error("net", "failed to parse tx_bytes")?;
+        let current_tx = self.device.tx_bytes()?;
         let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
         let (tx_speed, tx_unit) = convert_speed(tx_bytes);
         self.tx_bytes = current_tx;
