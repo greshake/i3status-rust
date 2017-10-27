@@ -150,6 +150,7 @@ impl NetworkDevice {
 pub struct Net {
     network: TextWidget,
     ssid: Option<TextWidget>,
+    max_ssid_width: usize,
     ip_addr: Option<TextWidget>,
     output_rx: TextWidget,
     graph_rx: Option<GraphWidget>,
@@ -184,6 +185,10 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_ssid")]
     pub ssid: bool,
 
+    /// Max SSID width, in characters.
+    #[serde(default = "NetConfig::default_max_ssid_width")]
+    pub max_ssid_width: usize,
+
     /// Whether to show the IP address of active networks.
     #[serde(default = "NetConfig::default_ip")]
     pub ip: bool,
@@ -208,6 +213,10 @@ impl NetConfig {
 
     fn default_hide_inactive() -> bool {
         false
+    }
+
+    fn default_max_ssid_width() -> usize {
+        21
     }
 
     fn default_ssid() -> bool {
@@ -240,6 +249,7 @@ impl ConfigBlock for Net {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
+            max_ssid_width: block_config.max_ssid_width,
             ip_addr: match block_config.ip {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
@@ -317,7 +327,9 @@ impl Block for Net {
             if let Some(ref mut widget) = self.ssid {
                 let ssid = try!(self.device.ssid());
                 if ssid.is_some() {
-                    widget.set_text(ssid.unwrap());
+                    let mut truncated = ssid.unwrap();
+                    truncated.truncate(self.max_ssid_width);
+                    widget.set_text(truncated);
                 }
             }
             if let Some(ref mut widget) = self.ip_addr {
