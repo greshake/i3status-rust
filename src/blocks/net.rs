@@ -142,7 +142,8 @@ impl NetworkDevice {
 
 pub struct Net {
     network: TextWidget,
-    ip: TextWidget,
+    ssid: Option<TextWidget>,
+    ip_addr: Option<TextWidget>,
     output_rx: TextWidget,
     graph_rx: GraphWidget,
     output_tx: TextWidget,
@@ -156,10 +157,6 @@ pub struct Net {
     tx_bytes: u64,
     graph: bool,
     show_down: bool,
-    ssid: Option<String>,
-    show_ssid: bool,
-    ip_addr: Option<String>,
-    show_ip: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -228,7 +225,16 @@ impl ConfigBlock for Net {
                 true => "net_wireless",
                 false => "net_wired",
             }),
-            ip: TextWidget::new(config.clone()),
+            // Might want to signal an error if the user wants the SSID of a
+            // wired connection instead.
+            ssid: match block_config.show_ssid && wireless {
+                true => Some(TextWidget::new(config.clone())),
+                false => None,
+            },
+            ip_addr: match block_config.show_ip {
+                true => Some(TextWidget::new(config.clone())),
+                false => None,
+            },
             output_tx: TextWidget::new(config.clone()).with_icon("net_up"),
             graph_tx: GraphWidget::new(config.clone()),
             output_rx: TextWidget::new(config.clone()).with_icon("net_down"),
@@ -240,10 +246,6 @@ impl ConfigBlock for Net {
             tx_bytes: 0,
             graph: block_config.graph,
             show_down: block_config.show_down,
-            ssid: None,
-            show_ssid: block_config.show_ssid && wireless,
-            ip_addr: None,
-            show_ip: block_config.show_ip,
         })
     }
 }
@@ -282,37 +284,33 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
 
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
-        // Skip displaying tx/rx if device is not up.
+        // Skip updating tx/rx if device is not up.
         let is_up = try!(self.device.is_up());
         if !is_up {
-            // Remove any residual SSID and IP address.
-            if self.ssid.is_some() {
-                self.ssid = None;
-            }
-            if self.ip_addr.is_some() {
-                self.ip_addr = None;
-            }
             self.network.set_text("×".to_string());
             self.output_tx.set_text("×".to_string());
             self.output_rx.set_text("×".to_string());
+
             return Ok(Some(self.update_interval));
+        } else {
+            self.network.set_text("".to_string());
         }
 
-        // Only retreive the SSID & IP address when the network status changes
-        // from down to up, since this request is expensive.
-        if self.ssid.is_none() && self.device.is_wireless() && self.show_ssid {
+        // Update SSID and IP address, if applicable.
+        //
+        // TODO: This is a more expensive operation than checking the tx/rx
+        // bytes, so it would be nice to avoid doing every 1s.
+        if let Some(ref mut widget) = self.ssid {
             let ssid = try!(self.device.ssid());
             if ssid.is_some() {
-                self.network.set_text(ssid.clone().unwrap());
+                widget.set_text(ssid.unwrap());
             }
-            self.ssid = ssid;
         }
-        if self.ip_addr.is_none() && self.show_ip {
+        if let Some(ref mut widget) = self.ip_addr {
             let ip_addr = try!(self.device.ip_addr());
             if ip_addr.is_some() {
-                self.ip.set_text(ip_addr.clone().unwrap());
+                widget.set_text(ip_addr.unwrap());
             }
-            self.ip_addr = ip_addr;
         }
 
         let current_rx = self.device.rx_bytes()?;
@@ -353,11 +351,14 @@ impl Block for Net {
             Err(_) => false,
         };
         if is_up {
-            let mut widgets: Vec<&I3BarWidget> = Vec::with_capacity(6);
+            let mut widgets: Vec<&I3BarWidget> = Vec::with_capacity(7);
             widgets.push(&self.network);
-            if self.show_ip {
-                widgets.push(&self.ip);
-            }
+            if let Some(ref widget) = self.ssid {
+                widgets.push(widget);
+            };
+            if let Some(ref widget) = self.ip_addr {
+                widgets.push(widget);
+            };
             if self.graph {
                 widgets.append(&mut vec![
                     &self.output_tx,
