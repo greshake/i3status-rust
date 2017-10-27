@@ -50,8 +50,15 @@ impl NetworkDevice {
     /// Check whether this network device is in the `up` state. Note that a
     /// device that is not `up` is not necessarily `down`.
     pub fn is_up(&self) -> Result<bool> {
-        let operstate = try!(read_file(&self.device_path.join("operstate")));
-        Ok(operstate == "up")
+        let operstate_file = self.device_path.join("operstate");
+        if !operstate_file.exists() {
+            // It seems more reasonable to treat these as inactive networks as
+            // opposed to erroring out the entire block.
+            Ok(false)
+        } else {
+            let operstate = try!(read_file(&operstate_file));
+            Ok(operstate == "up")
+        }
     }
 
     /// Query the device for the current `tx_bytes` statistic.
