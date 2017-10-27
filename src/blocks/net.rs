@@ -2,7 +2,7 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use chan::Sender;
 
 use block::{Block, ConfigBlock};
@@ -163,6 +163,7 @@ pub struct Net {
     rx_bytes: u64,
     tx_bytes: u64,
     show_down: bool,
+    last_update: Instant,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -259,6 +260,7 @@ impl ConfigBlock for Net {
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
             show_down: block_config.show_down,
+            last_update: Instant::now(),
         })
     }
 }
@@ -309,21 +311,22 @@ impl Block for Net {
             self.network.set_text("".to_string());
         }
 
-        // Update SSID and IP address, if applicable.
-        //
-        // TODO: This is a more expensive operation than checking the tx/rx
-        // bytes, so it would be nice to avoid doing every 1s.
-        if let Some(ref mut widget) = self.ssid {
-            let ssid = try!(self.device.ssid());
-            if ssid.is_some() {
-                widget.set_text(ssid.unwrap());
+        // Update SSID and IP address every 30s.
+        let now = Instant::now();
+        if now.duration_since(self.last_update).as_secs() > 30 {
+            if let Some(ref mut widget) = self.ssid {
+                let ssid = try!(self.device.ssid());
+                if ssid.is_some() {
+                    widget.set_text(ssid.unwrap());
+                }
             }
-        }
-        if let Some(ref mut widget) = self.ip_addr {
-            let ip_addr = try!(self.device.ip_addr());
-            if ip_addr.is_some() {
-                widget.set_text(ip_addr.unwrap());
+            if let Some(ref mut widget) = self.ip_addr {
+                let ip_addr = try!(self.device.ip_addr());
+                if ip_addr.is_some() {
+                    widget.set_text(ip_addr.unwrap());
+                }
             }
+            self.last_update = now;
         }
 
         let current_rx = self.device.rx_bytes()?;
