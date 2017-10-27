@@ -217,6 +217,8 @@ impl ConfigBlock for Net {
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let device = try!(NetworkDevice::from_device(block_config.device));
+        let init_rx_bytes = try!(device.rx_bytes());
+        let init_tx_bytes = try!(device.tx_bytes());
         let wireless = device.is_wireless();
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
@@ -242,8 +244,8 @@ impl ConfigBlock for Net {
             device: device,
             rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            rx_bytes: 0,
-            tx_bytes: 0,
+            rx_bytes: init_rx_bytes,
+            tx_bytes: init_tx_bytes,
             graph: block_config.graph,
             show_down: block_config.show_down,
         })
