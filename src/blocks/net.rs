@@ -162,7 +162,7 @@ pub struct Net {
     tx_buff: Vec<u64>,
     rx_bytes: u64,
     tx_bytes: u64,
-    show_down: bool,
+    hide_inactive: bool,
     last_update: Instant,
 }
 
@@ -180,17 +180,17 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_graph")]
     pub graph: bool,
 
-    /// Whether to show networks that are down.
-    #[serde(default = "NetConfig::default_show_down")]
-    pub show_down: bool,
-
     /// Whether to show the SSID of active wireless networks.
-    #[serde(default = "NetConfig::default_show_ssid")]
-    pub show_ssid: bool,
+    #[serde(default = "NetConfig::default_ssid")]
+    pub ssid: bool,
 
     /// Whether to show the IP address of active networks.
-    #[serde(default = "NetConfig::default_show_ip")]
-    pub show_ip: bool,
+    #[serde(default = "NetConfig::default_ip")]
+    pub ip: bool,
+
+    /// Whether to hide networks that are down/inactive completely.
+    #[serde(default = "NetConfig::default_hide_inactive")]
+    pub hide_inactive: bool,
 }
 
 impl NetConfig {
@@ -206,15 +206,15 @@ impl NetConfig {
         false
     }
 
-    fn default_show_down() -> bool {
-        true
-    }
-
-    fn default_show_ssid() -> bool {
+    fn default_hide_inactive() -> bool {
         false
     }
 
-    fn default_show_ip() -> bool {
+    fn default_ssid() -> bool {
+        false
+    }
+
+    fn default_ip() -> bool {
         false
     }
 }
@@ -236,11 +236,11 @@ impl ConfigBlock for Net {
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: match block_config.show_ssid && wireless {
+            ssid: match block_config.ssid && wireless {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
-            ip_addr: match block_config.show_ip {
+            ip_addr: match block_config.ip {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
@@ -259,7 +259,7 @@ impl ConfigBlock for Net {
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
-            show_down: block_config.show_down,
+            hide_inactive: block_config.hide_inactive,
             last_update: Instant::now(),
         })
     }
@@ -385,7 +385,7 @@ impl Block for Net {
                 widgets.push(widget);
             }
             widgets
-        } else if self.show_down {
+        } else if !self.hide_inactive {
             vec![&self.network]
         } else {
             vec![]
