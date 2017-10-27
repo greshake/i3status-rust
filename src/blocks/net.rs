@@ -145,9 +145,9 @@ pub struct Net {
     ssid: Option<TextWidget>,
     ip_addr: Option<TextWidget>,
     output_rx: TextWidget,
-    graph_rx: GraphWidget,
+    graph_rx: Option<GraphWidget>,
     output_tx: TextWidget,
-    graph_tx: GraphWidget,
+    graph_tx: Option<GraphWidget>,
     id: String,
     update_interval: Duration,
     device: NetworkDevice,
@@ -155,7 +155,6 @@ pub struct Net {
     tx_buff: Vec<u64>,
     rx_bytes: u64,
     tx_bytes: u64,
-    graph: bool,
     show_down: bool,
 }
 
@@ -238,15 +237,20 @@ impl ConfigBlock for Net {
                 false => None,
             },
             output_tx: TextWidget::new(config.clone()).with_icon("net_up"),
-            graph_tx: GraphWidget::new(config.clone()),
+            graph_tx: match block_config.graph {
+                true => Some(GraphWidget::new(config.clone())),
+                false => None,
+            },
             output_rx: TextWidget::new(config.clone()).with_icon("net_down"),
-            graph_rx: GraphWidget::new(config.clone()),
+            graph_rx: match block_config.graph {
+                true => Some(GraphWidget::new(config.clone())),
+                false => None,
+            },
             device: device,
             rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
-            graph: block_config.graph,
             show_down: block_config.show_down,
         })
     }
@@ -326,15 +330,16 @@ impl Block for Net {
         let (tx_speed, tx_unit) = convert_speed(tx_bytes);
         self.tx_bytes = current_tx;
 
-        if self.graph {
+        // Update the graph widgets, if they are enabled.
+        if let Some(ref mut widget) = self.graph_rx {
             self.rx_buff.remove(0);
             self.rx_buff.push(rx_bytes);
-
+            widget.set_values(&self.rx_buff, None, None);
+        }
+        if let Some(ref mut widget) = self.graph_tx {
             self.tx_buff.remove(0);
             self.tx_buff.push(tx_bytes);
-
-            self.graph_tx.set_values(&self.tx_buff, None, None);
-            self.graph_rx.set_values(&self.rx_buff, None, None);
+            widget.set_values(&self.tx_buff, None, None);
         }
 
         self.output_tx.set_text(
@@ -361,15 +366,13 @@ impl Block for Net {
             if let Some(ref widget) = self.ip_addr {
                 widgets.push(widget);
             };
-            if self.graph {
-                widgets.append(&mut vec![
-                    &self.output_tx,
-                    &self.graph_tx,
-                    &self.output_rx,
-                    &self.graph_rx,
-                ]);
-            } else {
-                widgets.append(&mut vec![&self.output_tx, &self.output_rx]);
+            widgets.push(&self.output_tx);
+            if let Some(ref widget) = self.graph_tx {
+                widgets.push(widget);
+            }
+            widgets.push(&self.output_rx);
+            if let Some(ref widget) = self.graph_rx {
+                widgets.push(widget);
             }
             widgets
         } else if self.show_down {
