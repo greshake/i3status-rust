@@ -1,5 +1,6 @@
 use std::time::Duration;
 use std::process::Command;
+use std::cmp::min;
 use chan::Sender;
 use scheduler::Task;
 
@@ -199,13 +200,14 @@ impl Block for Sound {
                     let device = self.devices
                         .get_mut(self.current_idx)
                         .block_error("sound", "failed to get device")?;
+                    let volume = device.volume;
 
                     match e.button {
                         MouseButton::Right => device.toggle()?,
-                        MouseButton::WheelUp => if device.volume <= (100 - self.step_width) {
-                            device.set_volume(self.step_width as i32)?;
+                        MouseButton::WheelUp => if volume < 100 {
+                            device.set_volume(min(self.step_width, (100 - volume)) as i32)?;
                         },
-                        MouseButton::WheelDown => if device.volume >= self.step_width {
+                        MouseButton::WheelDown => if volume >= self.step_width {
                             device.set_volume(-(self.step_width as i32))?;
                         },
                         _ => {}
