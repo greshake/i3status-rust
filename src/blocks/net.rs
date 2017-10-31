@@ -56,21 +56,21 @@ impl NetworkDevice {
             // opposed to erroring out the entire block.
             Ok(false)
         } else {
-            let operstate = try!(read_file(&operstate_file));
+            let operstate = read_file(&operstate_file)?;
             Ok(operstate == "up")
         }
     }
 
     /// Query the device for the current `tx_bytes` statistic.
     pub fn tx_bytes(&self) -> Result<u64> {
-        try!(read_file(&self.device_path.join("statistics/tx_bytes")))
+        read_file(&self.device_path.join("statistics/tx_bytes"))?
             .parse::<u64>()
             .block_error("net", "Failed to parse tx_bytes")
     }
 
     /// Query the device for the current `rx_bytes` statistic.
     pub fn rx_bytes(&self) -> Result<u64> {
-        try!(read_file(&self.device_path.join("statistics/rx_bytes")))
+        read_file(&self.device_path.join("statistics/rx_bytes"))?
             .parse::<u64>()
             .block_error("net", "Failed to parse rx_bytes")
     }
@@ -83,7 +83,7 @@ impl NetworkDevice {
     /// Queries the wireless SSID of this device (using `iw`), if it is
     /// connected to one.
     pub fn ssid(&self) -> Result<Option<String>> {
-        let up = try!(self.is_up());
+        let up = self.is_up()?;
         if !self.wireless || !up {
             return Err(BlockError(
                 "net".to_string(),
@@ -91,20 +91,19 @@ impl NetworkDevice {
                     .to_string(),
             ));
         }
-        let mut iw_output = try!(
-            Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        &format!(
-                            "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
-                            self.device
-                        ),
-                    ],
-                )
-                .output()
-                .block_error("net", "Failed to exectute SSID query.")
-        ).stdout;
+        let mut iw_output = Command::new("sh")
+            .args(
+                &[
+                    "-c",
+                    &format!(
+                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
+                        self.device
+                    ),
+                ],
+            )
+            .output()
+            .block_error("net", "Failed to exectute SSID query.")?
+            .stdout;
 
         if iw_output.len() == 0 {
             Ok(None)
@@ -121,20 +120,19 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-        let mut ip_output = try!(
-            Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        &format!(
-                            "ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"",
-                            self.device
-                        ),
-                    ],
-                )
-                .output()
-                .block_error("net", "Failed to exectute IP address query.")
-        ).stdout;
+        let mut ip_output = Command::new("sh")
+            .args(
+                &[
+                    "-c",
+                    &format!(
+                        "ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"",
+                        self.device
+                    ),
+                ],
+            )
+            .output()
+            .block_error("net", "Failed to exectute IP address query.")?
+            .stdout;
 
         if ip_output.len() == 0 {
             Ok(None)
@@ -163,6 +161,7 @@ pub struct Net {
     tx_buff: Vec<u64>,
     rx_bytes: u64,
     tx_bytes: u64,
+    active: bool,
     hide_inactive: bool,
     last_update: Instant,
 }
@@ -232,9 +231,9 @@ impl ConfigBlock for Net {
     type Config = NetConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let device = try!(NetworkDevice::from_device(block_config.device));
-        let init_rx_bytes = try!(device.rx_bytes());
-        let init_tx_bytes = try!(device.tx_bytes());
+        let device = NetworkDevice::from_device(block_config.device)?;
+        let init_rx_bytes = device.rx_bytes()?;
+        let init_tx_bytes = device.tx_bytes()?;
         let wireless = device.is_wireless();
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
@@ -269,6 +268,7 @@ impl ConfigBlock for Net {
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
+            active: true,
             hide_inactive: block_config.hide_inactive,
             last_update: Instant::now(),
         })
@@ -310,32 +310,34 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
         // Skip updating tx/rx if device is not up.
-        let is_up = try!(self.device.is_up());
+        let is_up = self.device.is_up()?;
         if !is_up {
+            self.active = false;
             self.network.set_text("×".to_string());
             self.output_tx.set_text("×".to_string());
             self.output_rx.set_text("×".to_string());
 
             return Ok(Some(self.update_interval));
         } else {
+            self.active = true;
             self.network.set_text("".to_string());
         }
 
         // Update SSID and IP address every 30s.
         let now = Instant::now();
         if now.duration_since(self.last_update).as_secs() > 30 {
-            if let Some(ref mut widget) = self.ssid {
-                let ssid = try!(self.device.ssid());
+            if let Some(ref mut ssid_widget) = self.ssid {
+                let ssid = self.device.ssid()?;
                 if ssid.is_some() {
                     let mut truncated = ssid.unwrap();
                     truncated.truncate(self.max_ssid_width);
-                    widget.set_text(truncated);
+                    ssid_widget.set_text(truncated);
                 }
             }
-            if let Some(ref mut widget) = self.ip_addr {
-                let ip_addr = try!(self.device.ip_addr());
+            if let Some(ref mut ip_addr_widget) = self.ip_addr {
+                let ip_addr = self.device.ip_addr()?;
                 if ip_addr.is_some() {
-                    widget.set_text(ip_addr.unwrap());
+                    ip_addr_widget.set_text(ip_addr.unwrap());
                 }
             }
             self.last_update = now;
@@ -353,15 +355,15 @@ impl Block for Net {
         self.tx_bytes = current_tx;
 
         // Update the graph widgets, if they are enabled.
-        if let Some(ref mut widget) = self.graph_rx {
+        if let Some(ref mut graph_rx_widget) = self.graph_rx {
             self.rx_buff.remove(0);
             self.rx_buff.push(rx_bytes);
-            widget.set_values(&self.rx_buff, None, None);
+            graph_rx_widget.set_values(&self.rx_buff, None, None);
         }
-        if let Some(ref mut widget) = self.graph_tx {
+        if let Some(ref mut graph_tx_widget) = self.graph_tx {
             self.tx_buff.remove(0);
             self.tx_buff.push(tx_bytes);
-            widget.set_values(&self.tx_buff, None, None);
+            graph_tx_widget.set_values(&self.tx_buff, None, None);
         }
 
         self.output_tx.set_text(
@@ -374,27 +376,22 @@ impl Block for Net {
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        // Since we can't error here, report errors as non-up.
-        let is_up = match self.device.is_up() {
-            Ok(status) => status,
-            Err(_) => false,
-        };
-        if is_up {
+        if self.active {
             let mut widgets: Vec<&I3BarWidget> = Vec::with_capacity(7);
             widgets.push(&self.network);
-            if let Some(ref widget) = self.ssid {
-                widgets.push(widget);
+            if let Some(ref ssid_widget) = self.ssid {
+                widgets.push(ssid_widget);
             };
-            if let Some(ref widget) = self.ip_addr {
-                widgets.push(widget);
+            if let Some(ref ip_addr_widget) = self.ip_addr {
+                widgets.push(ip_addr_widget);
             };
             widgets.push(&self.output_tx);
-            if let Some(ref widget) = self.graph_tx {
-                widgets.push(widget);
+            if let Some(ref graph_tx_widget) = self.graph_tx {
+                widgets.push(graph_tx_widget);
             }
             widgets.push(&self.output_rx);
-            if let Some(ref widget) = self.graph_rx {
-                widgets.push(widget);
+            if let Some(ref graph_rx_widget) = self.graph_rx {
+                widgets.push(graph_rx_widget);
             }
             widgets
         } else if !self.hide_inactive {
