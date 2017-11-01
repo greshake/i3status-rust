@@ -150,10 +150,10 @@ pub struct Net {
     ssid: Option<TextWidget>,
     max_ssid_width: usize,
     ip_addr: Option<TextWidget>,
-    output_rx: TextWidget,
-    graph_rx: Option<GraphWidget>,
-    output_tx: TextWidget,
+    output_tx: Option<TextWidget>,
     graph_tx: Option<GraphWidget>,
+    output_rx: Option<TextWidget>,
+    graph_rx: Option<GraphWidget>,
     id: String,
     update_interval: Duration,
     device: NetworkDevice,
@@ -195,6 +195,14 @@ pub struct NetConfig {
     /// Whether to hide networks that are down/inactive completely.
     #[serde(default = "NetConfig::default_hide_inactive")]
     pub hide_inactive: bool,
+
+    /// Whether to show the upload throughput of active networks
+    #[serde(default = "NetConfig::default_tx")]
+    pub tx: bool,
+
+    /// Whether to show the download throughput of active networks
+    #[serde(default = "NetConfig::default_rx")]
+    pub rx: bool,
 }
 
 impl NetConfig {
@@ -225,6 +233,14 @@ impl NetConfig {
     fn default_ip() -> bool {
         false
     }
+
+    fn default_tx() -> bool {
+        true
+    }
+
+    fn default_rx() -> bool {
+        true
+    }
 }
 
 impl ConfigBlock for Net {
@@ -253,12 +269,18 @@ impl ConfigBlock for Net {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
-            output_tx: TextWidget::new(config.clone()).with_icon("net_up"),
+            output_tx: match block_config.tx {
+                true => Some(TextWidget::new(config.clone()).with_icon("net_up")),
+                false => None,
+            },
             graph_tx: match block_config.graph {
                 true => Some(GraphWidget::new(config.clone())),
                 false => None,
             },
-            output_rx: TextWidget::new(config.clone()).with_icon("net_down"),
+            output_rx: match block_config.rx {
+                true => Some(TextWidget::new(config.clone()).with_icon("net_down")),
+                false => None,
+            },
             graph_rx: match block_config.graph {
                 true => Some(GraphWidget::new(config.clone())),
                 false => None,
@@ -314,8 +336,12 @@ impl Block for Net {
         if !is_up {
             self.active = false;
             self.network.set_text("×".to_string());
-            self.output_tx.set_text("×".to_string());
-            self.output_rx.set_text("×".to_string());
+            if let Some(ref mut tx_widget) = self.output_tx {
+                tx_widget.set_text("×".to_string());
+            };
+            if let Some(ref mut rx_widget) = self.output_rx {
+                rx_widget.set_text("×".to_string());
+            };
 
             return Ok(Some(self.update_interval));
         } else {
@@ -366,12 +392,12 @@ impl Block for Net {
             graph_tx_widget.set_values(&self.tx_buff, None, None);
         }
 
-        self.output_tx.set_text(
-            format!("{:5.1}{}", tx_speed, tx_unit),
-        );
-        self.output_rx.set_text(
-            format!("{:5.1}{}", rx_speed, rx_unit),
-        );
+        if let Some(ref mut tx_widget) = self.output_tx {
+            tx_widget.set_text(format!("{:5.1}{}", tx_speed, tx_unit));
+        };
+        if let Some(ref mut rx_widget) = self.output_rx {
+            rx_widget.set_text(format!("{:5.1}{}", rx_speed, rx_unit));
+        };
         Ok(Some(self.update_interval))
     }
 
@@ -385,11 +411,15 @@ impl Block for Net {
             if let Some(ref ip_addr_widget) = self.ip_addr {
                 widgets.push(ip_addr_widget);
             };
-            widgets.push(&self.output_tx);
+            if let Some(ref tx_widget) = self.output_tx {
+                widgets.push(tx_widget);
+            };
             if let Some(ref graph_tx_widget) = self.graph_tx {
                 widgets.push(graph_tx_widget);
-            }
-            widgets.push(&self.output_rx);
+            };
+            if let Some(ref rx_widget) = self.output_rx {
+                widgets.push(rx_widget);
+            };
             if let Some(ref graph_rx_widget) = self.graph_rx {
                 widgets.push(graph_rx_widget);
             }
