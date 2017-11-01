@@ -292,7 +292,7 @@ impl ConfigBlock for Net {
             tx_bytes: init_tx_bytes,
             active: true,
             hide_inactive: block_config.hide_inactive,
-            last_update: Instant::now(),
+            last_update: Instant::now() - Duration::from_secs(30),
         })
     }
 }
