@@ -157,10 +157,10 @@ pub struct Net {
     id: String,
     update_interval: Duration,
     device: NetworkDevice,
-    rx_buff: Vec<u64>,
     tx_buff: Vec<u64>,
-    rx_bytes: u64,
+    rx_buff: Vec<u64>,
     tx_bytes: u64,
+    rx_bytes: u64,
     active: bool,
     hide_inactive: bool,
     last_update: Instant,
@@ -369,35 +369,41 @@ impl Block for Net {
             self.last_update = now;
         }
 
-        let current_rx = self.device.rx_bytes()?;
+        // Update the throughout/graph widgets if they are enabled
         let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
-        let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
-        let (rx_speed, rx_unit) = convert_speed(rx_bytes);
-        self.rx_bytes = current_rx;
+        if self.output_tx.is_some() || self.graph_tx.is_some() {
+            let current_tx = self.device.tx_bytes()?;
+            let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
+            let (tx_speed, tx_unit) = convert_speed(tx_bytes);
+            self.tx_bytes = current_tx;
 
-        let current_tx = self.device.tx_bytes()?;
-        let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
-        let (tx_speed, tx_unit) = convert_speed(tx_bytes);
-        self.tx_bytes = current_tx;
+            if let Some(ref mut tx_widget) = self.output_tx {
+                tx_widget.set_text(format!("{:5.1}{}", tx_speed, tx_unit));
+            };
 
-        // Update the graph widgets, if they are enabled.
-        if let Some(ref mut graph_rx_widget) = self.graph_rx {
-            self.rx_buff.remove(0);
-            self.rx_buff.push(rx_bytes);
-            graph_rx_widget.set_values(&self.rx_buff, None, None);
+            if let Some(ref mut graph_tx_widget) = self.graph_tx {
+                self.tx_buff.remove(0);
+                self.tx_buff.push(tx_bytes);
+                graph_tx_widget.set_values(&self.tx_buff, None, None);
+            }
         }
-        if let Some(ref mut graph_tx_widget) = self.graph_tx {
-            self.tx_buff.remove(0);
-            self.tx_buff.push(tx_bytes);
-            graph_tx_widget.set_values(&self.tx_buff, None, None);
+        if self.output_rx.is_some() || self.graph_rx.is_some() {
+            let current_rx = self.device.rx_bytes()?;
+            let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
+            let (rx_speed, rx_unit) = convert_speed(rx_bytes);
+            self.rx_bytes = current_rx;
+
+            if let Some(ref mut rx_widget) = self.output_rx {
+                rx_widget.set_text(format!("{:5.1}{}", rx_speed, rx_unit));
+            };
+
+            if let Some(ref mut graph_rx_widget) = self.graph_rx {
+                self.rx_buff.remove(0);
+                self.rx_buff.push(rx_bytes);
+                graph_rx_widget.set_values(&self.rx_buff, None, None);
+            }
         }
 
-        if let Some(ref mut tx_widget) = self.output_tx {
-            tx_widget.set_text(format!("{:5.1}{}", tx_speed, tx_unit));
-        };
-        if let Some(ref mut rx_widget) = self.output_rx {
-            rx_widget.set_text(format!("{:5.1}{}", rx_speed, rx_unit));
-        };
         Ok(Some(self.update_interval))
     }
 
