@@ -177,9 +177,6 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_device")]
     pub device: String,
 
-    #[serde(default = "NetConfig::default_graph")]
-    pub graph: bool,
-
     /// Whether to show the SSID of active wireless networks.
     #[serde(default = "NetConfig::default_ssid")]
     pub ssid: bool,
@@ -196,13 +193,21 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_hide_inactive")]
     pub hide_inactive: bool,
 
-    /// Whether to show the upload throughput of active networks
-    #[serde(default = "NetConfig::default_tx")]
-    pub tx: bool,
+    /// Whether to show the upload throughput indicator of active networks.
+    #[serde(default = "NetConfig::default_speed_up")]
+    pub speed_up: bool,
 
-    /// Whether to show the download throughput of active networks
-    #[serde(default = "NetConfig::default_rx")]
-    pub rx: bool,
+    /// Whether to show the download throughput indicator of active networks.
+    #[serde(default = "NetConfig::default_speed_down")]
+    pub speed_down: bool,
+
+    /// Whether to show the upload throughput graph of active networks.
+    #[serde(default = "NetConfig::default_graph_up")]
+    pub graph_up: bool,
+
+    /// Whether to show the download throughput graph of active networks.
+    #[serde(default = "NetConfig::default_graph_down")]
+    pub graph_down: bool,
 }
 
 impl NetConfig {
@@ -212,10 +217,6 @@ impl NetConfig {
 
     fn default_device() -> String {
         "lo".to_string()
-    }
-
-    fn default_graph() -> bool {
-        false
     }
 
     fn default_hide_inactive() -> bool {
@@ -234,12 +235,20 @@ impl NetConfig {
         false
     }
 
-    fn default_tx() -> bool {
+    fn default_speed_up() -> bool {
         true
     }
 
-    fn default_rx() -> bool {
+    fn default_speed_down() -> bool {
         true
+    }
+
+    fn default_graph_up() -> bool {
+        false
+    }
+
+    fn default_graph_down() -> bool {
+        false
     }
 }
 
@@ -269,19 +278,19 @@ impl ConfigBlock for Net {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
-            output_tx: match block_config.tx {
+            output_tx: match block_config.speed_up {
                 true => Some(TextWidget::new(config.clone()).with_icon("net_up")),
                 false => None,
             },
-            graph_tx: match block_config.graph {
-                true => Some(GraphWidget::new(config.clone())),
-                false => None,
-            },
-            output_rx: match block_config.rx {
+            output_rx: match block_config.speed_down {
                 true => Some(TextWidget::new(config.clone()).with_icon("net_down")),
                 false => None,
             },
-            graph_rx: match block_config.graph {
+            graph_tx: match block_config.graph_up {
+                true => Some(GraphWidget::new(config.clone())),
+                false => None,
+            },
+            graph_rx: match block_config.graph_down {
                 true => Some(GraphWidget::new(config.clone())),
                 false => None,
             },
