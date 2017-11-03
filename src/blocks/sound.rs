@@ -1,9 +1,11 @@
-use std::time::Duration;
-use std::process::Command;
 use std::cmp::min;
+use std::io::Read;
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 use chan::Sender;
-use scheduler::Task;
 
+use scheduler::Task;
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
@@ -98,7 +100,6 @@ pub struct Sound {
     text: ButtonWidget,
     id: String,
     devices: Vec<SoundDevice>,
-    update_interval: Duration,
     step_width: u32,
     current_idx: usize,
     config: Config,
@@ -160,22 +161,56 @@ impl Sound {
 impl ConfigBlock for Sound {
     type Config = SoundConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         let mut step_width = block_config.step_width;
         if step_width > 50 {
             step_width = 50;
         }
 
-        Ok(Sound {
+        let sound = Sound {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
-            id,
+            id: id.clone(),
             devices: vec![SoundDevice::new("Master")?],
-            update_interval: block_config.interval,
             step_width: step_width,
             current_idx: 0,
             config: config,
-        })
+        };
+
+        // Monitor volume changes in a separate thread.
+        thread::spawn(move || {
+            let mut monitor = Command::new("sh")
+                .args(
+                    &[
+                        "-c",
+                        // Line-buffer to reduce noise.
+                        "stdbuf -oL alsactl monitor",
+                    ],
+                )
+                .stdout(Stdio::piped())
+                .spawn()
+                .expect("Failed to start alsactl monitor")
+                .stdout
+                .expect("Failed to pipe alsactl monitor output");
+
+            let mut buffer = [0; 1024]; // Should be more than enough.
+            loop {
+                // Block until we get some output. Doesn't really matter what
+                // the output actually is -- these are events -- we just update
+                // the sound information if *something* happens.
+                if let Ok(_) = monitor.read(&mut buffer) {
+                    tx_update_request.send(Task {
+                        id: id.clone(),
+                        update_time: Instant::now(),
+                    });
+                }
+                // Don't update too often. Wait 1/4 second, fast enough for
+                // volume button mashing but slow enough to skip event spam.
+                thread::sleep(Duration::new(0, 250_000_000))
+            }
+        });
+
+        Ok(sound)
     }
 }
 
@@ -185,7 +220,7 @@ const FILTER: &[char] = &['[', ']', '%'];
 impl Block for Sound {
     fn update(&mut self) -> Result<Option<Duration>> {
         self.display()?;
-        Ok(Some(self.update_interval))
+        Ok(None) // The monitor thread will call for updates when needed.
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
