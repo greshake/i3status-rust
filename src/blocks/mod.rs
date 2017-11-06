@@ -15,7 +15,7 @@ mod speedtest;
 mod focused_window;
 mod xrandr;
 mod net;
-mod backlight;
+pub mod backlight;
 mod weather;
 
 use config::Config;
@@ -36,7 +36,7 @@ use self::focused_window::*;
 use self::temperature::*;
 use self::xrandr::*;
 use self::net::*;
-use self::backlight::*;
+use self::backlight::Backlight;
 use self::weather::*;
 
 use super::block::{Block, ConfigBlock};

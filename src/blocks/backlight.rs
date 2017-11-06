@@ -1,20 +1,29 @@
+//! A block for displaying the brightness of a backlit device.
+//!
+//! This module contains the [`Backlight`](./struct.Backlight.html) block, which
+//! can display the brightness level of physical backlit devices. Brightness
+//! levels are read from and written to the `sysfs` filesystem, so this block
+//! does not depend on `xrandr` (and thus it works on Wayland). To set
+//! brightness levels using `xrandr`, see the
+//! [`Xrandr`](../xrandr/struct.Xrandr.html) block.
+
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
+
 use chan::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
+use uuid::Uuid;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
 use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
-
-use uuid::Uuid;
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
@@ -37,6 +46,7 @@ fn read_brightness(device_file: &Path) -> Result<u64> {
     )
 }
 
+/// Represents a physical backlit device whose brightness level can be queried.
 pub struct BacklitDevice {
     max_brightness: u64,
     device_path: PathBuf,
@@ -76,8 +86,8 @@ impl BacklitDevice {
         })
     }
 
-    /// Use the backlit device `device`. Raises an error if a directory for that
-    /// device is not found.
+    /// Use the backlit device `device`. Returns an error if a directory for
+    /// that device is not found.
     pub fn from_device(device: String) -> Result<Self> {
         let device_path = Path::new("/sys/class/backlight").join(device);
         if !device_path.exists() {
@@ -133,6 +143,7 @@ impl BacklitDevice {
     }
 }
 
+/// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
     id: String,
     output: ButtonWidget,
@@ -140,6 +151,7 @@ pub struct Backlight {
     step_width: u64,
 }
 
+/// Configuration for the [`Backlight`](./struct.Backlight.html) block.
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BacklightConfig {
