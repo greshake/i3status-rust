@@ -16,7 +16,6 @@ mod focused_window;
 mod xrandr;
 mod net;
 mod backlight;
-#[cfg(feature = "darksky")]
 mod weather;
 
 use config::Config;
@@ -38,7 +37,6 @@ use self::temperature::*;
 use self::xrandr::*;
 use self::net::*;
 use self::backlight::*;
-#[cfg(feature = "darksky")]
 use self::weather::*;
 
 use super::block::{Block, ConfigBlock};
@@ -90,7 +88,6 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "xrandr" => Xrandr,
             "net" => Net,
             "backlight" => Backlight,
-            #[cfg(feature = "darksky")]
             "weather" => Weather
     )
 }
