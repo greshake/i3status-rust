@@ -59,9 +59,10 @@ lazy_static! {
         "toggle_off" => " \u{f204} ",
         "toggle_on" => " \u{f205} ",
         "volume_full" => " \u{f028} ",
-        "volume_half" => " \u{f027} ",
-        "volume_empty" => " \u{f026} ",
+        "volume_half" => " \u{f027}  ",
+        "volume_empty" => " \u{f026}     ",
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
+        // TODO: I don't know how to make volume muted subtract a space, which would resolve its alignment.
         "volume_muted" => "\u{f00d}",
         "thermometer" => " \u{f2c8} ",
         "xrandr" => " \u{f26c} ",
