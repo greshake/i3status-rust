@@ -37,12 +37,12 @@ lazy_static! {
         "backlight_partial2" => " BRIGHT ",
         "backlight_partial3" => " BRIGHT ",
         "backlight_full" => " BRIGHT ",
-        "weather_sun" => " OUT ",
-        "weather_snow" => " OUT ",
-        "weather_thunder" => " OUT ",
-        "weather_clouds" => " OUT ",
-        "weather_rain" => " OUT ",
-        "weather_default" => " OUT "
+        "weather_sun" => " SUNNY ",
+        "weather_snow" => " SNOW ",
+        "weather_thunder" => " STORM ",
+        "weather_clouds" => " CLOUDY ",
+        "weather_rain" => " RAIN ",
+        "weather_default" => " WEATHER "
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
