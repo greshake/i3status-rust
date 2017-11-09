@@ -56,7 +56,7 @@ impl Weather {
                         &[
                             "-c",
                             &format!(
-                                "curl \"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}\"",
+                                "curl \"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}\" 2> /dev/null",
                                 city_id = city_id,
                                 api_key = api_key,
                                 units = match *units {
@@ -71,6 +71,15 @@ impl Weather {
                     .and_then(|raw_output| {
                         String::from_utf8(raw_output.stdout).block_error("weather", "Non-UTF8 SSID.")
                     })?;
+
+                // Don't error out on empty responses e.g. for when not
+                // connected to the internet. Instead just display a
+                // error/disabled-looking widget.
+                if output.len() < 1 {
+                    self.weather.set_icon("weather_default");
+                    self.weather.set_text("×".to_string());
+                    return Ok(());
+                }
 
                 let json: serde_json::value::Value = serde_json::from_str(&output).block_error(
                     "weather",
