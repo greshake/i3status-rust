@@ -8,6 +8,7 @@ use errors::*;
 use scheduler::Task;
 use input::I3BarEvent;
 use block::{Block, ConfigBlock};
+use de::deserialize_duration;
 use widgets::rotatingtext::RotatingTextWidget;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
@@ -38,9 +39,17 @@ pub struct MusicConfig {
     #[serde(default = "MusicConfig::default_max_width")]
     pub max_width: usize,
 
-    /// Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max-width
+    /// Bool to specify if a marquee style rotation should be used<br/> if the title + artist is longer than max-width
     #[serde(default = "MusicConfig::default_marquee")]
     pub marquee: bool,
+
+    /// Marquee interval in seconds. This is the delay between each rotation.
+    #[serde(default = "MusicConfig::default_marquee_interval", deserialize_with = "deserialize_duration")]
+    pub marquee_interval: Duration,
+
+    /// Marquee speed in seconds. This is the scrolling time used per character.
+    #[serde(default = "MusicConfig::default_marquee_speed", deserialize_with = "deserialize_duration")]
+    pub marquee_speed: Duration,
 
     /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
     #[serde(default = "MusicConfig::default_buttons")]
@@ -54,6 +63,14 @@ impl MusicConfig {
 
     fn default_marquee() -> bool {
         true
+    }
+
+    fn default_marquee_interval() -> Duration {
+        Duration::from_secs(10)
+    }
+
+    fn default_marquee_speed() -> Duration {
+        Duration::from_millis(500)
     }
 
     fn default_buttons() -> Vec<String> {
@@ -123,8 +140,8 @@ impl ConfigBlock for Music {
         Ok(Music {
             id: id_copy,
             current_song: RotatingTextWidget::new(
-                Duration::new(10, 0),
-                Duration::new(0, 500000000),
+                Duration::new(block_config.marquee_interval.as_secs(), 0),
+                Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
                 config.clone(),
             ).with_icon("music")
