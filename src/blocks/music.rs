@@ -26,8 +26,6 @@ pub struct Music {
     dbus_conn: Connection,
     player_avail: bool,
     marquee: bool,
-    marquee_interval: Duration,
-    marquee_speed: Duration,
     player: String,
 }
 
@@ -141,8 +139,6 @@ impl ConfigBlock for Music {
 
         Ok(Music {
             id: id_copy,
-            marquee_interval: block_config.marquee_interval,
-            marquee_speed: block_config.marquee_speed,
             current_song: RotatingTextWidget::new(
                 Duration::new(block_config.marquee_interval.as_secs(), 0),
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
