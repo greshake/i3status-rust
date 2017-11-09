@@ -13,8 +13,6 @@ extern crate uuid;
 extern crate regex;
 extern crate num;
 extern crate inotify;
-#[cfg(feature = "darksky")]
-extern crate darksky;
 
 #[macro_use]
 mod de;

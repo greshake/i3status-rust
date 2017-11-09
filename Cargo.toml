@@ -24,7 +24,3 @@ inotify = "0.5.0"
 # for profiling blocks
 cpuprofiler = "0.0.3"
 progress = "0.2"
-darksky = { version = "0.5.0", optional = true }
-
-[features]
-default = []
