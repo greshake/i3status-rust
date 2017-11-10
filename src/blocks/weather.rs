@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
 use chan::Sender;
@@ -8,9 +9,10 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
+use scheduler::Task;
+use util::FormatTemplate;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
-use scheduler::Task;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -39,6 +41,8 @@ pub enum OpenWeatherMapUnits {
 pub struct Weather {
     id: String,
     weather: TextWidget,
+    format: String,
+    weather_keys: HashMap<String, String>,
     service: WeatherService,
     update_interval: Duration,
 }
@@ -94,7 +98,7 @@ impl Weather {
                     ));
                 };
                 let raw_weather = match json.pointer("/weather/0/main")
-                    .and_then(|value| value.as_str())
+                    .and_then(|v| v.as_str())
                     .map(|s| s.to_string()) {
                     Some(v) => v,
                     None => {
@@ -104,7 +108,27 @@ impl Weather {
                         ));
                     }
                 };
-                let raw_temp = match json.pointer("/main/temp").and_then(|value| value.as_f64()) {
+                let raw_temp = match json.pointer("/main/temp").and_then(|v| v.as_f64()) {
+                    Some(v) => v,
+                    None => {
+                        return Err(BlockError(
+                            "weather".to_string(),
+                            "Malformed JSON.".to_string(),
+                        ));
+                    }
+                };
+                let raw_wind = match json.pointer("/wind/speed").and_then(|v| v.as_f64()) {
+                    Some(v) => v,
+                    None => {
+                        return Err(BlockError(
+                            "weather".to_string(),
+                            "Malformed JSON.".to_string(),
+                        ));
+                    }
+                };
+                let raw_location = match json.pointer("/name").and_then(|v| v.as_str()).map(|s| {
+                    s.to_string()
+                }) {
                     Some(v) => v,
                     None => {
                         return Err(BlockError(
@@ -122,11 +146,12 @@ impl Weather {
                     "Snow" => "weather_snow",
                     _ => "weather_default",
                 });
-                self.weather.set_text(format!(
-                    " {} {:.1}\u{00b0}",
-                    raw_weather,
-                    raw_temp
-                ));
+
+                self.weather_keys =
+                    map_to_owned!("{weather}" => raw_weather,
+                                  "{temp}" => format!("{:.0}", raw_temp),
+                                  "{wind}" => format!("{:.1}", raw_wind),
+                                  "{location}" => raw_location);
                 Ok(())
             }
         }
@@ -138,12 +163,18 @@ impl Weather {
 pub struct WeatherConfig {
     #[serde(default = "WeatherConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+    #[serde(default = "WeatherConfig::default_format")]
+    pub format: String,
     pub service: WeatherService,
 }
 
 impl WeatherConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(600)
+    }
+
+    fn default_format() -> String {
+        "{weather} {temp}\u{00b0}".to_string()
     }
 }
 
@@ -154,6 +185,8 @@ impl ConfigBlock for Weather {
         Ok(Weather {
             id: Uuid::new_v4().simple().to_string(),
             weather: TextWidget::new(config),
+            format: block_config.format,
+            weather_keys: HashMap::new(),
             service: block_config.service,
             update_interval: block_config.interval,
         })
@@ -163,6 +196,8 @@ impl ConfigBlock for Weather {
 impl Block for Weather {
     fn update(&mut self) -> Result<Option<Duration>> {
         self.update_weather()?;
+        let fmt = FormatTemplate::from_string(self.format.clone())?;
+        self.weather.set_text(fmt.render(&self.weather_keys));
         Ok(Some(self.update_interval))
     }
 
