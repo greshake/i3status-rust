@@ -30,6 +30,15 @@ pub struct I3BarEvent {
     pub button: MouseButton,
 }
 
+impl I3BarEvent {
+    pub fn matches_name(&self, other: &str) -> bool {
+        match self.name {
+            Some(ref name) => name.as_str() == other,
+            _ => false,
+        }
+    }
+}
+
 pub fn process_events(sender: Sender<I3BarEvent>) {
     thread::spawn(move || loop {
         let mut input = String::new();

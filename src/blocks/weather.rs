@@ -9,9 +9,10 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
+use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
 use util::FormatTemplate;
-use widgets::text::TextWidget;
+use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -40,7 +41,7 @@ pub enum OpenWeatherMapUnits {
 
 pub struct Weather {
     id: String,
-    weather: TextWidget,
+    weather: ButtonWidget,
     format: String,
     weather_keys: HashMap<String, String>,
     service: WeatherService,
@@ -182,9 +183,10 @@ impl ConfigBlock for Weather {
     type Config = WeatherConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        let id = Uuid::new_v4().simple().to_string();
         Ok(Weather {
-            id: Uuid::new_v4().simple().to_string(),
-            weather: TextWidget::new(config),
+            id: id.clone(),
+            weather: ButtonWidget::new(config, &id),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,
@@ -203,6 +205,18 @@ impl Block for Weather {
 
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.weather]
+    }
+
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if event.matches_name(self.id()) {
+            match event.button {
+                MouseButton::Left => {
+                    self.update()?;
+                }
+                _ => {}
+            }
+        }
+        Ok(())
     }
 
     fn id(&self) -> &str {
