@@ -14,7 +14,7 @@ This is a replacement for i3status, aiming to provide the most feature-complete 
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
 # Requirements
-i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux.
+i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux. Compilation is only tested with the latest Rust stable version. If you use a distro with old Rust packages (looking at you, Ubuntu!), fall back to rustup or find a precompiled package for your distro. 
 
 Optional:
 * `alsa-utils` For the volume block
