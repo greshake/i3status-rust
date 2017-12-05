@@ -102,7 +102,7 @@ impl NetworkDevice {
                 ],
             )
             .output()
-            .block_error("net", "Failed to exectute SSID query.")?
+            .block_error("net", "Failed to execute SSID query.")?
             .stdout;
 
         if iw_output.len() == 0 {
@@ -131,7 +131,7 @@ impl NetworkDevice {
                 ],
             )
             .output()
-            .block_error("net", "Failed to exectute IP address query.")?
+            .block_error("net", "Failed to execute IP address query.")?
             .stdout;
 
         if ip_output.len() == 0 {
@@ -143,6 +143,40 @@ impl NetworkDevice {
                 .map(|s| Some(s))
         }
     }
+
+    /// Queries the bitrate of this device (using `iwlist`)
+    pub fn bitrate(&self) -> Result<Option<String>> {
+        let up = self.is_up()?;
+        if !self.wireless || !up {
+            return Err(BlockError(
+                "net".to_string(),
+                "Bitrate is only available for connected wireless devices."
+                    .to_string(),
+            ));
+        }
+        let mut bitrate_output = Command::new("sh")
+            .args(
+                &[
+                    "-c",
+                    &format!(
+                        "iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'",
+                        self.device
+                    ),
+                ],
+            )
+            .output()
+            .block_error("net", "Failed to execute bitrate query.")?
+            .stdout;
+
+        if bitrate_output.len() == 0 {
+            Ok(None)
+        } else {
+            bitrate_output.pop(); // Remove trailing newline.
+            String::from_utf8(bitrate_output)
+                .block_error("net", "Non-UTF8 bitrate.")
+                .map(|s| Some(s))
+        }
+    }
 }
 
 pub struct Net {
@@ -150,6 +184,7 @@ pub struct Net {
     ssid: Option<TextWidget>,
     max_ssid_width: usize,
     ip_addr: Option<TextWidget>,
+    bitrate: Option<TextWidget>,
     output_tx: Option<TextWidget>,
     graph_tx: Option<GraphWidget>,
     output_rx: Option<TextWidget>,
@@ -184,6 +219,10 @@ pub struct NetConfig {
     /// Max SSID width, in characters.
     #[serde(default = "NetConfig::default_max_ssid_width")]
     pub max_ssid_width: usize,
+
+    /// Whether to show the bitrate of active wireless networks.
+    #[serde(default = "NetConfig::default_bitrate")]
+    pub bitrate: bool,
 
     /// Whether to show the IP address of active networks.
     #[serde(default = "NetConfig::default_ip")]
@@ -231,6 +270,10 @@ impl NetConfig {
         false
     }
 
+    fn default_bitrate() -> bool {
+        false
+    }
+
     fn default_ip() -> bool {
         false
     }
@@ -274,6 +317,10 @@ impl ConfigBlock for Net {
                 false => None,
             },
             max_ssid_width: block_config.max_ssid_width,
+            bitrate: match block_config.bitrate {
+                true => Some(TextWidget::new(config.clone())),
+                false => None,
+            },
             ip_addr: match block_config.ip {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
@@ -358,8 +405,16 @@ impl Block for Net {
             self.network.set_text("".to_string());
         }
 
-        // Update SSID and IP address every 30s.
+        // Update SSID and IP address every 30s and the bitrate every 10s
         let now = Instant::now();
+        if now.duration_since(self.last_update).as_secs() % 10 == 0 {
+            if let Some(ref mut bitrate_widget) = self.bitrate {
+                let bitrate = self.device.bitrate()?;
+                if bitrate.is_some() {
+                    bitrate_widget.set_text(bitrate.unwrap());
+                }
+            }
+        }
         if now.duration_since(self.last_update).as_secs() > 30 {
             if let Some(ref mut ssid_widget) = self.ssid {
                 let ssid = self.device.ssid()?;
@@ -423,6 +478,9 @@ impl Block for Net {
             if let Some(ref ssid_widget) = self.ssid {
                 widgets.push(ssid_widget);
             };
+            if let Some(ref bitrate_widget) = self.bitrate {
+                widgets.push(bitrate_widget);
+            }
             if let Some(ref ip_addr_widget) = self.ip_addr {
                 widgets.push(ip_addr_widget);
             };
