@@ -16,7 +16,7 @@ extern crate nix;
 
 use self::nix::sys::statvfs::vfs::Statvfs;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Deserialize)]
 pub enum Unit {
     MB,
     GB,
@@ -33,45 +33,16 @@ impl Unit {
             Unit::GiB => bytes as f64 / 1024. / 1024. / 1024.,
         }
     }
-
-    fn name(&self) -> &'static str {
-        match *self {
-            Unit::MB => "MB",
-            Unit::GB => "GB",
-            Unit::MiB => "MiB",
-            Unit::GiB => "GiB",
-        }
-    }
-
-    fn from_str(name: &str) -> Unit {
-        match name {
-            "MB" => Unit::MB,
-            "GB" => Unit::GB,
-            "MiB" => Unit::MiB,
-            "GiB" => Unit::GiB,
-            _ => panic!("Invalid unit name"),
-        }
-    }
 }
 
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum InfoType {
     Available,
     Free,
     // TODO: implement
     //Total,
     //Used,
-}
-
-impl InfoType {
-    fn from_str(name: &str) -> InfoType {
-        match name {
-            "available" => InfoType::Available,
-            "free" => InfoType::Free,
-            "total" => unimplemented!(), // SpaceType::Total,
-            "used" => unimplemented!(), // SpaceType::Used,
-            _ => panic!("Invalid InfoType"),
-        }
-    }
 }
 
 pub struct DiskSpace {
@@ -86,7 +57,7 @@ pub struct DiskSpace {
     alert: f64,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct DiskSpaceConfig {
     /// Path to collect information from
@@ -99,11 +70,11 @@ pub struct DiskSpaceConfig {
 
     /// Currently supported options are available and free
     #[serde(default = "DiskSpaceConfig::default_info_type")]
-    pub info_type: String,
+    pub info_type: InfoType,
 
     /// Unit that is used to display disk space. Options are MB, MiB, GB and GiB
     #[serde(default = "DiskSpaceConfig::default_unit")]
-    pub unit: String,
+    pub unit: Unit,
 
     /// Update interval in seconds
     #[serde(default = "DiskSpaceConfig::default_interval", deserialize_with = "deserialize_duration")]
@@ -128,12 +99,12 @@ impl DiskSpaceConfig {
         "/".to_owned()
     }
 
-    fn default_info_type() -> String {
-        "available".to_owned()
+    fn default_info_type() -> InfoType {
+        InfoType::Available
     }
 
-    fn default_unit() -> String {
-        "GB".to_owned()
+    fn default_unit() -> Unit {
+        Unit::GB
     }
 
     fn default_interval() -> Duration {
@@ -175,8 +146,8 @@ impl ConfigBlock for DiskSpace {
             disk_space: TextWidget::new(config).with_text("DiskSpace"),
             alias: block_config.alias,
             path: block_config.path,
-            info_type: InfoType::from_str(&block_config.info_type),
-            unit: Unit::from_str(&block_config.unit),
+            info_type: block_config.info_type,
+            unit: block_config.unit,
             warning: block_config.warning,
             alert: block_config.alert,
         })
@@ -203,10 +174,10 @@ impl Block for DiskSpace {
         }
 
         self.disk_space.set_text(format!(
-            "{0} {1:.2} {2}",
+            "{0} {1:.2} {2:?}",
             self.alias,
             converted,
-            self.unit.name()
+            self.unit
         ));
 
         let state = self.compute_state(result, self.warning, self.alert);
