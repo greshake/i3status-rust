@@ -390,5 +390,5 @@ interval = 1800
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-bytes | weather to use bytes or bits in the display.<br>(true for bytes, false for bits) | No | false
+bytes | whether to use bytes or bits in the display.<br>(true for bytes, false for bits) | No | false
 interval | Update interval in seconds | No | 1800
