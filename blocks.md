@@ -112,7 +112,9 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 player | Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.  | Yes | -
 max_width | Max width of the block in characters, not including the buttons | No | 21
-marquee | Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max_width | No | true
+marquee | Bool to specify if a marquee style rotation should be used<br/> if the title + artist is longer than max-width | No | true
+marquee_interval | Marquee interval in seconds. This is the delay between each rotation. | No | 10
+marquee_speed | Marquee speed in seconds. This is the scrolling time used per character. | No | 0.5
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
 ## Load
