@@ -356,6 +356,35 @@ icons | Show icons for brightness and resolution (needs awesome fonts support) |
 resolution | Shows the screens resolution | No | false
 step\_width | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | 5
 
+## Backlight
+
+Creates a block to display screen brightness. This is a simplified version of the [Xrandr](#xrandr) block that reads brightness information directly from the filesystem, so it works under Wayland. The block uses `inotify` to listen for changes in the device's brightness directly, so there is no need to set an update interval.
+
+When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.
+
+### Examples
+
+Show brightness for a specific device:
+
+```toml
+[[block]]
+block = "backlight"
+device = "intel_backlight"
+```
+
+Show brightness for the default device:
+
+```toml
+[[block]]
+block = "backlight"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+device | The `/sys/class/backlight` device to read brightness information from. | No | Default device
+
 ## Net
 Creates a block which displays the upload and download throughput for a network interface. Units are in bytes per second (kB/s, MB/s, etc).
 
