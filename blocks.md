@@ -432,3 +432,48 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 bytes | whether to use bytes or bits in the display.<br>(true for bytes, false for bits) | No | false
 interval | Update interval in seconds | No | 1800
+
+## Weather
+
+Creates a block which displays local weather and temperature information. In order to use this block, you will need access to a supported weather API service. At the time of writing, OpenWeatherMap is the only supported service.
+
+Configuring the Weather block requires configuring a weather service, which may require API keys and other parameters.
+
+### Examples
+
+Show detailed weather in San Francisco through the OpenWeatherMap service:
+
+```toml
+[[block]]
+block = "weather"
+format = "{weather} ({location}) {temp}°, {wind} km/s"
+service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units = "metric" }
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds. | No | 600
+format | The text format of the weather display. | No | {weather} {temp}°
+service | The configuration of a weather service (see below). | Yes | None
+
+### OpenWeatherMap Options
+
+To use the service you will need a (free) API key.
+
+Key | Values | Required | Default
+----|--------|----------|--------
+name | `openweathermap` | Yes | None
+api_key | Your OpenWeatherMap API key. | Yes | None
+city_id | OpenWeatherMap's ID for the city. | Yes | None
+units | One of `metric` or `imperial` | Yes | None
+
+### Available Format Keys
+
+Key | Value
+----|-------
+{location} | Location name (exact format depends on the service).
+{temp} | Temperature.
+{weather} | Textual description of the weather, e.g. "Raining".
+{wind} | Wind speed.
