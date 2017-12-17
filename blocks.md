@@ -278,25 +278,27 @@ info_type | Currently supported options are available and free | No | available
 unit | Unit that is used to display disk space. Options are MB, MiB, GB and GiB | No | GB
 interval | Update interval in seconds | No | 20
 
-
 ## Sound
-Creates a block which displays the current Master volume (currently based on amixer output). Right click to toggle mute, scroll to adjust volume.
 
-**Example**
+Creates a block which displays the volume level (according to ALSA). Right click to toggle mute, scroll to adjust volume.
+
+The display is updated when ALSA detects changes, so there is no need to set an update interval.
+
+### Examples
+
+Change the default scrolling step width to 3 percent:
+
 ```toml
 [[block]]
 block = "sound"
-
-interval = 10
+step_width = 3
 ```
 
-**Options**
+### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-interval | Update interval in seconds | No | 2
-step\_width | The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50) | No | 5
-
+step\_width | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | 5
 
 ## Temperature
 Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). Currently, you can only adjust these thresholds in source code. **Depends on lm_sensors being installed and configured!**
