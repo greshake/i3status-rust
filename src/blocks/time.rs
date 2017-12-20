@@ -86,9 +86,9 @@ impl Block for Time {
                 self.clicked = true;
                 let command_broken: Vec<&str> = self.command.split_whitespace().collect();
                 let mut itr = command_broken.iter();
-                let mut cmd = Command::new(OsStr::new(&itr.next().unwrap_or(&"nope")));
-                cmd.args(itr);
-                cmd.spawn();
+                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap_or(&"nope")))
+                    .args(itr)
+                    .spawn();
             }
         }
         Ok(())
