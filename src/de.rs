@@ -123,8 +123,9 @@ where
         A: de::SeqAccess<'de>,
     {
         let mut vec: Vec<Self::Value> = Vec::new();
-        while let Some(element) = visitor
-            .next_element_seed(MapType::<T, V>(PhantomData, PhantomData))?
+        while let Some(element) = visitor.next_element_seed(
+            MapType::<T, V>(PhantomData, PhantomData),
+        )?
         {
             vec.push(element);
         }
@@ -168,8 +169,9 @@ where
             );
         }
         if let Some(raw_overrides) = map.remove("overrides") {
-            let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides)
-                .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?;
+            let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides).map_err(
+                |e: toml::de::Error| de::Error::custom(e.description()),
+            )?;
             combined.extend(overrides);
         }
 

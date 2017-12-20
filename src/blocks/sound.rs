@@ -41,11 +41,10 @@ impl SoundDevice {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .block_error("sound", "could not run amixer to get sound info")?;
 
-        let last_line = &output
-            .lines()
-            .into_iter()
-            .last()
-            .block_error("sound", "could not get sound info")?;
+        let last_line = &output.lines().into_iter().last().block_error(
+            "sound",
+            "could not get sound info",
+        )?;
 
         let last = last_line
             .split_whitespace()
@@ -66,14 +65,16 @@ impl SoundDevice {
 
     fn set_volume(&mut self, step: i32) -> Result<()> {
         Command::new("sh")
-            .args(&[
-                "-c",
-                format!(
-                    "amixer set {} {}%",
-                    self.name,
-                    (self.volume as i32 + step) as u32
-                ).as_str(),
-            ])
+            .args(
+                &[
+                    "-c",
+                    format!(
+                        "amixer set {} {}%",
+                        self.name,
+                        (self.volume as i32 + step) as u32
+                    ).as_str(),
+                ],
+            )
             .output()
             .block_error("sound", "failed to set volume")?;
 
@@ -103,6 +104,7 @@ pub struct Sound {
     step_width: u32,
     current_idx: usize,
     config: Config,
+    command: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -115,6 +117,9 @@ pub struct SoundConfig {
     /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
     #[serde(default = "SoundConfig::default_step_width")]
     pub step_width: u32,
+
+    #[serde(default = "SoundConfig::default_command")]
+    pub command: String,
 }
 
 impl SoundConfig {
@@ -125,13 +130,18 @@ impl SoundConfig {
     fn default_step_width() -> u32 {
         5
     }
+
+    fn default_command() -> String {
+        "sleep 0".to_owned()
+    }
 }
 
 impl Sound {
     fn display(&mut self) -> Result<()> {
-        let device = self.devices
-            .get_mut(self.current_idx)
-            .block_error("sound", "failed to get device")?;
+        let device = self.devices.get_mut(self.current_idx).block_error(
+            "sound",
+            "failed to get device",
+        )?;
         device.get_info()?;
 
         if device.muted {
@@ -174,6 +184,7 @@ impl ConfigBlock for Sound {
             devices: vec![SoundDevice::new("Master")?],
             step_width: step_width,
             current_idx: 0,
+            command: block_config.command,
             config: config,
         };
 
@@ -232,19 +243,27 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 {
                     // Additional scope to not keep mutably borrowed device for too long
-                    let device = self.devices
-                        .get_mut(self.current_idx)
-                        .block_error("sound", "failed to get device")?;
+                    let device = self.devices.get_mut(self.current_idx).block_error(
+                        "sound",
+                        "failed to get device",
+                    )?;
                     let volume = device.volume;
 
                     match e.button {
                         MouseButton::Right => device.toggle()?,
-                        MouseButton::WheelUp => if volume < 100 {
-                            device.set_volume(min(self.step_width, (100 - volume)) as i32)?;
-                        },
-                        MouseButton::WheelDown => if volume >= self.step_width {
-                            device.set_volume(-(self.step_width as i32))?;
-                        },
+                        MouseButton::Left => self.spawn_command()?,
+                        MouseButton::WheelUp => {
+                            if volume < 100 {
+                                device.set_volume(
+                                    min(self.step_width, (100 - volume)) as i32,
+                                )?;
+                            }
+                        }
+                        MouseButton::WheelDown => {
+                            if volume >= self.step_width {
+                                device.set_volume(-(self.step_width as i32))?;
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -257,5 +276,11 @@ impl Block for Sound {
 
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn spawn_command() -> Result<()> {
+        Command::new("sh").args(&["-c"]).output();
+
+        Ok(())
     }
 }
