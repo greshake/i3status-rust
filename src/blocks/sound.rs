@@ -103,6 +103,7 @@ pub struct Sound {
     step_width: u32,
     current_idx: usize,
     config: Config,
+    command: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -115,6 +116,9 @@ pub struct SoundConfig {
     /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
     #[serde(default = "SoundConfig::default_step_width")]
     pub step_width: u32,
+
+    #[serde(default = "SoundConfig::default_command")]
+    pub command: String,
 }
 
 impl SoundConfig {
@@ -124,6 +128,10 @@ impl SoundConfig {
 
     fn default_step_width() -> u32 {
         5
+    }
+
+    fn default_command() -> String {
+        "sleep 0".to_owned()
     }
 }
 
@@ -174,6 +182,7 @@ impl ConfigBlock for Sound {
             devices: vec![SoundDevice::new("Master")?],
             step_width: step_width,
             current_idx: 0,
+            command: block_config.command,
             config: config,
         };
 
@@ -239,12 +248,19 @@ impl Block for Sound {
 
                     match e.button {
                         MouseButton::Right => device.toggle()?,
-                        MouseButton::WheelUp => if volume < 100 {
-                            device.set_volume(min(self.step_width, (100 - volume)) as i32)?;
-                        },
-                        MouseButton::WheelDown => if volume >= self.step_width {
-                            device.set_volume(-(self.step_width as i32))?;
-                        },
+                        MouseButton::Left => self.spawn_command()?,
+                        MouseButton::WheelUp => {
+                            if volume < 100 {
+                                device.set_volume(
+                                    min(self.step_width, (100 - volume)) as i32,
+                                )?;
+                            }
+                        }
+                        MouseButton::WheelDown => {
+                            if volume >= self.step_width {
+                                device.set_volume(-(self.step_width as i32))?;
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -257,5 +273,11 @@ impl Block for Sound {
 
     fn id(&self) -> &str {
         &self.id
+    }
+
+    fn spawn_command() -> Result<()> {
+        Command::new("sh").args(&["-c"]).output();
+
+        Ok(())
     }
 }
