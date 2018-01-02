@@ -278,25 +278,27 @@ info_type | Currently supported options are available and free | No | available
 unit | Unit that is used to display disk space. Options are MB, MiB, GB and GiB | No | GB
 interval | Update interval in seconds | No | 20
 
-
 ## Sound
-Creates a block which displays the current Master volume (currently based on amixer output). Right click to toggle mute, scroll to adjust volume.
 
-**Example**
+Creates a block which displays the volume level (according to ALSA). Right click to toggle mute, scroll to adjust volume.
+
+The display is updated when ALSA detects changes, so there is no need to set an update interval.
+
+### Examples
+
+Change the default scrolling step width to 3 percent:
+
 ```toml
 [[block]]
 block = "sound"
-
-interval = 10
+step_width = 3
 ```
 
-**Options**
+### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-interval | Update interval in seconds | No | 2
-step\_width | The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50) | No | 5
-
+step\_width | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | 5
 
 ## Temperature
 Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). Currently, you can only adjust these thresholds in source code. **Depends on lm_sensors being installed and configured!**
@@ -356,6 +358,35 @@ icons | Show icons for brightness and resolution (needs awesome fonts support) |
 resolution | Shows the screens resolution | No | false
 step\_width | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | 5
 
+## Backlight
+
+Creates a block to display screen brightness. This is a simplified version of the [Xrandr](#xrandr) block that reads brightness information directly from the filesystem, so it works under Wayland. The block uses `inotify` to listen for changes in the device's brightness directly, so there is no need to set an update interval.
+
+When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.
+
+### Examples
+
+Show brightness for a specific device:
+
+```toml
+[[block]]
+block = "backlight"
+device = "intel_backlight"
+```
+
+Show brightness for the default device:
+
+```toml
+[[block]]
+block = "backlight"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+device | The `/sys/class/backlight` device to read brightness information from. | No | Default device
+
 ## Net
 Creates a block which displays the upload and download throughput for a network interface. Units are in bytes per second (kB/s, MB/s, etc).
 
@@ -403,3 +434,48 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 bytes | whether to use bytes or bits in the display.<br>(true for bytes, false for bits) | No | false
 interval | Update interval in seconds | No | 1800
+
+## Weather
+
+Creates a block which displays local weather and temperature information. In order to use this block, you will need access to a supported weather API service. At the time of writing, OpenWeatherMap is the only supported service.
+
+Configuring the Weather block requires configuring a weather service, which may require API keys and other parameters.
+
+### Examples
+
+Show detailed weather in San Francisco through the OpenWeatherMap service:
+
+```toml
+[[block]]
+block = "weather"
+format = "{weather} ({location}) {temp}°, {wind} km/s"
+service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units = "metric" }
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds. | No | 600
+format | The text format of the weather display. | No | {weather} {temp}°
+service | The configuration of a weather service (see below). | Yes | None
+
+### OpenWeatherMap Options
+
+To use the service you will need a (free) API key.
+
+Key | Values | Required | Default
+----|--------|----------|--------
+name | `openweathermap` | Yes | None
+api_key | Your OpenWeatherMap API key. | Yes | None
+city_id | OpenWeatherMap's ID for the city. | Yes | None
+units | One of `metric` or `imperial` | Yes | None
+
+### Available Format Keys
+
+Key | Value
+----|-------
+{location} | Location name (exact format depends on the service).
+{temp} | Temperature.
+{weather} | Textual description of the weather, e.g. "Raining".
+{wind} | Wind speed.
