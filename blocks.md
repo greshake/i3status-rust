@@ -363,18 +363,27 @@ Creates a block which displays the upload and download throughput for a network 
 ```toml
 [[block]]
 block = "net"
-device = "eno1"
+device = "wlp2s0"
 interval = 5
-graph = true
+ssid = true
+ip = true
+speed_up = false
+graph_up = true
 ```
 
 **Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-device | network interface to moniter (name from /sys/class/net) | Yes | lo (loopback interface)
+device | Network interface to moniter (name from /sys/class/net) | Yes | lo (loopback interface)
 interval | Update interval in seconds | No | 1
-graph | display a bar graph | no | false
+ssid | Display network SSID (wireless only) | No | false
+bitrate | Display connection bitrate | No | false
+ip | Display connection IP address | No | false
+speed_up | Display upload speed | no | true
+speed_down | Display download speed | no | true
+graph_up | Display a bar graph for upload speed | no | false
+graph_down | Display a bar graph for download speed | no | false
 
 ## Speed Test
 Creates a block which uses [`speedtest-cli`](https://github.com/sivel/speedtest-cli) to measure your ping, download, and upload speeds.
