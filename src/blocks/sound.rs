@@ -3,6 +3,7 @@ use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
+use std::ffi::OsStr;
 use chan::Sender;
 
 use scheduler::Task;
@@ -104,6 +105,7 @@ pub struct Sound {
     step_width: u32,
     current_idx: usize,
     config: Config,
+    on_clicked: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -116,6 +118,9 @@ pub struct SoundConfig {
     /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
     #[serde(default = "SoundConfig::default_step_width")]
     pub step_width: u32,
+
+    #[serde(default = "SoundConfig::default_on_clicked")]
+    pub on_clicked: Option<String>,
 }
 
 impl SoundConfig {
@@ -125,6 +130,10 @@ impl SoundConfig {
 
     fn default_step_width() -> u32 {
         5
+    }
+
+    fn default_on_clicked() -> Option<String> {
+        None
     }
 }
 
@@ -177,6 +186,7 @@ impl ConfigBlock for Sound {
             step_width: step_width,
             current_idx: 0,
             config: config,
+            on_clicked: block_config.on_clicked,
         };
 
         // Monitor volume changes in a separate thread.
@@ -230,12 +240,14 @@ impl Block for Sound {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        fn spawn_command() -> Result<()> {
-            Command::new("pavucontrol").spawn().unwrap();
-            Ok(())
-        }
+
 
         if let Some(ref name) = e.name {
+            let mut command = "".to_string();
+            if self.on_clicked.is_some() {
+                command = self.on_clicked.clone().unwrap();
+            }
+
             if name.as_str() == self.id {
                 {
                     // Additional scope to not keep mutably borrowed device for too long
@@ -247,7 +259,15 @@ impl Block for Sound {
 
                     match e.button {
                         MouseButton::Right => device.toggle()?,
-                        MouseButton::Left => spawn_command()?,
+                        MouseButton::Left => {
+                            if self.on_clicked.is_some() {
+                                let command_broken: Vec<&str> = command.split_whitespace().collect();
+                                let mut itr = command_broken.iter();
+                                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
+                                    .args(itr)
+                                    .spawn();
+                            }
+                        }
                         MouseButton::WheelUp => {
                             if volume < 100 {
                                 device.set_volume(

@@ -16,6 +16,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 format | Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | %a %d/%m %R
 interval | Update interval in seconds | No | 5
+on_clicked | A command with or without arguments | No | None
 
 
 ## Memory
@@ -294,6 +295,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval in seconds | No | 2
 step\_width | The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50) | No | 5
+on_clicked | A command with or without arguments | No | None
 
 
 ## Temperature
