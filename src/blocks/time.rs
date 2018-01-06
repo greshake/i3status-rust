@@ -21,8 +21,7 @@ pub struct Time {
     id: String,
     update_interval: Duration,
     format: String,
-    command: String,
-    clicked: bool,
+    on_clicked: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -36,8 +35,8 @@ pub struct TimeConfig {
     #[serde(default = "TimeConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    #[serde(default = "TimeConfig::default_command")]
-    pub command: String,
+    #[serde(default = "TimeConfig::default_on_clicked")]
+    pub on_clicked: Option<String>,
 }
 
 impl TimeConfig {
@@ -49,8 +48,8 @@ impl TimeConfig {
         Duration::from_secs(5)
     }
 
-    fn default_command() -> String {
-        "sleep 0".to_owned()
+    fn default_on_clicked() -> Option<String> {
+        None
     }
 }
 
@@ -66,8 +65,7 @@ impl ConfigBlock for Time {
                 .with_text("")
                 .with_icon("time"),
             update_interval: block_config.interval,
-            command: block_config.command,
-            clicked: false,
+            on_clicked: block_config.on_clicked,
         })
     }
 }
@@ -81,12 +79,17 @@ impl Block for Time {
 
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
+        let mut command = "".to_string();
+        if self.on_clicked.is_some() {
+            command = self.on_clicked.clone().unwrap();
+        }
+
+
         if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                self.clicked = true;
-                let command_broken: Vec<&str> = self.command.split_whitespace().collect();
+            if name.as_str() == self.id && self.on_clicked.is_some() {
+                let command_broken: Vec<&str> = command.split_whitespace().collect();
                 let mut itr = command_broken.iter();
-                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap_or(&"nope")))
+                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
                     .args(itr)
                     .spawn();
             }
