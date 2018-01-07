@@ -105,7 +105,7 @@ pub struct Sound {
     step_width: u32,
     current_idx: usize,
     config: Config,
-    on_clicked: Option<String>,
+    on_click: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -119,8 +119,8 @@ pub struct SoundConfig {
     #[serde(default = "SoundConfig::default_step_width")]
     pub step_width: u32,
 
-    #[serde(default = "SoundConfig::default_on_clicked")]
-    pub on_clicked: Option<String>,
+    #[serde(default = "SoundConfig::default_on_click")]
+    pub on_click: Option<String>,
 }
 
 impl SoundConfig {
@@ -132,7 +132,7 @@ impl SoundConfig {
         5
     }
 
-    fn default_on_clicked() -> Option<String> {
+    fn default_on_click() -> Option<String> {
         None
     }
 }
@@ -186,7 +186,7 @@ impl ConfigBlock for Sound {
             step_width: step_width,
             current_idx: 0,
             config: config,
-            on_clicked: block_config.on_clicked,
+            on_click: block_config.on_click,
         };
 
         // Monitor volume changes in a separate thread.
@@ -243,10 +243,6 @@ impl Block for Sound {
 
 
         if let Some(ref name) = e.name {
-            let mut command = "".to_string();
-            if self.on_clicked.is_some() {
-                command = self.on_clicked.clone().unwrap();
-            }
 
             if name.as_str() == self.id {
                 {
@@ -260,7 +256,11 @@ impl Block for Sound {
                     match e.button {
                         MouseButton::Right => device.toggle()?,
                         MouseButton::Left => {
-                            if self.on_clicked.is_some() {
+                            let mut command = "".to_string();
+                            if self.on_click.is_some() {
+                                command = self.on_click.clone().unwrap();
+                            }
+                            if self.on_click.is_some() {
                                 let command_broken: Vec<&str> = command.split_whitespace().collect();
                                 let mut itr = command_broken.iter();
                                 let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
