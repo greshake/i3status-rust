@@ -300,6 +300,7 @@ step_width = 3
 Key | Values | Required | Default
 ----|--------|----------|--------
 step\_width | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | 5
+on_clicked | A command with or without arguments | No | None
 
 ## Temperature
 Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). Currently, you can only adjust these thresholds in source code. **Depends on lm_sensors being installed and configured!**
