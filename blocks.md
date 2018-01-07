@@ -113,7 +113,9 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 player | Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.  | Yes | -
 max_width | Max width of the block in characters, not including the buttons | No | 21
-marquee | Bool to specify if a marquee style rotation should be used every<br/>10s if the title + artist is longer than max_width | No | true
+marquee | Bool to specify if a marquee style rotation should be used<br/> if the title + artist is longer than max-width | No | true
+marquee_interval | Marquee interval in seconds. This is the delay between each rotation. | No | 10
+marquee_speed | Marquee speed in seconds. This is the scrolling time used per character. | No | 0.5
 buttons | Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title) | No | []
 
 ## Load
@@ -277,26 +279,27 @@ info_type | Currently supported options are available and free | No | available
 unit | Unit that is used to display disk space. Options are MB, MiB, GB and GiB | No | GB
 interval | Update interval in seconds | No | 20
 
-
 ## Sound
-Creates a block which displays the current Master volume (currently based on amixer output). Right click to toggle mute, scroll to adjust volume.
 
-**Example**
+Creates a block which displays the volume level (according to ALSA). Right click to toggle mute, scroll to adjust volume.
+
+The display is updated when ALSA detects changes, so there is no need to set an update interval.
+
+### Examples
+
+Change the default scrolling step width to 3 percent:
+
 ```toml
 [[block]]
 block = "sound"
-
-interval = 10
+step_width = 3
 ```
 
-**Options**
+### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-interval | Update interval in seconds | No | 2
-step\_width | The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50) | No | 5
-on_clicked | A command with or without arguments | No | None
-
+step\_width | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | 5
 
 ## Temperature
 Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). Currently, you can only adjust these thresholds in source code. **Depends on lm_sensors being installed and configured!**
@@ -356,6 +359,35 @@ icons | Show icons for brightness and resolution (needs awesome fonts support) |
 resolution | Shows the screens resolution | No | false
 step\_width | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | 5
 
+## Backlight
+
+Creates a block to display screen brightness. This is a simplified version of the [Xrandr](#xrandr) block that reads brightness information directly from the filesystem, so it works under Wayland. The block uses `inotify` to listen for changes in the device's brightness directly, so there is no need to set an update interval.
+
+When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.
+
+### Examples
+
+Show brightness for a specific device:
+
+```toml
+[[block]]
+block = "backlight"
+device = "intel_backlight"
+```
+
+Show brightness for the default device:
+
+```toml
+[[block]]
+block = "backlight"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+device | The `/sys/class/backlight` device to read brightness information from. | No | Default device
+
 ## Net
 Creates a block which displays the upload and download throughput for a network interface. Units are in bytes per second (kB/s, MB/s, etc).
 
@@ -363,18 +395,27 @@ Creates a block which displays the upload and download throughput for a network 
 ```toml
 [[block]]
 block = "net"
-device = "eno1"
+device = "wlp2s0"
 interval = 5
-graph = true
+ssid = true
+ip = true
+speed_up = false
+graph_up = true
 ```
 
 **Options**
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-device | network interface to moniter (name from /sys/class/net) | Yes | lo (loopback interface)
+device | Network interface to moniter (name from /sys/class/net) | Yes | lo (loopback interface)
 interval | Update interval in seconds | No | 1
-graph | display a bar graph | no | false
+ssid | Display network SSID (wireless only) | No | false
+bitrate | Display connection bitrate | No | false
+ip | Display connection IP address | No | false
+speed_up | Display upload speed | no | true
+speed_down | Display download speed | no | true
+graph_up | Display a bar graph for upload speed | no | false
+graph_down | Display a bar graph for download speed | no | false
 
 ## Speed Test
 Creates a block which uses [`speedtest-cli`](https://github.com/sivel/speedtest-cli) to measure your ping, download, and upload speeds.
@@ -394,3 +435,48 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 bytes | whether to use bytes or bits in the display.<br>(true for bytes, false for bits) | No | false
 interval | Update interval in seconds | No | 1800
+
+## Weather
+
+Creates a block which displays local weather and temperature information. In order to use this block, you will need access to a supported weather API service. At the time of writing, OpenWeatherMap is the only supported service.
+
+Configuring the Weather block requires configuring a weather service, which may require API keys and other parameters.
+
+### Examples
+
+Show detailed weather in San Francisco through the OpenWeatherMap service:
+
+```toml
+[[block]]
+block = "weather"
+format = "{weather} ({location}) {temp}°, {wind} km/s"
+service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units = "metric" }
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+interval | Update interval in seconds. | No | 600
+format | The text format of the weather display. | No | {weather} {temp}°
+service | The configuration of a weather service (see below). | Yes | None
+
+### OpenWeatherMap Options
+
+To use the service you will need a (free) API key.
+
+Key | Values | Required | Default
+----|--------|----------|--------
+name | `openweathermap` | Yes | None
+api_key | Your OpenWeatherMap API key. | Yes | None
+city_id | OpenWeatherMap's ID for the city. | Yes | None
+units | One of `metric` or `imperial` | Yes | None
+
+### Available Format Keys
+
+Key | Value
+----|-------
+{location} | Location name (exact format depends on the service).
+{temp} | Temperature.
+{weather} | Textual description of the weather, e.g. "Raining".
+{wind} | Wind speed.
