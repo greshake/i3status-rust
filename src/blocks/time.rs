@@ -72,8 +72,9 @@ impl ConfigBlock for Time {
 
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Duration>> {
-        self.time
-            .set_text(format!("{}", Local::now().format(&self.format)));
+        self.time.set_text(
+            format!("{}", Local::now().format(&self.format)),
+        );
         Ok(Some(self.update_interval))
     }
 
