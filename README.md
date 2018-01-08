@@ -20,7 +20,7 @@ Optional:
 * `alsa-utils` For the volume block
 * `lm_sensors` For the temperature block
 * [`speedtest-cli`](https://github.com/sivel/speedtest-cli) For the speedtest block
-* `ttf-font-awesome` For the awesome icons. If you want to use the font icons on Arch, install ttf-font-awesome from the AUR.
+* Font Awesome, for `icons="awesome"`. Version 5 of the font is causing some issues (see [#130](https://github.com/greshake/i3status-rust/issues/130)), so for now we recommend version 4. If you have access to the AUR, check out [`ttf-font-awesome-4`](https://aur.archlinux.org/packages/ttf-font-awesome-4/).
 * `gperftools` For dev builds, needed to profile block performance and bottlenecks.
 * [`powerline-fonts`](https://www.archlinux.org/packages/community/i686/powerline-fonts/) For all themes using the powerline arrow char. Recommended. See [`powerline on GitHub`](https://github.com/powerline/powerline/tree/develop/font)
 
@@ -28,28 +28,34 @@ Optional:
 1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
 2. run `cd i3status-rust && cargo build --release`
 3. Edit `example_config.toml` to your liking and put it to a sensible place (e.g. `~/.config/i3/status.toml`)
-4. Edit your i3 config
-      1. In your i3 config, put the path to the output binary as argument for `status_command`
-      2. Add the path to your config file as first and only argument to i3status-rs. See `i3status-rs --help` for more. **NOTE: You need to specify *font* in the bar section manually to use iconic fonts!**
+4. Edit your i3 bar configuration to use `i3status-rust`. For example:
 
-            Example of the `bar` section in the i3 config from my personal i3 config (Requires awesome-ttf-fonts). The colors block is optional, just my taste:
+   ```
+   bar {
+         font pango:DejaVu Sans Mono, FontAwesome 12
+         position top
+         status_command path/to/i3status-rs path/to/config.toml
+         colors {
+               separator #666666
+               background #222222
+               statusline #dddddd
+               focused_workspace #0088CC #0088CC #ffffff
+               active_workspace #333333 #333333 #ffffff
+               inactive_workspace #333333 #333333 #888888
+               urgent_workspace #2f343a #900000 #ffffff
+         }
+   }
+   ```
 
-            ```
-            bar {
-                  font pango:DejaVu Sans Mono, Icons 12
-                  position top
-                  status_command <PATH_TO_i3STATUS>/i3status-rs <PATH_TO_CONFIG>/config.toml
-                  colors {
-                        separator #666666
-                        background #222222
-                        statusline #dddddd
-                        focused_workspace #0088CC #0088CC #ffffff
-                        active_workspace #333333 #333333 #ffffff
-                        inactive_workspace #333333 #333333 #888888
-                        urgent_workspace #2f343a #900000 #ffffff
-                  }
-            }
-            ```
+   In order to use the built-in support for the Font Awesome icon set, you will need to include it in the `font` parameter, as above. Check to make sure that "FontAwesome" will correctly identify the font by using `fc-match`, e.g.
+
+   ``` shell
+   $ fc-match FontAwesome
+   fontawesome-webfont.ttf: "FontAwesome" "Regular"
+   ```
+
+   (Note that the name of the Font Awesome font may have changed in version 5. See [#130](https://github.com/greshake/i3status-rust/issues/130) for some discussion.)
+
 5. Reload i3: `i3 reload`
 
 # Breaking changes
