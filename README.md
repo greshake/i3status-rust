@@ -14,7 +14,7 @@ This is a replacement for i3status, aiming to provide the most feature-complete 
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
 # Requirements
-i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux. Compilation is only tested with the latest Rust stable version. If you use a distro with old Rust packages (looking at you, Ubuntu!), fall back to rustup or find a precompiled package for your distro. 
+i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux. Compilation is only tested with the latest Rust stable version. If you use a distro with old Rust packages (looking at you, Ubuntu!), fall back to rustup or find a precompiled package for your distro.
 
 Optional:
 * `alsa-utils` For the volume block
@@ -22,7 +22,7 @@ Optional:
 * [`speedtest-cli`](https://github.com/sivel/speedtest-cli) For the speedtest block
 * Font Awesome, for `icons="awesome"`. Version 5 of the font is causing some issues (see [#130](https://github.com/greshake/i3status-rust/issues/130)), so for now we recommend version 4. If you have access to the AUR, check out [`ttf-font-awesome-4`](https://aur.archlinux.org/packages/ttf-font-awesome-4/).
 * `gperftools` For dev builds, needed to profile block performance and bottlenecks.
-* [`powerline-fonts`](https://www.archlinux.org/packages/community/i686/powerline-fonts/) For all themes using the powerline arrow char. Recommended. See [`powerline on GitHub`](https://github.com/powerline/powerline/tree/develop/font)
+* [`powerline-fonts`](https://www.archlinux.org/packages/community/x86_64/powerline-fonts/) For all themes using the powerline arrow char. Recommended. See [`powerline on GitHub`](https://github.com/powerline/powerline/tree/develop/font)
 
 # How to use it
 1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
