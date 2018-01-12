@@ -19,6 +19,7 @@ pub struct Battery {
     max_charge: u64,
     update_interval: Duration,
     device_path: String,
+    show: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -31,6 +32,10 @@ pub struct BatteryConfig {
     /// Which BAT device in /sys/class/power_supply/ to read from.
     #[serde(default = "BatteryConfig::default_device")]
     pub device: String,
+
+    /// Show only percentage, time until (dis)charged or both
+    #[serde(default = "BatteryConfig::default_show")]
+    pub show: String,
 }
 
 impl BatteryConfig {
@@ -40,6 +45,10 @@ impl BatteryConfig {
 
     fn default_device() -> String {
         "BAT0".to_string()
+    }
+
+    fn default_show() -> String {
+        "both".to_string()
     }
 }
 
@@ -53,6 +62,7 @@ impl ConfigBlock for Battery {
             update_interval: block_config.interval,
             output: TextWidget::new(config),
             device_path: format!("/sys/class/power_supply/{}/", block_config.device),
+            show: block_config.show,
         })
     }
 }
@@ -161,7 +171,16 @@ impl Block for Battery {
 
         // Don't need to display a percentage when the battery is full
         if current_percentage != 100 && state != "Full" {
-            self.output.set_text(format!("{}% {}:{:02}", current_percentage, hours, minutes));
+            match self.show.as_ref() {
+                "both" => self.output.set_text(format!("{}% {}:{:02}", current_percentage, hours, minutes)),
+                "percentage" => self.output.set_text(format!("{}%", current_percentage)),
+                "time" => self.output.set_text(format!("{}:{:02}", hours, minutes)),
+                _ => { return Err(BlockError(
+                    "battery".to_string(),
+                    format!("Invalid 'show' option: '{}', use 'time', 'percentage' or 'both'", self.show).to_string(),
+                    ));
+                }
+            }
         } else {
             self.output.set_text(String::from(""));
         }

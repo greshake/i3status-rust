@@ -50,7 +50,7 @@ Key | Values | Required | Default
 
 ## Battery
 
-Creates a block which displays the current battery state (Full, Charging or Discharging) and percentage charged.
+Creates a block which displays the current battery state (Full, Charging or Discharging), percentage charged and estimate time until (dis)charged.
 
 ### Examples
 
@@ -60,6 +60,7 @@ Update the battery state every ten seconds:
 [[block]]
 block = "battery"
 interval = 10
+show = "percentage"
 ```
 
 ### Options
@@ -68,6 +69,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | The device in `/sys/class/power_supply/` to read from. | No | `"BAT0"`
 `interval` | Update interval, in seconds. | No | `10`
+`show` | Show remaining 'time', 'percentage' or 'both' | No | `both`
 
 ## CPU Utilization
 
@@ -501,7 +503,7 @@ Key | Value
 
 ## Xrandr
 
-Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brighntess.
+Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness.
 
 ### Examples
 
