@@ -127,8 +127,6 @@ impl Block for Battery {
             0
         };
 
-
-
         let energy_full = if file_exists(&format!("{}energy_full", self.device_path)) {
              read_file(&format!("{}energy_full", self.device_path))?
                 .parse::<u64>()
@@ -136,7 +134,6 @@ impl Block for Battery {
         } else {
             0
         };
-
 
         let power_now = if file_exists(&format!("{}power_now", self.device_path)) {
             read_file(&format!("{}power_now", self.device_path))?
@@ -169,10 +166,18 @@ impl Block for Battery {
             self.output.set_text(String::from(""));
         }
 
+
         self.output.set_icon(match state.as_str() {
             "Full" => "bat_full",
             "Discharging" => "bat_discharging",
             "Charging" => "bat_charging",
+            "Unknown" => {
+                if energy_now >= energy_full {
+                    "bat_full"
+                } else {
+                    "bat"
+                }
+            }
             _ => "bat",
         });
 
