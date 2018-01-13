@@ -19,10 +19,18 @@ pub struct Battery {
     max_charge: u64,
     update_interval: Duration,
     device_path: String,
-    show: String,
+    show: ShowType,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Copy, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum ShowType {
+    Time,
+    Percentage,
+    Both,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BatteryConfig {
     /// Update interval in seconds
@@ -35,7 +43,7 @@ pub struct BatteryConfig {
 
     /// Show only percentage, time until (dis)charged or both
     #[serde(default = "BatteryConfig::default_show")]
-    pub show: String,
+    pub show: ShowType,
 }
 
 impl BatteryConfig {
@@ -47,8 +55,8 @@ impl BatteryConfig {
         "BAT0".to_string()
     }
 
-    fn default_show() -> String {
-        "both".to_string()
+    fn default_show() -> ShowType {
+        ShowType::Both
     }
 }
 
@@ -171,20 +179,11 @@ impl Block for Battery {
 
         // Don't need to display a percentage when the battery is full
         if current_percentage != 100 && state != "Full" {
-            match self.show.as_ref() {
-                "both" => self.output
+            match self.show {
+                ShowType::Both => self.output
                     .set_text(format!("{}% {}:{:02}", current_percentage, hours, minutes)),
-                "percentage" => self.output.set_text(format!("{}%", current_percentage)),
-                "time" => self.output.set_text(format!("{}:{:02}", hours, minutes)),
-                _ => {
-                    return Err(BlockError(
-                        "battery".to_string(),
-                        format!(
-                            "Invalid 'show' option: '{}', use 'time', 'percentage' or 'both'",
-                            self.show
-                        ).to_string(),
-                    ));
-                }
+                ShowType::Percentage => self.output.set_text(format!("{}%", current_percentage)),
+                ShowType::Time => self.output.set_text(format!("{}:{:02}", hours, minutes)),
             }
         } else {
             self.output.set_text(String::from(""));
