@@ -501,6 +501,20 @@ Key | Value
 `{weather}` | Textual description of the weather, e.g. "Raining".
 `{wind}` | Wind speed.
 
+## Uptime
+Creates a block which displays system uptime. The block will always display the 2 biggest units, so minutes and seconds, or hours and minutes or days and hours or weeks and days.
+
+### Examples
+
+```toml
+[[block]]
+block = "uptime"
+```
+
+### Options
+
+None
+
 ## Xrandr
 
 Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness.
