@@ -66,7 +66,7 @@ fn main() {
         .arg(
             Arg::with_name("config")
                 .value_name("CONFIG_FILE")
-                .help("sets a json config file")
+                .help("sets a toml config file")
                 .required(true)
                 .index(1),
         )
