@@ -134,8 +134,11 @@ impl Block for Cpu {
             _ => State::Idle,
         });
 
-        self.utilization.set_text(format!("{:02}%", utilization));
-
+        if utilization < 100  {// 2 digits, pad with extra space to ensure consistent length
+            self.utilization.set_text(format!("  {:02}%", utilization));
+        } else {
+            self.utilization.set_text(format!("{:02}%", utilization));
+        }
         Ok(Some(self.update_interval))
     }
 
