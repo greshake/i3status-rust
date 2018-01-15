@@ -19,9 +19,18 @@ pub struct Temperature {
     collapsed: bool,
     id: String,
     update_interval: Duration,
+    show: ShowKind,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Copy, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum ShowKind {
+    Max,
+    Average,
+    Both,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct TemperatureConfig {
     /// Update interval in seconds
@@ -31,6 +40,10 @@ pub struct TemperatureConfig {
     /// Collapsed by default?
     #[serde(default = "TemperatureConfig::default_collapsed")]
     pub collapsed: bool,
+
+    /// Show average?
+    #[serde(default = "TemperatureConfig::default_show")]
+    pub show: ShowKind,
 }
 
 impl TemperatureConfig {
@@ -40,6 +53,10 @@ impl TemperatureConfig {
 
     fn default_collapsed() -> bool {
         true
+    }
+
+    fn default_show() -> ShowKind {
+        ShowKind::Both
     }
 }
 
@@ -53,6 +70,7 @@ impl ConfigBlock for Temperature {
             text: ButtonWidget::new(config, &id).with_icon("thermometer"),
             output: String::new(),
             collapsed: block_config.collapsed,
+            show: block_config.show,
             id,
         })
     }
@@ -103,7 +121,12 @@ impl Block for Temperature {
                 .block_error("temperature", "failed to get max temperature")?;
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
 
-            self.output = format!("{}° avg, {}° max", avg, max);
+            self.output = match self.show {
+                ShowKind::Both => format!("{}° avg, {}° max", avg, max),
+                ShowKind::Max => format!("{}°", max),
+                ShowKind::Average => format!("{}°", avg),
+            };
+
             if !self.collapsed {
                 self.text.set_text(self.output.clone());
             }
