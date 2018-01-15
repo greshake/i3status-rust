@@ -19,9 +19,18 @@ pub struct Battery {
     max_charge: u64,
     update_interval: Duration,
     device_path: String,
+    show: ShowType,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Copy, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum ShowType {
+    Time,
+    Percentage,
+    Both,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BatteryConfig {
     /// Update interval in seconds
@@ -31,6 +40,10 @@ pub struct BatteryConfig {
     /// Which BAT device in /sys/class/power_supply/ to read from.
     #[serde(default = "BatteryConfig::default_device")]
     pub device: String,
+
+    /// Show only percentage, time until (dis)charged or both
+    #[serde(default = "BatteryConfig::default_show")]
+    pub show: ShowType,
 }
 
 impl BatteryConfig {
@@ -40,6 +53,10 @@ impl BatteryConfig {
 
     fn default_device() -> String {
         "BAT0".to_string()
+    }
+
+    fn default_show() -> ShowType {
+        ShowType::Both
     }
 }
 
@@ -53,6 +70,7 @@ impl ConfigBlock for Battery {
             update_interval: block_config.interval,
             output: TextWidget::new(config),
             device_path: format!("/sys/class/power_supply/{}/", block_config.device),
+            show: block_config.show,
         })
     }
 }
@@ -128,7 +146,7 @@ impl Block for Battery {
         };
 
         let energy_full = if file_exists(&format!("{}energy_full", self.device_path)) {
-             read_file(&format!("{}energy_full", self.device_path))?
+            read_file(&format!("{}energy_full", self.device_path))?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse  energy_full")?
         } else {
@@ -139,33 +157,37 @@ impl Block for Battery {
             read_file(&format!("{}power_now", self.device_path))?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse current voltage")?
-        } else  {
+        } else {
             0
         };
 
         let (hours, minutes) = if power_now > 0 && energy_now > 0 {
             if state == "Discharging" {
                 let h = (energy_now as f64 / power_now as f64) as u64;
-                let m = (((energy_now  as f64 / power_now as f64) - h as f64)*60.0) as u64;
-                (h,m)
+                let m = (((energy_now as f64 / power_now as f64) - h as f64) * 60.0) as u64;
+                (h, m)
             } else if state == "Charging" {
                 let h = ((energy_full as f64 - energy_now as f64) / power_now as f64) as u64;
-                let m = ((((energy_full as f64 - energy_now as f64)  / power_now as f64) - h as f64) * 60.0) as u64;
-                (h,m)
+                let m = ((((energy_full as f64 - energy_now as f64) / power_now as f64) - h as f64) * 60.0) as u64;
+                (h, m)
             } else {
-                (0,0)
+                (0, 0)
             }
         } else {
-            (0,0)
+            (0, 0)
         };
 
         // Don't need to display a percentage when the battery is full
         if current_percentage != 100 && state != "Full" {
-            self.output.set_text(format!("{}% {}:{:02}", current_percentage, hours, minutes));
+            match self.show {
+                ShowType::Both => self.output
+                    .set_text(format!("{}% {}:{:02}", current_percentage, hours, minutes)),
+                ShowType::Percentage => self.output.set_text(format!("{}%", current_percentage)),
+                ShowType::Time => self.output.set_text(format!("{}:{:02}", hours, minutes)),
+            }
         } else {
             self.output.set_text(String::from(""));
         }
-
 
         self.output.set_icon(match state.as_str() {
             "Full" => "bat_full",
