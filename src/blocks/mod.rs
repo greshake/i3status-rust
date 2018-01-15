@@ -18,6 +18,7 @@ mod net;
 mod backlight;
 mod weather;
 mod uptime;
+mod lib;
 
 use config::Config;
 use self::time::*;

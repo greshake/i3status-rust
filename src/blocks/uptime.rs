@@ -1,18 +1,14 @@
 use std::time::Duration;
 use chan::Sender;
-
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
-use input::I3BarEvent;
 use scheduler::Task;
-use std::fs::OpenOptions;
-use std::io::prelude::*;
-
 use uuid::Uuid;
+use blocks::lib::*;
 
 pub struct Uptime {
     text: TextWidget,
@@ -52,22 +48,9 @@ impl ConfigBlock for Uptime {
     }
 }
 
-fn read_file(path: &str) -> Result<String> {
-    let mut f = OpenOptions::new()
-        .read(true)
-        .open(path)
-        .block_error("uptime", &format!("failed to open file {}", path))?;
-    let mut content = String::new();
-    f.read_to_string(&mut content)
-        .block_error("uptime", &format!("failed to read {}", path))?;
-    // Removes trailing newline
-    content.pop();
-    Ok(content)
-}
-
 impl Block for Uptime {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let uptime_raw = match read_file("/proc/uptime") {
+        let uptime_raw = match read_file("uptime", "/proc/uptime") {
             Ok(file) => file,
             Err(e) => {
                 return Err(BlockError(
