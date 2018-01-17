@@ -60,7 +60,7 @@ Update the battery state every ten seconds:
 [[block]]
 block = "battery"
 interval = 10
-show = "percentage"
+show = "both"
 ```
 
 ### Options
@@ -69,7 +69,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | The device in `/sys/class/power_supply/` to read from. | No | `"BAT0"`
 `interval` | Update interval, in seconds. | No | `10`
-`show` | Show remaining 'time', 'percentage' or 'both' | No | `both`
+`show` | Show remaining 'time', 'percentage' or 'both' | No | `percentage`
 
 ## CPU Utilization
 

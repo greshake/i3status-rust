@@ -56,7 +56,7 @@ impl BatteryConfig {
     }
 
     fn default_show() -> ShowType {
-        ShowType::Both
+        ShowType::Percentage
     }
 }
 
