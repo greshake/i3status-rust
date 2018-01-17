@@ -120,21 +120,25 @@ impl BacklitDevice {
 
     /// Set the brightness value for this backlit device, as a percent.
     pub fn set_brightness(&self, value: u64) -> Result<()> {
+        let file = OpenOptions::new().write(true).open(self.device_path.join(
+            "brightness",
+        ));
+        if file.is_err() {
+            // TODO: Find a way to issue a non-fatal error, since this is likely
+            // due to a permissions issue and not the fault of the user. It
+            // should not crash the bar.
+            // Error: "Failed to open brightness file for writing"
+            return Ok(());
+        }
         let safe_value = match value {
             0...100 => value,
             _ => 100,
         };
         let raw = (((safe_value as f64) / 100.0) * (self.max_brightness as f64)).round() as u64;
-        let mut file = try!(
-            OpenOptions::new()
-                .write(true)
-                .open(self.device_path.join("brightness"))
-                .block_error("backlight", "Failed to open brightness file for writing")
-        );
-        file.write_fmt(format_args!("{}", raw)).block_error(
-            "backlight",
-            "Failed to write into brightness file",
-        )
+        // It's safe to unwrap() here because we checked for errors above.
+        file.unwrap()
+            .write_fmt(format_args!("{}", raw))
+            .block_error("backlight", "Failed to write into brightness file")
     }
 
     /// The brightness file itself.
@@ -213,6 +217,9 @@ impl ConfigBlock for Backlight {
                         update_time: Instant::now(),
                     });
                 }
+
+                // Avoid update spam.
+                thread::sleep(Duration::from_millis(250))
             }
         });
 
@@ -246,13 +253,11 @@ impl Block for Backlight {
                     MouseButton::WheelUp => {
                         if brightness <= 100 {
                             self.device.set_brightness(brightness + self.step_width)?;
-                            self.update()?;
                         }
                     }
                     MouseButton::WheelDown => {
                         if brightness > self.step_width {
                             self.device.set_brightness(brightness - self.step_width)?;
-                            self.update()?;
                         }
                     }
                     _ => {}
