@@ -234,36 +234,45 @@ Key | Values | Required | Default
 
 ### Format string specification
 
-Key | Value
-----|-------
-`{MTg}` | Memory total (GiB).
-`{MTm}` | Memory total (MiB).
-`{MAg}` | Available memory, including cached memory and buffers (GiB).
-`{MAm}` | Available memory, including cached memory and buffers (MiB).
-`{MAp}` | Available memory, including cached memory and buffers (%).
-`{MFg}` | Memory free (GiB).
-`{MFm}` | Memory free (MiB).
-`{MFp}` | Memory free (%).
-`{Mug}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB).
-`{Mum}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB).
-`{Mup}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (%).
-`{MUg}` | Total memory used (GiB).
-`{MUm}` | Total memory used (MiB).
-`{MUp}` | Total memory used (%).
-`{Cg}`  | Cached memory, similar to htop's yellow bar (GiB).
-`{Cm}`  | Cached memory, similar to htop's yellow bar (MiB).
-`{Cp}`  | Cached memory, similar to htop's yellow bar (%).
-`{Bg}`  | Buffers, similar to htop's blue bar (GiB).
-`{Bm}`  | Buffers, similar to htop's blue bar (MiB).
-`{Bp}`  | Buffers, similar to htop's blue bar (%).
-`{STg}` | Swap total (GiB).
-`{STm}` | Swap total (MiB).
-`{SFg}` | Swap free (GiB).
-`{SFm}` | Swap free (MiB).
-`{SFp}` | Swap free (%).
-`{SUg}` | Swap used (GiB).
-`{SUm}` | Swap used (MiB).
-`{SUp}` | Swap used (%).
+  Key    | Value
+---------|-------
+`{MTg}`  | Memory total (GiB).
+`{MTm}`  | Memory total (MiB).
+`{MAg}`  | Available memory, including cached memory and buffers (GiB).
+`{MAm}`  | Available memory, including cached memory and buffers (MiB).
+`{MAp}`  | Available memory, including cached memory and buffers (%).
+`{MApi}` | Available memory, including cached memory and buffers (%) as integer.
+`{MFg}`  | Memory free (GiB).
+`{MFm}`  | Memory free (MiB).
+`{MFp}`  | Memory free (%).
+`{MFpi}` | Memory free (%) as integer.
+`{Mug}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB).
+`{Mum}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB).
+`{Mup}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (%).
+`{Mupi}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (%) as integer.
+`{MUg}`  | Total memory used (GiB).
+`{MUm}`  | Total memory used (MiB).
+`{MUp}`  | Total memory used (%).
+`{MUpi}` | Total memory used (%) as integer.
+`{Cg}`   | Cached memory, similar to htop's yellow bar (GiB).
+`{Cm}`   | Cached memory, similar to htop's yellow bar (MiB).
+`{Cp}`   | Cached memory, similar to htop's yellow bar (%).
+`{Cpi}`  | Cached memory, similar to htop's yellow bar (%) as integer.
+`{Bg}`   | Buffers, similar to htop's blue bar (GiB).
+`{Bm}`   | Buffers, similar to htop's blue bar (MiB).
+`{Bp}`   | Buffers, similar to htop's blue bar (%).
+`{Bpi}`  | Buffers, similar to htop's blue bar (%) as integer.
+`{STg}`  | Swap total (GiB).
+`{STm}`  | Swap total (MiB).
+`{SFg}`  | Swap free (GiB).
+`{SFm}`  | Swap free (MiB).
+`{SFp}`  | Swap free (%).
+`{SFpi}` | Swap free (%) as integer.
+`{SUg}`  | Swap used (GiB).
+`{SUm}`  | Swap used (MiB).
+`{SUp}`  | Swap used (%).
+`{SUpi}` | Swap used (%) as integer.
+
 
 ## Music
 

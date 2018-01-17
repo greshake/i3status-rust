@@ -34,36 +34,43 @@
 //!
 //! ### Format string specification
 //!
-//! Key | Value
-//! ----|-------
-//! {MTg} | Memory total (GiB)
-//! {MTm} | Memory total (MiB)
-//! {MAg} | Available emory, including cached memory and buffers (GiB)
-//! {MAm} | Available memory, including cached memory and buffers (MiB)
-//! {MAp} | Available memory, including cached memory and buffers (%)
-//! {MFg} | Memory free (GiB)
-//! {MFm} | Memory free (MiB)
-//! {MFp} | Memory free (%)
-//! {Mug} | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB)
-//! {Mum} | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB)
-//! {Mup} | Memory used, excluding cached memory and buffers; similar to htop's green bar (%)
-//! {MUg} | Total memory used (GiB)
-//! {MUm} | Total memory used (MiB)
-//! {MUp} | Total memory used (%)
-//! {Cg}  | Cached memory, similar to htop's yellow bar (GiB)
-//! {Cm}  | Cached memory, similar to htop's yellow bar (MiB)
-//! {Cp}  | Cached memory, similar to htop's yellow bar (%)
-//! {Bg}  | Buffers, similar to htop's blue bar (GiB)
-//! {Bm}  | Buffers, similar to htop's blue bar (MiB)
-//! {Bp}  | Buffers, similar to htop's blue bar (%)
-//! {STg} | Swap total (GiB)
-//! {STm} | Swap total (MiB)
-//! {SFg} | Swap free (GiB)
-//! {SFm} | Swap free (MiB)
-//! {SFp} | Swap free (%)
-//! {SUg} | Swap used (GiB)
-//! {SUm} | Swap used (MiB)
-//! {SUp} | Swap used (%)
+//!  Key   | Value
+//! -------|-------
+//! {MTg}  | Memory total (GiB)
+//! {MTm}  | Memory total (MiB)
+//! {MAg}  | Available emory, including cached memory and buffers (GiB)
+//! {MAm}  | Available memory, including cached memory and buffers (MiB)
+//! {MAp}  | Available memory, including cached memory and buffers (%)
+//! {MApi} | Available memory, including cached memory and buffers (%) as integer
+//! {MFg}  | Memory free (GiB)
+//! {MFm}  | Memory free (MiB)
+//! {MFp}  | Memory free (%)
+//! {MFpi} | Memory free (%) as integer
+//! {Mug}  | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB)
+//! {Mum}  | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB)
+//! {Mup}  | Memory used, excluding cached memory and buffers; similar to htop's green bar (%)
+//! {MUg}  | Total memory used (GiB)
+//! {MUm}  | Total memory used (MiB)
+//! {MUp}  | Total memory used (%)
+//! {MUpi} | Total memory used (%) a integer
+//! {Cg}   | Cached memory, similar to htop's yellow bar (GiB)
+//! {Cm}   | Cached memory, similar to htop's yellow bar (MiB)
+//! {Cp}   | Cached memory, similar to htop's yellow bar (%)
+//! {Bg}   | Buffers, similar to htop's blue bar (GiB)
+//! {Bm}   | Buffers, similar to htop's blue bar (MiB)
+//! {Bp}   | Buffers, similar to htop's blue bar (%)
+//! {Bpi}  | Buffers, similar to htop's blue bar (%) as integer
+//! {STg}  | Swap total (GiB)
+//! {STm}  | Swap total (MiB)
+//! {SFg}  | Swap free (GiB)
+//! {SFm}  | Swap free (MiB)
+//! {SFp}  | Swap free (%)
+//! {SFpi} | Swap free (%) as integer
+//! {SUg}  | Swap used (GiB)
+//! {SUm}  | Swap used (MiB)
+//! {SUp}  | Swap used (%)
+//! {SUpi} | Swap used (%) as integer
+
 //!
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
@@ -342,6 +349,10 @@ impl Memory {
             "{MFp}".to_string(),
             format!("{:.2}", mem_free.percent(mem_total)),
         );
+        self.values.insert(
+            "{MFpi}".to_string(),
+            format!("{}", mem_free.percent(mem_total) as i32),
+        );
         self.values
             .insert("{MUg}".to_string(), format!("{:.1}", mem_total_used.gib()));
         self.values
@@ -349,6 +360,10 @@ impl Memory {
         self.values.insert(
             "{MUp}".to_string(),
             format!("{:.2}", mem_total_used.percent(mem_total)),
+        );
+        self.values.insert(
+            "{MUpi}".to_string(),
+            format!("{}", mem_total_used.percent(mem_total) as i32),
         );
         self.values
             .insert("{Mug}".to_string(), format!("{:.1}", mem_used.gib()));
@@ -358,6 +373,10 @@ impl Memory {
             "{Mup}".to_string(),
             format!("{:.2}", mem_used.percent(mem_total)),
         );
+        self.values.insert(
+            "{Mupi}".to_string(),
+            format!("{}", mem_used.percent(mem_total) as i32),
+        );
         self.values
             .insert("{MAg}".to_string(), format!("{:.1}", mem_avail.gib()));
         self.values
@@ -365,6 +384,10 @@ impl Memory {
         self.values.insert(
             "{MAp}".to_string(),
             format!("{:.2}", mem_avail.percent(mem_total)),
+        );
+        self.values.insert(
+            "{MApi}".to_string(),
+            format!("{}", mem_avail.percent(mem_total) as i32),
         );
         self.values
             .insert("{STg}".to_string(), format!("{:.1}", swap_total.gib()));
@@ -378,6 +401,10 @@ impl Memory {
             "{SFp}".to_string(),
             format!("{:.2}", swap_free.percent(swap_total)),
         );
+        self.values.insert(
+            "{SFpi}".to_string(),
+            format!("{}", swap_free.percent(swap_total) as i32),
+        );
         self.values
             .insert("{SUg}".to_string(), format!("{:.1}", swap_used.gib()));
         self.values
@@ -385,6 +412,10 @@ impl Memory {
         self.values.insert(
             "{SUp}".to_string(),
             format!("{:.2}", swap_used.percent(swap_total)),
+        );
+        self.values.insert(
+            "{SUpi}".to_string(),
+            format!("{}", swap_used.percent(swap_total) as i32),
         );
         self.values
             .insert("{Bg}".to_string(), format!("{:.1}", buffers.gib()));
@@ -394,6 +425,10 @@ impl Memory {
             "{Bp}".to_string(),
             format!("{:.2}", buffers.percent(mem_total)),
         );
+        self.values.insert(
+            "{Bpi}".to_string(),
+            format!("{}", buffers.percent(mem_total) as i32),
+        );
         self.values
             .insert("{Cg}".to_string(), format!("{:.1}", cached.gib()));
         self.values
@@ -401,6 +436,10 @@ impl Memory {
         self.values.insert(
             "{Cp}".to_string(),
             format!("{:.2}", cached.percent(mem_total)),
+        );
+        self.values.insert(
+            "{Cpi}".to_string(),
+            format!("{}", cached.percent(mem_total) as i32),
         );
 
         match self.memtype {
