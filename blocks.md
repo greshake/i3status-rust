@@ -25,6 +25,8 @@ Creates a block to display screen brightness. This is a simplified version of th
 
 When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.
 
+It is possible to set the brightness using this block as well -- [see below](#setting-brightness-with-the-mouse-wheel) for details.
+
 ### Examples
 
 Show brightness for a specific device:
@@ -47,6 +49,20 @@ block = "backlight"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | The `/sys/class/backlight` device to read brightness information from. | No | Default device
+`step_width` | The brightness increment to use when scrolling, in percent. | No | `5`
+
+### Setting Brightness with the Mouse Wheel
+
+The block allows for setting brightness with the mouse wheel. However, depending on how you installed i3status-rust, it may not have the appropriate permissions to modify these files, and will fail silently. To remedy this you can write a `udev` rule for your system (if you are comfortable doing so).
+
+First, check that your user is a member of the "video" group using the `groups` command. Then add a rule in the `/etc/udev/rules.d/` directory containing the following, for example in `backlight.rules`:
+
+```
+ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="acpi_video0", RUN+="/bin/chgrp video /sys/class/backlight/%k/brightness"
+ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="acpi_video0", RUN+="/bin/chmod g+w /sys/class/backlight/%k/brightness"
+```
+
+You will need to ensure that the value of the `KERNEL` parameter here is the same as the `device` used to configure the block. (You will also need to restart for this rule to take effect.)
 
 ## Battery
 

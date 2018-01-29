@@ -19,7 +19,7 @@ mod de;
 #[macro_use]
 mod util;
 mod block;
-mod blocks;
+pub mod blocks;
 mod config;
 mod errors;
 mod input;

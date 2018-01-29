@@ -1,20 +1,29 @@
+//! A block for displaying the brightness of a backlit device.
+//!
+//! This module contains the [`Backlight`](./struct.Backlight.html) block, which
+//! can display the brightness level of physical backlit devices. Brightness
+//! levels are read from and written to the `sysfs` filesystem, so this block
+//! does not depend on `xrandr` (and thus it works on Wayland). To set
+//! brightness levels using `xrandr`, see the
+//! [`Xrandr`](../xrandr/struct.Xrandr.html) block.
+
 use std::fs::OpenOptions;
-use std::io::Read;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
+
 use chan::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
+use uuid::Uuid;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::I3BarWidget;
-use input::I3BarEvent;
+use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
-
-use uuid::Uuid;
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
@@ -37,8 +46,9 @@ fn read_brightness(device_file: &Path) -> Result<u64> {
     )
 }
 
+/// Represents a physical backlit device whose brightness level can be queried.
 pub struct BacklitDevice {
-    pub max_brightness: u64,
+    max_brightness: u64,
     device_path: PathBuf,
 }
 
@@ -76,8 +86,8 @@ impl BacklitDevice {
         })
     }
 
-    /// Use the backlit device `device`. Raises an error if a directory for that
-    /// device is not found.
+    /// Use the backlit device `device`. Returns an error if a directory for
+    /// that device is not found.
     pub fn from_device(device: String) -> Result<Self> {
         let device_path = Path::new("/sys/class/backlight").join(device);
         if !device_path.exists() {
@@ -98,9 +108,37 @@ impl BacklitDevice {
         })
     }
 
-    /// Query the brightness value for this backlit device.
+    /// Query the brightness value for this backlit device, as a percent.
     pub fn brightness(&self) -> Result<u64> {
-        read_brightness(&self.brightness_file())
+        let raw = try!(read_brightness(&self.brightness_file()));
+        let brightness = ((raw as f64 / self.max_brightness as f64) * 100.0).round() as u64;
+        match brightness {
+            0...100 => Ok(brightness),
+            _ => Ok(100),
+        }
+    }
+
+    /// Set the brightness value for this backlit device, as a percent.
+    pub fn set_brightness(&self, value: u64) -> Result<()> {
+        let file = OpenOptions::new().write(true).open(self.device_path.join(
+            "brightness",
+        ));
+        if file.is_err() {
+            // TODO: Find a way to issue a non-fatal error, since this is likely
+            // due to a permissions issue and not the fault of the user. It
+            // should not crash the bar.
+            // Error: "Failed to open brightness file for writing"
+            return Ok(());
+        }
+        let safe_value = match value {
+            0...100 => value,
+            _ => 100,
+        };
+        let raw = (((safe_value as f64) / 100.0) * (self.max_brightness as f64)).round() as u64;
+        // It's safe to unwrap() here because we checked for errors above.
+        file.unwrap()
+            .write_fmt(format_args!("{}", raw))
+            .block_error("backlight", "Failed to write into brightness file")
     }
 
     /// The brightness file itself.
@@ -109,23 +147,34 @@ impl BacklitDevice {
     }
 }
 
+/// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
     id: String,
-    output: TextWidget,
+    output: ButtonWidget,
     device: BacklitDevice,
+    step_width: u64,
 }
 
+/// Configuration for the [`Backlight`](./struct.Backlight.html) block.
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BacklightConfig {
     /// The backlight device in `/sys/class/backlight/` to read brightness from.
     #[serde(default = "BacklightConfig::default_device")]
     pub device: Option<String>,
+
+    /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
+    #[serde(default = "BacklightConfig::default_step_width")]
+    pub step_width: u64,
 }
 
 impl BacklightConfig {
     fn default_device() -> Option<String> {
         None
+    }
+
+    fn default_step_width() -> u64 {
+        5
     }
 }
 
@@ -142,9 +191,10 @@ impl ConfigBlock for Backlight {
         let brightness_file = device.brightness_file();
 
         let backlight = Backlight {
-            output: TextWidget::new(config),
+            output: ButtonWidget::new(config, &id),
             id: id.clone(),
             device: device,
+            step_width: block_config.step_width,
         };
 
         // Spin up a thread to watch for changes to the brightness file for the
@@ -167,6 +217,9 @@ impl ConfigBlock for Backlight {
                         update_time: Instant::now(),
                     });
                 }
+
+                // Avoid update spam.
+                thread::sleep(Duration::from_millis(250))
             }
         });
 
@@ -177,9 +230,8 @@ impl ConfigBlock for Backlight {
 impl Block for Backlight {
     fn update(&mut self) -> Result<Option<Duration>> {
         let brightness = try!(self.device.brightness());
-        let display = ((brightness as f64 / self.device.max_brightness as f64) * 100.0) as u64;
-        self.output.set_text(format!("{}%", display));
-        match display {
+        self.output.set_text(format!("{}%", brightness));
+        match brightness {
             0...19 => self.output.set_icon("backlight_empty"),
             20...39 => self.output.set_icon("backlight_partial1"),
             40...59 => self.output.set_icon("backlight_partial2"),
@@ -193,7 +245,26 @@ impl Block for Backlight {
         vec![&self.output]
     }
 
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if let Some(ref name) = event.name {
+            if name.as_str() == self.id {
+                let brightness = try!(self.device.brightness());
+                match event.button {
+                    MouseButton::WheelUp => {
+                        if brightness <= 100 {
+                            self.device.set_brightness(brightness + self.step_width)?;
+                        }
+                    }
+                    MouseButton::WheelDown => {
+                        if brightness > self.step_width {
+                            self.device.set_brightness(brightness - self.step_width)?;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
         Ok(())
     }
 
