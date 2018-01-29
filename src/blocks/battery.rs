@@ -128,10 +128,31 @@ impl Block for Battery {
                 // is full, leading to >100% charge.
                 _ => 100,
             };
-        } else {
+        } else if file_exists(&format!("{}energy_full", self.device_path)) && file_exists(&format!("{}energy_now", self.device_path)) {
+            // We only need to read max_charge once, shouldn't change
+            if self.max_charge == 0 {
+                self.max_charge = read_file(&format!("{}energy_full", self.device_path))?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse energy_full")?;
+            }
+
+            let current_charge = read_file(&format!("{}energy_now", self.device_path))?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse energy_now")?;
+            current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.0) as u64;
+            current_percentage = match current_percentage {
+                0...100 => current_percentage,
+                // We need to cap it at 100, because the kernel may report
+                // charge_now same as charge_full_design when the battery
+                // is full, leading to >100% charge.
+                _ => 100,
+            };
+        }
+        
+         else {
             return Err(BlockError(
                 "battery".to_string(),
-                "Device does not support reading capacity or charge".to_string(),
+                "Device does not support reading capacity, charge or energy".to_string(),
             ));
         }
 
