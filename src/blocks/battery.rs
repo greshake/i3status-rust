@@ -1,17 +1,14 @@
 use std::time::Duration;
 use chan::Sender;
 use scheduler::Task;
-
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
-use std::fs::OpenOptions;
-use std::io::prelude::*;
-
 use uuid::Uuid;
+use blocks::lib::*;
 
 pub struct Battery {
     output: TextWidget,
@@ -75,23 +72,6 @@ impl ConfigBlock for Battery {
     }
 }
 
-fn read_file(path: &str) -> Result<String> {
-    let mut f = OpenOptions::new()
-        .read(true)
-        .open(path)
-        .block_error("battery", &format!("failed to open file {}", path))?;
-    let mut content = String::new();
-    f.read_to_string(&mut content)
-        .block_error("battery", &format!("failed to read {}", path))?;
-    // Removes trailing newline
-    content.pop();
-    Ok(content)
-}
-
-fn file_exists(path: &str) -> bool {
-    ::std::path::Path::new(path).exists()
-}
-
 impl Block for Battery {
     fn update(&mut self) -> Result<Option<Duration>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
@@ -102,7 +82,7 @@ impl Block for Battery {
         let mut current_percentage = 0;
 
         if file_exists(&format!("{}capacity", self.device_path)) {
-            current_percentage = match read_file(&format!("{}capacity", self.device_path))?
+            current_percentage = match read_file("battery", &format!("{}capacity", self.device_path))?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse capacity")?
             {
@@ -112,12 +92,12 @@ impl Block for Battery {
         } else if file_exists(&format!("{}charge_full", self.device_path)) && file_exists(&format!("{}charge_now", self.device_path)) {
             // We only need to read max_charge once, shouldn't change
             if self.max_charge == 0 {
-                self.max_charge = read_file(&format!("{}charge_full", self.device_path))?
+                self.max_charge = read_file("battery", &format!("{}charge_full", self.device_path))?
                     .parse::<u64>()
                     .block_error("battery", "failed to parse charge_full")?;
             }
 
-            let current_charge = read_file(&format!("{}charge_now", self.device_path))?
+            let current_charge = read_file("battery", &format!("{}charge_now", self.device_path))?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse charge_now")?;
             current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.0) as u64;
@@ -135,10 +115,10 @@ impl Block for Battery {
             ));
         }
 
-        let state = read_file(&format!("{}status", self.device_path))?;
+        let state = read_file("battery", &format!("{}status", self.device_path))?;
 
         let energy_now = if file_exists(&format!("{}energy_now", self.device_path)) {
-            read_file(&format!("{}energy_now", self.device_path))?
+            read_file("battery", &format!("{}energy_now", self.device_path))?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse  energy_now")?
         } else {
@@ -146,7 +126,7 @@ impl Block for Battery {
         };
 
         let energy_full = if file_exists(&format!("{}energy_full", self.device_path)) {
-            read_file(&format!("{}energy_full", self.device_path))?
+            read_file("battery", &format!("{}energy_full", self.device_path))?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse  energy_full")?
         } else {
@@ -154,7 +134,7 @@ impl Block for Battery {
         };
 
         let power_now = if file_exists(&format!("{}power_now", self.device_path)) {
-            read_file(&format!("{}power_now", self.device_path))?
+            read_file("battery", &format!("{}power_now", self.device_path))?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse current voltage")?
         } else {

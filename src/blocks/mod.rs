@@ -17,6 +17,8 @@ mod xrandr;
 mod net;
 pub mod backlight;
 mod weather;
+mod uptime;
+mod lib;
 
 use config::Config;
 use self::time::*;
@@ -38,6 +40,7 @@ use self::xrandr::*;
 use self::net::*;
 use self::backlight::Backlight;
 use self::weather::*;
+use self::uptime::*;
 
 use super::block::{Block, ConfigBlock};
 use errors::*;
@@ -88,6 +91,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "xrandr" => Xrandr,
             "net" => Net,
             "backlight" => Backlight,
-            "weather" => Weather
+            "weather" => Weather,
+            "uptime" => Uptime
     )
 }
