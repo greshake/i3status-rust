@@ -13,13 +13,13 @@ use config::Config;
 use de::deserialize_duration;
 use errors::*;
 use input::{I3BarEvent, MouseButton};
-use widgets::text::TextWidget;
+use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 
 use uuid::Uuid;
 
 pub struct Pacman {
-    output: TextWidget,
+    output: ButtonWidget,
     id: String,
     update_interval: Duration,
 }
@@ -45,7 +45,7 @@ impl ConfigBlock for Pacman {
         Ok(Pacman {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            output: TextWidget::new(config).with_icon("update"),
+            output: ButtonWidget::new(config, "pacman").with_icon("update"),
         })
     }
 }
