@@ -111,12 +111,12 @@ impl Block for Battery {
         } else if file_exists(&format!("{}energy_full", self.device_path)) && file_exists(&format!("{}energy_now", self.device_path)) {
             // We only need to read max_charge once, shouldn't change
             if self.max_charge == 0 {
-                self.max_charge = read_file(&format!("{}energy_full", self.device_path))?
+                self.max_charge = read_file("battery", &format!("{}energy_full", self.device_path))?
                     .parse::<u64>()
                     .block_error("battery", "failed to parse energy_full")?;
             }
 
-            let current_charge = read_file(&format!("{}energy_now", self.device_path))?
+            let current_charge = read_file("battery", &format!("{}energy_now", self.device_path))?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse energy_now")?;
             current_percentage = ((current_charge as f64 / self.max_charge as f64) * 100.0) as u64;
