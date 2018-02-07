@@ -268,7 +268,7 @@ impl Block for Sound {
                         MouseButton::WheelUp => {
                             if volume < 100 {
                                 device.set_volume(
-                                    min(self.step_width, (100 - volume)) as i32,
+                                    min(self.step_width, 100 - volume) as i32,
                                 )?;
                             }
                         }
