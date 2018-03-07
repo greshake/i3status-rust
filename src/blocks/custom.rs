@@ -2,6 +2,7 @@ use std::time::{Duration, Instant};
 use std::process::Command;
 use std::iter::{Cycle, Peekable};
 use std::vec;
+use std::env;
 use chan::Sender;
 
 use block::{Block, ConfigBlock};
@@ -115,7 +116,10 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new("sh").args(&["-c", on_click]).output().ok();
+            match env::var("SHELL") {
+                Ok(name) => Command::new(name), 
+                _ => Command::new("sh")
+            }.args(&["-c", on_click]).output().ok();
             update = true;
         }
 
