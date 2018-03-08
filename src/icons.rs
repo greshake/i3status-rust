@@ -42,7 +42,8 @@ lazy_static! {
         "weather_thunder" => " STORM ",
         "weather_clouds" => " CLOUDY ",
         "weather_rain" => " RAIN ",
-        "weather_default" => " WEATHER "
+        "weather_default" => " WEATHER ",
+        "uptime" => " UP "
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
@@ -87,7 +88,9 @@ lazy_static! {
         "weather_clouds" => " \u{f0c2} ",
         "weather_rain" => " \u{f043} ",
         // Cloud symbol as default
-        "weather_default" => " \u{f0c2} "
+        "weather_default" => " \u{f0c2} ",
+        // Same as time symbol.
+        "uptime" => " \u{f017} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
@@ -115,7 +118,9 @@ lazy_static! {
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
         "volume_muted" => "\u{e04f}",
         "thermometer" => " \u{f2c8} ", // TODO
-        "xrandr" => " \u{e31e} "
+        "xrandr" => " \u{e31e} ",
+        // Same as time symbol.
+        "uptime" => " \u{e192} "
     };
 }
 
