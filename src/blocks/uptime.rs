@@ -41,7 +41,7 @@ impl ConfigBlock for Uptime {
         Ok(Uptime {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            text: TextWidget::new(config.clone()),
+            text: TextWidget::new(config.clone()).with_icon("uptime"),
             tx_update_request: tx_update_request,
             config: config,
         })
@@ -90,18 +90,20 @@ impl Block for Uptime {
         let rem_minutes = (rem_hours % 60) as u32;
         let seconds = rem_minutes as u32;
 
-        let mut text = String::from("0");
-        // display two digits at most
-        if hours == 0 && days == 0 && weeks == 0 {
-            text = format!("⏱ {}m {}s", minutes, seconds);
-        } else if hours > 0 && days == 0 {
-            text = format!("⏱ {}h {}m", hours, minutes,);
-        } else if hours > 0 && days > 0 && weeks == 0 {
-            text = format!("⏱ {}d {}h", days, hours);
-        } else if days > 0 && weeks > 0 {
-            text = format!("⏱ {}w {}d", weeks, days);
-        }
-        //debug:  let text = format!("uptime: {}w, {}d, {}h, {}m, {}s", weeks, days, hours, minutes, seconds);
+        // Display the two largest units.
+        let text = if hours == 0 && days == 0 && weeks == 0 {
+            format!("{}m {}s", minutes, seconds)
+        } else if hours > 0 && days == 0 && weeks == 0 {
+            format!("{}h {}m", hours, minutes)
+        } else if days > 0 && weeks == 0 {
+            format!("{}d {}h", days, hours)
+        } else if days == 0 && weeks > 0 {
+            format!("{}w {}h", weeks, hours)
+        } else if weeks > 0 {
+            format!("{}w {}d", weeks, days)
+        } else {
+            unreachable!()
+        };
         self.text.set_text(text);
         Ok(Some(self.update_interval))
     }
