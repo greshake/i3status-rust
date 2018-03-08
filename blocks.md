@@ -138,7 +138,7 @@ Note that `command` and `cycle` are mutually exclusive.
 Key | Values | Required | Default
 ----|--------|----------|--------
 `command` | Shell command to execute & display. | No | None
-`on_click` | Command to execute when the button is clicked. | No | None
+`on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `10`
 
