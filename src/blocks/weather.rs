@@ -61,7 +61,7 @@ impl Weather {
                         &[
                             "-c",
                             &format!(
-                                "curl \"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}\" 2> /dev/null",
+                                "curl -m 3 \"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}\" 2> /dev/null",
                                 city_id = city_id,
                                 api_key = api_key,
                                 units = match *units {
@@ -78,11 +78,10 @@ impl Weather {
                     })?;
 
                 // Don't error out on empty responses e.g. for when not
-                // connected to the internet. Instead just display a
-                // error/disabled-looking widget.
+                // connected to the internet.
                 if output.len() < 1 {
                     self.weather.set_icon("weather_default");
-                    self.weather.set_text("×".to_string());
+                    self.weather_keys = HashMap::new();
                     return Ok(());
                 }
 
@@ -198,8 +197,14 @@ impl ConfigBlock for Weather {
 impl Block for Weather {
     fn update(&mut self) -> Result<Option<Duration>> {
         self.update_weather()?;
-        let fmt = FormatTemplate::from_string(self.format.clone())?;
-        self.weather.set_text(fmt.render(&self.weather_keys));
+        // Display an error/disabled-looking widget when we don't have any
+        // weather information, which is likely due to internet connectivity.
+        if self.weather_keys.keys().len() == 0 {
+            self.weather.set_text("×".to_string());
+        } else {
+            let fmt = FormatTemplate::from_string(self.format.clone())?;
+            self.weather.set_text(fmt.render(&self.weather_keys));
+        }
         Ok(Some(self.update_interval))
     }
 
