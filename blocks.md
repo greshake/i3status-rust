@@ -412,6 +412,7 @@ Creates a block which displays the system temperature, based on lm_sensors' `sen
 block = "temperature"
 collapsed = false
 interval = 10
+show = "max"
 ```
 
 ### Options
@@ -420,6 +421,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval, in seconds. | No | 5
 collapsed | Collapsed by default? | No | true
+show | Show `max` temperature, `average` of all sensors or `both` | No | `both`
 
 ## Time
 
