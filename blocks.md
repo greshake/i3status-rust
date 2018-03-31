@@ -412,6 +412,7 @@ Creates a block which displays the system temperature, based on lm_sensors' `sen
 block = "temperature"
 collapsed = false
 interval = 10
+format = "{min}° min, {max}° max, {average}° avg"
 ```
 
 ### Options

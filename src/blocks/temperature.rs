@@ -1,5 +1,6 @@
 use std::time::Duration;
 use std::process::Command;
+use util::FormatTemplate;
 use chan::Sender;
 use scheduler::Task;
 
@@ -19,6 +20,7 @@ pub struct Temperature {
     collapsed: bool,
     id: String,
     update_interval: Duration,
+    format: FormatTemplate,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -31,9 +33,17 @@ pub struct TemperatureConfig {
     /// Collapsed by default?
     #[serde(default = "TemperatureConfig::default_collapsed")]
     pub collapsed: bool,
+
+    /// Format override
+    #[serde(default = "TemperatureConfig::default_format")]
+    pub format: String,
 }
 
 impl TemperatureConfig {
+    fn default_format() -> String {
+        "{average}° avg, {max}° max".to_owned()
+    }
+
     fn default_interval() -> Duration {
         Duration::from_secs(5)
     }
@@ -54,6 +64,8 @@ impl ConfigBlock for Temperature {
             output: String::new(),
             collapsed: block_config.collapsed,
             id,
+            format: FormatTemplate::from_string(block_config.format)
+                .block_error("temperature", "Invalid format specified for temperature")?,
         })
     }
 }
@@ -101,9 +113,17 @@ impl Block for Temperature {
                 .iter()
                 .max()
                 .block_error("temperature", "failed to get max temperature")?;
+            let min: i64 = *temperatures
+                .iter()
+                .min()
+                .block_error("temperature", "failed to get min temperature")?;
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
 
-            self.output = format!("{}° avg, {}° max", avg, max);
+            let values = map!("{average}" => avg,
+                              "{min}" => min,
+                              "{max}" => max);
+
+            self.output = self.format.render_static_str(&values)?;
             if !self.collapsed {
                 self.text.set_text(self.output.clone());
             }
