@@ -81,7 +81,7 @@ impl ConfigBlock for Temperature {
             collapsed: block_config.collapsed,
             id,
             format: FormatTemplate::from_string(block_config.format)
-                .block_error("load", "Invalid format specified for temperature")?,
+                .block_error("temperature", "Invalid format specified for temperature")?,
         })
     }
 }
