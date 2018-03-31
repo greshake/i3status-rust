@@ -34,7 +34,7 @@ pub struct LoadConfig {
 
 impl LoadConfig {
     fn default_format() -> String {
-        "{avg}° avg, {max}° max".to_owned()
+        "{average}° avg, {max}° max".to_owned()
     }
 
     fn default_interval() -> Duration {
@@ -135,7 +135,7 @@ impl Block for Temperature {
                 .block_error("temperature", "failed to get min temperature")?;
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
 
-            let values = map!("{avg}" => avg,
+            let values = map!("{average}" => avg,
                               "{min}" => min,
                               "{max}" => max);
 
