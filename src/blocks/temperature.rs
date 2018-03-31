@@ -25,26 +25,6 @@ pub struct Temperature {
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct LoadConfig {
-    #[serde(default = "LoadConfig::default_format")]
-    pub format: String,
-    #[serde(default = "LoadConfig::default_interval", deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-}
-
-impl LoadConfig {
-    fn default_format() -> String {
-        "{average}° avg, {max}° max".to_owned()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-}
-
-
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
 pub struct TemperatureConfig {
     /// Update interval in seconds
     #[serde(default = "TemperatureConfig::default_interval", deserialize_with = "deserialize_duration")]
@@ -55,11 +35,15 @@ pub struct TemperatureConfig {
     pub collapsed: bool,
 
     /// Format override
-    #[serde(default = "LoadConfig::default_format")]
+    #[serde(default = "TemperatureConfig::default_format")]
     pub format: String,
 }
 
 impl TemperatureConfig {
+    fn default_format() -> String {
+        "{average}° avg, {max}° max".to_owned()
+    }
+
     fn default_interval() -> Duration {
         Duration::from_secs(5)
     }
