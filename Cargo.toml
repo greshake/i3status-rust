@@ -16,7 +16,7 @@ uuid = { version = "0.5", features = ["v4"] }
 dbus = "0.5.3"
 regex = "0.2"
 nix = "0.8.1"
-i3ipc = "0.4.2"
+i3ipc = "0.8.2"
 num = "0.1.39"
 chan = "0.1.19"
 inotify = "0.5.0"
