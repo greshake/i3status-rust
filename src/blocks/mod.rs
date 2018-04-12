@@ -19,6 +19,7 @@ pub mod backlight;
 mod weather;
 mod uptime;
 mod lib;
+mod gpu;
 
 use config::Config;
 use self::time::*;
@@ -41,6 +42,7 @@ use self::net::*;
 use self::backlight::Backlight;
 use self::weather::*;
 use self::uptime::*;
+use self::gpu::*;
 
 use super::block::{Block, ConfigBlock};
 use errors::*;
@@ -92,6 +94,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "net" => Net,
             "backlight" => Backlight,
             "weather" => Weather,
-            "uptime" => Uptime
+            "uptime" => Uptime,
+            "gpu" => Gpu
     )
 }
