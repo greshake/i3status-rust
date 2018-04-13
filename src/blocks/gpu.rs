@@ -57,7 +57,7 @@ impl ConfigBlock for Gpu {
         Ok(Gpu {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            gpu_widget: TextWidget::new(config.clone()).with_text("gpu"),
+            gpu_widget: TextWidget::new(config).with_icon("cpu"),
             // TODO
             // Add params
             gpu_id: block_config.gpu_id,
@@ -82,9 +82,11 @@ impl Block for Gpu {
             .block_error("gpu", "Failed to execute nvidia-smi.")?
             .stdout;
         self.utilization = 0;
-        self.gpu_widget.set_text(String::from_utf8(output)
-            .block_error("net", "Non-UTF8 bitrate.")
-            .unwrap());
+        self.gpu_widget.set_text(format!("{:02}%",
+                                         String::from_utf8(output)
+                                             .block_error("net", "Non-UTF8 bitrate.")
+                                             .unwrap()));
+        //self.utilization.set_text(format!("{:02}%", utilization));
         Ok(Some(self.update_interval))
     }
 
