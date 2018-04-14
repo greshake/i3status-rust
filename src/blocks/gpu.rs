@@ -19,7 +19,7 @@ pub struct Gpu {
     update_interval: Duration,
 
     gpu_id: u64,
-    utilization: u64,
+    utilization: Option<TextWidget>,
     /*
     memory_used: u64,
     memory_total: u64,
@@ -38,6 +38,10 @@ pub struct GpuConfig {
     /// GPU id in system
     #[serde(default = "GpuConfig::default_gpu_id")]
     pub gpu_id: u64,
+
+    /// GPU utilization. In percents.
+    #[serde(default = "GpuConfig::default_utilization")]
+    pub utilization: bool,
 }
 
 impl GpuConfig {
@@ -48,6 +52,10 @@ impl GpuConfig {
     fn default_gpu_id() -> u64 {
         0
     }
+
+    fn default_utilization() -> bool {
+        true
+    }
 }
 
 impl ConfigBlock for Gpu {
@@ -57,11 +65,14 @@ impl ConfigBlock for Gpu {
         Ok(Gpu {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            gpu_widget: TextWidget::new(config).with_icon("cpu"),
+            gpu_widget: TextWidget::new(config.clone()).with_icon("cpu"),
             // TODO
             // Add params
             gpu_id: block_config.gpu_id,
-            utilization: 66,
+            utilization: match block_config.utilization {
+                true => Some(TextWidget::new(config.clone())),
+                false => None,
+            },
         })
     }
 }
@@ -81,11 +92,19 @@ impl Block for Gpu {
             .output()
             .block_error("gpu", "Failed to execute nvidia-smi.")?
             .stdout;
-        self.utilization = 0;
+
+        if let Some(ref mut utilization_widget) = self.utilization {
+            utilization_widget.set_text(format!("{}%",
+                                                String::from_utf8_lossy(&output)));
+        }
+
+        //self.utilization = 0;
+        //self.gpu_widget.set_text(format!("{:02}%",
+        //                                 String::from_utf8(output)
+        //                                     .block_error("net", "Non-UTF8 bitrate.")
+        //                                     .unwrap()));
         self.gpu_widget.set_text(format!("{:02}%",
-                                         String::from_utf8(output)
-                                             .block_error("net", "Non-UTF8 bitrate.")
-                                             .unwrap()));
+                                         String::from_utf8_lossy(&output)));
         //self.utilization.set_text(format!("{:02}%", utilization));
         Ok(Some(self.update_interval))
     }

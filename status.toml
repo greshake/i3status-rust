@@ -1,0 +1,65 @@
+theme = "solarized-dark"
+icons = "awesome"
+
+#[theme]
+#name = "solarized-dark"
+
+#[icons]
+#name = "awesome"
+
+[[block]]
+block = "gpu"
+interval = 1
+
+[[block]]
+block = "temperature"
+interval = 3
+collapsed = false
+
+[[block]]
+block = "music"
+player = "audacious"
+buttons = ["play", "next"]
+
+[[block]]
+block = "disk_space"
+path = "/"
+alias = "/"
+info_type = "available"
+unit = "GB"
+interval = 20
+
+[[block]]
+block = "memory"
+format_mem = "{Mug}GB/{MTg}GB ({Mup}%)"
+format_swap = "{SUg}GB/{STg}GB ({SUp}%)"
+display_type = "memory"
+icons = true
+clickable = true
+interval = 1
+warning_mem = 80
+warning_swap = 80
+critical_mem = 95
+critical_swap = 95
+
+[[block]]
+block = "cpu"
+interval = 1
+#info = 50
+#warning = 90
+
+[[block]]
+block = "net"
+device = "enp3s0"
+interval = 1
+
+[[block]]
+block = "sound"
+interval = 5
+step_width = 3
+
+[[block]]
+block = "time"
+interval = 60
+format = "%a %d/%m %R"
+
