@@ -20,12 +20,6 @@ pub struct Gpu {
 
     gpu_id: u64,
     utilization: Option<TextWidget>,
-    /*
-    memory_used: u64,
-    memory_total: u64,
-    temperature: u64,
-    fan_speed: u64,
-    */
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -65,7 +59,7 @@ impl ConfigBlock for Gpu {
         Ok(Gpu {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            gpu_widget: TextWidget::new(config.clone()).with_icon("cpu"),
+            gpu_widget: TextWidget::new(config.clone()).with_icon("gpu"),
             // TODO
             // Add params
             gpu_id: block_config.gpu_id,
@@ -79,9 +73,8 @@ impl ConfigBlock for Gpu {
 
 impl Block for Gpu {
     fn update(&mut self) -> Result<Option<Duration>> {
-        //let mut params = vec![];
         let params = "utilization.gpu";
-        let output = Command::new("nvidia-smi")
+        let mut output = Command::new("nvidia-smi")
             .args(
                 &[
                     "-i", &self.gpu_id.to_string(),
@@ -92,32 +85,27 @@ impl Block for Gpu {
             .output()
             .block_error("gpu", "Failed to execute nvidia-smi.")?
             .stdout;
+        output.pop(); // Remove trailing newline.
+        let result = String::from_utf8(output).unwrap();
 
         if let Some(ref mut utilization_widget) = self.utilization {
-            utilization_widget.set_text(format!("{}<>",
-                                                String::from_utf8_lossy(&output)));
+            utilization_widget.set_text(format!("{:02}%", result));
         }
 
-        //self.utilization = 0;
-        //self.gpu_widget.set_text(format!("{:02}%",
-        //                                 String::from_utf8(output)
-        //                                     .block_error("net", "Non-UTF8 bitrate.")
-        //                                     .unwrap()));
-        self.gpu_widget.set_text(format!("{:02}%",
-                                         String::from_utf8_lossy(&output)));
-        //self.utilization.set_text(format!("{:02}%", utilization));
+        self.gpu_widget.set_text(format!("gpu {}",
+                                         self.gpu_id,));
+
         Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        vec![&self.gpu_widget]
+        let mut widgets: Vec<&I3BarWidget> = Vec::new();
+        widgets.push(&self.gpu_widget);
+        if let Some(ref utilization_widget) = self.utilization {
+            widgets.push(utilization_widget);
+        }
+        widgets
     }
-
-    /*
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
-    */
 
     fn id(&self) -> &str {
         &self.id

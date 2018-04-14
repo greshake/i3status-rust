@@ -62,7 +62,7 @@ lazy_static! {
         "bat_full" => " \u{f240} ",
         "bat_charging" => " \u{f1e6} ",
         "bat_discharging" => " \u{f242} ",
-        "gpu" => " \u{f188} ",
+        "gpu" => " \u{f188} ", // TODO
         "update" => " \u{f062} ",
         "toggle_off" => " \u{f204} ",
         "toggle_on" => " \u{f205} ",

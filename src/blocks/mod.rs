@@ -19,7 +19,7 @@ pub mod backlight;
 mod weather;
 mod uptime;
 mod lib;
-mod gpu;
+pub mod gpu;
 
 use config::Config;
 use self::time::*;
