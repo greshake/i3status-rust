@@ -94,7 +94,7 @@ impl Block for Gpu {
             .stdout;
 
         if let Some(ref mut utilization_widget) = self.utilization {
-            utilization_widget.set_text(format!("{}%",
+            utilization_widget.set_text(format!("{}<>",
                                                 String::from_utf8_lossy(&output)));
         }
 
