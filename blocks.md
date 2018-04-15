@@ -22,6 +22,7 @@
 - [Toggle](#toggle)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
+- [Plugin](#plugin)
 
 ## Backlight
 
@@ -729,3 +730,37 @@ Key | Values | Required | Default
 `resolution` | Shows the screens resolution | No | `false`
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | `5`
 `interval` | Update interval, in seconds. | No | `5`
+
+## Plugin
+
+Similar to the Custom block, but implements a json protocol for more power.
+Currently supports setting the text and the state.
+The state must be one of the following: Idle, Info, Good, Warning, Critical.
+
+### Examples
+
+```toml
+[[block]]
+block = "plugin"
+command = "echo '{\"state\":\"Good\",\"text\":\"hello\"}'"
+interval = 100
+```
+
+```toml
+[[block]]
+block = "plugin"
+cycle = ["echo ON", "echo OFF"]
+on_click = "<command>"
+interval = 1
+```
+
+### Options
+
+Note that `command` and `cycle` are mutually exclusive.
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`command` | Shell command to execute & display. | No | None
+`on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
+`cycle` | Commands to execute and change when the button is clicked. | No | None
+`interval` | Update interval, in seconds. | No | `10`
