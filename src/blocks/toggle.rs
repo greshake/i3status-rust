@@ -43,6 +43,19 @@ pub struct ToggleConfig {
     pub text: String,
 }
 
+impl Toggle {
+
+    fn execute(&self, cmd: &String) -> bool {
+        !Command::new("sh")
+            .args(&["-c", cmd])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+            .unwrap_or_else(|e| e.description().to_owned())
+            .trim_left()
+            .is_empty() 
+    }
+}
+
 impl ConfigBlock for Toggle {
     type Config = ToggleConfig;
 
@@ -61,22 +74,13 @@ impl ConfigBlock for Toggle {
 }
 
 impl Block for Toggle {
-    fn update(&mut self) -> Result<Option<Duration>> {
-        let output = Command::new("sh")
-            .args(&["-c", &self.command_state])
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.description().to_owned());
 
-        self.text.set_icon(match output.trim_left() {
-            "" => {
-                self.toggled = false;
-                "toggle_off"
-            }
-            _ => {
-                self.toggled = true;
-                "toggle_on"
-            }
+    fn update(&mut self) -> Result<Option<Duration>> {
+        self.toggled = self.execute(&self.command_state);
+        self.text.set_icon(if self.toggled {
+            "toggle_on"
+        } else {
+            "toggle_off" 
         });
 
         Ok(self.update_interval)
@@ -89,20 +93,21 @@ impl Block for Toggle {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
+
                 let cmd = if self.toggled {
-                    self.toggled = false;
-                    self.text.set_icon("toggle_off");
                     &self.command_off
                 } else {
-                    self.toggled = true;
-                    self.text.set_icon("toggle_on");
                     &self.command_on
                 };
 
-                Command::new("sh")
-                    .args(&["-c", cmd])
-                    .output()
-                    .block_error("toggle", "failed to run toggle command")?;
+                if self.execute(&cmd) {
+                    self.toggled = !self.toggled;
+                    self.text.set_icon(if self.toggled {
+                        "toggle_on"
+                    } else {
+                        "toggle_off" 
+                    });
+                }
             }
         }
 
