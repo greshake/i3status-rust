@@ -76,10 +76,7 @@ impl Block for Battery {
     fn update(&mut self) -> Result<Option<Duration>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
-        // This annotation is needed temporarily due to a bug in the compiler warnings of
-        // the nightly compiler 1.20.0-nightly (086eaa78e 2017-07-15)
-        #[allow(unused_assignments)]
-        let mut current_percentage = 0;
+        let mut current_percentage: u64;
 
         if file_exists(&format!("{}capacity", self.device_path)) {
             current_percentage = match read_file("battery", &format!("{}capacity", self.device_path))?
