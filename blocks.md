@@ -99,6 +99,7 @@ Update CPU usage every second:
 [[block]]
 block = "cpu"
 interval = 1
+frequency = true
 ```
 
 ### Options
@@ -109,6 +110,7 @@ Key | Values | Required | Default
 `warning` | Minimum usage, where state is set to warning. | No | `60`
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
+`frequency` | Shows avg cpu frequency in GHz | No | `false`
 
 ## Custom
 
