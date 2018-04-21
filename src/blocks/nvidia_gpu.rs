@@ -13,7 +13,7 @@ use widget::{I3BarWidget, State};
 use widgets::button::ButtonWidget;
 use widgets::text::TextWidget;
 
-pub struct Gpu {
+pub struct NvidiaGpu {
     gpu_widget: ButtonWidget,
     id: String,
     id_fans: String,
@@ -37,41 +37,41 @@ pub struct Gpu {
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct GpuConfig {
+pub struct NvidiaGpuConfig {
     /// Update interval in seconds
-    #[serde(default = "GpuConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(default = "NvidiaGpuConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Label
-    #[serde(default = "GpuConfig::default_label")]
+    #[serde(default = "NvidiaGpuConfig::default_label")]
     pub label: String,
 
     /// GPU id in system
-    #[serde(default = "GpuConfig::default_gpu_id")]
+    #[serde(default = "NvidiaGpuConfig::default_gpu_id")]
     pub gpu_id: u64,
 
     /// GPU utilization. In percents.
-    #[serde(default = "GpuConfig::default_utilization")]
+    #[serde(default = "NvidiaGpuConfig::default_utilization")]
     pub utilization: bool,
 
     /// VRAM utilization.
-    #[serde(default = "GpuConfig::default_memory")]
+    #[serde(default = "NvidiaGpuConfig::default_memory")]
     pub memory: bool,
 
     /// Core GPU temperature. In degrees C.
-    #[serde(default = "GpuConfig::default_temperature")]
+    #[serde(default = "NvidiaGpuConfig::default_temperature")]
     pub temperature: bool,
 
     /// Fan speed.
-    #[serde(default = "GpuConfig::default_fan")]
+    #[serde(default = "NvidiaGpuConfig::default_fan")]
     pub fan: bool,
 
     /// GPU clocks. In percents.
-    #[serde(default = "GpuConfig::default_clocks")]
+    #[serde(default = "NvidiaGpuConfig::default_clocks")]
     pub clocks: bool,
 }
 
-impl GpuConfig {
+impl NvidiaGpuConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(3)
     }
@@ -105,8 +105,8 @@ impl GpuConfig {
     }
 }
 
-impl ConfigBlock for Gpu {
-    type Config = GpuConfig;
+impl ConfigBlock for NvidiaGpu {
+    type Config = NvidiaGpuConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
@@ -127,7 +127,7 @@ impl ConfigBlock for Gpu {
         let result_str = String::from_utf8(output).unwrap();
         let result: Vec<&str> = result_str.split(", ").collect();
 
-        Ok(Gpu {
+        Ok(NvidiaGpu {
             id: id.clone(),
             id_fans: id_fans.clone(),
             id_memory: id_memory.clone(),
@@ -166,7 +166,7 @@ impl ConfigBlock for Gpu {
     }
 }
 
-impl Block for Gpu {
+impl Block for NvidiaGpu {
     fn update(&mut self) -> Result<Option<Duration>> {
         let mut params = String::new();
         if self.utilization.is_some() {
