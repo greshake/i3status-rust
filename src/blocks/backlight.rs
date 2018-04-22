@@ -251,7 +251,7 @@ impl Block for Backlight {
                 let brightness = try!(self.device.brightness());
                 match event.button {
                     MouseButton::WheelUp => {
-                        if brightness <= 100 {
+                        if brightness < 100 {
                             self.device.set_brightness(brightness + self.step_width)?;
                         }
                     }
