@@ -81,7 +81,7 @@ impl BacklitDevice {
         let max_brightness = try!(read_brightness(&first_device.path().join("max_brightness")));
 
         Ok(BacklitDevice {
-            max_brightness: max_brightness,
+            max_brightness,
             device_path: first_device.path(),
         })
     }
@@ -103,8 +103,8 @@ impl BacklitDevice {
         let max_brightness = try!(read_brightness(&device_path.join("max_brightness")));
 
         Ok(BacklitDevice {
-            max_brightness: max_brightness,
-            device_path: device_path,
+            max_brightness,
+            device_path,
         })
     }
 
@@ -193,7 +193,7 @@ impl ConfigBlock for Backlight {
         let backlight = Backlight {
             output: ButtonWidget::new(config, &id),
             id: id.clone(),
-            device: device,
+            device,
             step_width: block_config.step_width,
         };
 
@@ -251,7 +251,7 @@ impl Block for Backlight {
                 let brightness = try!(self.device.brightness());
                 match event.button {
                     MouseButton::WheelUp => {
-                        if brightness <= 100 {
+                        if brightness < 100 {
                             self.device.set_brightness(brightness + self.step_width)?;
                         }
                     }
