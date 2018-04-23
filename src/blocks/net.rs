@@ -1,18 +1,18 @@
+use chan::Sender;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
-use chan::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widgets::graph::GraphWidget;
-use widget::I3BarWidget;
 use scheduler::Task;
+use widget::I3BarWidget;
+use widgets::graph::GraphWidget;
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 
@@ -87,20 +87,17 @@ impl NetworkDevice {
         if !self.wireless || !up {
             return Err(BlockError(
                 "net".to_string(),
-                "SSIDs are only available for connected wireless devices."
-                    .to_string(),
+                "SSIDs are only available for connected wireless devices.".to_string(),
             ));
         }
         let mut iw_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
+                    self.device
+                ),
+            ])
             .output()
             .block_error("net", "Failed to execute SSID query.")?
             .stdout;
@@ -150,20 +147,17 @@ impl NetworkDevice {
         if !self.wireless || !up {
             return Err(BlockError(
                 "net".to_string(),
-                "Bitrate is only available for connected wireless devices."
-                    .to_string(),
+                "Bitrate is only available for connected wireless devices.".to_string(),
             ));
         }
         let mut bitrate_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'",
+                    self.device
+                ),
+            ])
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
@@ -298,7 +292,11 @@ impl NetConfig {
 impl ConfigBlock for Net {
     type Config = NetConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let device = NetworkDevice::from_device(block_config.device)?;
         let init_rx_bytes = device.rx_bytes()?;
         let init_tx_bytes = device.tx_bytes()?;
@@ -356,19 +354,11 @@ impl ConfigBlock for Net {
 fn read_file(path: &Path) -> Result<String> {
     let mut f = OpenOptions::new().read(true).open(path).block_error(
         "net",
-        &format!(
-            "failed to open file {}",
-            path.to_string_lossy()
-        ),
+        &format!("failed to open file {}", path.to_string_lossy()),
     )?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error(
-        "net",
-        &format!(
-            "failed to read {}",
-            path.to_string_lossy()
-        ),
-    )?;
+    f.read_to_string(&mut content)
+        .block_error("net", &format!("failed to read {}", path.to_string_lossy()))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
@@ -434,7 +424,8 @@ impl Block for Net {
         }
 
         // Update the throughout/graph widgets if they are enabled
-        let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
+        let update_interval = (self.update_interval.as_secs() as f64)
+            + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
             let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
