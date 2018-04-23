@@ -91,24 +91,28 @@ impl NetworkDevice {
             ));
         }
         let mut iw_output = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!(
-                    "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
-                    self.device
-                ),
-            ])
+            .args(&["-c", &format!("iw dev {} link", self.device)])
             .output()
             .block_error("net", "Failed to execute SSID query.")?
             .stdout;
+        iw_output.pop(); // Remove trailing newline.
+        let iw_output = String::from_utf8(iw_output).block_error("net", "Non-UTF8 SSID.");
+        let mut ssid = String::new();
+        // get the line that starts with "SSID:" ...
+        for line in iw_output.unwrap().lines() {
+            if line.trim().starts_with("SSID:") {
+                ssid.push_str(line);
+            }
+        }
 
-        if iw_output.len() == 0 {
-            Ok(None)
+        let ssid = ssid.trim().to_string(); // remove whitespaces at start
+        if ssid.starts_with("SSID: ") {
+            // remove ths "SSID" so that only the id is left
+            ssid.replacen("SSID: ", "", 1);
+            Ok(Some(ssid))
         } else {
-            iw_output.pop(); // Remove trailing newline.
-            String::from_utf8(iw_output)
-                .block_error("net", "Non-UTF8 SSID.")
-                .map(|s| Some(s))
+            // SSID not found
+            Ok(None)
         }
     }
 
@@ -118,15 +122,7 @@ impl NetworkDevice {
             return Ok(None);
         }
         let mut ip_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&["-c", &format!("ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"", self.device)])
             .output()
             .block_error("net", "Failed to execute IP address query.")?
             .stdout;
