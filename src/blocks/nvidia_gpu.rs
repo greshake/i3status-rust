@@ -24,15 +24,15 @@ pub struct NvidiaGpu {
     gpu_name: String,
     gpu_name_displayed: bool,
     label: String,
-    utilization: Option<TextWidget>,
-    memory: Option<ButtonWidget>,
+    show_utilization: Option<TextWidget>,
+    show_memory: Option<ButtonWidget>,
     memory_total: String,
     memory_total_displayed: bool,
-    temperature: Option<TextWidget>,
-    fan: Option<ButtonWidget>,
+    show_temperature: Option<TextWidget>,
+    show_fan: Option<ButtonWidget>,
     fan_speed: u64,
     fan_speed_controlled: bool,
-    clocks: Option<TextWidget>,
+    show_clocks: Option<TextWidget>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -138,27 +138,27 @@ impl ConfigBlock for NvidiaGpu {
             gpu_name_displayed: false,
             gpu_id: block_config.gpu_id,
             label: block_config.label,
-            utilization: match block_config.utilization {
+            show_utilization: match block_config.utilization {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
-            memory: match block_config.memory {
+            show_memory: match block_config.memory {
                 true => Some(ButtonWidget::new(config.clone(), &id_memory)),
                 false => None,
             },
             memory_total: result[1].to_string(),
             memory_total_displayed: false,
-            temperature: match block_config.temperature {
+            show_temperature: match block_config.temperature {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
-            fan: match block_config.fan {
+            show_fan: match block_config.fan {
                 true => Some(ButtonWidget::new(config.clone(), &id_fans)),
                 false => None,
             },
             fan_speed: 0,
             fan_speed_controlled: false,
-            clocks: match block_config.clocks {
+            show_clocks: match block_config.clocks {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
@@ -169,19 +169,19 @@ impl ConfigBlock for NvidiaGpu {
 impl Block for NvidiaGpu {
     fn update(&mut self) -> Result<Option<Duration>> {
         let mut params = String::new();
-        if self.utilization.is_some() {
+        if self.show_utilization.is_some() {
             params += "utilization.gpu,";
         }
-        if self.memory.is_some() {
+        if self.show_memory.is_some() {
             params += "memory.used,";
         }
-        if self.temperature.is_some() {
+        if self.show_temperature.is_some() {
             params += "temperature.gpu,";
         }
-        if self.fan.is_some() {
+        if self.show_fan.is_some() {
             params += "fan.speed,";
         }
-        if self.clocks.is_some() {
+        if self.show_clocks.is_some() {
             params += "clocks.current.graphics,";
         }
 
@@ -203,11 +203,11 @@ impl Block for NvidiaGpu {
         let result: Vec<&str> = result_str.split(", ").collect();
 
         let mut count: usize = 0;
-        if let Some(ref mut utilization_widget) = self.utilization {
+        if let Some(ref mut utilization_widget) = self.show_utilization {
             utilization_widget.set_text(format!("{}%", result[count]));
             count += 1;
         }
-        if let Some(ref mut memory_widget) = self.memory {
+        if let Some(ref mut memory_widget) = self.show_memory {
             if self.memory_total_displayed {
                 memory_widget.set_text(format!("{}MB", self.memory_total));
             } else {
@@ -215,7 +215,7 @@ impl Block for NvidiaGpu {
             }
             count += 1;
         }
-        if let Some(ref mut temperature_widget) = self.temperature {
+        if let Some(ref mut temperature_widget) = self.show_temperature {
             let temp = result[count].parse::<u64>().unwrap();
             temperature_widget.set_state(match temp {
                 0...50 => State::Good,
@@ -227,12 +227,12 @@ impl Block for NvidiaGpu {
             temperature_widget.set_text(format!("{:02}°C", temp));
             count += 1;
         }
-        if let Some(ref mut fan_widget) = self.fan {
+        if let Some(ref mut fan_widget) = self.show_fan {
             self.fan_speed = result[count].parse::<u64>().unwrap();
             fan_widget.set_text(format!("{:02}%", self.fan_speed));
             count += 1;
         }
-        if let Some(ref mut clocks_widget) = self.clocks {
+        if let Some(ref mut clocks_widget) = self.show_clocks {
             clocks_widget.set_text(format!("{}MHz", result[count]));
         }
 
@@ -248,19 +248,19 @@ impl Block for NvidiaGpu {
     fn view(&self) -> Vec<&I3BarWidget> {
         let mut widgets: Vec<&I3BarWidget> = Vec::new();
         widgets.push(&self.gpu_widget);
-        if let Some(ref utilization_widget) = self.utilization {
+        if let Some(ref utilization_widget) = self.show_utilization {
             widgets.push(utilization_widget);
         }
-        if let Some(ref memory_widget) = self.memory {
+        if let Some(ref memory_widget) = self.show_memory {
             widgets.push(memory_widget);
         }
-        if let Some(ref temperature_widget) = self.temperature {
+        if let Some(ref temperature_widget) = self.show_temperature {
             widgets.push(temperature_widget);
         }
-        if let Some(ref fan_widget) = self.fan {
+        if let Some(ref fan_widget) = self.show_fan {
             widgets.push(fan_widget);
         }
-        if let Some(ref clocks_widget) = self.clocks {
+        if let Some(ref clocks_widget) = self.show_clocks {
             widgets.push(clocks_widget);
         }
         widgets
@@ -289,7 +289,7 @@ impl Block for NvidiaGpu {
                     _ => self.gpu_name_displayed
                 };
 
-                if let Some(ref mut memory_widget) = self.memory {
+                if let Some(ref mut memory_widget) = self.show_memory {
                     if self.memory_total_displayed {
                         memory_widget.set_text(format!("{}MB", self.memory_total));
                     } else {
@@ -332,7 +332,7 @@ impl Block for NvidiaGpu {
                     _ => {}
                 };
 
-                if let Some(ref mut fan_widget) = self.fan {
+                if let Some(ref mut fan_widget) = self.show_fan {
                     if controlled_changed {
                         if self.fan_speed_controlled {
                             Command::new("nvidia-settings")
