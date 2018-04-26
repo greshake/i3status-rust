@@ -51,24 +51,24 @@ pub struct NvidiaGpuConfig {
     pub gpu_id: u64,
 
     /// GPU utilization. In percents.
-    #[serde(default = "NvidiaGpuConfig::default_utilization")]
-    pub utilization: bool,
+    #[serde(default = "NvidiaGpuConfig::default_show_utilization")]
+    pub show_utilization: bool,
 
     /// VRAM utilization.
-    #[serde(default = "NvidiaGpuConfig::default_memory")]
-    pub memory: bool,
+    #[serde(default = "NvidiaGpuConfig::default_show_memory")]
+    pub show_memory: bool,
 
     /// Core GPU temperature. In degrees C.
-    #[serde(default = "NvidiaGpuConfig::default_temperature")]
-    pub temperature: bool,
+    #[serde(default = "NvidiaGpuConfig::default_show_temperature")]
+    pub show_temperature: bool,
 
-    /// Fan speed.
-    #[serde(default = "NvidiaGpuConfig::default_fan")]
-    pub fan: bool,
+    /// Fan speed. In percents.
+    #[serde(default = "NvidiaGpuConfig::default_show_fan_speed")]
+    pub show_fan_speed: bool,
 
     /// GPU clocks. In percents.
-    #[serde(default = "NvidiaGpuConfig::default_clocks")]
-    pub clocks: bool,
+    #[serde(default = "NvidiaGpuConfig::default_show_clocks")]
+    pub show_clocks: bool,
 }
 
 impl NvidiaGpuConfig {
@@ -84,23 +84,23 @@ impl NvidiaGpuConfig {
         0
     }
 
-    fn default_utilization() -> bool {
+    fn default_show_utilization() -> bool {
         true
     }
 
-    fn default_memory() -> bool {
+    fn default_show_memory() -> bool {
         true
     }
 
-    fn default_temperature() -> bool {
+    fn default_show_temperature() -> bool {
         true
     }
 
-    fn default_fan() -> bool {
+    fn default_show_fan_speed() -> bool {
         false
     }
 
-    fn default_clocks() -> bool {
+    fn default_show_clocks() -> bool {
         false
     }
 }
@@ -138,27 +138,27 @@ impl ConfigBlock for NvidiaGpu {
             gpu_name_displayed: false,
             gpu_id: block_config.gpu_id,
             label: block_config.label,
-            show_utilization: match block_config.utilization {
+            show_utilization: match block_config.show_utilization {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
-            show_memory: match block_config.memory {
+            show_memory: match block_config.show_memory {
                 true => Some(ButtonWidget::new(config.clone(), &id_memory)),
                 false => None,
             },
             memory_total: result[1].to_string(),
             memory_total_displayed: false,
-            show_temperature: match block_config.temperature {
+            show_temperature: match block_config.show_temperature {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },
-            show_fan: match block_config.fan {
+            show_fan: match block_config.show_fan_speed {
                 true => Some(ButtonWidget::new(config.clone(), &id_fans)),
                 false => None,
             },
             fan_speed: 0,
             fan_speed_controlled: false,
-            show_clocks: match block_config.clocks {
+            show_clocks: match block_config.show_clocks {
                 true => Some(TextWidget::new(config.clone())),
                 false => None,
             },

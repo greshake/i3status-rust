@@ -10,6 +10,7 @@
 - [Memory](#memory)
 - [Music](#music)
 - [Net](#net)
+- [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
@@ -354,8 +355,8 @@ Clicking the left button on the fans turns on the mode of changing the speed of 
 [[block]]
 block = "nvidia_gpu"
 label = "GT 1030"
-memory = false
-clocks = true
+show_memory = false
+show_clocks = true
 interval = 1
 ```
 
@@ -366,11 +367,11 @@ Key | Values | Required | Default
 `gpu_id` | GPU id in system | No | 0
 `label` | Display custom gpu label | No | ""
 `interval` | Update interval, in seconds. | No | `1`
-`utilization` | Display gpu utilization. In percents. | No | `true`
-`memory` | Display memory information. | No | `true`
-`temperature` | Display gpu temperature. | No | `true`
-`fan` | Display fan speed. | No | `false`
-`clocks` | Display gpu clocks. | No | `false`
+`show_utilization` | Display gpu utilization. In percents. | No | `true`
+`show_memory` | Display memory information. | No | `true`
+`show_temperature` | Display gpu temperature. | No | `true`
+`show_fan_speed` | Display fan speed. | No | `false`
+`show_clocks` | Display gpu clocks. | No | `false`
 
 ## Pacman
 
