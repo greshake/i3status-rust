@@ -10,6 +10,7 @@
 - [Memory](#memory)
 - [Music](#music)
 - [Net](#net)
+- [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
@@ -348,6 +349,40 @@ Key | Values | Required | Default
 `graph_up` | Display a bar graph for upload speed. | No | `false`
 `graph_down` | Display a bar graph for download speed. | No | `false`
 `interval` | Update interval, in seconds. | No | `1`
+
+## Nvidia Gpu
+
+Proprietary nvidia driver required.
+
+Creates a block which displays the Nvidia GPU utilization, temperature, used and total memory, fan speed, gpu clocks. You can set gpu label, that displayed by default.
+
+Clicking the left button on the icon changes the output of the label to the output of the gpu name. Same with memory: used/total. 
+
+Clicking the left button on the fans turns on the mode of changing the speed of the fans using the wheel. Press again to turn off the mode. For this opportunity you need nvidia-settings!
+
+### Examples
+
+```toml
+[[block]]
+block = "nvidia_gpu"
+label = "GT 1030"
+show_memory = false
+show_clocks = true
+interval = 1
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`gpu_id` | GPU id in system | No | 0
+`label` | Display custom gpu label | No | ""
+`interval` | Update interval, in seconds. | No | `1`
+`show_utilization` | Display gpu utilization. In percents. | No | `true`
+`show_memory` | Display memory information. | No | `true`
+`show_temperature` | Display gpu temperature. | No | `true`
+`show_fan_speed` | Display fan speed. | No | `false`
+`show_clocks` | Display gpu clocks. | No | `false`
 
 ## Pacman
 
