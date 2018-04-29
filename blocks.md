@@ -514,9 +514,12 @@ interval = 5
 
 Key | Values | Required | Default
 ----|--------|----------|--------
+`text` | Label to include next to the toggle icon. | No | ""
 `command_on` | Shell Command to enable the toggle | Yes | None
 `command_off` | Shell Command to disable the toggle | Yes | None
 `command_state` | Shell Command to determine toggle state. Empty output => off. Any output => on.| Yes | None
+`icon_on` | Icon override for the toggle button while on. | No | "toggle_on"
+`icon_off` | Icon override for the toggle button while off. | No | "toggle_off"
 `interval` | Update interval, in seconds. | No | None
 
 ## Weather
