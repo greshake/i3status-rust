@@ -46,13 +46,12 @@ pub struct ToggleConfig {
 impl Toggle {
 
     fn execute(&self, cmd: &String) -> bool {
-        !Command::new("sh")
-            .args(&["-c", cmd])
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.description().to_owned())
-            .trim_left()
-            .is_empty() 
+        Command::new("sh")
+           .args(&["-c", cmd])
+           .output()
+           .expect("failed to execute toggle command")
+           .status
+           .success()
     }
 }
 
