@@ -23,6 +23,7 @@ Optional:
 * Font Awesome, for `icons="awesome"`. Version 5 of the font is causing some issues (see [#130](https://github.com/greshake/i3status-rust/issues/130)), so for now we recommend version 4. If you have access to the AUR, check out [`ttf-font-awesome-4`](https://aur.archlinux.org/packages/ttf-font-awesome-4/).
 * `gperftools` For dev builds, needed to profile block performance and bottlenecks.
 * [`powerline-fonts`](https://www.archlinux.org/packages/community/x86_64/powerline-fonts/) For all themes using the powerline arrow char. Recommended. See [`powerline on GitHub`](https://github.com/powerline/powerline/tree/develop/font)
+* [`cower`](https://aur.archlinux.org/packages/cower/) For the pacman2 block.
 
 # How to use it
 1. If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/) and proceed to step 3. Otherwise, clone the repository: `git clone https://github.com/XYunknown/i3status-rust.git`
