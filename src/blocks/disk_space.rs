@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 extern crate nix;
 
-use self::nix::sys::statvfs::vfs::Statvfs;
+use self::nix::sys::statvfs::statvfs;
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 pub enum Unit {
@@ -156,18 +156,18 @@ impl ConfigBlock for DiskSpace {
 
 impl Block for DiskSpace {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let statvfs = Statvfs::for_path(Path::new(self.path.as_str()))
+        let statvfs = statvfs(Path::new(self.path.as_str()))
             .block_error("disk_space", "failed to retrieve statvfs")?;
         let result;
         let converted;
 
         match self.info_type {
             InfoType::Available => {
-                result = statvfs.f_bavail * statvfs.f_bsize;
+                result = statvfs.blocks_available() * statvfs.block_size();
                 converted = Unit::bytes_in_unit(self.unit, result);
             }
             InfoType::Free => {
-                result = statvfs.f_bfree * statvfs.f_bsize;
+                result = statvfs.blocks_free() * statvfs.block_size();
                 converted = Unit::bytes_in_unit(self.unit, result);
             }
             //InfoType::Total | InfoType::Used => unimplemented!(),
