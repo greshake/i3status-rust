@@ -22,7 +22,7 @@ pub struct Custom {
     output: ButtonWidget,
     command: Option<String>,
     on_click: Option<String>,
-    on_set_clicks: Option<Vec<(MouseButton, String)>>,
+    on_set_clicks: Option<Vec<MouseAction>>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
     tx_update_request: Sender<Task>,
 }
@@ -42,10 +42,16 @@ pub struct CustomConfig {
     pub on_click: Option<String>,
 
     /// Commands to execute when their specified button is clicked
-    pub on_set_clicks: Option<Vec<(MouseButton, String)>>,
+    pub on_set_clicks: Option<Vec<MouseAction>>,
 
     /// Commands to execute and change when any mouse button is clicked
     pub cycle: Option<Vec<String>>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct MouseAction {
+    pub button: MouseButton,
+    pub action: String,
 }
 
 impl CustomConfig {
@@ -59,7 +65,7 @@ impl ConfigBlock for Custom {
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
-        
+
         Ok(Custom {
             output: ButtonWidget::new(config, &id),
             id,
@@ -85,7 +91,7 @@ impl Block for Custom {
             .or(self.command.clone())
             .unwrap_or(String::new());
 
-        let output = Command::new("sh")
+        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
@@ -112,9 +118,9 @@ impl Block for Custom {
                 }
 
                 if let Some(ref possible_clicks) = self.on_set_clicks {
-                    for &(_, ref cmd) in possible_clicks.iter().filter(|v| v.0 == event.button) {
+                    for ma in possible_clicks.iter().filter(|ma| ma.button == event.button) {
                         Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
-                                .args(&["-c", &cmd]).output().ok();
+                                .args(&["-c", &ma.action]).output().ok();
                         update = true;
                     }
                 }
