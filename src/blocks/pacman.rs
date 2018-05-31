@@ -120,6 +120,7 @@ fn get_update_count() -> Result<usize> {
     Ok(
         String::from_utf8(
             Command::new("sh")
+                .env("LC_ALL", "C")
                 .args(&[
                     "-c",
                     &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db),
@@ -129,6 +130,7 @@ fn get_update_count() -> Result<usize> {
                 .stdout,
         ).block_error("pacman", "there was a problem parsing the output")?
             .lines()
+            .filter(|line| !line.contains("[ignored]"))
             .count(),
     )
 }
