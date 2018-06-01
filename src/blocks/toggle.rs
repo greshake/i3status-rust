@@ -50,8 +50,7 @@ pub struct ToggleConfig {
     pub icon_off: String,
 
     /// Text to display in i3bar for this block
-    #[serde(default = "ToggleConfig::default_text")]
-    pub text: String,
+    pub text: Option<String>,
 }
 
 impl ToggleConfig {
@@ -62,10 +61,6 @@ impl ToggleConfig {
     fn default_icon_off() -> String {
         "toggle_off".to_owned()
     }
-
-    fn default_text() -> String {
-        "".to_owned()
-    }
 }
 
 impl ConfigBlock for Toggle {
@@ -74,7 +69,7 @@ impl ConfigBlock for Toggle {
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         Ok(Toggle {
-            text: ButtonWidget::new(config, &id).with_text(&block_config.text),
+            text: ButtonWidget::new(config, &id).with_content(block_config.text),
             command_on: block_config.command_on,
             command_off: block_config.command_off,
             command_state: block_config.command_state,
