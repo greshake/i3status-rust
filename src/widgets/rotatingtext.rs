@@ -137,18 +137,19 @@ impl RotatingTextWidget {
 
     pub fn next(&mut self) -> Result<(bool, Option<Duration>)> {
         if let Some(next_rotation) = self.next_rotation {
-            if next_rotation > Instant::now() {
-                Ok((false, Some(next_rotation - Instant::now())))
+            let now = Instant::now();
+            if next_rotation > now {
+                Ok((false, Some(next_rotation - now)))
             } else if self.rotating {
                 if self.rotation_pos < self.content.len() {
                     self.rotation_pos += 1;
-                    self.next_rotation = Some(Instant::now() + self.rotation_speed);
+                    self.next_rotation = Some(now + self.rotation_speed);
                     self.update();
                     Ok((true, Some(self.rotation_speed)))
                 } else {
                     self.rotation_pos = 0;
                     self.rotating = false;
-                    self.next_rotation = Some(Instant::now() + self.rotation_interval);
+                    self.next_rotation = Some(now + self.rotation_interval);
                     self.update();
                     Ok((true, Some(self.rotation_interval)))
                 }

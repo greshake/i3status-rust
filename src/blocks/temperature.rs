@@ -10,7 +10,7 @@ use de::deserialize_duration;
 use errors::*;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
-use input::I3BarEvent;
+use input::{I3BarEvent, MouseButton};
 
 use uuid::Uuid;
 
@@ -146,7 +146,7 @@ impl Block for Temperature {
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
+            if name.as_str() == self.id && e.button == MouseButton::Left {
                 self.collapsed = !self.collapsed;
                 if self.collapsed {
                     self.text.set_text(String::new());

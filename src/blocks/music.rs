@@ -14,6 +14,7 @@ use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 
 use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
+use blocks::dbus::arg::{Variant, RefArg};
 use self::stdintf::OrgFreedesktopDBusProperties;
 use uuid::Uuid;
 
@@ -200,6 +201,7 @@ impl Block for Music {
                 match data {
                     Err(_) => play.set_icon("music_play"),
                     Ok(data) => {
+                        let data: Variant<Box<RefArg>> = data;
                         let state = data.0;
                         if state.as_str().map(|s| s != "Playing").unwrap_or(false) {
                             play.set_icon("music_play")
