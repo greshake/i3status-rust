@@ -16,6 +16,7 @@
 - [Speed Test](#speed-test)
 - [Temperature](#temperature)
 - [Time](#time)
+- [Todo](#todo)
 - [Toggle](#toggle)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
@@ -488,6 +489,41 @@ Key | Values | Required | Default
 `format` | Format string. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | `"%a %d/%m %R"`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `interval` | Update interval, in seconds. | No | 5
+
+## Todo
+
+Creates a todo block which displays the number of TODOs contained on a file. The block is collapsed by default, and can be expanded by clicking, showing a line on your file. You can then read each todo line using your wheel.
+
+### Examples
+
+```toml
+[[block]]
+block = "todo"
+filename = "~/Documents/todo.txt"
+format = "{size} - ({number}) '{text}'"
+interval = 5
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | 5
+`filename` | Path to the todo file | No | `"~/Documents/todo.txt"`
+`format` | Format string for Todo view. All format values are described below. | No | `"{size} - ({number}) '{text}'"`
+`collapsed` | Collapsed by default? | No | false
+`idle` | Idle by default? | No | false
+`info` | Minimum number, where state is set to info. | No | 4
+`warning` | Minimum number, where state is set to warning. | No | 15
+`critical` | Minimum number, where state is set to critical. | No | 50
+
+### Available Format Keys
+
+Key | Value
+----|------
+`{size}` | Size in lines of the TODO file.
+`{number}` | Number of the actual todo.
+`{text}` | Text of the actual todo.
 
 ## Toggle
 

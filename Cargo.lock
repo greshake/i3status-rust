@@ -202,6 +202,7 @@ dependencies = [
  "serde 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shellexpand 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -492,6 +493,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "shellexpand"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "strsim"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -696,6 +702,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum serde 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)" = "de4dee3b122edad92d80c66cac8d967ec7f8bf16a3b452247d6eb1dbf83c8f22"
 "checksum serde_derive 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)" = "7149ef7af607b09e0e7df38b1fd74264f08a29a67f604d5cb09d3fbdb1e256bc"
 "checksum serde_json 1.0.17 (registry+https://github.com/rust-lang/crates.io-index)" = "f3ad6d546e765177cf3dded3c2e424a8040f870083a0e64064746b958ece9cb1"
+"checksum shellexpand 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "de7a5b5a9142fd278a10e0209b021a1b85849352e6951f4f914735c976737564"
 "checksum strsim 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bb4f380125926a99e52bc279241539c018323fab05ad6368b56f93d9369ff550"
 "checksum syn 0.13.7 (registry+https://github.com/rust-lang/crates.io-index)" = "61b8f1b737f929c6516ba46a3133fd6d5215ad8a62f66760f851f7048aebedfb"
 "checksum terminal_size 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "ef4f7fdb2a063032d361d9a72539380900bc3e0cd9ffc9ca8b677f8c855bae0f"
