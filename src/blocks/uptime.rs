@@ -1,14 +1,17 @@
+use std::path::Path;
 use std::time::Duration;
+
 use chan::Sender;
+use uuid::Uuid;
+
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
+use scheduler::Task;
+use util::read_file;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
-use scheduler::Task;
-use uuid::Uuid;
-use blocks::lib::*;
 
 pub struct Uptime {
     text: TextWidget,
@@ -50,7 +53,7 @@ impl ConfigBlock for Uptime {
 
 impl Block for Uptime {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let uptime_raw = match read_file("uptime", "/proc/uptime") {
+        let uptime_raw = match read_file("uptime", Path::new("/proc/uptime")) {
             Ok(file) => file,
             Err(e) => {
                 return Err(BlockError(

@@ -18,7 +18,6 @@ mod net;
 pub mod backlight;
 mod weather;
 mod uptime;
-mod lib;
 pub mod nvidia_gpu;
 
 use config::Config;
