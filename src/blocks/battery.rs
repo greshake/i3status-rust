@@ -1,3 +1,5 @@
+use std::env;
+use std::process::Command;
 use std::time::Duration;
 use chan::Sender;
 use scheduler::Task;
@@ -5,18 +7,20 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
+use input::{I3BarEvent, MouseButton};
+use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use uuid::Uuid;
 use blocks::lib::*;
 
 pub struct Battery {
-    output: TextWidget,
+    output: ButtonWidget,
     id: String,
     max_charge: u64,
     update_interval: Duration,
     device_path: String,
     show: ShowType,
+    on_click: Option<String>,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -41,6 +45,10 @@ pub struct BatteryConfig {
     /// Show only percentage, time until (dis)charged or both
     #[serde(default = "BatteryConfig::default_show")]
     pub show: ShowType,
+
+    /// Command to execute when the right button is clicked
+    #[serde(default = "BatteryConfig::default_on_click")]
+    pub on_click: Option<String>,
 }
 
 impl BatteryConfig {
@@ -55,19 +63,25 @@ impl BatteryConfig {
     fn default_show() -> ShowType {
         ShowType::Percentage
     }
+
+    fn default_on_click() -> Option<String> {
+        Some("gnome-power-statistics".to_string())
+    }
 }
 
 impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        let i = Uuid::new_v4().simple().to_string();
         Ok(Battery {
-            id: Uuid::new_v4().simple().to_string(),
+            id: i.clone(),
             max_charge: 0,
             update_interval: block_config.interval,
-            output: TextWidget::new(config),
+            output: ButtonWidget::new(config, i.as_str()),
             device_path: format!("/sys/class/power_supply/{}/", block_config.device),
             show: block_config.show,
+            on_click: block_config.on_click,
         })
     }
 }
@@ -125,7 +139,7 @@ impl Block for Battery {
                 _ => 100,
             };
         }
-        
+
          else {
             return Err(BlockError(
                 "battery".to_string(),
@@ -213,6 +227,30 @@ impl Block for Battery {
 
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.output]
+    }
+
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if let Some(ref name) = event.name {
+            if name != &self.id {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
+
+        if let Some(ref on_click) = self.on_click {
+            match event.button {
+                MouseButton::Right => {
+                    Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                        .args(&["-c", &on_click])
+                        .spawn()
+                        .expect(&format!("Failed to execute {}.", on_click));
+                },
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     fn id(&self) -> &str {

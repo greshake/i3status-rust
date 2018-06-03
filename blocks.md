@@ -87,6 +87,7 @@ Key | Values | Required | Default
 `device` | The device in `/sys/class/power_supply/` to read from. | No | `"BAT0"`
 `interval` | Update interval, in seconds. | No | `10`
 `show` | Show remaining 'time', 'percentage' or 'both' | No | `percentage`
+`on_click` | Command to execute when the right button is clicked. | No | `"gnome-power-statistics"`
 
 ## CPU Utilization
 
