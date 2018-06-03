@@ -1,3 +1,4 @@
+use std::env;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -9,7 +10,8 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
+use input::{I3BarEvent, MouseButton};
+use widgets::button::ButtonWidget;
 use widgets::graph::GraphWidget;
 use widget::I3BarWidget;
 use scheduler::Task;
@@ -180,14 +182,14 @@ impl NetworkDevice {
 }
 
 pub struct Net {
-    network: TextWidget,
-    ssid: Option<TextWidget>,
+    network: ButtonWidget,
+    ssid: Option<ButtonWidget>,
     max_ssid_width: usize,
-    ip_addr: Option<TextWidget>,
-    bitrate: Option<TextWidget>,
-    output_tx: Option<TextWidget>,
+    ip_addr: Option<ButtonWidget>,
+    bitrate: Option<ButtonWidget>,
+    output_tx: Option<ButtonWidget>,
     graph_tx: Option<GraphWidget>,
-    output_rx: Option<TextWidget>,
+    output_rx: Option<ButtonWidget>,
     graph_rx: Option<GraphWidget>,
     id: String,
     update_interval: Duration,
@@ -199,6 +201,7 @@ pub struct Net {
     active: bool,
     hide_inactive: bool,
     last_update: Instant,
+    on_click: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -247,6 +250,10 @@ pub struct NetConfig {
     /// Whether to show the download throughput graph of active networks.
     #[serde(default = "NetConfig::default_graph_down")]
     pub graph_down: bool,
+
+    /// Command to execute when the right button is clicked
+    #[serde(default = "NetConfig::default_on_click")]
+    pub on_click: Option<String>,
 }
 
 impl NetConfig {
@@ -293,6 +300,10 @@ impl NetConfig {
     fn default_graph_down() -> bool {
         false
     }
+
+    fn default_on_click() -> Option<String> {
+        Some("xterm -e nmtui".to_string())
+    }
 }
 
 impl ConfigBlock for Net {
@@ -303,34 +314,35 @@ impl ConfigBlock for Net {
         let init_rx_bytes = device.rx_bytes()?;
         let init_tx_bytes = device.tx_bytes()?;
         let wireless = device.is_wireless();
+        let i = Uuid::new_v4().simple().to_string();
         Ok(Net {
-            id: Uuid::new_v4().simple().to_string(),
+            id: i.clone(),
             update_interval: block_config.interval,
-            network: TextWidget::new(config.clone()).with_icon(match wireless {
+            network: ButtonWidget::new(config.clone(), i.as_str()).with_icon(match wireless {
                 true => "net_wireless",
                 false => "net_wired",
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
             ssid: match block_config.ssid && wireless {
-                true => Some(TextWidget::new(config.clone())),
+                true => Some(ButtonWidget::new(config.clone(), i.as_str())),
                 false => None,
             },
             max_ssid_width: block_config.max_ssid_width,
             bitrate: match block_config.bitrate {
-                true => Some(TextWidget::new(config.clone())),
+                true => Some(ButtonWidget::new(config.clone(), i.as_str())),
                 false => None,
             },
             ip_addr: match block_config.ip {
-                true => Some(TextWidget::new(config.clone())),
+                true => Some(ButtonWidget::new(config.clone(), i.as_str())),
                 false => None,
             },
             output_tx: match block_config.speed_up {
-                true => Some(TextWidget::new(config.clone()).with_icon("net_up")),
+                true => Some(ButtonWidget::new(config.clone(), i.as_str()).with_icon("net_up")),
                 false => None,
             },
             output_rx: match block_config.speed_down {
-                true => Some(TextWidget::new(config.clone()).with_icon("net_down")),
+                true => Some(ButtonWidget::new(config.clone(), i.as_str()).with_icon("net_down")),
                 false => None,
             },
             graph_tx: match block_config.graph_up {
@@ -349,6 +361,7 @@ impl ConfigBlock for Net {
             active: true,
             hide_inactive: block_config.hide_inactive,
             last_update: Instant::now() - Duration::from_secs(30),
+            on_click: block_config.on_click,
         })
     }
 }
@@ -502,6 +515,30 @@ impl Block for Net {
         } else {
             vec![]
         }
+    }
+
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if let Some(ref name) = event.name {
+            if name != &self.id {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
+
+        if let Some(ref on_click) = self.on_click {
+            match event.button {
+                MouseButton::Right => {
+                    Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                        .args(&["-c", &on_click])
+                        .spawn()
+                        .expect(&format!("Failed to execute {}.", on_click));
+                },
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     fn id(&self) -> &str {

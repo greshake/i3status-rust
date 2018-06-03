@@ -349,6 +349,7 @@ Key | Values | Required | Default
 `graph_up` | Display a bar graph for upload speed. | No | `false`
 `graph_down` | Display a bar graph for download speed. | No | `false`
 `interval` | Update interval, in seconds. | No | `1`
+`on_click` | Command to execute when the right button is clicked. To launch a graphical interface, run `xterm -e <command>`. | No | `"xterm -e nmtui"`
 
 ## Nvidia Gpu
 
