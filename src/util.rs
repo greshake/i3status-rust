@@ -49,8 +49,8 @@ pub fn get_file(name: &str) -> Result<String> {
     Ok(file_contents)
 }
 
-macro_rules! match_range {
-    ($a:expr, default: ($default:expr) {$($lower:expr ; $upper:expr => $e:expr),+}) => (
+macro_rules! match_range {// the `*` in `$(,)*` should be replaced with `?` if/when RFC 2298 lands on stable.
+    ($a:expr, default: ($default:expr) {$($lower:expr ; $upper:expr => $e:expr),+} $(,)* ) => (
         match $a {
             $(
                 t if t >= $lower && t <= $upper => { $e },
@@ -60,8 +60,8 @@ macro_rules! match_range {
     )
 }
 
-macro_rules! map (
-    { $($key:expr => $value:expr),+ } => {
+macro_rules! map (// the `*` in `$(,)*` should be replaced with `?` if/when RFC 2298 lands on stable.
+    { $($key:expr => $value:expr),+ $(,)* } => {
         {
             let mut m = ::std::collections::HashMap::new();
             $(
@@ -72,8 +72,8 @@ macro_rules! map (
      };
 );
 
-macro_rules! map_to_owned (
-    { $($key:expr => $value:expr),+ } => {
+macro_rules! map_to_owned (// the `*` in `$(,)*` should be replaced with `?` if/when RFC 2298 lands on stable.
+    { $($key:expr => $value:expr),+ $(,)* } => {
         {
             let mut m = ::std::collections::HashMap::new();
             $(
@@ -283,8 +283,8 @@ macro_rules! if_debug {
     ($x:block) => (if cfg!(debug_assertions) $x)
 }
 
-macro_rules! mapped_struct {
-    ($( #[$attr:meta] )* pub struct $name:ident : $fieldtype:ty { $( pub $fname:ident ),* }) => {
+macro_rules! mapped_struct {// the `*` in `$(,)*` should be replaced with `?` if/when RFC 2298 lands on stable.
+    ($( #[$attr:meta] )* pub struct $name:ident : $fieldtype:ty { $( pub $fname:ident ),* $(,)* }) => {
         $( #[$attr] )*
         pub struct $name {
             $( pub $fname : $fieldtype ),*
