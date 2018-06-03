@@ -65,8 +65,8 @@ macro_rules! block {
     }}
 }
 
-macro_rules! blocks {
-    ( $name:ident, $block_config:ident, $config:ident, $tx_update_request:ident ; $( $block_name:expr => $block_type:ident ),+ ) => {
+macro_rules! blocks { // the `*` in `$(,)*` should be replaced with `?` if/when RFC 2298 lands on stable.
+    ( $name:ident, $block_config:ident, $config:ident, $tx_update_request:ident ; $( $block_name:expr => $block_type:ident ),+ $(,)* ) => {
         match $name {
             $(
                 $block_name => block!($block_type, $block_config, $config, $tx_update_request),
