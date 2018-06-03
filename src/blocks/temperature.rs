@@ -57,7 +57,7 @@ impl ConfigBlock for Temperature {
     type Config = TemperatureConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let id = Uuid::new_v4().simple().to_string();
+        let id = format!("{}", Uuid::new_v4().to_simple());
         Ok(Temperature {
             update_interval: block_config.interval,
             text: ButtonWidget::new(config, &id).with_icon("thermometer"),

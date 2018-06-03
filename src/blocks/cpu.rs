@@ -78,7 +78,7 @@ impl ConfigBlock for Cpu {
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         Ok(Cpu {
-            id: Uuid::new_v4().simple().to_string(),
+            id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,
             utilization: TextWidget::new(config).with_icon("cpu"),
             prev_idle: 0,

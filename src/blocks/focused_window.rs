@@ -43,7 +43,7 @@ impl ConfigBlock for FocusedWindow {
     type Config = FocusedWindowConfig;
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let id = Uuid::new_v4().simple().to_string();
+        let id = format!("{}", Uuid::new_v4().to_simple());
         let id_clone = id.clone();
 
         let title_original = Arc::new(Mutex::new(String::from("")));

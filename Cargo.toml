@@ -6,21 +6,21 @@ authors = ["Kai Greshake <development@kai-greshake.de>",
 
 [dependencies]
 chrono = "0.4"
-chrono-tz = "0.4"
-lazy_static = "1.0"
+chrono-tz = "0.5"
+lazy_static = "1.1"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 toml = "0.4"
-clap = "2.31"
-uuid = { version = "0.6", features = ["v4"] }
+clap = "2.32"
+uuid = { version = "0.7.1", features = ["v4"] }
 dbus = "0.6"
 regex = "1.0"
-nix = "0.10.0"
-i3ipc = "0.8.2"
-num = "0.1.42"
-chan = "0.1.21"
-inotify = "0.5.1"
+nix = "0.11.0"
+i3ipc = "0.8.4"
+num = "0.2.0"
+chan = "0.1.23"
+inotify = "0.6.1"
 maildir = "0.1.1"
 # Used only in debug build mode
 # for profiling blocks
