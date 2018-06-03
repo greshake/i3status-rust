@@ -85,7 +85,7 @@ impl SoundDevice {
 
     fn toggle(&mut self) -> Result<()> {
         Command::new("sh")
-            .args(&["-c", format!("amixer set {} toggle", self.name).as_str()])
+            .args(&["-c", format!("amixer -D pulse set {} 1+ toggle", self.name).as_str()])
             .output()
             .block_error("sound", "failed to toggle mute")?;
 
