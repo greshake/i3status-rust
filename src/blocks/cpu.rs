@@ -6,17 +6,20 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
+use input::{I3BarEvent, MouseButton};
 use widget::{I3BarWidget, State};
-use widgets::text::TextWidget;
+use widgets::button::ButtonWidget;
 
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::process::Command;
 
 use uuid::Uuid;
 
 pub struct Cpu {
-    utilization: TextWidget,
+    utilization: ButtonWidget,
     prev_idle: u64,
     prev_non_idle: u64,
     id: String,
@@ -25,6 +28,7 @@ pub struct Cpu {
     minimum_warning: u64,
     minimum_critical: u64,
     frequency: bool,
+    on_click: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -49,6 +53,10 @@ pub struct CpuConfig {
     /// Display frequency
     #[serde(default = "CpuConfig::default_frequency")]
     pub frequency: bool,
+
+    /// Command to execute when the right button is clicked
+    #[serde(default = "CpuConfig::default_on_click")]
+    pub on_click: Option<String>,
 }
 
 impl CpuConfig {
@@ -71,22 +79,28 @@ impl CpuConfig {
     fn default_frequency() -> bool {
         false
     }
+
+    fn default_on_click() -> Option<String> {
+        Some("gnome-system-monitor".to_string())
+    }
 }
 
 impl ConfigBlock for Cpu {
     type Config = CpuConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        let i = Uuid::new_v4().simple().to_string();
         Ok(Cpu {
-            id: Uuid::new_v4().simple().to_string(),
+            id: i.clone(),
             update_interval: block_config.interval,
-            utilization: TextWidget::new(config).with_icon("cpu"),
+            utilization: ButtonWidget::new(config, i.as_str()).with_icon("cpu"),
             prev_idle: 0,
             prev_non_idle: 0,
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
             frequency: block_config.frequency,
+            on_click: block_config.on_click,
         })
     }
 }
@@ -165,6 +179,30 @@ impl Block for Cpu {
 
     fn view(&self) -> Vec<&I3BarWidget> {
         vec![&self.utilization]
+    }
+
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if let Some(ref name) = event.name {
+            if name != &self.id {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
+
+        if let Some(ref on_click) = self.on_click {
+            match event.button {
+                MouseButton::Right => {
+                    Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                        .args(&["-c", &on_click])
+                        .spawn()
+                        .expect(&format!("Failed to execute {}.", on_click));
+                },
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     fn id(&self) -> &str {

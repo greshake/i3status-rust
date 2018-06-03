@@ -113,6 +113,7 @@ Key | Values | Required | Default
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
 `frequency` | Shows avg cpu frequency in GHz | No | `false`
+`on_click` | Command to execute when the right button is clicked. | No | `"gnome-system-monitor"`
 
 ## Custom
 
