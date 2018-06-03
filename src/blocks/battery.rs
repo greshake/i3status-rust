@@ -215,39 +215,53 @@ impl Block for Battery {
     fn update(&mut self) -> Result<Option<Duration>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
-        let current_percentage = self.device.capacity()?;
+        let status = self.device.status()?;
 
-        let state = self.device.status()?;
-
-        let time_remaining = self.device.time_remaining()?;
-        let hours = time_remaining / 60;
-        let minutes = time_remaining % 60;
-
-        // Don't need to display a percentage when the battery is full
-        if current_percentage != 100 && state != "Full" {
-            match self.show {
-                ShowType::Both => self.output
-                    .set_text(format!("{}% {}:{:02}", current_percentage, hours, minutes)),
-                ShowType::Percentage => self.output.set_text(format!("{}%", current_percentage)),
-                ShowType::Time => self.output.set_text(format!("{}:{:02}", hours, minutes)),
-            }
+        if status == "Full" {
+            self.output.set_icon("bat_full");
+            self.output.set_text("".to_string());
+            self.output.set_state(State::Good);
         } else {
-            self.output.set_text(String::from(""));
+            let capacity = self.device.capacity();
+            match self.show {
+                // Don't break the whole bar if we can't compute capacity or
+                // time at this point.
+                ShowType::Percentage => match capacity {
+                    Ok(capacity) => self.output.set_text(format!("{}%", capacity)),
+                    Err(_) => self.output.set_text("×".to_string()),
+                },
+                // Unlike capacity, we don't use time remaining to identify the
+                // state. So we can avoid computing it entirely when the user
+                // didn't ask for it.
+                ShowType::Time => match self.device.time_remaining() {
+                    Ok(time) => self.output.set_text(format!("{}:{:02}", time / 60, time % 60)),
+                    Err(_) => self.output.set_text("×".to_string()),
+                },
+                ShowType::Both => {
+                    let capacity =  match capacity {
+                        Ok(capacity) => format!("{}%", capacity),
+                        Err(_) => "×".to_string(),
+                    };
+                    let time =  match self.device.time_remaining() {
+                        Ok(time) => format!("{}:{:02}", time / 60, time % 60),
+                        Err(_) => "×".to_string(),
+                    };
+                    self.output.set_text(format!("{} {}", capacity, time))
+                },
+            }
+            self.output.set_state(match capacity {
+                Ok(0...15) => State::Critical,
+                Ok(16...30) => State::Warning,
+                Ok(31...60) => State::Info,
+                Ok(61...100) => State::Good,
+                _ => State::Warning,
+            });
+            self.output.set_icon(match status.as_str() {
+                "Discharging" => "bat_discharging",
+                "Charging" => "bat_charging",
+                _ => "bat",
+            });
         }
-
-        self.output.set_icon(match state.as_str() {
-            "Full" => "bat_full",
-            "Discharging" => "bat_discharging",
-            "Charging" => "bat_charging",
-            _ => "bat",
-        });
-
-        self.output.set_state(match current_percentage {
-            0...15 => State::Critical,
-            16...30 => State::Warning,
-            31...60 => State::Info,
-            _ => State::Good,
-        });
 
         Ok(Some(self.update_interval))
     }
