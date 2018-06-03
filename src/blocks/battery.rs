@@ -1,3 +1,9 @@
+//! A block for displaying information about an internal power supply.
+//!
+//! This module contains the [`Battery`](./struct.Battery.html) block, which can
+//! display the status, capacity, and time remaining for (dis)charge for an
+//! internal power supply.
+
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -21,7 +27,8 @@ pub struct PowerSupplyDevice {
 }
 
 impl PowerSupplyDevice {
-    /// Use the power supply device `device`. Raises an error if a directory for
+    /// Use the power supply device `device`, as found in the
+    /// `/sys/class/power_supply` directory. Raises an error if a directory for
     /// that device is not found.
     pub fn from_device(device: String) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device.clone());
@@ -60,7 +67,8 @@ impl PowerSupplyDevice {
         })
     }
 
-    /// Query the device status.
+    /// Query the device status, one of `"Full"`, `"Charging"`, `"Discharging"`,
+    /// or `"Unknown"`.
     pub fn status(&self) -> Result<String> {
         read_file("battery", &self.device_path.join("status"))
     }
@@ -151,6 +159,7 @@ impl PowerSupplyDevice {
     }
 }
 
+/// A block for displaying information about an internal power supply.
 pub struct Battery {
     output: TextWidget,
     id: String,
@@ -159,6 +168,7 @@ pub struct Battery {
     show: ShowType,
 }
 
+/// Options for displaying battery information.
 #[derive(Deserialize, Copy, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum ShowType {
@@ -167,6 +177,7 @@ pub enum ShowType {
     Both,
 }
 
+/// Configuration for the [`Battery`](./struct.Battery.html) block.
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BatteryConfig {
@@ -174,11 +185,12 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    /// Which BAT device in /sys/class/power_supply/ to read from.
+    /// The internal power supply device in `/sys/class/power_supply/` to read
+    /// from.
     #[serde(default = "BatteryConfig::default_device")]
     pub device: String,
 
-    /// Show only percentage, time until (dis)charged or both
+    /// Options for displaying battery information.
     #[serde(default = "BatteryConfig::default_show")]
     pub show: ShowType,
 }

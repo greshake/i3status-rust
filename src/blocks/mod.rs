@@ -4,7 +4,7 @@ mod load;
 mod memory;
 mod cpu;
 mod music;
-mod battery;
+pub mod battery;
 mod custom;
 mod disk_space;
 mod pacman;
