@@ -65,7 +65,7 @@ impl BatteryConfig {
     }
 
     fn default_on_click() -> Option<String> {
-        Some("gnome-power-statistics".to_string())
+        Some("".to_string())
     }
 }
 

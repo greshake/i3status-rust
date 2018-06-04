@@ -81,7 +81,7 @@ impl CpuConfig {
     }
 
     fn default_on_click() -> Option<String> {
-        Some("gnome-system-monitor".to_string())
+        Some("".to_string())
     }
 }
 

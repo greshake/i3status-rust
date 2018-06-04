@@ -87,7 +87,7 @@ Key | Values | Required | Default
 `device` | The device in `/sys/class/power_supply/` to read from. | No | `"BAT0"`
 `interval` | Update interval, in seconds. | No | `10`
 `show` | Show remaining 'time', 'percentage' or 'both' | No | `percentage`
-`on_click` | Command to execute when the right button is clicked. | No | `"gnome-power-statistics"`
+`on_click` | Command to execute when the right button is clicked, for instance: `"gnome-power-statistics"`. | No | `""`
 
 ## CPU Utilization
 
@@ -113,7 +113,7 @@ Key | Values | Required | Default
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
 `frequency` | Shows avg cpu frequency in GHz | No | `false`
-`on_click` | Command to execute when the right button is clicked. | No | `"gnome-system-monitor"`
+`on_click` | Command to execute when the right button is clicked, for instance: "`gnome-system-monitor"`. | No | `""`
 
 ## Custom
 
