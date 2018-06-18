@@ -15,7 +15,7 @@ use widget::{I3BarWidget, State};
 
 use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
 use blocks::dbus::arg::{Variant, RefArg};
-use self::stdintf::OrgFreedesktopDBusProperties;
+use self::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
 pub struct Music {
@@ -266,12 +266,11 @@ impl Block for Music {
     }
 }
 
-fn extract_from_metadata(metadata: &arg::Variant<Box<arg::RefArg>>) -> Result<(String, String)> {
+fn extract_from_metadata(metadata: &Box<arg::RefArg>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();
 
     let mut iter = metadata
-        .0
         .as_iter()
         .block_error("music", "failed to extract metadata")?;
 
