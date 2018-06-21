@@ -14,7 +14,7 @@ use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 
 use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
-use blocks::dbus::arg::{Variant, RefArg};
+use blocks::dbus::arg::RefArg;
 use self::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
@@ -199,10 +199,10 @@ impl Block for Music {
             if let Some(ref mut play) = self.play {
                 let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
                 match data {
-                    Err(_) => play.set_icon("music_play"),
+                    Err(_) => play.set_icon("music_prev"),
                     Ok(data) => {
-                        let data: Variant<Box<RefArg>> = data;
-                        let state = data.0;
+                        let data: Box<RefArg> = data;
+                        let state = data;
                         if state.as_str().map(|s| s != "Playing").unwrap_or(false) {
                             play.set_icon("music_play")
                         } else {
