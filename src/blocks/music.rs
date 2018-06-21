@@ -199,7 +199,7 @@ impl Block for Music {
             if let Some(ref mut play) = self.play {
                 let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
                 match data {
-                    Err(_) => play.set_icon("music_prev"),
+                    Err(_) => play.set_icon("music_play"),
                     Ok(data) => {
                         let data: Box<RefArg> = data;
                         let state = data;
