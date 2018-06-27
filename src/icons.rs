@@ -44,7 +44,8 @@ lazy_static! {
         "weather_rain" => " RAIN ",
         "weather_default" => " WEATHER ",
         "uptime" => " UP ",
-        "gpu" => " GPU "
+        "gpu" => " GPU ",
+        "mail" => " "
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
@@ -92,7 +93,8 @@ lazy_static! {
         "weather_default" => " \u{f0c2} ",
         // Same as time symbol.
         "uptime" => " \u{f017} ",
-        "gpu" => " \u{f26c} "
+        "gpu" => " \u{f26c} ",
+        "mail" => " \u{f0e0} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
@@ -123,7 +125,8 @@ lazy_static! {
         "xrandr" => " \u{e31e} ",
         // Same as time symbol.
         "uptime" => " \u{e192} ",
-        "gpu" => " \u{e333} "
+        "gpu" => " \u{e333} ",
+        "mail" => " \u{e0be} "
     };
 }
 
