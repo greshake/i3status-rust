@@ -9,11 +9,11 @@ use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use input::I3BarEvent;
 use scheduler::Task;
-use maildir::*;
+use maildir::Maildir as ExtMaildir;
 
 use uuid::Uuid;
 
-pub struct Mail {
+pub struct Maildir {
     text: TextWidget,
     id: String,
     update_interval: Duration,
@@ -24,18 +24,18 @@ pub struct Mail {
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct MailConfig {
+pub struct MaildirConfig {
     /// Update interval in seconds
-    #[serde(default = "MailConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(default = "MaildirConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
     pub inboxes: Vec<String>,
-    #[serde(default = "MailConfig::default_threshold_warning")]
+    #[serde(default = "MaildirConfig::default_threshold_warning")]
     pub threshold_warning: usize,
-    #[serde(default = "MailConfig::default_threshold_critical")]
+    #[serde(default = "MaildirConfig::default_threshold_critical")]
     pub threshold_critical: usize,
 }
 
-impl MailConfig {
+impl MaildirConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(5)
     }
@@ -47,11 +47,11 @@ impl MailConfig {
     }
 }
 
-impl ConfigBlock for Mail {
-    type Config = MailConfig;
+impl ConfigBlock for Maildir {
+    type Config = MaildirConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        Ok(Mail {
+        Ok(Maildir {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone())
@@ -64,12 +64,12 @@ impl ConfigBlock for Mail {
     }
 }
 
-impl Block for Mail {
+impl Block for Maildir {
     fn update(&mut self) -> Result<Option<Duration>> {
         let mut newmails = 0;
         for inbox in &self.inboxes {
             let isl: &str = &inbox[..];
-            let maildir = Maildir::from(isl);
+            let maildir = ExtMaildir::from(isl);
             newmails += maildir.count_new();
         }
         let mut state = { State::Idle };

@@ -20,7 +20,7 @@ mod weather;
 mod uptime;
 mod lib;
 pub mod nvidia_gpu;
-pub mod mail;
+pub mod maildir;
 
 use config::Config;
 use self::time::*;
@@ -44,7 +44,7 @@ use self::backlight::Backlight;
 use self::weather::*;
 use self::uptime::*;
 use self::nvidia_gpu::*;
-use self::mail::*;
+use self::maildir::*;
 
 use super::block::{Block, ConfigBlock};
 use errors::*;
@@ -98,6 +98,6 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "weather" => Weather,
             "uptime" => Uptime,
             "nvidia_gpu" => NvidiaGpu,
-            "mail" => Mail
+            "maildir" => Maildir
     )
 }

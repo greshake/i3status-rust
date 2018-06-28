@@ -19,7 +19,7 @@
 - [Toggle](#toggle)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
-- [Mail](#mail)
+- [Maildir](#maildir)
 
 ## Backlight
 
@@ -602,15 +602,15 @@ Key | Values | Required | Default
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | `5`
 `interval` | Update interval, in seconds. | No | `5`
 
-## Mail
+## Maildir
 
-Creates a block which shows unread mails. Currently only supports maildir.
+Creates a block which shows unread mails. Only supports maildir format.
 
 ### Examples
 
 ```toml
 [[block]]
-block = "mail"
+block = "maildir"
 interval = 60
 inboxes = ["/home/user/mail/local", "/home/user/mail/gmail/Inbox"]
 threshold_warning = 1
