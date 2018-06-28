@@ -17,12 +17,6 @@ pub struct Mail {
     text: TextWidget,
     id: String,
     update_interval: Duration,
-
-    //useful, but optional
-    #[allow(dead_code)]
-    config: Config,
-    #[allow(dead_code)]
-    tx_update_request: Sender<Task>,
     inboxes: Vec<String>,
     threshold_warning: usize,
     threshold_critical: usize,
@@ -56,15 +50,13 @@ impl MailConfig {
 impl ConfigBlock for Mail {
     type Config = MailConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         Ok(Mail {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone())
                 .with_icon("mail")
                 .with_text(""),
-            tx_update_request: tx_update_request,
-            config: config,
             inboxes: block_config.inboxes,
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,
