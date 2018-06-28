@@ -614,7 +614,7 @@ block = "mail"
 interval = 60
 inboxes = ["/home/user/mail/local", "/home/user/mail/gmail/Inbox"]
 threshold_warning = 1
-threshold_warning = 10
+threshold_critical = 10
 ```
 
 ### Options
