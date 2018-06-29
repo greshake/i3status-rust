@@ -185,8 +185,8 @@ impl Block for DiskSpace {
         let mut result;
         let mut converted = 0.0f64;
         let mut converted_str = String::new();
-        let total = statvfs.f_blocks * statvfs.f_frsize;
-        let used = (statvfs.f_blocks - statvfs.f_bfree) * statvfs.f_frsize;
+        let total = statvfs.blocks() * statvfs.fragment_size();
+        let used = (statvfs.blocks() - statvfs.blocks_free()) * statvfs.fragment_size();
 
         match self.info_type {
             InfoType::Available => {
