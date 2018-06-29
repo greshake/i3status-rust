@@ -8,10 +8,11 @@ use toml;
 use regex::Regex;
 use std::prelude::v1::String;
 use std::fmt::Display;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::num::ParseIntError;
+use std::path::Path;
 
 pub fn deserialize_file<T>(file: &str) -> Result<T>
 where
@@ -23,6 +24,19 @@ where
     file.read_to_string(&mut contents)
         .internal_error("util", "failed to read file")?;
     toml::from_str(&contents).configuration_error("failed to parse TOML from file contents")
+}
+
+pub fn read_file(blockname: &str, path: &Path) -> Result<String> {
+    let mut f = OpenOptions::new()
+        .read(true)
+        .open(path)
+        .block_error(blockname, &format!("failed to open file {}", path.to_string_lossy()))?;
+    let mut content = String::new();
+    f.read_to_string(&mut content)
+        .block_error(blockname, &format!("failed to read {}", path.to_string_lossy()))?;
+    // Removes trailing newline
+    content.pop();
+    Ok(content)
 }
 
 #[allow(dead_code)]

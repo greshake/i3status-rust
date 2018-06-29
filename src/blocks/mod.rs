@@ -4,7 +4,7 @@ mod load;
 mod memory;
 mod cpu;
 mod music;
-mod battery;
+pub mod battery;
 mod custom;
 mod disk_space;
 mod pacman;
@@ -18,7 +18,6 @@ mod net;
 pub mod backlight;
 mod weather;
 mod uptime;
-mod lib;
 pub mod nvidia_gpu;
 pub mod maildir;
 
