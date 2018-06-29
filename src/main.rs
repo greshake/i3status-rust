@@ -13,6 +13,7 @@ extern crate uuid;
 extern crate regex;
 extern crate num;
 extern crate inotify;
+extern crate maildir;
 
 #[macro_use]
 mod de;

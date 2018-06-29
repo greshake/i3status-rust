@@ -19,6 +19,7 @@
 - [Toggle](#toggle)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
+- [Maildir](#maildir)
 
 ## Backlight
 
@@ -600,4 +601,28 @@ Key | Values | Required | Default
 `icons` | Show icons for brightness and resolution (needs awesome fonts support) | No | `true`
 `resolution` | Shows the screens resolution | No | `false`
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | `5`
+`interval` | Update interval, in seconds. | No | `5`
+
+## Maildir
+
+Creates a block which shows unread mails. Only supports maildir format.
+
+### Examples
+
+```toml
+[[block]]
+block = "maildir"
+interval = 60
+inboxes = ["/home/user/mail/local", "/home/user/mail/gmail/Inbox"]
+threshold_warning = 1
+threshold_critical = 10
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`inboxes` | List of maildir inboxes to look for mails in | Yes | None
+`threshold_warning` | Number of unread mails where state is set to warning | No | `1`
+`threshold_critical` | Number of unread mails where state is set to critical | No | `10`
 `interval` | Update interval, in seconds. | No | `5`
