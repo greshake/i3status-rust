@@ -80,6 +80,15 @@ interval = 10
 show = "both"
 ```
 
+If you have several batteries in your laptop, instead of using one block per battery,
+you can specify them like so to display both battery percentages but only one total expected runtime:
+```toml
+[[block]]
+block = "battery"
+show = "both"
+device = "BAT0, BAT1"
+```
+
 ### Options
 
 Key | Values | Required | Default
