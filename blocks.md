@@ -12,6 +12,7 @@
 - [Net](#net)
 - [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
+- [Pacman2](#pacman2)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
 - [Temperature](#temperature)
@@ -358,7 +359,7 @@ Proprietary nvidia driver required.
 
 Creates a block which displays the Nvidia GPU utilization, temperature, used and total memory, fan speed, gpu clocks. You can set gpu label, that displayed by default.
 
-Clicking the left button on the icon changes the output of the label to the output of the gpu name. Same with memory: used/total. 
+Clicking the left button on the icon changes the output of the label to the output of the gpu name. Same with memory: used/total.
 
 Clicking the left button on the fans turns on the mode of changing the speed of the fans using the wheel. Press again to turn off the mode. For this opportunity you need nvidia-settings!
 
@@ -389,6 +390,28 @@ Key | Values | Required | Default
 ## Pacman
 
 Creates a block which displays the pending updates available on pacman.
+
+### Examples
+
+Update the list of pending updates every ten seconds:
+
+```toml
+[[block]]
+block = "pacman"
+interval = 10
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `600` (10min)
+
+## Pacman2
+
+Creates a block which displays the pending updates available on pacman, both for official packages and the AUR.
+Unlike the pacman block, it does not require fakeroot.
+This block requires ````cower```` to be installed.
 
 ### Examples
 
