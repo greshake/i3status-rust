@@ -261,13 +261,22 @@ impl Block for Battery {
                     self.output.set_text(format!("{} {}", capacity, time))
                 },
             }
-            self.output.set_state(match capacity {
-                Ok(0...15) => State::Critical,
-                Ok(16...30) => State::Warning,
-                Ok(31...60) => State::Info,
-                Ok(61...100) => State::Good,
-                _ => State::Warning,
-            });
+
+            // Check if the battery is in charging mode and change the state to Good.
+            // Otherwise, adjust the state depeding the power percentance.
+            match state.as_str() {
+                "Charging" => { self.output.set_state(State::Good); },
+                _ =>
+                    { self.output.set_state(match capacity {
+                    Ok(0...15) => State::Critical,
+                    Ok(16...30) => State::Warning,
+                    Ok(31...60) => State::Info,
+                    Ok(61...100) => State::Good,
+                    _ => State::Warning,
+                    });
+                }
+            }
+
             self.output.set_icon(match status.as_str() {
                 "Discharging" => "bat_discharging",
                 "Charging" => "bat_charging",
