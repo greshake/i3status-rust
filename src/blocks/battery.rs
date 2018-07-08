@@ -264,7 +264,7 @@ impl Block for Battery {
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.
-            match state.as_str() {
+            match status.as_str() {
                 "Charging" => { self.output.set_state(State::Good); },
                 _ =>
                     { self.output.set_state(match capacity {
