@@ -19,6 +19,7 @@ extern crate chrono_tz;
 extern crate dbus;
 #[cfg(feature = "pulseaudio")]
 extern crate libpulse_binding as pulse;
+extern crate notmuch;
 
 #[macro_use]
 mod de;
