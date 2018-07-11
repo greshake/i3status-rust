@@ -7,10 +7,10 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use input::I3BarEvent;
 use scheduler::Task;
 use widget::I3BarWidget;
 use widgets::text::TextWidget;
+use input::{I3BarEvent, MouseButton};
 
 extern crate libc;
 use self::libc::c_char;
@@ -22,9 +22,9 @@ use widget::State;
 
 use uuid::Uuid;
 
-#[repr(C)]
-pub struct notmuch_query_t;
-pub struct notmuch_database_t;
+pub enum notmuch_query_t{}
+
+pub enum notmuch_database_t{}
 
 // Status codes used for the return values of most functions.
 ///
@@ -108,7 +108,6 @@ pub struct Notmuch {
     threshold_warning: u16,
     threshold_critical: u16,
     name: Option<String>,
-    no_icon: bool,
 
     //useful, but optional
     #[allow(dead_code)]
@@ -221,7 +220,6 @@ impl ConfigBlock for Notmuch {
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,
             name: block_config.name,
-            no_icon: block_config.no_icon,
 
             text: widget,
             tx_update_request: tx_update_request,
@@ -270,7 +268,11 @@ impl Block for Notmuch {
         vec![&self.text]
     }
 
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if event.name.as_ref().map(|s| s == "notmuch").unwrap_or(false) && event.button == MouseButton::Left {
+            self.update()?;
+        }
+
         Ok(())
     }
 
