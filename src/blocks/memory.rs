@@ -2,7 +2,7 @@
 //!
 //! Creates a block displaying memory and swap usage.
 //!
-//! By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({Mp}%)" (Swap values
+//! By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({MUp}%)" (Swap values
 //! accordingly). That behaviour can be changed within config.json.
 //!
 //! This module keeps track of both Swap and Memory. By default, a click switches between them.
@@ -21,8 +21,8 @@
 //!
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
-//! format_mem | Format string for Memory view. All format values are described below. | No | {MFm}MB/{MTm}MB({Mp}%)
-//! format_swap | Format string for Swap view. | No | {SFm}MB/{STm}MB({Sp}%)
+//! format_mem | Format string for Memory view. All format values are described below. | No | {MFm}MB/{MTm}MB({MUp}%)
+//! format_swap | Format string for Swap view. | No | {SFm}MB/{STm}MB({SUp}%)
 //! type | Default view displayed on startup. Options are <br/> memory, swap | No | memory
 //! icons | Whether the format string should be prepended with Icons. Options are <br/> true, false | No | true
 //! clickable | Whether the view should switch between memory and swap on click. Options are <br/> true, false | No | true
@@ -282,11 +282,11 @@ pub struct MemoryConfig {
 
 impl MemoryConfig {
     fn default_format_mem() -> String {
-        "{MFm}MB/{MTm}MB({Mp}%)".to_owned()
+        "{MFm}MB/{MTm}MB({MUp}%)".to_owned()
     }
 
     fn default_format_swap() -> String {
-        "{SFm}MB/{STm}MB({Sp}%)".to_owned()
+        "{SFm}MB/{STm}MB({SUp}%)".to_owned()
     }
 
     fn default_display_type() -> Memtype {
