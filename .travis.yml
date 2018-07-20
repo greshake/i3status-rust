@@ -10,7 +10,7 @@ addons:
     packages:
       - libdbus-1-dev
       - libgoogle-perftools-dev
-      - libnotmuch3-dev
+      - libnotmuch-dev
 os:
   - linux
 matrix:
