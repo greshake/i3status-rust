@@ -26,3 +26,4 @@ maildir = "0.1.1"
 # for profiling blocks
 cpuprofiler = "0.0.3"
 progress = "0.2"
+notmuch = "*"

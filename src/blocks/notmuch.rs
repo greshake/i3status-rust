@@ -7,113 +7,33 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
+use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
 use widget::I3BarWidget;
 use widgets::text::TextWidget;
-use input::{I3BarEvent, MouseButton};
 
 extern crate libc;
-use self::libc::c_char;
+extern crate notmuch;
 use std::env;
-use std::ffi::CString;
-use std::ptr;
-use std::result;
 use widget::State;
 
 use uuid::Uuid;
 
-pub enum notmuch_query_t{}
+pub enum notmuch_query_t {}
 
-pub enum notmuch_database_t{}
-
-// Status codes used for the return values of most functions.
-///
-/// A zero value (SUCCESS) indicates that the function completed without error. Any other value
-/// indicates an error.
-#[repr(C)]
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
-pub enum notmuch_status_t {
-    /// No error occurred.
-    SUCCESS = 0,
-    /// Out of memory.
-    OUT_OF_MEMORY,
-    /// An attempt was made to write to a database opened in read-only
-    /// mode.
-    READ_ONLY_DATABASE,
-    /// A Xapian exception occurred.
-    ///
-    /// @todo We don't really want to expose this lame XAPIAN_EXCEPTION
-    /// value. Instead we should map to things like DATABASE_LOCKED or
-    /// whatever.
-    XAPIAN_EXCEPTION,
-    /// An error occurred trying to read or write to a file (this could
-    /// be file not found, permission denied, etc.)
-    FILE_ERROR,
-    /// A file was presented that doesn't appear to be an email
-    /// message.
-    FILE_NOT_EMAIL,
-    /// A file contains a message ID that is identical to a message
-    /// already in the database.
-    DUPLICATE_MESSAGE_ID,
-    /// The user erroneously passed a NULL pointer to a notmuch
-    /// function.
-    NULL_POINTER,
-    /// A tag value is too long (exceeds TAG_MAX).
-    TAG_TOO_LONG,
-    /// The `notmuch_message_thaw` function has been called more times
-    /// than `notmuch_message_freeze`.
-    UNBALANCED_FREEZE_THAW,
-    /// `notmuch_database_end_atomic` has been called more times than
-    /// `notmuch_database_begin_atomic`.
-    UNBALANCED_ATOMIC,
-    /// The operation is not supported.
-    UNSUPPORTED_OPERATION,
-    /// The operation requires a database upgrade.
-    UPGRADE_REQUIRED,
-    /// There is a problem with the proposed path, e.g. a relative path
-    /// passed to a function expecting an absolute path.
-    PATH_ERROR,
-    /// One of the arguments violates the preconditions for the
-    /// function, in a way not covered by a more specific argument.
-    NOTMUCH_STATUS_ILLEGAL_ARGUMENT,
-}
-
-#[repr(C)]
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
-pub enum notmuch_database_mode_t {
-    NOTMUCH_DATABASE_MODE_READ_ONLY = 0,
-    NOTMUCH_DATABASE_MODE_READ_WRITE,
-}
-
-#[link(name = "notmuch")]
-extern "C" {
-    pub fn notmuch_query_count_messages(query: *mut notmuch_query_t, count: *mut u16) -> notmuch_status_t;
-
-    pub fn notmuch_query_create(database: *mut notmuch_database_t, query_string: *const c_char) -> *mut notmuch_query_t;
-
-    pub fn notmuch_database_open(path: *const c_char, mode: notmuch_database_mode_t, database: *mut *mut notmuch_database_t) -> notmuch_status_t;
-
-    pub fn notmuch_database_destroy(database: *mut notmuch_database_t) -> notmuch_status_t;
-
-}
+pub enum notmuch_database_t {}
 
 pub struct Notmuch {
     text: TextWidget,
     id: String,
     update_interval: Duration,
-    query: CString,
-    db: CString,
-    threshold_info: u16,
-    threshold_good: u16,
-    threshold_warning: u16,
-    threshold_critical: u16,
+    query: String,
+    db: String,
+    threshold_info: u32,
+    threshold_good: u32,
+    threshold_warning: u32,
+    threshold_critical: u32,
     name: Option<String>,
-
-    //useful, but optional
-    #[allow(dead_code)]
-    config: Config,
-    #[allow(dead_code)]
-    tx_update_request: Sender<Task>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -127,13 +47,13 @@ pub struct NotmuchConfig {
     #[serde(default = "NotmuchConfig::default_query")]
     pub query: String,
     #[serde(default = "NotmuchConfig::default_threshold_warning")]
-    pub threshold_warning: u16,
+    pub threshold_warning: u32,
     #[serde(default = "NotmuchConfig::default_threshold_critical")]
-    pub threshold_critical: u16,
+    pub threshold_critical: u32,
     #[serde(default = "NotmuchConfig::default_threshold_info")]
-    pub threshold_info: u16,
+    pub threshold_info: u32,
     #[serde(default = "NotmuchConfig::default_threshold_good")]
-    pub threshold_good: u16,
+    pub threshold_good: u32,
     #[serde(default = "NotmuchConfig::default_name")]
     pub name: Option<String>,
     #[serde(default = "NotmuchConfig::default_no_icon")]
@@ -158,20 +78,20 @@ impl NotmuchConfig {
         "".to_owned()
     }
 
-    fn default_threshold_info() -> u16 {
-        <u16>::max_value()
+    fn default_threshold_info() -> u32 {
+        <u32>::max_value()
     }
 
-    fn default_threshold_good() -> u16 {
-        <u16>::max_value()
+    fn default_threshold_good() -> u32 {
+        <u32>::max_value()
     }
 
-    fn default_threshold_warning() -> u16 {
-        <u16>::max_value()
+    fn default_threshold_warning() -> u32 {
+        <u32>::max_value()
     }
 
-    fn default_threshold_critical() -> u16 {
-        <u16>::max_value()
+    fn default_threshold_critical() -> u32 {
+        <u32>::max_value()
     }
 
     fn default_name() -> Option<String> {
@@ -182,30 +102,17 @@ impl NotmuchConfig {
     }
 }
 
-fn run_query(db_path: &CString, query: &CString) -> result::Result<u16, notmuch_status_t> {
-    let mut db = ptr::null_mut();
-    let mut result = 0u16;
-    unsafe {
-        match notmuch_database_open(db_path.as_ptr(), notmuch_database_mode_t::NOTMUCH_DATABASE_MODE_READ_WRITE, &mut db) {
-            notmuch_status_t::SUCCESS => {
-                let query_ptr = notmuch_query_create(db, query.as_ptr());
-                let p_result: *mut u16 = &mut result;
-                notmuch_query_count_messages(query_ptr, &mut *p_result);
-                notmuch_database_destroy(db);
-                Ok(result)
-            }
-            status => Err(status),
-        }
-    }
+fn run_query(db_path: &String, query_string: &String) -> Result<u32> {
+    notmuch::Database::open(db_path, notmuch::DatabaseMode::ReadOnly)
+        .and_then(|db| db.create_query(query_string))
+        .and_then(|q| q.count_messages())
+        .or_else(|e| Err(BlockError("notmuch".to_string(), e.description().to_owned())))
 }
 
 impl ConfigBlock for Notmuch {
     type Config = NotmuchConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
-        let db_c_str = CString::new(block_config.maildir).unwrap();
-        let query_c_str = CString::new(block_config.query).unwrap();
-
+    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         let mut widget = TextWidget::new(config.clone());
         if !block_config.no_icon {
             widget.set_icon("mail");
@@ -213,23 +120,21 @@ impl ConfigBlock for Notmuch {
         Ok(Notmuch {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            db: db_c_str,
-            query: query_c_str,
+            db: block_config.maildir,
+            query: block_config.query,
             threshold_info: block_config.threshold_info,
             threshold_good: block_config.threshold_good,
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,
             name: block_config.name,
 
-            text: widget,
-            tx_update_request: tx_update_request,
-            config: config,
+            text: widget
         })
     }
 }
 
 impl Notmuch {
-    fn update_text(&mut self, count: u16) {
+    fn update_text(&mut self, count: u32) {
         let text = match self.name {
             Some(ref s) => format!("{}:{}", s, count),
             _ => format!("{}", count),
@@ -237,7 +142,7 @@ impl Notmuch {
         self.text.set_text(text);
     }
 
-    fn update_state(&mut self, count: u16) {
+    fn update_state(&mut self, count: u32) {
         let mut state = { State::Idle };
         if count >= self.threshold_critical {
             state = { State::Critical };
@@ -254,13 +159,14 @@ impl Notmuch {
 
 impl Block for Notmuch {
     fn update(&mut self) -> Result<Option<Duration>> {
+
         match run_query(&self.db, &self.query) {
-            Err(_) => Err(BlockError("foo".to_owned(), "bar".to_owned())),
             Ok(count) => {
                 self.update_text(count);
                 self.update_state(count);
                 Ok(Some(self.update_interval))
-            }
+            },
+            Err(e) => Err(e)
         }
     }
 
