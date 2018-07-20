@@ -112,42 +112,56 @@ impl PowerSupplyDevice {
     /// Query the estimated time remaining, in minutes, before (dis)charging is
     /// complete.
     pub fn time_remaining(&self) -> Result<u64> {
-        let energy_full = match self.energy_full {
-            Some(val) => val,
-            None => {
-                return Err(BlockError(
-                    "battery".to_string(),
-                    "Device does not support reading energy".to_string(),
-                ))
-            }
+        let full = if self.energy_full.is_some() {
+            self.energy_full.unwrap()
+        } else if self.charge_full.is_some() {
+            self.charge_full.unwrap()
+        } else {
+            return Err(BlockError(
+                "battery".to_string(),
+                "Device does not support reading energy".to_string(),
+            ))
         };
+
         let energy_path = self.device_path.join("energy_now");
-        let energy_now = if energy_path.exists() {
+        let charge_path = self.device_path.join("charge_now");
+        let fill = if energy_path.exists() {
             read_file("battery", &energy_path)?
                 .parse::<f64>()
                 .block_error("battery", "failed to parse energy_now")?
+        } else if charge_path.exists() {
+            read_file("battery", &charge_path)?
+                .parse::<f64>()
+                .block_error("battery", "failed to parse charge_now")?
         } else {
             return Err(BlockError(
                 "battery".to_string(),
                 "Device does not support reading energy".to_string(),
             ));
         };
+
         let power_path = self.device_path.join("power_now");
-        let power_now = if power_path.exists() {
+        let current_path = self.device_path.join("current_now");
+        let usage = if power_path.exists() {
             read_file("battery", &power_path)?
                 .parse::<f64>()
                 .block_error("battery", "failed to parse power_now")?
+        } else if current_path.exists() {
+            read_file("battery", &current_path)?
+                .parse::<f64>()
+                .block_error("battery", "failed to parse current_now")?
         } else {
             return Err(BlockError(
                 "battery".to_string(),
                 "Device does not support reading power".to_string(),
             ));
         };
+
         let status = self.status()?;
         match status.as_str() {
-            "Full" => Ok(((energy_full as f64 / power_now) * 60.0) as u64),
-            "Discharging" => Ok(((energy_now / power_now) * 60.0) as u64),
-            "Charging" => Ok((((energy_full as f64 - energy_now) / power_now) * 60.0) as u64),
+            "Full" => Ok(((full as f64 / usage) * 60.0) as u64),
+            "Discharging" => Ok(((fill / usage) * 60.0) as u64),
+            "Charging" => Ok((((full as f64 - fill) / usage) * 60.0) as u64),
             _ => {
                 // TODO: What should we return in this case? It seems that under
                 // some conditions sysfs will return 0 for some readings (energy
