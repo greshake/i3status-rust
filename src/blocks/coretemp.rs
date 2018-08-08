@@ -118,7 +118,7 @@ impl ConfigBlock for Coretemp {
 
         Ok(Coretemp {
             id: id,
-            output: TextWidget::new(config),
+            output: TextWidget::new(config).with_icon("thermometer"),
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(block_config.format)
                 .block_error("coretemp", "Invalid format specified for temperature")?,
