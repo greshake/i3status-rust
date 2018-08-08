@@ -21,6 +21,7 @@ num = "0.1.42"
 chan = "0.1.21"
 inotify = "0.5.1"
 maildir = "0.1.1"
+glob = "^0.2.0"
 # Used only in debug build mode
 # for profiling blocks
 cpuprofiler = "0.0.3"

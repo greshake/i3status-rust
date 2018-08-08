@@ -14,6 +14,7 @@ extern crate regex;
 extern crate num;
 extern crate inotify;
 extern crate maildir;
+extern crate glob;
 
 #[macro_use]
 mod de;
