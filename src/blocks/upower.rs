@@ -11,8 +11,10 @@ use scheduler::Task;
 use block::{Block, ConfigBlock};
 use widget::{I3BarWidget, State};
 use widgets::text::TextWidget;
-use blocks::dbus::{BusType, Connection, Message};
+use blocks::dbus::{BusType, Connection, Message, MessageItem, Path};
+use blocks::dbus::arg::Variant;
 
+#[derive(Clone, Copy)]
 enum DeviceType {
     Unknown,
     LinePower,
@@ -23,6 +25,12 @@ enum DeviceType {
     Keyboard,
     Pda,
     Phone,
+}
+
+impl DeviceType {
+    pub fn to_u32(&self) -> u32 {
+        *self as u32
+    }
 }
 
 impl From<u32> for DeviceType {
@@ -88,46 +96,24 @@ struct Battery {
     device: String,
 }
 
-
-/*
-let (rotated, next) = if self.marquee {
-    self.current_song.next()?
-} else {
-    (false, None)
-};
-
-if !rotated {
-    let c = self.dbus_conn.with_path(
-        format!("org.mpris.MediaPlayer2.{}", self.player),
-        "/org/mpris/MediaPlayer2",
-        1000,
-    );
-    let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
-
-    if data.is_err() {
-        self.current_song.set_text(String::from(""));
-        self.player_avail = false;
-    } else {
-
-        if title.is_empty() && artist.is_empty() {
-            self.player_avail = false;
-            self.current_song.set_text(String::new());
-        } else {
-            self.player_avail = true;
-            self.current_song
-                .set_text(format!("{} | {}", title, artist));
-        }
-    }
-}
-*/
 impl Battery {
     pub fn default(c: &Connection) -> Result<Self> {
-        // TODO: fetch all available devices from upower.
-        let devices: Vec<String> = Vec::new();
+        let m = Message::new_method_call(
+            "org.freedesktop.UPower",
+            "/org/freedesktop/UPower",
+            "org.freedesktop.UPower",
+            "EnumerateDevices")
+            .block_error("upower", "Failed to create message")?;
+
+        let r = c.send_with_reply_and_block(m, 1000)
+            .block_error("upower", "Failed to retrieve property")?;
+
+        let devices: Vec<Path> = r.get1()
+            .block_error("upower", "Failed to read property")?;
 
         match devices.into_iter().find(|x| Self::is_valid_device(c, x)) {
             Some(device) => return Ok(Battery {
-                device: device,
+                device: device.split("/").last().unwrap().to_string(),
             }),
             None => return Err(BlockError(
                 "upower".to_string(),
@@ -137,7 +123,8 @@ impl Battery {
     }
 
     pub fn from(c: &Connection, device: String) -> Result<Self> {
-        match Self::is_valid_device(c, &device) {
+        let device_path = Self::build_device_path(&device);
+        match Self::is_valid_device(c, &device_path) {
             true => Ok(Battery {
                 device: device,
             }),
@@ -148,75 +135,73 @@ impl Battery {
         }
     }
 
-    pub fn get_device(&self) -> String {
-        self.device.clone()
+    pub fn get_device_path(&self) -> String {
+        format!("/org/freedesktop/UPower/devices/{}", self.device)
     }
 
     pub fn build_device_path(device: &str) -> String {
         format!("/org/freedesktop/UPower/devices/{}", device)
     }
 
-    fn get_property(c: &Connection, device: &str, property: &str) -> Result<Message> {
+    fn get_property(c: &Connection, device_path: &str, property: &str) -> Result<Message> {
         let m = Message::new_method_call(
             "org.freedesktop.UPower",
-            Self::build_device_path(device),
-            "org.freedesktop.UPower.Device",
-            property)
-            .block_error("upower", "Failed to create message")?;
+            device_path,
+            "org.freedesktop.DBus.Properties",
+            "Get")
+            .block_error("upower", "Failed to create message")?
+            .append2(
+                MessageItem::Str("org.freedesktop.UPower.Device".to_string()),
+                MessageItem::Str(property.to_string())
+            );
 
         let r = c.send_with_reply_and_block(m, 1000);
-
-        // TODO: find more elegant solution.
-        match r {
-            Ok(msg) => Ok(msg),
-            Err(_) => Err(BlockError(
-                "upower".to_string(),
-                "Failed to retrieve property".to_string(),
-            )),
-        }
+        r.block_error("upower", "Failed to retrieve property")
     }
 
-    fn is_valid_device(c: &Connection, device: &str) -> bool {
-        let m = Self::get_property(c, device, "Type");
+    fn is_valid_device(c: &Connection, device_path: &str) -> bool {
+        let m = Self::get_property(c, device_path, "Type");
 
         match m {
             Err(_) => false,
             Ok(msg) => {
-                let is_present: Option<bool> = msg.get1();
-                match is_present {
-                    None => false,
-                    Some(val) => val,
+                let type_battery = DeviceType::Battery.to_u32();
+                let type_: Option<Variant<u32>> = msg.get1();
+
+                match type_ {
+                    Some(Variant(m)) if m == type_battery => true,
+                    _ => false,
                 }
             },
         }
     }
 
     pub fn percentage(&self, c: &Connection) -> Result<Option<u8>> {
-        let m = try!(Self::get_property(c, &self.get_device(), "IsPresent"));
-        let is_present: bool = m.get1().block_error(
+        let m = try!(Self::get_property(c, &self.get_device_path(), "IsPresent"));
+        let is_present: Variant<bool> = m.get1().block_error(
             "upower", "Failed to read property"
         )?;
 
-        if !is_present {
+        if !is_present.0 {
             return Ok(None)
         }
 
-        let m = try!(Self::get_property(c, &self.get_device(), "Percentage"));
-        let percentage: u8 = m.get1().block_error(
+        let m = try!(Self::get_property(c, &self.get_device_path(), "Percentage"));
+        let percentage: Variant<f64> = m.get1().block_error(
             "upower", "Failed to read property"
         )?;
 
-        Ok(Some(percentage))
+        Ok(Some(percentage.0 as u8))
     }
 
     pub fn state(&self, c: &Connection) -> Result<BatteryState> {
-        let m = try!(Self::get_property(c, &self.get_device(), "State"));
+        let m = try!(Self::get_property(c, &self.get_device_path(), "State"));
 
-        let state: u32 = m.get1().block_error(
+        let state: Variant<u32> = m.get1().block_error(
             "upower", "Failed to read property"
         )?;
 
-        Ok(BatteryState::from(state))
+        Ok(BatteryState::from(state.0))
     }
 }
 
@@ -253,7 +238,7 @@ impl ConfigBlock for Upower {
             Some(device) => Battery::from(&dbus_conn, device),
             None => Battery::default(&dbus_conn),
         });
-        let device_path = Battery::build_device_path(&battery.get_device());
+        let device_path = battery.get_device_path();
 
         thread::spawn(move || {
             let c = Connection::get_private(BusType::System).unwrap();
