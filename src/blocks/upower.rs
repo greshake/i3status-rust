@@ -148,18 +148,18 @@ impl Battery {
         }
     }
 
-    pub fn get_device_path(&self) -> String {
-        Self::build_device_path(&self.device)
+    pub fn get_device(&self) -> String {
+        self.device.clone()
     }
 
     pub fn build_device_path(device: &str) -> String {
         format!("/org/freedesktop/UPower/devices/{}", device)
     }
 
-    fn get_property(c: &Connection, device_path: &str, property: &str) -> Result<Message> {
+    fn get_property(c: &Connection, device: &str, property: &str) -> Result<Message> {
         let m = Message::new_method_call(
             "org.freedesktop.UPower",
-            device_path,
+            Self::build_device_path(device),
             "org.freedesktop.UPower.Device",
             property)
             .block_error("upower", "Failed to create message")?;
@@ -192,7 +192,7 @@ impl Battery {
     }
 
     pub fn percentage(&self, c: &Connection) -> Result<Option<u8>> {
-        let m = try!(Self::get_property(c, &self.get_device_path(), "IsPresent"));
+        let m = try!(Self::get_property(c, &self.get_device(), "IsPresent"));
         let is_present: bool = m.get1().block_error(
             "upower", "Failed to read property"
         )?;
@@ -201,7 +201,7 @@ impl Battery {
             return Ok(None)
         }
 
-        let m = try!(Self::get_property(c, &self.get_device_path(), "Percentage"));
+        let m = try!(Self::get_property(c, &self.get_device(), "Percentage"));
         let percentage: u8 = m.get1().block_error(
             "upower", "Failed to read property"
         )?;
@@ -210,7 +210,7 @@ impl Battery {
     }
 
     pub fn state(&self, c: &Connection) -> Result<BatteryState> {
-        let m = try!(Self::get_property(c, &self.get_device_path(), "State"));
+        let m = try!(Self::get_property(c, &self.get_device(), "State"));
 
         let state: u32 = m.get1().block_error(
             "upower", "Failed to read property"
@@ -253,7 +253,7 @@ impl ConfigBlock for Upower {
             Some(device) => Battery::from(&dbus_conn, device),
             None => Battery::default(&dbus_conn),
         });
-        let device_path = battery.get_device_path();
+        let device_path = Battery::build_device_path(&battery.get_device());
 
         thread::spawn(move || {
             let c = Connection::get_private(BusType::System).unwrap();
