@@ -1,49 +1,52 @@
-mod time;
-mod template;
-mod load;
-mod memory;
+mod backlight;
+mod battery;
 mod cpu;
-mod music;
-pub mod battery;
 mod custom;
 mod disk_space;
+mod focused_window;
+mod load;
+mod maildir;
+mod memory;
+mod music;
+mod net;
+mod nvidia_gpu;
 mod pacman;
-mod temperature;
-mod toggle;
 mod sound;
 mod speedtest;
-mod focused_window;
-mod xrandr;
-mod net;
-pub mod backlight;
-mod weather;
+mod temperature;
+mod template;
+mod time;
+mod toggle;
+mod upower;
 mod uptime;
-pub mod nvidia_gpu;
-pub mod maildir;
+mod weather;
+mod xrandr;
 
 use config::Config;
-use self::time::*;
-use self::template::*;
-use self::music::*;
-use self::cpu::*;
-use self::load::*;
-use self::memory::*;
+
+use self::backlight::*;
 use self::battery::*;
+use self::cpu::*;
 use self::custom::*;
 use self::disk_space::*;
+use self::focused_window::*;
+use self::load::*;
+use self::maildir::*;
+use self::memory::*;
+use self::music::*;
+use self::net::*;
+use self::nvidia_gpu::*;
 use self::pacman::*;
 use self::sound::*;
 use self::speedtest::*;
-use self::toggle::*;
-use self::focused_window::*;
 use self::temperature::*;
-use self::xrandr::*;
-use self::net::*;
-use self::backlight::Backlight;
-use self::weather::*;
+use self::template::*;
+use self::time::*;
+use self::toggle::*;
+use self::upower::*;
 use self::uptime::*;
-use self::nvidia_gpu::*;
-use self::maildir::*;
+use self::weather::*;
+use self::xrandr::*;
 
 use super::block::{Block, ConfigBlock};
 use errors::*;
@@ -76,27 +79,28 @@ macro_rules! blocks {
 
 pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_request: Sender<Task>) -> Result<Box<Block>> {
     blocks!(name, block_config, config, tx_update_request;
-            "time" => Time,
-            "template" => Template,
-            "music" => Music,
-            "load" => Load,
-            "memory" => Memory,
-            "cpu" => Cpu,
-            "pacman" => Pacman,
+            "backlight" => Backlight,
             "battery" => Battery,
+            "cpu" => Cpu,
             "custom" => Custom,
             "disk_space" => DiskSpace,
-            "toggle" => Toggle,
+            "focused_window" => FocusedWindow,
+            "load" => Load,
+            "maildir" => Maildir,
+            "memory" => Memory,
+            "music" => Music,
+            "net" => Net,
+            "nvidia_gpu" => NvidiaGpu,
+            "pacman" => Pacman,
             "sound" => Sound,
             "speedtest" => SpeedTest,
             "temperature" => Temperature,
-            "focused_window" => FocusedWindow,
-            "xrandr" => Xrandr,
-            "net" => Net,
-            "backlight" => Backlight,
-            "weather" => Weather,
+            "template" => Template,
+            "time" => Time,
+            "toggle" => Toggle,
+            "upower" => Upower,
             "uptime" => Uptime,
-            "nvidia_gpu" => NvidiaGpu,
-            "maildir" => Maildir
+            "weather" => Weather,
+            "xrandr" => Xrandr
     )
 }
