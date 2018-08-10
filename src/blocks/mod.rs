@@ -21,6 +21,7 @@ mod uptime;
 pub mod nvidia_gpu;
 pub mod maildir;
 mod networkmanager;
+mod upower;
 
 use config::Config;
 use self::time::*;
@@ -46,6 +47,7 @@ use self::uptime::*;
 use self::nvidia_gpu::*;
 use self::maildir::*;
 use self::networkmanager::*;
+use self::upower::*;
 
 use super::block::{Block, ConfigBlock};
 use errors::*;
@@ -100,6 +102,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "uptime" => Uptime,
             "nvidia_gpu" => NvidiaGpu,
             "maildir" => Maildir,
-            "networkmanager" => NetworkManager
+            "networkmanager" => NetworkManager,
+            "upower" => Upower
     )
 }
