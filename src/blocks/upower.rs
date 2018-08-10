@@ -80,14 +80,13 @@ impl From<u32> for BatteryState {
 impl fmt::Display for BatteryState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            // TODO: use correct icons.
-            BatteryState::Unknown => write!(f, "bat_full"),
-            BatteryState::Charging => write!(f, "bat_full"),
-            BatteryState::Discharging => write!(f, "bat_full"),
-            BatteryState::Empty => write!(f, "bat_full"),
+            BatteryState::Unknown => write!(f, "bat"),
+            BatteryState::Charging => write!(f, "bat_charging"),
+            BatteryState::Discharging => write!(f, "bat_discharging"),
+            BatteryState::Empty => write!(f, "bat"),
             BatteryState::FullyCharged => write!(f, "bat_full"),
-            BatteryState::PendingCharge => write!(f, "bat_full"),
-            BatteryState::PendingDischarge => write!(f, "bat_full"),
+            BatteryState::PendingCharge => write!(f, "bat_charging"),
+            BatteryState::PendingDischarge => write!(f, "bat_discharging"),
         }
     }
 }
@@ -283,17 +282,18 @@ impl Block for Upower {
         let state = self.battery.state(&self.dbus_conn)?;
         let percentage = self.battery.percentage(&self.dbus_conn)?;
         let text = match percentage {
-            Some(p) => format!("{:02}%", p),
-            None => "-".to_string(),
+            p @ Some(0...100) => format!("{:02}%", p.unwrap()),
+            _ => "-".to_string(),
         };
 
         self.output.set_text(text);
         self.output.set_icon(&state.to_string());
         self.output.set_state(match percentage {
-            Some(0...20) => State::Good,
-            Some(21...45) => State::Idle,
-            Some(46...60) => State::Info,
-            Some(61...80) => State::Warning,
+            Some(0...20) => State::Critical,
+            Some(21...45) => State::Warning,
+            Some(46...60) => State::Idle,
+            Some(61...80) => State::Info,
+            Some(81...100) => State::Good,
             _ => State::Critical,
         });
 
