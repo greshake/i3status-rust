@@ -17,14 +17,8 @@ use blocks::dbus::arg::Variant;
 #[derive(Clone, Copy)]
 enum DeviceType {
     Unknown,
-    LinePower,
     Battery,
-    Ups,
-    Monitor,
-    Mouse,
-    Keyboard,
-    Pda,
-    Phone,
+    Other,
 }
 
 impl DeviceType {
@@ -37,15 +31,9 @@ impl From<u32> for DeviceType {
     fn from(id: u32) -> Self {
         match id {
             // https://upower.freedesktop.org/docs/Device.html#Device:Type
-            // TODO: derive this automatically.
-            1 => DeviceType::LinePower,
+            1 => DeviceType::Other,
             2 => DeviceType::Battery,
-            3 => DeviceType::Ups,
-            4 => DeviceType::Monitor,
-            5 => DeviceType::Mouse,
-            6 => DeviceType::Keyboard,
-            7 => DeviceType::Pda,
-            8 => DeviceType::Phone,
+            3...8 => DeviceType::Other,
             _ => DeviceType::Unknown,
         }
     }
