@@ -29,7 +29,6 @@ impl From<u32> for NetworkState {
     fn from(id: u32) -> Self {
         match id {
             // https://developer.gnome.org/NetworkManager/unstable/nm-dbus-types.html#NMState
-            // TODO: derive this automatically.
             10 => NetworkState::Asleep,
             20 => NetworkState::Disconnected,
             30 => NetworkState::Disconnecting,
@@ -45,14 +44,14 @@ impl From<u32> for NetworkState {
 impl fmt::Display for NetworkState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            NetworkState::Unknown => write!(f, "net_down"),
-            NetworkState::Asleep => write!(f, "net_down"),
-            NetworkState::Disconnected => write!(f, "net_down"),
-            NetworkState::Disconnecting => write!(f, "net_down"),
-            NetworkState::Connecting => write!(f, "net_down"),
-            NetworkState::ConnectedLocal => write!(f, "net_up"),
-            NetworkState::ConnectedSite => write!(f, "net_up"),
-            NetworkState::ConnectedGlobal => write!(f, "net_up"),
+            NetworkState::Unknown => write!(f, "DOWN"),
+            NetworkState::Asleep => write!(f, "DOWN"),
+            NetworkState::Disconnected => write!(f, "DOWN"),
+            NetworkState::Disconnecting => write!(f, "DOWN"),
+            NetworkState::Connecting => write!(f, "DOWN"),
+            NetworkState::ConnectedLocal => write!(f, "UP"),
+            NetworkState::ConnectedSite => write!(f, "UP"),
+            NetworkState::ConnectedGlobal => write!(f, "UP"),
         }
     }
 }
@@ -68,7 +67,7 @@ impl From<String> for ConnectionType {
         match name.as_ref() {
             // https://developer.gnome.org/NetworkManager/unstable/settings-connection.html
             "802-3-ethernet" => ConnectionType::Ethernet,
-            "802-11-ethernet" => ConnectionType::Wireless,
+            "802-11-wireless" => ConnectionType::Wireless,
             _  => ConnectionType::Other,
         }
     }
@@ -201,7 +200,7 @@ impl Block for NetworkManager {
         let state = self.manager.state(&self.dbus_conn)?;
         let connection_type = self.manager.connection_type(&self.dbus_conn)?;
 
-        self.output.set_icon(&state.to_string());
+        self.output.set_icon(&connection_type.to_string());
         self.output.set_state(match state {
             NetworkState::ConnectedGlobal => State::Good,
             NetworkState::ConnectedSite => State::Info,
@@ -214,7 +213,7 @@ impl Block for NetworkManager {
         });
 
         if self.show_type {
-            self.output.set_text(connection_type.to_string());
+            self.output.set_text(state.to_string());
         }
 
         Ok(None)
