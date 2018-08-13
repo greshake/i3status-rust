@@ -1,14 +1,13 @@
-extern crate chrono;
-
 use std::time::Duration;
 use std::process::Command;
 use std::ffi::OsStr;
 
 use block::{Block, ConfigBlock};
 use config::Config;
-use de::deserialize_duration;
+use de::{deserialize_duration, deserialize_timezone};
 use errors::*;
-use self::chrono::offset::Local;
+use chrono::offset::{Utc, Local};
+use chrono_tz::Tz;
 use scheduler::Task;
 use chan::Sender;
 use widgets::button::ButtonWidget;
@@ -22,6 +21,7 @@ pub struct Time {
     update_interval: Duration,
     format: String,
     on_click: Option<String>,
+    timezone: Option<Tz>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -37,6 +37,9 @@ pub struct TimeConfig {
 
     #[serde(default = "TimeConfig::default_on_click")]
     pub on_click: Option<String>,
+
+    #[serde(default = "TimeConfig::default_timezone", deserialize_with = "deserialize_timezone")]
+    pub timezone: Option<Tz>,
 }
 
 impl TimeConfig {
@@ -49,6 +52,10 @@ impl TimeConfig {
     }
 
     fn default_on_click() -> Option<String> {
+        None
+    }
+
+    fn default_timezone() -> Option<Tz> {
         None
     }
 }
@@ -66,14 +73,18 @@ impl ConfigBlock for Time {
                 .with_icon("time"),
             update_interval: block_config.interval,
             on_click: block_config.on_click,
+            timezone: block_config.timezone,
         })
     }
 }
 
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Duration>> {
-        self.time
-            .set_text(format!("{}", Local::now().format(&self.format)));
+        let time = match self.timezone {
+            Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
+            None => Local::now().format(&self.format),
+        };
+        self.time.set_text(format!("{}", time));
         Ok(Some(self.update_interval))
     }
 
