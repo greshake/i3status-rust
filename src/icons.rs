@@ -17,6 +17,7 @@ lazy_static! {
         "bat_full" => " FULL ",
         "bat_charging" => " CHG ",
         "bat_discharging" => " DCG ",
+        "bat_disconnected" => " NC ",
         "update" => " UPD ",
         "toggle_off" => " OFF ",
         "toggle_on" => " ON ",
@@ -64,6 +65,7 @@ lazy_static! {
         "bat_full" => " \u{f240} ",
         "bat_charging" => " \u{f1e6} ",
         "bat_discharging" => " \u{f242} ",
+        "bat_disconnected" => " \u{f244} ", // battery_empty
         "update" => " \u{f062} ",
         "toggle_off" => " \u{f204} ",
         "toggle_on" => " \u{f205} ",
@@ -113,6 +115,7 @@ lazy_static! {
         "bat_full" => " \u{e1a4} ",
         "bat_charging" => " \u{e1a3} ",
         "bat_discharging" => " \u{e19c} ",
+        "bat_disconnected" => " \u{e1a6} ", // battery_unknown
         "update" => " \u{e8d7} ",
         "toggle_off" => " \u{e836} ",
         "toggle_on" => " \u{e837} ",

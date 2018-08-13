@@ -178,8 +178,10 @@ pub struct Battery {
     output: TextWidget,
     id: String,
     update_interval: Duration,
-    device: PowerSupplyDevice,
+    device_name: String,
+    device: Option<PowerSupplyDevice>,
     show: ShowType,
+    removable: bool,
 }
 
 /// Options for displaying battery information.
@@ -207,6 +209,11 @@ pub struct BatteryConfig {
     /// Options for displaying battery information.
     #[serde(default = "BatteryConfig::default_show")]
     pub show: ShowType,
+
+    /// Whether the battery is removable. If it can't be found, no error will
+    /// be thrown.
+    #[serde(default = "BatteryConfig::default_removable")]
+    pub removable: bool,
 }
 
 impl BatteryConfig {
@@ -221,34 +228,94 @@ impl BatteryConfig {
     fn default_show() -> ShowType {
         ShowType::Percentage
     }
+
+    fn default_removable() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        // If the device does not exist and its not removable, throw an Error
+        // If it is removable, set to None or Some(dev) depending on its status
+        let device =
+            match (
+                block_config.removable,
+                PowerSupplyDevice::from_device(block_config.device.clone())
+            ) {
+                (_, Ok(dev)) => Some(dev),
+                (true, Err(_)) => None,
+                (false, Err(e)) => return Err(e),
+            };
+
         Ok(Battery {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             output: TextWidget::new(config),
-            device: try!(PowerSupplyDevice::from_device(block_config.device)),
+            device_name: block_config.device,
+            device,
             show: block_config.show,
+            removable: block_config.removable,
         })
     }
 }
 
+// TODO: Is there a builtin for this?
+fn option_swap<T, F>(opt: &mut Option<T>, f: F)
+    where F: FnOnce(Option<T>) -> Option<T>
+{
+    let myopt = opt.take();
+    let newopt = f(myopt);
+    *opt = newopt;
+}
+
 impl Block for Battery {
     fn update(&mut self) -> Result<Option<Duration>> {
-        // TODO: Maybe use dbus to immediately signal when the battery state changes.
+        // TODO: Maybe use dbus to immediately signal when the battery state
+        // changes.
 
-        let status = self.device.status()?;
+        // If device is None, it has to be removable. Let's retry accessing the
+        // power supply device. We want to use or_else here, to avoid
+        // constructing a new device every time.
+        let device_name_clone = self.device_name.clone();
+        option_swap(&mut self.device,
+                    move |d: Option<PowerSupplyDevice>|
+                        d.or_else(move || PowerSupplyDevice::from_device(device_name_clone).ok())
+                   );
+
+        // Check whether the device is available
+        let (device, status) = {
+            let res_status = self.device.as_ref().map(|dev| dev.status());
+
+            match (self.removable, res_status) {
+                (true, Some(Err(_))) | (_, None) => {
+                    // Either the device was never initialized or there was
+                    // an error getting the status. Either way, it is probably
+                    // disconnected
+                    self.output.set_icon("bat_disconnected");
+                    self.output.set_text("".to_string());
+                    self.output.set_state(State::Idle);
+                    return Ok(Some(self.update_interval));
+                },
+                (false, Some(Err(e))) =>
+                    // Getting the status returned an error, but the device is
+                    // not marked as removable. Throw the error!
+                    { return Err(e) },
+                (_, Some(Ok(s))) =>
+                    // Getting the status worked, so the device must be Ok()
+                    (self.device.as_ref().unwrap(), s),
+            }
+        };
+
 
         if status == "Full" {
             self.output.set_icon("bat_full");
             self.output.set_text("".to_string());
             self.output.set_state(State::Good);
         } else {
-            let capacity = self.device.capacity();
+            let capacity = device.capacity();
             match self.show {
                 // Don't break the whole bar if we can't compute capacity or
                 // time at this point.
@@ -259,7 +326,7 @@ impl Block for Battery {
                 // Unlike capacity, we don't use time remaining to identify the
                 // state. So we can avoid computing it entirely when the user
                 // didn't ask for it.
-                ShowType::Time => match self.device.time_remaining() {
+                ShowType::Time => match device.time_remaining() {
                     Ok(time) => self.output.set_text(format!("{}:{:02}", time / 60, time % 60)),
                     Err(_) => self.output.set_text("×".to_string()),
                 },
@@ -268,7 +335,7 @@ impl Block for Battery {
                         Ok(capacity) => format!("{}%", capacity),
                         Err(_) => "×".to_string(),
                     };
-                    let time =  match self.device.time_remaining() {
+                    let time =  match device.time_remaining() {
                         Ok(time) => format!("{}:{:02}", time / 60, time % 60),
                         Err(_) => "×".to_string(),
                     };
