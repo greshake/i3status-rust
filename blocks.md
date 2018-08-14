@@ -168,7 +168,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `path` | Path to collect information from | No | `"/"`
 `alias` | Alias that is displayed for path | No | `"/"`
-`info_type` | Currently supported options are available and free | No | `"available"`
+`info_type` | Currently supported options are `available` and `free` | No | `"available"`
 `unit` | Unit that is used to display disk space. Options are MB, MiB, GB and GiB | No | `"GB"`
 `interval` | Update interval, in seconds. | No | `20`
 `show_percentage` | Show percentage of used/available disk space depending on info_type. | No | `false`
