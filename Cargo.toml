@@ -6,6 +6,7 @@ authors = ["Kai Greshake <development@kai-greshake.de>",
 
 [dependencies]
 chrono = "0.4"
+chrono-tz = "0.4"
 lazy_static = "1.0"
 serde = "1.0"
 serde_derive = "1.0"

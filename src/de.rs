@@ -7,6 +7,7 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::time::Duration;
 use toml::{self, value};
+use chrono_tz::Tz;
 
 pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
@@ -181,4 +182,12 @@ where
             Ok(combined)
         }
     }
+}
+
+pub fn deserialize_timezone<'de, D>(deserializer: D) -> Result<Option<Tz>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Tz::from_str(&s).map(|tz| Some(tz)).map_err(de::Error::custom)
 }
