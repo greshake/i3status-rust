@@ -14,7 +14,12 @@ This is a replacement for i3status, aiming to provide the most feature-complete 
 - blocks can trigger updates asynchronously, which allows for things like dbus signaling, to avoid periodic refreshing of data that rarely changes (example: music block)
 
 # Requirements
-i3, rustc, libdbus-dev and cargo. Only tested on Arch Linux. Compilation is only tested with the latest Rust stable version. If you use a distro with old Rust packages (looking at you, Ubuntu!), fall back to rustup or find a precompiled package for your distro.
+
+The Rust language and the `cargo` package manager are required to build the application.
+
+We also require Libdbus 1.6 or higher. On some older systems this may require installing `libdbus-1-dev`. See [#194](https://github.com/greshake/i3status-rust/issues/194) if you are having dbus-related compilation issues.
+
+Compilation is only tested with very recent stable versions of the `rustc`. If you use a distro with old Rust packages (looking at you, Ubuntu!), fall back to rustup or find a precompiled package for your distro.
 
 Optional:
 * `alsa-utils` For the volume block
