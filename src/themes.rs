@@ -2,21 +2,21 @@ use std::str::FromStr;
 
 lazy_static! {
     pub static ref SLICK: Theme = Theme {
-        idle_bg: "#424242de".to_owned(),
+        idle_bg: "#424242".to_owned(),
         idle_fg: "#ffffff".to_owned(),
-        info_bg: "#2196f3de".to_owned(),
+        info_bg: "#2196f3".to_owned(),
         info_fg: "#ffffff".to_owned(),
-        good_bg: "#8bc34ade".to_owned(),
-        good_fg: "#000000de".to_owned(),
-        warning_bg: "#ffc107de".to_owned(),
-        warning_fg: "#000000de".to_owned(),
-        critical_bg: "#f44336de".to_owned(),
+        good_bg: "#8bc34a".to_owned(),
+        good_fg: "#000000".to_owned(),
+        warning_bg: "#ffc107".to_owned(),
+        warning_fg: "#000000".to_owned(),
+        critical_bg: "#f44336".to_owned(),
         critical_fg: "#ffffff".to_owned(),
         separator: "\u{e0b2}".to_owned(),
         separator_bg: "auto".to_owned(),
         separator_fg: "auto".to_owned(),
-        alternating_tint_bg: "#000000".to_owned(),
-        alternating_tint_fg: "#000000".to_owned(),
+        alternating_tint_bg: "#111111".to_owned(),
+        alternating_tint_fg: "#111111".to_owned(),
     };
 
     pub static ref SOLARIZED_DARK: Theme = Theme {
