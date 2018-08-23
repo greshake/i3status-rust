@@ -21,10 +21,10 @@ We also require Libdbus 1.6 or higher. On some older systems this may require in
 
 Compilation is only tested with very recent stable versions of the `rustc`. If you use a distro with old Rust packages (looking at you, Ubuntu!), fall back to rustup or find a precompiled package for your distro.
 
+Some blocks have their own system requirements; these are mentioned in the [block documentation](blocks.md).
+
 Optional:
-* `alsa-utils` For the volume block
-* `lm_sensors` For the temperature block
-* [`speedtest-cli`](https://github.com/sivel/speedtest-cli) For the speedtest block
+
 * Font Awesome, for `icons="awesome"`. Version 5 of the font is causing some issues (see [#130](https://github.com/greshake/i3status-rust/issues/130)), so for now we recommend version 4. If you have access to the AUR, check out [`ttf-font-awesome-4`](https://aur.archlinux.org/packages/ttf-font-awesome-4/).
 * `gperftools` For dev builds, needed to profile block performance and bottlenecks.
 * [`powerline-fonts`](https://www.archlinux.org/packages/community/x86_64/powerline-fonts/) For all themes using the powerline arrow char. Recommended. See [`powerline on GitHub`](https://github.com/powerline/powerline/tree/develop/font)

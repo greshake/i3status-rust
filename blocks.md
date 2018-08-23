@@ -297,7 +297,9 @@ Key | Values | Required | Default
 
 ## Music
 
-Creates a block which can display the current song title and artist, in a fixed width marquee fashion. It uses dbus signaling to fetch new tracks, so no periodic updates are needed. It supports all Players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more. Also provides buttons for play/pause, previous and next title.
+Creates a block which can display the current song title and artist, in a fixed width marquee fashion. Also provides buttons for play/pause, previous and next title.
+
+Supports all music players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more. 
 
 ### Examples
 
@@ -410,7 +412,7 @@ Key | Values | Required | Default
 
 Creates a block which displays the volume level (according to ALSA). Right click to toggle mute, scroll to adjust volume.
 
-The display is updated when ALSA detects changes, so there is no need to set an update interval.
+Requires `alsa-utils`.
 
 ### Examples
 
@@ -452,6 +454,8 @@ Key | Values | Required | Default
 ## Temperature
 
 Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). Currently, you can only adjust these thresholds in source code. **Depends on lm_sensors being installed and configured!**
+
+Requires `lm_sensors` and appropriate kernel modules for your hardware.
 
 ### Examples
 
