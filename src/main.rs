@@ -16,6 +16,7 @@ extern crate inotify;
 extern crate maildir;
 extern crate chrono;
 extern crate chrono_tz;
+extern crate cpu_monitor;
 
 #[macro_use]
 mod de;
