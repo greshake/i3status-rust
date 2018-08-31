@@ -39,23 +39,6 @@ trait SoundDevice {
     fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) { }
 }
 
-enum GenericSoundDevice {
-    AlsaSoundDevice(AlsaSoundDevice),
-    PulseAudioSoundDevice(PulseAudioSoundDevice)
-}
-
-impl From<AlsaSoundDevice> for GenericSoundDevice {
-    fn from(device: AlsaSoundDevice) -> Self {
-        GenericSoundDevice::AlsaSoundDevice(device)
-    }
-}
-impl From<PulseAudioSoundDevice> for GenericSoundDevice {
-    fn from(device: PulseAudioSoundDevice) -> Self {
-        GenericSoundDevice::PulseAudioSoundDevice(device)
-    }
-}
-
-
 struct AlsaSoundDevice {
     name: String,
     volume: u32,
