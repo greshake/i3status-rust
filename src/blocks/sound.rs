@@ -4,6 +4,9 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 use std::ffi::OsStr;
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::ops::Deref;
 use chan::Sender;
 
 use scheduler::Task;
@@ -15,17 +18,53 @@ use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
 
+use pulse::mainloop::standard::Mainloop;
+use pulse::callbacks::ListResult;
+use pulse::context::{Context, flags, State as PulseState};
+use pulse::proplist::{properties, Proplist};
+use pulse::mainloop::standard::IterateResult;
+use pulse::volume::{ChannelVolumes, Volume};
+use pulse::def::Retval;
+
 use uuid::Uuid;
 
-struct SoundDevice {
+trait SoundDevice {
+    // fn name(&self) -> String;
+    fn volume(&self) -> u32;
+    fn muted(&self) -> bool;
+
+    fn get_info(&mut self) -> Result<()>;
+    fn set_volume(&mut self, step: i32) -> Result<()>;
+    fn toggle(&mut self) -> Result<()>;
+    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) { }
+}
+
+enum GenericSoundDevice {
+    AlsaSoundDevice(AlsaSoundDevice),
+    PulseAudioSoundDevice(PulseAudioSoundDevice)
+}
+
+impl From<AlsaSoundDevice> for GenericSoundDevice {
+    fn from(device: AlsaSoundDevice) -> Self {
+        GenericSoundDevice::AlsaSoundDevice(device)
+    }
+}
+impl From<PulseAudioSoundDevice> for GenericSoundDevice {
+    fn from(device: PulseAudioSoundDevice) -> Self {
+        GenericSoundDevice::PulseAudioSoundDevice(device)
+    }
+}
+
+
+struct AlsaSoundDevice {
     name: String,
     volume: u32,
     muted: bool,
 }
 
-impl SoundDevice {
+impl AlsaSoundDevice {
     fn new(name: &str) -> Result<Self> {
-        let mut sd = SoundDevice {
+        let mut sd = AlsaSoundDevice {
             name: String::from(name),
             volume: 0,
             muted: false,
@@ -34,6 +73,12 @@ impl SoundDevice {
 
         Ok(sd)
     }
+}
+
+impl SoundDevice for AlsaSoundDevice {
+    // fn name(&self) -> String { self.name }
+    fn volume(&self) -> u32 { self.volume }
+    fn muted(&self) -> bool { self.muted }
 
     fn get_info(&mut self) -> Result<()> {
         let output = Command::new("sh")
@@ -93,6 +138,183 @@ impl SoundDevice {
 
         Ok(())
     }
+
+    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) {
+        // Monitor volume changes in a separate thread.
+        thread::spawn(move || {
+            let mut monitor = Command::new("sh")
+                .args(
+                    &[
+                        "-c",
+                        // Line-buffer to reduce noise.
+                        "stdbuf -oL alsactl monitor",
+                    ],
+                )
+                .stdout(Stdio::piped())
+                .spawn()
+                .expect("Failed to start alsactl monitor")
+                .stdout
+                .expect("Failed to pipe alsactl monitor output");
+
+            let mut buffer = [0; 1024]; // Should be more than enough.
+            loop {
+                // Block until we get some output. Doesn't really matter what
+                // the output actually is -- these are events -- we just update
+                // the sound information if *something* happens.
+                if let Ok(_) = monitor.read(&mut buffer) {
+                    tx_update_request.send(Task {
+                        id: id.clone(),
+                        update_time: Instant::now(),
+                    });
+                }
+                // Don't update too often. Wait 1/4 second, fast enough for
+                // volume button mashing but slow enough to skip event spam.
+                thread::sleep(Duration::new(0, 250_000_000))
+            }
+        });
+    }
+}
+
+struct PulseAudioSoundDevice {
+    mainloop: Rc<RefCell<Mainloop>>,
+    context: Rc<RefCell<Context>>,
+    name: Option<String>,
+    index: u32,
+    volume: Option<ChannelVolumes>,
+    volume_avg: u32,
+    muted: bool,
+}
+
+impl PulseAudioSoundDevice {
+    fn new(index: u32) -> Result<Self> {
+        let mut proplist = Proplist::new().unwrap();
+        proplist.sets(properties::APPLICATION_NAME, "i3status-rs")
+            .block_error("sound", "could not set pulseaudio APPLICATION_NAME poperty")?;
+
+        let mut mainloop = Rc::new(RefCell::new(Mainloop::new()
+            .block_error("sound", "failed to create pulseaudio mainloop")?));
+
+        let mut context = Rc::new(RefCell::new(Context::new_with_proplist(
+            mainloop.borrow().deref(),
+            "i3status-rs_context",
+            &proplist
+            ).block_error("sound", "failed to create new pulseaudio context")?));
+
+        context.borrow_mut().connect(None, flags::NOFLAGS, None)
+            .block_error("sound", "failed to connect to pulseaudio context")?;
+
+        // Wait for context to be ready
+        loop {
+            match mainloop.borrow_mut().iterate(false) {
+                IterateResult::Quit(_) |
+                IterateResult::Err(_) => {
+                    return Err(BlockError(
+                        "sound".into(),
+                        "failed to iterate pulseaudio state".into(),
+                    ))
+                },
+                IterateResult::Success(_) => {},
+            }
+            match context.borrow().get_state() {
+                PulseState::Ready => { break; },
+                PulseState::Failed |
+                PulseState::Terminated => {
+                    return Err(BlockError(
+                        "sound".into(),
+                        "pulseaudio context state failed/terminated".into(),
+                    ))
+                },
+                _ => {},
+            }
+        }
+
+        let mut sd = PulseAudioSoundDevice {
+            mainloop,
+            context,
+            name: None,
+            index: 0,
+            volume: None,
+            volume_avg: 0,
+            muted: false,
+        };
+        sd.get_info()?;
+
+        Ok(sd)
+    }
+
+    fn volume(&mut self, volume: ChannelVolumes) {
+        self.volume = Some(volume);
+        self.volume_avg = volume.avg().0;
+    }
+}
+
+impl SoundDevice for PulseAudioSoundDevice {
+    // fn name(&self) -> String { self.name.unwrap_or_else(|| format!("#{}", self.index)) }
+    fn volume(&self) -> u32 { self.volume_avg }
+    fn muted(&self) -> bool { self.muted }
+
+    fn get_info(&mut self) -> Result<()> {
+        // TODO: Figure out how to get the callback working
+        /*
+        let sink_info = self.context.borrow().introspect().get_sink_info_by_index(self.index, |result|{
+            match result {
+                ListResult::End => {},
+                ListResult::Item(sink_info) => {
+                    self.name = sink_info.name.and_then(|v| Some(v.into()));
+                    self.muted = sink_info.mute;
+                    self.volume(sink_info.volume);
+                },
+                ListResult::Error => {
+                    // TODO: Error handling
+                }
+            }
+        });
+        */
+
+        Ok(())
+    }
+
+    fn set_volume(&mut self, step: i32) -> Result<()> {
+        let mut volume = match self.volume {
+            Some(volume) => volume,
+            None => return Err(BlockError("sound".into(),"volume unknown".into()))
+        };
+        let val = Volume { 0: step.abs() as u32 };
+
+        let volume = if step > 0 {
+            volume.increase(val)
+        } else if step < 0 {
+            volume.decrease(val)
+        } else {
+            return Ok(());
+        };
+
+        match volume {
+            Some(volume) => {
+                self.volume(*volume);
+                self.context.borrow().introspect().set_sink_volume_by_index(self.index, &volume, None);
+                Ok(())
+            },
+            None => Err(BlockError("sound".into(), "failed to increase/decrease volume".into()))
+        }
+    }
+
+    fn toggle(&mut self) -> Result<()> {
+        self.muted = !self.muted;
+        self.context.borrow().introspect().set_sink_mute_by_index(self.index, self.muted, None);
+
+        Ok(())
+    }
+
+    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) {
+        // TODO: listen to events
+    }
+}
+
+impl Drop for PulseAudioSoundDevice {
+    fn drop(&mut self) {
+        self.mainloop.borrow_mut().quit(Retval(0));
+    }
 }
 
 // TODO: Use the alsa control bindings to implement push updates
@@ -100,7 +322,7 @@ impl SoundDevice {
 pub struct Sound {
     text: ButtonWidget,
     id: String,
-    devices: Vec<SoundDevice>,
+    devices: Vec<::std::result::Result<PulseAudioSoundDevice, AlsaSoundDevice>>,
     step_width: u32,
     current_idx: usize,
     config: Config,
@@ -137,13 +359,19 @@ impl SoundConfig {
 }
 
 impl Sound {
-    fn display(&mut self) -> Result<()> {
-        let device = self.devices
+    fn device(&mut self) -> Result<&mut SoundDevice> {
+        match self.devices
             .get_mut(self.current_idx)
-            .block_error("sound", "failed to get device")?;
-        device.get_info()?;
+            .block_error("sound", "failed to get device")? {
+            Ok(dev) => Ok(dev),
+            Err(dev) => Ok(dev)
+        }
+    }
 
-        if device.muted {
+    fn display(&mut self) -> Result<()> {
+        self.device()?.get_info()?;
+
+        if self.device()?.muted() {
             self.text.set_icon("volume_empty");
             self.text.set_text(
                 self.config
@@ -154,12 +382,13 @@ impl Sound {
             );
             self.text.set_state(State::Warning);
         } else {
-            self.text.set_icon(match device.volume {
+            let volume = self.device()?.volume();
+            self.text.set_icon(match volume {
                 0...20 => "volume_empty",
                 21...70 => "volume_half",
                 _ => "volume_full",
             });
-            self.text.set_text(format!("{:02}%", device.volume));
+            self.text.set_text(format!("{:02}%", volume));
             self.text.set_state(State::Idle);
         }
 
@@ -177,48 +406,28 @@ impl ConfigBlock for Sound {
             step_width = 50;
         }
 
-        let sound = Sound {
+        let mut sound = Sound {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
-            devices: vec![SoundDevice::new("Master")?],
+            devices: vec![
+                // TODO: find better solution for mixed types
+                match PulseAudioSoundDevice::new(0) {
+                    Ok(dev) => Ok(dev),
+                    Err(_) => Err(AlsaSoundDevice::new("Master")?)
+                }
+            ],
             step_width: step_width,
             current_idx: 0,
             config: config,
             on_click: block_config.on_click,
         };
 
-        // Monitor volume changes in a separate thread.
-        thread::spawn(move || {
-            let mut monitor = Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        // Line-buffer to reduce noise.
-                        "stdbuf -oL alsactl monitor",
-                    ],
-                )
-                .stdout(Stdio::piped())
-                .spawn()
-                .expect("Failed to start alsactl monitor")
-                .stdout
-                .expect("Failed to pipe alsactl monitor output");
-
-            let mut buffer = [0; 1024]; // Should be more than enough.
-            loop {
-                // Block until we get some output. Doesn't really matter what
-                // the output actually is -- these are events -- we just update
-                // the sound information if *something* happens.
-                if let Ok(_) = monitor.read(&mut buffer) {
-                    tx_update_request.send(Task {
-                        id: id.clone(),
-                        update_time: Instant::now(),
-                    });
-                }
-                // Don't update too often. Wait 1/4 second, fast enough for
-                // volume button mashing but slow enough to skip event spam.
-                thread::sleep(Duration::new(0, 250_000_000))
+        sound.devices.iter_mut().map(|dev|
+            match dev {
+                Ok(dev) => dev.monitor(id.clone(), tx_update_request.clone()),
+                Err(dev) => dev.monitor(id.clone(), tx_update_request.clone())
             }
-        });
+        );
 
         Ok(sound)
     }
@@ -245,13 +454,10 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 {
                     // Additional scope to not keep mutably borrowed device for too long
-                    let device = self.devices
-                        .get_mut(self.current_idx)
-                        .block_error("sound", "failed to get device")?;
-                    let volume = device.volume;
+                    let volume = self.device()?.volume();
 
                     match e.button {
-                        MouseButton::Right => device.toggle()?,
+                        MouseButton::Right => self.device()?.toggle()?,
                         MouseButton::Left => {
                             let mut command = "".to_string();
                             if self.on_click.is_some() {
@@ -267,14 +473,14 @@ impl Block for Sound {
                         }
                         MouseButton::WheelUp => {
                             if volume < 100 {
-                                device.set_volume(
-                                    min(self.step_width, 100 - volume) as i32,
-                                )?;
+                                let step = min(self.step_width, 100 - volume) as i32;
+                                self.device()?.set_volume(step)?;
                             }
                         }
                         MouseButton::WheelDown => {
                             if volume >= self.step_width {
-                                device.set_volume(-(self.step_width as i32))?;
+                                let step = -(self.step_width as i32);
+                                self.device()?.set_volume(step)?;
                             }
                         }
                         _ => {}

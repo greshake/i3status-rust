@@ -16,6 +16,7 @@ extern crate inotify;
 extern crate maildir;
 extern crate chrono;
 extern crate chrono_tz;
+extern crate libpulse_binding as pulse;
 
 #[macro_use]
 mod de;
