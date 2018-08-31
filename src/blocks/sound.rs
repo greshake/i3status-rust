@@ -191,10 +191,10 @@ impl PulseAudioSoundDevice {
         proplist.sets(properties::APPLICATION_NAME, "i3status-rs")
             .block_error("sound", "could not set pulseaudio APPLICATION_NAME poperty")?;
 
-        let mut mainloop = Rc::new(RefCell::new(Mainloop::new()
+        let mainloop = Rc::new(RefCell::new(Mainloop::new()
             .block_error("sound", "failed to create pulseaudio mainloop")?));
 
-        let mut context = Rc::new(RefCell::new(Context::new_with_proplist(
+        let context = Rc::new(RefCell::new(Context::new_with_proplist(
             mainloop.borrow().deref(),
             "i3status-rs_context",
             &proplist
