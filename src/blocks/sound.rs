@@ -35,7 +35,7 @@ use pulse::proplist::{properties, Proplist};
 #[cfg(feature = "pulseaudio")]
 use pulse::mainloop::standard::IterateResult;
 #[cfg(feature = "pulseaudio")]
-use pulse::volume::{ChannelVolumes, Volume};
+use pulse::volume::{ChannelVolumes, Volume, VOLUME_NORM};
 #[cfg(feature = "pulseaudio")]
 use pulse::def::Retval;
 #[cfg(feature = "pulseaudio")]
@@ -289,7 +289,7 @@ impl PulseAudioSoundDevice {
 
     fn volume(&mut self, volume: ChannelVolumes) {
         self.volume = Some(volume);
-        self.volume_avg = volume.avg().0;
+        self.volume_avg = (volume.avg().0 as f32 / VOLUME_NORM.0 as f32 * 100.0).round() as u32;
     }
 }
 
@@ -302,18 +302,18 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn get_info(&mut self) -> Result<()> {
         let sink_info = self.context.borrow().introspect().get_sink_info_by_index(self.index, PulseAudioSoundDevice::sink_callback);
 
-        // Wait sink request
+        // Wait for sink_info request
         loop {
             self.iterate()?;
             match sink_info.get_state() {
                 OperationState::Done => { break; },
+                OperationState::Running => {},
                 OperationState::Cancelled => {
                     return Err(BlockError(
                         "sound".into(),
-                        "pulseaudio context state failed/terminated".into(),
+                        "pulseaudio get_sink_info request got cancelled".into(),
                     ))
                 },
-                _ => {},
             }
         }
 
@@ -331,8 +331,9 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn set_volume(&mut self, step: i32) -> Result<()> {
         let mut volume = match self.volume {
             Some(volume) => volume,
-            None => return Err(BlockError("sound".into(),"volume unknown".into()))
+            None => return Err(BlockError("sound".into(), "volume unknown".into()))
         };
+        let step = (step as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as i32;
         let val = Volume { 0: step.abs() as u32 };
 
         let volume = if step > 0 {
@@ -363,6 +364,8 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
         // TODO: listen to events
 
+        self.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioSoundDevice::subscribe_callback)));
+
         use pulse::context::subscribe::subscription_masks;
 
         let interest = subscription_masks::ALL |
@@ -373,20 +376,20 @@ impl SoundDevice for PulseAudioSoundDevice {
             |_| { }
         );
 
-        self.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioSoundDevice::subscribe_callback)));
-
         // Wait for subscribe
         loop {
             self.iterate()?;
             match subscribe.get_state() {
-                OperationState::Done => { break; },
+                OperationState::Done => { println!("!!! subscribe done"); break; },
+                OperationState::Running => {
+                    println!("!!! subscribe running");
+                },
                 OperationState::Cancelled => {
                     return Err(BlockError(
                         "sound".into(),
-                        "pulseaudio context state failed/terminated".into(),
+                        "pulseaudio subscribe got cancelled".into(),
                     ))
                 },
-                _ => {},
             }
         }
 
@@ -512,7 +515,7 @@ impl ConfigBlock for Sound {
             on_click: block_config.on_click,
         };
 
-        sound.device.monitor(id.clone(), tx_update_request.clone());
+        sound.device.monitor(id.clone(), tx_update_request.clone())?;
 
         Ok(sound)
     }
