@@ -4,7 +4,9 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 use std::ffi::OsStr;
+#[cfg(feature = "pulseaudio")]
 use std::rc::Rc;
+#[cfg(feature = "pulseaudio")]
 use std::cell::RefCell;
 use std::ops::Deref;
 use chan::Sender;
@@ -18,12 +20,19 @@ use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
 
+#[cfg(feature = "pulseaudio")]
 use pulse::mainloop::standard::Mainloop;
+#[cfg(feature = "pulseaudio")]
 use pulse::callbacks::ListResult;
+#[cfg(feature = "pulseaudio")]
 use pulse::context::{Context, flags, State as PulseState};
+#[cfg(feature = "pulseaudio")]
 use pulse::proplist::{properties, Proplist};
+#[cfg(feature = "pulseaudio")]
 use pulse::mainloop::standard::IterateResult;
+#[cfg(feature = "pulseaudio")]
 use pulse::volume::{ChannelVolumes, Volume};
+#[cfg(feature = "pulseaudio")]
 use pulse::def::Retval;
 
 use uuid::Uuid;
@@ -46,9 +55,9 @@ struct AlsaSoundDevice {
 }
 
 impl AlsaSoundDevice {
-    fn new(name: &str) -> Result<Self> {
+    fn with_name(name: String) -> Result<Self> {
         let mut sd = AlsaSoundDevice {
-            name: String::from(name),
+            name: name,
             volume: 0,
             muted: false,
         };
@@ -158,6 +167,7 @@ impl SoundDevice for AlsaSoundDevice {
     }
 }
 
+#[cfg(feature = "pulseaudio")]
 struct PulseAudioSoundDevice {
     mainloop: Rc<RefCell<Mainloop>>,
     context: Rc<RefCell<Context>>,
@@ -168,8 +178,9 @@ struct PulseAudioSoundDevice {
     muted: bool,
 }
 
+#[cfg(feature = "pulseaudio")]
 impl PulseAudioSoundDevice {
-    fn new(index: u32) -> Result<Self> {
+    fn with_index(index: u32) -> Result<Self> {
         let mut proplist = Proplist::new().unwrap();
         proplist.sets(properties::APPLICATION_NAME, "i3status-rs")
             .block_error("sound", "could not set pulseaudio APPLICATION_NAME poperty")?;
@@ -231,6 +242,7 @@ impl PulseAudioSoundDevice {
     }
 }
 
+#[cfg(feature = "pulseaudio")]
 impl SoundDevice for PulseAudioSoundDevice {
     // fn name(&self) -> String { self.name.unwrap_or_else(|| format!("#{}", self.index)) }
     fn volume(&self) -> u32 { self.volume_avg }
@@ -294,6 +306,7 @@ impl SoundDevice for PulseAudioSoundDevice {
     }
 }
 
+#[cfg(feature = "pulseaudio")]
 impl Drop for PulseAudioSoundDevice {
     fn drop(&mut self) {
         self.mainloop.borrow_mut().quit(Retval(0));
@@ -301,11 +314,10 @@ impl Drop for PulseAudioSoundDevice {
 }
 
 // TODO: Use the alsa control bindings to implement push updates
-// TODO: Allow for custom audio devices instead of Master
 pub struct Sound {
     text: ButtonWidget,
     id: String,
-    devices: Vec<::std::result::Result<PulseAudioSoundDevice, AlsaSoundDevice>>,
+    device: Box<SoundDevice>,
     step_width: u32,
     current_idx: usize,
     config: Config,
@@ -318,6 +330,14 @@ pub struct SoundConfig {
     /// Update interval in seconds
     #[serde(default = "SoundConfig::default_interval", deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+
+    /// ALSA sound device name
+    #[serde(default = "SoundConfig::default_name")]
+    pub name: String,
+
+    /// PulseAudio sound device index
+    #[serde(default = "SoundConfig::default_index")]
+    pub index: u32,
 
     /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
     #[serde(default = "SoundConfig::default_step_width")]
@@ -332,6 +352,14 @@ impl SoundConfig {
         Duration::from_secs(2)
     }
 
+    fn default_name() -> String {
+        "Master".into()
+    }
+    
+    fn default_index() -> u32 {
+        0
+    }
+
     fn default_step_width() -> u32 {
         5
     }
@@ -342,19 +370,10 @@ impl SoundConfig {
 }
 
 impl Sound {
-    fn device(&mut self) -> Result<&mut SoundDevice> {
-        match self.devices
-            .get_mut(self.current_idx)
-            .block_error("sound", "failed to get device")? {
-            Ok(dev) => Ok(dev),
-            Err(dev) => Ok(dev)
-        }
-    }
-
     fn display(&mut self) -> Result<()> {
-        self.device()?.get_info()?;
+        self.device.get_info()?;
 
-        if self.device()?.muted() {
+        if self.device.muted() {
             self.text.set_icon("volume_empty");
             self.text.set_text(
                 self.config
@@ -365,7 +384,7 @@ impl Sound {
             );
             self.text.set_state(State::Warning);
         } else {
-            let volume = self.device()?.volume();
+            let volume = self.device.volume();
             self.text.set_icon(match volume {
                 0...20 => "volume_empty",
                 21...70 => "volume_half",
@@ -389,28 +408,25 @@ impl ConfigBlock for Sound {
             step_width = 50;
         }
 
-        let mut sound = Sound {
+        #[cfg(feature = "pulseaudio")]
+        let device: Box<SoundDevice> = match PulseAudioSoundDevice::with_index(block_config.index) {
+            Ok(dev) => Box::new(dev),
+            Err(_) => Box::new(AlsaSoundDevice::with_name(block_config.name)?)
+        };
+        #[cfg(not(feature = "pulseaudio"))]
+        let device = Box::new(AlsaSoundDevice::with_name(block_config.name)?);
+
+        let mut sound = Self {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
-            devices: vec![
-                // TODO: find better solution for mixed types
-                match PulseAudioSoundDevice::new(0) {
-                    Ok(dev) => Ok(dev),
-                    Err(_) => Err(AlsaSoundDevice::new("Master")?)
-                }
-            ],
+            device,
             step_width: step_width,
             current_idx: 0,
             config: config,
             on_click: block_config.on_click,
         };
 
-        sound.devices.iter_mut().map(|dev|
-            match dev {
-                Ok(dev) => dev.monitor(id.clone(), tx_update_request.clone()),
-                Err(dev) => dev.monitor(id.clone(), tx_update_request.clone())
-            }
-        );
+        sound.device.monitor(id.clone(), tx_update_request.clone());
 
         Ok(sound)
     }
@@ -437,10 +453,10 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 {
                     // Additional scope to not keep mutably borrowed device for too long
-                    let volume = self.device()?.volume();
+                    let volume = self.device.volume();
 
                     match e.button {
-                        MouseButton::Right => self.device()?.toggle()?,
+                        MouseButton::Right => self.device.toggle()?,
                         MouseButton::Left => {
                             let mut command = "".to_string();
                             if self.on_click.is_some() {
@@ -457,13 +473,13 @@ impl Block for Sound {
                         MouseButton::WheelUp => {
                             if volume < 100 {
                                 let step = min(self.step_width, 100 - volume) as i32;
-                                self.device()?.set_volume(step)?;
+                                self.device.set_volume(step)?;
                             }
                         }
                         MouseButton::WheelDown => {
                             if volume >= self.step_width {
                                 let step = -(self.step_width as i32);
-                                self.device()?.set_volume(step)?;
+                                self.device.set_volume(step)?;
                             }
                         }
                         _ => {}
