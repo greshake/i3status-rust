@@ -319,7 +319,6 @@ pub struct Sound {
     id: String,
     device: Box<SoundDevice>,
     step_width: u32,
-    current_idx: usize,
     config: Config,
     on_click: Option<String>,
 }
@@ -421,7 +420,6 @@ impl ConfigBlock for Sound {
             id: id.clone(),
             device,
             step_width: step_width,
-            current_idx: 0,
             config: config,
             on_click: block_config.on_click,
         };
