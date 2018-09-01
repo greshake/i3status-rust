@@ -8,6 +8,10 @@ use std::ffi::OsStr;
 use std::rc::Rc;
 #[cfg(feature = "pulseaudio")]
 use std::cell::RefCell;
+#[cfg(feature = "pulseaudio")]
+use std::sync::Mutex;
+#[cfg(feature = "pulseaudio")]
+use std::collections::HashMap;
 use std::ops::Deref;
 use chan::Sender;
 
@@ -25,7 +29,7 @@ use pulse::mainloop::standard::Mainloop;
 #[cfg(feature = "pulseaudio")]
 use pulse::callbacks::ListResult;
 #[cfg(feature = "pulseaudio")]
-use pulse::context::{Context, flags, State as PulseState, introspect::SinkInfo};
+use pulse::context::{Context, flags, State as PulseState, introspect::SinkInfo, subscribe::Facility, subscribe::Operation};
 #[cfg(feature = "pulseaudio")]
 use pulse::proplist::{properties, Proplist};
 #[cfg(feature = "pulseaudio")]
@@ -47,7 +51,7 @@ trait SoundDevice {
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32) -> Result<()>;
     fn toggle(&mut self) -> Result<()>;
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) { }
+    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()>;
 }
 
 struct AlsaSoundDevice {
@@ -133,7 +137,7 @@ impl SoundDevice for AlsaSoundDevice {
         Ok(())
     }
 
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) {
+    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
         // Monitor volume changes in a separate thread.
         thread::spawn(move || {
             let mut monitor = Command::new("sh")
@@ -166,6 +170,8 @@ impl SoundDevice for AlsaSoundDevice {
                 thread::sleep(Duration::new(0, 250_000_000))
             }
         });
+
+        Ok(())
     }
 }
 
@@ -178,6 +184,17 @@ struct PulseAudioSoundDevice {
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
     muted: bool,
+}
+
+#[cfg(feature = "pulseaudio")]
+struct PulseAudioSinkInfo {
+    index: u32,
+    volume: ChannelVolumes,
+    mute: bool,
+}
+
+lazy_static! {
+    static ref PULSEAUDIO_SINKS: Mutex<HashMap<u32, PulseAudioSinkInfo>> = Mutex::new(HashMap::new());
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -251,25 +268,28 @@ impl PulseAudioSoundDevice {
             }
     }
 
+    fn sink_callback<'r, 's>(result: ListResult<&'r SinkInfo>) {
+        match result {
+            ListResult::End |
+            ListResult::Error => {},
+            ListResult::Item(sink_info) => {
+                let info = PulseAudioSinkInfo {
+                    index: sink_info.index,
+                    volume: sink_info.volume,
+                    mute: sink_info.mute,
+                };
+                PULSEAUDIO_SINKS.lock().unwrap().insert(sink_info.index, info);
+            },
+        }
+    }
+
+    fn subscribe_callback(facility: Option<Facility>, operation: Option<Operation>, index: u32) {
+        println!("!!! facility: {:?}, operation: {:?}, index: {:?}", facility, operation, index);
+    }
+
     fn volume(&mut self, volume: ChannelVolumes) {
         self.volume = Some(volume);
         self.volume_avg = volume.avg().0;
-    }
-}
-
-fn sink_callback<'r, 's>(result: ListResult<&'r SinkInfo>) {
-    match result {
-        ListResult::End => {},
-        ListResult::Item(sink_info) => {
-            // self.name = sink_info.name.and_then(|v| Some(v.into()));
-            // self.muted = sink_info.mute;
-            // self.volume(sink_info.volume);
-            println!("!!! {:?}", sink_info);
-        },
-        ListResult::Error => {
-            // TODO: Error handling
-            println!("!!! Error");
-        }
     }
 }
 
@@ -280,24 +300,7 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn muted(&self) -> bool { self.muted }
 
     fn get_info(&mut self) -> Result<()> {
-        // TODO: Figure out how to get the callback working
-        println!("!!! get sink info...");
-        let sink_info = self.context.borrow().introspect().get_sink_info_by_index(self.index, sink_callback);
-        /*
-        let sink_info = self.context.borrow().introspect().get_sink_info_by_index(self.index, |result|{
-            match result {
-                ListResult::End => {},
-                ListResult::Item(sink_info) => {
-                    self.name = sink_info.name.and_then(|v| Some(v.into()));
-                    self.muted = sink_info.mute;
-                    self.volume(sink_info.volume);
-                },
-                ListResult::Error => {
-                    // TODO: Error handling
-                }
-            }
-        });
-        */
+        let sink_info = self.context.borrow().introspect().get_sink_info_by_index(self.index, PulseAudioSoundDevice::sink_callback);
 
         // Wait sink request
         loop {
@@ -311,6 +314,14 @@ impl SoundDevice for PulseAudioSoundDevice {
                     ))
                 },
                 _ => {},
+            }
+        }
+
+        match PULSEAUDIO_SINKS.lock().unwrap().get(&self.index) {
+            None => {},
+            Some(sink_info) => {
+                self.volume(sink_info.volume);
+                self.muted = sink_info.mute;
             }
         }
 
@@ -349,8 +360,37 @@ impl SoundDevice for PulseAudioSoundDevice {
         Ok(())
     }
 
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) {
+    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
         // TODO: listen to events
+
+        use pulse::context::subscribe::subscription_masks;
+
+        let interest = subscription_masks::ALL |
+            subscription_masks::SINK;
+
+        let subscribe = self.context.borrow_mut().subscribe(
+            interest,
+            |_| { }
+        );
+
+        self.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioSoundDevice::subscribe_callback)));
+
+        // Wait for subscribe
+        loop {
+            self.iterate()?;
+            match subscribe.get_state() {
+                OperationState::Done => { break; },
+                OperationState::Cancelled => {
+                    return Err(BlockError(
+                        "sound".into(),
+                        "pulseaudio context state failed/terminated".into(),
+                    ))
+                },
+                _ => {},
+            }
+        }
+
+        Ok(())
     }
 }
 
