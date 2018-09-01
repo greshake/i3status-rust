@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::{min, max};
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -35,7 +35,7 @@ use pulse::proplist::{properties, Proplist};
 #[cfg(feature = "pulseaudio")]
 use pulse::mainloop::standard::IterateResult;
 #[cfg(feature = "pulseaudio")]
-use pulse::volume::{ChannelVolumes, Volume, VOLUME_NORM};
+use pulse::volume::{ChannelVolumes, Volume, VOLUME_NORM, VOLUME_MAX};
 #[cfg(feature = "pulseaudio")]
 use pulse::def::Retval;
 #[cfg(feature = "pulseaudio")]
@@ -109,19 +109,20 @@ impl SoundDevice for AlsaSoundDevice {
     }
 
     fn set_volume(&mut self, step: i32) -> Result<()> {
+        let volume = max(0, self.volume as i32 + step) as u32;
         Command::new("sh")
             .args(&[
                 "-c",
                 format!(
                     "amixer set {} {}%",
                     self.name,
-                    (self.volume as i32 + step) as u32
+                    volume
                 ).as_str(),
             ])
             .output()
             .block_error("sound", "failed to set volume")?;
 
-        self.volume = (self.volume as i32 + step) as u32;
+        self.volume = volume;
 
         Ok(())
     }
@@ -188,7 +189,7 @@ struct PulseAudioSoundDevice {
 
 #[cfg(feature = "pulseaudio")]
 struct PulseAudioSinkInfo {
-    index: u32,
+    // index: u32,
     volume: ChannelVolumes,
     mute: bool,
 }
@@ -199,6 +200,8 @@ lazy_static! {
 
 #[cfg(feature = "pulseaudio")]
 impl PulseAudioSoundDevice {
+    // TODO: get default sink with `pa_context_get_server_info
+
     fn with_index(index: u32) -> Result<Self> {
         let mut proplist = Proplist::new().unwrap();
         proplist.sets(properties::APPLICATION_NAME, "i3status-rs")
@@ -274,7 +277,7 @@ impl PulseAudioSoundDevice {
             ListResult::Error => {},
             ListResult::Item(sink_info) => {
                 let info = PulseAudioSinkInfo {
-                    index: sink_info.index,
+                    // index: sink_info.index,
                     volume: sink_info.volume,
                     mute: sink_info.mute,
                 };
@@ -302,7 +305,7 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn get_info(&mut self) -> Result<()> {
         let sink_info = self.context.borrow().introspect().get_sink_info_by_index(self.index, PulseAudioSoundDevice::sink_callback);
 
-        // Wait for sink_info request
+        // Wait for get_sink_info request
         loop {
             self.iterate()?;
             match sink_info.get_state() {
@@ -333,25 +336,32 @@ impl SoundDevice for PulseAudioSoundDevice {
             Some(volume) => volume,
             None => return Err(BlockError("sound".into(), "volume unknown".into()))
         };
+
+        // apply step to volumes
         let step = (step as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as i32;
-        let val = Volume { 0: step.abs() as u32 };
-
-        let volume = if step > 0 {
-            volume.increase(val)
-        } else if step < 0 {
-            volume.decrease(val)
-        } else {
-            return Ok(());
-        };
-
-        match volume {
-            Some(volume) => {
-                self.volume(*volume);
-                self.context.borrow().introspect().set_sink_volume_by_index(self.index, &volume, None);
-                Ok(())
-            },
-            None => Err(BlockError("sound".into(), "failed to increase/decrease volume".into()))
+        for vol in volume.values.iter_mut() {
+            vol.0 = min(max(0, vol.0 as i32 + step) as u32, VOLUME_MAX.0);
         }
+
+        // update volumes
+        self.volume(volume);
+        let sink_update = self.context.borrow().introspect().set_sink_volume_by_index(self.index, &volume, None);
+
+        // Wait for set_sink_info request
+        loop {
+            self.iterate()?;
+            match sink_update.get_state() {
+                OperationState::Done => { break; },
+                OperationState::Running => {},
+                OperationState::Cancelled => {
+                    return Err(BlockError(
+                        "sound".into(),
+                        "pulseaudio set_sink_info request got cancelled".into(),
+                    ))
+                },
+            }
+        }
+        Ok(())
     }
 
     fn toggle(&mut self) -> Result<()> {
@@ -408,6 +418,7 @@ impl Drop for PulseAudioSoundDevice {
 pub struct Sound {
     text: ButtonWidget,
     id: String,
+    update_interval: Duration,
     device: Box<SoundDevice>,
     step_width: u32,
     config: Config,
@@ -509,6 +520,7 @@ impl ConfigBlock for Sound {
         let mut sound = Self {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
+            update_interval: block_config.interval,
             device,
             step_width: step_width,
             config: config,
@@ -527,7 +539,10 @@ const FILTER: &[char] = &['[', ']', '%'];
 impl Block for Sound {
     fn update(&mut self) -> Result<Option<Duration>> {
         self.display()?;
-        Ok(None) // The monitor thread will call for updates when needed.
+
+        // TODO: fix monitor thread
+        // Ok(None) // The monitor thread will call for updates when needed.
+        Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
@@ -535,44 +550,32 @@ impl Block for Sound {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-
-
         if let Some(ref name) = e.name {
-
             if name.as_str() == self.id {
-                {
-                    // Additional scope to not keep mutably borrowed device for too long
-                    let volume = self.device.volume();
-
-                    match e.button {
-                        MouseButton::Right => self.device.toggle()?,
-                        MouseButton::Left => {
-                            let mut command = "".to_string();
-                            if self.on_click.is_some() {
-                                command = self.on_click.clone().unwrap();
-                            }
-                            if self.on_click.is_some() {
-                                let command_broken: Vec<&str> = command.split_whitespace().collect();
-                                let mut itr = command_broken.iter();
-                                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                                    .args(itr)
-                                    .spawn();
-                            }
+                match e.button {
+                    MouseButton::Right => self.device.toggle()?,
+                    MouseButton::Left => {
+                        let mut command = "".to_string();
+                        if self.on_click.is_some() {
+                            command = self.on_click.clone().unwrap();
                         }
-                        MouseButton::WheelUp => {
-                            if volume < 100 {
-                                let step = min(self.step_width, 100 - volume) as i32;
-                                self.device.set_volume(step)?;
-                            }
+                        if self.on_click.is_some() {
+                            let command_broken: Vec<&str> = command.split_whitespace().collect();
+                            let mut itr = command_broken.iter();
+                            let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
+                                .args(itr)
+                                .spawn();
                         }
-                        MouseButton::WheelDown => {
-                            if volume >= self.step_width {
-                                let step = -(self.step_width as i32);
-                                self.device.set_volume(step)?;
-                            }
-                        }
-                        _ => {}
                     }
+                    MouseButton::WheelUp => {
+                        let step = self.step_width as i32;
+                        self.device.set_volume(step)?;
+                    }
+                    MouseButton::WheelDown => {
+                        let step = -(self.step_width as i32);
+                        self.device.set_volume(step)?;
+                    }
+                    _ => {}
                 }
                 self.display()?;
             }
