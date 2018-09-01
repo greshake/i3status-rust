@@ -25,7 +25,7 @@ use pulse::mainloop::standard::Mainloop;
 #[cfg(feature = "pulseaudio")]
 use pulse::callbacks::ListResult;
 #[cfg(feature = "pulseaudio")]
-use pulse::context::{Context, flags, State as PulseState};
+use pulse::context::{Context, flags, State as PulseState, introspect::SinkInfo};
 #[cfg(feature = "pulseaudio")]
 use pulse::proplist::{properties, Proplist};
 #[cfg(feature = "pulseaudio")]
@@ -34,6 +34,8 @@ use pulse::mainloop::standard::IterateResult;
 use pulse::volume::{ChannelVolumes, Volume};
 #[cfg(feature = "pulseaudio")]
 use pulse::def::Retval;
+#[cfg(feature = "pulseaudio")]
+use pulse::operation::State as OperationState;
 
 use uuid::Uuid;
 
@@ -236,9 +238,38 @@ impl PulseAudioSoundDevice {
         Ok(sd)
     }
 
+    fn iterate(&mut self) -> Result<()> {
+        match self.mainloop.borrow_mut().iterate(false) {
+                IterateResult::Quit(_) |
+                IterateResult::Err(_) => {
+                    Err(BlockError(
+                        "sound".into(),
+                        "failed to iterate pulseaudio state".into(),
+                    ))
+                },
+                IterateResult::Success(_) => Ok(()),
+            }
+    }
+
     fn volume(&mut self, volume: ChannelVolumes) {
         self.volume = Some(volume);
         self.volume_avg = volume.avg().0;
+    }
+}
+
+fn sink_callback<'r, 's>(result: ListResult<&'r SinkInfo>) {
+    match result {
+        ListResult::End => {},
+        ListResult::Item(sink_info) => {
+            // self.name = sink_info.name.and_then(|v| Some(v.into()));
+            // self.muted = sink_info.mute;
+            // self.volume(sink_info.volume);
+            println!("!!! {:?}", sink_info);
+        },
+        ListResult::Error => {
+            // TODO: Error handling
+            println!("!!! Error");
+        }
     }
 }
 
@@ -250,6 +281,8 @@ impl SoundDevice for PulseAudioSoundDevice {
 
     fn get_info(&mut self) -> Result<()> {
         // TODO: Figure out how to get the callback working
+        println!("!!! get sink info...");
+        let sink_info = self.context.borrow().introspect().get_sink_info_by_index(self.index, sink_callback);
         /*
         let sink_info = self.context.borrow().introspect().get_sink_info_by_index(self.index, |result|{
             match result {
@@ -265,6 +298,21 @@ impl SoundDevice for PulseAudioSoundDevice {
             }
         });
         */
+
+        // Wait sink request
+        loop {
+            self.iterate()?;
+            match sink_info.get_state() {
+                OperationState::Done => { break; },
+                OperationState::Cancelled => {
+                    return Err(BlockError(
+                        "sound".into(),
+                        "pulseaudio context state failed/terminated".into(),
+                    ))
+                },
+                _ => {},
+            }
+        }
 
         Ok(())
     }
