@@ -79,8 +79,8 @@ impl SoundDevice for AlsaSoundDevice {
     fn muted(&self) -> bool { self.muted }
 
     fn get_info(&mut self) -> Result<()> {
-        let output = Command::new("sh")
-            .args(&["-c", format!("amixer get {}", self.name).as_str()])
+        let output = Command::new("amixer")
+            .args(&["get", &self.name])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .block_error("sound", "could not run amixer to get sound info")?;
@@ -110,14 +110,12 @@ impl SoundDevice for AlsaSoundDevice {
 
     fn set_volume(&mut self, step: i32) -> Result<()> {
         let volume = max(0, self.volume as i32 + step) as u32;
-        Command::new("sh")
+
+        Command::new("amixer")
             .args(&[
-                "-c",
-                format!(
-                    "amixer set {} {}%",
-                    self.name,
-                    volume
-                ).as_str(),
+                "set",
+                &self.name,
+                &format!("{}%", volume),
             ])
             .output()
             .block_error("sound", "failed to set volume")?;
@@ -128,8 +126,8 @@ impl SoundDevice for AlsaSoundDevice {
     }
 
     fn toggle(&mut self) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", format!("amixer set {} toggle", self.name).as_str()])
+        Command::new("amixer")
+            .args(&["set", &self.name, "toggle"])
             .output()
             .block_error("sound", "failed to toggle mute")?;
 
@@ -141,14 +139,9 @@ impl SoundDevice for AlsaSoundDevice {
     fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
         // Monitor volume changes in a separate thread.
         thread::spawn(move || {
-            let mut monitor = Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        // Line-buffer to reduce noise.
-                        "stdbuf -oL alsactl monitor",
-                    ],
-                )
+            // Line-buffer to reduce noise.
+            let mut monitor = Command::new("stdbuf")
+                .args(&["-oL", "alsactl", "monitor"])
                 .stdout(Stdio::piped())
                 .spawn()
                 .expect("Failed to start alsactl monitor")
