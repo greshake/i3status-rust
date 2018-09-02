@@ -9,13 +9,13 @@ use std::rc::Rc;
 #[cfg(feature = "pulseaudio")]
 use std::cell::RefCell;
 #[cfg(feature = "pulseaudio")]
-use std::sync::{Arc, Mutex, Once, ONCE_INIT};
+use std::sync::{Mutex, Once, ONCE_INIT};
 #[cfg(feature = "pulseaudio")]
 use std::collections::HashMap;
 use std::ops::Deref;
 use chan::Sender;
 #[cfg(feature = "pulseaudio")]
-use chan::{async, sync, Receiver};
+use chan::async;
 
 use scheduler::Task;
 use block::{Block, ConfigBlock};
@@ -38,15 +38,10 @@ use pulse::proplist::{properties, Proplist};
 use pulse::mainloop::standard::IterateResult;
 #[cfg(feature = "pulseaudio")]
 use pulse::volume::{ChannelVolumes, VOLUME_NORM, VOLUME_MAX};
-#[cfg(feature = "pulseaudio")]
-use pulse::def::Retval;
-#[cfg(feature = "pulseaudio")]
-use pulse::operation::{Operation, State as OperationState};
 
 use uuid::Uuid;
 
 trait SoundDevice {
-    // fn name(&self) -> String;
     fn volume(&self) -> u32;
     fn muted(&self) -> bool;
 
@@ -171,13 +166,19 @@ impl SoundDevice for AlsaSoundDevice {
 }
 
 #[cfg(feature = "pulseaudio")]
+struct PulseAudioConnection {
+    mainloop: Rc<RefCell<Mainloop>>,
+    context: Rc<RefCell<Context>>
+}
+
+#[cfg(feature = "pulseaudio")]
 struct PulseAudioClient {
     sender: Sender<PulseAudioClientRequest>
 }
 
 #[cfg(feature = "pulseaudio")]
 struct PulseAudioSoundDevice {
-    client: PulseAudioClient,
+    // client: PulseAudioClient,
     name: Option<String>,
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
@@ -195,24 +196,24 @@ struct PulseAudioSinkInfo {
 #[derive(Debug)]
 enum PulseAudioClientRequest {
     GetDefaultDevice,
+    GetSinkInfoByIndex(u32),
     GetSinkInfoByName(String),
-    // GetSinkInfoByIndex(u32),
+    // SetSinkVolumeByIndex(u32, ChannelVolumes),
     SetSinkVolumeByName(String, ChannelVolumes),
-    // SetSinkVolumeByName(u32, ChannelVolumes),
+    // SetSinkMuteByIndex(u32, bool),
     SetSinkMuteByName(String, bool),
-    // SetSinkMuteByName(u32, bool),
-    QuitClient,
+    // QuitClient,
 }
 
 lazy_static! {
-    // static ref PULSEAUDIO_EVENT: (Sender<Task>, Receiver<Task>) = async();
+    static ref PULSEAUDIO_CLIENT: PulseAudioClient = PulseAudioClient::new().unwrap();
     static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<String, Sender<Task>>> = Mutex::new(HashMap::new());
     static ref PULSEAUDIO_DEFAULT_SINK: Mutex<String> = Mutex::new("@DEFAULT_SINK@".into());
     static ref PULSEAUDIO_SINKS: Mutex<HashMap<String, PulseAudioSinkInfo>> = Mutex::new(HashMap::new());
 }
 
-impl PulseAudioClient {
-    fn connect() -> Result<(Rc<RefCell<Mainloop>>, Rc<RefCell<Context>>)> {
+impl PulseAudioConnection {
+    fn new() -> Result<Self> {
         let mut proplist = Proplist::new().unwrap();
         proplist.sets(properties::APPLICATION_NAME, "i3status-rs")
             .block_error("sound", "could not set pulseaudio APPLICATION_NAME poperty")?;
@@ -232,19 +233,15 @@ impl PulseAudioClient {
         context.borrow_mut().connect(None, flags::NOFLAGS, None)
             .block_error("sound", "failed to connect to pulseaudio context")?;
 
+        let mut connection = PulseAudioConnection {
+            mainloop,
+            context
+        };
+
         // Wait for context to be ready
         loop {
-            match mainloop.borrow_mut().iterate(false) {
-                IterateResult::Quit(_) |
-                IterateResult::Err(_) => {
-                    Err(BlockError(
-                        "sound".into(),
-                        "failed to iterate pulseaudio state".into(),
-                    )).unwrap()
-                },
-                IterateResult::Success(_) => { },
-            };
-            match context.borrow().get_state() {
+            connection.iterate(false);
+            match connection.context.borrow().get_state() {
                 PulseState::Ready => { break; },
                 PulseState::Failed |
                 PulseState::Terminated => {
@@ -257,37 +254,44 @@ impl PulseAudioClient {
             }
         }
 
-        Ok((mainloop, context))
+        Ok(connection)
     }
 
+    fn iterate(&mut self, blocking: bool) -> Result<()> {
+        match self.mainloop.borrow_mut().iterate(blocking) {
+            IterateResult::Quit(_) |
+            IterateResult::Err(_) => {
+                Err(BlockError(
+                    "sound".into(),
+                    "failed to iterate pulseaudio state".into(),
+                ))
+            },
+            IterateResult::Success(_) => Ok(()),
+        }
+    }
+}
+
+impl PulseAudioClient {
     fn new() -> Result<PulseAudioClient> {
         let (send, recv) = async();
 
+        // requests
         thread::spawn(move || {
-            let (mainloop, context) = PulseAudioClient::connect().unwrap();
-            let mut introspector = context.borrow_mut().introspect();
-
-            let iterate = |block| -> Result<()> {
-                match mainloop.borrow_mut().iterate(block) {
-                    IterateResult::Quit(_) |
-                    IterateResult::Err(_) => {
-                        Err(BlockError(
-                            "sound".into(),
-                            "failed to iterate pulseaudio state".into(),
-                        ))
-                    },
-                    IterateResult::Success(_) => Ok(()),
-                }
-            };
+            let mut connection = PulseAudioConnection::new().unwrap();
 
             loop {
                 match recv.recv() {
                     None => { },
                     Some(req) => {
                         println!("!!! req: {:?}", req);
+                        let mut introspector = connection.context.borrow_mut().introspect();
+
                         match req {
                             PulseAudioClientRequest::GetDefaultDevice => {
                                 introspector.get_server_info(PulseAudioClient::server_info_callback);
+                            },
+                            PulseAudioClientRequest::GetSinkInfoByIndex(index) => {
+                                introspector.get_sink_info_by_index(index, PulseAudioClient::sink_info_callback);
                             },
                             PulseAudioClientRequest::GetSinkInfoByName(name) => {
                                 introspector.get_sink_info_by_name(&name, PulseAudioClient::sink_info_callback);
@@ -298,59 +302,40 @@ impl PulseAudioClient {
                             PulseAudioClientRequest::SetSinkMuteByName(name, mute) => {
                                 introspector.set_sink_mute_by_name(&name, mute, None);
                             },
-                            PulseAudioClientRequest::QuitClient => { break; }
+                            // PulseAudioClientRequest::QuitClient => { break; }
                         };
 
-                        iterate(false).unwrap();
+                        connection.iterate(true).unwrap();
+                        connection.iterate(true).unwrap();
                     }
                 }
             }
         });
 
-        PulseAudioClient::init_monitor();
+        // subscribe
+        thread::spawn(move || {
+            let connection = PulseAudioConnection::new().unwrap();
+        
+            // subcribe for events
+            connection.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
+
+            use pulse::context::subscribe::subscription_masks;
+            connection.context.borrow_mut().subscribe(
+                subscription_masks::SERVER |
+                subscription_masks::SINK,
+                |_| { }
+            );
+
+            connection.mainloop.borrow_mut().run().unwrap();
+        });
 
         Ok(PulseAudioClient{
             sender: send
         })
     }
 
-    fn init_monitor() {
-        thread::spawn(move || {
-            let (mainloop, context) = PulseAudioClient::connect().unwrap();
-
-            let iterate = |block| -> Result<()> {
-                match mainloop.borrow_mut().iterate(block) {
-                    IterateResult::Quit(_) |
-                    IterateResult::Err(_) => {
-                        Err(BlockError(
-                            "sound".into(),
-                            "failed to iterate pulseaudio state".into(),
-                        ))
-                    },
-                    IterateResult::Success(_) => Ok(()),
-                }
-            };
-        
-            // subcribe for events
-            context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
-            iterate(false).unwrap();
-
-            use pulse::context::subscribe::subscription_masks;
-            context.borrow_mut().subscribe(
-                subscription_masks::SERVER |
-                subscription_masks::SINK,
-                |_| { }
-            );
-            iterate(false).unwrap();
-
-            loop {
-                iterate(true).unwrap();
-            }
-        });
-    }
-
-    fn send(&self, request: PulseAudioClientRequest) {
-        self.sender.send(request)
+    fn send(request: PulseAudioClientRequest) {
+        PULSEAUDIO_CLIENT.sender.send(request)
     }
 
     fn server_info_callback(server_info: &ServerInfo) {
@@ -388,25 +373,19 @@ impl PulseAudioClient {
 
     fn subscribe_callback(facility: Option<Facility>, operation: Option<SubscribeOperation>, index: u32) {
         println!("!!! facility: {:?}, operation: {:?}, index: {:?}", facility, operation, index);
-        // PulseAudioClient::send_update_event();
 
-        /*
         match facility {
-            None,
+            None => { },
             Some(facility) => match facility {
                 Facility::Server => {
-                    // TODO: update default device 
+                    PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice);
                 },
                 Facility::Sink => {
-                    // TODO: update sink info
-                }
+                    PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByIndex(index));
+                },
+                _ => { }
             }
         }
-
-        facility.and_then(|f| match f {
-            
-        });
-        */
     }
 
     fn send_update_event() {
@@ -422,24 +401,29 @@ impl PulseAudioClient {
 #[cfg(feature = "pulseaudio")]
 impl PulseAudioSoundDevice {
     fn new() -> Result<Self> {
-        let client = PulseAudioClient::new()?;
-        client.send(PulseAudioClientRequest::GetDefaultDevice);
+        // let client = PulseAudioClient::new()?;
+        // PulseAudioClient::init();
+        PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice);
 
-        Ok(PulseAudioSoundDevice {
-            client,
+        let device = PulseAudioSoundDevice {
+            // client,
             name: None,
             volume: None,
             volume_avg: 0,
             muted: false,
-        })
+        };
+        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(device.name()));
+
+        Ok(device)
     }
 
     fn with_name(name: String) -> Result<Self> {
-        let client = PulseAudioClient::new()?;
-        client.send(PulseAudioClientRequest::GetSinkInfoByName(name.clone()));
+        // let client = PulseAudioClient::new()?;
+        // init
+        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(name.clone()));
 
         Ok(PulseAudioSoundDevice {
-            client,
+            // client,
             name: Some(name),
             volume: None,
             volume_avg: 0,
@@ -501,7 +485,7 @@ impl SoundDevice for PulseAudioSoundDevice {
         // let sink_update = self.context.borrow().introspect().set_sink_volume_by_name(&self.name(), &volume, None);
         // self.wait_for(sink_update, "set_sink_volume_by_name")?;
         // unimplemented!();
-        self.client.send(PulseAudioClientRequest::SetSinkVolumeByName(self.name(), volume));
+        PulseAudioClient::send(PulseAudioClientRequest::SetSinkVolumeByName(self.name(), volume));
 
         Ok(())
     }
@@ -509,62 +493,21 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn toggle(&mut self) -> Result<()> {
         self.muted = !self.muted;
         // self.context.borrow().introspect().set_sink_mute_by_name(&self.name(), self.muted, None);
-        self.client.send(PulseAudioClientRequest::SetSinkMuteByName(self.name(), self.muted));
+        PulseAudioClient::send(PulseAudioClientRequest::SetSinkMuteByName(self.name(), self.muted));
 
         Ok(())
     }
 
     fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
-        // TODO: listen to events
-
-        /*
-        let (send, recv) = sync(8);
-
-        send.send(0);
-
-        thread::spawn(move || {
-            loop {
-                recv.recv().unwrap();
-
-                self.name = Some("Test".into());
-
-                tx_update_request.send(Task {
-                    id: id.clone(),
-                    update_time: Instant::now(),
-                });
-            }
-        });
-        */
-
-        // Ok(())
-
         PULSEAUDIO_EVENT_LISTENER.lock().unwrap().insert(id, tx_update_request);
         Ok(())
-
-        // unimplemented!();
-        /*
-        self.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioSoundDevice::subscribe_callback)));
-
-        use pulse::context::subscribe::subscription_masks;
-
-        let interest = subscription_masks::ALL |
-            subscription_masks::SINK;
-
-        let subscribe = self.context.borrow_mut().subscribe(
-            interest,
-            |_| { }
-        );
-        self.wait_for(subscribe, "subscribe")?;
-
-        Ok(())
-        */
     }
 }
 
 #[cfg(feature = "pulseaudio")]
 impl Drop for PulseAudioSoundDevice {
     fn drop(&mut self) {
-        self.client.send(PulseAudioClientRequest::QuitClient);
+        // self.client.send(PulseAudioClientRequest::QuitClient);
     }
 }
 
@@ -572,7 +515,6 @@ impl Drop for PulseAudioSoundDevice {
 pub struct Sound {
     text: ButtonWidget,
     id: String,
-    update_interval: Duration,
     device: Box<SoundDevice>,
     step_width: u32,
     config: Config,
@@ -582,10 +524,6 @@ pub struct Sound {
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct SoundConfig {
-    /// Update interval in seconds
-    #[serde(default = "SoundConfig::default_interval", deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-
     /// ALSA / PulseAudio sound device name
     #[serde(default = "SoundConfig::default_name")]
     pub name: Option<String>,
@@ -599,10 +537,6 @@ pub struct SoundConfig {
 }
 
 impl SoundConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(2)
-    }
-
     fn default_name() -> Option<String> {
         None
     }
@@ -661,7 +595,7 @@ impl ConfigBlock for Sound {
             Some(name) => PulseAudioSoundDevice::with_name(name)
         };
         #[cfg(not(feature = "pulseaudio"))]
-        let pulseaudio_device = Err(BlockError(
+        let pulseaudio_device: Result<AlsaSoundDevice> = Err(BlockError(
             "sound".into(),
             "PulseAudio feature disabled".into(),
         ));
@@ -674,7 +608,6 @@ impl ConfigBlock for Sound {
         let mut sound = Self {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
-            update_interval: block_config.interval,
             device,
             step_width: step_width,
             config: config,
@@ -693,10 +626,7 @@ const FILTER: &[char] = &['[', ']', '%'];
 impl Block for Sound {
     fn update(&mut self) -> Result<Option<Duration>> {
         self.display()?;
-
-        // TODO: fix monitor thread
         Ok(None) // The monitor thread will call for updates when needed.
-        // Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
