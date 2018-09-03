@@ -297,6 +297,11 @@ impl PulseAudioClient {
             };
 
             loop {
+                // make sure mainloop dispatched everything
+                for _ in 0..10 {
+                    connection.iterate(false).unwrap();
+                }
+
                 match recv_req.recv() {
                     None => { },
                     Some(req) => {
@@ -321,6 +326,7 @@ impl PulseAudioClient {
                             // PulseAudioClientRequest::QuitClient => { break; }
                         };
 
+                        // send request and receive response
                         connection.iterate(true).unwrap();
                         connection.iterate(true).unwrap();
                     }
