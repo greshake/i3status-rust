@@ -1,4 +1,6 @@
-use std::cmp::{min, max};
+#[cfg(feature = "pulseaudio")]
+use std::cmp::min;
+use std::cmp::max;
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -9,18 +11,18 @@ use std::rc::Rc;
 #[cfg(feature = "pulseaudio")]
 use std::cell::RefCell;
 #[cfg(feature = "pulseaudio")]
-use std::sync::{Mutex, Once, ONCE_INIT};
+use std::sync::Mutex;
 #[cfg(feature = "pulseaudio")]
 use std::collections::HashMap;
+#[cfg(feature = "pulseaudio")]
 use std::ops::Deref;
 use chan::Sender;
 #[cfg(feature = "pulseaudio")]
-use chan::async;
+use chan::{async, sync};
 
 use scheduler::Task;
 use block::{Block, ConfigBlock};
 use config::Config;
-use de::deserialize_duration;
 use errors::*;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
@@ -31,7 +33,7 @@ use pulse::mainloop::standard::Mainloop;
 #[cfg(feature = "pulseaudio")]
 use pulse::callbacks::ListResult;
 #[cfg(feature = "pulseaudio")]
-use pulse::context::{Context, flags, State as PulseState, introspect::SinkInfo, introspect::ServerInfo, subscribe::Facility, subscribe::Operation as SubscribeOperation};
+use pulse::context::{Context, flags, State as PulseState, introspect::SinkInfo, introspect::ServerInfo, subscribe::Facility, subscribe::Operation as SubscribeOperation, subscribe::subscription_masks};
 #[cfg(feature = "pulseaudio")]
 use pulse::proplist::{properties, Proplist};
 #[cfg(feature = "pulseaudio")]
@@ -205,13 +207,16 @@ enum PulseAudioClientRequest {
     // QuitClient,
 }
 
+#[cfg(feature = "pulseaudio")]
 lazy_static! {
+    // TODO: catch errors somehow
     static ref PULSEAUDIO_CLIENT: PulseAudioClient = PulseAudioClient::new().unwrap();
     static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<String, Sender<Task>>> = Mutex::new(HashMap::new());
     static ref PULSEAUDIO_DEFAULT_SINK: Mutex<String> = Mutex::new("@DEFAULT_SINK@".into());
     static ref PULSEAUDIO_SINKS: Mutex<HashMap<String, PulseAudioSinkInfo>> = Mutex::new(HashMap::new());
 }
 
+#[cfg(feature = "pulseaudio")]
 impl PulseAudioConnection {
     fn new() -> Result<Self> {
         let mut proplist = Proplist::new().unwrap();
@@ -240,7 +245,7 @@ impl PulseAudioConnection {
 
         // Wait for context to be ready
         loop {
-            connection.iterate(false);
+            connection.iterate(false)?;
             match connection.context.borrow().get_state() {
                 PulseState::Ready => { break; },
                 PulseState::Failed |
@@ -271,19 +276,30 @@ impl PulseAudioConnection {
     }
 }
 
+#[cfg(feature = "pulseaudio")]
 impl PulseAudioClient {
     fn new() -> Result<PulseAudioClient> {
-        let (send, recv) = async();
+        let (send_req, recv_req) = async();
+        let (send_result, recv_result) = sync(0);
+        let send_result2 = send_result.clone();
 
         // requests
         thread::spawn(move || {
-            let mut connection = PulseAudioConnection::new().unwrap();
+            let mut connection = match PulseAudioConnection::new() {
+                Ok(conn) => {
+                    send_result.send(Ok(()));
+                    conn
+                },
+                Err(err) => {
+                    send_result.send(Err(err));
+                    return;
+                }
+            };
 
             loop {
-                match recv.recv() {
+                match recv_req.recv() {
                     None => { },
                     Some(req) => {
-                        println!("!!! req: {:?}", req);
                         let mut introspector = connection.context.borrow_mut().introspect();
 
                         match req {
@@ -314,12 +330,20 @@ impl PulseAudioClient {
 
         // subscribe
         thread::spawn(move || {
-            let connection = PulseAudioConnection::new().unwrap();
+            // let connection = PulseAudioConnection::new().unwrap();
+            let connection = match PulseAudioConnection::new() {
+                Ok(conn) => {
+                    send_result2.send(Ok(()));
+                    conn
+                },
+                Err(err) => {
+                    send_result2.send(Err(err));
+                    return;
+                }
+            };
         
             // subcribe for events
             connection.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
-
-            use pulse::context::subscribe::subscription_masks;
             connection.context.borrow_mut().subscribe(
                 subscription_masks::SERVER |
                 subscription_masks::SINK,
@@ -329,8 +353,23 @@ impl PulseAudioClient {
             connection.mainloop.borrow_mut().run().unwrap();
         });
 
+        // receive connection results
+        for _ in 0..2 {
+            match recv_result.recv() {
+                None => {
+                    return Err(BlockError(
+                        "sound".into(),
+                        "failed to receive from pulseaudio thread channel".into()
+                    ))
+                },
+                Some(result) => {
+                    result?;
+                }
+            }
+        }
+
         Ok(PulseAudioClient{
-            sender: send
+            sender: send_req
         })
     }
 
@@ -339,7 +378,6 @@ impl PulseAudioClient {
     }
 
     fn server_info_callback(server_info: &ServerInfo) {
-        println!("!!! server_info_callback: {:?}", server_info);
         match server_info.default_sink_name.clone() {
             None => {},
             Some(default_sink) => {
@@ -350,12 +388,10 @@ impl PulseAudioClient {
     }
 
     fn sink_info_callback<'r, 's>(result: ListResult<&'r SinkInfo>) {
-        println!("!!! sink_info_callback");
         match result {
             ListResult::End |
             ListResult::Error => { },
             ListResult::Item(sink_info) => {
-                println!("!!! {:?}", sink_info);
                 match sink_info.name.clone() {
                     None => {},
                     Some(name) => {
@@ -371,9 +407,7 @@ impl PulseAudioClient {
         }
     }
 
-    fn subscribe_callback(facility: Option<Facility>, operation: Option<SubscribeOperation>, index: u32) {
-        println!("!!! facility: {:?}, operation: {:?}, index: {:?}", facility, operation, index);
-
+    fn subscribe_callback(facility: Option<Facility>, _operation: Option<SubscribeOperation>, index: u32) {
         match facility {
             None => { },
             Some(facility) => match facility {
@@ -401,29 +435,24 @@ impl PulseAudioClient {
 #[cfg(feature = "pulseaudio")]
 impl PulseAudioSoundDevice {
     fn new() -> Result<Self> {
-        // let client = PulseAudioClient::new()?;
-        // PulseAudioClient::init();
         PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice);
 
         let device = PulseAudioSoundDevice {
-            // client,
             name: None,
             volume: None,
             volume_avg: 0,
             muted: false,
         };
+
         PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(device.name()));
 
         Ok(device)
     }
 
     fn with_name(name: String) -> Result<Self> {
-        // let client = PulseAudioClient::new()?;
-        // init
         PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(name.clone()));
 
         Ok(PulseAudioSoundDevice {
-            // client,
             name: Some(name),
             volume: None,
             volume_avg: 0,
@@ -447,16 +476,6 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn muted(&self) -> bool { self.muted }
 
     fn get_info(&mut self) -> Result<()> {
-        // unimplemented!();
-
-        // let sink_info = self.context.borrow().introspect().get_sink_info_by_name(&self.name(), PulseAudioSoundDevice::sink_callback);
-        // self.wait_for(sink_info, "get_sink_info_by_name")?;
-
-        // self.client.send(PulseAudioClientRequest::GetSinkInfoByName(self.name()));
-
-        println!("!!! {:?}", *PULSEAUDIO_SINKS.lock().unwrap());
-        // return Ok(());
-
         match PULSEAUDIO_SINKS.lock().unwrap().get(&self.name()) {
             None => {},
             Some(sink_info) => {
@@ -482,9 +501,6 @@ impl SoundDevice for PulseAudioSoundDevice {
 
         // update volumes
         self.volume(volume);
-        // let sink_update = self.context.borrow().introspect().set_sink_volume_by_name(&self.name(), &volume, None);
-        // self.wait_for(sink_update, "set_sink_volume_by_name")?;
-        // unimplemented!();
         PulseAudioClient::send(PulseAudioClientRequest::SetSinkVolumeByName(self.name(), volume));
 
         Ok(())
@@ -492,7 +508,6 @@ impl SoundDevice for PulseAudioSoundDevice {
 
     fn toggle(&mut self) -> Result<()> {
         self.muted = !self.muted;
-        // self.context.borrow().introspect().set_sink_mute_by_name(&self.name(), self.muted, None);
         PulseAudioClient::send(PulseAudioClientRequest::SetSinkMuteByName(self.name(), self.muted));
 
         Ok(())
@@ -501,13 +516,6 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
         PULSEAUDIO_EVENT_LISTENER.lock().unwrap().insert(id, tx_update_request);
         Ok(())
-    }
-}
-
-#[cfg(feature = "pulseaudio")]
-impl Drop for PulseAudioSoundDevice {
-    fn drop(&mut self) {
-        // self.client.send(PulseAudioClientRequest::QuitClient);
     }
 }
 
@@ -589,6 +597,7 @@ impl ConfigBlock for Sound {
             step_width = 50;
         }
 
+        // TODO: fix pulseaudio with alsa fallback
         #[cfg(feature = "pulseaudio")]
         let pulseaudio_device = match block_config.name.clone() {
             None => PulseAudioSoundDevice::new(),
@@ -652,12 +661,10 @@ impl Block for Sound {
                         }
                     }
                     MouseButton::WheelUp => {
-                        let step = self.step_width as i32;
-                        self.device.set_volume(step)?;
+                        self.device.set_volume(self.step_width as i32)?;
                     }
                     MouseButton::WheelDown => {
-                        let step = -(self.step_width as i32);
-                        self.device.set_volume(step)?;
+                        self.device.set_volume(-(self.step_width as i32))?;
                     }
                     _ => {}
                 }
