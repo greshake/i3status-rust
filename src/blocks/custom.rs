@@ -1,18 +1,18 @@
-use std::time::{Duration, Instant};
-use std::process::Command;
-use std::iter::{Cycle, Peekable};
-use std::vec;
-use std::env;
 use chan::Sender;
+use std::env;
+use std::iter::{Cycle, Peekable};
+use std::process::Command;
+use std::time::{Duration, Instant};
+use std::vec;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
 use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -72,12 +72,8 @@ impl ConfigBlock for Custom {
             update_interval: block_config.interval,
             on_click: block_config.on_click,
             on_set_clicks: block_config.on_set_clicks,
-            command: if block_config.cycle.is_none() {
-                block_config.command
-            } else { None },
-            cycle: if let Some(cycle) = block_config.cycle {
-                Some(cycle.into_iter().cycle().peekable())
-            } else { None },
+            command: if block_config.cycle.is_none() { block_config.command } else { None },
+            cycle: block_config.cycle.map(|cycle| cycle.into_iter().cycle().peekable()),
             tx_update_request: tx,
         })
     }
@@ -85,7 +81,8 @@ impl ConfigBlock for Custom {
 
 impl Block for Custom {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let command_str = self.cycle
+        let command_str = self
+            .cycle
             .as_mut()
             .map(|c| c.peek().cloned().unwrap_or(String::new()))
             .or(self.command.clone())
@@ -112,15 +109,13 @@ impl Block for Custom {
                 let mut update = false;
 
                 if let Some(ref on_click) = self.on_click {
-                    Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
-                            .args(&["-c", on_click]).output().ok();
+                    Command::new(env::var("SHELL").unwrap_or("sh".to_owned())).args(&["-c", on_click]).output().ok();
                     update = true;
                 }
 
                 if let Some(ref possible_clicks) = self.on_set_clicks {
                     for ma in possible_clicks.iter().filter(|ma| ma.button == event.button) {
-                        Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
-                                .args(&["-c", &ma.action]).output().ok();
+                        Command::new(env::var("SHELL").unwrap_or("sh".to_owned())).args(&["-c", &ma.action]).output().ok();
                         update = true;
                     }
                 }
