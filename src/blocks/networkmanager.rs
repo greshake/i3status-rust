@@ -109,7 +109,7 @@ impl ConnectionManager {
     }
 
     pub fn state(&self, c: &Connection) -> Result<NetworkState> {
-        let m = try!(Self::get_property(c, "State"));
+        let m = Self::get_property(c, "State")?;
 
         let state: Variant<u32> = m.get1()
             .block_error("networkmanager", "Failed to read property")?;
@@ -118,7 +118,7 @@ impl ConnectionManager {
     }
 
     pub fn connection_type(&self, c: &Connection) -> Result<ConnectionType> {
-        let m = try!(Self::get_property(c, "PrimaryConnectionType"));
+        let m = Self::get_property(c, "PrimaryConnectionType")?;
 
         let connection_type: Variant<String> = m.get1()
             .block_error("networkmanager", "Failed to read property")?;
