@@ -209,7 +209,6 @@ enum PulseAudioClientRequest {
 
 #[cfg(feature = "pulseaudio")]
 lazy_static! {
-    // TODO: catch errors somehow
     static ref PULSEAUDIO_CLIENT: Result<PulseAudioClient> = PulseAudioClient::new();
     static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<String, Sender<Task>>> = Mutex::new(HashMap::new());
     static ref PULSEAUDIO_DEFAULT_SINK: Mutex<String> = Mutex::new("@DEFAULT_SINK@".into());
@@ -606,7 +605,6 @@ impl ConfigBlock for Sound {
             step_width = 50;
         }
 
-        // TODO: fix pulseaudio with alsa fallback
         #[cfg(feature = "pulseaudio")]
         let pulseaudio_device = match block_config.name.clone() {
             None => PulseAudioSoundDevice::new(),
@@ -618,6 +616,7 @@ impl ConfigBlock for Sound {
             "PulseAudio feature disabled".into(),
         ));
         
+        // prefere PulseAudio if available, fallback to ALSA
         let device: Box<SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
             Err(_) => Box::new(AlsaSoundDevice::new(block_config.name.unwrap_or_else(|| "Master".into()))?)
