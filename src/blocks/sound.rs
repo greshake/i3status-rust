@@ -180,7 +180,6 @@ struct PulseAudioClient {
 
 #[cfg(feature = "pulseaudio")]
 struct PulseAudioSoundDevice {
-    // client: PulseAudioClient,
     name: Option<String>,
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
@@ -200,11 +199,8 @@ enum PulseAudioClientRequest {
     GetDefaultDevice,
     GetSinkInfoByIndex(u32),
     GetSinkInfoByName(String),
-    // SetSinkVolumeByIndex(u32, ChannelVolumes),
     SetSinkVolumeByName(String, ChannelVolumes),
-    // SetSinkMuteByIndex(u32, bool),
     SetSinkMuteByName(String, bool),
-    // QuitClient,
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -337,7 +333,6 @@ impl PulseAudioClient {
                             PulseAudioClientRequest::SetSinkMuteByName(name, mute) => {
                                 introspector.set_sink_mute_by_name(&name, mute, None);
                             },
-                            // PulseAudioClientRequest::QuitClient => { break; }
                         };
 
                         // send request and receive response
