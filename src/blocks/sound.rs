@@ -210,7 +210,7 @@ enum PulseAudioClientRequest {
 #[cfg(feature = "pulseaudio")]
 lazy_static! {
     // TODO: catch errors somehow
-    static ref PULSEAUDIO_CLIENT: PulseAudioClient = PulseAudioClient::new().unwrap();
+    static ref PULSEAUDIO_CLIENT: Result<PulseAudioClient> = PulseAudioClient::new();
     static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<String, Sender<Task>>> = Mutex::new(HashMap::new());
     static ref PULSEAUDIO_DEFAULT_SINK: Mutex<String> = Mutex::new("@DEFAULT_SINK@".into());
     static ref PULSEAUDIO_SINKS: Mutex<HashMap<String, PulseAudioSinkInfo>> = Mutex::new(HashMap::new());
@@ -371,8 +371,19 @@ impl PulseAudioClient {
         })
     }
 
-    fn send(request: PulseAudioClientRequest) {
-        PULSEAUDIO_CLIENT.sender.send(request)
+    fn send(request: PulseAudioClientRequest) -> Result<()> {
+        match PULSEAUDIO_CLIENT.as_ref() {
+            Ok(client) => {
+                client.sender.send(request);
+                Ok(())
+            },
+            Err(err) => {
+                Err(BlockError(
+                    "sound".into(),
+                    format!("pulseaudio connection failed with error: {}", err),
+                ))
+            }
+        }
     }
 
     fn server_info_callback(server_info: &ServerInfo) {
@@ -410,10 +421,10 @@ impl PulseAudioClient {
             None => { },
             Some(facility) => match facility {
                 Facility::Server => {
-                    PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice);
+                    let _ = PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice);
                 },
                 Facility::Sink => {
-                    PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByIndex(index));
+                    let _ = PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByIndex(index));
                 },
                 _ => { }
             }
@@ -433,7 +444,7 @@ impl PulseAudioClient {
 #[cfg(feature = "pulseaudio")]
 impl PulseAudioSoundDevice {
     fn new() -> Result<Self> {
-        PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice);
+        PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice)?;
 
         let device = PulseAudioSoundDevice {
             name: None,
@@ -442,13 +453,13 @@ impl PulseAudioSoundDevice {
             muted: false,
         };
 
-        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(device.name()));
+        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(device.name()))?;
 
         Ok(device)
     }
 
     fn with_name(name: String) -> Result<Self> {
-        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(name.clone()));
+        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(name.clone()))?;
 
         Ok(PulseAudioSoundDevice {
             name: Some(name),
@@ -499,14 +510,14 @@ impl SoundDevice for PulseAudioSoundDevice {
 
         // update volumes
         self.volume(volume);
-        PulseAudioClient::send(PulseAudioClientRequest::SetSinkVolumeByName(self.name(), volume));
+        PulseAudioClient::send(PulseAudioClientRequest::SetSinkVolumeByName(self.name(), volume))?;
 
         Ok(())
     }
 
     fn toggle(&mut self) -> Result<()> {
         self.muted = !self.muted;
-        PulseAudioClient::send(PulseAudioClientRequest::SetSinkMuteByName(self.name(), self.muted));
+        PulseAudioClient::send(PulseAudioClientRequest::SetSinkMuteByName(self.name(), self.muted))?;
 
         Ok(())
     }
