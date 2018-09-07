@@ -282,19 +282,34 @@ impl PulseAudioClient {
         let (send_req, recv_req) = async();
         let (send_result, recv_result) = sync(0);
         let send_result2 = send_result.clone();
-
-        // requests
-        thread::spawn(move || {
-            let mut connection = match PulseAudioConnection::new() {
+        let new_connection = |sender: Sender<Result<()>>| -> PulseAudioConnection {
+            let conn = PulseAudioConnection::new();
+            match conn {
                 Ok(conn) => {
-                    send_result.send(Ok(()));
+                    sender.send(Ok(()));
                     conn
                 },
                 Err(err) => {
-                    send_result.send(Err(err));
-                    return;
+                    sender.send(Err(err));
+                    panic!("failed to create pulseaudio connection");
                 }
-            };
+            }
+        };
+        let thread_result = || -> Result<()> {
+            match recv_result.recv() {
+                None => {
+                    Err(BlockError(
+                        "sound".into(),
+                        "failed to receive from pulseaudio thread channel".into()
+                    ))
+                },
+                Some(result) => result
+            }
+        };
+
+        // requests
+        thread::spawn(move || {
+            let mut connection = new_connection(send_result);
 
             loop {
                 // make sure mainloop dispatched everything
@@ -333,20 +348,11 @@ impl PulseAudioClient {
                 }
             }
         });
+        thread_result()?;
 
         // subscribe
         thread::spawn(move || {
-            // let connection = PulseAudioConnection::new().unwrap();
-            let connection = match PulseAudioConnection::new() {
-                Ok(conn) => {
-                    send_result2.send(Ok(()));
-                    conn
-                },
-                Err(err) => {
-                    send_result2.send(Err(err));
-                    return;
-                }
-            };
+            let connection = new_connection(send_result2);
         
             // subcribe for events
             connection.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
@@ -358,21 +364,7 @@ impl PulseAudioClient {
 
             connection.mainloop.borrow_mut().run().unwrap();
         });
-
-        // receive connection results
-        for _ in 0..2 {
-            match recv_result.recv() {
-                None => {
-                    return Err(BlockError(
-                        "sound".into(),
-                        "failed to receive from pulseaudio thread channel".into()
-                    ))
-                },
-                Some(result) => {
-                    result?;
-                }
-            }
-        }
+        thread_result()?;
 
         Ok(PulseAudioClient{
             sender: send_req
