@@ -20,7 +20,25 @@ use util::read_file;
 use widget::{I3BarWidget, State};
 use widgets::text::TextWidget;
 
-/// Represents a physical power supply device.
+/// A battery device can be queried for a few properties relevant to the user.
+pub trait BatteryDevice {
+    /// Query the device status, one of `"Full"`, `"Charging"`, `"Discharging"`,
+    /// or `"Unknown"`. Thinkpad batteries also report "`Not charging`", which
+    /// for our purposes should be treated as equivalent to full.
+    fn status(&self) -> Result<String>;
+
+    /// Query the device's current capacity, as a percent.
+    fn capacity(&self) -> Result<u64>;
+
+    /// Query the estimated time remaining, in minutes, before (dis)charging is
+    /// complete.
+    fn time_remaining(&self) -> Result<u64>;
+
+    /// Query the current power consumption, in uW.
+    fn power_consumption(&self) -> Result<u64>;
+}
+
+/// Represents a physical power supply device, as known to sysfs.
 pub struct PowerSupplyDevice {
     device_path: PathBuf,
     charge_full: Option<u64>,
@@ -67,16 +85,14 @@ impl PowerSupplyDevice {
             energy_full: energy_full,
         })
     }
+}
 
-    /// Query the device status, one of `"Full"`, `"Charging"`, `"Discharging"`,
-    /// or `"Unknown"`. Thinkpad batteries also report "`Not charging`", which
-    /// for our purposes should be treated as equivalent to full.
-    pub fn status(&self) -> Result<String> {
+impl BatteryDevice for PowerSupplyDevice {
+    fn status(&self) -> Result<String> {
         read_file("battery", &self.device_path.join("status"))
     }
 
-    /// Query the device's current capacity, as a percent.
-    pub fn capacity(&self) -> Result<u64> {
+    fn capacity(&self) -> Result<u64> {
         let capacity_path = self.device_path.join("capacity");
         let charge_path = self.device_path.join("charge_now");
         let energy_path = self.device_path.join("energy_now");
@@ -111,9 +127,7 @@ impl PowerSupplyDevice {
         }
     }
 
-    /// Query the estimated time remaining, in minutes, before (dis)charging is
-    /// complete.
-    pub fn time_remaining(&self) -> Result<u64> {
+    fn time_remaining(&self) -> Result<u64> {
         let full = if self.energy_full.is_some() {
             self.energy_full.unwrap()
         } else if self.charge_full.is_some() {
@@ -174,8 +188,7 @@ impl PowerSupplyDevice {
         }
     }
 
-    /// Query the current power consumption in uW
-    pub fn power_consumption(&self) -> Result<u64> {
+    fn power_consumption(&self) -> Result<u64> {
         let power_path = self.device_path.join("power_now");
 
         if power_path.exists() {
