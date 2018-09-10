@@ -88,7 +88,15 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | The device in `/sys/class/power_supply/` to read from. | No | `"BAT0"`
 `interval` | Update interval, in seconds. | No | `10`
-`show` | Show remaining 'time', 'percentage' or 'both' | No | `percentage`
+`show` | Format string | No | `{level}%`
+
+### Format string
+
+Placeholder | Description
+------------|-------------
+`{percentage}` | Battery level (in percent) excluding %
+`{time}` | Remaining time (in hh:mm)
+`{power}` | Power consumption (in watt) from battery or from power supply for charging
 
 ## CPU Utilization
 

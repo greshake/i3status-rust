@@ -6,6 +6,7 @@
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use util::FormatTemplate;
 
 use chan::Sender;
 use uuid::Uuid;
@@ -171,6 +172,22 @@ impl PowerSupplyDevice {
             }
         }
     }
+
+    /// Query the current power consumption in uW
+    pub fn power_consumption(&self) -> Result<u64> {
+        let power_path = self.device_path.join("power_now");
+
+        if power_path.exists() {
+            Ok(read_file("battery", &power_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse power_now")?)
+        } else {
+            Err(BlockError(
+                "battery".to_string(),
+                "Device does not support power consumption".to_string(),
+            ))
+        }
+    }
 }
 
 /// A block for displaying information about an internal power supply.
@@ -179,16 +196,7 @@ pub struct Battery {
     id: String,
     update_interval: Duration,
     device: PowerSupplyDevice,
-    show: ShowType,
-}
-
-/// Options for displaying battery information.
-#[derive(Deserialize, Copy, Clone, Debug)]
-#[serde(rename_all = "lowercase")]
-pub enum ShowType {
-    Time,
-    Percentage,
-    Both,
+    format: FormatTemplate,
 }
 
 /// Configuration for the [`Battery`](./struct.Battery.html) block.
@@ -204,9 +212,14 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_device")]
     pub device: String,
 
-    /// Options for displaying battery information.
-    #[serde(default = "BatteryConfig::default_show")]
-    pub show: ShowType,
+    /// (DEPRECATED) Options for displaying battery information.
+    #[serde()]
+    pub show: Option<String>,
+
+    /// Format string for displaying battery information.
+    /// placeholders: {percentage}, {time} and {power}
+    #[serde(default = "BatteryConfig::default_format")]
+    pub format: String,
 }
 
 impl BatteryConfig {
@@ -218,8 +231,8 @@ impl BatteryConfig {
         "BAT0".to_string()
     }
 
-    fn default_show() -> ShowType {
-        ShowType::Percentage
+    fn default_format() -> String {
+        "{percentage}%".into()
     }
 }
 
@@ -227,12 +240,28 @@ impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        // TODO: remove deprecated show types eventually
+        let format = match block_config.show {
+            Some(show) => match show.as_ref() {
+                "time" => "{time}".into(),
+                "percentage" => "{percentage}%".into(),
+                "both" => "{percentage}% {time}".into(),
+                _ => {
+                    return Err(BlockError(
+                        "battery".into(),
+                        "Unknown show option".into(),
+                    ));
+                }
+            },
+            None => block_config.format
+        };
+
         Ok(Battery {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             output: TextWidget::new(config),
             device: PowerSupplyDevice::from_device(block_config.device)?,
-            show: block_config.show,
+            format: FormatTemplate::from_string(format)?,
         })
     }
 }
@@ -249,32 +278,22 @@ impl Block for Battery {
             self.output.set_state(State::Good);
         } else {
             let capacity = self.device.capacity();
-            match self.show {
-                // Don't break the whole bar if we can't compute capacity or
-                // time at this point.
-                ShowType::Percentage => match capacity {
-                    Ok(capacity) => self.output.set_text(format!("{}%", capacity)),
-                    Err(_) => self.output.set_text("×".to_string()),
-                },
-                // Unlike capacity, we don't use time remaining to identify the
-                // state. So we can avoid computing it entirely when the user
-                // didn't ask for it.
-                ShowType::Time => match self.device.time_remaining() {
-                    Ok(time) => self.output.set_text(format!("{}:{:02}", time / 60, time % 60)),
-                    Err(_) => self.output.set_text("×".to_string()),
-                },
-                ShowType::Both => {
-                    let capacity =  match capacity {
-                        Ok(capacity) => format!("{}%", capacity),
-                        Err(_) => "×".to_string(),
-                    };
-                    let time =  match self.device.time_remaining() {
-                        Ok(time) => format!("{}:{:02}", time / 60, time % 60),
-                        Err(_) => "×".to_string(),
-                    };
-                    self.output.set_text(format!("{} {}", capacity, time))
-                },
-            }
+            let percentage = match capacity {
+                Ok(capacity) => format!("{}", capacity),
+                Err(_) => "×".into(),
+            };
+            let time = match self.device.time_remaining() {
+                Ok(time) => format!("{}:{:02}", time / 60, time % 60),
+                Err(_) => "×".into(),
+            };
+            let power = match self.device.power_consumption() {
+                Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
+                Err(_) => "×".into(),
+            };
+            let values = map!("{percentage}" => percentage,
+                              "{time}" => time,
+                              "{power}" => power);
+            self.output.set_text(self.format.render_static_str(&values)?);
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.
