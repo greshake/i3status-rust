@@ -126,7 +126,7 @@ impl RotatingTextWidget {
                                 self.get_rotated_content()),
             "separator": false,
             "separator_block_width": 0,
-            "min_width": if self.content == "" {"".to_string()} else {"0".repeat(self.width)},
+            "min_width": if self.content == "" {"".to_string()} else {"0".repeat(self.width+5)},
             "align": "left",
             "background": key_bg,
             "color": key_fg
