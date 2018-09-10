@@ -266,7 +266,7 @@ impl Block for NvidiaGpu {
         widgets
     }
 
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             let event_name = name.as_str();
 

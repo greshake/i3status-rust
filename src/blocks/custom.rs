@@ -104,7 +104,7 @@ impl Block for Custom {
         vec![&self.output]
     }
 
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
             if name != &self.id {
                 return Ok(());

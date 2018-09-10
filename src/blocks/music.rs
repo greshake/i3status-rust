@@ -219,7 +219,7 @@ impl Block for Music {
         })
     }
 
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
             let action = match name as &str {
                 "play" => "PlayPause",

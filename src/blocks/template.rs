@@ -61,7 +61,7 @@ impl Block for Template {
         vec![&self.text]
     }
 
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, _: &I3BarEvent) -> Result<()> {
         Ok(())
     }
 

@@ -89,7 +89,7 @@ impl Block for Time {
     }
 
 
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, e: &I3BarEvent) -> Result<()> {
         let mut command = "".to_string();
         if self.on_click.is_some() {
             command = self.on_click.clone().unwrap();

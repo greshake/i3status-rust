@@ -156,7 +156,7 @@ impl Block for Pacman {
         &self.id
     }
 
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, event: &I3BarEvent) -> Result<()> {
         if event.name.as_ref().map(|s| s == "pacman").unwrap_or(false) && event.button == MouseButton::Left {
             self.update()?;
         }

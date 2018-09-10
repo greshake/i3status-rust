@@ -87,7 +87,7 @@ impl Block for Maildir {
         vec![&self.text]
     }
 
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, _: &I3BarEvent) -> Result<()> {
         Ok(())
     }
 

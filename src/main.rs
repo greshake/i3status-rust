@@ -238,7 +238,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             rx_clicks.recv() -> res => match res {
                 Some(event) => {
                     for block in block_map.values_mut() {
-                        block.click(&event)?;
+                        block.click_any(&event)?;
                     }
                     util::print_blocks(&order, &block_map, &config)?;
                 },

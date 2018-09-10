@@ -17,7 +17,7 @@ pub trait Block {
     #[allow(unused_variables)]
     /// This function is called on every block for every click.
     /// Filter events by using the event.name property (matches the ButtonWidget name)
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, event: &I3BarEvent) -> Result<()> {
         Ok(())
     }
 

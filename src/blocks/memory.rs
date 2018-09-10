@@ -639,7 +639,7 @@ impl Block for Memory {
         Ok(Some(self.update_interval))
     }
 
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, event: &I3BarEvent) -> Result<()> {
         if_debug!({
             let mut f = OpenOptions::new()
                 .create(true)

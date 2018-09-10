@@ -212,7 +212,7 @@ impl Block for Weather {
         vec![&self.weather]
     }
 
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, event: &I3BarEvent) -> Result<()> {
         if event.matches_name(self.id()) {
             match event.button {
                 MouseButton::Left => {

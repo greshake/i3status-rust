@@ -253,7 +253,7 @@ impl Block for Xrandr {
         vec![&self.text]
     }
 
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
+    fn click_any(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 match e.button {
