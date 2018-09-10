@@ -69,7 +69,8 @@ impl PowerSupplyDevice {
     }
 
     /// Query the device status, one of `"Full"`, `"Charging"`, `"Discharging"`,
-    /// or `"Unknown"`.
+    /// or `"Unknown"`. Thinkpad batteries also report "`Not charging`", which
+    /// for our purposes should be treated as equivalent to full.
     pub fn status(&self) -> Result<String> {
         read_file("battery", &self.device_path.join("status"))
     }
@@ -272,7 +273,7 @@ impl Block for Battery {
 
         let status = self.device.status()?;
 
-        if status == "Full" {
+        if status == "Full" || status == "Not charging" {
             self.output.set_icon("bat_full");
             self.output.set_text("".to_string());
             self.output.set_state(State::Good);
