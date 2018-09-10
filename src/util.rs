@@ -135,7 +135,8 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
                     "separator": false,
                     "separator_block_width": 0,
                     "background": if sep_bg.is_some() { Value::String(sep_bg.unwrap()) } else { Value::Null },
-                    "color": sep_fg
+                    "color": sep_fg,
+                    "markup": "pango"
                 });
         print!("{}{},", if state.has_predecessor { "," } else { "" },
                separator.to_string());
