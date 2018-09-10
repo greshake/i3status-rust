@@ -71,15 +71,17 @@ You will need to ensure that the value of the `KERNEL` parameter here is the sam
 
 Creates a block which displays the current battery state (Full, Charging or Discharging), percentage charged and estimate time until (dis)charged.
 
+The battery block collapses when the battery is fully charged -- or, in the case of some Thinkpad batteries, when it reports "Not charging".
+
 ### Examples
 
-Update the battery state every ten seconds:
+Update the battery state every ten seconds, and show the time remainging until (dis)charging is complete:
 
 ```toml
 [[block]]
 block = "battery"
 interval = 10
-show = "both"
+format = "{percentage}% {time}"
 ```
 
 ### Options
@@ -88,15 +90,18 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | The device in `/sys/class/power_supply/` to read from. | No | `"BAT0"`
 `interval` | Update interval, in seconds. | No | `10`
-`show` | Format string | No | `{level}%`
+`format` | A format string. See below for available placeholders. | No | `"{percentage}%"`
+`show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
+
+The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
 ### Format string
 
 Placeholder | Description
 ------------|-------------
-`{percentage}` | Battery level (in percent) excluding %
-`{time}` | Remaining time (in hh:mm)
-`{power}` | Power consumption (in watt) from battery or from power supply for charging
+`{percentage}` | Battery level, in percent.
+`{time}` | Time remaining until (dis)charge is complete.
+`{power}` | Power consumption (in watts) by the battery or from the power supply when charging.
 
 ## CPU Utilization
 
