@@ -75,7 +75,7 @@ The battery block collapses when the battery is fully charged -- or, in the case
 
 ### Examples
 
-Update the battery state every ten seconds, and show the time remainging until (dis)charging is complete:
+Update the battery state every ten seconds, and show the time remaining until (dis)charging is complete:
 
 ```toml
 [[block]]
