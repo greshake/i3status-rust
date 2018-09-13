@@ -20,7 +20,6 @@
 - [Toggle](#toggle)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
-- [Maildir](#maildir)
 
 ## Backlight
 
