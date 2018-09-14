@@ -15,6 +15,14 @@ pub trait Block {
     fn view(&self) -> Vec<&I3BarWidget>;
 
     #[allow(unused_variables)]
+    /// This function is only called for click on the block. You may need
+    /// function click_any for advanced use. Please note that both this function
+    /// and click_any, will be executed.
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        Ok(())
+    }
+
+    #[allow(unused_variables)]
     /// This function is called on every block for every click.
     /// Filter events by using the event.name property (matches the ButtonWidget name)
     fn click_any(&mut self, event: &I3BarEvent) -> Result<()> {

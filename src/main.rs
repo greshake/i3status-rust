@@ -239,6 +239,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 Some(event) => {
                     for block in block_map.values_mut() {
                         block.click_any(&event)?;
+                        if let Some(ref name) = event.name {
+                            if name.as_str() == block.id() {
+                                block.click(&event)?;
+                            }
+                        }
+
                     }
                     util::print_blocks(&order, &block_map, &config)?;
                 },
