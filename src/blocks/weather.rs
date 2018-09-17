@@ -117,7 +117,16 @@ impl Weather {
                         ));
                     }
                 };
-                let raw_wind = match json.pointer("/wind/speed").and_then(|v| v.as_f64()) {
+                let raw_wind_speed = match json.pointer("/wind/speed").and_then(|v| v.as_f64()) {
+                    Some(v) => v,
+                    None => {
+                        return Err(BlockError(
+                            "weather".to_string(),
+                            "Malformed JSON.".to_string(),
+                        ));
+                    }
+                };
+                let raw_wind_direction = match json.pointer("/wind/deg").and_then(|v| v.as_i64()) {
                     Some(v) => v,
                     None => {
                         return Err(BlockError(
@@ -138,6 +147,29 @@ impl Weather {
                     }
                 };
 
+                // Convert wind direction in azimuth degrees to abbreviation names
+                fn convert_wind_direction(direction: i64) -> String {
+                    if direction < 23 {
+                        return String::from("N");
+                    } else if direction < 68 {
+                        return String::from("NE");
+                    } else if direction < 113 {
+                        return String::from("E");
+                    } else if direction < 158 {
+                        return String::from("SE");
+                    } else if direction < 203 {
+                        return String::from("S");
+                    } else if direction < 248 {
+                        return String::from("SW");
+                    } else if direction < 293 {
+                        return String::from("W");
+                    } else if direction < 338 {
+                        return String::from("NW");
+                    } else {
+                        return String::from("N");
+                    }
+                }
+
                 self.weather.set_icon(match raw_weather.as_str() {
                     "Clear" => "weather_sun",
                     "Rain" | "Drizzle" => "weather_rain",
@@ -150,7 +182,8 @@ impl Weather {
                 self.weather_keys =
                     map_to_owned!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
-                                  "{wind}" => format!("{:.1}", raw_wind),
+                                  "{wind}" => format!("{:.1}", raw_wind_speed),
+                                  "{direction}" => convert_wind_direction(raw_wind_direction),
                                   "{location}" => raw_location);
                 Ok(())
             }
