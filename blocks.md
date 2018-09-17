@@ -577,7 +577,7 @@ Show detailed weather in San Francisco through the OpenWeatherMap service:
 ```toml
 [[block]]
 block = "weather"
-format = "{weather} ({location}) {temp}°, {wind} m/s"
+format = "{weather} ({location}) {temp}°, {wind} m/s {direction}"
 service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units = "metric" }
 ```
 
@@ -608,6 +608,7 @@ Key | Value
 `{temp}` | Temperature.
 `{weather}` | Textual description of the weather, e.g. "Raining".
 `{wind}` | Wind speed.
+`{direction}` | Wind direction, e.g. "NE".
 
 ## Uptime
 Creates a block which displays system uptime. The block will always display the 2 biggest units, so minutes and seconds, or hours and minutes or days and hours or weeks and days.
