@@ -22,6 +22,7 @@ pub mod nvidia_gpu;
 pub mod maildir;
 mod networkmanager;
 mod bluetooth;
+pub mod ibus;
 
 use crate::config::Config;
 use self::time::*;
@@ -48,6 +49,7 @@ use self::nvidia_gpu::*;
 use self::maildir::*;
 use self::networkmanager::*;
 use self::bluetooth::*;
+use self::ibus::*;
 
 use super::block::{Block, ConfigBlock};
 use crate::errors::*;
@@ -103,6 +105,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "nvidia_gpu" => NvidiaGpu,
             "maildir" => Maildir,
             "networkmanager" => NetworkManager,
-            "bluetooth" => Bluetooth
+            "bluetooth" => Bluetooth,
+            "ibus" => IBus
     )
 }

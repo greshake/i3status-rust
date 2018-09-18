@@ -7,6 +7,7 @@
 - [Custom](#custom)
 - [Disk Space](#disk-space)
 - [Focused Window](#focused-window)
+- [IBus](#ibus)
 - [Load](#load)
 - [Maildir](#maildir)
 - [Memory](#memory)
@@ -240,6 +241,17 @@ max_width = 21
 Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
+
+## IBus
+
+Creates a block which displays the current global engine set in [IBus](https://wiki.archlinux.org/index.php/IBus). Updates are instant as D-Bus signalling is used.
+
+### Examples
+
+```toml
+[[block]]
+block = "ibus"
+```
 
 ## Load
 
