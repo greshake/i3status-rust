@@ -149,7 +149,7 @@ impl Weather {
 
                 // Convert wind direction in azimuth degrees to abbreviation names
                 fn convert_wind_direction(direction: i64) -> String {
-                    return match direction {
+                    match direction {
                         24 ... 68 => "NE".to_string(),
                         69 ... 113 => "E".to_string(),
                         114 ... 158 => "SE".to_string(),
@@ -158,7 +158,7 @@ impl Weather {
                         249 ... 293 => "W".to_string(),
                         294 ... 338 => "NW".to_string(),
                         _ => "N".to_string()
-                    };
+                    }
                 }
 
                 self.weather.set_icon(match raw_weather.as_str() {
