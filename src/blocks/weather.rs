@@ -149,25 +149,16 @@ impl Weather {
 
                 // Convert wind direction in azimuth degrees to abbreviation names
                 fn convert_wind_direction(direction: i64) -> String {
-                    if direction < 23 {
-                        return String::from("N");
-                    } else if direction < 68 {
-                        return String::from("NE");
-                    } else if direction < 113 {
-                        return String::from("E");
-                    } else if direction < 158 {
-                        return String::from("SE");
-                    } else if direction < 203 {
-                        return String::from("S");
-                    } else if direction < 248 {
-                        return String::from("SW");
-                    } else if direction < 293 {
-                        return String::from("W");
-                    } else if direction < 338 {
-                        return String::from("NW");
-                    } else {
-                        return String::from("N");
-                    }
+                    return match direction {
+                        24 ... 68 => "NE".to_string(),
+                        69 ... 113 => "E".to_string(),
+                        114 ... 158 => "SE".to_string(),
+                        159 ... 203 => "S".to_string(),
+                        204 ... 248 => "SW".to_string(),
+                        249 ... 293 => "W".to_string(),
+                        294 ... 338 => "NW".to_string(),
+                        _ => "N".to_string()
+                    };
                 }
 
                 self.weather.set_icon(match raw_weather.as_str() {
