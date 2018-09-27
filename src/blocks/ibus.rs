@@ -49,13 +49,13 @@ impl ConfigBlock for IBus {
         let id_copy = id.clone();
 
         let ibus_address = get_ibus_address()
-            .block_error("ibus", "Could not get ibus address")?;
+            .block_error("ibus", "Could not get IBus address")?;
         let c = Connection::open_private(&ibus_address)
             .block_error("ibus", &format!("Failed to establish D-Bus connection to {}", ibus_address))?;
         let p = c.with_path("org.freedesktop.IBus", "/org/freedesktop/IBus", 5000);
         use blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
         let info: arg::Variant<Box<arg::RefArg>> = p.get("org.freedesktop.IBus", "GlobalEngine")
-            .block_error("ibus", "Couldn't get ibus address")?;
+            .block_error("ibus", "Failed to query IBus")?;
 
         // `info` should contain something containing an array with the contents as such:
         // [name, longname, description, language, license, author, icon, layout, layout_variant, layout_option, rank, hotkeys, symbol, setup, version, textdomain, icon_prop_key]
