@@ -154,8 +154,10 @@ fn parse_msg(ci: &ConnectionItem) -> Option<&str> {
 fn get_ibus_address() -> Result<String> {
     // TODO: Check IBUS_ADDRESS variable, as it seems it can be manually set too.
 
+    // TODO: Don't fail if $XDG_CONFIG_HOME is not set. 
+    // Next try $HOME/.config, then only error if that $HOME is not set.
     let config_dir = env::var("XDG_CONFIG_HOME")
-        .block_error("ibus", "Problem getting $XDG_CONFIG_HOME")?;
+        .block_error("ibus", "$XDG_CONFIG_HOME not set")?;
 
     // TODO: Check /var/lib/dbus/machine-id if /etc/machine-id fails
     let mut f = File::open("/etc/machine-id")
