@@ -102,11 +102,11 @@ impl Block for IBus {
 
     // Updates the internal state of the block.
     fn update(&mut self) -> Result<Option<Duration>> {
-        let string = (*self.engine
+        let engine = (*self.engine
             .lock()
             .block_error("ibus", "failed to acquire lock")?)
             .clone();
-        self.text.set_text(string);
+        self.text.set_text(engine);
         Ok(None)
     }
 
