@@ -63,8 +63,14 @@ impl ConfigBlock for IBus {
         // e.g.                   name           longname        description     language
         // ["IBusEngineDesc", {}, "xkb:us::eng", "English (US)", "English (US)", "en", "GPL", "Peng Huang <shawn.p.huang@gmail.com>", "ibus-keyboard", "us", 99, "", "", "", "", "", "", "", ""]
         //                         ↑ We will use this element (name) as it is what GlobalEngineChanged signal returns.
-        let current = info.0.as_iter().unwrap().nth(2).unwrap().as_str().unwrap_or("??");
-        let engine_original = Arc::new(Mutex::new(String::from(current)));
+        let current_engine = info.0
+            .as_iter()
+            .block_error("ibus", "Failed to parse D-Bus message (step 1)")?
+            .nth(2)
+            .block_error("ibus", "Failed to parse D-Bus message (step 2)")?
+            .as_str()
+            .unwrap_or("??");
+        let engine_original = Arc::new(Mutex::new(String::from(current_engine)));
 
         let engine = engine_original.clone();
         thread::spawn(move || {
@@ -163,22 +169,26 @@ fn get_ibus_address() -> Result<String> {
     // ibus-daemon can be autostarted by sway (via an entry in config file), however since
     // the bar is executed first, $DISPLAY will not yet be set at the time this code runs.
     // Hence on sway you will need to reload the bar once after login to get the block to work.
-    let display = env::var("DISPLAY")
+    let display_var = env::var("DISPLAY")
         .block_error("ibus", "$DISPLAY not set. Try restarting bar if on sway")?;
     let re = Regex::new(r"^:(\d{1})$").unwrap();
-    let cap = re.captures(&display).unwrap();
-    let display = &cap[1].to_string();
+    let cap = re.captures(&display_var)
+        .block_error("ibus", "Failed to extract display number from $DISPLAY")?;
+    let display_number = &cap[1].to_string();
 
     let hostname = String::from("unix");
 
-    let ibus_socket_path = format!("{}/ibus/bus/{}-{}-{}", config_dir, machine_id, hostname, display);
-    let mut f = File::open(ibus_socket_path).expect("file not found");
+    let ibus_socket_path = format!("{}/ibus/bus/{}-{}-{}", config_dir, machine_id, hostname, display_number);
+    let mut f = File::open(&ibus_socket_path)
+        .block_error("ibus", &format!("Could not open {}", ibus_socket_path))?;
     let mut ibus_address = String::new();
-    f.read_to_string(&mut ibus_address).expect("something went wrong reading the file");
+    f.read_to_string(&mut ibus_address)
+        .block_error("ibus", &format!("Error reading contents of {}", ibus_address))?;
     let re = Regex::new(r"IBUS_ADDRESS=(.*),guid").unwrap();
-    let cap = re.captures(&ibus_address).unwrap();
+    let cap = re.captures(&ibus_address)
+        .block_error("ibus", &format!("Failed to extract address out of {}", ibus_address))?;
     let ibus_address = &cap[1];
-    
+
     Ok(
         ibus_address.to_string()
     )
