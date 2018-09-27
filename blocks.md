@@ -205,9 +205,9 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
 
-## ibus
+## IBus
 
-Creates a block which displays the current global engine set in ibus. Updates are instant as D-Bus signalling is used.
+Creates a block which displays the current global engine set in [IBus](https://wiki.archlinux.org/index.php/IBus). Updates are instant as D-Bus signalling is used.
 
 ### Examples
 
