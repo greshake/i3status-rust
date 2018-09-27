@@ -164,7 +164,7 @@ fn get_ibus_address() -> Result<String> {
     // the bar is executed first, $DISPLAY will not yet be set at the time this code runs.
     // Hence on sway you will need to reload the bar once after login to get the block to work.
     let display = env::var("DISPLAY")
-        .block_error("ibus", "$DISPLAY not set. Try restarting block if on sway")?;
+        .block_error("ibus", "$DISPLAY not set. Try restarting bar if on sway")?;
     let re = Regex::new(r"^:(\d{1})$").unwrap();
     let cap = re.captures(&display).unwrap();
     let display = &cap[1].to_string();
