@@ -30,7 +30,7 @@ pub struct IBus {
 #[serde(deny_unknown_fields)]
 pub struct IBusConfig {
     // TODO: Implement this.
-    // Set to display engine name as the two letter country abbreviation, e.g. "jp".
+    /// Set to display engine name as the two letter country abbreviation, e.g. "jp".
     #[serde(default = "IBusConfig::default_abbreviate")]
     pub as_icon: bool,
 }
