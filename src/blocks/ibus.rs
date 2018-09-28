@@ -74,10 +74,10 @@ impl ConfigBlock for IBus {
 
         let engine = engine_original.clone();
         thread::spawn(move || {
-            let c = Connection::open_private(&ibus_address).unwrap();
+            let c = Connection::open_private(&ibus_address).expect("Failed to establish D-Bus connection in thread");
             c.add_match(
                 "interface='org.freedesktop.IBus',member='GlobalEngineChanged'",
-            ).unwrap();
+            ).expect("Failed to add D-Bus message rule - has IBus interface changed?");
             loop {
                 for ci in c.iter(100000) {
                     if let Some(engine_name) = parse_msg(&ci) {
@@ -173,7 +173,7 @@ fn get_ibus_address() -> Result<String> {
     // Hence on sway you will need to reload the bar once after login to get the block to work.
     let display_var = env::var("DISPLAY")
         .block_error("ibus", "$DISPLAY not set. Try restarting bar if on sway")?;
-    let re = Regex::new(r"^:(\d{1})$").unwrap();
+    let re = Regex::new(r"^:(\d{1})$").unwrap(); // valid regex expression will not cause panic
     let cap = re.captures(&display_var)
         .block_error("ibus", "Failed to extract display number from $DISPLAY")?;
     let display_number = &cap[1].to_string();
@@ -186,7 +186,7 @@ fn get_ibus_address() -> Result<String> {
     let mut ibus_address = String::new();
     f.read_to_string(&mut ibus_address)
         .block_error("ibus", &format!("Error reading contents of {}", ibus_address))?;
-    let re = Regex::new(r"IBUS_ADDRESS=(.*),guid").unwrap();
+    let re = Regex::new(r"IBUS_ADDRESS=(.*),guid").unwrap(); // valid regex expression will not cause panic
     let cap = re.captures(&ibus_address)
         .block_error("ibus", &format!("Failed to extract address out of {}", ibus_address))?;
     let ibus_address = &cap[1];
