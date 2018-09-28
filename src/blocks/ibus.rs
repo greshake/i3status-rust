@@ -185,7 +185,7 @@ fn get_ibus_address() -> Result<String> {
         .block_error("ibus", &format!("Could not open {}", ibus_socket_path))?;
     let mut ibus_address = String::new();
     f.read_to_string(&mut ibus_address)
-        .block_error("ibus", &format!("Error reading contents of {}", ibus_address))?;
+        .block_error("ibus", &format!("Error reading contents of {}", ibus_socket_path))?;
     let re = Regex::new(r"IBUS_ADDRESS=(.*),guid").unwrap(); // valid regex expression will not cause panic
     let cap = re.captures(&ibus_address)
         .block_error("ibus", &format!("Failed to extract address out of {}", ibus_address))?;
