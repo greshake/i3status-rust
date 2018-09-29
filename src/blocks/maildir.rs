@@ -52,7 +52,7 @@ impl ConfigBlock for Maildir {
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         Ok(Maildir {
-            id: Uuid::new_v4().simple().to_string(),
+            id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone())
                 .with_icon("mail")

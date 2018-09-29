@@ -218,7 +218,7 @@ impl ConfigBlock for Xrandr {
     type Config = XrandrConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let id = Uuid::new_v4().simple().to_string();
+        let id = format!("{}", Uuid::new_v4().to_simple());
         let mut step_width = block_config.step_width;
         if step_width > 50 {
             step_width = 50;

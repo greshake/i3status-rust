@@ -104,7 +104,7 @@ impl ConfigBlock for SpeedTest {
         // Create all the things we are going to send and take for ourselves.
         let (send, recv): (Sender<()>, Receiver<()>) = async();
         let vals = Arc::new(Mutex::new((false, vec![])));
-        let id = Uuid::new_v4().simple().to_string();
+        let id = format!("{}", Uuid::new_v4().to_simple());
 
         // Make the update thread
         make_thread(recv, done, vals.clone(), block_config.clone(), id.clone());

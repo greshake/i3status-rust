@@ -183,7 +183,7 @@ impl ConfigBlock for Backlight {
             None => BacklitDevice::default(),
         }?;
 
-        let id = Uuid::new_v4().simple().to_string();
+        let id = format!("{}", Uuid::new_v4().to_simple());
         let brightness_file = device.brightness_file();
 
         let backlight = Backlight {
