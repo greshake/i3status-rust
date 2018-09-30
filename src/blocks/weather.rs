@@ -117,7 +117,16 @@ impl Weather {
                         ));
                     }
                 };
-                let raw_wind = match json.pointer("/wind/speed").and_then(|v| v.as_f64()) {
+                let raw_wind_speed = match json.pointer("/wind/speed").and_then(|v| v.as_f64()) {
+                    Some(v) => v,
+                    None => {
+                        return Err(BlockError(
+                            "weather".to_string(),
+                            "Malformed JSON.".to_string(),
+                        ));
+                    }
+                };
+                let raw_wind_direction = match json.pointer("/wind/deg").and_then(|v| v.as_i64()) {
                     Some(v) => v,
                     None => {
                         return Err(BlockError(
@@ -138,6 +147,20 @@ impl Weather {
                     }
                 };
 
+                // Convert wind direction in azimuth degrees to abbreviation names
+                fn convert_wind_direction(direction: i64) -> String {
+                    match direction {
+                        24 ... 68 => "NE".to_string(),
+                        69 ... 113 => "E".to_string(),
+                        114 ... 158 => "SE".to_string(),
+                        159 ... 203 => "S".to_string(),
+                        204 ... 248 => "SW".to_string(),
+                        249 ... 293 => "W".to_string(),
+                        294 ... 338 => "NW".to_string(),
+                        _ => "N".to_string()
+                    }
+                }
+
                 self.weather.set_icon(match raw_weather.as_str() {
                     "Clear" => "weather_sun",
                     "Rain" | "Drizzle" => "weather_rain",
@@ -150,7 +173,8 @@ impl Weather {
                 self.weather_keys =
                     map_to_owned!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
-                                  "{wind}" => format!("{:.1}", raw_wind),
+                                  "{wind}" => format!("{:.1}", raw_wind_speed),
+                                  "{direction}" => convert_wind_direction(raw_wind_direction),
                                   "{location}" => raw_location);
                 Ok(())
             }
