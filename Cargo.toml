@@ -16,7 +16,7 @@ clap = "2.31"
 uuid = { version = "0.6", features = ["v4"] }
 dbus = "0.6"
 regex = "1.0"
-nix = "0.10.0"
+nix = "0.11.0"
 i3ipc = "0.8.2"
 num = "0.1.42"
 chan = "0.1.21"
