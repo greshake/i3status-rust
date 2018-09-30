@@ -451,6 +451,8 @@ Creates a block which displays the volume level (according to ALSA). Right click
 
 Requires `alsa-utils`.
 
+Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, ALSA (and therefore this block) may not report updates after the volume exceeds 100%. See [#266](https://github.com/greshake/i3status-rust/issues/266#issuecomment-425724196) for some discussion.
+
 ### Examples
 
 Change the default scrolling step width to 3 percent:
