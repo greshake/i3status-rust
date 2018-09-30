@@ -5,10 +5,12 @@
 //! internal power supply.
 
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 use util::FormatTemplate;
+use std::time::{Duration, Instant};
+use std::thread;
 
 use chan::Sender;
+use blocks::dbus;
 use uuid::Uuid;
 
 use block::{Block, ConfigBlock};
@@ -20,7 +22,25 @@ use util::read_file;
 use widget::{I3BarWidget, State};
 use widgets::text::TextWidget;
 
-/// Represents a physical power supply device.
+/// A battery device can be queried for a few properties relevant to the user.
+pub trait BatteryDevice {
+    /// Query the device status, one of `"Full"`, `"Charging"`, `"Discharging"`,
+    /// or `"Unknown"`. Thinkpad batteries also report "`Not charging`", which
+    /// for our purposes should be treated as equivalent to full.
+    fn status(&self) -> Result<String>;
+
+    /// Query the device's current capacity, as a percent.
+    fn capacity(&self) -> Result<u64>;
+
+    /// Query the estimated time remaining, in minutes, before (dis)charging is
+    /// complete.
+    fn time_remaining(&self) -> Result<u64>;
+
+    /// Query the current power consumption, in uW.
+    fn power_consumption(&self) -> Result<u64>;
+}
+
+/// Represents a physical power supply device, as known to sysfs.
 pub struct PowerSupplyDevice {
     device_path: PathBuf,
     charge_full: Option<u64>,
@@ -67,16 +87,14 @@ impl PowerSupplyDevice {
             energy_full: energy_full,
         })
     }
+}
 
-    /// Query the device status, one of `"Full"`, `"Charging"`, `"Discharging"`,
-    /// or `"Unknown"`. Thinkpad batteries also report "`Not charging`", which
-    /// for our purposes should be treated as equivalent to full.
-    pub fn status(&self) -> Result<String> {
+impl BatteryDevice for PowerSupplyDevice {
+    fn status(&self) -> Result<String> {
         read_file("battery", &self.device_path.join("status"))
     }
 
-    /// Query the device's current capacity, as a percent.
-    pub fn capacity(&self) -> Result<u64> {
+    fn capacity(&self) -> Result<u64> {
         let capacity_path = self.device_path.join("capacity");
         let charge_path = self.device_path.join("charge_now");
         let energy_path = self.device_path.join("energy_now");
@@ -111,9 +129,7 @@ impl PowerSupplyDevice {
         }
     }
 
-    /// Query the estimated time remaining, in minutes, before (dis)charging is
-    /// complete.
-    pub fn time_remaining(&self) -> Result<u64> {
+    fn time_remaining(&self) -> Result<u64> {
         let full = if self.energy_full.is_some() {
             self.energy_full.unwrap()
         } else if self.charge_full.is_some() {
@@ -174,8 +190,7 @@ impl PowerSupplyDevice {
         }
     }
 
-    /// Query the current power consumption in uW
-    pub fn power_consumption(&self) -> Result<u64> {
+    fn power_consumption(&self) -> Result<u64> {
         let power_path = self.device_path.join("power_now");
 
         if power_path.exists() {
@@ -191,13 +206,154 @@ impl PowerSupplyDevice {
     }
 }
 
+fn get_upower_property(con: &dbus::Connection, device_path: &str, property: &str) -> Result<dbus::Message> {
+    let msg = dbus::Message::new_method_call(
+        "org.freedesktop.UPower",
+        device_path,
+        "org.freedesktop.DBus.Properties",
+        "Get",
+    ).block_error("battery", "Failed to create Dbus message.")?
+        .append2(
+            dbus::MessageItem::Str("org.freedesktop.UPower.Device".to_string()),
+            dbus::MessageItem::Str(property.to_string()),
+        );
+
+    con.send_with_reply_and_block(msg, 1000).block_error(
+        "battery",
+        &format!(
+            "Failed to retrieve UPower property '{}' from '{}' via Dbus.",
+            property, device_path
+        ),
+    )
+}
+
+/// Represents a battery known to UPower.
+pub struct UpowerDevice {
+    device_path: String,
+    con: dbus::Connection,
+}
+
+impl UpowerDevice {
+    /// Create the UPower device from the `device` string, which is converted to
+    /// the path `"/org/freedesktop/UPower/devices/battery_<device>"`. Raises an
+    /// error if D-Bus cannot connect to this device, or if the device is not a
+    /// battery.
+    pub fn from_device(device: String) -> Result<Self> {
+        let device_path = format!("/org/freedesktop/UPower/devices/battery_{}", device);
+        let con = dbus::Connection::get_private(dbus::BusType::System)
+            .block_error("battery", "Failed to establish D-Bus connection.")?;
+
+        let upower_type: dbus::arg::Variant<u32> = get_upower_property(&con, &device_path, "Type")?
+            .get1()
+            .block_error("battery", "Failed to read UPower Type property.")?;
+
+        // https://upower.freedesktop.org/docs/Device.html#Device:Type
+        if upower_type.0 != 2 {
+            return Err(BlockError(
+                "battery".into(),
+                "UPower device is not a battery.".into(),
+            ));
+        }
+        Ok(UpowerDevice {
+            device_path: device_path,
+            con: con,
+        })
+    }
+
+    /// Monitor UPower property changes in a separate thread and send updates
+    /// via the `update_request` channel.
+    pub fn monitor(&self, id: String, update_request: Sender<Task>) {
+        let path = self.device_path.clone();
+        thread::spawn(move || {
+            let con = dbus::Connection::get_private(dbus::BusType::System)
+                .expect("Failed to establish D-Bus connection.");
+            let rule = format!(
+                "type='signal',\
+                 path='{}',\
+                 interface='org.freedesktop.DBus.Properties',\
+                 member='PropertiesChanged'",
+                path
+            );
+
+            // First we're going to get an (irrelevant) NameAcquired event.
+            con.incoming(10_000).next();
+
+            con.add_match(&rule)
+                .expect("Failed to add D-Bus match rule.");
+
+            loop {
+                if let Some(_) = con.incoming(10_000).next() {
+                    update_request.send(Task {
+                        id: id.clone(),
+                        update_time: Instant::now(),
+                    });
+                    // Avoid update spam.
+                    // TODO: Is this necessary?
+                    thread::sleep(Duration::from_millis(1000))
+                }
+            }
+        });
+    }
+}
+
+impl BatteryDevice for UpowerDevice {
+    fn status(&self) -> Result<String> {
+        let status: dbus::arg::Variant<u32> =
+            get_upower_property(&self.con, &self.device_path, "State")?
+                .get1()
+                .block_error("battery", "Failed to read UPower State property.")?;
+
+        // https://upower.freedesktop.org/docs/Device.html#Device:State
+        match status.0 {
+            1 => Ok("Charging".to_string()),
+            2 => Ok("Discharging".to_string()),
+            3 => Ok("Empty".to_string()),
+            4 => Ok("Full".to_string()),
+            5 => Ok("Not charging".to_string()),
+            6 => Ok("Discharging".to_string()),
+            _ => Ok("Unknown".to_string()),
+        }
+    }
+
+    fn capacity(&self) -> Result<u64> {
+        let capacity: dbus::arg::Variant<f64> =
+            get_upower_property(&self.con, &self.device_path, "Percentage")?
+                .get1()
+                .block_error("battery", "Failed to read UPower Percentage property.")?;
+
+        if capacity.0 > 100.0 {
+            Ok(100)
+        } else {
+            Ok(capacity.0 as u64)
+        }
+    }
+
+    fn time_remaining(&self) -> Result<u64> {
+        let time_to_empty: dbus::arg::Variant<i64> =
+            get_upower_property(&self.con, &self.device_path, "TimeToEmpty")?
+                .get1()
+                .block_error("battery", "Failed to read UPower TimeToEmpty property.")?;
+        Ok((time_to_empty.0 / 60) as u64)
+    }
+
+    fn power_consumption(&self) -> Result<u64> {
+        let energy_rate: dbus::arg::Variant<f64> =
+            get_upower_property(&self.con, &self.device_path, "EnergyRate")?
+                .get1()
+                .block_error("battery", "Failed to read UPower EnergyRate property.")?;
+        // FIXME: Might want to make the interface send Watts instead.
+        Ok((energy_rate.0 * 1_000_000.0) as u64)
+    }
+}
+
 /// A block for displaying information about an internal power supply.
 pub struct Battery {
     output: TextWidget,
     id: String,
     update_interval: Duration,
-    device: PowerSupplyDevice,
+    device: Box<BatteryDevice>,
     format: FormatTemplate,
+    upower: bool,
 }
 
 /// Configuration for the [`Battery`](./struct.Battery.html) block.
@@ -221,6 +377,10 @@ pub struct BatteryConfig {
     /// placeholders: {percentage}, {time} and {power}
     #[serde(default = "BatteryConfig::default_format")]
     pub format: String,
+
+    /// Use UPower to monitor battery status and events.
+    #[serde(default = "BatteryConfig::default_upower")]
+    pub upower: bool,
 }
 
 impl BatteryConfig {
@@ -235,12 +395,16 @@ impl BatteryConfig {
     fn default_format() -> String {
         "{percentage}%".into()
     }
+
+    fn default_upower() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(block_config: Self::Config, config: Config, update_request: Sender<Task>) -> Result<Self> {
         // TODO: remove deprecated show types eventually
         let format = match block_config.show {
             Some(show) => match show.as_ref() {
@@ -257,12 +421,23 @@ impl ConfigBlock for Battery {
             None => block_config.format
         };
 
+        let id = Uuid::new_v4().simple().to_string();
+        let device: Box<BatteryDevice> = match block_config.upower {
+            true => {
+                let out = UpowerDevice::from_device(block_config.device)?;
+                out.monitor(id.clone(), update_request);
+                Box::new(out)
+            }
+            false => Box::new(PowerSupplyDevice::from_device(block_config.device)?),
+        };
+
         Ok(Battery {
-            id: Uuid::new_v4().simple().to_string(),
+            id: id,
             update_interval: block_config.interval,
             output: TextWidget::new(config),
-            device: PowerSupplyDevice::from_device(block_config.device)?,
+            device: device,
             format: FormatTemplate::from_string(format)?,
+            upower: block_config.upower,
         })
     }
 }
@@ -318,7 +493,11 @@ impl Block for Battery {
             });
         }
 
-        Ok(Some(self.update_interval))
+        if self.upower {
+            Ok(None)
+        } else {
+            Ok(Some(self.update_interval))
+        }
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
