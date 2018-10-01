@@ -51,7 +51,6 @@ impl ConfigBlock for IBus {
         let c = Connection::open_private(&ibus_address)
             .block_error("ibus", &format!("Failed to establish D-Bus connection to {}", ibus_address))?;
         let p = c.with_path("org.freedesktop.IBus", "/org/freedesktop/IBus", 5000);
-        use blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
         let info: arg::Variant<Box<arg::RefArg>> = p.get("org.freedesktop.IBus", "GlobalEngine")
             .block_error("ibus", "Failed to query IBus")?;
 
