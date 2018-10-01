@@ -47,8 +47,7 @@ impl ConfigBlock for IBus {
         let id: String = Uuid::new_v4().simple().to_string();
         let id_copy = id.clone();
 
-        let ibus_address = get_ibus_address()
-            .block_error("ibus", "Could not get IBus address")?;
+        let ibus_address = get_ibus_address()?;
         let c = Connection::open_private(&ibus_address)
             .block_error("ibus", &format!("Failed to establish D-Bus connection to {}", ibus_address))?;
         let p = c.with_path("org.freedesktop.IBus", "/org/freedesktop/IBus", 5000);
