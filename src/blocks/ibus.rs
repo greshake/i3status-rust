@@ -4,21 +4,20 @@ use std::io::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use chan::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use errors::*;
 use input::I3BarEvent;
 use scheduler::Task;
-use uuid::Uuid;
 use widgets::text::TextWidget;
 use widget::I3BarWidget;
 
-extern crate dbus;
-extern crate regex;
-use self::dbus::{Connection, ConnectionItem, arg};
-use self::regex::Regex;
+use chan::Sender;
+use blocks::dbus::{Connection, ConnectionItem, arg};
+use blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
+use regex::Regex;
+use uuid::Uuid;
 
 pub struct IBus {
     id: String,
