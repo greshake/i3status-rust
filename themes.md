@@ -35,47 +35,47 @@ bat_discharging = " |v| "
 Example configurations can be found as `example_theme.toml` and `example_icon.toml`.
 Here's a full list of available overrides:
 
-| Theme        		| Icons
-| -----    		| -----
-| idle_bg		| time
-| idle_fg		| music
-| info_bg		| music_play
-| info_fg		| music_pause
-| good_bg		| music_next
-| good_fg		| music_prev
-| warning_bg		| cogs
-| warning_fg		| memory_mem
-| critical_bg		| memory_swap
-| critical_fg		| cpu
-| separator		| bat
-| separator_bg		| bat_full
-| separator_fg		| bat_charging
+| Theme        		    | Icons
+| -----    		        | -----
+| idle_bg	          	| time
+| idle_fg		          | music
+| info_bg		          | music_play
+| info_fg		          | music_pause
+| good_bg		          | music_next
+| good_fg		          | music_prev
+| warning_bg	       	| cogs
+| warning_fg		      | memory_mem
+| critical_bg		      | memory_swap
+| critical_fg	      	| cpu
+| separator	        	| bat
+| separator_bg	    	| bat_full
+| separator_fg	    	| bat_charging
 | alternating_tint_bg	| bat_discharging
 | alternating_tint_fg	| update
-|              		| toggle_off
-|              		| toggle_on
-|              		| volume_full
-|            	 	| volume_half
-|			| volume_empty
-|            		| volume_muted
-|             		| thermometer
-|             		| xrandr
-|             		| net_up
-|             		| net_down
-|             		| netw_wireless
-|             		| net_wired
-|             		| ping
-|            		| backlight_empty
-|             		| backlight_partial1
-|             		| backlight_partial2
-|            		| backlight_partial3
-|           		| backlight_full
-|          		| weather_sun
-|            		| weather_snow
-|           		| weather_thunder
-|             		| weather_clouds
-|            		| weather_rain
-|            		| weather_default
-|            		| uptime
-|             		| gpu
-|              		| mail
+|                  		| toggle_off
+|                  		| toggle_on
+|                  		| volume_full
+|                  	 	| volume_half
+|			                | volume_empty
+|                 		| volume_muted
+|                  		| thermometer
+|                 		| xrandr
+|                 		| net_up
+|             		    | net_down
+|             	    	| netw_wireless
+|                 		| net_wired
+|             		    | ping
+|            	     	  | backlight_empty
+|                		  | backlight_partial1
+|              		    | backlight_partial2
+|            	  	    | backlight_partial3
+|                  		| backlight_full
+|                  		| weather_sun
+|                  		| weather_snow
+|                  		| weather_thunder
+|                 		| weather_clouds
+|                  		| weather_rain
+|                 		| weather_default
+|                 		| uptime
+|                  		| gpu
+|                  		| mail
