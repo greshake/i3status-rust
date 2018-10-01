@@ -536,6 +536,10 @@ pub struct Sound {
 #[serde(deny_unknown_fields)]
 pub struct SoundConfig {
     /// ALSA / PulseAudio sound device name
+    #[serde(default = "SoundDriver::default")]
+    pub driver: SoundDriver,
+
+    /// ALSA / PulseAudio sound device name
     #[serde(default = "SoundConfig::default_name")]
     pub name: Option<String>,
 
@@ -545,6 +549,21 @@ pub struct SoundConfig {
 
     #[serde(default = "SoundConfig::default_on_click")]
     pub on_click: Option<String>,
+}
+
+#[derive(Deserialize, Copy, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum SoundDriver {
+    Auto,
+    Alsa,
+    #[cfg(feature = "pulseaudio")]
+    PulseAudio,
+}
+
+impl Default for SoundDriver {
+    fn default() -> Self {
+        SoundDriver::Auto
+    }
 }
 
 impl SoundConfig {
@@ -600,18 +619,24 @@ impl ConfigBlock for Sound {
             step_width = 50;
         }
 
-        #[cfg(feature = "pulseaudio")]
-        let pulseaudio_device = match block_config.name.clone() {
-            None => PulseAudioSoundDevice::new(),
-            Some(name) => PulseAudioSoundDevice::with_name(name)
-        };
         #[cfg(not(feature = "pulseaudio"))]
-        let pulseaudio_device: Result<AlsaSoundDevice> = Err(BlockError(
-            "sound".into(),
-            "PulseAudio feature disabled".into(),
-        ));
+        type PulseAudioSoundDevice =  AlsaSoundDevice;
+
+        // try to create a pulseaudio device if feature is enabled and `driver != "alsa"`
+        let pulseaudio_device: Result<PulseAudioSoundDevice> = match block_config.driver {
+            #[cfg(feature = "pulseaudio")]
+            SoundDriver::Auto | SoundDriver::PulseAudio =>
+                match block_config.name.clone() {
+                    None => PulseAudioSoundDevice::new(),
+                    Some(name) => PulseAudioSoundDevice::with_name(name)
+                },
+            _ => Err(BlockError(
+                "sound".into(),
+                "PulseAudio feature or driver disabled".into(),
+            ))
+        };
         
-        // prefere PulseAudio if available, fallback to ALSA
+        // prefere PulseAudio if available and selected, fallback to ALSA
         let device: Box<SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
             Err(_) => Box::new(AlsaSoundDevice::new(block_config.name.unwrap_or_else(|| "Master".into()))?)

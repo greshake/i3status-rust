@@ -451,11 +451,11 @@ Creates a block which displays the volume level (according to PulseAudio or ALSA
 
 Requires a PulseAudio installation or `alsa-utils` for ALSA.
 
-PulseAudio support is feature and can be turn on (`--features "pulseaudio"`) / off (`--no-default-features`) during build with `cargo`.  
-If PulseAudio support is enabled the sound block will first try to connect to PulseAudio and then fallback to ALSA on error.
+PulseAudio support is a feature and can be turned on (`--features "pulseaudio"`) / off (`--no-default-features`) during build with `cargo`.  
+If PulseAudio support is enabled the `"auto"` driver will first try to connect to PulseAudio and then fallback to ALSA on error.
 
 
-Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, ALSA (and therefore this block) may not report updates after the volume exceeds 100%. See [#266](https://github.com/greshake/i3status-rust/issues/266#issuecomment-425724196) for some discussion.
+Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `"pulseaudio"` (or `"auto"`) driver to see volume changes that exceed 100%.
 
 ### Examples
 
@@ -471,6 +471,7 @@ step_width = 3
 
 Key | Values | Required | Default
 ----|--------|----------|--------
+`driver` | `"auto"`, `"pulseaudio"`, `"alsa"` | No | `"auto"` (Pulseaudio with ALSA fallback)
 `name` | PulseAudio / ALSA device name | No | Default Device (`@DEFAULT_SINK@` / `Master`)
 `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | `5`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
