@@ -6,9 +6,9 @@ authors = ["Kai Greshake <development@kai-greshake.de>",
 
 [features]
 default = ["pulseaudio"]
-
 pulseaudio = ["libpulse-binding"]
-
+# Opt-in block profiling, intended for developers.
+profiling = ["cpuprofiler", "progress"]
 
 [dependencies]
 chrono = "0.4"
@@ -31,5 +31,5 @@ maildir = "0.1.1"
 libpulse-binding = { version = "^2.2", optional = true }
 # Used only in debug build mode
 # for profiling blocks
-cpuprofiler = "0.0.3"
-progress = "0.2"
+cpuprofiler = { version = "0.0.3", optional = true }
+progress = { version = "0.2", optional = true }
