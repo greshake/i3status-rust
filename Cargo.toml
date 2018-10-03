@@ -5,7 +5,8 @@ authors = ["Kai Greshake <development@kai-greshake.de>",
            "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
 
 [features]
-default = []
+default = ["pulseaudio"]
+pulseaudio = ["libpulse-binding"]
 # Opt-in block profiling, intended for developers.
 profiling = ["cpuprofiler", "progress"]
 
@@ -27,5 +28,8 @@ num = "0.1.42"
 chan = "0.1.21"
 inotify = "0.5.1"
 maildir = "0.1.1"
+libpulse-binding = { version = "^2.2", optional = true }
+# Used only in debug build mode
+# for profiling blocks
 cpuprofiler = { version = "0.0.3", optional = true }
 progress = { version = "0.2", optional = true }
