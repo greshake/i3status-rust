@@ -95,8 +95,11 @@ impl NetworkDevice {
             .args(
                 &[
                     "-c",
+                    "-o",
+                    "pipefail",
                     &format!(
-                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
+                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\" || nmcli -g general.connection device show {}",
+                        self.device,
                         self.device
                     ),
                 ],
