@@ -95,10 +95,8 @@ impl NetworkDevice {
             .args(
                 &[
                     "-c",
-                    "-o",
-                    "pipefail",
                     &format!(
-                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\" || nmcli -g general.connection device show {}",
+                        "ssid=\$(iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"); [ \$ssid -eq "" ] && ssid=\$(nmcli -g general.connection device show {}); echo \$ssid",
                         self.device,
                         self.device
                     ),
