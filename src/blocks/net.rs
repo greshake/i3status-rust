@@ -95,11 +95,8 @@ impl NetworkDevice {
             .args(
                 &[
                     "-c",
-                    "-o",
-                    "pipefail",
                     &format!(
-                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\" || nmcli -g general.connection device show {}",
-                        self.device,
+                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
                         self.device
                     ),
                 ],
@@ -107,6 +104,22 @@ impl NetworkDevice {
             .output()
             .block_error("net", "Failed to execute SSID query.")?
             .stdout;
+
+        if iw_output.is_empty() {
+            iw_output = Command::new("sh")
+                .args(
+                    &[
+                        "-c",
+                        &format!(
+                            "nmcli -g general.connection device show {}",
+                            self.device
+                        ),
+                    ],
+                )
+                .output()
+                .block_error("net", "Failed to execute SSID query.")?
+                .stdout;
+        }
 
         if iw_output.is_empty() {
             Ok(None)
