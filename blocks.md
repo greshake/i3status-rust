@@ -498,6 +498,7 @@ Key | Values | Required | Default
 `name` | PulseAudio / ALSA device name | No | Default Device (`@DEFAULT_SINK@` / `Master`)
 `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | `5`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
+`show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false
 
 ## Speed Test
 

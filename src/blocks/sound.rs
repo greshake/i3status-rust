@@ -528,6 +528,7 @@ pub struct Sound {
     step_width: u32,
     config: Config,
     on_click: Option<String>,
+    show_volume_when_muted: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -547,6 +548,9 @@ pub struct SoundConfig {
 
     #[serde(default = "SoundConfig::default_on_click")]
     pub on_click: Option<String>,
+
+    #[serde(default = "SoundConfig::default_show_volume_when_muted")]
+    pub show_volume_when_muted: bool,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -576,24 +580,38 @@ impl SoundConfig {
     fn default_on_click() -> Option<String> {
         None
     }
+
+    fn default_show_volume_when_muted() -> bool {
+        false
+    }
 }
 
 impl Sound {
     fn display(&mut self) -> Result<()> {
         self.device.get_info()?;
 
+        let volume = self.device.volume();
         if self.device.muted() {
             self.text.set_icon("volume_empty");
-            self.text.set_text(
-                self.config
-                    .icons
-                    .get("volume_muted")
-                    .block_error("sound", "cannot find icon")?
-                    .to_owned(),
-            );
+            if self.show_volume_when_muted {
+                self.text.set_text(format!("{} {:02}%",
+                    self.config
+                        .icons
+                        .get("volume_muted")
+                        .block_error("sound", "cannot find icon")?
+                        .to_owned(), volume)
+                );
+            } else {
+                self.text.set_text(
+                    self.config
+                        .icons
+                        .get("volume_muted")
+                        .block_error("sound", "cannot find icon")?
+                        .to_owned()
+                );
+            }
             self.text.set_state(State::Warning);
         } else {
-            let volume = self.device.volume();
             self.text.set_icon(match volume {
                 0...20 => "volume_empty",
                 21...70 => "volume_half",
@@ -647,6 +665,7 @@ impl ConfigBlock for Sound {
             step_width,
             config,
             on_click: block_config.on_click,
+            show_volume_when_muted: block_config.show_volume_when_muted,
         };
 
         sound.device.monitor(id.clone(), tx_update_request.clone())?;
