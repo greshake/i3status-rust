@@ -49,6 +49,7 @@
 //! {Mug}  | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB)
 //! {Mum}  | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB)
 //! {Mup}  | Memory used, excluding cached memory and buffers; similar to htop's green bar (%)
+//! {Mupi}  | Memory used, excluding cached memory and buffers; similar to htop's green bar (%) as integer
 //! {MUg}  | Total memory used (GiB)
 //! {MUm}  | Total memory used (MiB)
 //! {MUp}  | Total memory used (%)
