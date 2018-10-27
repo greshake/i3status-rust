@@ -206,6 +206,111 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 }
 
+pub struct MultiBatteryDevice {
+    devices: Vec<PowerSupplyDevice>,
+}
+
+impl MultiBatteryDevice {
+    /// Use the power supply devices, as found in the
+    /// `/sys/class/power_supply` directory. Raises an error if no devices
+    /// are found.
+    pub fn from_device(devices: &[String]) -> Result<Self> {
+        let new_devices: Vec<PowerSupplyDevice> = devices.iter().filter_map(|dev| {
+            match PowerSupplyDevice::from_device(dev.to_string()) {
+                Ok(device) => Some(device),
+                _ => None,
+            }
+        }).collect();
+
+        match new_devices.len() {
+            0 => Err(BlockError(
+                "battery".to_string(),
+                format!("Power supply devices '{:?}' do not exist", devices),
+            )),
+            _ => Ok(MultiBatteryDevice{
+                devices: new_devices,
+            })
+        }
+    }
+}
+
+impl BatteryDevice for MultiBatteryDevice {
+    fn status(&self) -> Result<String> {
+        let statuses: Vec<String> = self.devices.iter().filter_map(|device| {
+            let stat = read_file("battery", &device.device_path.join("status"));
+            match stat {
+                Ok(s) => Some(s),
+                _ => None,
+            }
+        }).collect();
+
+        if statuses.len() == 0 {
+            return Err(BlockError(
+                "battery".to_string(),
+                "Could not read battery statuses.".to_string(),
+            ));
+        }
+
+        if statuses.contains(&String::from("Charging")) {
+            return Ok(String::from("Charging"));
+        } else if statuses.contains(&String::from("Discharging")) {
+            return Ok(String::from("Discharging"));
+        }
+
+        Ok(statuses[0].clone())
+    }
+
+    fn capacity(&self) -> Result<u64> {
+        let mut current = 0;
+        let mut max = 0;
+        for battery in self.devices.iter() {
+            let energy_path = battery.device_path.join("energy_now");
+
+            if energy_path.exists() && battery.energy_full.is_some() {
+                current += read_file("battery", &energy_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse energy_now")?;
+                max += battery.energy_full.unwrap();
+            }
+        }
+
+        if max == 0 {
+            return Err(BlockError(
+                    "battery".to_string(),
+                    "Could not read any battery device levels".to_string(),
+                    ));
+        }
+
+        let capacity = ((current as f64) / (max as f64) * 100.0) as u64;
+
+        match capacity {
+            0...100 => Ok(capacity),
+            // We need to cap it at 100, because the kernel may report
+            // charge_now same as charge_full_design when the battery is full,
+            // leading to >100% charge.
+            _ => Ok(100),
+        }
+    }
+
+    fn time_remaining(&self) -> Result<u64> {
+        Ok(self.devices.iter().map(|device| {
+            match device.time_remaining() {
+                Ok(time) => time,
+                _ => 0,
+            }
+        }).sum())
+    }
+
+    fn power_consumption(&self) -> Result<u64> {
+        Ok(self.devices.iter().map(|device| {
+            match device.power_consumption() {
+                Ok(time) => time,
+                _ => 0,
+            }
+        }).sum())
+    }
+}
+
 fn get_upower_property(con: &dbus::Connection, device_path: &str, property: &str) -> Result<dbus::Message> {
     let msg = dbus::Message::new_method_call(
         "org.freedesktop.UPower",
@@ -369,6 +474,10 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_device")]
     pub device: String,
 
+    /// List of power supply devices to read from. This takes precedent over `device`.
+    #[serde(default = "BatteryConfig::default_devices")]
+    pub devices: Vec<String>,
+
     /// (DEPRECATED) Options for displaying battery information.
     #[serde()]
     pub show: Option<String>,
@@ -399,6 +508,10 @@ impl BatteryConfig {
     fn default_upower() -> bool {
         false
     }
+
+    fn default_devices() -> Vec<String> {
+        Vec::new()
+    }
 }
 
 impl ConfigBlock for Battery {
@@ -422,13 +535,15 @@ impl ConfigBlock for Battery {
         };
 
         let id = Uuid::new_v4().simple().to_string();
-        let device: Box<BatteryDevice> = match block_config.upower {
-            true => {
-                let out = UpowerDevice::from_device(block_config.device)?;
-                out.monitor(id.clone(), update_request);
-                Box::new(out)
+        let device: Box<BatteryDevice> = if block_config.upower {
+            let out = UpowerDevice::from_device(block_config.device)?;
+            out.monitor(id.clone(), update_request);
+            Box::new(out)
+        } else {
+            match block_config.devices.len() {
+                0 => Box::new(PowerSupplyDevice::from_device(block_config.device)?),
+                _ => Box::new(MultiBatteryDevice::from_device(block_config.devices.as_ref())?)
             }
-            false => Box::new(PowerSupplyDevice::from_device(block_config.device)?),
         };
 
         Ok(Battery {

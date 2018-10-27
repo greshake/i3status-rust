@@ -83,16 +83,25 @@ interval = 10
 format = "{percentage}% {time}"
 ```
 
+Show the combined stats of multiple batteries:
+```toml
+[[block]]
+block = "battery"
+devices = ["BAT0", "BAT1"]
+```
+
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | The device in `/sys/class/power_supply/` to read from. | No | `"BAT0"`
+`devices` | List of devices in `/sys/class/power_supply` to read from. | No | `[]`
 `interval` | Update interval, in seconds. | No | `10`
 `format` | A format string. See below for available placeholders. | No | `"{percentage}%"`
 `show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
+`devices` will take priority over `device`.
 
 ### Format string
 
