@@ -94,18 +94,15 @@ impl ConfigBlock for FocusedWindow {
                         };
                     }
                     Event::WorkspaceEvent(e) => {
-                        match e.change {
-                            WorkspaceChange::Init => {
-                                let mut title = title_original.lock().unwrap();
-                                *title = String::from("");
-                                tx.send(Task {
-                                    id: id_clone.clone(),
-                                    update_time: Instant::now(),
-                                });
-                            }
-                            _ => {}
-                        };
-                    }
+                        if let WorkspaceChange::Init = e.change {
+                            let mut title = title_original.lock().unwrap();
+                            *title = String::from("");
+                            tx.send(Task {
+                                id: id_clone.clone(),
+                                update_time: Instant::now(),
+                            });
+                        }
+                    },
                     _ => unreachable!(),
                 }
             }

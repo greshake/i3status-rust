@@ -92,7 +92,7 @@ impl ConfigBlock for Music {
                 "interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'",
             ).unwrap();
             loop {
-                for ci in c.iter(100000) {
+                for ci in c.iter(100_000) {
                     if let ConnectionItem::Signal(msg) = ci {
                         if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" && &*msg.member().unwrap() == "PropertiesChanged" {
                             send.send(Task {
@@ -147,9 +147,9 @@ impl ConfigBlock for Music {
                 config.clone(),
             ).with_icon("music")
                 .with_state(State::Info),
-            prev: prev,
-            play: play,
-            next: next,
+            prev,
+            play,
+            next,
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
@@ -179,12 +179,7 @@ impl Block for Music {
             );
             let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
-            if data.is_err() {
-                self.current_song.set_text(String::from(""));
-                self.player_avail = false;
-            } else {
-                let metadata = data.unwrap();
-
+            if let Ok(metadata) = data {
                 let (title, artist) = extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
                 if title.is_empty() && artist.is_empty() {
@@ -195,7 +190,11 @@ impl Block for Music {
                     self.current_song
                         .set_text(format!("{} | {}", title, artist));
                 }
-            }
+            } else {
+                self.current_song.set_text(String::from(""));
+                self.player_avail = false;
+            } 
+
             if let Some(ref mut play) = self.play {
                 let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
                 match data {

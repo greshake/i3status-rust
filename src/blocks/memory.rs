@@ -444,14 +444,14 @@ impl Memory {
 
         match self.memtype {
             Memtype::Memory => self.output.0.set_state(match mem_used.percent(mem_total) {
-                x if x as f64 > self.critical.0 => State::Critical,
-                x if x as f64 > self.warning.0 => State::Warning,
+                x if f64::from(x) > self.critical.0 => State::Critical,
+                x if f64::from(x) > self.warning.0 => State::Warning,
                 _ => State::Idle,
             }),
             Memtype::Swap => self.output.1.set_state(
                 match swap_used.percent(swap_total) {
-                    x if x as f64 > self.critical.1 => State::Critical,
-                    x if x as f64 > self.warning.1 => State::Warning,
+                    x if f64::from(x)  > self.critical.1 => State::Critical,
+                    x if f64::from(x) > self.warning.1 => State::Warning,
                     _ => State::Idle,
                 },
             ),
@@ -501,8 +501,8 @@ impl ConfigBlock for Memory {
             },
             clickable: block_config.clickable,
             format: (
-                FormatTemplate::from_string(block_config.format_mem)?,
-                FormatTemplate::from_string(block_config.format_swap)?,
+                FormatTemplate::from_string(&block_config.format_mem)?,
+                FormatTemplate::from_string(&block_config.format_swap)?,
             ),
             update_interval: block_config.interval,
             tx_update_request: tx,

@@ -28,7 +28,7 @@ impl ButtonWidget {
                 "background": "#000000",
                 "color": "#000000"
             }),
-            config: config,
+            config,
             cached_output: None,
         }
     }
@@ -51,8 +51,8 @@ impl ButtonWidget {
         self
     }
 
-    pub fn set_text(&mut self, content: String) {
-        self.content = Some(content);
+    pub fn set_text<S: Into<String>>(&mut self, content: S) {
+        self.content = Some(content.into());
         self.update();
     }
 
