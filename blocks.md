@@ -518,6 +518,10 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval, in seconds. | No | 5
 collapsed | Collapsed by default? | No | true
+`good` | Maximum temperature to set state to good. | No | `20`
+`idle` | Maximum temperature to set state to idle. | No | `45`
+`info` | Maximum temperature to set state to info. | No | `60`
+`warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | No | `80`
 
 ## Time
 
