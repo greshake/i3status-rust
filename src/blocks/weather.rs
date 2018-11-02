@@ -79,7 +79,7 @@ impl Weather {
 
                 // Don't error out on empty responses e.g. for when not
                 // connected to the internet.
-                if output.len() < 1 {
+                if output.is_empty() {
                     self.weather.set_icon("weather_default");
                     self.weather_keys = HashMap::new();
                     return Ok(());
@@ -226,7 +226,7 @@ impl Block for Weather {
         if self.weather_keys.keys().len() == 0 {
             self.weather.set_text("×".to_string());
         } else {
-            let fmt = FormatTemplate::from_string(self.format.clone())?;
+            let fmt = FormatTemplate::from_string(&self.format)?;
             self.weather.set_text(fmt.render(&self.weather_keys));
         }
         Ok(Some(self.update_interval))
@@ -238,11 +238,8 @@ impl Block for Weather {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if event.matches_name(self.id()) {
-            match event.button {
-                MouseButton::Left => {
+            if let MouseButton::Left = event.button {
                     self.update()?;
-                }
-                _ => {}
             }
         }
         Ok(())

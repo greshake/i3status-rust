@@ -161,16 +161,15 @@ impl ConfigBlock for NetworkManager {
 
         thread::spawn(move || {
             let c = Connection::get_private(BusType::System).unwrap();
-            let rule = format!(
-                "type='signal',\
+            let rule = "type='signal',\
                  path='/org/freedesktop/NetworkManager',\
                  interface='org.freedesktop.NetworkManager',\
-                 member='StateChanged'");
+                 member='StateChanged'";
 
             c.add_match(&rule).unwrap();
 
             loop {
-                let timeout = 100000;
+                let timeout = 100_000;
 
                 for _event in c.iter(timeout) {
                     send.send(Task {
@@ -184,8 +183,8 @@ impl ConfigBlock for NetworkManager {
         Ok(NetworkManager {
             id: id_copy,
             output: TextWidget::new(config),
-            dbus_conn: dbus_conn,
-            manager: manager,
+            dbus_conn,
+            manager,
             show_type: block_config.show_type,
         })
     }

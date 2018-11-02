@@ -90,10 +90,11 @@ impl Block for Time {
 
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        let mut command = "".to_string();
-        if self.on_click.is_some() {
-            command = self.on_click.clone().unwrap();
-        }
+        let command = if self.on_click.is_some() {
+            self.on_click.clone().unwrap()
+        } else {
+            "".to_string()
+        };
 
 
         if let Some(ref name) = e.name {

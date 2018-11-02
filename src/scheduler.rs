@@ -54,7 +54,7 @@ impl UpdateScheduler {
             });
         }
 
-        UpdateScheduler { schedule: schedule }
+        UpdateScheduler { schedule }
     }
 
     pub fn schedule(&mut self, task: Task) {

@@ -41,9 +41,9 @@ impl NetworkDevice {
         let wireless = device_path.join("wireless").exists();
 
         Ok(NetworkDevice {
-            device: device,
-            device_path: device_path,
-            wireless: wireless,
+            device,
+            device_path,
+            wireless,
         })
     }
 
@@ -108,13 +108,13 @@ impl NetworkDevice {
             .block_error("net", "Failed to execute SSID query.")?
             .stdout;
 
-        if iw_output.len() == 0 {
+        if iw_output.is_empty() {
             Ok(None)
         } else {
             iw_output.pop(); // Remove trailing newline.
             String::from_utf8(iw_output)
                 .block_error("net", "Non-UTF8 SSID.")
-                .map(|s| Some(s))
+                .map(Some)
         }
     }
 
@@ -137,13 +137,13 @@ impl NetworkDevice {
             .block_error("net", "Failed to execute IP address query.")?
             .stdout;
 
-        if ip_output.len() == 0 {
+        if ip_output.is_empty() {
             Ok(None)
         } else {
             ip_output.pop(); // Remove trailing newline.
             String::from_utf8(ip_output)
                 .block_error("net", "Non-UTF8 IP address.")
-                .map(|s| Some(s))
+                .map(Some)
         }
     }
 
@@ -171,13 +171,13 @@ impl NetworkDevice {
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
 
-        if bitrate_output.len() == 0 {
+        if bitrate_output.is_empty() {
             Ok(None)
         } else {
             bitrate_output.pop(); // Remove trailing newline.
             String::from_utf8(bitrate_output)
                 .block_error("net", "Non-UTF8 bitrate.")
-                .map(|s| Some(s))
+                .map(Some)
         }
     }
 }
@@ -309,42 +309,42 @@ impl ConfigBlock for Net {
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            network: TextWidget::new(config.clone()).with_icon(match wireless {
-                true => "net_wireless",
-                false => "net_wired",
+            network: TextWidget::new(config.clone()).with_icon(if wireless {
+                "net_wireless" } else {
+                "net_wired"
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: match block_config.ssid && wireless {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            ssid: if block_config.ssid && wireless {
+                Some(TextWidget::new(config.clone())) } else {
+                None
             },
             max_ssid_width: block_config.max_ssid_width,
-            bitrate: match block_config.bitrate {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            bitrate: if block_config.bitrate {
+                Some(TextWidget::new(config.clone())) } else {
+                None
             },
-            ip_addr: match block_config.ip {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            ip_addr: if block_config.ip {
+                Some(TextWidget::new(config.clone())) } else {
+                None
             },
-            output_tx: match block_config.speed_up {
-                true => Some(TextWidget::new(config.clone()).with_icon("net_up")),
-                false => None,
+            output_tx: if block_config.speed_up {
+                Some(TextWidget::new(config.clone()).with_icon("net_up")) } else {
+                None
             },
-            output_rx: match block_config.speed_down {
-                true => Some(TextWidget::new(config.clone()).with_icon("net_down")),
-                false => None,
+            output_rx: if block_config.speed_down {
+                Some(TextWidget::new(config.clone()).with_icon("net_down")) } else {
+                None
             },
-            graph_tx: match block_config.graph_up {
-                true => Some(GraphWidget::new(config.clone())),
-                false => None,
+            graph_tx: if block_config.graph_up {
+                Some(GraphWidget::new(config.clone())) } else { 
+                None
             },
-            graph_rx: match block_config.graph_down {
-                true => Some(GraphWidget::new(config.clone())),
-                false => None,
+            graph_rx: if block_config.graph_down {
+                Some(GraphWidget::new(config.clone())) } else {
+                None
             },
-            device: device,
+            device,
             rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: init_rx_bytes,
@@ -436,6 +436,7 @@ impl Block for Net {
             self.last_update = now;
         }
 
+        // TODO: consider using `as_nanos`
         // Update the throughout/graph widgets if they are enabled
         let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         if self.output_tx.is_some() || self.graph_tx.is_some() {

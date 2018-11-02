@@ -225,23 +225,21 @@ impl Block for DiskSpace {
                 percentage
             ));
             result = percentage as u64;
-        } else {
-            if self.show_percentage {
-                self.disk_space.set_text(format!(
+        } else if self.show_percentage {
+            self.disk_space.set_text(format!(
                     "{0} {1} ({2:.2}%) {3:?}",
                     self.alias,
                     converted_str,
                     percentage,
                     self.unit
-                ));
-            } else {
-                self.disk_space.set_text(format!(
+                    ));
+        } else {
+            self.disk_space.set_text(format!(
                     "{0} {1} {2:?}",
                     self.alias,
                     converted_str,
                     self.unit
-                ));
-            }
+                    ));
         }
 
         let state = self.compute_state(result, self.warning, self.alert);

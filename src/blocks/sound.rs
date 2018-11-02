@@ -62,7 +62,7 @@ struct AlsaSoundDevice {
 impl AlsaSoundDevice {
     fn new(name: String) -> Result<Self> {
         let mut sd = AlsaSoundDevice {
-            name: name,
+            name,
             volume: 0,
             muted: false,
         };
@@ -85,13 +85,11 @@ impl SoundDevice for AlsaSoundDevice {
 
         let last_line = &output
             .lines()
-            .into_iter()
             .last()
             .block_error("sound", "could not get sound info")?;
 
         let last = last_line
             .split_whitespace()
-            .into_iter()
             .filter(|x| x.starts_with('[') && !x.contains("dB"))
             .map(|s| s.trim_matches(FILTER))
             .collect::<Vec<&str>>();
@@ -151,7 +149,7 @@ impl SoundDevice for AlsaSoundDevice {
                 // Block until we get some output. Doesn't really matter what
                 // the output actually is -- these are events -- we just update
                 // the sound information if *something* happens.
-                if let Ok(_) = monitor.read(&mut buffer) {
+                if monitor.read(&mut buffer).is_ok() {
                     tx_update_request.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
@@ -390,7 +388,7 @@ impl PulseAudioClient {
         }
     }
 
-    fn sink_info_callback<'r, 's>(result: ListResult<&'r SinkInfo>) {
+    fn sink_info_callback(result: ListResult<&SinkInfo>) {
         match result {
             ListResult::End |
             ListResult::Error => { },
@@ -646,8 +644,8 @@ impl ConfigBlock for Sound {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
             device,
-            step_width: step_width,
-            config: config,
+            step_width,
+            config,
             on_click: block_config.on_click,
         };
 
@@ -676,10 +674,11 @@ impl Block for Sound {
                 match e.button {
                     MouseButton::Right => self.device.toggle()?,
                     MouseButton::Left => {
-                        let mut command = "".to_string();
-                        if self.on_click.is_some() {
-                            command = self.on_click.clone().unwrap();
-                        }
+                        let mut command =            if self.on_click.is_some() {
+                            self.on_click.clone().unwrap()
+                        } else {
+                            "".to_string()
+                        };
                         if self.on_click.is_some() {
                             let command_broken: Vec<&str> = command.split_whitespace().collect();
                             let mut itr = command_broken.iter();

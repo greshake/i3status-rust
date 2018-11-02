@@ -26,7 +26,7 @@ impl TextWidget {
                 "background": "#000000",
                 "color": "#000000"
             }),
-            config: config,
+            config,
             cached_output: None,
         }
     }
