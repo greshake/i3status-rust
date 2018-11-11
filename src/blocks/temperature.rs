@@ -169,13 +169,13 @@ impl Block for Temperature {
                 self.text.set_text(self.output.clone());
             }
 
-            let state =
-                if max <= self.maximum_good { State::Good }
-            else if max <= self.maximum_idle { State::Idle }
-            else if max <= self.maximum_info { State::Info }
-            else if max <= self.maximum_warning { State::Warning }
-            else { State::Critical }
-            ;
+            let state = match max {
+                m if m <= self.maximum_good => State::Good,
+                m if m <= self.maximum_idle => State::Idle,
+                m if m <= self.maximum_info => State::Info,
+                m if m <= self.maximum_warning => State::Warning,
+                _ => State::Critical,
+            };
 
             self.text.set_state(state);
         }
