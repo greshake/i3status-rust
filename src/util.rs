@@ -98,7 +98,7 @@ impl PrintState {
     }
 }
 
-pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>, config: &Config) -> Result<()> {
+pub fn print_blocks(order: &[String], block_map: &HashMap<String, &mut Block>, config: &Config) -> Result<()> {
     let mut state = PrintState {
         has_predecessor: false,
         last_bg: None,
@@ -110,7 +110,7 @@ pub fn print_blocks(order: &Vec<String>, block_map: &HashMap<String, &mut Block>
             .get(block_id)
             .internal_error("util", "couldn't get block by id")?));
         let widgets = block.view();
-        if widgets.len() == 0 {
+        if widgets.is_empty() {
             continue;
         }
         let first = widgets[0];
@@ -193,8 +193,8 @@ pub enum FormatTemplate {
 }
 
 impl FormatTemplate {
-    pub fn from_string(s: String) -> Result<FormatTemplate> {
-        let s_as_bytes = s.clone().into_bytes();
+    pub fn from_string(s: &str) -> Result<FormatTemplate> {
+        let s_as_bytes = s.as_bytes();
 
         //valid var tokens: {} containing any amount of alphanumericals
         let re = Regex::new(r"\{[a-zA-Z0-9]+?\}")
@@ -247,7 +247,7 @@ impl FormatTemplate {
             }
             Var(ref key, ref next) => {
                 rendered.push_str(
-                    &format!("{}", vars.get(key).expect(&format!("Unknown placeholder in format string: {}", key))),
+                    &format!("{}", vars.get(key).unwrap_or_else(|| panic!("Unknown placeholder in format string: {}", key))),
                 );
                 if let Some(ref next) = *next {
                     rendered.push_str(&*next.render(vars));

@@ -141,7 +141,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // In dev build, we might diverge into profiling blocks here
     if let Some(name) = matches.value_of("profile") {
-        profile_config(name, matches.value_of("profile-runs").unwrap(), &config, tx_update_requests)?;
+        profile_config(name, matches.value_of("profile-runs").unwrap(), &config, &tx_update_requests)?;
         return Ok(());
     }
 
@@ -192,7 +192,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // We save the order of the blocks here,
     // because they will be passed to an unordered HashMap
-    let order = blocks.iter().map(|x| String::from(x.id())).collect();
+    let order = blocks.iter().map(|x| String::from(x.id())).collect::<Vec<_>>();
 
     let mut scheduler = UpdateScheduler::new(&blocks);
 
@@ -216,21 +216,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         chan_select! {
             // Receive click events
-            rx_clicks.recv() -> res => match res {
-                Some(event) => {
+            rx_clicks.recv() -> res => if let Some(event) = res {
                     for block in block_map.values_mut() {
                         block.click(&event)?;
                     }
                     util::print_blocks(&order, &block_map, &config)?;
-                },
-                None => ()
             },
             // Receive async update requests
-            rx_update_requests.recv() -> res => match res {
-                Some(request) => {
+            rx_update_requests.recv() -> res => if let Some(request) = res {
                     scheduler.schedule(request);
-                },
-                None => ()
             },
             // Receive update timer events
             ttnu.recv() => {
@@ -295,7 +289,7 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
 }
 
 #[cfg(not(feature = "profiling"))]
-fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: Sender<Task>) -> Result<()> {
+fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: &Sender<Task>) -> Result<()> {
     // TODO: Maybe we should just panic! here.
     Err(InternalError(
         "profile".to_string(),

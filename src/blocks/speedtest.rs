@@ -58,7 +58,7 @@ fn get_values(bytes: bool) -> Result<String> {
     ).block_error("speedtest", "could not parse speedtest-cli output")
 }
 
-fn parse_values(output: String) -> Result<Vec<f32>> {
+fn parse_values(output: &str) -> Result<Vec<f32>> {
     let mut vals: Vec<f32> = Vec::with_capacity(3);
 
     for line in output.lines() {
@@ -75,9 +75,9 @@ fn parse_values(output: String) -> Result<Vec<f32>> {
 
 fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, Vec<f32>)>>, config: SpeedTestConfig, id: String) {
     spawn(move || loop {
-        if let Some(_) = recv.recv() {
+        if recv.recv().is_some() {
             if let Ok(output) = get_values(config.bytes) {
-                if let Ok(vals) = parse_values(output) {
+                if let Ok(vals) = parse_values(&output) {
                     if vals.len() == 3 {
                         let (ref mut update, ref mut values) = *values
                             .lock()

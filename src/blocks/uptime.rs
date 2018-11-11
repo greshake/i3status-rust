@@ -45,8 +45,8 @@ impl ConfigBlock for Uptime {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone()).with_icon("uptime"),
-            tx_update_request: tx_update_request,
-            config: config,
+            tx_update_request,
+            config,
         })
     }
 }

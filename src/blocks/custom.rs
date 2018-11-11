@@ -89,7 +89,7 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let output = Command::new("sh")
+        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
@@ -116,7 +116,7 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+            Command::new(env::var("SHELL").unwrap_or_else(|_|"sh".to_owned()))
                     .args(&["-c", on_click]).output().ok();
             update = true;
         }

@@ -105,7 +105,7 @@ impl ConfigBlock for Temperature {
             maximum_idle: block_config.idle,
             maximum_info: block_config.info,
             maximum_warning: block_config.warning,
-            format: FormatTemplate::from_string(block_config.format)
+            format: FormatTemplate::from_string(&block_config.format)
                 .block_error("temperature", "Invalid format specified for temperature")?,
         })
     }

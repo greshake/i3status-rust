@@ -51,8 +51,8 @@ impl PowerSupplyDevice {
     /// Use the power supply device `device`, as found in the
     /// `/sys/class/power_supply` directory. Raises an error if a directory for
     /// that device is not found.
-    pub fn from_device(device: String) -> Result<Self> {
-        let device_path = Path::new("/sys/class/power_supply").join(device.clone());
+    pub fn from_device(device: &str) -> Result<Self> {
+        let device_path = Path::new("/sys/class/power_supply").join(device);
         if !device_path.exists() {
             return Err(BlockError(
                 "battery".to_string(),
@@ -82,9 +82,9 @@ impl PowerSupplyDevice {
         };
 
         Ok(PowerSupplyDevice {
-            device_path: device_path,
-            charge_full: charge_full,
-            energy_full: energy_full,
+            device_path,
+            charge_full,
+            energy_full,
         })
     }
 }
@@ -238,7 +238,7 @@ impl UpowerDevice {
     /// the path `"/org/freedesktop/UPower/devices/battery_<device>"`. Raises an
     /// error if D-Bus cannot connect to this device, or if the device is not a
     /// battery.
-    pub fn from_device(device: String) -> Result<Self> {
+    pub fn from_device(device: &str) -> Result<Self> {
         let device_path = format!("/org/freedesktop/UPower/devices/battery_{}", device);
         let con = dbus::Connection::get_private(dbus::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
@@ -255,8 +255,8 @@ impl UpowerDevice {
             ));
         }
         Ok(UpowerDevice {
-            device_path: device_path,
-            con: con,
+            device_path,
+            con,
         })
     }
 
@@ -282,7 +282,7 @@ impl UpowerDevice {
                 .expect("Failed to add D-Bus match rule.");
 
             loop {
-                if let Some(_) = con.incoming(10_000).next() {
+                if con.incoming(10_000).next().is_some() {
                     update_request.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
@@ -422,21 +422,21 @@ impl ConfigBlock for Battery {
         };
 
         let id = Uuid::new_v4().simple().to_string();
-        let device: Box<BatteryDevice> = match block_config.upower {
-            true => {
-                let out = UpowerDevice::from_device(block_config.device)?;
-                out.monitor(id.clone(), update_request);
-                Box::new(out)
-            }
-            false => Box::new(PowerSupplyDevice::from_device(block_config.device)?),
+        let device: Box<BatteryDevice> = if block_config.upower {
+            let out = UpowerDevice::from_device(&block_config.device)?;
+            out.monitor(id.clone(), update_request);
+            Box::new(out)
+        } else {
+            Box::new(PowerSupplyDevice::from_device(&block_config.device)?)
+
         };
 
         Ok(Battery {
-            id: id,
+            id,
             update_interval: block_config.interval,
             output: TextWidget::new(config),
-            device: device,
-            format: FormatTemplate::from_string(format)?,
+            device,
+            format: FormatTemplate::from_string(&format)?,
             upower: block_config.upower,
         })
     }
