@@ -498,7 +498,7 @@ Key | Values | Required | Default
 
 ## Temperature
 
-Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). Currently, you can only adjust these thresholds in source code. **Depends on lm_sensors being installed and configured!**
+Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). **Depends on lm_sensors being installed and configured!**
 
 Requires `lm_sensors` and appropriate kernel modules for your hardware.
 
@@ -518,6 +518,10 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 interval | Update interval, in seconds. | No | 5
 collapsed | Collapsed by default? | No | true
+`good` | Maximum temperature to set state to good. | No | `20`
+`idle` | Maximum temperature to set state to idle. | No | `45`
+`info` | Maximum temperature to set state to info. | No | `60`
+`warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | No | `80`
 
 ## Time
 

@@ -20,6 +20,10 @@ pub struct Temperature {
     collapsed: bool,
     id: String,
     update_interval: Duration,
+    maximum_good: i64,
+    maximum_idle: i64,
+    maximum_info: i64,
+    maximum_warning: i64,
     format: FormatTemplate,
 }
 
@@ -33,6 +37,22 @@ pub struct TemperatureConfig {
     /// Collapsed by default?
     #[serde(default = "TemperatureConfig::default_collapsed")]
     pub collapsed: bool,
+
+    /// Maximum temperature, below which state is set to good
+    #[serde(default = "TemperatureConfig::default_good")]
+    pub good: i64,
+
+    /// Maximum temperature, below which state is set to idle
+    #[serde(default = "TemperatureConfig::default_idle")]
+    pub idle: i64,
+
+    /// Maximum temperature, below which state is set to info
+    #[serde(default = "TemperatureConfig::default_info")]
+    pub info: i64,
+
+    /// Maximum temperature, below which state is set to warning
+    #[serde(default = "TemperatureConfig::default_warning")]
+    pub warning: i64,
 
     /// Format override
     #[serde(default = "TemperatureConfig::default_format")]
@@ -51,6 +71,23 @@ impl TemperatureConfig {
     fn default_collapsed() -> bool {
         true
     }
+
+    fn default_good() -> i64 {
+        20
+    }
+
+    fn default_idle() -> i64 {
+        45
+    }
+
+    fn default_info() -> i64 {
+        60
+    }
+
+    fn default_warning() -> i64 {
+        80
+    }
+
 }
 
 impl ConfigBlock for Temperature {
@@ -64,6 +101,10 @@ impl ConfigBlock for Temperature {
             output: String::new(),
             collapsed: block_config.collapsed,
             id,
+            maximum_good: block_config.good,
+            maximum_idle: block_config.idle,
+            maximum_info: block_config.info,
+            maximum_warning: block_config.warning,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("temperature", "Invalid format specified for temperature")?,
         })
@@ -128,13 +169,15 @@ impl Block for Temperature {
                 self.text.set_text(self.output.clone());
             }
 
-            self.text.set_state(match max {
-                0...20 => State::Good,
-                21...45 => State::Idle,
-                46...60 => State::Info,
-                61...80 => State::Warning,
+            let state = match max {
+                m if m <= self.maximum_good => State::Good,
+                m if m <= self.maximum_idle => State::Idle,
+                m if m <= self.maximum_info => State::Info,
+                m if m <= self.maximum_warning => State::Warning,
                 _ => State::Critical,
-            });
+            };
+
+            self.text.set_state(state);
         }
 
         Ok(Some(self.update_interval))
