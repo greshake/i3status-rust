@@ -39,6 +39,12 @@ impl ButtonWidget {
         self
     }
 
+    pub fn with_content(mut self, content: Option<String>) -> Self {
+        self.content = content;
+        self.update();
+        self
+    }
+
     pub fn with_text(mut self, content: &str) -> Self {
         self.content = Some(String::from(content));
         self.update();
