@@ -89,17 +89,15 @@ impl ConfigBlock for Music {
         thread::spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
             c.add_match(
-                "interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'",
+                "interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'",
             ).unwrap();
             loop {
                 for ci in c.iter(100_000) {
-                    if let ConnectionItem::Signal(msg) = ci {
-                        if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" && &*msg.member().unwrap() == "PropertiesChanged" {
-                            send.send(Task {
-                                id: id.clone(),
-                                update_time: Instant::now(),
-                            });
-                        }
+                    if let ConnectionItem::Signal(_) = ci {
+                        send.send(Task {
+                            id: id.clone(),
+                            update_time: Instant::now(),
+                        });
                     }
                 }
             }
@@ -193,7 +191,7 @@ impl Block for Music {
             } else {
                 self.current_song.set_text(String::from(""));
                 self.player_avail = false;
-            } 
+            }
 
             if let Some(ref mut play) = self.play {
                 let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
