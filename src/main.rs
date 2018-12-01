@@ -224,7 +224,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
             },
             // Receive async update requests
             rx_update_requests.recv() -> res => if let Some(request) = res {
-                    scheduler.schedule(request);
+                // Process immediately and forget
+                block_map
+                    .get_mut(&request.id)
+                    .internal_error("scheduler", "could not get required block")?
+                    .update()?;
+                util::print_blocks(&order, &block_map, &config)?;
             },
             // Receive update timer events
             ttnu.recv() => {
