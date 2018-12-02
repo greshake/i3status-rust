@@ -14,7 +14,7 @@ use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 
 use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
-use blocks::dbus::arg::RefArg;
+use blocks::dbus::arg::{Array, RefArg};
 use self::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
@@ -28,6 +28,7 @@ pub struct Music {
     player_avail: bool,
     marquee: bool,
     player: String,
+    auto_discover: bool
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -151,7 +152,13 @@ impl ConfigBlock for Music {
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
-            player: block_config.player,
+            auto_discover: block_config.player.is_empty(),
+            player: if block_config.player.is_empty()
+                {
+                    block_config.player
+                } else {
+                    format!("org.mpris.MediaPlayer2.{}", block_config.player)
+                },
             marquee: block_config.marquee,
         })
     }
@@ -168,10 +175,16 @@ impl Block for Music {
         } else {
             (false, None)
         };
-
-        if !rotated {
+        println!("{:?}", self.player);
+        if !rotated && self.player.is_empty() {
+            if let Some(name) = get_first_available_player(&self.dbus_conn) {
+                self.player = name
+            }
+        }
+        println!("> {:?}", self.player);
+        if !(rotated || self.player.is_empty()) {
             let c = self.dbus_conn.with_path(
-                format!("org.mpris.MediaPlayer2.{}", self.player),
+                self.player.clone(),
                 "/org/mpris/MediaPlayer2",
                 1000,
             );
@@ -191,6 +204,9 @@ impl Block for Music {
             } else {
                 self.current_song.set_text(String::from(""));
                 self.player_avail = false;
+                if self.auto_discover {
+                    self.player = String::from("");
+                }
             }
 
             if let Some(ref mut play) = self.play {
@@ -211,8 +227,7 @@ impl Block for Music {
         }
         Ok(match (next, self.marquee) {
             (Some(_), _) => next,
-            (None, true) => Some(Duration::new(1, 0)),
-            (None, false) => Some(Duration::new(1, 0)),
+            (None, _) => Some(Duration::new(2, 0))
         })
     }
 
@@ -303,4 +318,16 @@ fn extract_from_metadata(metadata: &Box<arg::RefArg>) -> Result<(String, String)
         };
     }
     Ok((title, artist))
+}
+
+fn get_first_available_player(connection: &Connection) -> Option<String> {
+    let m = Message::new_method_call("org.freedesktop.DBus", "/", "org.freedesktop.DBus", "ListNames").unwrap();
+    let r = connection.send_with_reply_and_block(m, 2000).unwrap();
+    // ListNames returns one argument, which is an array of strings.
+    let mut arr: Array<&str, _>  = r.get1().unwrap();
+    if let Some(name) = arr.find(|entry| entry.starts_with("org.mpris.MediaPlayer2")) {
+        Some(String::from(name))
+    } else {
+        None
+    }
 }
