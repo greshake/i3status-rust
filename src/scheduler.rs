@@ -57,10 +57,6 @@ impl UpdateScheduler {
         UpdateScheduler { schedule }
     }
 
-    pub fn schedule(&mut self, task: Task) {
-        self.schedule.push(task);
-    }
-
     pub fn time_to_next_update(&self) -> Option<Duration> {
         if let Some(peeked) = self.schedule.peek() {
             let next_update = peeked.update_time;
