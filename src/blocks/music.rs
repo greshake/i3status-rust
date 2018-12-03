@@ -245,7 +245,7 @@ impl Block for Music {
             };
             if action != "" {
                 let m = Message::new_method_call(
-                    format!("org.mpris.MediaPlayer2.{}", self.player),
+                    &self.player,
                     "/org/mpris/MediaPlayer2",
                     "org.mpris.MediaPlayer2.Player",
                     action,
