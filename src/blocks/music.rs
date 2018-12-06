@@ -36,7 +36,6 @@ pub struct Music {
 pub struct MusicConfig {
     /// Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.
     /// Set an empty string for auto-discovery of currently active player.
-    #[serde(default = "MusicConfig::default_player")]
     pub player: Option<String>,
 
     /// Max width of the block in characters, not including the buttons
@@ -79,10 +78,6 @@ impl MusicConfig {
 
     fn default_buttons() -> Vec<String> {
         vec![]
-    }
-
-    fn default_player() -> Option<String> {
-        None
     }
 }
 
