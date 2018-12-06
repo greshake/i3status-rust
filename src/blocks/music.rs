@@ -27,7 +27,7 @@ pub struct Music {
     dbus_conn: Connection,
     player_avail: bool,
     marquee: bool,
-    player: String,
+    player: Option<String>,
     auto_discover: bool
 }
 
@@ -37,7 +37,7 @@ pub struct MusicConfig {
     /// Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.
     /// Set an empty string for auto-discovery of currently active player.
     #[serde(default = "MusicConfig::default_player")]
-    pub player: String,
+    pub player: Option<String>,
 
     /// Max width of the block in characters, not including the buttons
     #[serde(default = "MusicConfig::default_max_width")]
@@ -81,8 +81,8 @@ impl MusicConfig {
         vec![]
     }
 
-    fn default_player() -> String {
-        String::from("")
+    fn default_player() -> Option<String> {
+        None
     }
 }
 
@@ -158,12 +158,12 @@ impl ConfigBlock for Music {
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
-            auto_discover: block_config.player.is_empty(),
-            player: if block_config.player.is_empty()
+            auto_discover: block_config.player.is_none(),
+            player: if block_config.player.is_none()
                 {
                     block_config.player
                 } else {
-                    format!("org.mpris.MediaPlayer2.{}", block_config.player)
+                    Some(format!("org.mpris.MediaPlayer2.{}", block_config.player.unwrap()))
                 },
             marquee: block_config.marquee,
         })
@@ -181,14 +181,12 @@ impl Block for Music {
         } else {
             (false, None)
         };
-        if !rotated && self.player.is_empty() {
-            if let Some(name) = get_first_available_player(&self.dbus_conn) {
-                self.player = name
-            }
+        if !rotated && self.player.is_none() {
+            self.player = get_first_available_player(&self.dbus_conn)
         }
-        if !(rotated || self.player.is_empty()) {
+        if !(rotated || self.player.is_none()) {
             let c = self.dbus_conn.with_path(
-                self.player.clone(),
+                self.player.clone().unwrap(),
                 "/org/mpris/MediaPlayer2",
                 1000,
             );
@@ -209,7 +207,7 @@ impl Block for Music {
                 self.current_song.set_text(String::from(""));
                 self.player_avail = false;
                 if self.auto_discover {
-                    self.player = String::from("");
+                    self.player = None;
                 }
             }
 
@@ -245,7 +243,7 @@ impl Block for Music {
             };
             if action != "" {
                 let m = Message::new_method_call(
-                    &self.player,
+                    self.player.as_ref().unwrap(),
                     "/org/mpris/MediaPlayer2",
                     "org.mpris.MediaPlayer2.Player",
                     action,
