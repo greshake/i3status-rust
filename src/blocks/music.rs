@@ -35,6 +35,8 @@ pub struct Music {
 #[serde(deny_unknown_fields)]
 pub struct MusicConfig {
     /// Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.
+    /// Set an empty string for auto-discovery of currently active player.
+    #[serde(default = "MusicConfig::default_player")]
     pub player: String,
 
     /// Max width of the block in characters, not including the buttons
@@ -77,6 +79,10 @@ impl MusicConfig {
 
     fn default_buttons() -> Vec<String> {
         vec![]
+    }
+
+    fn default_player() -> String {
+        String::from("")
     }
 }
 
@@ -175,13 +181,11 @@ impl Block for Music {
         } else {
             (false, None)
         };
-        println!("{:?}", self.player);
         if !rotated && self.player.is_empty() {
             if let Some(name) = get_first_available_player(&self.dbus_conn) {
                 self.player = name
             }
         }
-        println!("> {:?}", self.player);
         if !(rotated || self.player.is_empty()) {
             let c = self.dbus_conn.with_path(
                 self.player.clone(),
