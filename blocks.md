@@ -408,7 +408,7 @@ Proprietary nvidia driver required.
 
 Creates a block which displays the Nvidia GPU utilization, temperature, used and total memory, fan speed, gpu clocks. You can set gpu label, that displayed by default.
 
-Clicking the left button on the icon changes the output of the label to the output of the gpu name. Same with memory: used/total. 
+Clicking the left button on the icon changes the output of the label to the output of the gpu name. Same with memory: used/total.
 
 Clicking the left button on the fans turns on the mode of changing the speed of the fans using the wheel. Press again to turn off the mode. For this opportunity you need nvidia-settings!
 
@@ -462,7 +462,7 @@ Creates a block which displays the volume level (according to PulseAudio or ALSA
 
 Requires a PulseAudio installation or `alsa-utils` for ALSA.
 
-PulseAudio support is a feature and can be turned on (`--features "pulseaudio"`) / off (`--no-default-features`) during build with `cargo`.  
+PulseAudio support is a feature and can be turned on (`--features "pulseaudio"`) / off (`--no-default-features`) during build with `cargo`.
 If PulseAudio support is enabled the `"auto"` driver will first try to connect to PulseAudio and then fallback to ALSA on error.
 
 
