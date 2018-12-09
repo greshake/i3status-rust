@@ -336,11 +336,13 @@ Key | Values | Required | Default
 
 Creates a block which can display the current song title and artist, in a fixed width marquee fashion. Also provides buttons for play/pause, previous and next title.
 
-Supports all music players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more. 
+Supports all music players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more.
+
+It can be configured to drive a specific (running) player or to automatically discover the currently active one. Most often, you only run one player at a time.
 
 ### Examples
 
-Show the currently playing song on Spotify, with play & next buttons:
+Show the currently playing song on Spotify only, with play & next buttons:
 
 ```toml
 [[block]]
@@ -349,11 +351,20 @@ player = "spotify"
 buttons = ["play", "next"]
 ```
 
+Same thing for any compatible player, takes the first active on the bus:
+
+```toml
+[[block]]
+block = "music"
+buttons = ["play", "next"]
+```
+
+
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`player` | Name of the music player. Must be the same name the player is registered with the MediaPlayer2 Interface.  | Yes | None
+`player` | Name of the music player. Must be the same name the player is registered with the MediaPlayer2 Interface.  If unset, it will automatically discover the active player.  | Yes | None
 `max_width` | Max width of the block in characters, not including the buttons | No | `21`
 `marquee` | Bool to specify if a marquee style rotation should be used if the title + artist is longer than max-width | No | `true`
 `marquee_interval` | Marquee interval in seconds. This is the delay between each rotation. | No | `10`
@@ -397,7 +408,7 @@ Proprietary nvidia driver required.
 
 Creates a block which displays the Nvidia GPU utilization, temperature, used and total memory, fan speed, gpu clocks. You can set gpu label, that displayed by default.
 
-Clicking the left button on the icon changes the output of the label to the output of the gpu name. Same with memory: used/total. 
+Clicking the left button on the icon changes the output of the label to the output of the gpu name. Same with memory: used/total.
 
 Clicking the left button on the fans turns on the mode of changing the speed of the fans using the wheel. Press again to turn off the mode. For this opportunity you need nvidia-settings!
 
@@ -451,7 +462,7 @@ Creates a block which displays the volume level (according to PulseAudio or ALSA
 
 Requires a PulseAudio installation or `alsa-utils` for ALSA.
 
-PulseAudio support is a feature and can be turned on (`--features "pulseaudio"`) / off (`--no-default-features`) during build with `cargo`.  
+PulseAudio support is a feature and can be turned on (`--features "pulseaudio"`) / off (`--no-default-features`) during build with `cargo`.
 If PulseAudio support is enabled the `"auto"` driver will first try to connect to PulseAudio and then fallback to ALSA on error.
 
 
