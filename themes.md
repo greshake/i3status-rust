@@ -10,6 +10,7 @@ icons = "awesome"
 # Available themes:
 * `plain` (default)
 * `solarized-dark`
+* `solarized-light`
 * `slick`
 * `modern`
 * `bad-wolf`
