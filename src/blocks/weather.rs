@@ -126,7 +126,7 @@ impl Weather {
                         ));
                     }
                 };
-                let raw_wind_direction = match json.pointer("/wind/deg").and_then(|v| v.as_i64()) {
+                let raw_wind_direction = match json.pointer("/wind/deg").and_then(|v| v.as_f64()) {
                     Some(v) => v,
                     None => {
                         return Err(BlockError(
@@ -148,8 +148,8 @@ impl Weather {
                 };
 
                 // Convert wind direction in azimuth degrees to abbreviation names
-                fn convert_wind_direction(direction: i64) -> String {
-                    match direction {
+                fn convert_wind_direction(direction: f64) -> String {
+                    match direction.round() as i64 {
                         24 ... 68 => "NE".to_string(),
                         69 ... 113 => "E".to_string(),
                         114 ... 158 => "SE".to_string(),
