@@ -565,7 +565,7 @@ interval = 60
 Key | Values | Required | Default
 ----|--------|----------|--------
 `format` | Format string. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | `"%a %d/%m %R"`
-`on_click` | Shell command to run when the sound block is clicked. | No | None
+`on_click` | Shell command to run when the time block is clicked. | No | None
 `interval` | Update interval, in seconds. | No | 5
 `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | No | Local timezone
 
