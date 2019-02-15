@@ -1,3 +1,5 @@
+use std::ffi::OsStr;
+use std::process::Command;
 use std::time::{Duration, Instant};
 use chan::Sender;
 use std::thread;
@@ -24,6 +26,8 @@ pub struct Music {
     prev: Option<ButtonWidget>,
     play: Option<ButtonWidget>,
     next: Option<ButtonWidget>,
+    on_collapsed_click_widget: ButtonWidget,
+    on_collapsed_click: Option<String>,
     dbus_conn: Connection,
     player_avail: bool,
     marquee: bool,
@@ -57,6 +61,9 @@ pub struct MusicConfig {
     /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
     #[serde(default = "MusicConfig::default_buttons")]
     pub buttons: Vec<String>,
+
+    #[serde(default = "MusicConfig::default_on_collapsed_click")]
+    pub on_collapsed_click: Option<String>,
 }
 
 impl MusicConfig {
@@ -78,6 +85,10 @@ impl MusicConfig {
 
     fn default_buttons() -> Vec<String> {
         vec![]
+    }
+
+    fn default_on_collapsed_click() -> Option<String> {
+        None
     }
 }
 
@@ -150,6 +161,12 @@ impl ConfigBlock for Music {
             prev,
             play,
             next,
+            on_collapsed_click_widget: ButtonWidget::new(
+                config.clone(),
+                "on_collapsed_click",
+            ).with_icon("music")
+                .with_state(State::Info),
+            on_collapsed_click: block_config.on_collapsed_click,
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
@@ -248,6 +265,14 @@ impl Block for Music {
                     .block_error("music", "failed to call method via D-Bus")
                     .map(|_| ())
             } else {
+                if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
+                    let command = self.on_collapsed_click.clone().unwrap();
+                    let command_broken: Vec<&str> = command.split_whitespace().collect();
+                    let mut itr = command_broken.iter();
+                    let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
+                        .args(itr)
+                        .spawn();
+                }
                 Ok(())
             }
         } else {
@@ -270,7 +295,11 @@ impl Block for Music {
             }
             elements
         } else {
-            vec![&self.current_song]
+            if self.current_song.is_empty() {
+                vec![&self.on_collapsed_click_widget]
+            } else {
+                vec![&self.current_song]
+            }
         }
     }
 }
