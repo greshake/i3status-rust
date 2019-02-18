@@ -24,10 +24,10 @@ pub struct NetworkDevice {
 
 impl NetworkDevice {
     /// Use the network device `device`. Raises an error if a directory for that
-    /// device is not found.
-    pub fn from_device(device: String) -> Result<Self> {
+    /// device is not found unless `allow_missing` is true.
+    pub fn from_device(device: String, allow_missing: bool) -> Result<Self> {
         let device_path = Path::new("/sys/class/net").join(device.clone());
-        if !device_path.exists() {
+        if !allow_missing && !device_path.exists() {
             return Err(BlockError("net".to_string(), format!("Network device '{}' does not exist", device_path.to_string_lossy())));
         }
 
@@ -154,6 +154,7 @@ pub struct Net {
     rx_bytes: u64,
     active: bool,
     hide_inactive: bool,
+    hide_missing: bool,
     last_update: Instant,
 }
 
@@ -188,6 +189,10 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_hide_inactive")]
     pub hide_inactive: bool,
 
+    /// Whether to hide networks that are missing completely.
+    #[serde(default = "NetConfig::default_hide_missing")]
+    pub hide_missing: bool,
+
     /// Whether to show the upload throughput indicator of active networks.
     #[serde(default = "NetConfig::default_speed_up")]
     pub speed_up: bool,
@@ -215,6 +220,10 @@ impl NetConfig {
     }
 
     fn default_hide_inactive() -> bool {
+        false
+    }
+
+    fn default_hide_missing() -> bool {
         false
     }
 
@@ -255,9 +264,9 @@ impl ConfigBlock for Net {
     type Config = NetConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let device = NetworkDevice::from_device(block_config.device)?;
-        let init_rx_bytes = device.rx_bytes()?;
-        let init_tx_bytes = device.tx_bytes()?;
+        let device = NetworkDevice::from_device(block_config.device, block_config.hide_missing)?;
+        let init_rx_bytes = device.rx_bytes().unwrap_or(0);
+        let init_tx_bytes = device.tx_bytes().unwrap_or(0);
         let wireless = device.is_wireless();
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
@@ -284,6 +293,7 @@ impl ConfigBlock for Net {
             tx_bytes: init_tx_bytes,
             active: true,
             hide_inactive: block_config.hide_inactive,
+            hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
         })
     }
@@ -425,7 +435,7 @@ impl Block for Net {
                 widgets.push(graph_rx_widget);
             }
             widgets
-        } else if !self.hide_inactive {
+        } else if !(self.hide_inactive || self.hide_missing) {
             vec![&self.network]
         } else {
             vec![]
