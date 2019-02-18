@@ -1,14 +1,14 @@
-use std::time::Duration;
 use chan::Sender;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
+use widget::I3BarWidget;
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 

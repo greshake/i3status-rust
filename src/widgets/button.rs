@@ -1,7 +1,7 @@
-use config::Config;
-use widget::State;
-use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
+use config::Config;
+use serde_json::value::Value;
+use widget::State;
 
 #[derive(Clone, Debug)]
 pub struct ButtonWidget {
@@ -92,9 +92,7 @@ impl ButtonWidget {
 
 impl I3BarWidget for ButtonWidget {
     fn to_string(&self) -> String {
-        self.cached_output
-            .clone()
-            .unwrap_or_else(|| self.rendered.to_string())
+        self.cached_output.clone().unwrap_or_else(|| self.rendered.to_string())
     }
 
     fn get_rendered(&self) -> &Value {

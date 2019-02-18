@@ -1,10 +1,10 @@
+use chan::Sender;
 use serde::{de, Deserializer};
 use serde_json;
 use std::fmt;
 use std::io;
 use std::option::Option;
 use std::string::*;
-use chan::Sender;
 use std::thread;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

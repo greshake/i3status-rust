@@ -1,16 +1,16 @@
-use std::time::Duration;
-use std::process::Command;
-use util::FormatTemplate;
 use chan::Sender;
 use scheduler::Task;
+use std::process::Command;
+use std::time::Duration;
+use util::FormatTemplate;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
+use widget::{I3BarWidget, State};
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -87,7 +87,6 @@ impl TemperatureConfig {
     fn default_warning() -> i64 {
         80
     }
-
 }
 
 impl ConfigBlock for Temperature {
@@ -105,8 +104,7 @@ impl ConfigBlock for Temperature {
             maximum_idle: block_config.idle,
             maximum_info: block_config.info,
             maximum_warning: block_config.warning,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("temperature", "Invalid format specified for temperature")?,
+            format: FormatTemplate::from_string(&block_config.format).block_error("temperature", "Invalid format specified for temperature")?,
         })
     }
 }
@@ -123,11 +121,7 @@ impl Block for Temperature {
 
         for line in output.lines() {
             if line.starts_with("  temp") {
-                let rest = &line[6..]
-                    .split('_')
-                    .flat_map(|x| x.split(' '))
-                    .flat_map(|x| x.split('.'))
-                    .collect::<Vec<_>>();
+                let rest = &line[6..].split('_').flat_map(|x| x.split(' ')).flat_map(|x| x.split('.')).collect::<Vec<_>>();
 
                 if rest[1].starts_with("input") {
                     match rest[2].parse::<i64>() {
@@ -140,24 +134,15 @@ impl Block for Temperature {
                             eprintln!("Temperature ({}) outside of range ([-100, 150])", t);
                             Ok(())
                         }
-                        Err(_) => Err(BlockError(
-                            "temperature".to_owned(),
-                            "failed to parse temperature as an integer".to_owned(),
-                        )),
+                        Err(_) => Err(BlockError("temperature".to_owned(), "failed to parse temperature as an integer".to_owned())),
                     }?
                 }
             }
         }
 
         if !temperatures.is_empty() {
-            let max: i64 = *temperatures
-                .iter()
-                .max()
-                .block_error("temperature", "failed to get max temperature")?;
-            let min: i64 = *temperatures
-                .iter()
-                .min()
-                .block_error("temperature", "failed to get min temperature")?;
+            let max: i64 = *temperatures.iter().max().block_error("temperature", "failed to get max temperature")?;
+            let min: i64 = *temperatures.iter().min().block_error("temperature", "failed to get min temperature")?;
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
 
             let values = map!("{average}" => avg,

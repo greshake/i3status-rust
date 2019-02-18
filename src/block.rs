@@ -1,9 +1,9 @@
+use chan::Sender;
 use config::Config;
 use errors::*;
-use scheduler::Task;
-use chan::Sender;
-use std::time::Duration;
 use input::I3BarEvent;
+use scheduler::Task;
+use std::time::Duration;
 use widget::I3BarWidget;
 
 pub trait Block {

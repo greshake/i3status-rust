@@ -1,3 +1,4 @@
+use chrono_tz::Tz;
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use std::collections::{BTreeMap, HashMap as Map};
 use std::error::Error;
@@ -7,7 +8,6 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::time::Duration;
 use toml::{self, value};
-use chrono_tz::Tz;
 
 pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
@@ -82,7 +82,7 @@ macro_rules! map_type {
                 $fromstr_expr
             }
         }
-    }
+    };
 }
 
 impl<'de, T, V> DeserializeSeed<'de> for MapType<T, V>
@@ -124,9 +124,7 @@ where
         A: de::SeqAccess<'de>,
     {
         let mut vec: Vec<Self::Value> = Vec::new();
-        while let Some(element) = visitor
-            .next_element_seed(MapType::<T, V>(PhantomData, PhantomData))?
-        {
+        while let Some(element) = visitor.next_element_seed(MapType::<T, V>(PhantomData, PhantomData))? {
             vec.push(element);
         }
 
@@ -169,15 +167,12 @@ where
             );
         }
         if let Some(raw_overrides) = map.remove("overrides") {
-            let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides)
-                .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?;
+            let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides).map_err(|e: toml::de::Error| de::Error::custom(e.description()))?;
             combined.extend(overrides);
         }
 
         if combined.is_empty() {
-            Err(de::Error::custom(
-                "missing all fields (`name`, `overrides`)",
-            ))
+            Err(de::Error::custom("missing all fields (`name`, `overrides`)"))
         } else {
             Ok(combined)
         }

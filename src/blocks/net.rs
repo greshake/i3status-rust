@@ -1,18 +1,18 @@
+use chan::Sender;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
-use chan::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widgets::graph::GraphWidget;
-use widget::I3BarWidget;
 use scheduler::Task;
+use widget::I3BarWidget;
+use widgets::graph::GraphWidget;
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 
@@ -28,23 +28,13 @@ impl NetworkDevice {
     pub fn from_device(device: String) -> Result<Self> {
         let device_path = Path::new("/sys/class/net").join(device.clone());
         if !device_path.exists() {
-            return Err(BlockError(
-                "net".to_string(),
-                format!(
-                    "Network device '{}' does not exist",
-                    device_path.to_string_lossy()
-                ),
-            ));
+            return Err(BlockError("net".to_string(), format!("Network device '{}' does not exist", device_path.to_string_lossy())));
         }
 
         // I don't believe that this should ever change, so set it now:
         let wireless = device_path.join("wireless").exists();
 
-        Ok(NetworkDevice {
-            device,
-            device_path,
-            wireless,
-        })
+        Ok(NetworkDevice { device, device_path, wireless })
     }
 
     /// Check whether this network device is in the `up` state. Note that a
@@ -63,16 +53,12 @@ impl NetworkDevice {
 
     /// Query the device for the current `tx_bytes` statistic.
     pub fn tx_bytes(&self) -> Result<u64> {
-        read_file(&self.device_path.join("statistics/tx_bytes"))?
-            .parse::<u64>()
-            .block_error("net", "Failed to parse tx_bytes")
+        read_file(&self.device_path.join("statistics/tx_bytes"))?.parse::<u64>().block_error("net", "Failed to parse tx_bytes")
     }
 
     /// Query the device for the current `rx_bytes` statistic.
     pub fn rx_bytes(&self) -> Result<u64> {
-        read_file(&self.device_path.join("statistics/rx_bytes"))?
-            .parse::<u64>()
-            .block_error("net", "Failed to parse rx_bytes")
+        read_file(&self.device_path.join("statistics/rx_bytes"))?.parse::<u64>().block_error("net", "Failed to parse rx_bytes")
     }
 
     /// Checks whether this device is wireless.
@@ -85,37 +71,17 @@ impl NetworkDevice {
     pub fn ssid(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
         if !self.wireless || !up {
-            return Err(BlockError(
-                "net".to_string(),
-                "SSIDs are only available for connected wireless devices."
-                    .to_string(),
-            ));
+            return Err(BlockError("net".to_string(), "SSIDs are only available for connected wireless devices.".to_string()));
         }
         let mut iw_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&["-c", &format!("iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"", self.device)])
             .output()
             .block_error("net", "Failed to execute SSID query.")?
             .stdout;
 
         if iw_output.is_empty() {
             iw_output = Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        &format!(
-                            "nmcli -g general.connection device show {}",
-                            self.device
-                        ),
-                    ],
-                )
+                .args(&["-c", &format!("nmcli -g general.connection device show {}", self.device)])
                 .output()
                 .block_error("net", "Failed to execute SSID query.")?
                 .stdout;
@@ -125,9 +91,7 @@ impl NetworkDevice {
             Ok(None)
         } else {
             iw_output.pop(); // Remove trailing newline.
-            String::from_utf8(iw_output)
-                .block_error("net", "Non-UTF8 SSID.")
-                .map(Some)
+            String::from_utf8(iw_output).block_error("net", "Non-UTF8 SSID.").map(Some)
         }
     }
 
@@ -137,15 +101,7 @@ impl NetworkDevice {
             return Ok(None);
         }
         let mut ip_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&["-c", &format!("ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"", self.device)])
             .output()
             .block_error("net", "Failed to execute IP address query.")?
             .stdout;
@@ -154,9 +110,7 @@ impl NetworkDevice {
             Ok(None)
         } else {
             ip_output.pop(); // Remove trailing newline.
-            String::from_utf8(ip_output)
-                .block_error("net", "Non-UTF8 IP address.")
-                .map(Some)
+            String::from_utf8(ip_output).block_error("net", "Non-UTF8 IP address.").map(Some)
         }
     }
 
@@ -164,22 +118,10 @@ impl NetworkDevice {
     pub fn bitrate(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
         if !self.wireless || !up {
-            return Err(BlockError(
-                "net".to_string(),
-                "Bitrate is only available for connected wireless devices."
-                    .to_string(),
-            ));
+            return Err(BlockError("net".to_string(), "Bitrate is only available for connected wireless devices.".to_string()));
         }
         let mut bitrate_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&["-c", &format!("iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'", self.device)])
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
@@ -188,9 +130,7 @@ impl NetworkDevice {
             Ok(None)
         } else {
             bitrate_output.pop(); // Remove trailing newline.
-            String::from_utf8(bitrate_output)
-                .block_error("net", "Non-UTF8 bitrate.")
-                .map(Some)
+            String::from_utf8(bitrate_output).block_error("net", "Non-UTF8 bitrate.").map(Some)
         }
     }
 }
@@ -322,41 +262,21 @@ impl ConfigBlock for Net {
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            network: TextWidget::new(config.clone()).with_icon(if wireless {
-                "net_wireless" } else {
-                "net_wired"
-            }),
+            network: TextWidget::new(config.clone()).with_icon(if wireless { "net_wireless" } else { "net_wired" }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: if block_config.ssid && wireless {
-                Some(TextWidget::new(config.clone())) } else {
-                None
-            },
+            ssid: if block_config.ssid && wireless { Some(TextWidget::new(config.clone())) } else { None },
             max_ssid_width: block_config.max_ssid_width,
-            bitrate: if block_config.bitrate {
-                Some(TextWidget::new(config.clone())) } else {
-                None
-            },
-            ip_addr: if block_config.ip {
-                Some(TextWidget::new(config.clone())) } else {
-                None
-            },
-            output_tx: if block_config.speed_up {
-                Some(TextWidget::new(config.clone()).with_icon("net_up")) } else {
-                None
-            },
+            bitrate: if block_config.bitrate { Some(TextWidget::new(config.clone())) } else { None },
+            ip_addr: if block_config.ip { Some(TextWidget::new(config.clone())) } else { None },
+            output_tx: if block_config.speed_up { Some(TextWidget::new(config.clone()).with_icon("net_up")) } else { None },
             output_rx: if block_config.speed_down {
-                Some(TextWidget::new(config.clone()).with_icon("net_down")) } else {
+                Some(TextWidget::new(config.clone()).with_icon("net_down"))
+            } else {
                 None
             },
-            graph_tx: if block_config.graph_up {
-                Some(GraphWidget::new(config.clone())) } else { 
-                None
-            },
-            graph_rx: if block_config.graph_down {
-                Some(GraphWidget::new(config.clone())) } else {
-                None
-            },
+            graph_tx: if block_config.graph_up { Some(GraphWidget::new(config.clone())) } else { None },
+            graph_rx: if block_config.graph_down { Some(GraphWidget::new(config.clone())) } else { None },
             device,
             rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -370,21 +290,12 @@ impl ConfigBlock for Net {
 }
 
 fn read_file(path: &Path) -> Result<String> {
-    let mut f = OpenOptions::new().read(true).open(path).block_error(
-        "net",
-        &format!(
-            "failed to open file {}",
-            path.to_string_lossy()
-        ),
-    )?;
+    let mut f = OpenOptions::new()
+        .read(true)
+        .open(path)
+        .block_error("net", &format!("failed to open file {}", path.to_string_lossy()))?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error(
-        "net",
-        &format!(
-            "failed to read {}",
-            path.to_string_lossy()
-        ),
-    )?;
+    f.read_to_string(&mut content).block_error("net", &format!("failed to read {}", path.to_string_lossy()))?;
     // Removes trailing newline
     content.pop();
     Ok(content)

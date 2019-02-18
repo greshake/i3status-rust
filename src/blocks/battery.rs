@@ -5,12 +5,12 @@
 //! internal power supply.
 
 use std::path::{Path, PathBuf};
-use util::FormatTemplate;
-use std::time::{Duration, Instant};
 use std::thread;
+use std::time::{Duration, Instant};
+use util::FormatTemplate;
 
-use chan::Sender;
 use blocks::dbus;
+use chan::Sender;
 use uuid::Uuid;
 
 use block::{Block, ConfigBlock};
@@ -54,29 +54,27 @@ impl PowerSupplyDevice {
     pub fn from_device(device: &str) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device);
         if !device_path.exists() {
-            return Err(BlockError(
-                "battery".to_string(),
-                format!(
-                    "Power supply device '{}' does not exist",
-                    device_path.to_string_lossy()
-                ),
-            ));
+            return Err(BlockError("battery".to_string(), format!("Power supply device '{}' does not exist", device_path.to_string_lossy())));
         }
 
         // Read charge_full exactly once, if it exists.
         let charge_full = if device_path.join("charge_full").exists() {
-            Some(read_file("battery", &device_path.join("charge_full"))?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse charge_full")?)
+            Some(
+                read_file("battery", &device_path.join("charge_full"))?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse charge_full")?,
+            )
         } else {
             None
         };
 
         // Read energy_full exactly once, if it exists.
         let energy_full = if device_path.join("energy_full").exists() {
-            Some(read_file("battery", &device_path.join("energy_full"))?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse energy_full")?)
+            Some(
+                read_file("battery", &device_path.join("energy_full"))?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse energy_full")?,
+            )
         } else {
             None
         };
@@ -100,24 +98,15 @@ impl BatteryDevice for PowerSupplyDevice {
         let energy_path = self.device_path.join("energy_now");
 
         let capacity = if capacity_path.exists() {
-            read_file("battery", &capacity_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse capacity")?
+            read_file("battery", &capacity_path)?.parse::<u64>().block_error("battery", "failed to parse capacity")?
         } else if charge_path.exists() && self.charge_full.is_some() {
-            let charge = read_file("battery", &charge_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse charge_now")?;
+            let charge = read_file("battery", &charge_path)?.parse::<u64>().block_error("battery", "failed to parse charge_now")?;
             ((charge as f64 / self.charge_full.unwrap() as f64) * 100.0) as u64
         } else if energy_path.exists() && self.energy_full.is_some() {
-            let charge = read_file("battery", &energy_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse energy_now")?;
+            let charge = read_file("battery", &energy_path)?.parse::<u64>().block_error("battery", "failed to parse energy_now")?;
             ((charge as f64 / self.energy_full.unwrap() as f64) * 100.0) as u64
         } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading capacity, charge, or energy".to_string(),
-            ));
+            return Err(BlockError("battery".to_string(), "Device does not support reading capacity, charge, or energy".to_string()));
         };
 
         match capacity {
@@ -135,44 +124,27 @@ impl BatteryDevice for PowerSupplyDevice {
         } else if self.charge_full.is_some() {
             self.charge_full.unwrap()
         } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading energy".to_string(),
-            ))
+            return Err(BlockError("battery".to_string(), "Device does not support reading energy".to_string()));
         };
 
         let energy_path = self.device_path.join("energy_now");
         let charge_path = self.device_path.join("charge_now");
         let fill = if energy_path.exists() {
-            read_file("battery", &energy_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse energy_now")?
+            read_file("battery", &energy_path)?.parse::<f64>().block_error("battery", "failed to parse energy_now")?
         } else if charge_path.exists() {
-            read_file("battery", &charge_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse charge_now")?
+            read_file("battery", &charge_path)?.parse::<f64>().block_error("battery", "failed to parse charge_now")?
         } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading energy".to_string(),
-            ));
+            return Err(BlockError("battery".to_string(), "Device does not support reading energy".to_string()));
         };
 
         let power_path = self.device_path.join("power_now");
         let current_path = self.device_path.join("current_now");
         let usage = if power_path.exists() {
-            read_file("battery", &power_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse power_now")?
+            read_file("battery", &power_path)?.parse::<f64>().block_error("battery", "failed to parse power_now")?
         } else if current_path.exists() {
-            read_file("battery", &current_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse current_now")?
+            read_file("battery", &current_path)?.parse::<f64>().block_error("battery", "failed to parse current_now")?
         } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading power".to_string(),
-            ));
+            return Err(BlockError("battery".to_string(), "Device does not support reading power".to_string()));
         };
 
         let status = self.status()?;
@@ -194,37 +166,20 @@ impl BatteryDevice for PowerSupplyDevice {
         let power_path = self.device_path.join("power_now");
 
         if power_path.exists() {
-            Ok(read_file("battery", &power_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse power_now")?)
+            Ok(read_file("battery", &power_path)?.parse::<u64>().block_error("battery", "failed to parse power_now")?)
         } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support power consumption".to_string(),
-            ))
+            Err(BlockError("battery".to_string(), "Device does not support power consumption".to_string()))
         }
     }
 }
 
 fn get_upower_property(con: &dbus::Connection, device_path: &str, property: &str) -> Result<dbus::Message> {
-    let msg = dbus::Message::new_method_call(
-        "org.freedesktop.UPower",
-        device_path,
-        "org.freedesktop.DBus.Properties",
-        "Get",
-    ).block_error("battery", "Failed to create Dbus message.")?
-        .append2(
-            dbus::MessageItem::Str("org.freedesktop.UPower.Device".to_string()),
-            dbus::MessageItem::Str(property.to_string()),
-        );
+    let msg = dbus::Message::new_method_call("org.freedesktop.UPower", device_path, "org.freedesktop.DBus.Properties", "Get")
+        .block_error("battery", "Failed to create Dbus message.")?
+        .append2(dbus::MessageItem::Str("org.freedesktop.UPower.Device".to_string()), dbus::MessageItem::Str(property.to_string()));
 
-    con.send_with_reply_and_block(msg, 1000).block_error(
-        "battery",
-        &format!(
-            "Failed to retrieve UPower property '{}' from '{}' via Dbus.",
-            property, device_path
-        ),
-    )
+    con.send_with_reply_and_block(msg, 1000)
+        .block_error("battery", &format!("Failed to retrieve UPower property '{}' from '{}' via Dbus.", property, device_path))
 }
 
 /// Represents a battery known to UPower.
@@ -240,24 +195,15 @@ impl UpowerDevice {
     /// battery.
     pub fn from_device(device: &str) -> Result<Self> {
         let device_path = format!("/org/freedesktop/UPower/devices/battery_{}", device);
-        let con = dbus::Connection::get_private(dbus::BusType::System)
-            .block_error("battery", "Failed to establish D-Bus connection.")?;
+        let con = dbus::Connection::get_private(dbus::BusType::System).block_error("battery", "Failed to establish D-Bus connection.")?;
 
-        let upower_type: dbus::arg::Variant<u32> = get_upower_property(&con, &device_path, "Type")?
-            .get1()
-            .block_error("battery", "Failed to read UPower Type property.")?;
+        let upower_type: dbus::arg::Variant<u32> = get_upower_property(&con, &device_path, "Type")?.get1().block_error("battery", "Failed to read UPower Type property.")?;
 
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
         if upower_type.0 != 2 {
-            return Err(BlockError(
-                "battery".into(),
-                "UPower device is not a battery.".into(),
-            ));
+            return Err(BlockError("battery".into(), "UPower device is not a battery.".into()));
         }
-        Ok(UpowerDevice {
-            device_path,
-            con,
-        })
+        Ok(UpowerDevice { device_path, con })
     }
 
     /// Monitor UPower property changes in a separate thread and send updates
@@ -265,8 +211,7 @@ impl UpowerDevice {
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.device_path.clone();
         thread::spawn(move || {
-            let con = dbus::Connection::get_private(dbus::BusType::System)
-                .expect("Failed to establish D-Bus connection.");
+            let con = dbus::Connection::get_private(dbus::BusType::System).expect("Failed to establish D-Bus connection.");
             let rule = format!(
                 "type='signal',\
                  path='{}',\
@@ -278,8 +223,7 @@ impl UpowerDevice {
             // First we're going to get an (irrelevant) NameAcquired event.
             con.incoming(10_000).next();
 
-            con.add_match(&rule)
-                .expect("Failed to add D-Bus match rule.");
+            con.add_match(&rule).expect("Failed to add D-Bus match rule.");
 
             loop {
                 if con.incoming(10_000).next().is_some() {
@@ -298,10 +242,9 @@ impl UpowerDevice {
 
 impl BatteryDevice for UpowerDevice {
     fn status(&self) -> Result<String> {
-        let status: dbus::arg::Variant<u32> =
-            get_upower_property(&self.con, &self.device_path, "State")?
-                .get1()
-                .block_error("battery", "Failed to read UPower State property.")?;
+        let status: dbus::arg::Variant<u32> = get_upower_property(&self.con, &self.device_path, "State")?
+            .get1()
+            .block_error("battery", "Failed to read UPower State property.")?;
 
         // https://upower.freedesktop.org/docs/Device.html#Device:State
         match status.0 {
@@ -316,10 +259,9 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn capacity(&self) -> Result<u64> {
-        let capacity: dbus::arg::Variant<f64> =
-            get_upower_property(&self.con, &self.device_path, "Percentage")?
-                .get1()
-                .block_error("battery", "Failed to read UPower Percentage property.")?;
+        let capacity: dbus::arg::Variant<f64> = get_upower_property(&self.con, &self.device_path, "Percentage")?
+            .get1()
+            .block_error("battery", "Failed to read UPower Percentage property.")?;
 
         if capacity.0 > 100.0 {
             Ok(100)
@@ -329,18 +271,16 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn time_remaining(&self) -> Result<u64> {
-        let time_to_empty: dbus::arg::Variant<i64> =
-            get_upower_property(&self.con, &self.device_path, "TimeToEmpty")?
-                .get1()
-                .block_error("battery", "Failed to read UPower TimeToEmpty property.")?;
+        let time_to_empty: dbus::arg::Variant<i64> = get_upower_property(&self.con, &self.device_path, "TimeToEmpty")?
+            .get1()
+            .block_error("battery", "Failed to read UPower TimeToEmpty property.")?;
         Ok((time_to_empty.0 / 60) as u64)
     }
 
     fn power_consumption(&self) -> Result<u64> {
-        let energy_rate: dbus::arg::Variant<f64> =
-            get_upower_property(&self.con, &self.device_path, "EnergyRate")?
-                .get1()
-                .block_error("battery", "Failed to read UPower EnergyRate property.")?;
+        let energy_rate: dbus::arg::Variant<f64> = get_upower_property(&self.con, &self.device_path, "EnergyRate")?
+            .get1()
+            .block_error("battery", "Failed to read UPower EnergyRate property.")?;
         // FIXME: Might want to make the interface send Watts instead.
         Ok((energy_rate.0 * 1_000_000.0) as u64)
     }
@@ -412,13 +352,10 @@ impl ConfigBlock for Battery {
                 "percentage" => "{percentage}%".into(),
                 "both" => "{percentage}% {time}".into(),
                 _ => {
-                    return Err(BlockError(
-                        "battery".into(),
-                        "Unknown show option".into(),
-                    ));
+                    return Err(BlockError("battery".into(), "Unknown show option".into()));
                 }
             },
-            None => block_config.format
+            None => block_config.format,
         };
 
         let id = Uuid::new_v4().simple().to_string();
@@ -428,7 +365,6 @@ impl ConfigBlock for Battery {
             Box::new(out)
         } else {
             Box::new(PowerSupplyDevice::from_device(&block_config.device)?)
-
         };
 
         Ok(Battery {
@@ -474,14 +410,16 @@ impl Block for Battery {
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.
             match status.as_str() {
-                "Charging" => { self.output.set_state(State::Good); },
-                _ =>
-                    { self.output.set_state(match capacity {
-                    Ok(0...15) => State::Critical,
-                    Ok(16...30) => State::Warning,
-                    Ok(31...60) => State::Info,
-                    Ok(61...100) => State::Good,
-                    _ => State::Warning,
+                "Charging" => {
+                    self.output.set_state(State::Good);
+                }
+                _ => {
+                    self.output.set_state(match capacity {
+                        Ok(0...15) => State::Critical,
+                        Ok(16...30) => State::Warning,
+                        Ok(31...60) => State::Info,
+                        Ok(61...100) => State::Good,
+                        _ => State::Warning,
                     });
                 }
             }

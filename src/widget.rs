@@ -1,5 +1,5 @@
-use themes::Theme;
 use serde_json::value::Value;
+use themes::Theme;
 
 #[derive(Debug, Copy, Clone)]
 pub enum State {

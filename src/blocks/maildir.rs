@@ -1,15 +1,15 @@
-use std::time::Duration;
 use chan::Sender;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::{I3BarWidget, State};
 use input::I3BarEvent;
-use scheduler::Task;
 use maildir::Maildir as ExtMaildir;
+use scheduler::Task;
+use widget::{I3BarWidget, State};
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 
@@ -54,9 +54,7 @@ impl ConfigBlock for Maildir {
         Ok(Maildir {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            text: TextWidget::new(config.clone())
-                .with_icon("mail")
-                .with_text(""),
+            text: TextWidget::new(config.clone()).with_icon("mail").with_text(""),
             inboxes: block_config.inboxes,
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,
