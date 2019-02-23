@@ -673,19 +673,15 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 match e.button {
                     MouseButton::Right => self.device.toggle()?,
-                    MouseButton::Left => {
-                        let mut command =            if self.on_click.is_some() {
-                            self.on_click.clone().unwrap()
-                        } else {
-                            "".to_string()
-                        };
-                        if self.on_click.is_some() {
-                            let command_broken: Vec<&str> = command.split_whitespace().collect();
+                    MouseButton::Left => match self.on_click {
+                        Some(ref cmd) => {
+                            let command_broken: Vec<&str> = cmd.split_whitespace().collect();
                             let mut itr = command_broken.iter();
                             let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
                                 .args(itr)
                                 .spawn();
                         }
+                        _ => ()
                     }
                     MouseButton::WheelUp => {
                         self.device.set_volume(self.step_width as i32)?;
@@ -693,7 +689,7 @@ impl Block for Sound {
                     MouseButton::WheelDown => {
                         self.device.set_volume(-(self.step_width as i32))?;
                     }
-                    _ => {}
+                    _ => ()
                 }
                 self.display()?;
             }
