@@ -92,15 +92,13 @@ impl NetworkDevice {
             ));
         }
         let mut iw_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\"",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | awk '/^\\s+SSID:/ {{ print $2 }}",
+                    self.device
+                ),
+            ])
             .output()
             .block_error("net", "Failed to execute SSID query.")?
             .stdout;
@@ -163,15 +161,13 @@ impl NetworkDevice {
             ));
         }
         let mut bitrate_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
+                    self.device
+                ),
+            ])
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
