@@ -106,16 +106,8 @@ impl NetworkDevice {
             .stdout;
 
         if iw_output.is_empty() {
-            iw_output = Command::new("sh")
-                .args(
-                    &[
-                        "-c",
-                        &format!(
-                            "nmcli -g general.connection device show {}",
-                            self.device
-                        ),
-                    ],
-                )
+            iw_output = Command::new("nmcli")
+                .args(&["-g", "general.connection", "device", "show", &self.device])
                 .output()
                 .block_error("net", "Failed to execute SSID query.")?
                 .stdout;
