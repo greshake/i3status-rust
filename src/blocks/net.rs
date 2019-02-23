@@ -1,5 +1,6 @@
 use std::fs::OpenOptions;
 use std::io::prelude::*;
+use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -15,6 +16,9 @@ use widget::I3BarWidget;
 use scheduler::Task;
 
 use uuid::Uuid;
+
+extern crate interfaces;
+use self::interfaces::Interface;
 
 pub struct NetworkDevice {
     device: String,
@@ -136,27 +140,21 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-        let mut ip_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"",
-                        self.device
-                    ),
-                ],
-            )
-            .output()
-            .block_error("net", "Failed to execute IP address query.")?
-            .stdout;
+        match Interface::get_by_name(&self.device) {
+            Ok(Some(iface)) => {
+                for addr in &iface.addresses {
+                    match (addr.addr, addr.mask) {
+                        (Some(SocketAddr::V4(addr)), Some(SocketAddr::V4(mask))) => {
+                            let m: u32 = mask.ip().octets().into_iter().map(|x| x.count_ones()).sum();
+                            return Ok(Some(format!("{}/{}", addr.ip(), m)));
+                        },
+                        _ => (),
+                    }
+                }
 
-        if ip_output.is_empty() {
-            Ok(None)
-        } else {
-            ip_output.pop(); // Remove trailing newline.
-            String::from_utf8(ip_output)
-                .block_error("net", "Non-UTF8 IP address.")
-                .map(Some)
+                Ok(None)
+            },
+            _ => Ok(None),
         }
     }
 

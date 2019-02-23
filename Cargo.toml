@@ -33,3 +33,4 @@ libpulse-binding = { optional = true, version = "2.2.3", default-features = fals
 # for profiling blocks
 cpuprofiler = { version = "0.0.3", optional = true }
 progress = { version = "0.2", optional = true }
+interfaces = "0.0.3"
