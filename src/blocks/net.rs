@@ -3,16 +3,19 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
+use std::ffi::OsStr;
 use chan::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
+use widgets::button::ButtonWidget;
 use widgets::graph::GraphWidget;
 use widget::I3BarWidget;
 use scheduler::Task;
+use input::{I3BarEvent, MouseButton};
+
 
 use uuid::Uuid;
 
@@ -196,14 +199,14 @@ impl NetworkDevice {
 }
 
 pub struct Net {
-    network: TextWidget,
-    ssid: Option<TextWidget>,
+    network: ButtonWidget,
+    ssid: Option<ButtonWidget>,
     max_ssid_width: usize,
-    ip_addr: Option<TextWidget>,
-    bitrate: Option<TextWidget>,
-    output_tx: Option<TextWidget>,
+    ip_addr: Option<ButtonWidget>,
+    bitrate: Option<ButtonWidget>,
+    output_tx: Option<ButtonWidget>,
     graph_tx: Option<GraphWidget>,
-    output_rx: Option<TextWidget>,
+    output_rx: Option<ButtonWidget>,
     graph_rx: Option<GraphWidget>,
     id: String,
     update_interval: Duration,
@@ -215,6 +218,7 @@ pub struct Net {
     active: bool,
     hide_inactive: bool,
     last_update: Instant,
+    on_click: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -263,6 +267,9 @@ pub struct NetConfig {
     /// Whether to show the download throughput graph of active networks.
     #[serde(default = "NetConfig::default_graph_down")]
     pub graph_down: bool,
+
+    #[serde(default = "NetConfig::default_on_click")]
+    pub on_click: Option<String>,
 }
 
 impl NetConfig {
@@ -309,6 +316,10 @@ impl NetConfig {
     fn default_graph_down() -> bool {
         false
     }
+
+    fn default_on_click() -> Option<String> {
+        None
+    }
 }
 
 impl ConfigBlock for Net {
@@ -319,38 +330,39 @@ impl ConfigBlock for Net {
         let init_rx_bytes = device.rx_bytes()?;
         let init_tx_bytes = device.tx_bytes()?;
         let wireless = device.is_wireless();
+        let id = Uuid::new_v4().simple().to_string();
         Ok(Net {
-            id: Uuid::new_v4().simple().to_string(),
+            id: id.clone(),
             update_interval: block_config.interval,
-            network: TextWidget::new(config.clone()).with_icon(if wireless {
+            network: ButtonWidget::new(config.clone(), &id).with_icon(if wireless {
                 "net_wireless" } else {
                 "net_wired"
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
             ssid: if block_config.ssid && wireless {
-                Some(TextWidget::new(config.clone())) } else {
+                Some(ButtonWidget::new(config.clone(), &id)) } else {
                 None
             },
             max_ssid_width: block_config.max_ssid_width,
             bitrate: if block_config.bitrate {
-                Some(TextWidget::new(config.clone())) } else {
+                Some(ButtonWidget::new(config.clone(), &id)) } else {
                 None
             },
             ip_addr: if block_config.ip {
-                Some(TextWidget::new(config.clone())) } else {
+                Some(ButtonWidget::new(config.clone(), &id)) } else {
                 None
             },
             output_tx: if block_config.speed_up {
-                Some(TextWidget::new(config.clone()).with_icon("net_up")) } else {
+                Some(ButtonWidget::new(config.clone(), &id).with_icon("net_up")) } else {
                 None
             },
             output_rx: if block_config.speed_down {
-                Some(TextWidget::new(config.clone()).with_icon("net_down")) } else {
+                Some(ButtonWidget::new(config.clone(), &id).with_icon("net_down")) } else {
                 None
             },
             graph_tx: if block_config.graph_up {
-                Some(GraphWidget::new(config.clone())) } else { 
+                Some(GraphWidget::new(config.clone())) } else {
                 None
             },
             graph_rx: if block_config.graph_down {
@@ -365,6 +377,7 @@ impl ConfigBlock for Net {
             active: true,
             hide_inactive: block_config.hide_inactive,
             last_update: Instant::now() - Duration::from_secs(30),
+            on_click: block_config.on_click,
         })
     }
 }
@@ -519,6 +532,28 @@ impl Block for Net {
         } else {
             vec![]
         }
+    }
+
+    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
+        if let Some(ref name) = e.name {
+            if name.as_str() == self.id {
+                match e.button {
+                    MouseButton::Left => match self.on_click {
+                        Some(ref cmd) => {
+                            let command_broken: Vec<&str> = cmd.split_whitespace().collect();
+                            let mut itr = command_broken.iter();
+                            let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
+                                .args(itr)
+                                .spawn();
+                        }
+                        _ => ()
+                    }
+                    _ => ()
+                }
+            }
+        }
+
+        Ok(())
     }
 
     fn id(&self) -> &str {
