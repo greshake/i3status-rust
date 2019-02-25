@@ -91,9 +91,11 @@ lazy_static! {
         "xrandr" => " \u{f26c} ",
         "net_up" => " \u{2b06} ",
         "net_down" => " \u{2b07} ",
-        "net_wireless" => " \u{f1eb}",
-        "net_wired" => " \u{f0ac}",
-        "net_vpn" => " \u{f023}",
+        "net_wireless" => " \u{f1eb} ",
+        "net_wired" => " \u{f0ac} ",
+        "net_bridge" => " \u{f0e8} ",
+        "net_vpn" => " \u{f023} ",
+        "net_modem" => " \u{f095} ",
         "ping" => " \u{21ba} ",
         "backlight_empty" => " \u{1f315} ",
         "backlight_partial1" => " \u{1f314} ",
@@ -118,6 +120,7 @@ lazy_static! {
         "mouse" => " \u{f245}",
         "docker" => " \u{f21a} ",
         "pomodoro" => " \u{1f345} "
+        "unknown" => " \u{f128} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
