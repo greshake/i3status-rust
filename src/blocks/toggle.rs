@@ -91,7 +91,7 @@ impl Block for Toggle {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.description().to_owned());
 
-        self.text.set_icon(match output.trim_left() {
+        self.text.set_icon(match output.trim_start() {
             "" => {
                 self.toggled = false;
                 self.icon_off.as_str()
