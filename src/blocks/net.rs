@@ -95,7 +95,7 @@ impl NetworkDevice {
             .args(&[
                 "-c",
                 &format!(
-                    "iw dev {} link | awk '/^\\s+SSID:/ {{ print $2 }}",
+                    "iw dev {} link | awk '/^\\s+SSID:/ {{ print $2 }}'",
                     self.device
                 ),
             ])
