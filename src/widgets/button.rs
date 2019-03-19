@@ -26,7 +26,8 @@ impl ButtonWidget {
                 "separator": false,
                 "separator_block_width": 0,
                 "background": "#000000",
-                "color": "#000000"
+                "color": "#000000",
+                "markup": "pango"
             }),
             config,
             cached_output: None,
@@ -83,7 +84,8 @@ impl ButtonWidget {
             "name": self.id.clone(),
             "separator_block_width": 0,
             "background": key_bg,
-            "color": key_fg
+            "color": key_fg,
+            "markup": "pango"
         });
 
         self.cached_output = Some(self.rendered.to_string());
