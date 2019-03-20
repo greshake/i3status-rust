@@ -27,7 +27,7 @@ impl ButtonWidget {
                 "separator_block_width": 0,
                 "background": "#000000",
                 "color": "#000000",
-                "markup":" pango"
+                "markup": "pango"
             }),
             config,
             cached_output: None,
