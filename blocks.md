@@ -346,11 +346,17 @@ Key | Values | Required | Default
 
 ## Music
 
-Creates a block which can display the current song title and artist, in a fixed width marquee fashion. Also provides buttons for play/pause, previous and next title.
+Creates a block to display the current song title and artist in a fixed-width marquee. Also provides buttons for play/pause, previous and next.
 
-Supports all music players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes spotify, vlc and many more.
+Supports all music players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes:
 
-It can be configured to drive a specific (running) player or to automatically discover the currently active one. Most often, you only run one player at a time.
+- Spotify
+- VLC
+- mpd (via [mpDris2](https://github.com/eonpatapon/mpDris2))
+
+and many others.
+
+The block can be configured to drive a specific music player by name or automatically discover the currently active one.
 
 ### Examples
 
