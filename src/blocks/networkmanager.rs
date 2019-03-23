@@ -21,6 +21,7 @@ use config::Config;
 use errors::*;
 use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
+use util::FormatTemplate;
 use widget::{I3BarWidget, State};
 use widgets::button::ButtonWidget;
 
@@ -364,10 +365,9 @@ pub struct NetworkManager {
     config: Config,
     on_click: Option<String>,
     primary_only: bool,
-    unknown_device_icon: bool,
-    ip: bool,
-    ssid: bool,
     max_ssid_width: usize,
+    device_format: FormatTemplate,
+    connection_format: FormatTemplate,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -380,21 +380,17 @@ pub struct NetworkManagerConfig {
     #[serde(default = "NetworkManagerConfig::default_primary_only")]
     pub primary_only: bool,
 
-    /// Whether to show an unknown device icon instead of name for unknown devices.
-    #[serde(default = "NetworkManagerConfig::default_unknown_device_icon")]
-    pub unknown_device_icon: bool,
-
-    /// Whether to show the IP address of active networks.
-    #[serde(default = "NetworkManagerConfig::default_ip")]
-    pub ip: bool,
-
-    /// Whether to show the SSID of active wireless networks.
-    #[serde(default = "NetworkManagerConfig::default_ssid")]
-    pub ssid: bool,
-
     /// Max SSID width, in characters.
     #[serde(default = "NetworkManagerConfig::default_max_ssid_width")]
     pub max_ssid_width: usize,
+
+    /// Device formatter.
+    #[serde(default = "NetworkManagerConfig::default_device_format")]
+    pub device_format: String,
+
+    /// Connection formatter.
+    #[serde(default = "NetworkManagerConfig::default_connection_format")]
+    pub connection_format: String,
 }
 
 impl NetworkManagerConfig {
@@ -406,20 +402,16 @@ impl NetworkManagerConfig {
         false
     }
 
-    fn default_unknown_device_icon() -> bool {
-        false
-    }
-
-    fn default_ip() -> bool {
-        true
-    }
-
-    fn default_ssid() -> bool {
-        true
-    }
-
     fn default_max_ssid_width() -> usize {
         21
+    }
+
+    fn default_device_format() -> String {
+        "{icon}{ssid}".to_string()
+    }
+
+    fn default_connection_format() -> String {
+        "{devices} {ips}".to_string()
     }
 }
 
@@ -469,10 +461,9 @@ impl ConfigBlock for NetworkManager {
             manager,
             on_click: block_config.on_click,
             primary_only: block_config.primary_only,
-            unknown_device_icon: block_config.unknown_device_icon,
-            ip: block_config.ip,
-            ssid: block_config.ssid,
             max_ssid_width: block_config.max_ssid_width,
+            device_format: FormatTemplate::from_string(&block_config.device_format)?,
+            connection_format: FormatTemplate::from_string(&block_config.connection_format)?,
         })
     }
 }
@@ -549,67 +540,61 @@ impl Block for NetworkManager {
                         let mut devicevec: Vec<String> = Vec::new();
                         if let Ok(devices) = conn.devices(&self.dbus_conn) {
                             for device in devices {
-                                let iconstr =
-                                    if let Ok(dev_type) = device.device_type(&self.dbus_conn) {
-                                        match dev_type.to_icon_name() {
-                                            Some(icon_name) => self
-                                                .config
-                                                .icons
-                                                .get(&icon_name)
-                                                .cloned()
-                                                .unwrap_or("".to_string()),
-                                            None => {
-                                                if self.unknown_device_icon {
-                                                    self.config
-                                                        .icons
-                                                        .get("unknown")
-                                                        .cloned()
-                                                        .unwrap_or("".to_string())
-                                                } else {
-                                                    format!("{:?}", dev_type).to_string()
-                                                }
-                                            }
+                                let (icon, type_name) = if let Ok(dev_type) = device.device_type(&self.dbus_conn) {
+                                    match dev_type.to_icon_name() {
+                                        Some(icon_name) => {
+                                            let i = self.config.icons.get(&icon_name).cloned().unwrap_or("".to_string());
+                                            (i.to_string(), format!("{:?}", dev_type).to_string())
                                         }
+                                        None => (self.config.icons.get("unknown").cloned().unwrap_or("".to_string()), format!("{:?}", dev_type).to_string()),
+                                    }
+                                } else {
+                                    // TODO: Communicate the error to the user?
+                                    ("".to_string(), "".to_string())
+                                };
+
+                                let ssidstr = if let Ok(ap) = device.active_access_point(&self.dbus_conn) {
+                                    if let Ok(ssid) = ap.ssid(&self.dbus_conn) {
+                                        let mut truncated = ssid.to_string();
+                                        truncated.truncate(self.max_ssid_width);
+                                        truncated
                                     } else {
                                         "".to_string()
-                                    };
-
-                                let mut ssidstr = "".to_string();
-                                if self.ssid {
-                                    if let Ok(ap) = device.active_access_point(&self.dbus_conn) {
-                                        if let Ok(ssid) = ap.ssid(&self.dbus_conn) {
-                                            let mut truncated = ssid.to_string();
-                                            truncated.truncate(self.max_ssid_width);
-                                            ssidstr = truncated + " ";
-                                        }
                                     }
-                                }
+                                } else {
+                                    "".to_string()
+                                };
 
-                                devicevec.push(iconstr + &ssidstr);
+                                let values = map!("{icon}" => icon,
+                                                  "{typename}" => type_name,
+                                                  "{ssid}" => ssidstr);
+
+                                if let Ok(s) = self.device_format.render_static_str(&values) {
+                                    devicevec.push(s);
+                                } else {
+                                    devicevec.push("[invalid device format string]".to_string())
+                                }
                             }
                         };
 
                         // Get all IPs for this connection
-                        let ip = if self.ip {
-                            let mut ip = "×".to_string();
-                            if let Ok(ip4config) = conn.ip4config(&self.dbus_conn) {
-                                if let Ok(addresses) = ip4config.addresses(&self.dbus_conn) {
-                                    if addresses.len() > 0 {
-                                        ip = addresses
-                                            .into_iter()
-                                            .map(|x| x.to_string())
-                                            .collect::<Vec<String>>()
-                                            .join(",")
-                                    }
+                        let mut ips = "×".to_string();
+                        if let Ok(ip4config) = conn.ip4config(&self.dbus_conn) {
+                            if let Ok(addresses) = ip4config.addresses(&self.dbus_conn) {
+                                if addresses.len() > 0 {
+                                    ips = addresses.into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join(",");
                                 }
                             }
-                            ip
+                        }
+
+                        let values = map!("{devices}" => devicevec.join(" "),
+                                          "{ips}" => ips);
+
+                        if let Ok(s) = self.connection_format.render_static_str(&values) {
+                            widget.set_text(s);
                         } else {
-                            "".to_string()
-                        };
-
-                        widget.set_text(devicevec.join(" ") + &ip);
-
+                            widget.set_text("[invalid connection format string]");
+                        }
                         widget
                     })
                     .collect()
