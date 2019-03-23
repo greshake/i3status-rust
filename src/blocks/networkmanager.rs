@@ -363,7 +363,7 @@ pub struct NetworkManager {
     manager: ConnectionManager,
     config: Config,
     on_click: Option<String>,
-    only_primary_connection: bool,
+    primary_only: bool,
     unknown_device_icon: bool,
     ip: bool,
     ssid: bool,
@@ -377,8 +377,8 @@ pub struct NetworkManagerConfig {
     pub on_click: Option<String>,
 
     /// Whether to only show the primary connection, or all active connections.
-    #[serde(default = "NetworkManagerConfig::default_only_primary_connection")]
-    pub only_primary_connection: bool,
+    #[serde(default = "NetworkManagerConfig::default_primary_only")]
+    pub primary_only: bool,
 
     /// Whether to show an unknown device icon instead of name for unknown devices.
     #[serde(default = "NetworkManagerConfig::default_unknown_device_icon")]
@@ -402,7 +402,7 @@ impl NetworkManagerConfig {
         None
     }
 
-    fn default_only_primary_connection() -> bool {
+    fn default_primary_only() -> bool {
         false
     }
 
@@ -468,7 +468,7 @@ impl ConfigBlock for NetworkManager {
             dbus_conn,
             manager,
             on_click: block_config.on_click,
-            only_primary_connection: block_config.only_primary_connection,
+            primary_only: block_config.primary_only,
             unknown_device_icon: block_config.unknown_device_icon,
             ip: block_config.ip,
             ssid: block_config.ssid,
@@ -513,7 +513,7 @@ impl Block for NetworkManager {
                     _ => State::Idle,
                 };
 
-                let connections = if self.only_primary_connection {
+                let connections = if self.primary_only {
                     match self.manager.primary_connection(&self.dbus_conn) {
                         Ok(conn) => vec![conn],
                         Err(_) => vec![],
