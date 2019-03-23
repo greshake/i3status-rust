@@ -610,6 +610,43 @@ Key | Values | Required | Default
 `name` | Label to show before the mail count | No | `""`
 `no_icon` | Disable the mail icon | No | `false`
 
+## NetworkManager
+
+Creates a block which displays network connection information from NetworkManager.
+
+### Examples
+
+```toml
+[[block]]
+block = "networkmanager"
+on_click = "alacritty -e nmtui"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|---------
+`primary_only` | Whether to show only the primary active connection or all active connections | No | `false`
+`max_ssid_width` | Truncation length for SSID | No | `21`
+`device_format` | Device string formatter. See below for available placeholders. | No | `"{icon}{ssid}"`
+`connection_format` | Connection string formatter. See below for available placeholders. | No | `"{devices} {ips}"`
+`on_click` | On-click handler | No | `""`
+
+### Device format string
+
+Placeholder | Description
+------------|-------------
+`{icon}` | The icon matching the device type.
+`{typename}` | The name of the device type.
+`{ssid}` | The connected SSID if available.
+
+### Connection format string
+
+Placeholder | Description
+------------|-------------
+`{devices}` | The list of devices, each formatted with the device format string.
+`{ips}` | The list of IPs for this connection.
+
 ## Nvidia Gpu
 
 Proprietary nvidia driver required.
