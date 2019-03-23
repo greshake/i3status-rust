@@ -25,14 +25,14 @@ use widget::{I3BarWidget, State};
 use widgets::button::ButtonWidget;
 
 enum NetworkState {
-    Unknown = 0,
-    Asleep = 10,
-    Disconnected = 20,
-    Disconnecting = 30,
-    Connecting = 40,
-    ConnectedLocal = 50,
-    ConnectedSite = 60,
-    ConnectedGlobal = 70,
+    Unknown,
+    Asleep,
+    Disconnected,
+    Disconnecting,
+    Connecting,
+    ConnectedLocal,
+    ConnectedSite,
+    ConnectedGlobal,
 }
 
 impl From<u32> for NetworkState {
@@ -52,11 +52,11 @@ impl From<u32> for NetworkState {
 }
 
 enum ActiveConnectionState {
-    Unknown = 0,
-    Activating = 1,
-    Activated = 2,
-    Deactivating = 3,
-    Deactivated = 4,
+    Unknown,
+    Activating,
+    Activated,
+    Deactivating,
+    Deactivated,
 }
 
 impl From<u32> for ActiveConnectionState {
@@ -86,36 +86,13 @@ impl ActiveConnectionState {
 
 #[derive(Debug)]
 enum DeviceType {
-    Unknown = 0,
-    Ethernet = 1,
-    Wifi = 2,
-    Unused1 = 3,
-    Unused2 = 4,
-    BT = 5,
-    OLPCMesh = 6,
-    WiMAX = 7,
-    Modem = 8,
-    InfiniBand = 9,
-    Bond = 10,
-    VLAN = 11,
-    ADLS = 12,
-    Bridge = 13,
-    Generic = 14,
-    Team = 15,
-    TUN = 16,
-    IPTunnel = 17,
-    MACVLAN = 18,
-    VXLAN = 19,
-    VETH = 20,
-    MACsec = 21,
-    Dummy = 22,
-    PPP = 23,
-    OVSInterface = 24,
-    OVSPort = 25,
-    OVSBridge = 26,
-    WPAN = 27,
-    IPv6LoWPAN = 28,
-    Wireguard = 29,
+    Unknown,
+    Ethernet,
+    Wifi,
+    Modem,
+    Bridge,
+    TUN,
+    Wireguard,
 }
 
 impl From<u32> for DeviceType {
@@ -124,32 +101,9 @@ impl From<u32> for DeviceType {
             // https://developer.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMDeviceType
             1 => DeviceType::Ethernet,
             2 => DeviceType::Wifi,
-            3 => DeviceType::Unused1,
-            4 => DeviceType::Unused2,
-            5 => DeviceType::BT,
-            6 => DeviceType::OLPCMesh,
-            7 => DeviceType::WiMAX,
             8 => DeviceType::Modem,
-            9 => DeviceType::InfiniBand,
-            10 => DeviceType::Bond,
-            11 => DeviceType::VLAN,
-            12 => DeviceType::ADLS,
             13 => DeviceType::Bridge,
-            14 => DeviceType::Generic,
-            15 => DeviceType::Team,
             16 => DeviceType::TUN,
-            17 => DeviceType::IPTunnel,
-            18 => DeviceType::MACVLAN,
-            19 => DeviceType::VXLAN,
-            20 => DeviceType::VETH,
-            21 => DeviceType::MACsec,
-            22 => DeviceType::Dummy,
-            23 => DeviceType::PPP,
-            24 => DeviceType::OVSInterface,
-            25 => DeviceType::OVSPort,
-            26 => DeviceType::OVSBridge,
-            27 => DeviceType::WPAN,
-            28 => DeviceType::IPv6LoWPAN,
             29 => DeviceType::Wireguard,
             _ => DeviceType::Unknown,
         }
