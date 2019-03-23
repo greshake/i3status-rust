@@ -206,9 +206,8 @@ impl ConnectionManager {
         Ok(NetworkState::from(state.0))
     }
 
-    pub fn primary_connection(&self, c: &Connection) -> Result<NMConnection> {
-        let m = Self::get_property(c, "PrimaryConnection")
-            .block_error("networkmanager", "Failed to retrieve primary connection")?;
+    pub fn primary_connection(&self, c: &Connection) -> Result<NmConnection> {
+        let m = Self::get_property(c, "PrimaryConnection").block_error("networkmanager", "Failed to retrieve primary connection")?;
 
         let primary_connection: Variant<Path> = m
             .get1()
@@ -223,33 +222,26 @@ impl ConnectionManager {
             }
         }
 
-        Ok(NMConnection {
-            path: primary_connection.0.clone(),
-        })
+        Ok(NmConnection { path: primary_connection.0.clone() })
     }
 
-    pub fn active_connections(&self, c: &Connection) -> Result<Vec<NMConnection>> {
-        let m = Self::get_property(c, "ActiveConnections")
-            .block_error("networkmanager", "Failed to retrieve active connections")?;
+    pub fn active_connections(&self, c: &Connection) -> Result<Vec<NmConnection>> {
+        let m = Self::get_property(c, "ActiveConnections").block_error("networkmanager", "Failed to retrieve active connections")?;
 
         let active_connections: Variant<Array<Path, Iter>> = m
             .get1()
             .block_error("networkmanager", "Failed to read active connections")?;
 
-        Ok(active_connections
-            .0
-            .into_iter()
-            .map(|x| NMConnection { path: x })
-            .collect())
+        Ok(active_connections.0.into_iter().map(|x| NmConnection { path: x }).collect())
     }
 }
 
 #[derive(Clone)]
-struct NMConnection<'a> {
+struct NmConnection<'a> {
     path: Path<'a>,
 }
 
-impl<'a> NMConnection<'a> {
+impl<'a> NmConnection<'a> {
     fn state(&self, c: &Connection) -> Result<ActiveConnectionState> {
         let m = ConnectionManager::get(
             c,
@@ -265,47 +257,28 @@ impl<'a> NMConnection<'a> {
         Ok(ActiveConnectionState::from(state.0))
     }
 
-    fn ip4config(&self, c: &Connection) -> Result<NMIp4Config> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "Ip4Config",
-        )
-        .block_error("networkmanager", "Failed to retrieve connection ip4config")?;
+    fn ip4config(&self, c: &Connection) -> Result<NmIp4Config> {
+        let m =
+            ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Connection.Active", "Ip4Config").block_error("networkmanager", "Failed to retrieve connection ip4config")?;
 
-        let ip4config: Variant<Path> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read ip4config")?;
-        Ok(NMIp4Config { path: ip4config.0 })
+        let ip4config: Variant<Path> = m.get1().block_error("networkmanager", "Failed to read ip4config")?;
+        Ok(NmIp4Config { path: ip4config.0 })
     }
 
-    fn devices(&self, c: &Connection) -> Result<Vec<NMDevice>> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "Devices",
-        )
-        .block_error("networkmanager", "Failed to retrieve connection device")?;
+    fn devices(&self, c: &Connection) -> Result<Vec<NmDevice>> {
+        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Connection.Active", "Devices").block_error("networkmanager", "Failed to retrieve connection device")?;
 
-        let devices: Variant<Array<Path, Iter>> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read devices")?;
-        Ok(devices
-            .0
-            .into_iter()
-            .map(|x| NMDevice { path: x })
-            .collect())
+        let devices: Variant<Array<Path, Iter>> = m.get1().block_error("networkmanager", "Failed to read devices")?;
+        Ok(devices.0.into_iter().map(|x| NmDevice { path: x }).collect())
     }
 }
 
 #[derive(Clone)]
-struct NMDevice<'a> {
+struct NmDevice<'a> {
     path: Path<'a>,
 }
 
-impl<'a> NMDevice<'a> {
+impl<'a> NmDevice<'a> {
     fn device_type(&self, c: &Connection) -> Result<DeviceType> {
         let m = ConnectionManager::get(
             c,
@@ -321,31 +294,21 @@ impl<'a> NMDevice<'a> {
         Ok(DeviceType::from(device_type.0))
     }
 
-    fn active_access_point(&self, c: &Connection) -> Result<NMAccessPoint> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Device.Wireless",
-            "ActiveAccessPoint",
-        )
-        .block_error(
-            "networkmanager",
-            "Failed to retrieve device active access point",
-        )?;
+    fn active_access_point(&self, c: &Connection) -> Result<NmAccessPoint> {
+        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Device.Wireless", "ActiveAccessPoint")
+            .block_error("networkmanager", "Failed to retrieve device active access point")?;
 
-        let active_ap: Variant<Path> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read active access point")?;
-        Ok(NMAccessPoint { path: active_ap.0 })
+        let active_ap: Variant<Path> = m.get1().block_error("networkmanager", "Failed to read active access point")?;
+        Ok(NmAccessPoint { path: active_ap.0 })
     }
 }
 
 #[derive(Clone)]
-struct NMAccessPoint<'a> {
+struct NmAccessPoint<'a> {
     path: Path<'a>,
 }
 
-impl<'a> NMAccessPoint<'a> {
+impl<'a> NmAccessPoint<'a> {
     fn ssid(&self, c: &Connection) -> Result<String> {
         let m = ConnectionManager::get(
             c,
@@ -367,11 +330,11 @@ impl<'a> NMAccessPoint<'a> {
 }
 
 #[derive(Clone)]
-struct NMIp4Config<'a> {
+struct NmIp4Config<'a> {
     path: Path<'a>,
 }
 
-impl<'a> NMIp4Config<'a> {
+impl<'a> NmIp4Config<'a> {
     fn addresses(&self, c: &Connection) -> Result<Vec<Ipv4Address>> {
         let m = ConnectionManager::get(
             c,
