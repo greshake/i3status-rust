@@ -347,7 +347,7 @@ impl PulseAudioClient {
         // subscribe
         thread::spawn(move || {
             let connection = new_connection(send_result2);
-        
+
             // subcribe for events
             connection.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
             connection.context.borrow_mut().subscribe(
@@ -539,6 +539,10 @@ pub struct SoundConfig {
     #[serde(default = "SoundDriver::default")]
     pub driver: SoundDriver,
 
+    /// whether the this block specifies an audio input or output
+    #[serde(default = "Direction::default")]
+    pub direction: Direction,
+
     /// ALSA / PulseAudio sound device name
     #[serde(default = "SoundConfig::default_name")]
     pub name: Option<String>,
@@ -563,6 +567,19 @@ pub enum SoundDriver {
 impl Default for SoundDriver {
     fn default() -> Self {
         SoundDriver::Auto
+    }
+}
+
+#[derive(Deserialize, Copy, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum Direction {
+    Input,
+    Output,
+}
+
+impl Default for Direction {
+    fn default() -> Self {
+        Direction::Output
     }
 }
 
@@ -635,7 +652,7 @@ impl ConfigBlock for Sound {
                 "PulseAudio feature or driver disabled".into(),
             ))
         };
-        
+
         // prefere PulseAudio if available and selected, fallback to ALSA
         let device: Box<SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
