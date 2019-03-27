@@ -81,6 +81,11 @@ impl NetworkDevice {
         self.wireless
     }
 
+    /// Checks whether this device is vpn network.
+    pub fn is_vpn(&self) -> bool {
+        self.tun
+    }
+
     /// Queries the wireless SSID of this device (using `iw`), if it is
     /// connected to one.
     pub fn ssid(&self) -> Result<Option<String>> {
@@ -317,11 +322,13 @@ impl ConfigBlock for Net {
         let init_rx_bytes = device.rx_bytes().unwrap_or(0);
         let init_tx_bytes = device.tx_bytes().unwrap_or(0);
         let wireless = device.is_wireless();
+        let vpn = device.is_vpn();
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             network: TextWidget::new(config.clone()).with_icon(if wireless {
-                "net_wireless" } else {
+                "net_wireless" } else if vpn {
+                "net_vpn" } else {
                 "net_wired"
             }),
             // Might want to signal an error if the user wants the SSID of a
