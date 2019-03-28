@@ -714,6 +714,7 @@ pub struct Sound {
     text: ButtonWidget,
     id: String,
     device: Box<SoundDevice>,
+    direction: Direction,
     step_width: u32,
     config: Config,
     on_click: Option<String>,
@@ -788,25 +789,51 @@ impl Sound {
     fn display(&mut self) -> Result<()> {
         self.device.get_info()?;
 
-        if self.device.muted() {
-            self.text.set_icon("volume_empty");
-            self.text.set_text(
-                self.config
-                    .icons
-                    .get("volume_muted")
-                    .block_error("sound", "cannot find icon")?
-                    .to_owned(),
-            );
-            self.text.set_state(State::Warning);
-        } else {
-            let volume = self.device.volume();
-            self.text.set_icon(match volume {
-                0...20 => "volume_empty",
-                21...70 => "volume_half",
-                _ => "volume_full",
-            });
-            self.text.set_text(format!("{:02}%", volume));
-            self.text.set_state(State::Idle);
+        match self.direction {
+            Direction::Input => {
+                if self.device.muted() {
+                    self.text.set_icon("mic_empty");
+                    self.text.set_text(
+                        self.config
+                            .icons
+                            .get("mic_muted")
+                            .block_error("sound", "cannot find icon")?
+                            .to_owned(),
+                    );
+                    self.text.set_state(State::Warning);
+                } else {
+                    let volume = self.device.volume();
+                    self.text.set_icon(match volume {
+                        0...20 => "mic_empty",
+                        21...70 => "mic_half",
+                        _ => "mic_full",
+                    });
+                    self.text.set_text(format!("{:02}%", volume));
+                    self.text.set_state(State::Idle);
+                }
+            }
+            Direction::Output => {
+                if self.device.muted() {
+                    self.text.set_icon("volume_empty");
+                    self.text.set_text(
+                        self.config
+                            .icons
+                            .get("volume_muted")
+                            .block_error("sound", "cannot find icon")?
+                            .to_owned(),
+                    );
+                    self.text.set_state(State::Warning);
+                } else {
+                    let volume = self.device.volume();
+                    self.text.set_icon(match volume {
+                        0...20 => "volume_empty",
+                        21...70 => "volume_half",
+                        _ => "volume_full",
+                    });
+                    self.text.set_text(format!("{:02}%", volume));
+                    self.text.set_state(State::Idle);
+                }
+            }
         }
 
         Ok(())
@@ -858,7 +885,8 @@ impl ConfigBlock for Sound {
         let mut sound = Self {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
-            device,
+            device: device,
+            direction: block_config.direction,
             step_width: step_width,
             config: config,
             on_click: block_config.on_click,

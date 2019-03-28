@@ -72,6 +72,11 @@ lazy_static! {
         "volume_empty" => " \u{f026} ",
         // This icon has no spaces around it because it is manually set as text. (sound.rs)
         "volume_muted" => "\u{f00d}",
+        "mic_full" => " \u{f130} ",
+        "mic_half" => " \u{f130} ",
+        "mic_empty" => " \u{f130} ",
+        // This icon has no spaces around it because it is manually set as text. (sound.rs)
+        "mic_muted" => "\u{f131}",
         "thermometer" => " \u{f2c8} ",
         "xrandr" => " \u{f26c} ",
         "net_up" => " \u{2b06} ",
