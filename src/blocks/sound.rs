@@ -843,7 +843,16 @@ impl ConfigBlock for Sound {
         // prefere PulseAudio if available and selected, fallback to ALSA
         let device: Box<SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
-            Err(_) => Box::new(AlsaSoundDevice::new(block_config.name.unwrap_or_else(|| "Master".into()))?)
+            Err(_) => {
+                match block_config.direction {
+                    Direction::Input => {
+                        Box::new(AlsaSoundDevice::new(block_config.name.unwrap_or_else(|| "Capture".into()))?)
+                    }
+                    Direction::Output => {
+                        Box::new(AlsaSoundDevice::new(block_config.name.unwrap_or_else(|| "Master".into()))?)
+                    }
+                }
+            }
         };
 
         let mut sound = Self {
