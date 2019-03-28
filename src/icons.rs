@@ -67,16 +67,16 @@ lazy_static! {
         "update" => " \u{f062} ",
         "toggle_off" => " \u{f204} ",
         "toggle_on" => " \u{f205} ",
+        // This icon has no spaces around it because it is manually set as text. (sound.rs)
+        "crossed" => "\u{f00d}",
         "volume_full" => " \u{f028} ",
         "volume_half" => " \u{f027} ",
         "volume_empty" => " \u{f026} ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "volume_muted" => "\u{f00d}",
+        "volume_muted" => "\u{f026} ",
         "mic_full" => " \u{f130} ",
         "mic_half" => " \u{f130} ",
         "mic_empty" => " \u{f130} ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "mic_muted" => "\u{f131}",
+        "mic_muted" => "\u{f131} ",
         "thermometer" => " \u{f2c8} ",
         "xrandr" => " \u{f26c} ",
         "net_up" => " \u{2b06} ",

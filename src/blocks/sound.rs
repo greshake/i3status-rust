@@ -792,11 +792,11 @@ impl Sound {
         match self.direction {
             Direction::Input => {
                 if self.device.muted() {
-                    self.text.set_icon("mic_empty");
+                    self.text.set_icon("mic_muted");
                     self.text.set_text(
                         self.config
                             .icons
-                            .get("mic_muted")
+                            .get("crossed")
                             .block_error("sound", "cannot find icon")?
                             .to_owned(),
                     );
@@ -814,11 +814,11 @@ impl Sound {
             }
             Direction::Output => {
                 if self.device.muted() {
-                    self.text.set_icon("volume_empty");
+                    self.text.set_icon("volume_muted");
                     self.text.set_text(
                         self.config
                             .icons
-                            .get("volume_muted")
+                            .get("crossed")
                             .block_error("sound", "cannot find icon")?
                             .to_owned(),
                     );
