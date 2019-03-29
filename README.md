@@ -36,6 +36,7 @@ $ cd i3status-rust && cargo build --release
 # Optional:
 $ cp target/release/i3status-rs ~/bin/i3status-rs
 ```
+* NOTE: Supported rust version is `>~ 1.30`
 
 Now you need to create a configuration. Edit the [example configuration](https://raw.githubusercontent.com/greshake/i3status-rust/master/example_config.toml) to your liking and put it to a sensible place (e.g. `~/.config/i3/status.toml`).
 
