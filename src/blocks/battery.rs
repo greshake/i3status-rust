@@ -235,11 +235,14 @@ pub struct UpowerDevice {
 
 impl UpowerDevice {
     /// Create the UPower device from the `device` string, which is converted to
-    /// the path `"/org/freedesktop/UPower/devices/battery_<device>"`. Raises an
-    /// error if D-Bus cannot connect to this device, or if the device is not a
+    /// the path `"/org/freedesktop/UPower/devices/battery_<device>"`, except if
+    /// `device` equals `"DisplayDevice"`, in which case it is converted to the
+    /// path `"/org/freedesktop/UPower/devices/DisplayDevice"`. Raises an error
+    /// if D-Bus cannot connect to this device, or if the device is not a
     /// battery.
     pub fn from_device(device: &str) -> Result<Self> {
-        let device_path = format!("/org/freedesktop/UPower/devices/battery_{}", device);
+        let device_name = if device == "DisplayDevice" { device.to_string() } else { format!("battery_{}", device) };
+        let device_path = format!("/org/freedesktop/UPower/devices/{}", device_name);
         let con = dbus::Connection::get_private(dbus::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
