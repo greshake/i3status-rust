@@ -450,13 +450,13 @@ Placeholder | Description
 `{icon}` | The icon matching the device type.
 `{typename}` | The name of the device type.
 `{ssid}` | The connected SSID if available.
+`{ips}` | The list of IPs for this device.
 
 ### Connection format string
 
 Placeholder | Description
 ------------|-------------
 `{devices}` | The list of devices, each formatted with the device format string.
-`{ips}` | The list of IPs for this connection.
 
 ## Nvidia Gpu
 

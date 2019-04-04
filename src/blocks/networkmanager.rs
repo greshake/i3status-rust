@@ -218,14 +218,6 @@ impl<'a> NmConnection<'a> {
         Ok(ActiveConnectionState::from(state.0))
     }
 
-    fn ip4config(&self, c: &Connection) -> Result<NmIp4Config> {
-        let m =
-            ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Connection.Active", "Ip4Config").block_error("networkmanager", "Failed to retrieve connection ip4config")?;
-
-        let ip4config: Variant<Path> = m.get1().block_error("networkmanager", "Failed to read ip4config")?;
-        Ok(NmIp4Config { path: ip4config.0 })
-    }
-
     fn devices(&self, c: &Connection) -> Result<Vec<NmDevice>> {
         let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Connection.Active", "Devices").block_error("networkmanager", "Failed to retrieve connection device")?;
 
@@ -245,6 +237,13 @@ impl<'a> NmDevice<'a> {
 
         let device_type: Variant<u32> = m.get1().block_error("networkmanager", "Failed to read device type")?;
         Ok(DeviceType::from(device_type.0))
+    }
+
+    fn ip4config(&self, c: &Connection) -> Result<NmIp4Config> {
+        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Device", "Ip4Config").block_error("networkmanager", "Failed to retrieve device ip4config")?;
+
+        let ip4config: Variant<Path> = m.get1().block_error("networkmanager", "Failed to read ip4config")?;
+        Ok(NmIp4Config { path: ip4config.0 })
     }
 
     fn active_access_point(&self, c: &Connection) -> Result<NmAccessPoint> {
@@ -337,11 +336,11 @@ impl NetworkManagerConfig {
     }
 
     fn default_device_format() -> String {
-        "{icon}{ssid}".to_string()
+        "{icon}{ssid} {ips}".to_string()
     }
 
     fn default_connection_format() -> String {
-        "{devices} {ips}".to_string()
+        "{devices}".to_string()
     }
 }
 
@@ -483,9 +482,19 @@ impl Block for NetworkManager {
                                     "".to_string()
                                 };
 
+                                let mut ips = "×".to_string();
+                                if let Ok(ip4config) = device.ip4config(&self.dbus_conn) {
+                                    if let Ok(addresses) = ip4config.addresses(&self.dbus_conn) {
+                                        if addresses.len() > 0 {
+                                            ips = addresses.into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join(",");
+                                        }
+                                    }
+                                }
+
                                 let values = map!("{icon}" => icon,
                                                   "{typename}" => type_name,
-                                                  "{ssid}" => ssidstr);
+                                                  "{ssid}" => ssidstr,
+                                                  "{ips}" => ips);
 
                                 if let Ok(s) = self.device_format.render_static_str(&values) {
                                     devicevec.push(s);
@@ -495,18 +504,7 @@ impl Block for NetworkManager {
                             }
                         };
 
-                        // Get all IPs for this connection
-                        let mut ips = "×".to_string();
-                        if let Ok(ip4config) = conn.ip4config(&self.dbus_conn) {
-                            if let Ok(addresses) = ip4config.addresses(&self.dbus_conn) {
-                                if addresses.len() > 0 {
-                                    ips = addresses.into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join(",");
-                                }
-                            }
-                        }
-
-                        let values = map!("{devices}" => devicevec.join(" "),
-                                          "{ips}" => ips);
+                        let values = map!("{devices}" => devicevec.join(" ");
 
                         if let Ok(s) = self.connection_format.render_static_str(&values) {
                             widget.set_text(s);
