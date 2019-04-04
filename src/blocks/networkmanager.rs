@@ -276,6 +276,20 @@ impl<'a> NmAccessPoint<'a> {
             .block_error("networkmanager", "Failed to parse ssid")?
             .to_string())
     }
+
+    fn strength(&self, c: &Connection) -> Result<u8> {
+        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.AccessPoint", "Strength").block_error("networkmanager", "Failed to retrieve strength")?;
+
+        let strength: Variant<u8> = m.get1().block_error("networkmanager", "Failed to read strength")?;
+        Ok(strength.0)
+    }
+
+    fn frequency(&self, c: &Connection) -> Result<u32> {
+        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.AccessPoint", "Frequency").block_error("networkmanager", "Failed to retrieve frequency")?;
+
+        let frequency: Variant<u32> = m.get1().block_error("networkmanager", "Failed to read frequency")?;
+        Ok(frequency.0)
+    }
 }
 
 #[derive(Clone)]
@@ -302,6 +316,7 @@ pub struct NetworkManager {
     on_click: Option<String>,
     primary_only: bool,
     max_ssid_width: usize,
+    ap_format: FormatTemplate,
     device_format: FormatTemplate,
     connection_format: FormatTemplate,
 }
@@ -319,6 +334,10 @@ pub struct NetworkManagerConfig {
     /// Max SSID width, in characters.
     #[serde(default = "NetworkManagerConfig::default_max_ssid_width")]
     pub max_ssid_width: usize,
+
+    /// AP formatter
+    #[serde(default = "NetworkManagerConfig::default_ap_format")]
+    pub ap_format: String,
 
     /// Device formatter.
     #[serde(default = "NetworkManagerConfig::default_device_format")]
@@ -342,8 +361,12 @@ impl NetworkManagerConfig {
         21
     }
 
+    fn default_ap_format() -> String {
+        "{ssid}".to_string()
+    }
+
     fn default_device_format() -> String {
-        "{icon}{ssid} {ips}".to_string()
+        "{icon}{ap} {ips}".to_string()
     }
 
     fn default_connection_format() -> String {
@@ -394,6 +417,7 @@ impl ConfigBlock for NetworkManager {
             on_click: block_config.on_click,
             primary_only: block_config.primary_only,
             max_ssid_width: block_config.max_ssid_width,
+            ap_format: FormatTemplate::from_string(&block_config.ap_format)?,
             device_format: FormatTemplate::from_string(&block_config.device_format)?,
             connection_format: FormatTemplate::from_string(&block_config.connection_format)?,
         })
@@ -477,13 +501,31 @@ impl Block for NetworkManager {
                                     ("".to_string(), "".to_string())
                                 };
 
-                                let ssidstr = if let Ok(ap) = device.active_access_point(&self.dbus_conn) {
-                                    if let Ok(ssid) = ap.ssid(&self.dbus_conn) {
-                                        let mut truncated = ssid.to_string();
-                                        truncated.truncate(self.max_ssid_width);
-                                        truncated
+                                let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn) {
+                                    let ssid = match ap.ssid(&self.dbus_conn) {
+                                        Ok(ssid) => {
+                                            let mut truncated = ssid.to_string();
+                                            truncated.truncate(self.max_ssid_width);
+                                            truncated
+                                        }
+                                        Err(_) => "".to_string(),
+                                    };
+                                    let strength = match ap.strength(&self.dbus_conn) {
+                                        Ok(v) => format!("{}", v).to_string(),
+                                        Err(_) => "0".to_string(),
+                                    };
+                                    let freq = match ap.frequency(&self.dbus_conn) {
+                                        Ok(v) => format!("{}", v).to_string(),
+                                        Err(_) => "0".to_string(),
+                                    };
+
+                                    let values = map!("{ssid}" => ssid,
+                                                      "{strength}" => strength,
+                                                      "{freq}" => freq);
+                                    if let Ok(s) = self.ap_format.render_static_str(&values) {
+                                        s
                                     } else {
-                                        "".to_string()
+                                        "[invalid device format string]".to_string()
                                     }
                                 } else {
                                     "".to_string()
@@ -500,7 +542,7 @@ impl Block for NetworkManager {
 
                                 let values = map!("{icon}" => icon,
                                                   "{typename}" => type_name,
-                                                  "{ssid}" => ssidstr,
+                                                  "{ap}" => ap,
                                                   "{ips}" => ips);
 
                                 if let Ok(s) = self.device_format.render_static_str(&values) {

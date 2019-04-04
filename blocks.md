@@ -443,13 +443,21 @@ Key | Values | Required | Default
 `connection_format` | Connection string formatter. See below for available placeholders. | No | `"{devices} {ips}"`
 `on_click` | On-click handler | No | `""`
 
+### AP format string
+
+Placeholder | Description
+------------|-------------
+`{ssid}` | The SSID for this AP.
+`{strength}` | The signal strength in percent for this AP.
+`{frequency}` | The frequency of this AP in MHz.
+
 ### Device format string
 
 Placeholder | Description
 ------------|-------------
 `{icon}` | The icon matching the device type.
 `{typename}` | The name of the device type.
-`{ssid}` | The connected SSID if available.
+`{ap}` | The connected AP if available, formatted with the AP format string.
 `{ips}` | The list of IPs for this device.
 
 ### Connection format string
