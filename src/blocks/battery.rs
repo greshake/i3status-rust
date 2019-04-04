@@ -10,10 +10,11 @@ use std::time::{Duration, Instant};
 use std::thread;
 
 use chan::Sender;
-use blocks::dbus;
 use uuid::Uuid;
 
 use block::{Block, ConfigBlock};
+use blocks::dbus;
+use blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
@@ -206,27 +207,6 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 }
 
-fn get_upower_property(con: &dbus::Connection, device_path: &str, property: &str) -> Result<dbus::Message> {
-    let msg = dbus::Message::new_method_call(
-        "org.freedesktop.UPower",
-        device_path,
-        "org.freedesktop.DBus.Properties",
-        "Get",
-    ).block_error("battery", "Failed to create Dbus message.")?
-        .append2(
-            dbus::MessageItem::Str("org.freedesktop.UPower.Device".to_string()),
-            dbus::MessageItem::Str(property.to_string()),
-        );
-
-    con.send_with_reply_and_block(msg, 1000).block_error(
-        "battery",
-        &format!(
-            "Failed to retrieve UPower property '{}' from '{}' via Dbus.",
-            property, device_path
-        ),
-    )
-}
-
 /// Represents a battery known to UPower.
 pub struct UpowerDevice {
     device_path: String,
@@ -246,12 +226,13 @@ impl UpowerDevice {
         let con = dbus::Connection::get_private(dbus::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
-        let upower_type: dbus::arg::Variant<u32> = get_upower_property(&con, &device_path, "Type")?
-            .get1()
+        let upower_type: u32 = con
+            .with_path("org.freedesktop.UPower", &device_path, 1000)
+            .get("org.freedesktop.UPower.Device", "Type")
             .block_error("battery", "Failed to read UPower Type property.")?;
 
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
-        if upower_type.0 != 2 {
+        if upower_type != 2 {
             return Err(BlockError(
                 "battery".into(),
                 "UPower device is not a battery.".into(),
@@ -301,13 +282,14 @@ impl UpowerDevice {
 
 impl BatteryDevice for UpowerDevice {
     fn status(&self) -> Result<String> {
-        let status: dbus::arg::Variant<u32> =
-            get_upower_property(&self.con, &self.device_path, "State")?
-                .get1()
-                .block_error("battery", "Failed to read UPower State property.")?;
+        let status: u32 = self
+            .con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get("org.freedesktop.UPower.Device", "State")
+            .block_error("battery", "Failed to read UPower State property.")?;
 
         // https://upower.freedesktop.org/docs/Device.html#Device:State
-        match status.0 {
+        match status {
             1 => Ok("Charging".to_string()),
             2 => Ok("Discharging".to_string()),
             3 => Ok("Empty".to_string()),
@@ -319,34 +301,44 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn capacity(&self) -> Result<u64> {
-        let capacity: dbus::arg::Variant<f64> =
-            get_upower_property(&self.con, &self.device_path, "Percentage")?
-                .get1()
-                .block_error("battery", "Failed to read UPower Percentage property.")?;
+        let capacity: f64 = self
+            .con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get("org.freedesktop.UPower.Device", "Percentage")
+            .block_error("battery", "Failed to read UPower Percentage property.")?;
 
-        if capacity.0 > 100.0 {
+        if capacity > 100.0 {
             Ok(100)
         } else {
-            Ok(capacity.0 as u64)
+            Ok(capacity as u64)
         }
     }
 
     fn time_remaining(&self) -> Result<u64> {
-        let property = if self.status()? == "Charging" { "TimeToFull" } else { "TimeToEmpty" };
-        let time_to_empty: dbus::arg::Variant<i64> =
-            get_upower_property(&self.con, &self.device_path, property)?
-                .get1()
-                .block_error("battery", &format!("Failed to read UPower {} property.", property))?;
-        Ok((time_to_empty.0 / 60) as u64)
+        let property = if self.status()? == "Charging" {
+            "TimeToFull"
+        } else {
+            "TimeToEmpty"
+        };
+        let time_to_empty: i64 = self
+            .con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get("org.freedesktop.UPower.Device", property)
+            .block_error(
+                "battery",
+                &format!("Failed to read UPower {} property.", property),
+            )?;
+        Ok((time_to_empty / 60) as u64)
     }
 
     fn power_consumption(&self) -> Result<u64> {
-        let energy_rate: dbus::arg::Variant<f64> =
-            get_upower_property(&self.con, &self.device_path, "EnergyRate")?
-                .get1()
-                .block_error("battery", "Failed to read UPower EnergyRate property.")?;
+        let energy_rate: f64 = self
+            .con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get("org.freedesktop.UPower.Device", "EnergyRate")
+            .block_error("battery", "Failed to read UPower EnergyRate property.")?;
         // FIXME: Might want to make the interface send Watts instead.
-        Ok((energy_rate.0 * 1_000_000.0) as u64)
+        Ok((energy_rate * 1_000_000.0) as u64)
     }
 }
 
