@@ -258,6 +258,13 @@ impl<'a> NmConnection<'a> {
         Ok(ActiveConnectionState::from(state.0))
     }
 
+    fn id(&self, c: &Connection) -> Result<String> {
+        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Connection.Active", "Id").block_error("networkmanager", "Failed to retrieve connection ID")?;
+
+        let id: Variant<String> = m.get1().block_error("networkmanager", "Failed to read Id")?;
+        Ok(id.0)
+    }
+
     fn devices(&self, c: &Connection) -> Result<Vec<NmDevice>> {
         let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Connection.Active", "Devices").block_error("networkmanager", "Failed to retrieve connection device")?;
 
@@ -586,7 +593,13 @@ impl Block for NetworkManager {
                             }
                         };
 
-                        let values = map!("{devices}" => devicevec.join(" ");
+                        let id = match conn.id(&self.dbus_conn) {
+                            Ok(id) => id,
+                            Err(v) => format!("{:?}", v).to_string(),
+                        };
+
+                        let values = map!("{devices}" => devicevec.join(" "),
+                                          "{id}" => id);
 
                         if let Ok(s) = self.connection_format.render_static_str(&values) {
                             widget.set_text(s);
