@@ -9,9 +9,10 @@ use blocks::dbus;
 use blocks::dbus::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
 use config::Config;
 use errors::*;
+use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
 use widget::{I3BarWidget, State};
-use widgets::text::TextWidget;
+use widgets::button::ButtonWidget;
 
 pub struct BluetoothDevice {
     pub path: String,
@@ -92,6 +93,20 @@ impl BluetoothDevice {
             .block_error("bluetooth", "Failed to decode D-Bus property.")
     }
 
+    pub fn toggle(&self) -> Result<()> {
+        let method = match self.connected()? {
+            true => "Disconnect",
+            false => "Connect",
+        };
+        let msg =
+            dbus::Message::new_method_call("org.bluez", &self.path, "org.bluez.Device1", method)
+                .block_error("bluetooth", "Failed to build D-Bus method.")?;
+
+        // Swallow errors rather than nuke the bar.
+        let _ = self.con.send(msg);
+        Ok(())
+    }
+
     /// Monitor Bluetooth property changes in a separate thread and send updates
     /// via the `update_request` channel.
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
@@ -127,7 +142,7 @@ impl BluetoothDevice {
 
 pub struct Bluetooth {
     id: String,
-    output: TextWidget,
+    output: ButtonWidget,
     device: BluetoothDevice,
 }
 
@@ -146,8 +161,8 @@ impl ConfigBlock for Bluetooth {
         device.monitor(id.clone(), send);
 
         Ok(Bluetooth {
-            id: id,
-            output: TextWidget::new(config).with_icon(match device.icon {
+            id: id.clone(),
+            output: ButtonWidget::new(config, &id).with_icon(match device.icon {
                 Some(ref icon) if icon == "audio-card" => "headphones",
                 Some(ref icon) if icon == "input-gaming" => "joystick",
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",
@@ -188,6 +203,18 @@ impl Block for Bluetooth {
         }
 
         Ok(None)
+    }
+
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if let Some(ref name) = event.name {
+            if name.as_str() == self.id {
+                match event.button {
+                    MouseButton::Right => self.device.toggle()?,
+                    _ => (),
+                }
+            }
+        }
+        Ok(())
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
