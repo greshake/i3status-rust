@@ -332,10 +332,11 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn time_remaining(&self) -> Result<u64> {
+        let property = if self.status()? == "Charging" { "TimeToFull" } else { "TimeToEmpty" };
         let time_to_empty: dbus::arg::Variant<i64> =
-            get_upower_property(&self.con, &self.device_path, "TimeToEmpty")?
+            get_upower_property(&self.con, &self.device_path, property)?
                 .get1()
-                .block_error("battery", "Failed to read UPower TimeToEmpty property.")?;
+                .block_error("battery", &format!("Failed to read UPower {} property.", property))?;
         Ok((time_to_empty.0 / 60) as u64)
     }
 
