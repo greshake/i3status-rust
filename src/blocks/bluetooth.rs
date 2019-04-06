@@ -31,7 +31,7 @@ impl BluetoothDevice {
         let objects = con
             .with_path("org.bluez", "/", 1000)
             .get_managed_objects()
-            .block_error("bluetooth", "Failed to decode D-Bus property.")?;
+            .block_error("bluetooth", "Failed to get managed objects from org.bluez.")?;
 
         let devices: Vec<(dbus::Path, String)> = objects
             .into_iter()
@@ -86,15 +86,18 @@ impl BluetoothDevice {
             .ok()
     }
 
-    pub fn connected(&self) -> Result<bool> {
+    pub fn connected(&self) -> bool {
         self.con
             .with_path("org.bluez", &self.path, 1000)
             .get("org.bluez.Device1", "Connected")
-            .block_error("bluetooth", "Failed to decode D-Bus property.")
+            // In the case that the D-Bus interface missing or responds
+            // incorrectly, it seems reasonable to treat the device as "down"
+            // instead of nuking the bar. This matches the behaviour elsewhere.
+            .unwrap_or(false)
     }
 
     pub fn toggle(&self) -> Result<()> {
-        let method = match self.connected()? {
+        let method = match self.connected() {
             true => "Disconnect",
             false => "Connect",
         };
@@ -180,7 +183,7 @@ impl Block for Bluetooth {
     }
 
     fn update(&mut self) -> Result<Option<Duration>> {
-        let connected = self.device.connected()?;
+        let connected = self.device.connected();
         self.output.set_text(match connected {
             true => "".to_string(),
             false => " ×".to_string(),
