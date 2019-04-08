@@ -9,7 +9,7 @@ use util::FormatTemplate;
 use std::time::{Duration, Instant};
 use std::thread;
 
-use chan::Sender;
+use crossbeam_channel::Sender;
 use uuid::Uuid;
 
 use block::{Block, ConfigBlock};

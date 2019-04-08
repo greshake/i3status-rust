@@ -1,7 +1,7 @@
 use std::time::Duration;
 use std::process::Command;
 use util::FormatTemplate;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};

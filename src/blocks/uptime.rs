@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use chan::Sender;
+use crossbeam_channel::Sender;
 use uuid::Uuid;
 
 use block::{Block, ConfigBlock};

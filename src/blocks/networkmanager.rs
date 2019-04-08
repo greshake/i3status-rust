@@ -2,7 +2,7 @@ use std::fmt;
 use std::time::{Duration, Instant};
 use std::thread;
 
-use chan::Sender;
+use crossbeam_channel::Sender;
 use uuid::Uuid;
 
 use config::Config;

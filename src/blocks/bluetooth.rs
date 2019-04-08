@@ -1,7 +1,7 @@
 use std::thread;
 use std::time::{Duration, Instant};
 
-use chan::Sender;
+use crossbeam_channel::Sender;
 use uuid::Uuid;
 
 use block::{Block, ConfigBlock};

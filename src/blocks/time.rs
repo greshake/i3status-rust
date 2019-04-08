@@ -9,7 +9,7 @@ use errors::*;
 use chrono::offset::{Utc, Local};
 use chrono_tz::Tz;
 use scheduler::Task;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
 use input::I3BarEvent;
@@ -44,7 +44,7 @@ pub struct TimeConfig {
 
 impl TimeConfig {
     fn default_format() -> String {
-        "%a %d/%m %R".to_owned()
+        "%a %d/%m %R".to_string()
     }
 
     fn default_interval() -> Duration {

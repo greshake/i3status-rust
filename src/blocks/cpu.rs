@@ -1,4 +1,4 @@
-use chan::Sender;
+use crossbeam_channel::Sender;
 use scheduler::Task;
 use std::time::Duration;
 

@@ -1,5 +1,5 @@
 use std::time::Duration;
-use chan::Sender;
+use crossbeam_channel::Sender;
 
 use block::{Block, ConfigBlock};
 use config::Config;

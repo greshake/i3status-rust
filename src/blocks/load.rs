@@ -7,7 +7,7 @@ use errors::*;
 use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
 use util::FormatTemplate;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use scheduler::Task;
 
 use std::io::BufReader;

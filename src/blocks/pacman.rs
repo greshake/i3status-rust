@@ -5,7 +5,7 @@ use std::time::Duration;
 use std::process::Command;
 use std::env;
 use std::ffi::OsString;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use scheduler::Task;
 
 use block::{Block, ConfigBlock};

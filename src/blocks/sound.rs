@@ -16,9 +16,9 @@ use std::sync::Mutex;
 use std::collections::HashMap;
 #[cfg(feature = "pulseaudio")]
 use std::ops::Deref;
-use chan::Sender;
+use crossbeam_channel::Sender;
 #[cfg(feature = "pulseaudio")]
-use chan::{async, sync};
+use crossbeam_channel::unbounded;
 
 use scheduler::Task;
 use block::{Block, ConfigBlock};
@@ -272,8 +272,8 @@ impl PulseAudioConnection {
 #[cfg(feature = "pulseaudio")]
 impl PulseAudioClient {
     fn new() -> Result<PulseAudioClient> {
-        let (send_req, recv_req) = async();
-        let (send_result, recv_result) = sync(0);
+        let (send_req, recv_req) = unbounded();
+        let (send_result, recv_result) = unbounded();
         let send_result2 = send_result.clone();
         let new_connection = |sender: Sender<Result<()>>| -> PulseAudioConnection {
             let conn = PulseAudioConnection::new();
@@ -290,13 +290,13 @@ impl PulseAudioClient {
         };
         let thread_result = || -> Result<()> {
             match recv_result.recv() {
-                None => {
+                Err(_) => {
                     Err(BlockError(
                         "sound".into(),
                         "failed to receive from pulseaudio thread channel".into()
                     ))
                 },
-                Some(result) => result
+                Ok(result) => result
             }
         };
 
@@ -311,8 +311,8 @@ impl PulseAudioClient {
                 }
 
                 match recv_req.recv() {
-                    None => { },
-                    Some(req) => {
+                    Err(e) => { },
+                    Ok(req) => {
                         let mut introspector = connection.context.borrow_mut().introspect();
 
                         match req {
