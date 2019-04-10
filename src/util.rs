@@ -1,6 +1,6 @@
-use block::Block;
-use config::Config;
-use errors::*;
+use crate::block::Block;
+use crate::config::Config;
+use crate::errors::*;
 use std::collections::HashMap;
 use serde::de::DeserializeOwned;
 use serde_json::value::Value;

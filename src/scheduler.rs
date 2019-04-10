@@ -1,5 +1,5 @@
-use block::Block;
-use errors::*;
+use crate::block::Block;
+use crate::errors::*;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
 use std::thread;

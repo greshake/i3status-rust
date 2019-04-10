@@ -5,14 +5,14 @@ use std::thread;
 use chan::Sender;
 use uuid::Uuid;
 
-use config::Config;
-use errors::*;
-use scheduler::Task;
-use block::{Block, ConfigBlock};
-use widget::{I3BarWidget, State};
-use widgets::text::TextWidget;
-use blocks::dbus::{BusType, Connection, Message, MessageItem};
-use blocks::dbus::arg::Variant;
+use crate::config::Config;
+use crate::errors::*;
+use crate::scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::text::TextWidget;
+use crate::blocks::dbus::{BusType, Connection, Message, MessageItem};
+use crate::blocks::dbus::arg::Variant;
 
 enum NetworkState {
     Unknown = 0,

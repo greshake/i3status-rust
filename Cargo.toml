@@ -3,6 +3,7 @@ name = "i3status-rs"
 version = "0.9.0"
 authors = ["Kai Greshake <development@kai-greshake.de>",
            "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
+edition = "2018"
 
 [features]
 default = ["pulseaudio"]

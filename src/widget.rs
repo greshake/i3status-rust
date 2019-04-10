@@ -1,4 +1,4 @@
-use themes::Theme;
+use crate::themes::Theme;
 use serde_json::value::Value;
 
 #[derive(Debug, Copy, Clone)]

@@ -2,16 +2,16 @@ use std::time::{Duration, Instant};
 use std::process::Command;
 use std::thread::spawn;
 use std::sync::{Arc, Mutex};
-use chan::{async, Receiver, Sender};
-use scheduler::Task;
+use chan::{r#async, Receiver, Sender};
+use crate::scheduler::Task;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
-use input::{I3BarEvent, MouseButton};
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::input::{I3BarEvent, MouseButton};
 
 use uuid::Uuid;
 
@@ -102,7 +102,7 @@ impl ConfigBlock for SpeedTest {
 
     fn new(block_config: Self::Config, config: Config, done: Sender<Task>) -> Result<Self> {
         // Create all the things we are going to send and take for ourselves.
-        let (send, recv): (Sender<()>, Receiver<()>) = async();
+        let (send, recv): (Sender<()>, Receiver<()>) = r#async();
         let vals = Arc::new(Mutex::new((false, vec![])));
         let id = Uuid::new_v4().simple().to_string();
 

@@ -4,15 +4,15 @@ use std::time::{Duration, Instant};
 use chan::Sender;
 use uuid::Uuid;
 
-use block::{Block, ConfigBlock};
-use blocks::dbus;
-use blocks::dbus::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
-use config::Config;
-use errors::*;
-use input::{I3BarEvent, MouseButton};
-use scheduler::Task;
-use widget::{I3BarWidget, State};
-use widgets::button::ButtonWidget;
+use crate::block::{Block, ConfigBlock};
+use crate::blocks::dbus;
+use crate::blocks::dbus::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
+use crate::config::Config;
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
 
 pub struct BluetoothDevice {
     pub path: String,

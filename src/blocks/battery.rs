@@ -5,23 +5,23 @@
 //! internal power supply.
 
 use std::path::{Path, PathBuf};
-use util::FormatTemplate;
+use crate::util::FormatTemplate;
 use std::time::{Duration, Instant};
 use std::thread;
 
 use chan::Sender;
 use uuid::Uuid;
 
-use block::{Block, ConfigBlock};
-use blocks::dbus;
-use blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use scheduler::Task;
-use util::read_file;
-use widget::{I3BarWidget, State};
-use widgets::text::TextWidget;
+use crate::block::{Block, ConfigBlock};
+use crate::blocks::dbus;
+use crate::blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::scheduler::Task;
+use crate::util::read_file;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::text::TextWidget;
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {

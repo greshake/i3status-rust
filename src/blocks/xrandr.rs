@@ -2,17 +2,17 @@ use std::time::Duration;
 use std::process::Command;
 use std::str::FromStr;
 use chan::Sender;
-use scheduler::Task;
+use crate::scheduler::Task;
 
-use util::FormatTemplate;
+use crate::util::FormatTemplate;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
-use input::{I3BarEvent, MouseButton};
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::I3BarWidget;
+use crate::input::{I3BarEvent, MouseButton};
 
 use uuid::Uuid;
 

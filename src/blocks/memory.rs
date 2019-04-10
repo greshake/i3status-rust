@@ -74,22 +74,22 @@
 //!
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
-use util::*;
+use crate::util::*;
 use chan::Sender;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use block::{Block, ConfigBlock};
-use input::{I3BarEvent, MouseButton};
+use crate::block::{Block, ConfigBlock};
+use crate::input::{I3BarEvent, MouseButton};
 use std::str::FromStr;
 use uuid::Uuid;
 use std::fmt;
 
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
-use scheduler::Task;
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::scheduler::Task;
 
 use std::io::Write;
 use std::fs::OpenOptions;

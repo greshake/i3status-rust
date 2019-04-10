@@ -23,7 +23,7 @@ pub mod maildir;
 mod networkmanager;
 mod bluetooth;
 
-use config::Config;
+use crate::config::Config;
 use self::time::*;
 use self::template::*;
 use self::music::*;
@@ -50,7 +50,7 @@ use self::networkmanager::*;
 use self::bluetooth::*;
 
 use super::block::{Block, ConfigBlock};
-use errors::*;
+use crate::errors::*;
 use super::scheduler::Task;
 
 extern crate dbus;

@@ -4,14 +4,14 @@ use std::time::Duration;
 use chan::Sender;
 use uuid::Uuid;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use scheduler::Task;
-use util::read_file;
-use widgets::text::TextWidget;
-use widget::I3BarWidget;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::scheduler::Task;
+use crate::util::read_file;
+use crate::widgets::text::TextWidget;
+use crate::widget::I3BarWidget;
 
 pub struct Uptime {
     text: TextWidget,

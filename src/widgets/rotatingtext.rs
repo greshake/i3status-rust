@@ -1,7 +1,7 @@
-use config::Config;
-use errors::*;
+use crate::config::Config;
+use crate::errors::*;
 use std::time::{Duration, Instant};
-use widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, State};
 use serde_json::value::Value;
 
 #[derive(Clone, Debug)]
