@@ -5,14 +5,14 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 use chan::Sender;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::text::TextWidget;
-use widgets::graph::GraphWidget;
-use widget::I3BarWidget;
-use scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::text::TextWidget;
+use crate::widgets::graph::GraphWidget;
+use crate::widget::I3BarWidget;
+use crate::scheduler::Task;
 
 use uuid::Uuid;
 

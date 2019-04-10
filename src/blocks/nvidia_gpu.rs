@@ -2,16 +2,16 @@ use std::time::Duration;
 use std::process::Command;
 use chan::Sender;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use input::{I3BarEvent, MouseButton};
-use scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
 use uuid::Uuid;
-use widget::{I3BarWidget, State};
-use widgets::button::ButtonWidget;
-use widgets::text::TextWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 
 pub struct NvidiaGpu {
     gpu_widget: ButtonWidget,

@@ -1,18 +1,18 @@
 use std::time::Duration;
 
-use block::{Block, ConfigBlock};
+use crate::block::{Block, ConfigBlock};
 use chan::Sender;
 use chrono::offset::{Local, Utc};
 use chrono_tz::Tz;
-use config::Config;
-use de::{deserialize_duration, deserialize_timezone};
-use errors::*;
-use input::I3BarEvent;
-use scheduler::Task;
+use crate::config::Config;
+use crate::de::{deserialize_duration, deserialize_timezone};
+use crate::errors::*;
+use crate::input::I3BarEvent;
+use crate::scheduler::Task;
 use uuid::Uuid;
-use widget::I3BarWidget;
-use widgets::button::ButtonWidget;
-use subprocess::{parse_command, spawn_child_async};
+use crate::widget::I3BarWidget;
+use crate::widgets::button::ButtonWidget;
+use crate::subprocess::{parse_command, spawn_child_async};
 
 pub struct Time {
     time: ButtonWidget,

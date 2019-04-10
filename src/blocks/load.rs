@@ -1,14 +1,14 @@
 use std::time::Duration;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::text::TextWidget;
-use widget::{I3BarWidget, State};
-use util::FormatTemplate;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::text::TextWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::util::FormatTemplate;
 use chan::Sender;
-use scheduler::Task;
+use crate::scheduler::Task;
 
 use std::io::BufReader;
 use std::io::prelude::*;

@@ -46,17 +46,17 @@ use std::collections::HashMap;
 use std::time::Duration;
 use std::ops::DerefMut;
 
-use block::Block;
+use crate::block::Block;
 
-use blocks::create_block;
-use config::Config;
-use errors::*;
-use input::{process_events, I3BarEvent};
-use scheduler::{Task, UpdateScheduler};
-use widget::{I3BarWidget, State};
-use widgets::text::TextWidget;
+use crate::blocks::create_block;
+use crate::config::Config;
+use crate::errors::*;
+use crate::input::{process_events, I3BarEvent};
+use crate::scheduler::{Task, UpdateScheduler};
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::text::TextWidget;
 
-use util::deserialize_file;
+use crate::util::deserialize_file;
 
 use self::clap::{App, Arg, ArgMatches};
 use self::chan::{Receiver, Sender};
@@ -138,7 +138,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Update request channel
-    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) = chan::async();
+    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) = chan::r#async();
 
     // In dev build, we might diverge into profiling blocks here
     if let Some(name) = matches.value_of("profile") {
@@ -204,7 +204,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     // We wait for click events in a separate thread, to avoid blocking to wait for stdin
-    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = chan::async();
+    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = chan::r#async();
     process_events(tx_clicks);
 
     // Time to next update channel.

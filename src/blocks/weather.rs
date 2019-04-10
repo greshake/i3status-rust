@@ -5,15 +5,15 @@ use chan::Sender;
 use serde_json;
 use uuid::Uuid;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use input::{I3BarEvent, MouseButton};
-use scheduler::Task;
-use util::FormatTemplate;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::util::FormatTemplate;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::I3BarWidget;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]

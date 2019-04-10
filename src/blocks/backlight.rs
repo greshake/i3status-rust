@@ -17,13 +17,13 @@ use chan::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use uuid::Uuid;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use errors::*;
-use input::{I3BarEvent, MouseButton};
-use scheduler::Task;
-use widget::I3BarWidget;
-use widgets::button::ButtonWidget;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::widget::I3BarWidget;
+use crate::widgets::button::ButtonWidget;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {

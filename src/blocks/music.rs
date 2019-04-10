@@ -3,18 +3,18 @@ use chan::Sender;
 use std::thread;
 use std::boxed::Box;
 
-use config::Config;
-use errors::*;
-use scheduler::Task;
-use input::I3BarEvent;
-use block::{Block, ConfigBlock};
-use de::deserialize_duration;
-use widgets::rotatingtext::RotatingTextWidget;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
+use crate::config::Config;
+use crate::errors::*;
+use crate::scheduler::Task;
+use crate::input::I3BarEvent;
+use crate::block::{Block, ConfigBlock};
+use crate::de::deserialize_duration;
+use crate::widgets::rotatingtext::RotatingTextWidget;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::{I3BarWidget, State};
 
-use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
-use blocks::dbus::arg::{Array, RefArg};
+use crate::blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
+use crate::blocks::dbus::arg::{Array, RefArg};
 use self::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 

@@ -3,12 +3,12 @@ use chan::Sender;
 use std::thread;
 use std::sync::{Arc, Mutex};
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use errors::*;
-use widgets::text::TextWidget;
-use widget::I3BarWidget;
-use scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::errors::*;
+use crate::widgets::text::TextWidget;
+use crate::widget::I3BarWidget;
+use crate::scheduler::Task;
 
 use uuid::Uuid;
 
