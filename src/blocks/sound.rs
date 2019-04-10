@@ -5,7 +5,6 @@ use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
-use std::ffi::OsStr;
 #[cfg(feature = "pulseaudio")]
 use std::rc::Rc;
 #[cfg(feature = "pulseaudio")]
@@ -27,6 +26,7 @@ use errors::*;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
+use subprocess::{parse_command, spawn_child_async};
 
 #[cfg(feature = "pulseaudio")]
 use pulse::mainloop::standard::Mainloop;
@@ -345,7 +345,7 @@ impl PulseAudioClient {
         // subscribe
         thread::spawn(move || {
             let connection = new_connection(send_result2);
-        
+
             // subcribe for events
             connection.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
             connection.context.borrow_mut().subscribe(
@@ -633,7 +633,7 @@ impl ConfigBlock for Sound {
                 "PulseAudio feature or driver disabled".into(),
             ))
         };
-        
+
         // prefere PulseAudio if available and selected, fallback to ALSA
         let device: Box<SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
@@ -673,16 +673,12 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 match e.button {
                     MouseButton::Right => self.device.toggle()?,
-                    MouseButton::Left => match self.on_click {
-                        Some(ref cmd) => {
-                            let command_broken: Vec<&str> = cmd.split_whitespace().collect();
-                            let mut itr = command_broken.iter();
-                            let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                                .args(itr)
-                                .spawn();
+                    MouseButton::Left =>
+                        if let Some(ref cmd) = self.on_click {
+                            let (cmd_name, cmd_args) = parse_command(cmd);
+                            spawn_child_async(cmd_name, &cmd_args)
+                                .block_error("sound", "could not spawn child")?;
                         }
-                        _ => ()
-                    }
                     MouseButton::WheelUp => {
                         self.device.set_volume(self.step_width as i32)?;
                     }

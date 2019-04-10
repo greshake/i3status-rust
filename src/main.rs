@@ -31,6 +31,7 @@ mod input;
 mod icons;
 mod themes;
 mod scheduler;
+mod subprocess;
 mod widget;
 mod widgets;
 

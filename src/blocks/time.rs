@@ -1,19 +1,18 @@
 use std::time::Duration;
-use std::process::Command;
-use std::ffi::OsStr;
 
 use block::{Block, ConfigBlock};
+use chan::Sender;
+use chrono::offset::{Local, Utc};
+use chrono_tz::Tz;
 use config::Config;
 use de::{deserialize_duration, deserialize_timezone};
 use errors::*;
-use chrono::offset::{Utc, Local};
-use chrono_tz::Tz;
-use scheduler::Task;
-use chan::Sender;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
 use input::I3BarEvent;
+use scheduler::Task;
 use uuid::Uuid;
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
+use subprocess::{parse_command, spawn_child_async};
 
 pub struct Time {
     time: ButtonWidget,
@@ -88,22 +87,14 @@ impl Block for Time {
         Ok(Some(self.update_interval))
     }
 
-
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        let command = if self.on_click.is_some() {
-            self.on_click.clone().unwrap()
-        } else {
-            "".to_string()
-        };
-
-
         if let Some(ref name) = e.name {
-            if name.as_str() == self.id && self.on_click.is_some() {
-                let command_broken: Vec<&str> = command.split_whitespace().collect();
-                let mut itr = command_broken.iter();
-                let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                    .args(itr)
-                    .spawn();
+            if name.as_str() == self.id {
+                if let Some(ref cmd) = self.on_click {
+                    let (cmd_name, cmd_args) = parse_command(cmd);
+                    spawn_child_async(cmd_name, &cmd_args)
+                        .block_error("time", "could not spawn child")?;
+                }
             }
         }
         Ok(())
