@@ -1,17 +1,18 @@
 use crate::blocks::Block;
 use crate::config::Config;
 use crate::errors::*;
-use regex::Regex;
 use serde::de::DeserializeOwned;
+use serde::ser::Serialize;
+use serde::Serializer;
 use serde_json::value::Value;
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::{Debug, Display, Formatter};
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
-use std::prelude::v1::String;
+use strfmt::FmtError;
 use toml;
 
 pub fn xdg_config_home() -> PathBuf {
@@ -71,18 +72,6 @@ macro_rules! match_range {
         }
     )
 }
-
-macro_rules! map (
-    { $($key:expr => $value:expr),+ } => {
-        {
-            let mut m = ::std::collections::HashMap::new();
-            $(
-                m.insert($key, $value);
-            )+
-            m
-        }
-     };
-);
 
 macro_rules! map_to_owned (
     { $($key:expr => $value:expr),+ } => {
@@ -211,102 +200,97 @@ pub fn add_colors(a: &str, b: &str) -> ::std::result::Result<String, ParseIntErr
     )))
 }
 
-#[derive(Debug, Clone)]
-pub enum FormatTemplate {
-    Str(String, Option<Box<FormatTemplate>>),
-    Var(String, Option<Box<FormatTemplate>>),
+pub struct FormatTemplate {
+    format_str: String,
+}
+
+impl Debug for FormatTemplate {
+    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), std::fmt::Error> {
+        let _ = write!(f, "FormatTemplate(\"{}\")", self.format_str);
+        Ok(())
+    }
 }
 
 impl FormatTemplate {
     pub fn from_string(s: &str) -> Result<FormatTemplate> {
-        let s_as_bytes = s.as_bytes();
-
-        //valid var tokens: {} containing any amount of alphanumericals
-        let re = Regex::new(r"\{[a-zA-Z0-9]+?\}").internal_error("util", "invalid regex")?;
-
-        let mut token_vec: Vec<FormatTemplate> = vec![];
-        let mut start: usize = 0;
-
-        for re_match in re.find_iter(&s) {
-            if re_match.start() != start {
-                let str_vec: Vec<u8> = (&s_as_bytes)[start..re_match.start()].to_vec();
-                token_vec.push(FormatTemplate::Str(
-                    String::from_utf8(str_vec)
-                        .internal_error("util", "failed to convert string from UTF8")?,
-                    None,
-                ));
-            }
-            token_vec.push(FormatTemplate::Var(re_match.as_str().to_string(), None));
-            start = re_match.end();
-        }
-        let str_vec: Vec<u8> = (&s_as_bytes)[start..].to_vec();
-        token_vec.push(FormatTemplate::Str(
-            String::from_utf8(str_vec)
-                .internal_error("util", "failed to convert string from UTF8")?,
-            None,
-        ));
-        let mut template: FormatTemplate = match token_vec.pop() {
-            Some(token) => token,
-            _ => FormatTemplate::Str("".to_string(), None),
-        };
-        while let Some(token) = token_vec.pop() {
-            template = match token {
-                FormatTemplate::Str(s, _) => FormatTemplate::Str(s, Some(Box::new(template))),
-                FormatTemplate::Var(s, _) => FormatTemplate::Var(s, Some(Box::new(template))),
-            }
-        }
-        Ok(template)
+        Ok(FormatTemplate {
+            format_str: s.to_owned(),
+        })
     }
 
-    // TODO: Make this function tail-recursive for compiler optimization, also only use the version below, static_str
-    pub fn render<T: Display>(&self, vars: &HashMap<String, T>) -> String {
-        use self::FormatTemplate::*;
-        let mut rendered = String::new();
-        match *self {
-            Str(ref s, ref next) => {
-                rendered.push_str(s);
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render(vars));
-                };
-            }
-            Var(ref key, ref next) => {
-                rendered.push_str(&format!(
-                    "{}",
-                    vars.get(key)
-                        .unwrap_or_else(|| panic!("Unknown placeholder in format string: {}", key))
-                ));
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render(vars));
-                };
-            }
-        };
-        rendered
-    }
+    pub fn render<T: Serialize>(&self, vars: &T) -> String {
+        fn try_render<T: Serialize>(
+            format_str: &str,
+            vars: &T,
+        ) -> ::std::result::Result<String, ()> {
+            if let Value::Object(ast) = serde_json::value::to_value(vars).map_err(|_| ())? {
+                let formatter = |mut fmt: ::strfmt::Formatter| {
+                    let v = match ast.get(fmt.key) {
+                        Some(v) => v,
+                        None => {
+                            return Err(FmtError::KeyError(format!("Invalid key: {}", fmt.key)));
+                        }
+                    };
 
-    pub fn render_static_str<T: Display>(&self, vars: &HashMap<&str, T>) -> Result<String> {
-        use self::FormatTemplate::*;
-        let mut rendered = String::new();
-        match *self {
-            Str(ref s, ref next) => {
-                rendered.push_str(s);
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render_static_str(vars)?);
+                    match v {
+                        Value::String(s) => fmt.str(s),
+                        Value::Number(n) => {
+                            if let Some(n) = n.as_f64() {
+                                fmt.f64(n)
+                            } else if let Some(n) = n.as_u64() {
+                                fmt.u64(n)
+                            } else if let Some(n) = n.as_i64() {
+                                fmt.i64(n)
+                            } else {
+                                Err(::strfmt::FmtError::TypeError(
+                                    "unknown Number type".to_owned(),
+                                ))
+                            }
+                        }
+                        _ => Err(::strfmt::FmtError::TypeError("unknown type".to_owned())),
+                    }
                 };
+                return ::strfmt::strfmt_map(format_str, &formatter).map_err(|_| ());
             }
-            Var(ref key, ref next) => {
-                rendered.push_str(&format!(
-                    "{}",
-                    vars.get(&**key).internal_error(
-                        "util",
-                        &format!("Unknown placeholder in format string: {}", key)
-                    )?
-                ));
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render_static_str(vars)?);
-                };
-            }
+            ::std::result::Result::Err(())
         };
-        Ok(rendered)
+        try_render(&self.format_str, vars).unwrap_or_else(|_| "\u{f321}".to_owned())
+    }
+}
+
+pub struct DisplayableOption<T: Display, F: Display> {
+    inner: Option<T>,
+    fallback: F,
+}
+
+impl<T: Display, F: Display> Serialize for DisplayableOption<T, F> {
+    fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        if let Some(inner) = &self.inner {
+            serializer.serialize_str(&format!("{}", inner))
+        } else {
+            serializer.serialize_str(&format!("{}", self.fallback))
+        }
+    }
+}
+
+impl<T: Display, F: Display> DisplayableOption<T, F> {
+    pub fn new(value: Option<T>, fallback: F) -> Self {
+        DisplayableOption {
+            inner: value,
+            fallback,
+        }
+    }
+}
+
+impl<T: Display, F: Display> Display for DisplayableOption<T, F> {
+    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), std::fmt::Error> {
+        match &self.inner {
+            Some(value) => value.fmt(f),
+            None => self.fallback.fmt(f),
+        }
     }
 }
 

@@ -16,6 +16,13 @@ use std::io::BufReader;
 
 use uuid::Uuid;
 
+#[derive(Serialize)]
+struct LoadValues {
+    la_1m: f32,
+    la_5m: f32,
+    la_15m: f32,
+}
+
 pub struct Load {
     text: TextWidget,
     logical_cores: u32,
@@ -54,6 +61,11 @@ impl ConfigBlock for Load {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let format = block_config
+            .format
+            .replace("{1m}", "{la_1m}")
+            .replace("{5m}", "{la_5m}")
+            .replace("{15m}", "{la_15m}");
         let text = TextWidget::new(config)
             .with_icon("cogs")
             .with_state(State::Info);
@@ -79,8 +91,7 @@ impl ConfigBlock for Load {
             id: Uuid::new_v4().simple().to_string(),
             logical_cores,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("load", "Invalid format specified for load")?,
+            format: FormatTemplate::from_string(&format)?,
             text,
         })
     }
@@ -101,14 +112,19 @@ impl Block for Load {
 
         let split: Vec<&str> = (&loadavg).split(' ').collect();
 
-        let values = map!("{1m}" => split[0],
-                          "{5m}" => split[1],
-                          "{15m}" => split[2]);
+        let values = LoadValues {
+            la_1m: split[0]
+                .parse::<f32>()
+                .block_error("load", "failed to parse float percentage")?,
+            la_5m: split[1]
+                .parse::<f32>()
+                .block_error("load", "failed to parse float percentage")?,
+            la_15m: split[2]
+                .parse::<f32>()
+                .block_error("load", "failed to parse float percentage")?,
+        };
 
-        let used_perc = values["{1m}"]
-            .parse::<f32>()
-            .block_error("load", "failed to parse float percentage")?
-            / self.logical_cores as f32;
+        let used_perc = values.la_1m / self.logical_cores as f32;
         self.text
             .set_state(match_range!(used_perc, default: (State::Idle) {
                     0.0 ; 0.3 => State::Idle,
@@ -116,7 +132,7 @@ impl Block for Load {
                     0.6 ; 0.9 => State::Warning
             }));
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_text(self.format.render(&values));
 
         Ok(Some(self.update_interval))
     }

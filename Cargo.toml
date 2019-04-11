@@ -16,6 +16,7 @@ pulseaudio = ["libpulse-binding"]
 profiling = ["cpuprofiler", "progress"]
 
 [dependencies]
+time = "0.1"
 chrono = "0.4"
 chrono-tz = "0.4"
 lazy_static = "1.0"
@@ -37,6 +38,7 @@ notmuch = { optional = true, version = "0.1.1" }
 # for profiling blocks
 cpuprofiler = { version = "0.0.3", optional = true }
 progress = { version = "0.2", optional = true }
+strfmt = "0.1.6"
 
 [dependencies.clap]
 version = "2.31"

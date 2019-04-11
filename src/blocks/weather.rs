@@ -1,6 +1,5 @@
 use crossbeam_channel::Sender;
 use serde_json;
-use std::collections::HashMap;
 use std::env;
 use std::process::Command;
 use std::time::Duration;
@@ -54,11 +53,19 @@ pub enum OpenWeatherMapUnits {
     Imperial,
 }
 
+#[derive(Serialize)]
+struct WeatherValues {
+    weather: String,
+    temp: f64,
+    wind: f64,
+    direction: String,
+    location: String,
+}
+
 pub struct Weather {
     id: String,
     weather: ButtonWidget,
-    format: String,
-    weather_keys: HashMap<String, String>,
+    format: FormatTemplate,
     service: WeatherService,
     update_interval: Duration,
 }
@@ -68,7 +75,7 @@ fn malformed_json_error() -> Error {
 }
 
 impl Weather {
-    fn update_weather(&mut self) -> Result<()> {
+    fn update_weather(&mut self) -> Result<Option<WeatherValues>> {
         match self.service {
             WeatherService::OpenWeatherMap {
                 api_key: Some(ref api_key),
@@ -96,8 +103,7 @@ impl Weather {
                 // connected to the internet.
                 if output.is_empty() {
                     self.weather.set_icon("weather_default");
-                    self.weather_keys = HashMap::new();
-                    return Ok(());
+                    return Ok(None);
                 }
 
                 let json: serde_json::value::Value = serde_json::from_str(&output)
@@ -150,7 +156,7 @@ impl Weather {
                             294..=338 => "NW".to_string(),
                             _ => "N".to_string(),
                         },
-                        None => "-".to_string(),
+                        None => "•".to_string(),
                     }
                 }
 
@@ -163,12 +169,13 @@ impl Weather {
                     _ => "weather_default",
                 });
 
-                self.weather_keys = map_to_owned!("{weather}" => raw_weather,
-                                  "{temp}" => format!("{:.0}", raw_temp),
-                                  "{wind}" => format!("{:.1}", raw_wind_speed),
-                                  "{direction}" => convert_wind_direction(raw_wind_direction),
-                                  "{location}" => raw_location);
-                Ok(())
+                Ok(Some(WeatherValues {
+                    weather: raw_weather,
+                    temp: raw_temp,
+                    wind: raw_wind_speed,
+                    direction: convert_wind_direction(raw_wind_direction),
+                    location: raw_location,
+                }))
             }
             WeatherService::OpenWeatherMap {
                 ref api_key,
@@ -192,7 +199,7 @@ impl Weather {
                         ),
                     ))
                 } else {
-                    Ok(())
+                    Ok(None)
                 }
             }
         }
@@ -234,8 +241,12 @@ impl ConfigBlock for Weather {
         Ok(Weather {
             id: id.clone(),
             weather: ButtonWidget::new(config, &id),
-            format: block_config.format,
-            weather_keys: HashMap::new(),
+            format: FormatTemplate::from_string(
+                &block_config
+                    .format
+                    .replace("{temp}", "{temp:.0}")
+                    .replace("{wind}", "{temp:.1}"),
+            )?,
             service: block_config.service,
             update_interval: block_config.interval,
         })
@@ -244,14 +255,12 @@ impl ConfigBlock for Weather {
 
 impl Block for Weather {
     fn update(&mut self) -> Result<Option<Duration>> {
-        self.update_weather()?;
         // Display an error/disabled-looking widget when we don't have any
         // weather information, which is likely due to internet connectivity.
-        if self.weather_keys.keys().len() == 0 {
-            self.weather.set_text("×".to_string());
+        if let Some(values) = self.update_weather()? {
+            self.weather.set_text(self.format.render(&values));
         } else {
-            let fmt = FormatTemplate::from_string(&self.format)?;
-            self.weather.set_text(fmt.render(&self.weather_keys));
+            self.weather.set_text("×".to_string());
         }
         Ok(Some(self.update_interval))
     }

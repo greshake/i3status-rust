@@ -19,7 +19,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{read_file, FormatTemplate};
+use crate::util::{read_file, DisplayableOption, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -368,6 +368,13 @@ impl BatteryDevice for UpowerDevice {
     }
 }
 
+#[derive(Serialize)]
+struct BatteryValues {
+    percentage: DisplayableOption<f64, &'static str>,
+    time: DisplayableOption<time::Duration, &'static str>,
+    power: DisplayableOption<f64, &'static str>,
+}
+
 /// A block for displaying information about an internal power supply.
 pub struct Battery {
     output: TextWidget,
@@ -503,23 +510,25 @@ impl Block for Battery {
             self.output.set_state(State::Good);
         } else {
             let capacity = self.device.capacity();
-            let percentage = match capacity {
-                Ok(capacity) => format!("{}", capacity),
-                Err(_) => "×".into(),
+
+            let values = BatteryValues {
+                percentage: DisplayableOption::new(capacity.as_ref().ok().map(|&c| c as f64), "×"),
+                time: DisplayableOption::new(
+                    self.device
+                        .time_remaining()
+                        .ok()
+                        .map(|m| time::Duration::minutes(m as i64)),
+                    "×",
+                ),
+                power: DisplayableOption::new(
+                    self.device
+                        .power_consumption()
+                        .ok()
+                        .map(|p| (p as f64) / 1_000_000.0),
+                    "×",
+                ),
             };
-            let time = match self.device.time_remaining() {
-                Ok(time) => format!("{}:{:02}", time / 60, time % 60),
-                Err(_) => "×".into(),
-            };
-            let power = match self.device.power_consumption() {
-                Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
-                Err(_) => "×".into(),
-            };
-            let values = map!("{percentage}" => percentage,
-                              "{time}" => time,
-                              "{power}" => power);
-            self.output
-                .set_text(self.format.render_static_str(&values)?);
+            self.output.set_text(self.format.render(&values));
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.

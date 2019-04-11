@@ -112,6 +112,13 @@ macro_rules! unwrap_or_continue {
     };
 }
 
+#[derive(Serialize)]
+struct XrandrValues {
+    display: String,
+    brightness: f32,
+    resolution: String,
+}
+
 impl Xrandr {
     fn get_active_monitors() -> Result<Option<Vec<String>>> {
         let active_monitors_cli = String::from_utf8(
@@ -192,27 +199,27 @@ impl Xrandr {
 
     fn display(&mut self) -> Result<()> {
         if let Some(m) = self.monitors.get(self.current_idx) {
-            let brightness_str = m.brightness.to_string();
-            let values = map!("{display}" => m.name.clone(),
-                              "{brightness}" => brightness_str,
-                              "{resolution}" => m.resolution.clone());
+            let values = XrandrValues {
+                display: m.name.clone(),
+                brightness: m.brightness as f32,
+                resolution: m.resolution.clone(),
+            };
 
             self.text.set_icon("xrandr");
             let format_str = if self.resolution {
                 if self.icons {
-                    "{display} \u{f185} {brightness} \u{f096} {resolution}"
+                    "{display} \u{f185} {brightness:.0} \u{f096} {resolution}"
                 } else {
-                    "{display}: {brightness} [{resolution}]"
+                    "{display}: {brightness:.0} [{resolution}]"
                 }
             } else if self.icons {
-                "{display} \u{f185} {brightness}"
+                "{display} \u{f185} {brightness:.0}"
             } else {
-                "{display}: {brightness}"
+                "{display}: {brightness:.0}"
             };
 
-            if let Ok(fmt_template) = FormatTemplate::from_string(format_str) {
-                self.text.set_text(fmt_template.render_static_str(&values)?);
-            }
+            let fmt_template = FormatTemplate::from_string(format_str)?;
+            self.text.set_text(fmt_template.render(&values));
         }
 
         Ok(())

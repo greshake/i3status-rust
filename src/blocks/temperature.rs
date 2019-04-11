@@ -13,6 +13,13 @@ use std::time::Duration;
 
 use uuid::Uuid;
 
+#[derive(Serialize)]
+struct TemperatureValues {
+    min: i64,
+    max: i64,
+    average: i64,
+}
+
 pub struct Temperature {
     text: ButtonWidget,
     output: String,
@@ -180,11 +187,13 @@ impl Block for Temperature {
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
                 .round() as i64;
 
-            let values = map!("{average}" => avg,
-                              "{min}" => min,
-                              "{max}" => max);
+            let values = TemperatureValues {
+                min,
+                max,
+                average: avg,
+            };
 
-            self.output = self.format.render_static_str(&values)?;
+            self.output = self.format.render(&values);
             if !self.collapsed {
                 self.text.set_text(self.output.clone());
             }

@@ -219,12 +219,13 @@ impl Block for Cpu {
             }
         }
 
-        let values = map!("{frequency}" => format!("{:.*}", 1, freq),
-                          "{barchart}" => barchart,
-                          "{utilization}" => format!("{:02}", avg_utilization));
+        let values = CpuValues {
+            frequency: freq,
+            barchart,
+            utilization: avg_utilization,
+        };
 
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
+        self.output.set_text(self.format.render(&values));
 
         Ok(Some(self.update_interval))
     }
@@ -236,4 +237,11 @@ impl Block for Cpu {
     fn id(&self) -> &str {
         &self.id
     }
+}
+
+#[derive(Debug, Serialize)]
+struct CpuValues {
+    frequency: f32,
+    barchart: String,
+    utilization: u64,
 }

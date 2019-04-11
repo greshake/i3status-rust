@@ -76,7 +76,6 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::input::{I3BarEvent, MouseButton};
 use crate::util::*;
 use crossbeam_channel::Sender;
-use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -122,7 +121,16 @@ impl Unit {
     fn n(&self) -> u64 {
         match self.kib() {
             Unit::KiB(n) => n,
-            _ => 0,
+            Unit::MiB(n) => n,
+            Unit::GiB(n) => n.round() as u64,
+        }
+    }
+
+    fn as_f32(&self) -> f32 {
+        match self.kib() {
+            Unit::KiB(n) => n as f32,
+            Unit::MiB(n) => n as f32,
+            Unit::GiB(n) => n,
         }
     }
 
@@ -230,7 +238,41 @@ impl Memstate {
     }
 }
 
-#[derive(Clone, Debug)]
+//noinspection RsFieldNaming
+#[allow(non_snake_case)]
+#[derive(Debug, Serialize)]
+struct MemoryValues {
+    MTg: f32,
+    MTm: u64,
+    MFg: f32,
+    MFm: u64,
+    MFp: f32,
+    MUg: f32,
+    MUm: u64,
+    MUp: f32,
+    Mug: f32,
+    Mum: u64,
+    Mup: f32,
+    MAg: f32,
+    MAm: u64,
+    MAp: f32,
+    STg: f32,
+    STm: u64,
+    SFg: f32,
+    SFm: u64,
+    SFp: f32,
+    SUg: f32,
+    SUm: u64,
+    SUp: f32,
+    Bg: f32,
+    Bm: u64,
+    Bp: f32,
+    Cg: f32,
+    Cm: u64,
+    Cp: f32,
+}
+
+#[derive(Debug)]
 pub struct Memory {
     id: String,
     memtype: Memtype,
@@ -239,7 +281,6 @@ pub struct Memory {
     format: (FormatTemplate, FormatTemplate),
     update_interval: Duration,
     tx_update_request: Sender<Task>,
-    values: HashMap<String, String>,
     warning: (f64, f64),
     critical: (f64, f64),
 }
@@ -345,113 +386,39 @@ impl Memory {
         let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
         let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
 
-        self.values
-            .insert("{MTg}".to_string(), format!("{:.1}", mem_total.gib()));
-        self.values
-            .insert("{MTm}".to_string(), format!("{}", mem_total.mib()));
-        self.values
-            .insert("{MFg}".to_string(), format!("{:.1}", mem_free.gib()));
-        self.values
-            .insert("{MFm}".to_string(), format!("{}", mem_free.mib()));
-        self.values.insert(
-            "{MFp}".to_string(),
-            format!("{:.2}", mem_free.percent(mem_total)),
-        );
-        self.values.insert(
-            "{MFpi}".to_string(),
-            format!("{:02}", mem_free.percent(mem_total) as i32),
-        );
-        self.values
-            .insert("{MUg}".to_string(), format!("{:.1}", mem_total_used.gib()));
-        self.values
-            .insert("{MUm}".to_string(), format!("{}", mem_total_used.mib()));
-        self.values.insert(
-            "{MUp}".to_string(),
-            format!("{:.2}", mem_total_used.percent(mem_total)),
-        );
-        self.values.insert(
-            "{MUpi}".to_string(),
-            format!("{:02}", mem_total_used.percent(mem_total) as i32),
-        );
-        self.values
-            .insert("{Mug}".to_string(), format!("{:.1}", mem_used.gib()));
-        self.values
-            .insert("{Mum}".to_string(), format!("{}", mem_used.mib()));
-        self.values.insert(
-            "{Mup}".to_string(),
-            format!("{:.2}", mem_used.percent(mem_total)),
-        );
-        self.values.insert(
-            "{Mupi}".to_string(),
-            format!("{:02}", mem_used.percent(mem_total) as i32),
-        );
-        self.values
-            .insert("{MAg}".to_string(), format!("{:.1}", mem_avail.gib()));
-        self.values
-            .insert("{MAm}".to_string(), format!("{}", mem_avail.mib()));
-        self.values.insert(
-            "{MAp}".to_string(),
-            format!("{:.2}", mem_avail.percent(mem_total)),
-        );
-        self.values.insert(
-            "{MApi}".to_string(),
-            format!("{:02}", mem_avail.percent(mem_total) as i32),
-        );
-        self.values
-            .insert("{STg}".to_string(), format!("{:.1}", swap_total.gib()));
-        self.values
-            .insert("{STm}".to_string(), format!("{}", swap_total.mib()));
-        self.values
-            .insert("{SFg}".to_string(), format!("{:.1}", swap_free.gib()));
-        self.values
-            .insert("{SFm}".to_string(), format!("{}", swap_free.mib()));
-        self.values.insert(
-            "{SFp}".to_string(),
-            format!("{:.2}", swap_free.percent(swap_total)),
-        );
-        self.values.insert(
-            "{SFpi}".to_string(),
-            format!("{:02}", swap_free.percent(swap_total) as i32),
-        );
-        self.values
-            .insert("{SUg}".to_string(), format!("{:.1}", swap_used.gib()));
-        self.values
-            .insert("{SUm}".to_string(), format!("{}", swap_used.mib()));
-        self.values.insert(
-            "{SUp}".to_string(),
-            format!("{:.2}", swap_used.percent(swap_total)),
-        );
-        self.values.insert(
-            "{SUpi}".to_string(),
-            format!("{:02}", swap_used.percent(swap_total) as i32),
-        );
-        self.values
-            .insert("{Bg}".to_string(), format!("{:.1}", buffers.gib()));
-        self.values
-            .insert("{Bm}".to_string(), format!("{}", buffers.mib()));
-        self.values.insert(
-            "{Bp}".to_string(),
-            format!("{:.2}", buffers.percent(mem_total)),
-        );
-        self.values.insert(
-            "{Bpi}".to_string(),
-            format!("{:02}", buffers.percent(mem_total) as i32),
-        );
-        self.values
-            .insert("{Cg}".to_string(), format!("{:.1}", cached.gib()));
-        self.values
-            .insert("{Cm}".to_string(), format!("{}", cached.mib()));
-        self.values.insert(
-            "{Cp}".to_string(),
-            format!("{:.2}", cached.percent(mem_total)),
-        );
-        self.values.insert(
-            "{Cpi}".to_string(),
-            format!("{:02}", cached.percent(mem_total) as i32),
-        );
+        let values = MemoryValues {
+            MTg: mem_total.gib().as_f32(),
+            MTm: mem_total.mib().n(),
+            MFg: mem_free.gib().as_f32(),
+            MFm: mem_free.mib().n(),
+            MFp: mem_free.percent(mem_total),
+            MUg: mem_used.gib().as_f32(),
+            MUm: mem_used.mib().n(),
+            MUp: mem_used.percent(mem_total),
+            Mug: mem_total_used.gib().as_f32(),
+            Mum: mem_total_used.mib().n(),
+            Mup: mem_total_used.percent(mem_total),
+            MAg: mem_avail.gib().as_f32(),
+            MAm: mem_avail.mib().n(),
+            MAp: mem_avail.percent(swap_total),
+            STg: swap_total.gib().as_f32(),
+            STm: swap_total.mib().n(),
+            SFg: swap_free.gib().as_f32(),
+            SFm: swap_free.mib().n(),
+            SFp: swap_free.percent(swap_total),
+            SUg: swap_used.gib().as_f32(),
+            SUm: swap_used.mib().n(),
+            SUp: swap_used.percent(swap_total),
+            Bg: buffers.gib().as_f32(),
+            Bm: buffers.mib().n(),
+            Bp: buffers.percent(mem_total),
+            Cg: cached.gib().as_f32(),
+            Cm: cached.mib().n(),
+            Cp: cached.percent(mem_total),
+        };
 
         match self.memtype {
-            Memtype::Memory => self.output.0.set_state(match mem_used.percent(mem_total) {
+            Memtype::Memory => self.output.0.set_state(match values.MUp {
                 x if f64::from(x) > self.critical.0 => State::Critical,
                 x if f64::from(x) > self.warning.0 => State::Warning,
                 _ => State::Idle,
@@ -472,13 +439,13 @@ impl Memory {
                 .append(true)
                 .open("/tmp/i3log")
                 .block_error("memory", "can't open /tmp/i3log")?;
-            writeln!(f, "Inserted values: {:?}", self.values)
+            writeln!(f, "Inserted values: {:?}", values)
                 .block_error("memory", "failed to write to /tmp/i3log")?;
         });
 
         Ok(match self.memtype {
-            Memtype::Memory => self.format.0.render(&self.values),
-            Memtype::Swap => self.format.1.render(&self.values),
+            Memtype::Memory => self.format.0.render(&values),
+            Memtype::Swap => self.format.1.render(&values),
         })
     }
 
@@ -497,6 +464,47 @@ impl ConfigBlock for Memory {
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, "memory").with_text("");
+
+        fn rewrite_legacy_placeholders(format: &str) -> String {
+            format
+                .replace("{MTg}", "{MTg:.1}")
+                .replace("{MTm}", "{MTm}")
+                .replace("{MFg}", "{MFg:.1}")
+                .replace("{MFm}", "{MFm}")
+                .replace("{MFp}", "{MFp:.2}")
+                .replace("{MFpi}", "{MFp:02}")
+                .replace("{MUg}", "{MUg:.1}")
+                .replace("{MUm}", "{MUm}")
+                .replace("{MUp}", "{MUp:.2}")
+                .replace("{MUpi}", "{MUp:02}")
+                .replace("{Mug}", "{Mug:.1}")
+                .replace("{Mum}", "{Mum}")
+                .replace("{Mup}", "{Mup:.2}")
+                .replace("{Mupi}", "{Mup:02}")
+                .replace("{MAg}", "{MAg:.1}")
+                .replace("{MAm}", "{MAm}")
+                .replace("{MAp}", "{MAp:.2}")
+                .replace("{MApi}", "{MAp:02}")
+                .replace("{STg}", "{STg:.1}")
+                .replace("{STm}", "{STm}")
+                .replace("{SFg}", "{SFg:.1}")
+                .replace("{SFm}", "{SFm}")
+                .replace("{SFp}", "{SFp:.2}")
+                .replace("{SFpi}", "{SFp:02}")
+                .replace("{SUg}", "{SUg:.1}")
+                .replace("{SUm}", "{SUm}")
+                .replace("{SUp}", "{SUp:.2}")
+                .replace("{SUpi}", "{SUp:02}")
+                .replace("{Bg}", "{Bg:.1}")
+                .replace("{Bm}", "{Bm}")
+                .replace("{Bp}", "{Bp:.2}")
+                .replace("{Bpi}", "{Bp:02}")
+                .replace("{Cg}", "{Cg:.1}")
+                .replace("{Cm}", "{Cm}")
+                .replace("{Cp}", "{Cp:.2}")
+                .replace("{Cpi}", "{Cp:02}")
+        }
+
         Ok(Memory {
             id: Uuid::new_v4().simple().to_string(),
             memtype: block_config.display_type,
@@ -510,12 +518,15 @@ impl ConfigBlock for Memory {
             },
             clickable: block_config.clickable,
             format: (
-                FormatTemplate::from_string(&block_config.format_mem)?,
-                FormatTemplate::from_string(&block_config.format_swap)?,
+                FormatTemplate::from_string(&rewrite_legacy_placeholders(
+                    &block_config.format_mem,
+                ))?,
+                FormatTemplate::from_string(&rewrite_legacy_placeholders(
+                    &block_config.format_swap,
+                ))?,
             ),
             update_interval: block_config.interval,
             tx_update_request: tx,
-            values: HashMap::<String, String>::new(),
             warning: (block_config.warning_mem, block_config.warning_swap),
             critical: (block_config.critical_mem, block_config.critical_swap),
         })

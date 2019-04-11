@@ -19,6 +19,7 @@ extern crate maildir;
 extern crate notmuch;
 extern crate num_traits;
 extern crate regex;
+extern crate strfmt;
 extern crate toml;
 extern crate uuid;
 

@@ -79,6 +79,15 @@ impl ConfigBlock for Docker {
     }
 }
 
+#[derive(Serialize)]
+struct DockerValues {
+    total: i64,
+    running: i64,
+    stopped: i64,
+    paused: i64,
+    images: i64,
+}
+
 impl Block for Docker {
     fn update(&mut self) -> Result<Option<Duration>> {
         let output = match Command::new("sh")
@@ -106,15 +115,15 @@ impl Block for Docker {
         let status: Status = serde_json::from_str(&output)
             .block_error("docker", "Failed to parse JSON response.")?;
 
-        let values = map!(
-            "{total}" => format!("{}", status.total),
-            "{running}" => format!("{}", status.running),
-            "{paused}" => format!("{}", status.paused),
-            "{stopped}" => format!("{}", status.stopped),
-            "{images}" => format!("{}", status.images)
-        );
+        let values = DockerValues {
+            total: status.total,
+            running: status.running,
+            paused: status.paused,
+            stopped: status.stopped,
+            images: status.images,
+        };
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_text(self.format.render(&values));
 
         Ok(Some(self.update_interval))
     }
