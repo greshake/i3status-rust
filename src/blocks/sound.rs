@@ -20,7 +20,7 @@ use crossbeam_channel::Sender;
 use crossbeam_channel::unbounded;
 
 use crate::scheduler::Task;
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
 use crate::widgets::button::ButtonWidget;

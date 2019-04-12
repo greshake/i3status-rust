@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crossbeam_channel::Sender;
 use chrono::offset::{Local, Utc};
 use chrono_tz::Tz;

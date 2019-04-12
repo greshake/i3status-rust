@@ -54,14 +54,45 @@ use self::uptime::*;
 use self::weather::*;
 use self::xrandr::*;
 
+use std::time::Duration;
+
 use crossbeam_channel::Sender;
 use serde::de::Deserialize;
 use toml::value::Value;
 
-use crate::block::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
+use crate::input::I3BarEvent;
+use crate::widget::I3BarWidget;
+
+pub trait Block {
+    /// A unique id for the block.
+    fn id(&self) -> &str;
+
+    /// The current "view" of the block, comprised of widgets.
+    fn view(&self) -> Vec<&I3BarWidget>;
+
+    /// Forces an update of the internal state of the block.
+    fn update(&mut self) -> Result<Option<Duration>> {
+        Ok(None)
+    }
+
+    /// Sends click events to the block. This function is called on every block
+    /// for every click; filter events by using the `event.name` property.
+    fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
+        Ok(())
+    }
+}
+
+pub trait ConfigBlock: Block {
+    type Config;
+
+    /// Creates a new block from the relevant configuration.
+    fn new(block_config: Self::Config, config: Config, update_request: Sender<Task>) -> Result<Self>
+    where
+        Self: Sized;
+}
 
 macro_rules! block {
     ($block_type:ident, $block_config:expr, $config:expr, $update_request:expr) => {{

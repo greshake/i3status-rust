@@ -3,7 +3,7 @@ use crossbeam_channel::Sender;
 use std::thread;
 use std::sync::{Arc, Mutex};
 
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
 use crate::widgets::text::TextWidget;

@@ -10,7 +10,7 @@ use uuid::Uuid;
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 

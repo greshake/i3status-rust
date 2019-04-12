@@ -6,7 +6,7 @@ use crossbeam_channel::Sender;
 use serde_json;
 use uuid::Uuid;
 
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;

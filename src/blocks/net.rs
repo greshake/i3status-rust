@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use std::ffi::OsStr;
 use crossbeam_channel::Sender;
 
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;

@@ -24,7 +24,6 @@ extern crate libpulse_binding as pulse;
 mod de;
 #[macro_use]
 mod util;
-mod block;
 pub mod blocks;
 mod config;
 mod errors;
@@ -47,7 +46,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use std::ops::DerefMut;
 
-use crate::block::Block;
+use crate::blocks::Block;
 
 use crate::blocks::create_block;
 use crate::config::Config;

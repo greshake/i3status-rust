@@ -7,7 +7,7 @@ use dbus;
 use dbus::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;

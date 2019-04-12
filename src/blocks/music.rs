@@ -9,7 +9,7 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::input::I3BarEvent;
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::de::deserialize_duration;
 use crate::widgets::rotatingtext::RotatingTextWidget;
 use crate::widgets::button::ButtonWidget;

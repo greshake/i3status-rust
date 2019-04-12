@@ -11,7 +11,7 @@ use dbus::stdintf::org_freedesktop_dbus::Properties;
 use regex::Regex;
 use uuid::Uuid;
 
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
