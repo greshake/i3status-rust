@@ -3,11 +3,11 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
+use dbus;
+use dbus::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
 use crate::block::{Block, ConfigBlock};
-use crate::blocks::dbus;
-use crate::blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;

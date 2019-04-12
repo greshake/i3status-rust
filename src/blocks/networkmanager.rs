@@ -3,6 +3,8 @@ use std::time::{Duration, Instant};
 use std::thread;
 
 use crossbeam_channel::Sender;
+use dbus::{BusType, Connection, Message, MessageItem};
+use dbus::arg::Variant;
 use uuid::Uuid;
 
 use crate::config::Config;
@@ -11,8 +13,6 @@ use crate::scheduler::Task;
 use crate::block::{Block, ConfigBlock};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-use crate::blocks::dbus::{BusType, Connection, Message, MessageItem};
-use crate::blocks::dbus::arg::Variant;
 
 enum NetworkState {
     Unknown = 0,

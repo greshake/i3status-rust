@@ -6,12 +6,12 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
+use dbus::{arg, Connection, ConnectionItem};
+use dbus::stdintf::org_freedesktop_dbus::Properties;
 use regex::Regex;
 use uuid::Uuid;
 
 use crate::block::{Block, ConfigBlock};
-use crate::blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
-use crate::blocks::dbus::{arg, Connection, ConnectionItem};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
