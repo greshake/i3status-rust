@@ -291,27 +291,3 @@ impl FormatTemplate {
 macro_rules! if_debug {
     ($x:block) => (if cfg!(debug_assertions) $x)
 }
-
-macro_rules! mapped_struct {
-    ($( #[$attr:meta] )* pub struct $name:ident : $fieldtype:ty { $( pub $fname:ident ),* }) => {
-        $( #[$attr] )*
-        pub struct $name {
-            $( pub $fname : $fieldtype ),*
-        }
-
-        impl $name {
-            #[allow(dead_code)]
-            pub fn map(&self) -> ::std::collections::HashMap<&'static str, &$fieldtype> {
-                let mut m = ::std::collections::HashMap::new();
-                $( m.insert(stringify!($fname), &self.$fname); )*
-                m
-            }
-
-            pub fn owned_map(&self) -> ::std::collections::HashMap<String, $fieldtype> {
-                let mut m = ::std::collections::HashMap::new();
-                $( m.insert(stringify!($fname).to_owned(), self.$fname.to_owned()); )*
-                m
-            }
-        }
-    }
-}

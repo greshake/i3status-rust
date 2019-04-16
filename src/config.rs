@@ -1,18 +1,18 @@
 use crate::de::*;
 use crate::icons;
-use serde::de::{self, Deserialize, Deserializer};
 use toml::value;
+use serde::de::{Deserialize, Deserializer, Error};
 use std::collections::HashMap as Map;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::str::FromStr;
-use crate::themes::{self, Theme};
+use crate::themes::{Theme, ThemeConfig};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     #[serde(default = "icons::default", deserialize_with = "deserialize_icons")]
     pub icons: Map<String, String>,
-    #[serde(default = "themes::default", deserialize_with = "deserialize_themes")]
+    #[serde(deserialize_with = "deserialize_themes")]
     pub theme: Theme,
     #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
     pub blocks: Vec<(String, value::Value)>,
@@ -22,7 +22,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             icons: icons::default(),
-            theme: themes::default(),
+            theme: Theme::default(),
             blocks: Vec::new(),
         }
     }
@@ -59,14 +59,7 @@ fn deserialize_themes<'de, D>(deserializer: D) -> Result<Theme, D::Error>
 where
     D: Deserializer<'de>,
 {
-    map_type!(ThemeIntermediary, String;
-              s => Ok(ThemeIntermediary(themes::get_theme(s).ok_or_else(|| "cannot find specified theme")?.owned_map())));
-
-    let intermediary: Map<String, String> = deserializer
-        .deserialize_any(MapType::<ThemeIntermediary, String>(
-            PhantomData,
-            PhantomData,
-        ))?;
-
-    Deserialize::deserialize(de::value::MapDeserializer::new(intermediary.into_iter()))
+    ThemeConfig::deserialize(deserializer)?
+        .into_theme()
+        .ok_or_else(|| D::Error::custom("Unrecognized theme name."))
 }
