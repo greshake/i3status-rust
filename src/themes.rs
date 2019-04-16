@@ -1,6 +1,9 @@
 use lazy_static::lazy_static;
 use serde_derive::Deserialize;
 use std::default::Default;
+use std::path::Path;
+
+use crate::util;
 
 lazy_static! {
     pub static ref SLICK: Theme = Theme {
@@ -207,6 +210,22 @@ impl Theme {
             _ => None,
         }
     }
+
+    pub fn from_file(file: &str) -> Option<Theme> {
+        let full_path = Path::new(file);
+        let xdg_path = util::xdg_config_home().join("i3status-rs/themes").join(file);
+        let share_path = Path::new(util::USR_SHARE_PATH).join("themes").join(file);
+
+        if full_path.exists() {
+            util::deserialize_file(full_path.to_str().unwrap()).ok()
+        } else if xdg_path.exists() {
+            util::deserialize_file(xdg_path.to_str().unwrap()).ok()
+        } else if share_path.exists() {
+            util::deserialize_file(share_path.to_str().unwrap()).ok()
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -232,13 +251,20 @@ pub struct ThemeOverrides {
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ThemeConfig {
-    name: String,
+    name: Option<String>,
+    file: Option<String>,
     overrides: Option<ThemeOverrides>,
 }
 
 impl ThemeConfig {
     pub fn into_theme(self) -> Option<Theme> {
-        let mut theme = Theme::from_name(&self.name)?;
+        let mut theme = if let Some(name) = self.name {
+            Theme::from_name(&name)
+        } else if let Some(file) = self.file {
+            Theme::from_file(&file)
+        } else {
+            None
+        }?;
         if let Some(overrides) = self.overrides {
             theme.idle_bg = overrides.idle_bg.unwrap_or(theme.idle_bg);
             theme.idle_fg = overrides.idle_fg.unwrap_or(theme.idle_fg);
