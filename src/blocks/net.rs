@@ -31,7 +31,7 @@ impl NetworkDevice {
 
         // I don't believe that this should ever change, so set it now:
         let wireless = device_path.join("wireless").exists();
-        let tun = device_path.join("tun_flags").exists();
+        let tun = device_path.join("tun_flags").exists() || device.starts_with("tun") || device.starts_with("tap");
 
         NetworkDevice {
             device,
