@@ -27,7 +27,6 @@ use crate::errors::*;
 use crate::widgets::button::ButtonWidget;
 use crate::widget::{I3BarWidget, State};
 use crate::input::{I3BarEvent, MouseButton};
-use crate::subprocess::{parse_command, spawn_child_async};
 
 #[cfg(feature = "pulseaudio")]
 use crate::pulse::mainloop::standard::Mainloop;
