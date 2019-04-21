@@ -800,11 +800,11 @@ impl Sound {
             }
             Direction::Output => {
                 if self.device.muted() {
-                    self.text.set_icon("volume_empty");
+                    self.text.set_icon("volume_muted");
                     self.text.set_text(
                         self.config
                             .icons
-                            .get("volume_muted")
+                            .get("crossed")
                             .block_error("sound", "cannot find icon")?
                             .to_owned(),
                     );
