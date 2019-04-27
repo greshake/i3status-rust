@@ -74,7 +74,7 @@ Creates a block which displays the current battery state (Full, Charging or Disc
 
 The battery block collapses when the battery is fully charged -- or, in the case of some Thinkpad batteries, when it reports "Not charging".
 
-The battery block supports reading charging and status information from `sysfs`, or optionally through the [UPower](https://upower.freedesktop.org/) D-Bus interface on systems where that is available. Note that UPower has the notion of a DisplayDevice, which is a single logical power source representing all physical power sources. This is for example useful if your system has multiple batteries, in which case the DisplayDevice behaves as if you had a single larger battery.
+The battery block supports reading charging and status information from either `sysfs` or the [UPower](https://upower.freedesktop.org/) D-Bus interface. These "drivers" have largely identical features, but UPower does include support for `device = "DisplayDevice"`, which treats all physical power sources as a single logical battery. This is particularly useful if your system has multiple batteries.
 
 ### Examples
 
@@ -92,7 +92,7 @@ Rely on Upower for battery updates and information:
 ```toml
 [[block]]
 block = "battery"
-upower = true
+driver = "upower"
 format = "{percentage}% {time}"
 ```
 
@@ -101,10 +101,11 @@ format = "{percentage}% {time}"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | `"BAT0"`
-`interval` | Update interval, in seconds. | No | `10`
+`driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
+`interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 `format` | A format string. See below for available placeholders. | No | `"{percentage}%"`
 `show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
-`upower` | When `true`, use the Upower D-Bus interface for battery updates. | No | `false`
+`upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
