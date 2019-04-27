@@ -28,18 +28,7 @@ pub struct IBus {
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct IBusConfig {
-    // TODO: Implement this.
-    /// Set to display engine name as the two letter country abbreviation, e.g. "jp".
-    #[serde(default = "IBusConfig::default_abbreviate")]
-    pub as_icon: bool,
-}
-
-impl IBusConfig {
-    fn default_abbreviate() -> bool {
-        true
-    }
-}
+pub struct IBusConfig {}
 
 impl ConfigBlock for IBus {
     type Config = IBusConfig;
