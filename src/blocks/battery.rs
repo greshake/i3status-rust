@@ -349,7 +349,20 @@ pub struct Battery {
     update_interval: Duration,
     device: Box<BatteryDevice>,
     format: FormatTemplate,
-    upower: bool,
+    driver: BatteryDriver,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum BatteryDriver {
+    Sysfs,
+    Upower,
+}
+
+impl Default for BatteryDriver {
+    fn default() -> Self {
+        BatteryDriver::Sysfs
+    }
 }
 
 /// Configuration for the [`Battery`](./struct.Battery.html) block.
@@ -374,9 +387,12 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_format")]
     pub format: String,
 
-    /// Use UPower to monitor battery status and events.
+    /// (DEPRECATED) Use UPower to monitor battery status and events.
     #[serde(default = "BatteryConfig::default_upower")]
     pub upower: bool,
+
+    /// The "driver" to use for powering the block. One of "sysfs" or "upower".
+    pub driver: Option<BatteryDriver>,
 }
 
 impl BatteryConfig {
@@ -417,14 +433,21 @@ impl ConfigBlock for Battery {
             None => block_config.format
         };
 
-        let id = Uuid::new_v4().simple().to_string();
-        let device: Box<BatteryDevice> = if block_config.upower {
-            let out = UpowerDevice::from_device(&block_config.device)?;
-            out.monitor(id.clone(), update_request);
-            Box::new(out)
-        } else {
-            Box::new(PowerSupplyDevice::from_device(&block_config.device)?)
+        // TODO: Remove the deprecated upower config eventually.
+        let driver = match block_config.driver {
+            Some(val) => val,
+            None if block_config.upower => BatteryDriver::Upower,
+            _ => BatteryDriver::Sysfs,
+        };
 
+        let id = Uuid::new_v4().simple().to_string();
+        let device: Box<BatteryDevice> = match driver {
+            BatteryDriver::Upower => {
+                let out = UpowerDevice::from_device(&block_config.device)?;
+                out.monitor(id.clone(), update_request);
+                Box::new(out)
+            },
+            BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(&block_config.device)?),
         };
 
         Ok(Battery {
@@ -433,7 +456,7 @@ impl ConfigBlock for Battery {
             output: TextWidget::new(config),
             device,
             format: FormatTemplate::from_string(&format)?,
-            upower: block_config.upower,
+            driver,
         })
     }
 }
@@ -489,10 +512,9 @@ impl Block for Battery {
             });
         }
 
-        if self.upower {
-            Ok(None)
-        } else {
-            Ok(Some(self.update_interval))
+        match self.driver {
+            BatteryDriver::Sysfs => Ok(Some(self.update_interval)),
+            BatteryDriver::Upower => Ok(None),
         }
     }
 
