@@ -1,5 +1,5 @@
 use std::env;
-use std::fs::File;
+use std::fs::{read_dir, File};
 use std::io::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -163,46 +163,67 @@ fn parse_msg(ci: &ConnectionItem) -> Option<&str> {
 // IBUS_DAEMON_PID=11140
 // ```
 fn get_ibus_address() -> Result<String> {
-    // TODO: Check IBUS_ADDRESS variable, as it seems it can be manually set too.
+    if let Ok(address) = env::var("IBUS_ADDRESS") {
+        return Ok(address);
+    }
 
-    // TODO: Don't fail if $XDG_CONFIG_HOME is not set. 
-    // Next try $HOME/.config, then only error if that $HOME is not set.
-    let config_dir = env::var("XDG_CONFIG_HOME")
-        .block_error("ibus", "$XDG_CONFIG_HOME not set")?;
+    let socket_dir = util::xdg_config_home().join("ibus/bus");
+    let socket_files: Vec<String> = read_dir(socket_dir.clone())
+        .block_error("ibus", &format!("Could not open '{:?}'.", socket_dir))?
+        .filter(|entry| entry.is_ok())
+        // The path will be valid unicode, so this is safe to unwrap.
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect();
 
-    // TODO: Check /var/lib/dbus/machine-id if /etc/machine-id fails
-    let mut f = File::open("/etc/machine-id")
-        .block_error("ibus", "Could not open /etc/machine-id")?;
-    let mut machine_id = String::new();
-    f.read_to_string(&mut machine_id)
-        .block_error("ibus", "Something went wrong reading /etc/machine-id")?;
-    let machine_id = machine_id.trim();
+    if socket_files.len() == 0 {
+        return Err(BlockError(
+            "ibus".to_string(),
+            "Could not locate an IBus socket file.".to_string(),
+        ));
+    }
 
-    // On sway, $DISPLAY is only set by programs requiring xwayland, such as ibus (GTK2).
-    // ibus-daemon can be autostarted by sway (via an entry in config file), however since
-    // the bar is executed first, $DISPLAY will not yet be set at the time this code runs.
-    // Hence on sway you will need to reload the bar once after login to get the block to work.
-    let display_var = env::var("DISPLAY")
-        .block_error("ibus", "$DISPLAY not set. Try restarting bar if on sway")?;
-    let re = Regex::new(r"^:(\d{1})$").unwrap(); // valid regex expression will not cause panic
-    let cap = re.captures(&display_var)
-        .block_error("ibus", "Failed to extract display number from $DISPLAY")?;
-    let display_number = &cap[1].to_string();
+    // Only check $DISPLAY if we need to.
 
-    let hostname = String::from("unix");
+    let socket_path = if socket_files.len() == 1 {
+        socket_dir.join(&socket_files[0])
+    } else {
+        // On sway, $DISPLAY is only set by programs requiring xwayland, such as ibus (GTK2).
+        // ibus-daemon can be autostarted by sway (via an entry in config file), however since
+        // the bar is executed first, $DISPLAY will not yet be set at the time this code runs.
+        // Hence on sway you will need to reload the bar once after login to get the block to work.
+        let display_var = env::var("DISPLAY")
+            .block_error("ibus", "$DISPLAY not set. Try restarting bar if on sway")?;
+        let re = Regex::new(r"^:(\d{1})$").unwrap(); // Valid regex is safe to unwrap.
+        let cap = re
+            .captures(&display_var)
+            .block_error("ibus", "Failed to extract display number from $DISPLAY")?;
+        let display_number = &cap[1].to_string();
 
-    let ibus_socket_path = format!("{}/ibus/bus/{}-{}-{}", config_dir, machine_id, hostname, display_number);
-    let mut f = File::open(&ibus_socket_path)
-        .block_error("ibus", &format!("Could not open {}", ibus_socket_path))?;
-    let mut ibus_address = String::new();
-    f.read_to_string(&mut ibus_address)
-        .block_error("ibus", &format!("Error reading contents of {}", ibus_socket_path))?;
-    let re = Regex::new(r"IBUS_ADDRESS=(.*),guid").unwrap(); // valid regex expression will not cause panic
-    let cap = re.captures(&ibus_address)
-        .block_error("ibus", &format!("Failed to extract address out of {}", ibus_address))?;
-    let ibus_address = &cap[1];
+        let candidate = socket_files
+            .iter()
+            .filter(|fname| fname.ends_with(display_number))
+            .take(1)
+            .next()
+            .block_error(
+                "ibus",
+                &format!("Could not find an IBus socket file matching $DISPLAY."),
+            )?;
+        socket_dir.join(candidate)
+    };
 
-    Ok(
-        ibus_address.to_string()
-    )
+    let re = Regex::new(r"ADDRESS=(.*),guid").unwrap(); // Valid regex is safe to unwrap.
+    let mut address = String::new();
+    File::open(&socket_path)
+        .block_error("ibus", &format!("Could not open '{:?}'.", socket_path))?
+        .read_to_string(&mut address)
+        .block_error(
+            "ibus",
+            &format!("Error reading contents of '{:?}'.", socket_path),
+        )?;
+    let cap = re.captures(&address).block_error(
+        "ibus",
+        &format!("Failed to extract address out of '{}'.", address),
+    )?;
+
+    Ok(cap[1].to_string())
 }

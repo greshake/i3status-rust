@@ -12,7 +12,15 @@ use std::fs::{File, OpenOptions};
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::num::ParseIntError;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+pub fn xdg_config_home() -> PathBuf {
+    // In the unlikely event that $HOME is not set, it doesn't really matter
+    // what we fall back on, so use /.config.
+    let config_path = std::env::var("XDG_CONFIG_HOME")
+        .unwrap_or(format!("{}/.config", std::env::var("HOME").unwrap_or("".to_string())));
+    PathBuf::from(&config_path)
+}
 
 pub fn deserialize_file<T>(file: &str) -> Result<T>
 where
