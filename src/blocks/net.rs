@@ -334,7 +334,7 @@ impl ConfigBlock for Net {
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
             ssid: if block_config.ssid && wireless {
-                Some(TextWidget::new(config.clone())) } else {
+                Some(TextWidget::new(config.clone()).with_text(" ")) } else {
                 None
             },
             max_ssid_width: block_config.max_ssid_width,
