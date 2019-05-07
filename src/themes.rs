@@ -20,16 +20,34 @@ lazy_static! {
     };
 
     pub static ref SOLARIZED_DARK: Theme = Theme {
-        idle_bg: "#002b36".to_owned(),
-        idle_fg: "#93a1a1".to_owned(),
-        info_bg: "#268bd2".to_owned(),
-        info_fg: "#002b36".to_owned(),
-        good_bg: "#859900".to_owned(),
-        good_fg: "#002b36".to_owned(),
-        warning_bg: "#b58900".to_owned(),
-        warning_fg: "#002b36".to_owned(),
-        critical_bg: "#dc322f".to_owned(),
-        critical_fg: "#002b36".to_owned(),
+        idle_bg: "#002b36".to_owned(),      // base03
+        idle_fg: "#93a1a1".to_owned(),      // base1
+        info_bg: "#268bd2".to_owned(),      // blue
+        info_fg: "#002b36".to_owned(),      // base03
+        good_bg: "#859900".to_owned(),      // green
+        good_fg: "#002b36".to_owned(),      // base03
+        warning_bg: "#b58900".to_owned(),   // yellow
+        warning_fg: "#002b36".to_owned(),   // base03
+        critical_bg: "#dc322f".to_owned(),  // red
+        critical_fg: "#002b36".to_owned(),  // base03
+        separator: "\u{e0b2}".to_owned(),
+        separator_bg: "auto".to_owned(),
+        separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
+    };
+
+    pub static ref SOLARIZED_LIGHT: Theme = Theme {
+        idle_bg: "#fdf6e3".to_owned(),      // base3
+        idle_fg: "#586e75".to_owned(),      // base01
+        info_bg: "#268bd2".to_owned(),      // blue
+        info_fg: "#fdf6e3".to_owned(),      // base3
+        good_bg: "#859900".to_owned(),      // green
+        good_fg: "#fdf6e3".to_owned(),      // base3
+        warning_bg: "#b58900".to_owned(),   // yellow
+        warning_fg: "#fdf6e3".to_owned(),   // base3
+        critical_bg: "#dc322f".to_owned(),  // red
+        critical_fg: "#fdf6e3".to_owned(),  // base3
         separator: "\u{e0b2}".to_owned(),
         separator_bg: "auto".to_owned(),
         separator_fg: "auto".to_owned(),
@@ -162,6 +180,7 @@ pub fn get_theme(name: &str) -> Option<Theme> {
     match name {
         "slick" => Some(SLICK.clone()),
         "solarized-dark" => Some(SOLARIZED_DARK.clone()),
+        "solarized-light" => Some(SOLARIZED_LIGHT.clone()),
         "plain" => Some(PLAIN.clone()),
         "modern" => Some(MODERN.clone()),
         "bad-wolf" => Some(BAD_WOLF.clone()),

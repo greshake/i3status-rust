@@ -1,14 +1,14 @@
 use std::time::Duration;
 use std::path::Path;
 use chan::Sender;
-use scheduler::Task;
+use crate::scheduler::Task;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::text::TextWidget;
-use widget::{I3BarWidget, State};
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::text::TextWidget;
+use crate::widget::{I3BarWidget, State};
 
 use uuid::Uuid;
 
@@ -225,23 +225,21 @@ impl Block for DiskSpace {
                 percentage
             ));
             result = percentage as u64;
-        } else {
-            if self.show_percentage {
-                self.disk_space.set_text(format!(
+        } else if self.show_percentage {
+            self.disk_space.set_text(format!(
                     "{0} {1} ({2:.2}%) {3:?}",
                     self.alias,
                     converted_str,
                     percentage,
                     self.unit
-                ));
-            } else {
-                self.disk_space.set_text(format!(
+                    ));
+        } else {
+            self.disk_space.set_text(format!(
                     "{0} {1} {2:?}",
                     self.alias,
                     converted_str,
                     self.unit
-                ));
-            }
+                    ));
         }
 
         let state = self.compute_state(result, self.warning, self.alert);

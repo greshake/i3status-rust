@@ -5,14 +5,14 @@ use std::vec;
 use std::env;
 use chan::Sender;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
-use input::I3BarEvent;
-use scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::I3BarWidget;
+use crate::input::I3BarEvent;
+use crate::scheduler::Task;
 
 use uuid::Uuid;
 
@@ -89,7 +89,7 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let output = Command::new("sh")
+        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
@@ -116,7 +116,7 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+            Command::new(env::var("SHELL").unwrap_or_else(|_|"sh".to_owned()))
                     .args(&["-c", on_click]).output().ok();
             update = true;
         }

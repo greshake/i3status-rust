@@ -189,5 +189,5 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    Tz::from_str(&s).map(|tz| Some(tz)).map_err(de::Error::custom)
+    Tz::from_str(&s).map(Some).map_err(de::Error::custom)
 }

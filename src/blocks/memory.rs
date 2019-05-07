@@ -74,22 +74,22 @@
 //!
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
-use util::*;
+use crate::util::*;
 use chan::Sender;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use block::{Block, ConfigBlock};
-use input::{I3BarEvent, MouseButton};
+use crate::block::{Block, ConfigBlock};
+use crate::input::{I3BarEvent, MouseButton};
 use std::str::FromStr;
 use uuid::Uuid;
 use std::fmt;
 
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
-use scheduler::Task;
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::scheduler::Task;
 
 use std::io::Write;
 use std::fs::OpenOptions;
@@ -444,14 +444,14 @@ impl Memory {
 
         match self.memtype {
             Memtype::Memory => self.output.0.set_state(match mem_used.percent(mem_total) {
-                x if x as f64 > self.critical.0 => State::Critical,
-                x if x as f64 > self.warning.0 => State::Warning,
+                x if f64::from(x) > self.critical.0 => State::Critical,
+                x if f64::from(x) > self.warning.0 => State::Warning,
                 _ => State::Idle,
             }),
             Memtype::Swap => self.output.1.set_state(
                 match swap_used.percent(swap_total) {
-                    x if x as f64 > self.critical.1 => State::Critical,
-                    x if x as f64 > self.warning.1 => State::Warning,
+                    x if f64::from(x)  > self.critical.1 => State::Critical,
+                    x if f64::from(x) > self.warning.1 => State::Warning,
                     _ => State::Idle,
                 },
             ),
@@ -501,8 +501,8 @@ impl ConfigBlock for Memory {
             },
             clickable: block_config.clickable,
             format: (
-                FormatTemplate::from_string(block_config.format_mem)?,
-                FormatTemplate::from_string(block_config.format_swap)?,
+                FormatTemplate::from_string(&block_config.format_mem)?,
+                FormatTemplate::from_string(&block_config.format_swap)?,
             ),
             update_interval: block_config.interval,
             tx_update_request: tx,

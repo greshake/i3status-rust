@@ -1,5 +1,5 @@
-use config::Config;
-use widget::State;
+use crate::config::Config;
+use crate::widget::State;
 use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
 
@@ -26,7 +26,7 @@ impl TextWidget {
                 "background": "#000000",
                 "color": "#000000"
             }),
-            config: config,
+            config,
             cached_output: None,
         }
     }

@@ -6,15 +6,15 @@ use std::process::Command;
 use std::env;
 use std::ffi::OsString;
 use chan::Sender;
-use scheduler::Task;
+use crate::scheduler::Task;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use input::{I3BarEvent, MouseButton};
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::widgets::button::ButtonWidget;
+use crate::widget::{I3BarWidget, State};
 
 use uuid::Uuid;
 

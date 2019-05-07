@@ -31,6 +31,7 @@ lazy_static! {
         "net_down" => " DOWN ",
         "net_wireless" => " WLAN ",
         "net_wired" => " ETH ",
+        "net_vpn" => " VPN ",
         "ping" => " PING ",
         "backlight_empty" => " BRIGHT ",
         "backlight_partial1" => " BRIGHT ",
@@ -45,7 +46,12 @@ lazy_static! {
         "weather_default" => " WEATHER ",
         "uptime" => " UP ",
         "gpu" => " GPU ",
-        "mail" => " "
+        "mail" => " ",
+        "bluetooth" => " BT",
+        "headphones" => " HEAD",
+        "joystick" => " JOY",
+        "keyboard" => " KBD",
+        "mouse" => " MOUSE"
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
@@ -78,6 +84,7 @@ lazy_static! {
         "net_down" => " \u{2b07} ",
         "net_wireless" => " \u{f1eb} ",
         "net_wired" => " \u{f0ac} ",
+        "net_vpn" => " \u{f023} ",
         "ping" => " \u{21ba} ",
         "backlight_empty" => " \u{1f315} ",
         "backlight_partial1" => " \u{1f314} ",
@@ -94,7 +101,12 @@ lazy_static! {
         // Same as time symbol.
         "uptime" => " \u{f017} ",
         "gpu" => " \u{f26c} ",
-        "mail" => " \u{f0e0} "
+        "mail" => " \u{f0e0} ",
+        "bluetooth" => " \u{f294}",
+        "headphones" => " \u{f025}",
+        "joystick" => " \u{f11b}",
+        "keyboard" => " \u{f11c}",
+        "mouse" => " \u{f245}"
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
@@ -126,7 +138,12 @@ lazy_static! {
         // Same as time symbol.
         "uptime" => " \u{e192} ",
         "gpu" => " \u{e333} ",
-        "mail" => " \u{e0be} "
+        "mail" => " \u{e0be} ",
+        "bluetooth" => " \u{e1a7}",
+        "headphones" => " \u{e60f}",
+        "joystick" => " \u{e30f}",
+        "keyboard" => " \u{e312}",
+        "mouse" => " \u{e323}"
     };
 }
 

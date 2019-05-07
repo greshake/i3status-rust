@@ -5,15 +5,15 @@ use chan::Sender;
 use serde_json;
 use uuid::Uuid;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use input::{I3BarEvent, MouseButton};
-use scheduler::Task;
-use util::FormatTemplate;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::util::FormatTemplate;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::I3BarWidget;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -79,7 +79,7 @@ impl Weather {
 
                 // Don't error out on empty responses e.g. for when not
                 // connected to the internet.
-                if output.len() < 1 {
+                if output.is_empty() {
                     self.weather.set_icon("weather_default");
                     self.weather_keys = HashMap::new();
                     return Ok(());
@@ -126,7 +126,7 @@ impl Weather {
                         ));
                     }
                 };
-                let raw_wind_direction = match json.pointer("/wind/deg").and_then(|v| v.as_i64()) {
+                let raw_wind_direction = match json.pointer("/wind/deg").and_then(|v| v.as_f64()) {
                     Some(v) => v,
                     None => {
                         return Err(BlockError(
@@ -148,8 +148,8 @@ impl Weather {
                 };
 
                 // Convert wind direction in azimuth degrees to abbreviation names
-                fn convert_wind_direction(direction: i64) -> String {
-                    match direction {
+                fn convert_wind_direction(direction: f64) -> String {
+                    match direction.round() as i64 {
                         24 ... 68 => "NE".to_string(),
                         69 ... 113 => "E".to_string(),
                         114 ... 158 => "SE".to_string(),
@@ -226,7 +226,7 @@ impl Block for Weather {
         if self.weather_keys.keys().len() == 0 {
             self.weather.set_text("×".to_string());
         } else {
-            let fmt = FormatTemplate::from_string(self.format.clone())?;
+            let fmt = FormatTemplate::from_string(&self.format)?;
             self.weather.set_text(fmt.render(&self.weather_keys));
         }
         Ok(Some(self.update_interval))
@@ -238,11 +238,8 @@ impl Block for Weather {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if event.matches_name(self.id()) {
-            match event.button {
-                MouseButton::Left => {
+            if let MouseButton::Left = event.button {
                     self.update()?;
-                }
-                _ => {}
             }
         }
         Ok(())

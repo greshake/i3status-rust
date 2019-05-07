@@ -2,16 +2,16 @@ use std::time::Duration;
 use std::process::Command;
 use chan::Sender;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use input::{I3BarEvent, MouseButton};
-use scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
 use uuid::Uuid;
-use widget::{I3BarWidget, State};
-use widgets::button::ButtonWidget;
-use widgets::text::TextWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 
 pub struct NvidiaGpu {
     gpu_widget: ButtonWidget,
@@ -138,29 +138,29 @@ impl ConfigBlock for NvidiaGpu {
             gpu_name_displayed: false,
             gpu_id: block_config.gpu_id,
             label: block_config.label,
-            show_utilization: match block_config.show_utilization {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            show_utilization: if block_config.show_utilization {
+                Some(TextWidget::new(config.clone())) } else {
+                None
             },
-            show_memory: match block_config.show_memory {
-                true => Some(ButtonWidget::new(config.clone(), &id_memory)),
-                false => None,
+            show_memory: if block_config.show_memory {
+                Some(ButtonWidget::new(config.clone(), &id_memory)) } else {
+                None
             },
             memory_total: result[1].to_string(),
             memory_total_displayed: false,
-            show_temperature: match block_config.show_temperature {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            show_temperature: if block_config.show_temperature {
+                Some(TextWidget::new(config.clone())) } else {
+                None
             },
-            show_fan: match block_config.show_fan_speed {
-                true => Some(ButtonWidget::new(config.clone(), &id_fans)),
-                false => None,
+            show_fan: if block_config.show_fan_speed {
+                Some(ButtonWidget::new(config.clone(), &id_fans)) } else {
+                None
             },
             fan_speed: 0,
             fan_speed_controlled: false,
-            show_clocks: match block_config.show_clocks {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            show_clocks: if block_config.show_clocks {
+                 Some(TextWidget::new(config.clone())) } else {
+                None
             },
         })
     }
@@ -237,9 +237,9 @@ impl Block for NvidiaGpu {
         }
 
         if self.gpu_name_displayed {
-            self.gpu_widget.set_text(format!("{}", self.gpu_name));
+            self.gpu_widget.set_text(self.gpu_name.as_ref());
         } else {
-            self.gpu_widget.set_text(format!("{}", self.label));
+            self.gpu_widget.set_text(self.label.as_ref());
         }
 
         Ok(Some(self.update_interval))
@@ -277,9 +277,9 @@ impl Block for NvidiaGpu {
                 };
 
                 if self.gpu_name_displayed {
-                    self.gpu_widget.set_text(format!("{}", self.gpu_name));
+                    self.gpu_widget.set_text(self.gpu_name.as_ref());
                 } else {
-                    self.gpu_widget.set_text(format!("{}", self.label));
+                    self.gpu_widget.set_text(self.label.as_ref());
                 }
             }
 

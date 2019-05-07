@@ -1,7 +1,7 @@
-use config::Config;
-use errors::*;
+use crate::config::Config;
+use crate::errors::*;
 use std::time::{Duration, Instant};
-use widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, State};
 use serde_json::value::Value;
 
 #[derive(Clone, Debug)]
@@ -25,7 +25,7 @@ impl RotatingTextWidget {
     pub fn new(interval: Duration, speed: Duration, width: usize, config: Config) -> RotatingTextWidget {
         RotatingTextWidget {
             rotation_pos: 0,
-            width: width,
+            width,
             rotation_interval: interval,
             rotation_speed: speed,
             next_rotation: None,
@@ -40,7 +40,7 @@ impl RotatingTextWidget {
                 "color": "#000000"
             }),
             cached_output: None,
-            config: config,
+            config,
             rotating: false,
         }
     }

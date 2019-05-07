@@ -2,17 +2,17 @@ use std::time::Duration;
 use std::process::Command;
 use std::str::FromStr;
 use chan::Sender;
-use scheduler::Task;
+use crate::scheduler::Task;
 
-use util::FormatTemplate;
+use crate::util::FormatTemplate;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
-use input::{I3BarEvent, MouseButton};
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::I3BarWidget;
+use crate::input::{I3BarEvent, MouseButton};
 
 use uuid::Uuid;
 
@@ -26,7 +26,7 @@ impl Monitor {
     fn new(name: &str, brightness: u32, resolution: &str) -> Self {
         Monitor {
             name: String::from(name),
-            brightness: brightness,
+            brightness,
             resolution: String::from(resolution),
         }
     }
@@ -191,21 +191,20 @@ impl Xrandr {
                               "{resolution}" => m.resolution.clone());
 
             self.text.set_icon("xrandr");
-            let format_str: &str;
-            if self.resolution {
+            let format_str = if self.resolution {
                 if self.icons {
-                    format_str = "{display} \u{f185} {brightness} \u{f096} {resolution}";
+                    "{display} \u{f185} {brightness} \u{f096} {resolution}"
                 } else {
-                    format_str = "{display}: {brightness} [{resolution}]";
+                    "{display}: {brightness} [{resolution}]"
                 }
             } else if self.icons {
-                format_str = "{display} \u{f185} {brightness}";
+                "{display} \u{f185} {brightness}"
             } else {
-                format_str = "{display}: {brightness}";
-            }
+                "{display}: {brightness}"
+            };
 
 
-            if let Ok(fmt_template) = FormatTemplate::from_string(String::from(format_str)) {
+            if let Ok(fmt_template) = FormatTemplate::from_string(format_str) {
                 self.text.set_text(fmt_template.render_static_str(&values)?);
             }
         }
@@ -230,9 +229,9 @@ impl ConfigBlock for Xrandr {
             current_idx: 0,
             icons: block_config.icons,
             resolution: block_config.resolution,
-            step_width: step_width,
+            step_width,
             monitors: Vec::new(),
-            config: config,
+            config,
         })
     }
 }

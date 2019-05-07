@@ -5,14 +5,14 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 use chan::Sender;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::text::TextWidget;
-use widgets::graph::GraphWidget;
-use widget::I3BarWidget;
-use scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::text::TextWidget;
+use crate::widgets::graph::GraphWidget;
+use crate::widget::I3BarWidget;
+use crate::scheduler::Task;
 
 use uuid::Uuid;
 
@@ -20,31 +20,30 @@ pub struct NetworkDevice {
     device: String,
     device_path: PathBuf,
     wireless: bool,
+    tun: bool,
 }
 
 impl NetworkDevice {
     /// Use the network device `device`. Raises an error if a directory for that
     /// device is not found.
-    pub fn from_device(device: String) -> Result<Self> {
+    pub fn from_device(device: String) -> Self {
         let device_path = Path::new("/sys/class/net").join(device.clone());
-        if !device_path.exists() {
-            return Err(BlockError(
-                "net".to_string(),
-                format!(
-                    "Network device '{}' does not exist",
-                    device_path.to_string_lossy()
-                ),
-            ));
-        }
 
         // I don't believe that this should ever change, so set it now:
         let wireless = device_path.join("wireless").exists();
+        let tun = device_path.join("tun_flags").exists() || device.starts_with("tun") || device.starts_with("tap");
 
-        Ok(NetworkDevice {
-            device: device,
-            device_path: device_path,
-            wireless: wireless,
-        })
+        NetworkDevice {
+            device,
+            device_path,
+            wireless,
+            tun,
+        }
+    }
+
+    /// Check whether the device exists.
+    pub fn exists(&self) -> Result<bool> {
+        Ok(self.device_path.exists())
     }
 
     /// Check whether this network device is in the `up` state. Note that a
@@ -55,6 +54,8 @@ impl NetworkDevice {
             // It seems more reasonable to treat these as inactive networks as
             // opposed to erroring out the entire block.
             Ok(false)
+        } else if self.tun {
+            Ok(true)
         } else {
             let operstate = read_file(&operstate_file)?;
             Ok(operstate == "up")
@@ -80,6 +81,11 @@ impl NetworkDevice {
         self.wireless
     }
 
+    /// Checks whether this device is vpn network.
+    pub fn is_vpn(&self) -> bool {
+        self.tun
+    }
+
     /// Queries the wireless SSID of this device (using `iw`), if it is
     /// connected to one.
     pub fn ssid(&self) -> Result<Option<String>> {
@@ -92,29 +98,32 @@ impl NetworkDevice {
             ));
         }
         let mut iw_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    "-o",
-                    "pipefail",
-                    &format!(
-                        "iw dev {} link | grep \"^\\sSSID:\" | sed \"s/^\\sSSID:\\s//g\" || nmcli -g general.connection device show {}",
-                        self.device,
-                        self.device
-                    ),
-                ],
-            )
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | awk '/^\\s+SSID:/ {{ print $2 }}'",
+                    self.device
+                ),
+            ])
             .output()
             .block_error("net", "Failed to execute SSID query.")?
             .stdout;
 
-        if iw_output.len() == 0 {
+        if iw_output.is_empty() {
+            iw_output = Command::new("nmcli")
+                .args(&["-g", "general.connection", "device", "show", &self.device])
+                .output()
+                .block_error("net", "Failed to execute SSID query.")?
+                .stdout;
+        }
+
+        if iw_output.is_empty() {
             Ok(None)
         } else {
             iw_output.pop(); // Remove trailing newline.
             String::from_utf8(iw_output)
                 .block_error("net", "Non-UTF8 SSID.")
-                .map(|s| Some(s))
+                .map(Some)
         }
     }
 
@@ -137,13 +146,13 @@ impl NetworkDevice {
             .block_error("net", "Failed to execute IP address query.")?
             .stdout;
 
-        if ip_output.len() == 0 {
+        if ip_output.is_empty() {
             Ok(None)
         } else {
             ip_output.pop(); // Remove trailing newline.
             String::from_utf8(ip_output)
                 .block_error("net", "Non-UTF8 IP address.")
-                .map(|s| Some(s))
+                .map(Some)
         }
     }
 
@@ -158,26 +167,24 @@ impl NetworkDevice {
             ));
         }
         let mut bitrate_output = Command::new("sh")
-            .args(
-                &[
-                    "-c",
-                    &format!(
-                        "iw dev {} link | grep \"tx bitrate\" | awk '{{print $3\" \"$4}}'",
-                        self.device
-                    ),
-                ],
-            )
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
+                    self.device
+                ),
+            ])
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
 
-        if bitrate_output.len() == 0 {
+        if bitrate_output.is_empty() {
             Ok(None)
         } else {
             bitrate_output.pop(); // Remove trailing newline.
             String::from_utf8(bitrate_output)
                 .block_error("net", "Non-UTF8 bitrate.")
-                .map(|s| Some(s))
+                .map(Some)
         }
     }
 }
@@ -201,6 +208,7 @@ pub struct Net {
     rx_bytes: u64,
     active: bool,
     hide_inactive: bool,
+    hide_missing: bool,
     last_update: Instant,
 }
 
@@ -235,6 +243,10 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_hide_inactive")]
     pub hide_inactive: bool,
 
+    /// Whether to hide networks that are missing.
+    #[serde(default = "NetConfig::default_hide_missing")]
+    pub hide_missing: bool,
+
     /// Whether to show the upload throughput indicator of active networks.
     #[serde(default = "NetConfig::default_speed_up")]
     pub speed_up: bool,
@@ -262,6 +274,10 @@ impl NetConfig {
     }
 
     fn default_hide_inactive() -> bool {
+        false
+    }
+
+    fn default_hide_missing() -> bool {
         false
     }
 
@@ -302,55 +318,58 @@ impl ConfigBlock for Net {
     type Config = NetConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let device = NetworkDevice::from_device(block_config.device)?;
-        let init_rx_bytes = device.rx_bytes()?;
-        let init_tx_bytes = device.tx_bytes()?;
+        let device = NetworkDevice::from_device(block_config.device);
+        let init_rx_bytes = device.rx_bytes().unwrap_or(0);
+        let init_tx_bytes = device.tx_bytes().unwrap_or(0);
         let wireless = device.is_wireless();
+        let vpn = device.is_vpn();
         Ok(Net {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            network: TextWidget::new(config.clone()).with_icon(match wireless {
-                true => "net_wireless",
-                false => "net_wired",
+            network: TextWidget::new(config.clone()).with_icon(if wireless {
+                "net_wireless" } else if vpn {
+                "net_vpn" } else {
+                "net_wired"
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: match block_config.ssid && wireless {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            ssid: if block_config.ssid && wireless {
+                Some(TextWidget::new(config.clone())) } else {
+                None
             },
             max_ssid_width: block_config.max_ssid_width,
-            bitrate: match block_config.bitrate {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            bitrate: if block_config.bitrate {
+                Some(TextWidget::new(config.clone())) } else {
+                None
             },
-            ip_addr: match block_config.ip {
-                true => Some(TextWidget::new(config.clone())),
-                false => None,
+            ip_addr: if block_config.ip {
+                Some(TextWidget::new(config.clone())) } else {
+                None
             },
-            output_tx: match block_config.speed_up {
-                true => Some(TextWidget::new(config.clone()).with_icon("net_up")),
-                false => None,
+            output_tx: if block_config.speed_up {
+                Some(TextWidget::new(config.clone()).with_icon("net_up")) } else {
+                None
             },
-            output_rx: match block_config.speed_down {
-                true => Some(TextWidget::new(config.clone()).with_icon("net_down")),
-                false => None,
+            output_rx: if block_config.speed_down {
+                Some(TextWidget::new(config.clone()).with_icon("net_down")) } else {
+                None
             },
-            graph_tx: match block_config.graph_up {
-                true => Some(GraphWidget::new(config.clone())),
-                false => None,
+            graph_tx: if block_config.graph_up {
+                Some(GraphWidget::new(config.clone())) } else { 
+                None
             },
-            graph_rx: match block_config.graph_down {
-                true => Some(GraphWidget::new(config.clone())),
-                false => None,
+            graph_rx: if block_config.graph_down {
+                Some(GraphWidget::new(config.clone())) } else {
+                None
             },
-            device: device,
+            device,
             rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
             active: true,
             hide_inactive: block_config.hide_inactive,
+            hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
         })
     }
@@ -391,8 +410,9 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
         // Skip updating tx/rx if device is not up.
+        let exists = self.device.exists()?;
         let is_up = self.device.is_up()?;
-        if !is_up {
+        if !exists || !is_up {
             self.active = false;
             self.network.set_text("×".to_string());
             if let Some(ref mut tx_widget) = self.output_tx {
@@ -436,6 +456,7 @@ impl Block for Net {
             self.last_update = now;
         }
 
+        // TODO: consider using `as_nanos`
         // Update the throughout/graph widgets if they are enabled
         let update_interval = (self.update_interval.as_secs() as f64) + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         if self.output_tx.is_some() || self.graph_tx.is_some() {
@@ -500,7 +521,7 @@ impl Block for Net {
                 widgets.push(graph_rx_widget);
             }
             widgets
-        } else if !self.hide_inactive {
+        } else if !self.hide_inactive || !self.hide_missing {
             vec![&self.network]
         } else {
             vec![]

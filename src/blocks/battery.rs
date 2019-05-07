@@ -5,22 +5,23 @@
 //! internal power supply.
 
 use std::path::{Path, PathBuf};
-use util::FormatTemplate;
+use crate::util::FormatTemplate;
 use std::time::{Duration, Instant};
 use std::thread;
 
 use chan::Sender;
-use blocks::dbus;
 use uuid::Uuid;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use scheduler::Task;
-use util::read_file;
-use widget::{I3BarWidget, State};
-use widgets::text::TextWidget;
+use crate::block::{Block, ConfigBlock};
+use crate::blocks::dbus;
+use crate::blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::scheduler::Task;
+use crate::util::read_file;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::text::TextWidget;
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {
@@ -51,8 +52,8 @@ impl PowerSupplyDevice {
     /// Use the power supply device `device`, as found in the
     /// `/sys/class/power_supply` directory. Raises an error if a directory for
     /// that device is not found.
-    pub fn from_device(device: String) -> Result<Self> {
-        let device_path = Path::new("/sys/class/power_supply").join(device.clone());
+    pub fn from_device(device: &str) -> Result<Self> {
+        let device_path = Path::new("/sys/class/power_supply").join(device);
         if !device_path.exists() {
             return Err(BlockError(
                 "battery".to_string(),
@@ -82,9 +83,9 @@ impl PowerSupplyDevice {
         };
 
         Ok(PowerSupplyDevice {
-            device_path: device_path,
-            charge_full: charge_full,
-            energy_full: energy_full,
+            device_path,
+            charge_full,
+            energy_full,
         })
     }
 }
@@ -206,27 +207,6 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 }
 
-fn get_upower_property(con: &dbus::Connection, device_path: &str, property: &str) -> Result<dbus::Message> {
-    let msg = dbus::Message::new_method_call(
-        "org.freedesktop.UPower",
-        device_path,
-        "org.freedesktop.DBus.Properties",
-        "Get",
-    ).block_error("battery", "Failed to create Dbus message.")?
-        .append2(
-            dbus::MessageItem::Str("org.freedesktop.UPower.Device".to_string()),
-            dbus::MessageItem::Str(property.to_string()),
-        );
-
-    con.send_with_reply_and_block(msg, 1000).block_error(
-        "battery",
-        &format!(
-            "Failed to retrieve UPower property '{}' from '{}' via Dbus.",
-            property, device_path
-        ),
-    )
-}
-
 /// Represents a battery known to UPower.
 pub struct UpowerDevice {
     device_path: String,
@@ -235,28 +215,32 @@ pub struct UpowerDevice {
 
 impl UpowerDevice {
     /// Create the UPower device from the `device` string, which is converted to
-    /// the path `"/org/freedesktop/UPower/devices/battery_<device>"`. Raises an
-    /// error if D-Bus cannot connect to this device, or if the device is not a
+    /// the path `"/org/freedesktop/UPower/devices/battery_<device>"`, except if
+    /// `device` equals `"DisplayDevice"`, in which case it is converted to the
+    /// path `"/org/freedesktop/UPower/devices/DisplayDevice"`. Raises an error
+    /// if D-Bus cannot connect to this device, or if the device is not a
     /// battery.
-    pub fn from_device(device: String) -> Result<Self> {
-        let device_path = format!("/org/freedesktop/UPower/devices/battery_{}", device);
+    pub fn from_device(device: &str) -> Result<Self> {
+        let device_name = if device == "DisplayDevice" { device.to_string() } else { format!("battery_{}", device) };
+        let device_path = format!("/org/freedesktop/UPower/devices/{}", device_name);
         let con = dbus::Connection::get_private(dbus::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
-        let upower_type: dbus::arg::Variant<u32> = get_upower_property(&con, &device_path, "Type")?
-            .get1()
+        let upower_type: u32 = con
+            .with_path("org.freedesktop.UPower", &device_path, 1000)
+            .get("org.freedesktop.UPower.Device", "Type")
             .block_error("battery", "Failed to read UPower Type property.")?;
 
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
-        if upower_type.0 != 2 {
+        if upower_type != 2 {
             return Err(BlockError(
                 "battery".into(),
                 "UPower device is not a battery.".into(),
             ));
         }
         Ok(UpowerDevice {
-            device_path: device_path,
-            con: con,
+            device_path,
+            con,
         })
     }
 
@@ -282,7 +266,7 @@ impl UpowerDevice {
                 .expect("Failed to add D-Bus match rule.");
 
             loop {
-                if let Some(_) = con.incoming(10_000).next() {
+                if con.incoming(10_000).next().is_some() {
                     update_request.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
@@ -298,13 +282,14 @@ impl UpowerDevice {
 
 impl BatteryDevice for UpowerDevice {
     fn status(&self) -> Result<String> {
-        let status: dbus::arg::Variant<u32> =
-            get_upower_property(&self.con, &self.device_path, "State")?
-                .get1()
-                .block_error("battery", "Failed to read UPower State property.")?;
+        let status: u32 = self
+            .con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get("org.freedesktop.UPower.Device", "State")
+            .block_error("battery", "Failed to read UPower State property.")?;
 
         // https://upower.freedesktop.org/docs/Device.html#Device:State
-        match status.0 {
+        match status {
             1 => Ok("Charging".to_string()),
             2 => Ok("Discharging".to_string()),
             3 => Ok("Empty".to_string()),
@@ -316,33 +301,44 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn capacity(&self) -> Result<u64> {
-        let capacity: dbus::arg::Variant<f64> =
-            get_upower_property(&self.con, &self.device_path, "Percentage")?
-                .get1()
-                .block_error("battery", "Failed to read UPower Percentage property.")?;
+        let capacity: f64 = self
+            .con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get("org.freedesktop.UPower.Device", "Percentage")
+            .block_error("battery", "Failed to read UPower Percentage property.")?;
 
-        if capacity.0 > 100.0 {
+        if capacity > 100.0 {
             Ok(100)
         } else {
-            Ok(capacity.0 as u64)
+            Ok(capacity as u64)
         }
     }
 
     fn time_remaining(&self) -> Result<u64> {
-        let time_to_empty: dbus::arg::Variant<i64> =
-            get_upower_property(&self.con, &self.device_path, "TimeToEmpty")?
-                .get1()
-                .block_error("battery", "Failed to read UPower TimeToEmpty property.")?;
-        Ok((time_to_empty.0 / 60) as u64)
+        let property = if self.status()? == "Charging" {
+            "TimeToFull"
+        } else {
+            "TimeToEmpty"
+        };
+        let time_to_empty: i64 = self
+            .con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get("org.freedesktop.UPower.Device", property)
+            .block_error(
+                "battery",
+                &format!("Failed to read UPower {} property.", property),
+            )?;
+        Ok((time_to_empty / 60) as u64)
     }
 
     fn power_consumption(&self) -> Result<u64> {
-        let energy_rate: dbus::arg::Variant<f64> =
-            get_upower_property(&self.con, &self.device_path, "EnergyRate")?
-                .get1()
-                .block_error("battery", "Failed to read UPower EnergyRate property.")?;
+        let energy_rate: f64 = self
+            .con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get("org.freedesktop.UPower.Device", "EnergyRate")
+            .block_error("battery", "Failed to read UPower EnergyRate property.")?;
         // FIXME: Might want to make the interface send Watts instead.
-        Ok((energy_rate.0 * 1_000_000.0) as u64)
+        Ok((energy_rate * 1_000_000.0) as u64)
     }
 }
 
@@ -353,7 +349,20 @@ pub struct Battery {
     update_interval: Duration,
     device: Box<BatteryDevice>,
     format: FormatTemplate,
-    upower: bool,
+    driver: BatteryDriver,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum BatteryDriver {
+    Sysfs,
+    Upower,
+}
+
+impl Default for BatteryDriver {
+    fn default() -> Self {
+        BatteryDriver::Sysfs
+    }
 }
 
 /// Configuration for the [`Battery`](./struct.Battery.html) block.
@@ -378,9 +387,12 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_format")]
     pub format: String,
 
-    /// Use UPower to monitor battery status and events.
+    /// (DEPRECATED) Use UPower to monitor battery status and events.
     #[serde(default = "BatteryConfig::default_upower")]
     pub upower: bool,
+
+    /// The "driver" to use for powering the block. One of "sysfs" or "upower".
+    pub driver: Option<BatteryDriver>,
 }
 
 impl BatteryConfig {
@@ -421,23 +433,30 @@ impl ConfigBlock for Battery {
             None => block_config.format
         };
 
+        // TODO: Remove the deprecated upower config eventually.
+        let driver = match block_config.driver {
+            Some(val) => val,
+            None if block_config.upower => BatteryDriver::Upower,
+            _ => BatteryDriver::Sysfs,
+        };
+
         let id = Uuid::new_v4().simple().to_string();
-        let device: Box<BatteryDevice> = match block_config.upower {
-            true => {
-                let out = UpowerDevice::from_device(block_config.device)?;
+        let device: Box<BatteryDevice> = match driver {
+            BatteryDriver::Upower => {
+                let out = UpowerDevice::from_device(&block_config.device)?;
                 out.monitor(id.clone(), update_request);
                 Box::new(out)
-            }
-            false => Box::new(PowerSupplyDevice::from_device(block_config.device)?),
+            },
+            BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(&block_config.device)?),
         };
 
         Ok(Battery {
-            id: id,
+            id,
             update_interval: block_config.interval,
             output: TextWidget::new(config),
-            device: device,
-            format: FormatTemplate::from_string(format)?,
-            upower: block_config.upower,
+            device,
+            format: FormatTemplate::from_string(&format)?,
+            driver,
         })
     }
 }
@@ -493,10 +512,9 @@ impl Block for Battery {
             });
         }
 
-        if self.upower {
-            Ok(None)
-        } else {
-            Ok(Some(self.update_interval))
+        match self.driver {
+            BatteryDriver::Sysfs => Ok(Some(self.update_interval)),
+            BatteryDriver::Upower => Ok(None),
         }
     }
 

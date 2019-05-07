@@ -2,16 +2,16 @@ use std::time::{Duration, Instant};
 use std::process::Command;
 use std::thread::spawn;
 use std::sync::{Arc, Mutex};
-use chan::{async, Receiver, Sender};
-use scheduler::Task;
+use chan::{r#async, Receiver, Sender};
+use crate::scheduler::Task;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
-use input::{I3BarEvent, MouseButton};
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::input::{I3BarEvent, MouseButton};
 
 use uuid::Uuid;
 
@@ -58,7 +58,7 @@ fn get_values(bytes: bool) -> Result<String> {
     ).block_error("speedtest", "could not parse speedtest-cli output")
 }
 
-fn parse_values(output: String) -> Result<Vec<f32>> {
+fn parse_values(output: &str) -> Result<Vec<f32>> {
     let mut vals: Vec<f32> = Vec::with_capacity(3);
 
     for line in output.lines() {
@@ -75,9 +75,9 @@ fn parse_values(output: String) -> Result<Vec<f32>> {
 
 fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, Vec<f32>)>>, config: SpeedTestConfig, id: String) {
     spawn(move || loop {
-        if let Some(_) = recv.recv() {
+        if recv.recv().is_some() {
             if let Ok(output) = get_values(config.bytes) {
-                if let Ok(vals) = parse_values(output) {
+                if let Ok(vals) = parse_values(&output) {
                     if vals.len() == 3 {
                         let (ref mut update, ref mut values) = *values
                             .lock()
@@ -102,7 +102,7 @@ impl ConfigBlock for SpeedTest {
 
     fn new(block_config: Self::Config, config: Config, done: Sender<Task>) -> Result<Self> {
         // Create all the things we are going to send and take for ourselves.
-        let (send, recv): (Sender<()>, Receiver<()>) = async();
+        let (send, recv): (Sender<()>, Receiver<()>) = r#async();
         let vals = Arc::new(Mutex::new((false, vec![])));
         let id = Uuid::new_v4().simple().to_string();
 

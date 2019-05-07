@@ -5,14 +5,14 @@ use std::thread;
 use chan::Sender;
 use uuid::Uuid;
 
-use config::Config;
-use errors::*;
-use scheduler::Task;
-use block::{Block, ConfigBlock};
-use widget::{I3BarWidget, State};
-use widgets::text::TextWidget;
-use blocks::dbus::{BusType, Connection, Message, MessageItem};
-use blocks::dbus::arg::Variant;
+use crate::config::Config;
+use crate::errors::*;
+use crate::scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::text::TextWidget;
+use crate::blocks::dbus::{BusType, Connection, Message, MessageItem};
+use crate::blocks::dbus::arg::Variant;
 
 enum NetworkState {
     Unknown = 0,
@@ -161,16 +161,15 @@ impl ConfigBlock for NetworkManager {
 
         thread::spawn(move || {
             let c = Connection::get_private(BusType::System).unwrap();
-            let rule = format!(
-                "type='signal',\
+            let rule = "type='signal',\
                  path='/org/freedesktop/NetworkManager',\
                  interface='org.freedesktop.NetworkManager',\
-                 member='StateChanged'");
+                 member='StateChanged'";
 
             c.add_match(&rule).unwrap();
 
             loop {
-                let timeout = 100000;
+                let timeout = 100_000;
 
                 for _event in c.iter(timeout) {
                     send.send(Task {
@@ -184,8 +183,8 @@ impl ConfigBlock for NetworkManager {
         Ok(NetworkManager {
             id: id_copy,
             output: TextWidget::new(config),
-            dbus_conn: dbus_conn,
-            manager: manager,
+            dbus_conn,
+            manager,
             show_type: block_config.show_type,
         })
     }

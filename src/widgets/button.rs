@@ -1,5 +1,5 @@
-use config::Config;
-use widget::State;
+use crate::config::Config;
+use crate::widget::State;
 use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
 
@@ -26,15 +26,22 @@ impl ButtonWidget {
                 "separator": false,
                 "separator_block_width": 0,
                 "background": "#000000",
-                "color": "#000000"
+                "color": "#000000",
+                "markup": "pango"
             }),
-            config: config,
+            config,
             cached_output: None,
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
         self.icon = self.config.icons.get(name).cloned();
+        self.update();
+        self
+    }
+
+    pub fn with_content(mut self, content: Option<String>) -> Self {
+        self.content = content;
         self.update();
         self
     }
@@ -51,8 +58,8 @@ impl ButtonWidget {
         self
     }
 
-    pub fn set_text(&mut self, content: String) {
-        self.content = Some(content);
+    pub fn set_text<S: Into<String>>(&mut self, content: S) {
+        self.content = Some(content.into());
         self.update();
     }
 
@@ -77,7 +84,8 @@ impl ButtonWidget {
             "name": self.id.clone(),
             "separator_block_width": 0,
             "background": key_bg,
-            "color": key_fg
+            "color": key_fg,
+            "markup": "pango"
         });
 
         self.cached_output = Some(self.rendered.to_string());

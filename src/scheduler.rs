@@ -1,5 +1,5 @@
-use block::Block;
-use errors::*;
+use crate::block::Block;
+use crate::errors::*;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
 use std::thread;
@@ -54,11 +54,7 @@ impl UpdateScheduler {
             });
         }
 
-        UpdateScheduler { schedule: schedule }
-    }
-
-    pub fn schedule(&mut self, task: Task) {
-        self.schedule.push(task);
+        UpdateScheduler { schedule }
     }
 
     pub fn time_to_next_update(&self) -> Option<Duration> {

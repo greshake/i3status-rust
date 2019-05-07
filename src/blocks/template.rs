@@ -1,14 +1,14 @@
 use std::time::Duration;
 use chan::Sender;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::text::TextWidget;
-use widget::I3BarWidget;
-use input::I3BarEvent;
-use scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::text::TextWidget;
+use crate::widget::I3BarWidget;
+use crate::input::I3BarEvent;
+use crate::scheduler::Task;
 
 use uuid::Uuid;
 
@@ -46,8 +46,8 @@ impl ConfigBlock for Template {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone()).with_text("Template"),
-            tx_update_request: tx_update_request,
-            config: config,
+            tx_update_request,
+            config,
         })
     }
 }

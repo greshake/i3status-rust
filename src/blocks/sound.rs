@@ -5,7 +5,6 @@ use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
-use std::ffi::OsStr;
 #[cfg(feature = "pulseaudio")]
 use std::rc::Rc;
 #[cfg(feature = "pulseaudio")]
@@ -18,28 +17,29 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use chan::Sender;
 #[cfg(feature = "pulseaudio")]
-use chan::{async, sync};
+use chan::{r#async, sync};
 
-use scheduler::Task;
-use block::{Block, ConfigBlock};
-use config::Config;
-use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
-use input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::errors::*;
+use crate::widgets::button::ButtonWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::input::{I3BarEvent, MouseButton};
+use crate::subprocess::{parse_command, spawn_child_async};
 
 #[cfg(feature = "pulseaudio")]
-use pulse::mainloop::standard::Mainloop;
+use crate::pulse::mainloop::standard::Mainloop;
 #[cfg(feature = "pulseaudio")]
-use pulse::callbacks::ListResult;
+use crate::pulse::callbacks::ListResult;
 #[cfg(feature = "pulseaudio")]
-use pulse::context::{Context, flags, State as PulseState, introspect::SinkInfo, introspect::ServerInfo, subscribe::Facility, subscribe::Operation as SubscribeOperation, subscribe::subscription_masks};
+use crate::pulse::context::{Context, flags, State as PulseState, introspect::SinkInfo, introspect::ServerInfo, subscribe::Facility, subscribe::Operation as SubscribeOperation, subscribe::subscription_masks};
 #[cfg(feature = "pulseaudio")]
-use pulse::proplist::{properties, Proplist};
+use crate::pulse::proplist::{properties, Proplist};
 #[cfg(feature = "pulseaudio")]
-use pulse::mainloop::standard::IterateResult;
+use crate::pulse::mainloop::standard::IterateResult;
 #[cfg(feature = "pulseaudio")]
-use pulse::volume::{ChannelVolumes, VOLUME_NORM, VOLUME_MAX};
+use crate::pulse::volume::{ChannelVolumes, VOLUME_NORM, VOLUME_MAX};
 
 use uuid::Uuid;
 
@@ -62,7 +62,7 @@ struct AlsaSoundDevice {
 impl AlsaSoundDevice {
     fn new(name: String) -> Result<Self> {
         let mut sd = AlsaSoundDevice {
-            name: name,
+            name,
             volume: 0,
             muted: false,
         };
@@ -85,13 +85,11 @@ impl SoundDevice for AlsaSoundDevice {
 
         let last_line = &output
             .lines()
-            .into_iter()
             .last()
             .block_error("sound", "could not get sound info")?;
 
         let last = last_line
             .split_whitespace()
-            .into_iter()
             .filter(|x| x.starts_with('[') && !x.contains("dB"))
             .map(|s| s.trim_matches(FILTER))
             .collect::<Vec<&str>>();
@@ -151,7 +149,7 @@ impl SoundDevice for AlsaSoundDevice {
                 // Block until we get some output. Doesn't really matter what
                 // the output actually is -- these are events -- we just update
                 // the sound information if *something* happens.
-                if let Ok(_) = monitor.read(&mut buffer) {
+                if monitor.read(&mut buffer).is_ok() {
                     tx_update_request.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
@@ -274,7 +272,7 @@ impl PulseAudioConnection {
 #[cfg(feature = "pulseaudio")]
 impl PulseAudioClient {
     fn new() -> Result<PulseAudioClient> {
-        let (send_req, recv_req) = async();
+        let (send_req, recv_req) = r#async();
         let (send_result, recv_result) = sync(0);
         let send_result2 = send_result.clone();
         let new_connection = |sender: Sender<Result<()>>| -> PulseAudioConnection {
@@ -347,7 +345,7 @@ impl PulseAudioClient {
         // subscribe
         thread::spawn(move || {
             let connection = new_connection(send_result2);
-        
+
             // subcribe for events
             connection.context.borrow_mut().set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
             connection.context.borrow_mut().subscribe(
@@ -390,7 +388,7 @@ impl PulseAudioClient {
         }
     }
 
-    fn sink_info_callback<'r, 's>(result: ListResult<&'r SinkInfo>) {
+    fn sink_info_callback(result: ListResult<&SinkInfo>) {
         match result {
             ListResult::End |
             ListResult::Error => { },
@@ -635,7 +633,7 @@ impl ConfigBlock for Sound {
                 "PulseAudio feature or driver disabled".into(),
             ))
         };
-        
+
         // prefere PulseAudio if available and selected, fallback to ALSA
         let device: Box<SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
@@ -646,8 +644,8 @@ impl ConfigBlock for Sound {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
             device,
-            step_width: step_width,
-            config: config,
+            step_width,
+            config,
             on_click: block_config.on_click,
         };
 
@@ -675,26 +673,19 @@ impl Block for Sound {
             if name.as_str() == self.id {
                 match e.button {
                     MouseButton::Right => self.device.toggle()?,
-                    MouseButton::Left => {
-                        let mut command = "".to_string();
-                        if self.on_click.is_some() {
-                            command = self.on_click.clone().unwrap();
+                    MouseButton::Left =>
+                        if let Some(ref cmd) = self.on_click {
+                            let (cmd_name, cmd_args) = parse_command(cmd);
+                            spawn_child_async(cmd_name, &cmd_args)
+                                .block_error("sound", "could not spawn child")?;
                         }
-                        if self.on_click.is_some() {
-                            let command_broken: Vec<&str> = command.split_whitespace().collect();
-                            let mut itr = command_broken.iter();
-                            let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                                .args(itr)
-                                .spawn();
-                        }
-                    }
                     MouseButton::WheelUp => {
                         self.device.set_volume(self.step_width as i32)?;
                     }
                     MouseButton::WheelDown => {
                         self.device.set_volume(-(self.step_width as i32))?;
                     }
-                    _ => {}
+                    _ => ()
                 }
                 self.display()?;
             }

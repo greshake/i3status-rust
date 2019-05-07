@@ -1,14 +1,14 @@
 use std::time::Duration;
 
-use block::{Block, ConfigBlock};
-use config::Config;
-use de::deserialize_duration;
-use errors::*;
-use widgets::text::TextWidget;
-use widget::{I3BarWidget, State};
-use util::FormatTemplate;
+use crate::block::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::widgets::text::TextWidget;
+use crate::widget::{I3BarWidget, State};
+use crate::util::FormatTemplate;
 use chan::Sender;
-use scheduler::Task;
+use crate::scheduler::Task;
 
 use std::io::BufReader;
 use std::io::prelude::*;
@@ -70,11 +70,11 @@ impl ConfigBlock for Load {
 
         Ok(Load {
             id: Uuid::new_v4().simple().to_string(),
-            logical_cores: logical_cores,
+            logical_cores,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(block_config.format)
+            format: FormatTemplate::from_string(&block_config.format)
                 .block_error("load", "Invalid format specified for load")?,
-            text: text,
+            text,
         })
     }
 }

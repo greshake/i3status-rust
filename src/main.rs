@@ -31,6 +31,7 @@ mod input;
 mod icons;
 mod themes;
 mod scheduler;
+mod subprocess;
 mod widget;
 mod widgets;
 
@@ -45,17 +46,17 @@ use std::collections::HashMap;
 use std::time::Duration;
 use std::ops::DerefMut;
 
-use block::Block;
+use crate::block::Block;
 
-use blocks::create_block;
-use config::Config;
-use errors::*;
-use input::{process_events, I3BarEvent};
-use scheduler::{Task, UpdateScheduler};
-use widget::{I3BarWidget, State};
-use widgets::text::TextWidget;
+use crate::blocks::create_block;
+use crate::config::Config;
+use crate::errors::*;
+use crate::input::{process_events, I3BarEvent};
+use crate::scheduler::{Task, UpdateScheduler};
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::text::TextWidget;
 
-use util::deserialize_file;
+use crate::util::deserialize_file;
 
 use self::clap::{App, Arg, ArgMatches};
 use self::chan::{Receiver, Sender};
@@ -137,11 +138,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Update request channel
-    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) = chan::async();
+    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) = chan::r#async();
 
     // In dev build, we might diverge into profiling blocks here
     if let Some(name) = matches.value_of("profile") {
-        profile_config(name, matches.value_of("profile-runs").unwrap(), &config, tx_update_requests)?;
+        profile_config(name, matches.value_of("profile-runs").unwrap(), &config, &tx_update_requests)?;
         return Ok(());
     }
 
@@ -192,7 +193,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // We save the order of the blocks here,
     // because they will be passed to an unordered HashMap
-    let order = blocks.iter().map(|x| String::from(x.id())).collect();
+    let order = blocks.iter().map(|x| String::from(x.id())).collect::<Vec<_>>();
 
     let mut scheduler = UpdateScheduler::new(&blocks);
 
@@ -203,7 +204,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     // We wait for click events in a separate thread, to avoid blocking to wait for stdin
-    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = chan::async();
+    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = chan::r#async();
     process_events(tx_clicks);
 
     // Time to next update channel.
@@ -216,21 +217,20 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         chan_select! {
             // Receive click events
-            rx_clicks.recv() -> res => match res {
-                Some(event) => {
+            rx_clicks.recv() -> res => if let Some(event) = res {
                     for block in block_map.values_mut() {
                         block.click(&event)?;
                     }
                     util::print_blocks(&order, &block_map, &config)?;
-                },
-                None => ()
             },
             // Receive async update requests
-            rx_update_requests.recv() -> res => match res {
-                Some(request) => {
-                    scheduler.schedule(request);
-                },
-                None => ()
+            rx_update_requests.recv() -> res => if let Some(request) = res {
+                // Process immediately and forget
+                block_map
+                    .get_mut(&request.id)
+                    .internal_error("scheduler", "could not get required block")?
+                    .update()?;
+                util::print_blocks(&order, &block_map, &config)?;
             },
             // Receive update timer events
             ttnu.recv() => {
@@ -295,7 +295,7 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
 }
 
 #[cfg(not(feature = "profiling"))]
-fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: Sender<Task>) -> Result<()> {
+fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: &Sender<Task>) -> Result<()> {
     // TODO: Maybe we should just panic! here.
     Err(InternalError(
         "profile".to_string(),
