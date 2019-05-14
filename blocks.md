@@ -289,6 +289,7 @@ interval = 60
 inboxes = ["/home/user/mail/local", "/home/user/mail/gmail/Inbox"]
 threshold_warning = 1
 threshold_critical = 10
+display_type = "new"
 ```
 
 ### Options
@@ -299,6 +300,7 @@ Key | Values | Required | Default
 `threshold_warning` | Number of unread mails where state is set to warning | No | `1`
 `threshold_critical` | Number of unread mails where state is set to critical | No | `10`
 `interval` | Update interval, in seconds. | No | `5`
+`display_type` | Which part of the maildir to count. One of "new", "cur", or "all" | No | `"new"`
 
 ## Memory
 

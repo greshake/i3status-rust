@@ -13,6 +13,30 @@ use maildir::Maildir as ExtMaildir;
 
 use uuid::Uuid;
 
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MailType {
+    New,
+    Cur,
+    All,
+}
+
+impl MailType {
+    fn count_mail(&self, maildir: &ExtMaildir) -> usize {
+        match self {
+            MailType::New => maildir.count_new(),
+            MailType::Cur => maildir.count_cur(),
+            MailType::All => maildir.count_new() + maildir.count_cur(),
+        }
+    }
+}
+
+impl Default for MailType {
+    fn default() -> MailType {
+        MailType::New
+    }
+}
+
 pub struct Maildir {
     text: TextWidget,
     id: String,
@@ -20,6 +44,7 @@ pub struct Maildir {
     inboxes: Vec<String>,
     threshold_warning: usize,
     threshold_critical: usize,
+    display_type: MailType,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -33,6 +58,8 @@ pub struct MaildirConfig {
     pub threshold_warning: usize,
     #[serde(default = "MaildirConfig::default_threshold_critical")]
     pub threshold_critical: usize,
+    #[serde(default)]
+    pub display_type: MailType,
 }
 
 impl MaildirConfig {
@@ -60,6 +87,7 @@ impl ConfigBlock for Maildir {
             inboxes: block_config.inboxes,
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,
+            display_type: block_config.display_type,
         })
     }
 }
@@ -70,7 +98,7 @@ impl Block for Maildir {
         for inbox in &self.inboxes {
             let isl: &str = &inbox[..];
             let maildir = ExtMaildir::from(isl);
-            newmails += maildir.count_new();
+            newmails += self.display_type.count_mail(&maildir)
         }
         let mut state = { State::Idle };
         if newmails >= self.threshold_critical {
