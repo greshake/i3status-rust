@@ -1,5 +1,6 @@
 use chan::Sender;
 use crate::scheduler::Task;
+use crate::util::FormatTemplate;
 use std::time::Duration;
 
 use crate::block::{Block, ConfigBlock};
@@ -16,15 +17,18 @@ use std::io::BufReader;
 use uuid::Uuid;
 
 pub struct Cpu {
-    utilization: TextWidget,
-    prev_idle: u64,
-    prev_non_idle: u64,
+    output: TextWidget,
+    prev_idles: [u64; 32],
+    prev_non_idles: [u64; 32],
     id: String,
     update_interval: Duration,
     minimum_info: u64,
     minimum_warning: u64,
     minimum_critical: u64,
-    frequency: bool,
+    format: FormatTemplate,
+    has_barchart: bool,
+    has_frequency: bool,
+    first_update: bool
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -46,12 +50,16 @@ pub struct CpuConfig {
     #[serde(default = "CpuConfig::default_critical")]
     pub critical: u64,
 
-    /// Display frequency
-    #[serde(default = "CpuConfig::default_frequency")]
-    pub frequency: bool,
+    /// Format override
+    #[serde(default = "CpuConfig::default_format")]
+    pub format: String,
 }
 
 impl CpuConfig {
+    fn default_format() -> String {
+        "{barchart} {utilization}% {frequency}GHz".to_owned()
+    }
+
     fn default_interval() -> Duration {
         Duration::from_secs(1)
     }
@@ -68,9 +76,6 @@ impl CpuConfig {
         90
     }
 
-    fn default_frequency() -> bool {
-        false
-    }
 }
 
 impl ConfigBlock for Cpu {
@@ -80,45 +85,82 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            utilization: TextWidget::new(config).with_icon("cpu"),
-            prev_idle: 0,
-            prev_non_idle: 0,
+            output: TextWidget::new(config).with_icon("cpu"),
+            prev_idles: [0; 32],
+            prev_non_idles: [0; 32],
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            frequency: block_config.frequency,
+            format: FormatTemplate::from_string(&block_config.format)
+                .block_error("cpu", "Invalid format specified for cpu")?,
+            has_frequency: false,
+            has_barchart: false,
+            first_update: true
         })
     }
 }
 
 impl Block for Cpu {
     fn update(&mut self) -> Result<Option<Duration>> {
+        if self.first_update {
+            // TODO: Should be moved into the constructor
+            let mut fmt = &self.format;
+            loop {
+                match fmt {
+                    FormatTemplate::Var(ref s, ref next) => {
+                        match &s as &str {
+                            "{frequency}" => { self.has_frequency = true; },
+                            "{barchart}" =>  { self.has_barchart = true; },
+                            _ => {},
+                        }
+                        if let Some(fmt1) = next {
+                            fmt = fmt1;
+                        } else {
+                            break;
+                        }
+                    }
+                    FormatTemplate::Str(ref _s, ref next) => {
+                        if let Some(fmt1) = next {
+                            fmt = fmt1;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            self.first_update = false;
+        }
         let f = File::open("/proc/stat").block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
+        let mut n_cpu = 0;
         let mut freq: f32 = 0.0;
-        if self.frequency {
+        if self.has_frequency {
             let freq_file = File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
             let freq_file_content = BufReader::new(freq_file);
-            let mut cores = 0;
             // read frequency of each cpu and calculate the average which we will display
             for line in freq_file_content.lines().scan((), |_, x| x.ok()) {
                 if line.starts_with("cpu MHz") {
-                    cores += 1;
                     let words = line.split(' ');
                     let last = words.last().expect("failed to get last word of line while getting cpu frequency");
                     let numb = last.parse::<f32>().expect("failed to parse String to f32 while getting cpu frequency");
                     freq += numb;
+                    n_cpu += 1;
                 }
             }
             // get the average
-            freq = (freq / (cores as f32) / 1000.0) as f32;
+            freq = (freq / (n_cpu as f32) / 1000.0) as f32;
         }
-        let mut utilization = 0;
 
+        // Read data from a maximum of 32 CPU cores, if a barchart is displayed
+        let max_cpus = if self.has_barchart { 32 } else { 1 };
+        let mut cpu_utilizations = vec![0.0; max_cpus];
+
+        let mut cpu_i = 0;
         for line in f.lines().scan((), |_, x| x.ok()) {
-            if line.starts_with("cpu ") {
-                let data: Vec<u64> = (&line).split(' ').collect::<Vec<&str>>().iter().skip(2).filter_map(|x| x.parse::<u64>().ok()).collect::<Vec<_>>();
+
+            if line.starts_with("cpu") {
+                let data: Vec<u64> = (&line).split(' ').collect::<Vec<&str>>().iter().skip(if cpu_i == 0 { 2 } else { 1 }).filter_map(|x| x.parse::<u64>().ok()).collect::<Vec<_>>();
 
                 // idle = idle + iowait
                 let idle = data[3] + data[4];
@@ -129,42 +171,57 @@ impl Block for Cpu {
                                 data[6] + // softirq
                                 data[7]; // steal
 
-                let prev_total = self.prev_idle + self.prev_non_idle;
+                let prev_total = self.prev_idles[cpu_i] + self.prev_non_idles[cpu_i];
                 let total = idle + non_idle;
 
                 // This check is needed because the new values may be reset, for
                 // example after hibernation.
 
-                let (total_delta, idle_delta) = if prev_total < total && self.prev_idle <= idle {
-                    (total - prev_total, idle - self.prev_idle)
+                let (total_delta, idle_delta) = if prev_total < total && self.prev_idles[cpu_i] <= idle {
+                    (total - prev_total, idle - self.prev_idles[cpu_i])
                 } else {
                     (1, 1)
                 };
 
-                utilization = (((total_delta - idle_delta) as f64 / total_delta as f64) * 100.) as u64;
+                cpu_utilizations[cpu_i] = (total_delta - idle_delta) as f64 / total_delta as f64;
 
-                self.prev_idle = idle;
-                self.prev_non_idle = non_idle;
+                self.prev_idles[cpu_i] = idle;
+                self.prev_non_idles[cpu_i] = non_idle;
+                cpu_i += 1;
+                if cpu_i >= max_cpus { break; };
             }
         }
 
-        self.utilization.set_state(match utilization {
+        let avg_utilization = (100.0 * cpu_utilizations[0]) as u64;
+
+        self.output.set_state(match avg_utilization {
             x if x > self.minimum_critical => State::Critical,
             x if x > self.minimum_warning => State::Warning,
             x if x > self.minimum_info => State::Info,
             _ => State::Idle,
         });
-        if self.frequency {
-            let frequency = format!("{:.*}", 1, freq);
-            self.utilization.set_text(format!("{:02}% {}GHz", utilization, frequency));
-        } else {
-            self.utilization.set_text(format!("{:02}%", utilization));
+
+        let mut barchart = String::new();
+
+        if self.has_barchart {
+            let boxchars = vec!['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+            for i in 1..cpu_i {
+                barchart.push(boxchars[(7.5 * cpu_utilizations[i]) as usize]);
+            }
         }
+
+        let values = map!("{frequency}" => format!("{:.*}", 1, freq),
+                          "{barchart}" => barchart,
+                          "{utilization}" => format!("{:02}", avg_utilization));
+
+        self.output.set_text(self.format.render_static_str(&values)?);
+
         Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
-        vec![&self.utilization]
+        vec![&self.output]
     }
 
     fn id(&self) -> &str {
