@@ -565,7 +565,7 @@ Key | Values | Required | Default
 
 ## Temperature
 
-Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). **Depends on lm_sensors being installed and configured!**
+Creates a block which displays the system temperature, based on lm_sensors' `sensors -u` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. The average temperature is computed by taking the mean of all sensors displayed by `sensors -u`, and the color of the block is determined by the maximum of these sensors. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). **Depends on lm_sensors being installed and configured!**
 
 Requires `lm_sensors` and appropriate kernel modules for your hardware.
 
