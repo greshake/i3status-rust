@@ -28,7 +28,6 @@ pub struct Cpu {
     format: FormatTemplate,
     has_barchart: bool,
     has_frequency: bool,
-    first_update: bool
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -93,43 +92,14 @@ impl ConfigBlock for Cpu {
             minimum_critical: block_config.critical,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("cpu", "Invalid format specified for cpu")?,
-            has_frequency: false,
-            has_barchart: false,
-            first_update: true
+            has_frequency: block_config.format.contains("{frequency}"),
+            has_barchart: block_config.format.contains("{barchart}")
         })
     }
 }
 
 impl Block for Cpu {
     fn update(&mut self) -> Result<Option<Duration>> {
-        if self.first_update {
-            // TODO: Should be moved into the constructor
-            let mut fmt = &self.format;
-            loop {
-                match fmt {
-                    FormatTemplate::Var(ref s, ref next) => {
-                        match &s as &str {
-                            "{frequency}" => { self.has_frequency = true; },
-                            "{barchart}" =>  { self.has_barchart = true; },
-                            _ => {},
-                        }
-                        if let Some(fmt1) = next {
-                            fmt = fmt1;
-                        } else {
-                            break;
-                        }
-                    }
-                    FormatTemplate::Str(ref _s, ref next) => {
-                        if let Some(fmt1) = next {
-                            fmt = fmt1;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-            self.first_update = false;
-        }
         let f = File::open("/proc/stat").block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
