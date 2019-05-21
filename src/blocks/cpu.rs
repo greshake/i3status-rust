@@ -49,6 +49,10 @@ pub struct CpuConfig {
     #[serde(default = "CpuConfig::default_critical")]
     pub critical: u64,
 
+    /// Display frequency
+    #[serde(default = "CpuConfig::default_frequency")]
+    pub frequency: bool,
+
     /// Format override
     #[serde(default = "CpuConfig::default_format")]
     pub format: String,
@@ -56,7 +60,7 @@ pub struct CpuConfig {
 
 impl CpuConfig {
     fn default_format() -> String {
-        "{barchart} {utilization}% {frequency}GHz".to_owned()
+        "{utilization}%".to_owned()
     }
 
     fn default_interval() -> Duration {
@@ -75,12 +79,21 @@ impl CpuConfig {
         90
     }
 
+    fn default_frequency() -> bool {
+      false
+  }
+
 }
 
 impl ConfigBlock for Cpu {
     type Config = CpuConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+        let mut format = block_config.format;
+        if block_config.frequency {
+            format = "{utilization}% {frequency}GHz".into();
+        }
+
         Ok(Cpu {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
@@ -90,10 +103,10 @@ impl ConfigBlock for Cpu {
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            format: FormatTemplate::from_string(&block_config.format)
+            format: FormatTemplate::from_string(&format)
                 .block_error("cpu", "Invalid format specified for cpu")?,
-            has_frequency: block_config.format.contains("{frequency}"),
-            has_barchart: block_config.format.contains("{barchart}")
+            has_frequency: format.contains("{frequency}"),
+            has_barchart: format.contains("{barchart}"),
         })
     }
 }

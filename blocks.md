@@ -164,7 +164,9 @@ Key | Values | Required | Default
 `warning` | Minimum usage, where state is set to warning. | No | `60`
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
-`format` | A format string. Possible placeholders: `{barchart}` (barchart of each CPU's core utilization), `{utilization}` (average CPU utilization in percent) and `{frequency}` (CPU frequency). | No | `"{barchart} {utilization}% {frequency}GHz"`
+`format` | A format string. Possible placeholders: `{barchart}` (barchart of each CPU's core utilization), `{utilization}` (average CPU utilization in percent) and `{frequency}` (CPU frequency). | No | `"{utilization}%"`
+`frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
+
 
 ## Custom
 
