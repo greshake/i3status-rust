@@ -137,7 +137,7 @@ impl NetworkDevice {
                 &[
                     "-c",
                     &format!(
-                        "ip -oneline -family inet address show {} | sed -rn \"s/.*inet ([\\.0-9/]+).*/\\1/p\"",
+                        "ip -oneline -family inet address show {} | sed -rn -e \"s/.*inet ([\\.0-9/]+).*/\\1/; G; s/\\n/ /;h\" -e \"$ P;\"",
                         self.device
                     ),
                 ],
