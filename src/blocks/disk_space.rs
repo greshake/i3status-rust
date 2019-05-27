@@ -191,16 +191,16 @@ impl Block for DiskSpace {
         match self.info_type {
             InfoType::Available => {
                 result = statvfs.blocks_available() * statvfs.block_size();
-                converted = Unit::bytes_in_unit(self.unit, result);
+                converted = Unit::bytes_in_unit(self.unit, result as u64);
             }
             InfoType::Free => {
                 result = statvfs.blocks_free() * statvfs.block_size();
-                converted = Unit::bytes_in_unit(self.unit, result);
+                converted = Unit::bytes_in_unit(self.unit, result as u64);
             }
             InfoType::Total => {
                 result = used;
-                let converted_used = Unit::bytes_in_unit(self.unit, result);
-                let converted_total = Unit::bytes_in_unit(self.unit, total);
+                let converted_used = Unit::bytes_in_unit(self.unit, result as u64);
+                let converted_total = Unit::bytes_in_unit(self.unit, total as u64);
 
                 converted_str = format!(
                                     "{0:.2}/{1:.2}",
@@ -210,7 +210,7 @@ impl Block for DiskSpace {
             }
             InfoType::Used => {
                 result = used;
-                converted = Unit::bytes_in_unit(self.unit, result);
+                converted = Unit::bytes_in_unit(self.unit, result as u64);
             }
         }
 
@@ -224,7 +224,7 @@ impl Block for DiskSpace {
                 self.alias,
                 percentage
             ));
-            result = percentage as u64;
+            result = percentage as u32;
         } else if self.show_percentage {
             self.disk_space.set_text(format!(
                     "{0} {1} ({2:.2}%) {3:?}",
@@ -242,7 +242,7 @@ impl Block for DiskSpace {
                     ));
         }
 
-        let state = self.compute_state(result, self.warning, self.alert);
+        let state = self.compute_state(result as u64, self.warning, self.alert);
         self.disk_space.set_state(state);
 
         Ok(Some(self.update_interval))
