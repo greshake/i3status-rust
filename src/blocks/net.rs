@@ -101,7 +101,7 @@ impl NetworkDevice {
             .args(&[
                 "-c",
                 &format!(
-                    "iw dev {} link | awk '/^\\s+SSID:/ {{ print $2 }}'",
+                    "iw dev {} link | sed -n 's/^\\s\\+SSID: \\(.*\\)/\\1/p'",
                     self.device
                 ),
             ])
