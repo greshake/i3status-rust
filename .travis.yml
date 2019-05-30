@@ -10,6 +10,7 @@ addons:
     packages:
       - libdbus-1-dev
       - libgoogle-perftools-dev
+      - pandoc
 os:
   - linux
 matrix:
@@ -17,6 +18,10 @@ matrix:
     - rust: nightly
 env:
   - RUSTFLAGS="-D warnings"
-script:
-  - cargo build
-  - cargo test
+jobs:
+  include:
+    - stage: docs
+    script: pandoc README.md blocks.md themes.md -s -t man -o manpage
+    - stage: test
+    script: cargo build
+    script: cargo test
