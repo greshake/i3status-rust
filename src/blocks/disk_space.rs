@@ -20,6 +20,8 @@ use self::nix::sys::statvfs::statvfs;
 pub enum Unit {
     MB,
     GB,
+    TB,
+    TiB,
     GiB,
     MiB,
     Percent
@@ -30,8 +32,10 @@ impl Unit {
         match unit {
             Unit::MB => bytes as f64 / 1000. / 1000.,
             Unit::GB => bytes as f64 / 1000. / 1000. / 1000.,
+            Unit::TB => bytes as f64 / 1000. / 1000. / 1000. / 1000.,
             Unit::MiB => bytes as f64 / 1024. / 1024.,
             Unit::GiB => bytes as f64 / 1024. / 1024. / 1024.,
+            Unit::TiB => bytes as f64 / 1024. / 1024. / 1024. / 1024.,
             Unit::Percent => bytes as f64,
         }
     }
@@ -74,7 +78,7 @@ pub struct DiskSpaceConfig {
     #[serde(default = "DiskSpaceConfig::default_info_type")]
     pub info_type: InfoType,
 
-    /// Unit that is used to display disk space. Options are MB, MiB, GB and GiB
+    /// Unit that is used to display disk space. Options are MB, MiB, GB, GiB, TB and TiB
     #[serde(default = "DiskSpaceConfig::default_unit")]
     pub unit: Unit,
 
