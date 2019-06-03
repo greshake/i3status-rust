@@ -28,7 +28,7 @@ where
 {
     let mut contents = String::new();
     let mut file = BufReader::new(File::open(file)
-        .internal_error("util", "failed to open file")?);
+        .internal_error("util", &("failed to open file".to_owned() + file))?);
     file.read_to_string(&mut contents)
         .internal_error("util", "failed to read file")?;
     toml::from_str(&contents).configuration_error("failed to parse TOML from file contents")
