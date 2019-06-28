@@ -237,9 +237,9 @@ impl Block for NvidiaGpu {
         }
 
         if self.gpu_name_displayed {
-            self.gpu_widget.set_text(self.gpu_name.as_ref());
+            self.gpu_widget.set_text(self.gpu_name.to_string());
         } else {
-            self.gpu_widget.set_text(self.label.as_ref());
+            self.gpu_widget.set_text(self.label.to_string());
         }
 
         Ok(Some(self.update_interval))
@@ -277,9 +277,9 @@ impl Block for NvidiaGpu {
                 };
 
                 if self.gpu_name_displayed {
-                    self.gpu_widget.set_text(self.gpu_name.as_ref());
+                    self.gpu_widget.set_text(self.gpu_name.to_string());
                 } else {
-                    self.gpu_widget.set_text(self.label.as_ref());
+                    self.gpu_widget.set_text(self.label.to_string());
                 }
             }
 
