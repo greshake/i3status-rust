@@ -25,6 +25,7 @@ pub struct Temperature {
     maximum_info: i64,
     maximum_warning: i64,
     format: FormatTemplate,
+    chip: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -57,11 +58,19 @@ pub struct TemperatureConfig {
     /// Format override
     #[serde(default = "TemperatureConfig::default_format")]
     pub format: String,
+
+    /// Chip override
+    #[serde(default = "TemperatureConfig::default_chip")]
+    pub chip: String,
 }
 
 impl TemperatureConfig {
     fn default_format() -> String {
         "{average}° avg, {max}° max".to_owned()
+    }
+
+    fn default_chip() -> String {
+        "".to_owned()
     }
 
     fn default_interval() -> Duration {
@@ -107,14 +116,19 @@ impl ConfigBlock for Temperature {
             maximum_warning: block_config.warning,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("temperature", "Invalid format specified for temperature")?,
+            chip: block_config.chip,
         })
     }
 }
 
 impl Block for Temperature {
     fn update(&mut self) -> Result<Option<Duration>> {
+        let mut args = vec!["-u"];
+        if &self.chip != ""{
+            args.push(&self.chip);
+        }
         let output = Command::new("sensors")
-            .args(&["-u"])
+            .args(&args)
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.description().to_owned());
