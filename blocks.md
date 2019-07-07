@@ -566,7 +566,7 @@ Key | Values | Required | Default
 
 ## Temperature
 
-Creates a block which displays the system temperature, based on lm_sensors' `sensors -u` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. The average temperature is computed by taking the mean of all sensors displayed by `sensors -u`, and the color of the block is determined by the maximum of these sensors. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). **Depends on lm_sensors being installed and configured!**
+Creates a block which displays the system temperature, based on lm_sensors' `sensors -u` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. The average temperature is computed by taking the mean of all sensors displayed by `sensors -u`, or the mean of temperatures for a given chip, and the color of the block is determined by the maximum of these sensors. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). **Depends on lm_sensors being installed and configured!**
 
 Requires `lm_sensors` and appropriate kernel modules for your hardware.
 
@@ -578,6 +578,7 @@ block = "temperature"
 collapsed = false
 interval = 10
 format = "{min}° min, {max}° max, {average}° avg"
+chip = "coretemp-isa-00000"
 ```
 
 ### Options
@@ -590,6 +591,7 @@ collapsed | Collapsed by default? | No | true
 `idle` | Maximum temperature to set state to idle. | No | `45`
 `info` | Maximum temperature to set state to info. | No | `60`
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | No | `80`
+chip | The chip to read temperature from | No | empty/all
 
 ## Time
 
