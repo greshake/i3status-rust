@@ -8,6 +8,7 @@
 - [Disk Space](#disk-space)
 - [Focused Window](#focused-window)
 - [IBus](#ibus)
+- [Keyboard Layout](#keyboard-layout)
 - [Load](#load)
 - [Maildir](#maildir)
 - [Memory](#memory)
@@ -253,6 +254,38 @@ Creates a block which displays the current global engine set in [IBus](https://w
 [[block]]
 block = "ibus"
 ```
+
+## Keyboard Layout
+
+Creates a block to display the current keyboard layout.
+
+This block polls `setxkbmap` for the current layout by default, but can be configured to read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path. Which of these two methods is appropriate will depend on your system setup.
+
+### Examples
+
+Check `setxkbmap` every 15 seconds:
+
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "setxkbmap"
+interval = 15
+```
+
+Listen to D-Bus for changes:
+
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "localebus"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`driver` | One of `"setxkbmap"` or `"localebus"`, depending on your system. | No | `"setxkbmap"`
+`interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
 
 ## Load
 
