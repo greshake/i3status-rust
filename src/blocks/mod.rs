@@ -23,7 +23,7 @@ pub mod maildir;
 mod networkmanager;
 mod bluetooth;
 pub mod ibus;
-mod locale;
+mod keyboard_layout;
 
 use crate::config::Config;
 use self::time::*;
@@ -51,7 +51,7 @@ use self::maildir::*;
 use self::networkmanager::*;
 use self::bluetooth::*;
 use self::ibus::*;
-use self::locale::*;
+use self::keyboard_layout::*;
 
 use super::block::{Block, ConfigBlock};
 use crate::errors::*;
@@ -109,6 +109,6 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "networkmanager" => NetworkManager,
             "bluetooth" => Bluetooth,
             "ibus" => IBus,
-            "locale" => Locale
+            "keyboard_layout" => KeyboardLayout
     )
 }
