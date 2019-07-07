@@ -566,9 +566,13 @@ Key | Values | Required | Default
 
 ## Temperature
 
-Creates a block which displays the system temperature, based on lm_sensors' `sensors -u` output. The block is collapsed by default, and can be expanded by clicking, showing max and avg temperature. The average temperature is computed by taking the mean of all sensors displayed by `sensors -u`, or the mean of temperatures for a given chip, and the color of the block is determined by the maximum of these sensors. When collapsed, the color of the temperature block gives a quick indication as to the temperature (Critical when maxtemp > 80°, Warning when > 60°). **Depends on lm_sensors being installed and configured!**
+Creates a block which displays the system temperature, based on lm_sensors' `sensors -u` output. The block has two modes: "collapsed", which uses only colour as an indicator, and "expanded", which shows the content of a `format` string.
 
 Requires `lm_sensors` and appropriate kernel modules for your hardware.
+
+The average, minimum, and maximum temperatures are computed using all sensors displayed by `sensors -u`, or the subset matching the chip name, if `chip` is specified.
+
+Note that the colour of the block is always determined by the maximum temperature across all sensors, not the average. You may need to keep this in mind if you have a misbehaving sensor.
 
 ### Examples
 
@@ -578,20 +582,28 @@ block = "temperature"
 collapsed = false
 interval = 10
 format = "{min}° min, {max}° max, {average}° avg"
-chip = "coretemp-isa-00000"
+chip = "*-isa-*"
 ```
 
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-interval | Update interval, in seconds. | No | 5
-collapsed | Collapsed by default? | No | true
+`interval` | Update interval, in seconds. | No | 5
+`collapsed` | Whether the block will be collapsed by default. | No | `true`
 `good` | Maximum temperature to set state to good. | No | `20`
 `idle` | Maximum temperature to set state to idle. | No | `45`
 `info` | Maximum temperature to set state to info. | No | `60`
-`warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | No | `80`
-chip | The chip to read temperature from | No | empty/all
+`warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80`
+`chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{min}` | Minimum temperature among all sensors.
+`{average}` | Average temperature among all sensors.
+`{max}` | Maximum temperature among all sensors.
 
 ## Time
 
