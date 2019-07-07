@@ -61,13 +61,16 @@ impl KeyboardLayoutMonitor for SetXkbMap {
             })?;
 
         // Find the "layout:    xxxx" entry.
-        let layout = output.split('\n')
+        let layout = output
+            .split('\n')
             .filter(|line| line.starts_with("layout"))
             .next()
-            .ok_or_else(|| BlockError(
-                "keyboard_layout".to_string(),
-                "Could not find the layout entry from setxkbmap.".to_string()
-            ))?
+            .ok_or_else(|| {
+                BlockError(
+                    "keyboard_layout".to_string(),
+                    "Could not find the layout entry from setxkbmap.".to_string(),
+                )
+            })?
             .split(char::is_whitespace)
             .last();
 
@@ -75,7 +78,7 @@ impl KeyboardLayoutMonitor for SetXkbMap {
             Some(layout) => Ok(layout.to_string()),
             None => Err(BlockError(
                 "keyboard_layout".to_string(),
-                "Could not read the layout entry from setxkbmap.".to_string()
+                "Could not read the layout entry from setxkbmap.".to_string(),
             )),
         }
     }
@@ -148,7 +151,10 @@ impl KeyboardLayoutMonitor for LocaleBus {
 #[serde(default, deny_unknown_fields)]
 pub struct KeyboardLayoutConfig {
     driver: KeyboardLayoutDriver,
-    #[serde(default = "KeyboardLayoutConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "KeyboardLayoutConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     interval: Duration,
 }
 
@@ -176,7 +182,7 @@ impl ConfigBlock for KeyboardLayout {
                 let monitor = LocaleBus::new()?;
                 monitor.monitor(id.clone(), send);
                 Box::new(monitor)
-            },
+            }
         };
         let update_interval = match monitor.must_poll() {
             true => Some(block_config.interval),
@@ -185,7 +191,8 @@ impl ConfigBlock for KeyboardLayout {
         Ok(KeyboardLayout {
             id: id,
             output: TextWidget::new(config),
-            monitor, update_interval,
+            monitor,
+            update_interval,
         })
     }
 }
