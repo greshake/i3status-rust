@@ -190,7 +190,10 @@ impl Block for Cpu {
             let boxchars = vec!['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
             for i in 1..cpu_i {
-                barchart.push(boxchars[(7.5 * cpu_utilizations[i]) as usize]);
+                barchart.push(boxchars[((7.5 * cpu_utilizations[i]) as usize)
+                    // TODO: Replace with .clamp once the feature is stable
+                    // upper bound just in case the value is negative, e.g. USIZE MAX after conversion
+                    .min(boxchars.len() - 1)]);
             }
         }
 
