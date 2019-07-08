@@ -120,14 +120,14 @@ impl StdError for Error {
     }
 }
 
-impl<T> From<::std::sync::mpsc::SendError<T>> for Error
+impl<T> From<::crossbeam::SendError<T>> for Error
 where
-    T: fmt::Display + Send,
+    T: Send,
 {
-    fn from(err: ::std::sync::mpsc::SendError<T>) -> Error {
+    fn from(_err: ::crossbeam::SendError<T>) -> Error {
         InternalError(
             "unknown".to_owned(),
-            format!("send error for '{}'", err.0),
+            format!("send error"),
             None,
         )
     }

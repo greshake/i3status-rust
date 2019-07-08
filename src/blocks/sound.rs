@@ -153,7 +153,7 @@ impl SoundDevice for AlsaSoundDevice {
                     tx_update_request.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
-                    });
+                    }).unwrap();
                 }
                 // Don't update too often. Wait 1/4 second, fast enough for
                 // volume button mashing but slow enough to skip event spam.
@@ -279,11 +279,11 @@ impl PulseAudioClient {
             let conn = PulseAudioConnection::new();
             match conn {
                 Ok(conn) => {
-                    sender.send(Ok(()));
+                    sender.send(Ok(())).unwrap();
                     conn
                 },
                 Err(err) => {
-                    sender.send(Err(err));
+                    sender.send(Err(err)).unwrap();
                     panic!("failed to create pulseaudio connection");
                 }
             }
@@ -366,7 +366,7 @@ impl PulseAudioClient {
     fn send(request: PulseAudioClientRequest) -> Result<()> {
         match PULSEAUDIO_CLIENT.as_ref() {
             Ok(client) => {
-                client.sender.send(request);
+                client.sender.send(request).unwrap();
                 Ok(())
             },
             Err(err) => {
@@ -428,7 +428,7 @@ impl PulseAudioClient {
             tx_update_request.send(Task {
                 id: id.clone(),
                 update_time: Instant::now(),
-            });
+            }).unwrap();
         }
     }
 }

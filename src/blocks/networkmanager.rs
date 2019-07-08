@@ -175,7 +175,7 @@ impl ConfigBlock for NetworkManager {
                     send.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
-                    });
+                    }).unwrap();
                 }
             }
         });

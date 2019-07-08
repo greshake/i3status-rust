@@ -211,7 +211,7 @@ impl ConfigBlock for Backlight {
                     tx_update_request.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
-                    });
+                    }).unwrap();
                 }
 
                 // Avoid update spam.

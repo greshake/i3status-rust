@@ -68,7 +68,7 @@ impl ConfigBlock for FocusedWindow {
                                 tx.send(Task {
                                     id: id_clone.clone(),
                                     update_time: Instant::now(),
-                                });
+                                }).unwrap();
                             },
                             WindowChange::Title => if e.container.focused {
                                 if let Some(name) = e.container.name {
@@ -77,7 +77,7 @@ impl ConfigBlock for FocusedWindow {
                                     tx.send(Task {
                                         id: id_clone.clone(),
                                         update_time: Instant::now(),
-                                    });
+                                    }).unwrap();
                                 }
                             },
                             WindowChange::Close => if let Some(name) = e.container.name {
@@ -87,7 +87,7 @@ impl ConfigBlock for FocusedWindow {
                                     tx.send(Task {
                                         id: id_clone.clone(),
                                         update_time: Instant::now(),
-                                    });
+                                    }).unwrap();
                                 }
                             },
                             _ => {}
@@ -100,7 +100,7 @@ impl ConfigBlock for FocusedWindow {
                             tx.send(Task {
                                 id: id_clone.clone(),
                                 update_time: Instant::now(),
-                            });
+                            }).unwrap();
                         }
                     },
                     _ => unreachable!(),

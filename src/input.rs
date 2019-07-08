@@ -50,7 +50,7 @@ pub fn process_events(sender: Sender<I3BarEvent>) {
 
         if !slice.is_empty() {
             let e: I3BarEvent = serde_json::from_str(slice).unwrap();
-            sender.send(e);
+            sender.send(e).unwrap();
         }
     });
 }

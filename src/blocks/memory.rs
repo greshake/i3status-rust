@@ -657,7 +657,7 @@ impl Block for Memory {
                 self.tx_update_request.send(Task {
                     id: self.id.clone(),
                     update_time: Instant::now(),
-                });
+                })?;
             }
         }
 

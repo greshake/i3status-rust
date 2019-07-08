@@ -140,7 +140,7 @@ impl KeyboardLayoutMonitor for LocaleBus {
                     update_request.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
-                    });
+                    }).unwrap();
                 }
             }
         });

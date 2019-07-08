@@ -89,7 +89,7 @@ fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, 
                         done.send(Task {
                             id: id.clone(),
                             update_time: Instant::now(),
-                        });
+                        }).unwrap();
                     }
                 }
             }
@@ -155,7 +155,7 @@ impl Block for SpeedTest {
 
             Ok(None)
         } else {
-            self.send.send(());
+            self.send.send(())?;
             Ok(Some(self.config.interval))
         }
     }
@@ -163,7 +163,7 @@ impl Block for SpeedTest {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id && e.button == MouseButton::Left {
-                self.send.send(());
+                self.send.send(())?;
             }
         }
         Ok(())

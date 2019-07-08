@@ -99,7 +99,7 @@ impl ConfigBlock for Music {
                         send.send(Task {
                             id: id.clone(),
                             update_time: Instant::now(),
-                        });
+                        }).unwrap();
                     }
                 }
             }

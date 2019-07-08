@@ -130,7 +130,7 @@ impl Block for Custom {
             self.tx_update_request.send(Task {
                 id: self.id.clone(),
                 update_time: Instant::now(),
-            });
+            })?;
         }
 
         Ok(())

@@ -270,7 +270,7 @@ impl UpowerDevice {
                     update_request.send(Task {
                         id: id.clone(),
                         update_time: Instant::now(),
-                    });
+                    }).unwrap();
                     // Avoid update spam.
                     // TODO: Is this necessary?
                     thread::sleep(Duration::from_millis(1000))
