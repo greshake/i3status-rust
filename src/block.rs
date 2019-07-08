@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crossbeam::Sender;
+use crossbeam_channel::Sender;
 use std::time::Duration;
 use crate::input::I3BarEvent;
 use crate::widget::I3BarWidget;

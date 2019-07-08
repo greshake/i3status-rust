@@ -120,11 +120,11 @@ impl StdError for Error {
     }
 }
 
-impl<T> From<::crossbeam::SendError<T>> for Error
+impl<T> From<::crossbeam_channel::SendError<T>> for Error
 where
     T: Send,
 {
-    fn from(_err: ::crossbeam::SendError<T>) -> Error {
+    fn from(_err: ::crossbeam_channel::SendError<T>) -> Error {
         InternalError(
             "unknown".to_owned(),
             format!("send error"),

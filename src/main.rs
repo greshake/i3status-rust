@@ -5,7 +5,6 @@ extern crate serde_derive;
 extern crate serde;
 #[macro_use]
 extern crate serde_json;
-extern crate crossbeam;
 #[macro_use]
 extern crate crossbeam_channel;
 extern crate toml;
