@@ -92,6 +92,10 @@ impl RotatingTextWidget {
         self.update()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.content.is_empty()
+    }
+
     fn get_rotated_content(&self) -> String {
         if self.content.len() > self.width {
             let missing = (self.rotation_pos + self.width).saturating_sub(self.content.len());
