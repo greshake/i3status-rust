@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
-use chan::Sender;
+use crossbeam_channel::Sender;
 
 use crate::block::{Block, ConfigBlock};
 use crate::config::Config;

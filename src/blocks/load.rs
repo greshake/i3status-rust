@@ -7,7 +7,7 @@ use crate::errors::*;
 use crate::widgets::text::TextWidget;
 use crate::widget::{I3BarWidget, State};
 use crate::util::FormatTemplate;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use crate::scheduler::Task;
 
 use std::io::BufReader;

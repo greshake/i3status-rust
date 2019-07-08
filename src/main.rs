@@ -5,8 +5,9 @@ extern crate serde_derive;
 extern crate serde;
 #[macro_use]
 extern crate serde_json;
+extern crate crossbeam;
 #[macro_use]
-extern crate chan;
+extern crate crossbeam_channel;
 extern crate toml;
 extern crate clap;
 extern crate uuid;
@@ -59,7 +60,7 @@ use crate::widgets::text::TextWidget;
 use crate::util::deserialize_file;
 
 use self::clap::{App, Arg, ArgMatches};
-use self::chan::{Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender};
 
 fn main() {
     let mut builder = App::new("i3status-rs")
@@ -138,7 +139,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Update request channel
-    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) = chan::r#async();
+    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) = crossbeam_channel::unbounded();
 
     // In dev build, we might diverge into profiling blocks here
     if let Some(name) = matches.value_of("profile") {
@@ -204,47 +205,45 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     // We wait for click events in a separate thread, to avoid blocking to wait for stdin
-    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = chan::r#async();
+    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = crossbeam_channel::unbounded();
     process_events(tx_clicks);
 
     // Time to next update channel.
     // Fires immediately for first updates
-    let mut ttnu = chan::after_ms(0);
+    let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
 
     loop {
         // We use the message passing concept of channel selection
         // to avoid busy wait
-
-        chan_select! {
+        select! {
             // Receive click events
-            rx_clicks.recv() -> res => if let Some(event) = res {
+            recv(rx_clicks) -> res => if let Ok(event) = res {
                     for block in block_map.values_mut() {
                         block.click(&event)?;
                     }
                     util::print_blocks(&order, &block_map, &config)?;
             },
             // Receive async update requests
-            rx_update_requests.recv() -> res => if let Some(request) = res {
+            recv(rx_update_requests) -> request => if let Ok(req) = request {
                 // Process immediately and forget
                 block_map
-                    .get_mut(&request.id)
+                    .get_mut(&req.id)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
                 util::print_blocks(&order, &block_map, &config)?;
             },
             // Receive update timer events
-            ttnu.recv() => {
+            recv(ttnu) -> _ => {
                 scheduler.do_scheduled_updates(&mut block_map)?;
-
                 // redraw the blocks, state changed
                 util::print_blocks(&order, &block_map, &config)?;
-            }
+            },
         }
 
         // Set the time-to-next-update timer
         match scheduler.time_to_next_update() {
-            Some(time) => ttnu = chan::after(time),
-            None => ttnu = chan::after(Duration::from_secs(std::u64::MAX)),
+            Some(time) => ttnu = crossbeam_channel::after(time),
+            None => ttnu = crossbeam_channel::after(Duration::from_secs(std::u64::MAX)),
         }
     }
 }

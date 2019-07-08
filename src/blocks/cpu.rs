@@ -1,4 +1,4 @@
-use chan::Sender;
+use crossbeam_channel::Sender;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use std::time::Duration;

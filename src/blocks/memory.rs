@@ -75,7 +75,7 @@
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use crate::util::*;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use crate::block::{Block, ConfigBlock};

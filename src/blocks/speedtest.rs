@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 use std::process::Command;
 use std::thread::spawn;
 use std::sync::{Arc, Mutex};
-use chan::{r#async, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use crate::scheduler::Task;
 
 use crate::block::{Block, ConfigBlock};
@@ -75,7 +75,7 @@ fn parse_values(output: &str) -> Result<Vec<f32>> {
 
 fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, Vec<f32>)>>, config: SpeedTestConfig, id: String) {
     spawn(move || loop {
-        if recv.recv().is_some() {
+        if !recv.recv().is_err() {
             if let Ok(output) = get_values(config.bytes) {
                 if let Ok(vals) = parse_values(&output) {
                     if vals.len() == 3 {
@@ -89,7 +89,7 @@ fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, 
                         done.send(Task {
                             id: id.clone(),
                             update_time: Instant::now(),
-                        })
+                        });
                     }
                 }
             }
@@ -102,7 +102,7 @@ impl ConfigBlock for SpeedTest {
 
     fn new(block_config: Self::Config, config: Config, done: Sender<Task>) -> Result<Self> {
         // Create all the things we are going to send and take for ourselves.
-        let (send, recv): (Sender<()>, Receiver<()>) = r#async();
+        let (send, recv): (Sender<()>, Receiver<()>) = unbounded();
         let vals = Arc::new(Mutex::new((false, vec![])));
         let id = Uuid::new_v4().simple().to_string();
 

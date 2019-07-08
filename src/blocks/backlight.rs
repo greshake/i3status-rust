@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use chan::Sender;
+use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use uuid::Uuid;
 

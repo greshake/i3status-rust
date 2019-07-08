@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use serde_json;
 use uuid::Uuid;
 

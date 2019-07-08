@@ -60,7 +60,7 @@ use super::scheduler::Task;
 extern crate dbus;
 
 use serde::de::Deserialize;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use toml::value::Value;
 
 macro_rules! block {

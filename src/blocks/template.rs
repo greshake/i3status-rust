@@ -1,5 +1,5 @@
 use std::time::Duration;
-use chan::Sender;
+use crossbeam_channel::Sender;
 
 use crate::block::{Block, ConfigBlock};
 use crate::config::Config;

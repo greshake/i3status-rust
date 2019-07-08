@@ -1,6 +1,6 @@
 use std::time::Duration;
 use std::path::Path;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use crate::scheduler::Task;
 
 use crate::block::{Block, ConfigBlock};

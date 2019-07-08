@@ -3,7 +3,7 @@ use std::process::Command;
 use std::iter::{Cycle, Peekable};
 use std::vec;
 use std::env;
-use chan::Sender;
+use crossbeam_channel::Sender;
 
 use crate::block::{Block, ConfigBlock};
 use crate::config::Config;

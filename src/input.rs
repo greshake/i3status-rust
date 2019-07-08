@@ -4,7 +4,7 @@ use std::fmt;
 use std::io;
 use std::option::Option;
 use std::string::*;
-use chan::Sender;
+use crossbeam_channel::Sender;
 use std::thread;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
