@@ -63,6 +63,13 @@ pub struct Weather {
     update_interval: Duration,
 }
 
+fn malformed_json_error() -> Error {
+    BlockError(
+            "weather".to_string(),
+            "Malformed JSON.".to_string(),
+    )
+}
+
 impl Weather {
     fn update_weather(&mut self) -> Result<()> {
         match self.service {
@@ -112,67 +119,41 @@ impl Weather {
                         format!("API Error: {}", val.as_str().unwrap()),
                     ));
                 };
-                let raw_weather = match json.pointer("/weather/0/main")
+                let raw_weather = json.pointer("/weather/0/main")
                     .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()) {
-                    Some(v) => v,
-                    None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
-                    }
-                };
-                let raw_temp = match json.pointer("/main/temp").and_then(|v| v.as_f64()) {
-                    Some(v) => v,
-                    None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
-                    }
-                };
-                let raw_wind_speed = match json.pointer("/wind/speed").and_then(|v| v.as_f64()) {
-                    Some(v) => v,
-                    None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
-                    }
-                };
-                let raw_wind_direction = match json.pointer("/wind/deg").and_then(|v| v.as_f64()) {
-                    Some(v) => v,
-                    None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
-                    }
-                };
-                let raw_location = match json.pointer("/name").and_then(|v| v.as_str()).map(|s| {
-                    s.to_string()
-                }) {
-                    Some(v) => v,
-                    None => {
-                        return Err(BlockError(
-                            "weather".to_string(),
-                            "Malformed JSON.".to_string(),
-                        ));
-                    }
-                };
+                    .map(|s| s.to_string())
+                    .ok_or_else(malformed_json_error)?;
+
+                let raw_temp = json.pointer("/main/temp").and_then(|v| v.as_f64()).ok_or_else(malformed_json_error)?;
+
+                let raw_wind_speed: f64= json.pointer("/wind/speed")
+                    .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
+                    .ok_or_else(malformed_json_error)?; // error when conversion to f64 fails
+
+                let raw_wind_direction: Option<f64>= json.pointer("/wind/deg")
+                    .map_or(Some(None), |v| v.as_f64().and_then(|v| Some(Some(v)))) // provide default value None
+                    .ok_or_else(malformed_json_error)?; // error when conversion to f64 fails
+
+
+                let raw_location = json.pointer("/name")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .ok_or_else(malformed_json_error)?;
 
                 // Convert wind direction in azimuth degrees to abbreviation names
-                fn convert_wind_direction(direction: f64) -> String {
-                    match direction.round() as i64 {
-                        24 ... 68 => "NE".to_string(),
-                        69 ... 113 => "E".to_string(),
-                        114 ... 158 => "SE".to_string(),
-                        159 ... 203 => "S".to_string(),
-                        204 ... 248 => "SW".to_string(),
-                        249 ... 293 => "W".to_string(),
-                        294 ... 338 => "NW".to_string(),
-                        _ => "N".to_string()
+                fn convert_wind_direction(direction_opt: Option<f64>) -> String {
+                    match direction_opt {
+                        Some(direction) => match direction.round() as i64 {
+                            24 ... 68 => "NE".to_string(),
+                            69 ... 113 => "E".to_string(),
+                            114 ... 158 => "SE".to_string(),
+                            159 ... 203 => "S".to_string(),
+                            204 ... 248 => "SW".to_string(),
+                            249 ... 293 => "W".to_string(),
+                            294 ... 338 => "NW".to_string(),
+                            _ => "N".to_string()
+                        },
+                        None => "-".to_string()
                     }
                 }
 
