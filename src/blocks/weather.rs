@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::process::Command;
 use std::time::Duration;
 use crossbeam_channel::Sender;
@@ -15,6 +16,11 @@ use crate::util::FormatTemplate;
 use crate::widgets::button::ButtonWidget;
 use crate::widget::I3BarWidget;
 
+lazy_static! {
+    static ref OPENWEATHERMAP_API_KEY_ENV: &'static str = "OPENWEATHERMAP_API_KEY";
+    static ref OPENWEATHERMAP_CITY_ID_ENV: &'static str = "OPENWEATHERMAP_CITY_ID";
+}
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
 pub enum WeatherService {
@@ -26,10 +32,21 @@ pub enum WeatherService {
     //     units: Option<InputUnit>
     // },
     OpenWeatherMap {
-        api_key: String,
-        city_id: String,
+        #[serde(default = "WeatherService::getenv_openweathermap_api_key")]
+        api_key: Option<String>,
+        #[serde(default = "WeatherService::getenv_openweathermap_city_id")]
+        city_id: Option<String>,
         units: OpenWeatherMapUnits,
     },
+}
+
+impl WeatherService {
+    fn getenv_openweathermap_api_key() -> Option<String> {
+        env::var(OPENWEATHERMAP_API_KEY_ENV.to_string()).ok()
+    }
+    fn getenv_openweathermap_city_id() -> Option<String> {
+        env::var(OPENWEATHERMAP_CITY_ID_ENV.to_string()).ok()
+    }
 }
 
 #[derive(Copy, Clone, Debug, Deserialize)]
@@ -52,8 +69,8 @@ impl Weather {
     fn update_weather(&mut self) -> Result<()> {
         match self.service {
             WeatherService::OpenWeatherMap {
-                ref api_key,
-                ref city_id,
+                api_key: Some(ref api_key),
+                city_id: Some(ref city_id),
                 ref units,
             } => {
                 let output = Command::new("sh")
@@ -176,6 +193,27 @@ impl Weather {
                                   "{wind}" => format!("{:.1}", raw_wind_speed),
                                   "{direction}" => convert_wind_direction(raw_wind_direction),
                                   "{location}" => raw_location);
+                Ok(())
+            },
+            WeatherService::OpenWeatherMap { ref api_key, ref city_id, .. } => {
+                if api_key == &None {
+                    return Err(BlockError(
+                        "weather".to_string(),
+                        format!(
+                            "Missing member 'service.api_key'. Add the member or configure with the environment variable {}",
+                            OPENWEATHERMAP_API_KEY_ENV.to_string()
+                        ),
+                    ));
+                }
+                if city_id == &None {
+                    return Err(BlockError(
+                        "weather".to_string(),
+                        format!(
+                            "Missing member 'service.city_id'. Add the member or configure with the environment variable {}",
+                            OPENWEATHERMAP_CITY_ID_ENV.to_string()
+                        ),
+                    ));
+                }
                 Ok(())
             }
         }
