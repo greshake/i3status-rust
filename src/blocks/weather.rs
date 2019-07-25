@@ -204,7 +204,7 @@ impl Weather {
                     ))
                 }
                 else if let None = city_id {
-                    return Err(BlockError(
+                    Err(BlockError(
                         "weather".to_string(),
                         format!(
                             "Missing member 'service.city_id'. Add the member or configure with the environment variable {}",
