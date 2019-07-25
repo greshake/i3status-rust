@@ -16,10 +16,8 @@ use crate::util::FormatTemplate;
 use crate::widgets::button::ButtonWidget;
 use crate::widget::I3BarWidget;
 
-lazy_static! {
-    static ref OPENWEATHERMAP_API_KEY_ENV: &'static str = "OPENWEATHERMAP_API_KEY";
-    static ref OPENWEATHERMAP_CITY_ID_ENV: &'static str = "OPENWEATHERMAP_CITY_ID";
-}
+const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
+const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -42,10 +40,10 @@ pub enum WeatherService {
 
 impl WeatherService {
     fn getenv_openweathermap_api_key() -> Option<String> {
-        env::var(OPENWEATHERMAP_API_KEY_ENV.to_string()).ok()
+        env::var(OPENWEATHERMAP_API_KEY_ENV).ok()
     }
     fn getenv_openweathermap_city_id() -> Option<String> {
-        env::var(OPENWEATHERMAP_CITY_ID_ENV.to_string()).ok()
+        env::var(OPENWEATHERMAP_CITY_ID_ENV).ok()
     }
 }
 
@@ -196,25 +194,26 @@ impl Weather {
                 Ok(())
             },
             WeatherService::OpenWeatherMap { ref api_key, ref city_id, .. } => {
-                if api_key == &None {
-                    return Err(BlockError(
+                if let None = api_key {
+                    Err(BlockError(
                         "weather".to_string(),
                         format!(
                             "Missing member 'service.api_key'. Add the member or configure with the environment variable {}",
                             OPENWEATHERMAP_API_KEY_ENV.to_string()
                         ),
-                    ));
+                    ))
                 }
-                if city_id == &None {
+                else if let None = city_id {
                     return Err(BlockError(
                         "weather".to_string(),
                         format!(
                             "Missing member 'service.city_id'. Add the member or configure with the environment variable {}",
                             OPENWEATHERMAP_CITY_ID_ENV.to_string()
                         ),
-                    ));
+                    ))
+                } else {
+                    Ok(())
                 }
-                Ok(())
             }
         }
     }
