@@ -744,6 +744,10 @@ Key | Values | Required | Default
 `city_id` | OpenWeatherMap's ID for the city. | Yes | None
 `units` | One of `metric` or `imperial`. | Yes | None
 
+The options `api_key` and/or `city_id` can be omitted from configuration,
+in which case they must be provided in the environment variables
+`OPENWEATHERMAP_API_KEY` and/or `OPENWEATHERMAP_CITY_ID`.
+
 ### Available Format Keys
 
 Key | Value
