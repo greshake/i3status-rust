@@ -51,7 +51,8 @@ lazy_static! {
         "headphones" => " HEAD",
         "joystick" => " JOY",
         "keyboard" => " KBD",
-        "mouse" => " MOUSE"
+        "mouse" => " MOUSE",
+        "docker" => " DOCKER "
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
@@ -106,7 +107,8 @@ lazy_static! {
         "headphones" => " \u{f025}",
         "joystick" => " \u{f11b}",
         "keyboard" => " \u{f11c}",
-        "mouse" => " \u{f245}"
+        "mouse" => " \u{f245}",
+        "docker" => " \u{f21a} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
@@ -143,7 +145,8 @@ lazy_static! {
         "headphones" => " \u{e60f}",
         "joystick" => " \u{e30f}",
         "keyboard" => " \u{e312}",
-        "mouse" => " \u{e323}"
+        "mouse" => " \u{e323}",
+        "docker" => " \u{e532} "
     };
 }
 

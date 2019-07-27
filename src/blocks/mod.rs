@@ -24,6 +24,7 @@ mod networkmanager;
 mod bluetooth;
 pub mod ibus;
 mod keyboard_layout;
+mod docker;
 
 use crate::config::Config;
 use self::time::*;
@@ -52,6 +53,7 @@ use self::networkmanager::*;
 use self::bluetooth::*;
 use self::ibus::*;
 use self::keyboard_layout::*;
+use self::docker::*;
 
 use super::block::{Block, ConfigBlock};
 use crate::errors::*;
@@ -109,6 +111,7 @@ pub fn create_block(name: &str, block_config: Value, config: Config, tx_update_r
             "networkmanager" => NetworkManager,
             "bluetooth" => Bluetooth,
             "ibus" => IBus,
-            "keyboard_layout" => KeyboardLayout
+            "keyboard_layout" => KeyboardLayout,
+            "docker" => Docker
     )
 }
