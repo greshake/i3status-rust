@@ -44,6 +44,28 @@ impl NetworkDevice {
         }
     }
 
+    pub fn device(&self) -> String {
+        self.device.clone()
+    }
+
+    /// Grab the name of the 'default' device.
+    /// A default device is usually selected by the network manager
+    /// and will change when the status of devices change.
+    pub fn default_device() -> Option<String> {
+        String::from_utf8(Command::new("sh")
+            .args(&[
+                "-c",
+                "ip route show default|head -n1|sed -n 's/^default.*dev \\(\\w*\\).*/\\1/p'"
+            ])
+            .output()
+            .ok()
+            .map(|o| {
+                let mut v = o.stdout;
+                v.pop(); // remove newline
+                v})?
+            ).ok()
+    }
+
     /// Check whether the device exists.
     pub fn exists(&self) -> Result<bool> {
         Ok(self.device_path.exists())
@@ -205,6 +227,7 @@ pub struct Net {
     id: String,
     update_interval: Duration,
     device: NetworkDevice,
+    auto_device: bool,
     tx_buff: Vec<u64>,
     rx_buff: Vec<u64>,
     tx_bytes: u64,
@@ -226,6 +249,9 @@ pub struct NetConfig {
     /// Which interface in /sys/class/net/ to read from.
     #[serde(default = "NetConfig::default_device")]
     pub device: String,
+
+    #[serde(default = "NetConfig::default_auto_device")]
+    pub auto_device: bool,
 
     /// Whether to show the SSID of active wireless networks.
     #[serde(default = "NetConfig::default_ssid")]
@@ -277,7 +303,14 @@ impl NetConfig {
     }
 
     fn default_device() -> String {
-        "lo".to_string()
+        match NetworkDevice::default_device() {
+            Some(ref s) if !s.is_empty() => s.to_string(),
+            _ => "lo".to_string(),
+        }
+    }
+
+    fn default_auto_device() -> bool {
+        false
     }
 
     fn default_hide_inactive() -> bool {
@@ -375,6 +408,7 @@ impl ConfigBlock for Net {
                 None
             },
             device,
+            auto_device: block_config.auto_device,
             rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: init_rx_bytes,
@@ -422,6 +456,18 @@ fn convert_speed(speed: u64) -> (f64, &'static str) {
 
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Duration>> {
+        if self.auto_device {
+            // update the device and icon to the device currently marked as default
+            let dev = NetConfig::default_device();
+            if self.device.device() != dev {
+                self.device = NetworkDevice::from_device(dev);
+                self.network.set_icon(if self.device.is_wireless() {
+                    "net_wireless" } else if self.device.is_vpn() {
+                    "net_vpn" } else {
+                    "net_wired"
+                });
+            }
+        }
         // Skip updating tx/rx if device is not up.
         let exists = self.device.exists()?;
         let is_up = self.device.is_up()?;
