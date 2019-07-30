@@ -190,9 +190,25 @@ on_click = "<command>"
 interval = 1
 ```
 
+```toml
+[[block]]
+block = "custom"
+cycle = ["echo Idle",
+	"echo Info; exit 1",
+	"echo Good; exit 2",
+	"echo Warning; exit 3",
+	"echo Critical; exit 4"]
+info_exit_codes     = [1]
+good_exit_codes     = [2]
+warning_exit_codes  = [3]
+critical_exit_codes = [4]
+```
+
 ### Options
 
 Note that `command` and `cycle` are mutually exclusive.
+
+Any exit code not specified will default to the idle state.
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -200,6 +216,10 @@ Key | Values | Required | Default
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `10`
+`info_exit_codes` | List of exit codes to change the status to info | No | None
+`good_exit_codes` | List of exit codes to change the status to good | No | None
+`warning_exit_codes` | List of exit codes to change the status to warning | No | None
+`critical_exit_codes` | List of exit codes to change the status to critical | No | None
 
 ## Disk Space
 
