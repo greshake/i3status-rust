@@ -10,7 +10,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::widgets::button::ButtonWidget;
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, State};
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 
@@ -24,6 +24,10 @@ pub struct Custom {
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
     tx_update_request: Sender<Task>,
+    info_exit_codes     : Vec<i32>,
+    good_exit_codes     : Vec<i32>,
+    warning_exit_codes  : Vec<i32>,
+    critical_exit_codes : Vec<i32>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -41,6 +45,18 @@ pub struct CustomConfig {
 
     /// Commands to execute and change when the button is clicked
     pub cycle: Option<Vec<String>>,
+
+    /// Exit codes to change the status to info
+    pub info_exit_codes     : Option<Vec<i32>>,
+
+    /// Exit codes to change the status to good
+    pub good_exit_codes     : Option<Vec<i32>>,
+    
+    /// Exit codes to change the status to warning
+    pub warning_exit_codes  : Option<Vec<i32>>,
+
+    /// Exit codes to change the status to critical
+    pub critical_exit_codes : Option<Vec<i32>>,
 }
 
 impl CustomConfig {
@@ -61,6 +77,10 @@ impl ConfigBlock for Custom {
             on_click: None,
             cycle: None,
             tx_update_request: tx,
+            info_exit_codes:     block_config.info_exit_codes.unwrap_or(vec![]),
+            good_exit_codes:     block_config.good_exit_codes.unwrap_or(vec![]),
+            warning_exit_codes:  block_config.warning_exit_codes.unwrap_or(vec![]),
+            critical_exit_codes: block_config.critical_exit_codes.unwrap_or(vec![]),
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
@@ -89,13 +109,26 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+        let (statuscode, output) = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
             .args(&["-c", &command_str])
             .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.description().to_owned());
+            .map(|o| (o.status.code().unwrap_or(254) , String::from_utf8_lossy(&o.stdout).trim().to_owned()))
+            .unwrap_or_else(|e| (255, e.description().to_owned()));
 
         self.output.set_text(output);
+        self.output.set_state( 
+                if self.critical_exit_codes.contains(&statuscode) {
+                    State::Critical
+                } else if self.warning_exit_codes.contains(&statuscode) {
+                    State::Warning
+                } else if self.good_exit_codes.contains(&statuscode) {
+                    State::Good
+                } else if self.info_exit_codes.contains(&statuscode) {
+                    State::Info
+                } else {
+                    State::Idle
+                }
+        );
 
         Ok(Some(self.update_interval))
     }
