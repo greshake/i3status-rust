@@ -204,7 +204,7 @@ pub fn get_theme(name: &str) -> Option<Theme> {
         "bad-wolf" => Some(BAD_WOLF.clone()),
         "gruvbox-light" => Some(GRUVBOX_LIGHT.clone()),
         "gruvbox-dark" => Some(GRUVBOX_DARK.clone()),
-        "space-villian" => Some(SPACE_VILLAIN.clone()),
+        "space-villain" => Some(SPACE_VILLAIN.clone()),
         _ => None,
     }
 }
