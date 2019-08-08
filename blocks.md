@@ -485,6 +485,7 @@ Creates a block which displays the upload and download throughput for a network 
 block = "net"
 device = "wlp2s0"
 ssid = true
+signal_strength = true
 ip = true
 speed_up = false
 graph_up = true
@@ -497,6 +498,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | Network interface to moniter (name from /sys/class/net) | Yes | `lo` (loopback interface)
 `ssid` | Display network SSID (wireless only). | No | `false`
+`signal_strength` | Display WiFi signal strength (wireless only). | No | `false`
 `bitrate` | Display connection bitrate. | No | `false`
 `ip` | Display connection IP address. | No | `false`
 `speed_up` | Display upload speed. | No | `true`
