@@ -130,6 +130,62 @@ impl NetworkDevice {
         }
     }
 
+    fn absolute_signal_strength(&self) -> Result<Option<i32>> {
+        let up = self.is_up()?;
+        if !self.wireless || !up {
+            return Err(BlockError(
+                "net".to_string(),
+                "Signal strength is only available for connected wireless devices."
+                    .to_string(),
+            ));
+        }
+        let mut iw_output = Command::new("sh")
+            .args(&[
+                "-c",
+                &format!(
+                    "iw dev {} link | sed -n 's/^\\s\\+signal: \\(.*\\) dBm/\\1/p'",
+                    self.device
+                ),
+            ])
+            .output()
+            .block_error("net", "Failed to execute signal strength query.")?
+            .stdout;
+        if iw_output.is_empty() {
+            Ok(None)
+        } else {
+            iw_output.pop(); // Remove trailing newline.
+            String::from_utf8(iw_output)
+                .block_error("net", "Non-UTF8 signal strength.")
+                .and_then(|as_str| as_str.parse::<i32>()
+                    .block_error("net", "Non numerical signal strength."))
+                .map(Some)
+        }
+    }
+
+    fn relative_signal_strength(&self) -> Result<Option<u32>> {
+        let xbm = if let Some(xbm) = self.absolute_signal_strength()? {
+            xbm as f64
+        } else {
+            return Ok(None);
+        };
+
+        // Code inspired by https://github.com/NetworkManager/NetworkManager/blob/master/src/platform/wifi/nm-wifi-utils-nl80211.c
+        const NOISE_FLOOR_DBM: f64 = -90.;
+        const SIGNAL_MAX_DBM: f64 = -20.;
+
+        let xbm = if xbm < NOISE_FLOOR_DBM {
+            NOISE_FLOOR_DBM
+        } else if xbm > SIGNAL_MAX_DBM {
+            SIGNAL_MAX_DBM
+        } else {
+            xbm
+        };
+
+        let result = 100. - 70. * ((SIGNAL_MAX_DBM - xbm) / (SIGNAL_MAX_DBM - NOISE_FLOOR_DBM));
+        let result = result as u32;
+        Ok(Some(result))
+    }
+
     /// Queries the inet IP of this device (using `ip`).
     pub fn ip_addr(&self) -> Result<Option<String>> {
         if !self.is_up()? {
@@ -196,6 +252,7 @@ pub struct Net {
     network: ButtonWidget,
     ssid: Option<ButtonWidget>,
     max_ssid_width: usize,
+    signal_strength: Option<ButtonWidget>,
     ip_addr: Option<ButtonWidget>,
     bitrate: Option<ButtonWidget>,
     output_tx: Option<ButtonWidget>,
@@ -234,6 +291,10 @@ pub struct NetConfig {
     /// Max SSID width, in characters.
     #[serde(default = "NetConfig::default_max_ssid_width")]
     pub max_ssid_width: usize,
+
+    /// Whether to show the signal strength of active wireless networks.
+    #[serde(default = "NetConfig::default_signal_strength")]
+    pub signal_strength: bool,
 
     /// Whether to show the bitrate of active wireless networks.
     #[serde(default = "NetConfig::default_bitrate")]
@@ -296,6 +357,10 @@ impl NetConfig {
         false
     }
 
+    fn default_signal_strength() -> bool {
+        false
+    }
+
     fn default_bitrate() -> bool {
         false
     }
@@ -350,6 +415,10 @@ impl ConfigBlock for Net {
                 None
             },
             max_ssid_width: block_config.max_ssid_width,
+            signal_strength: if block_config.signal_strength && wireless {
+                Some(ButtonWidget::new(config.clone(), &id)) } else {
+                None
+            },
             bitrate: if block_config.bitrate {
                 Some(ButtonWidget::new(config.clone(), &id)) } else {
                 None
@@ -460,6 +529,12 @@ impl Block for Net {
                     ssid_widget.set_text(truncated);
                 }
             }
+            if let Some(ref mut signal_strength_widget) = self.signal_strength {
+                let value = self.device.relative_signal_strength()?;
+                if value.is_some() {
+                    signal_strength_widget.set_text(format!("{}%", value.unwrap()));
+                }
+            }
             if let Some(ref mut ip_addr_widget) = self.ip_addr {
                 let ip_addr = self.device.ip_addr()?;
                 if ip_addr.is_some() {
@@ -510,10 +585,13 @@ impl Block for Net {
 
     fn view(&self) -> Vec<&I3BarWidget> {
         if self.active {
-            let mut widgets: Vec<&I3BarWidget> = Vec::with_capacity(7);
+            let mut widgets: Vec<&I3BarWidget> = Vec::with_capacity(8);
             widgets.push(&self.network);
             if let Some(ref ssid_widget) = self.ssid {
                 widgets.push(ssid_widget);
+            };
+            if let Some(ref signal_strength_widget) = self.signal_strength {
+                widgets.push(signal_strength_widget);
             };
             if let Some(ref bitrate_widget) = self.bitrate {
                 widgets.push(bitrate_widget);
