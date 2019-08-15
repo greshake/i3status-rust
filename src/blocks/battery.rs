@@ -221,7 +221,12 @@ impl UpowerDevice {
     /// if D-Bus cannot connect to this device, or if the device is not a
     /// battery.
     pub fn from_device(device: &str) -> Result<Self> {
-        let device_name = if device == "DisplayDevice" { device.to_string() } else { format!("battery_{}", device) };
+        let device_name =
+            if device == "DisplayDevice" || !device.starts_with("BAT") {
+                device.to_string()
+            } else {
+                format!("battery_{}", device)
+            };
         let device_path = format!("/org/freedesktop/UPower/devices/{}", device_name);
         let con = dbus::Connection::get_private(dbus::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
