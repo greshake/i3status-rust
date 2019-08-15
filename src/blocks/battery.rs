@@ -15,6 +15,7 @@ use uuid::Uuid;
 use crate::block::{Block, ConfigBlock};
 use crate::blocks::dbus;
 use crate::blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
+use crate::blocks::dbus::arg::Array;
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -221,18 +222,35 @@ impl UpowerDevice {
     /// if D-Bus cannot connect to this device, or if the device is not a
     /// battery.
     pub fn from_device(device: &str) -> Result<Self> {
-        let device_name = if device == "DisplayDevice" { device.to_string() } else { format!("battery_{}", device) };
-        let device_path = format!("/org/freedesktop/UPower/devices/{}", device_name);
+        let device_path;
         let con = dbus::Connection::get_private(dbus::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
+        if device == "DisplayDevice" {
+            device_path = String::from("/org/freedesktop/UPower/devices/DisplayDevice");
+        } else {
+            let msg = dbus::Message::new_method_call("org.freedesktop.UPower", "/org/freedesktop/UPower", "org.freedesktop.UPower", "EnumerateDevices").unwrap();
+            let dbus_reply = con.send_with_reply_and_block(msg, 2000).unwrap();
+
+            // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
+            let mut paths: Array<dbus::Path, _> = dbus_reply.get1().unwrap();
+            let path = paths.find(|entry| entry.ends_with(device));
+            if path.is_none() {
+                return Err(BlockError(
+                    "battery".into(),
+                    "UPower device could not be found.".into(),
+                ));
+            }
+            device_path = path.unwrap().as_cstr().to_string_lossy().into_owned();
+        }
         let upower_type: u32 = con
             .with_path("org.freedesktop.UPower", &device_path, 1000)
             .get("org.freedesktop.UPower.Device", "Type")
             .block_error("battery", "Failed to read UPower Type property.")?;
 
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
-        if upower_type != 2 {
+        // consider any peripheral, UPS and internal battery
+        if upower_type == 1 {
             return Err(BlockError(
                 "battery".into(),
                 "UPower device is not a battery.".into(),
