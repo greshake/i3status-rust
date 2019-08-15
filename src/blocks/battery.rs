@@ -238,9 +238,7 @@ impl UpowerDevice {
 
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
         // consider any peripheral, UPS and internal battery
-        let list: [u32; 5] = [2,3,4,5,6];
-
-        if !list.contains(&upower_type) {
+        if upower_type == 1 {
             return Err(BlockError(
                 "battery".into(),
                 "UPower device is not a battery.".into(),
