@@ -232,7 +232,10 @@ impl UpowerDevice {
             .block_error("battery", "Failed to read UPower Type property.")?;
 
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
-        if upower_type != 2 {
+        // consider any peripheral, UPS and internal battery
+        let list: [u32; 5] = [2,3,4,5,6];
+
+        if !list.contains(&upower_type) {
             return Err(BlockError(
                 "battery".into(),
                 "UPower device is not a battery.".into(),
