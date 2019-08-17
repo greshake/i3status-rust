@@ -9,6 +9,7 @@
 - [Disk Space](#disk-space)
 - [Docker](#docker)
 - [Focused Window](#focused-window)
+- [Github](#github)
 - [IBus](#ibus)
 - [Keyboard Layout](#keyboard-layout)
 - [Load](#load)
@@ -340,6 +341,32 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
 `show_marks` | Display marks instead of the title, if there are some. Options are `"none"`, `"all"` or `"visible"`, the latter of which ignores marks that start with an underscore. | No | `"none"`
+
+## Github
+
+Creates a block which shows the unread notification count for a github account.
+
+### Examples
+
+```toml
+[[block]]
+block = "github"
+format = "{total}|{author}|{comment}|{mention}|{review_requested}"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `30`
+`format` | A format string. See below for available placeholders. | No | `"{total}"`
+
+It requires a github token, which must be passed using the `GITHUB_TOKEN` environment variable.
+
+### Available Format Keys
+
+The block maintains a count of all notifications under the `total` format key.
+It also maintains count per "notification reason". All specified [reasons](https://developer.github.com/v3/activity/notifications/#notification-reasons) are available as format keys.
 
 ## IBus
 
