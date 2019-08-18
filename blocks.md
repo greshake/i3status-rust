@@ -5,6 +5,7 @@
 - [Bluetooth](#bluetooth)
 - [CPU Utilization](#cpu-utilization)
 - [Custom](#custom)
+- [Custom DBus](#custom-dbus)
 - [Disk Space](#disk-space)
 - [Focused Window](#focused-window)
 - [IBus](#ibus)
@@ -200,6 +201,25 @@ Key | Values | Required | Default
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `10`
+
+## Custom DBus
+
+Creates a block that asynchronously displays the status of a DBus object located at '/localhost/statusbar/DBus/`name`'.
+
+### Examples
+
+```toml
+[[block]]
+block = "custom_dbus"
+name = "CurrentOutputDevice"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`name` | Name of the DBus object to monitor. | Yes | None
+
 
 ## Disk Space
 
