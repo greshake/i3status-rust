@@ -106,7 +106,7 @@ impl PrintState {
     }
 }
 
-pub fn print_blocks(order: &[String], block_map: &HashMap<String, &mut Block>, config: &Config) -> Result<()> {
+pub fn print_blocks(order: &[String], block_map: &HashMap<String, &mut dyn Block>, config: &Config) -> Result<()> {
     let mut state = PrintState {
         has_predecessor: false,
         last_bg: None,

@@ -228,7 +228,7 @@ impl Block for Music {
                 match data {
                     Err(_) => play.set_icon("music_play"),
                     Ok(data) => {
-                        let data: Box<RefArg> = data;
+                        let data: Box<dyn RefArg> = data;
                         let state = data;
                         if state.as_str().map(|s| s != "Playing").unwrap_or(false) {
                             play.set_icon("music_play")
@@ -280,18 +280,18 @@ impl Block for Music {
         }
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         if self.player_avail {
-            let mut elements: Vec<&I3BarWidget> = Vec::new();
+            let mut elements: Vec<&dyn I3BarWidget> = Vec::new();
             elements.push(&self.current_song);
             if let Some(ref prev) = self.prev {
                 elements.push(prev);
             }
             if let Some(ref play) = self.play {
-                elements.push(play);;
+                elements.push(play);
             }
             if let Some(ref next) = self.next {
-                elements.push(next);;
+                elements.push(next);
             }
             elements
         } else {
@@ -304,7 +304,7 @@ impl Block for Music {
     }
 }
 
-fn extract_from_metadata(metadata: &Box<arg::RefArg>) -> Result<(String, String)> {
+fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();
 

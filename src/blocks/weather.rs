@@ -144,13 +144,13 @@ impl Weather {
                 fn convert_wind_direction(direction_opt: Option<f64>) -> String {
                     match direction_opt {
                         Some(direction) => match direction.round() as i64 {
-                            24 ... 68 => "NE".to_string(),
-                            69 ... 113 => "E".to_string(),
-                            114 ... 158 => "SE".to_string(),
-                            159 ... 203 => "S".to_string(),
-                            204 ... 248 => "SW".to_string(),
-                            249 ... 293 => "W".to_string(),
-                            294 ... 338 => "NW".to_string(),
+                            24 ..= 68 => "NE".to_string(),
+                            69 ..= 113 => "E".to_string(),
+                            114 ..= 158 => "SE".to_string(),
+                            159 ..= 203 => "S".to_string(),
+                            204 ..= 248 => "SW".to_string(),
+                            249 ..= 293 => "W".to_string(),
+                            294 ..= 338 => "NW".to_string(),
                             _ => "N".to_string()
                         },
                         None => "-".to_string()
@@ -250,7 +250,7 @@ impl Block for Weather {
         Ok(Some(self.update_interval))
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.weather]
     }
 

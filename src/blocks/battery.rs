@@ -123,7 +123,7 @@ impl BatteryDevice for PowerSupplyDevice {
         };
 
         match capacity {
-            0...100 => Ok(capacity),
+            0..=100 => Ok(capacity),
             // We need to cap it at 100, because the kernel may report
             // charge_now same as charge_full_design when the battery is full,
             // leading to >100% charge.
@@ -365,7 +365,7 @@ pub struct Battery {
     output: TextWidget,
     id: String,
     update_interval: Duration,
-    device: Box<BatteryDevice>,
+    device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
     driver: BatteryDriver,
 }
@@ -459,7 +459,7 @@ impl ConfigBlock for Battery {
         };
 
         let id = Uuid::new_v4().simple().to_string();
-        let device: Box<BatteryDevice> = match driver {
+        let device: Box<dyn BatteryDevice> = match driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
                 out.monitor(id.clone(), update_request);
@@ -514,10 +514,10 @@ impl Block for Battery {
                 "Charging" => { self.output.set_state(State::Good); },
                 _ =>
                     { self.output.set_state(match capacity {
-                    Ok(0...15) => State::Critical,
-                    Ok(16...30) => State::Warning,
-                    Ok(31...60) => State::Info,
-                    Ok(61...100) => State::Good,
+                    Ok(0..=15) => State::Critical,
+                    Ok(16..=30) => State::Warning,
+                    Ok(31..=60) => State::Info,
+                    Ok(61..=100) => State::Good,
                     _ => State::Warning,
                     });
                 }
@@ -536,7 +536,7 @@ impl Block for Battery {
         }
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
     }
 

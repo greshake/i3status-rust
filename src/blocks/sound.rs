@@ -524,7 +524,7 @@ impl SoundDevice for PulseAudioSoundDevice {
 pub struct Sound {
     text: ButtonWidget,
     id: String,
-    device: Box<SoundDevice>,
+    device: Box<dyn SoundDevice>,
     step_width: u32,
     config: Config,
     on_click: Option<String>,
@@ -613,8 +613,8 @@ impl Sound {
             self.text.set_state(State::Warning);
         } else {
             self.text.set_icon(match volume {
-                0...20 => "volume_empty",
-                21...70 => "volume_half",
+                0..=20 => "volume_empty",
+                21..=70 => "volume_half",
                 _ => "volume_full",
             });
             self.text.set_text(format!("{:02}%", volume));
@@ -653,7 +653,7 @@ impl ConfigBlock for Sound {
         };
 
         // prefere PulseAudio if available and selected, fallback to ALSA
-        let device: Box<SoundDevice> = match pulseaudio_device {
+        let device: Box<dyn SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
             Err(_) => Box::new(AlsaSoundDevice::new(block_config.name.unwrap_or_else(|| "Master".into()))?)
         };
@@ -683,7 +683,7 @@ impl Block for Sound {
         Ok(None) // The monitor thread will call for updates when needed.
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
     }
 

@@ -99,7 +99,7 @@ fn main() {
                     .takes_value(true)
                     .default_value("10000")
                     .help("How many times to execute update when profiling."),
-            );;
+            );
     });
 
     let matches = builder.get_matches();
@@ -173,7 +173,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .configuration_error("can't parse alternative_tint color code")?;
     }
 
-    let mut blocks: Vec<Box<Block>> = Vec::new();
+    let mut blocks: Vec<Box<dyn Block>> = Vec::new();
 
     let mut alternator = false;
     // Initialize the blocks
@@ -197,7 +197,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let mut scheduler = UpdateScheduler::new(&blocks);
 
-    let mut block_map: HashMap<String, &mut Block> = HashMap::new();
+    let mut block_map: HashMap<String, &mut dyn Block> = HashMap::new();
 
     for block in &mut blocks {
         block_map.insert(String::from(block.id()), (*block).deref_mut());

@@ -169,8 +169,8 @@ impl Block for SpeedTest {
         Ok(())
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
-        let mut new: Vec<&I3BarWidget> = Vec::with_capacity(self.text.len());
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
+        let mut new: Vec<&dyn I3BarWidget> = Vec::with_capacity(self.text.len());
         for w in &self.text {
             new.push(w);
         }

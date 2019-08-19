@@ -105,7 +105,7 @@ impl Block for Toggle {
         Ok(self.update_interval)
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
     }
 
