@@ -38,17 +38,11 @@ impl NetworkDevice {
         let wireless = device_path.join("wireless").exists();
         let tun = device_path.join("tun_flags").exists() || device.starts_with("tun") || device.starts_with("tap");
 
-        fn is_wg_device(wg_uevent_path: &PathBuf) -> bool {
-            if wg_uevent_path.exists() {
-                let uevent_data = read_to_string(&wg_uevent_path).expect("Unable to read file");
-                return uevent_data.contains("wireguard");
-            } else {
-                return false;
-            };
-        };
-
         let wg_uevent_path = device_path.join("uevent");
-        let wg = is_wg_device(&wg_uevent_path);
+        let wg = match read_to_string(&wg_uevent_path) {
+                Ok(s) => s.contains("wireguard"),
+                Err(_e) => false,
+        };
 
         NetworkDevice {
             device,
