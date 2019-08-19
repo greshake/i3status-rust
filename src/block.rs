@@ -12,7 +12,7 @@ pub trait Block {
         Ok(None)
     }
     /// Returns the view of the block, comprised of widgets
-    fn view(&self) -> Vec<&I3BarWidget>;
+    fn view(&self) -> Vec<&dyn I3BarWidget>;
 
     #[allow(unused_variables)]
     /// This function is called on every block for every click.

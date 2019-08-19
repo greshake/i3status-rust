@@ -196,10 +196,10 @@ impl Block for Bluetooth {
         // Use battery info, when available.
         if let Some(value) = self.device.battery() {
             self.output.set_state(match value {
-                0...15 => State::Critical,
-                16...30 => State::Warning,
-                31...60 => State::Info,
-                61...100 => State::Good,
+                0..=15 => State::Critical,
+                16..=30 => State::Warning,
+                31..=60 => State::Info,
+                61..=100 => State::Good,
                 _ => State::Warning,
             });
             self.output.set_text(format!(" {}%", value));
@@ -220,7 +220,7 @@ impl Block for Bluetooth {
         Ok(())
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
     }
 }

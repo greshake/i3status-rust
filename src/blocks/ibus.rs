@@ -43,7 +43,7 @@ impl ConfigBlock for IBus {
             &format!("Failed to establish D-Bus connection to {}", ibus_address),
         )?;
         let p = c.with_path("org.freedesktop.IBus", "/org/freedesktop/IBus", 5000);
-        let info: arg::Variant<Box<arg::RefArg>> = p
+        let info: arg::Variant<Box<dyn arg::RefArg>> = p
             .get("org.freedesktop.IBus", "GlobalEngine")
             .block_error("ibus", "Failed to query IBus")?;
 
@@ -109,7 +109,7 @@ impl Block for IBus {
     }
 
     // Returns the view of the block, comprised of widgets.
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
     }
 

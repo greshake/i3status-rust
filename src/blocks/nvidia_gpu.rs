@@ -218,10 +218,10 @@ impl Block for NvidiaGpu {
         if let Some(ref mut temperature_widget) = self.show_temperature {
             let temp = result[count].parse::<u64>().unwrap();
             temperature_widget.set_state(match temp {
-                0...50 => State::Good,
-                51...70 => State::Idle,
-                71...75 => State::Info,
-                76...80 => State::Warning,
+                0..=50 => State::Good,
+                51..=70 => State::Idle,
+                71..=75 => State::Info,
+                76..=80 => State::Warning,
                 _ => State::Critical,
             });
             temperature_widget.set_text(format!("{:02}°C", temp));
@@ -245,8 +245,8 @@ impl Block for NvidiaGpu {
         Ok(Some(self.update_interval))
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
-        let mut widgets: Vec<&I3BarWidget> = Vec::new();
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
+        let mut widgets: Vec<&dyn I3BarWidget> = Vec::new();
         widgets.push(&self.gpu_widget);
         if let Some(ref utilization_widget) = self.show_utilization {
             widgets.push(utilization_widget);

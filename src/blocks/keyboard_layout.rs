@@ -167,7 +167,7 @@ impl KeyboardLayoutConfig {
 pub struct KeyboardLayout {
     id: String,
     output: TextWidget,
-    monitor: Box<KeyboardLayoutMonitor>,
+    monitor: Box<dyn KeyboardLayoutMonitor>,
     update_interval: Option<Duration>,
 }
 
@@ -176,7 +176,7 @@ impl ConfigBlock for KeyboardLayout {
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
         let id: String = Uuid::new_v4().simple().to_string();
-        let monitor: Box<KeyboardLayoutMonitor> = match block_config.driver {
+        let monitor: Box<dyn KeyboardLayoutMonitor> = match block_config.driver {
             KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap::new()?),
             KeyboardLayoutDriver::LocaleBus => {
                 let monitor = LocaleBus::new()?;
@@ -207,7 +207,7 @@ impl Block for KeyboardLayout {
         Ok(self.update_interval)
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
     }
 }

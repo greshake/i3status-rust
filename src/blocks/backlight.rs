@@ -109,7 +109,7 @@ impl BacklitDevice {
         let raw = read_brightness(&self.brightness_file())?;
         let brightness = ((raw as f64 / self.max_brightness as f64) * 100.0).round() as u64;
         match brightness {
-            0...100 => Ok(brightness),
+            0..=100 => Ok(brightness),
             _ => Ok(100),
         }
     }
@@ -127,7 +127,7 @@ impl BacklitDevice {
             return Ok(());
         }
         let safe_value = match value {
-            0...100 => value,
+            0..=100 => value,
             _ => 100,
         };
         let raw = (((safe_value as f64) / 100.0) * (self.max_brightness as f64)).round() as u64;
@@ -228,16 +228,16 @@ impl Block for Backlight {
         let brightness = self.device.brightness()?;
         self.output.set_text(format!("{}%", brightness));
         match brightness {
-            0...19 => self.output.set_icon("backlight_empty"),
-            20...39 => self.output.set_icon("backlight_partial1"),
-            40...59 => self.output.set_icon("backlight_partial2"),
-            60...79 => self.output.set_icon("backlight_partial3"),
+            0..=19 => self.output.set_icon("backlight_empty"),
+            20..=39 => self.output.set_icon("backlight_partial1"),
+            40..=59 => self.output.set_icon("backlight_partial2"),
+            60..=79 => self.output.set_icon("backlight_partial3"),
             _ => self.output.set_icon("backlight_full"),
         }
         Ok(None)
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
     }
 

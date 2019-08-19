@@ -583,9 +583,9 @@ impl Block for Net {
         Ok(Some(self.update_interval))
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         if self.active {
-            let mut widgets: Vec<&I3BarWidget> = Vec::with_capacity(8);
+            let mut widgets: Vec<&dyn I3BarWidget> = Vec::with_capacity(8);
             widgets.push(&self.network);
             if let Some(ref ssid_widget) = self.ssid {
                 widgets.push(ssid_widget);

@@ -43,7 +43,7 @@ pub struct UpdateScheduler {
 }
 
 impl UpdateScheduler {
-    pub fn new(blocks: &[Box<Block>]) -> UpdateScheduler {
+    pub fn new(blocks: &[Box<dyn Block>]) -> UpdateScheduler {
         let mut schedule = BinaryHeap::new();
 
         let now = Instant::now();
@@ -72,7 +72,7 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) -> Result<()> {
+    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut dyn Block>) -> Result<()> {
         let t = self.schedule
             .pop()
             .internal_error("scheduler", "schedule is empty")?;

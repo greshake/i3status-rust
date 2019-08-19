@@ -129,7 +129,7 @@ impl Block for FocusedWindow {
         Ok(None)
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         let title = &*self.title.lock().unwrap();
         if String::is_empty(title) {
             vec![]
