@@ -99,7 +99,7 @@ fn main() {
                     .takes_value(true)
                     .default_value("10000")
                     .help("How many times to execute update when profiling."),
-            );;
+            );
     });
 
     let matches = builder.get_matches();

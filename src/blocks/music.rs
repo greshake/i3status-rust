@@ -288,10 +288,10 @@ impl Block for Music {
                 elements.push(prev);
             }
             if let Some(ref play) = self.play {
-                elements.push(play);;
+                elements.push(play);
             }
             if let Some(ref next) = self.next {
-                elements.push(next);;
+                elements.push(next);
             }
             elements
         } else {
