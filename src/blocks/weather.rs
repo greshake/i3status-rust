@@ -126,6 +126,10 @@ impl Weather {
 
                 let raw_temp = json.pointer("/main/temp").and_then(|v| v.as_f64()).ok_or_else(malformed_json_error)?;
 
+                let raw_humidity = json.pointer("/main/humidity")
+                    .and_then(|v| v.as_f64())
+                    .ok_or_else(malformed_json_error)?;
+
                 let raw_wind_speed: f64= json.pointer("/wind/speed")
                     .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
                     .ok_or_else(malformed_json_error)?; // error when conversion to f64 fails
@@ -141,6 +145,35 @@ impl Weather {
                     .ok_or_else(malformed_json_error)?;
 
                 // Convert wind direction in azimuth degrees to abbreviation names
+                // Compute the felt temperature according to Australian
+                // apparent temperature as found on wikipedia
+                // unsure about how to properly make if statement
+                let check = match *units {
+                    OpenWeatherMapUnits::Metric => true,
+                    OpenWeatherMapUnits::Imperial => false,
+                };
+
+                let temp_celsius = if check {
+                    raw_temp
+                } else {
+                    (raw_temp-32.0)*0.556
+                };
+
+                let exponent = 17.27*temp_celsius/(237.7+temp_celsius);
+                let e = raw_humidity*0.06105*exponent.exp();
+
+                let metric_wind_speed = if check{
+                    raw_wind_speed
+                } else {
+                    raw_wind_speed*0.447
+                };
+                let metric_apparent_temp= temp_celsius+0.33*e-0.7*metric_wind_speed-4.0;
+                let apparent_temp = if check {
+                    metric_apparent_temp
+                } else {
+                    1.8*metric_apparent_temp+32.0
+                };
+
                 fn convert_wind_direction(direction_opt: Option<f64>) -> String {
                     match direction_opt {
                         Some(direction) => match direction.round() as i64 {
@@ -169,6 +202,8 @@ impl Weather {
                 self.weather_keys =
                     map_to_owned!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
+                                  "{humidity}" => format!("{:.0}", raw_humidity),
+                                  "{apparent}" => format!("{:.0}",apparent_temp),
                                   "{wind}" => format!("{:.1}", raw_wind_speed),
                                   "{direction}" => convert_wind_direction(raw_wind_direction),
                                   "{location}" => raw_location);
