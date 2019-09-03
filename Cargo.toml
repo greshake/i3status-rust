@@ -1,9 +1,5 @@
 [package]
 name = "i3status-rs"
-description = "A feature-rich and resource-friendly replacement for i3status, written in Rust."
-repository = "https://github.com/greshake/i3status-rust/"
-readme = "README.md"
-license = "GPLv3"
 version = "0.10.0"
 authors = ["Kai Greshake <development@kai-greshake.de>",
            "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
@@ -26,7 +22,6 @@ toml = "0.4"
 clap = "2.31"
 uuid = { version = "0.6", features = ["v4"] }
 dbus = "0.6"
-regex = "1.0"
 nix = "0.14.0"
 i3ipc = "0.8.2"
 num = "0.1.42"
@@ -38,3 +33,8 @@ libpulse-binding = { optional = true, version = "2.2.3", default-features = fals
 # for profiling blocks
 cpuprofiler = { version = "0.0.3", optional = true }
 progress = { version = "0.2", optional = true }
+
+[dependencies.regex]
+version = "1.3.0"
+default-features = false
+features = ["std"]
