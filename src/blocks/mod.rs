@@ -73,7 +73,7 @@ pub trait Block {
     fn id(&self) -> &str;
 
     /// The current "view" of the block, comprised of widgets.
-    fn view(&self) -> Vec<&I3BarWidget>;
+    fn view(&self) -> Vec<&dyn I3BarWidget>;
 
     /// Forces an update of the internal state of the block.
     fn update(&mut self) -> Result<Option<Duration>> {
@@ -101,7 +101,7 @@ macro_rules! block {
         let block_config: <$block_type as ConfigBlock>::Config =
             <$block_type as ConfigBlock>::Config::deserialize($block_config)
                 .configuration_error("Failed to deserialize block config.")?;
-        Ok(Box::new($block_type::new(block_config, $config, $update_request)?) as Box<Block>)
+        Ok(Box::new($block_type::new(block_config, $config, $update_request)?) as Box<dyn Block>)
     }};
 }
 
@@ -110,7 +110,7 @@ pub fn create_block(
     block_config: Value,
     config: Config,
     update_request: Sender<Task>,
-) -> Result<Box<Block>> {
+) -> Result<Box<dyn Block>> {
     match name {
         // Please keep these in alphabetical order.
         "backlight" => block!(Backlight, block_config, config, update_request),
