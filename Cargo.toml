@@ -33,7 +33,7 @@ crossbeam-channel = "0.3"
 inotify = "0.5.1"
 maildir = "0.1.1"
 libpulse-binding = { optional = true, version = "2.2.3", default-features = false }
-notmuch = "0.1.1"
+notmuch = { optional = true, version = "0.1.1" }
 # Used only in debug build mode
 # for profiling blocks
 cpuprofiler = { version = "0.0.3", optional = true }

@@ -14,7 +14,7 @@ pub mod memory;
 pub mod music;
 pub mod net;
 pub mod networkmanager;
-pub mod notmuch;
+#[cfg(feature = "notmuch")] pub mod notmuch;
 pub mod nvidia_gpu;
 pub mod pacman;
 pub mod sound;
@@ -43,7 +43,7 @@ use self::memory::*;
 use self::music::*;
 use self::net::*;
 use self::networkmanager::*;
-use self::notmuch::*;
+#[cfg(feature = "notmuch")] use self::notmuch::*;
 use self::nvidia_gpu::*;
 use self::pacman::*;
 use self::sound::*;
@@ -129,6 +129,7 @@ pub fn create_block(
         "music" => block!(Music, block_config, config, update_request),
         "net" => block!(Net, block_config, config, update_request),
         "networkmanager" => block!(NetworkManager, block_config, config, update_request),
+        #[cfg(feature = "notmuch")]
         "notmuch" => block!(Notmuch, block_config, config, update_request),
         "nvidia_gpu" => block!(NvidiaGpu, block_config, config, update_request),
         "pacman" => block!(Pacman, block_config, config, update_request),
