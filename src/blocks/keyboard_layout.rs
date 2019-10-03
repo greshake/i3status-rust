@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use dbus;
-use dbus::stdintf::org_freedesktop_dbus::Properties;
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -89,12 +89,12 @@ impl KeyboardLayoutMonitor for SetXkbMap {
 }
 
 pub struct LocaleBus {
-    con: dbus::Connection,
+    con: dbus::ffidisp::Connection,
 }
 
 impl LocaleBus {
     pub fn new() -> Result<Self> {
-        let con = dbus::Connection::get_private(dbus::BusType::System)
+        let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("locale", "Failed to establish D-Bus connection.")?;
 
         Ok(LocaleBus { con: con })
@@ -120,7 +120,7 @@ impl KeyboardLayoutMonitor for LocaleBus {
     /// via the `update_request` channel.
     fn monitor(&self, id: String, update_request: Sender<Task>) {
         thread::spawn(move || {
-            let con = dbus::Connection::get_private(dbus::BusType::System)
+            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
                 .expect("Failed to establish D-Bus connection.");
             let rule = "type='signal',\
                         path='/org/freedesktop/locale1',\
@@ -175,7 +175,7 @@ impl ConfigBlock for KeyboardLayout {
     type Config = KeyboardLayoutConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().simple().to_string();
+        let id: String = Uuid::new_v4().to_simple().to_string();
         let monitor: Box<dyn KeyboardLayoutMonitor> = match block_config.driver {
             KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap::new()?),
             KeyboardLayoutDriver::LocaleBus => {

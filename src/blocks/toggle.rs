@@ -68,7 +68,7 @@ impl ConfigBlock for Toggle {
     type Config = ToggleConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let id = Uuid::new_v4().simple().to_string();
+        let id = Uuid::new_v4().to_simple().to_string();
         Ok(Toggle {
             text: ButtonWidget::new(config, &id).with_content(block_config.text),
             command_on: block_config.command_on,

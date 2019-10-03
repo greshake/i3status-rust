@@ -3,8 +3,10 @@ use std::time::{Duration, Instant};
 use std::thread;
 
 use crossbeam_channel::Sender;
-use dbus::{BusType, Connection, Message, MessageItem};
+use dbus::Message;
 use dbus::arg::Variant;
+use dbus::arg::messageitem::MessageItem;
+use dbus::ffidisp::{BusType, Connection};
 use uuid::Uuid;
 
 use crate::config::Config;
@@ -153,7 +155,7 @@ impl ConfigBlock for NetworkManager {
     type Config = NetworkManagerConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().simple().to_string();
+        let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
         let dbus_conn = Connection::get_private(BusType::System)
             .block_error("networkmanager", "failed to establish D-Bus connection")?;

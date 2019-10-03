@@ -224,7 +224,7 @@ impl ConfigBlock for Weather {
     type Config = WeatherConfig;
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
-        let id = Uuid::new_v4().simple().to_string();
+        let id = Uuid::new_v4().to_simple().to_string();
         Ok(Weather {
             id: id.clone(),
             weather: ButtonWidget::new(config, &id),

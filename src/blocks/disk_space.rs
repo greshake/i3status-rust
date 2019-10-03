@@ -168,7 +168,7 @@ impl ConfigBlock for DiskSpace {
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         Ok(DiskSpace {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
             disk_space: TextWidget::new(config).with_text("DiskSpace"),
             alias: block_config.alias,

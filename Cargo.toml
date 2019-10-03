@@ -17,23 +17,23 @@ profiling = ["cpuprofiler", "progress"]
 
 [dependencies]
 chrono = "0.4"
-chrono-tz = "0.4"
+chrono-tz = "0.5"
 lazy_static = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-toml = "0.4"
+toml = "0.5"
 clap = "2.31"
-uuid = { version = "0.6", features = ["v4"] }
-dbus = "0.6"
-nix = "0.14.0"
-i3ipc = "0.8.2"
-num = "0.1.42"
+uuid = { version = "0.7", features = ["v4"] }
+dbus = "0.7"
+nix = "0.15.0"
+i3ipc = "0.10.1"
+num = "0.2.0"
 crossbeam-channel = "0.3"
-inotify = "0.5.1"
+inotify = "0.7.0"
 maildir = "0.1.1"
 libpulse-binding = { optional = true, version = "2.2.3", default-features = false }
-notmuch = { optional = true, version = "0.1.1" }
+notmuch = { optional = true, version = "0.5.0" }
 # Used only in debug build mode
 # for profiling blocks
 cpuprofiler = { version = "0.0.3", optional = true }

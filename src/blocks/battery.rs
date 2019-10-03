@@ -11,7 +11,7 @@ use std::thread;
 use crossbeam_channel::Sender;
 use dbus;
 use dbus::arg::Array;
-use dbus::stdintf::org_freedesktop_dbus::Properties;
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -210,7 +210,7 @@ impl BatteryDevice for PowerSupplyDevice {
 /// Represents a battery known to UPower.
 pub struct UpowerDevice {
     device_path: String,
-    con: dbus::Connection,
+    con: dbus::ffidisp::Connection,
 }
 
 impl UpowerDevice {
@@ -222,7 +222,7 @@ impl UpowerDevice {
     /// battery.
     pub fn from_device(device: &str) -> Result<Self> {
         let device_path;
-        let con = dbus::Connection::get_private(dbus::BusType::System)
+        let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
         if device == "DisplayDevice" {
@@ -266,7 +266,7 @@ impl UpowerDevice {
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.device_path.clone();
         thread::spawn(move || {
-            let con = dbus::Connection::get_private(dbus::BusType::System)
+            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
                 .expect("Failed to establish D-Bus connection.");
             let rule = format!(
                 "type='signal',\
@@ -457,7 +457,7 @@ impl ConfigBlock for Battery {
             _ => BatteryDriver::Sysfs,
         };
 
-        let id = Uuid::new_v4().simple().to_string();
+        let id = Uuid::new_v4().to_simple().to_string();
         let device: Box<dyn BatteryDevice> = match driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;

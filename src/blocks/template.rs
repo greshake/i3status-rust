@@ -43,7 +43,7 @@ impl ConfigBlock for Template {
 
     fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
         Ok(Template {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone()).with_text("Template"),
             tx_update_request,

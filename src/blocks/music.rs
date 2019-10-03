@@ -15,9 +15,11 @@ use crate::widgets::rotatingtext::RotatingTextWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widget::{I3BarWidget, State};
 
-use dbus::{arg, BusType, Connection, ConnectionItem, Message};
+use dbus::Message;
 use dbus::arg::{Array, RefArg};
-use dbus::stdintf::org_freedesktop_dbus::Properties;
+use dbus::arg;
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
+use dbus::ffidisp::{BusType, Connection, ConnectionItem};
 use uuid::Uuid;
 
 pub struct Music {
@@ -96,7 +98,7 @@ impl ConfigBlock for Music {
     type Config = MusicConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().simple().to_string();
+        let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
         thread::spawn(move || {
