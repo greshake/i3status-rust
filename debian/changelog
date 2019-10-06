@@ -1,0 +1,11 @@
+i3status-rust (0.11.0-1) UNRELEASED; urgency=low
+
+  * Adds a changelog.
+
+ -- Aaron Jacobs <atheriel@gmail.com>  Sun, 06 Oct 2019 14:24:27 -0400
+
+i3status-rust (0.11.0) UNRELEASED; urgency=low
+
+  * Initial release.
+
+ -- Aaron Jacobs <atheriel@gmail.com>  Sat, 05 Oct 2019 23:14:51 -0400

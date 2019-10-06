@@ -83,3 +83,4 @@ assets = [
     ["example_theme.toml", "usr/share/doc/i3status-rust/", "644"],
     ["example_icon.toml", "usr/share/doc/i3status-rust/", "644"]
 ]
+changelog = "debian/changelog"
