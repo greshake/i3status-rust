@@ -182,7 +182,7 @@ fn get_ibus_address() -> Result<String> {
         // Hence on sway you will need to reload the bar once after login to get the block to work.
         let display_var = env::var("DISPLAY")
             .block_error("ibus", "$DISPLAY not set. Try restarting bar if on sway")?;
-        let re = Regex::new(r"^:(\d{1})$").unwrap(); // Valid regex is safe to unwrap.
+        let re = Regex::new(r"^:([0-9]{1})$").unwrap(); // Valid regex is safe to unwrap.
         let cap = re
             .captures(&display_var)
             .block_error("ibus", "Failed to extract display number from $DISPLAY")?;
