@@ -251,7 +251,7 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
     }
 }
 
-struct KbddMessageHandler(Arc<Mutex<Option<String>>>);
+struct KbddMessageHandler(Arc<Mutex<u32>>);
 
 impl dbus::MsgHandler for KbddMessageHandler {
     fn handler_type(&self) -> MsgHandlerType {
@@ -259,12 +259,11 @@ impl dbus::MsgHandler for KbddMessageHandler {
     }
 
     fn handle_msg(&mut self, msg: &Message) -> Option<MsgHandlerResult> {
-        let mut val = self.0.lock().unwrap();
-        let layout: Option<&str> = msg.get1();
-        *val = match layout {
-            Some(v) => Some(v.split(char::is_whitespace).nth(0).unwrap().to_string()),
-            None => None,
-        };
+        let layout: Option<u32> = msg.get1();
+        if let Some(idx) = layout {
+            let mut val = self.0.lock().unwrap();
+            *val = idx;
+        }
         //handled=false - because we still need to call update_request.send in monitor
         Some(MsgHandlerResult { handled: false, done: false, reply: vec![] })
     }
