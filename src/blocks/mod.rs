@@ -18,6 +18,7 @@ pub mod networkmanager;
 pub mod notmuch;
 pub mod nvidia_gpu;
 pub mod pacman;
+pub mod pomodoro;
 pub mod sound;
 pub mod speedtest;
 pub mod temperature;
@@ -48,6 +49,7 @@ use self::networkmanager::*;
 use self::notmuch::*;
 use self::nvidia_gpu::*;
 use self::pacman::*;
+use self::pomodoro::*;
 use self::sound::*;
 use self::speedtest::*;
 use self::temperature::*;
@@ -104,19 +106,12 @@ pub trait ConfigBlock: Block {
 
 macro_rules! block {
     ($block_type:ident, $block_config:expr, $config:expr, $update_request:expr) => {{
-        let block_config: <$block_type as ConfigBlock>::Config =
-            <$block_type as ConfigBlock>::Config::deserialize($block_config)
-                .configuration_error("Failed to deserialize block config.")?;
+        let block_config: <$block_type as ConfigBlock>::Config = <$block_type as ConfigBlock>::Config::deserialize($block_config).configuration_error("Failed to deserialize block config.")?;
         Ok(Box::new($block_type::new(block_config, $config, $update_request)?) as Box<dyn Block>)
     }};
 }
 
-pub fn create_block(
-    name: &str,
-    block_config: Value,
-    config: Config,
-    update_request: Sender<Task>,
-) -> Result<Box<dyn Block>> {
+pub fn create_block(name: &str, block_config: Value, config: Config, update_request: Sender<Task>) -> Result<Box<dyn Block>> {
     match name {
         // Please keep these in alphabetical order.
         "backlight" => block!(Backlight, block_config, config, update_request),
@@ -148,6 +143,7 @@ pub fn create_block(
         "uptime" => block!(Uptime, block_config, config, update_request),
         "weather" => block!(Weather, block_config, config, update_request),
         "xrandr" => block!(Xrandr, block_config, config, update_request),
+        "pomodoro" => block!(Pomodoro, block_config, config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
     }
 }
