@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use std::process::Command;
 use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -149,18 +150,27 @@ pub struct Pomodoro {
     id: String,
     time: TextWidget,
     state: State,
+    pomodoro_length: usize,
+    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct PomodoroConfig {}
+pub struct PomodoroConfig {
+    #[serde(default = "PomodoroConfig::default_pomodoro_length")]
+    pub pomodoro_length: usize,
+}
 
-impl PomodoroConfig {}
+impl PomodoroConfig {
+    fn default_pomodoro_length() -> usize {
+        25
+    }
+}
 
 impl ConfigBlock for Pomodoro {
     type Config = PomodoroConfig;
 
-    fn new(_block_config: Self::Config, config: Config, _send: Sender<Task>) -> Result<Self> {
+    fn new(block_config: Self::Config, config: Config, _send: Sender<Task>) -> Result<Self> {
         let id: String = Uuid::new_v4().simple().to_string();
         let id_copy = id.clone();
 
@@ -168,6 +178,8 @@ impl ConfigBlock for Pomodoro {
             id: id_copy,
             time: TextWidget::new(config),
             state: State::stopped("stopped".to_string()),
+            pomodoro_length: block_config.pomodoro_length,
+            update_interval: Duration::from_millis(1000),
         })
     }
 }
@@ -182,17 +194,31 @@ impl Block for Pomodoro {
 
         self.time.set_text(format!("{}", self.state.get_text().unwrap()));
 
-        Ok(Some(Duration::from_millis(1000)))
+        if let Some(seconds) = self.state.seconds() {
+            // TODO add * 60 to converto to minutes
+            if seconds > &self.pomodoro_length {
+                std::thread::spawn(|| -> Result<()> {
+                    match Command::new("i3-nagbar").args(&["-m", "Pomodoro over"]).output() {
+                        Ok(_raw_output) => Ok(()),
+                        Err(_) => {
+                            // We don't want the bar to crash if i3-nagbar fails
+                            Ok(())
+                        }
+                    }
+                });
+
+                self.state = self.state.on_stop(Stop);
+            }
+        }
+
+        Ok(Some(self.update_interval))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         match event.button {
             MouseButton::Right => match &self.state {
                 State::Started(_state) => {
-                    self.state = self.state.on_pause(Pause);
-                }
-                State::Paused(_state) => {
-                    self.state = self.state.on_start(Start);
+                    self.state = self.state.on_stop(Stop);
                 }
                 _ => {}
             },
@@ -201,7 +227,7 @@ impl Block for Pomodoro {
                     self.state = self.state.on_start(Start);
                 }
                 State::Started(_state) => {
-                    self.state = self.state.on_stop(Stop);
+                    self.state = self.state.on_pause(Pause);
                 }
                 State::Paused(_state) => {
                     self.state = self.state.on_start(Start);
