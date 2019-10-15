@@ -200,7 +200,7 @@ impl Block for Pomodoro {
             // TODO add * 60 to converto to minutes
             if seconds >= &self.length {
                 std::thread::spawn(|| -> Result<()> {
-                    match Command::new("i3-nagbar").args(&["-m", "Pomodoro over"]).output() {
+                    match Command::new("i3-nagbar").args(&["-m", "Pomodoro over! Take a break!"]).output() {
                         Ok(_raw_output) => Ok(()),
                         Err(_) => {
                             // We don't want the bar to crash if i3-nagbar fails
