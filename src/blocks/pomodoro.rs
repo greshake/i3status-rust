@@ -198,7 +198,7 @@ impl Block for Pomodoro {
 
         if let Some(seconds) = self.state.seconds() {
             // TODO add * 60 to converto to minutes
-            if seconds > &self.length {
+            if seconds >= &self.length {
                 std::thread::spawn(|| -> Result<()> {
                     match Command::new("i3-nagbar").args(&["-m", "Pomodoro over"]).output() {
                         Ok(_raw_output) => Ok(()),
