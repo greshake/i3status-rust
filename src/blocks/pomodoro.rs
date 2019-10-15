@@ -77,7 +77,7 @@ impl Stopped {
     pub fn on_start(&mut self, _: Start) -> Started {
         Started {
             seconds: 0,
-            text: "started".to_string(),
+            text: "\u{f04b}".to_string(),
         }
     }
 }
@@ -86,12 +86,12 @@ impl Started {
     pub fn on_pause(&mut self, _: Pause) -> Paused {
         Paused {
             seconds: self.seconds,
-            text: "paused".to_string(),
+            text: "\u{f04c}".to_string(),
         }
     }
 
     pub fn on_stop(&mut self, _: Stop) -> Stopped {
-        Stopped { text: "stopped".to_string() }
+        Stopped { text: "\u{25a0} 0:00".to_string() }
     }
 }
 
@@ -99,12 +99,12 @@ impl Paused {
     pub fn on_start(&mut self, _: Start) -> Started {
         Started {
             seconds: self.seconds,
-            text: "started".to_string(),
+            text: "\u{f04b}".to_string(),
         }
     }
 
     pub fn on_stop(&mut self, _: Stop) -> Stopped {
-        Stopped { text: "stopped".to_string() }
+        Stopped { text: "\u{25a0} 0:00".to_string() }
     }
 }
 
@@ -132,7 +132,9 @@ impl State {
 
 impl Started {
     pub fn get_text(&self) -> String {
-        format!("{} {}", self.text, self.seconds)
+        // TODO change formatting
+        // show minutes and seconds
+        format!("{} {}:{:02}", self.text, self.seconds / 60, self.seconds % 60)
     }
 
     pub fn tick(&mut self) -> () {
@@ -142,7 +144,7 @@ impl Started {
 
 impl Paused {
     pub fn get_text(&self) -> String {
-        format!("{} {}", self.text, self.seconds)
+        format!("{} {}:{:02}", self.text, self.seconds / 60, self.seconds % 60)
     }
 }
 
@@ -150,19 +152,19 @@ pub struct Pomodoro {
     id: String,
     time: TextWidget,
     state: State,
-    pomodoro_length: usize,
+    length: usize,
     update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct PomodoroConfig {
-    #[serde(default = "PomodoroConfig::default_pomodoro_length")]
-    pub pomodoro_length: usize,
+    #[serde(default = "PomodoroConfig::default_length")]
+    pub length: usize,
 }
 
 impl PomodoroConfig {
-    fn default_pomodoro_length() -> usize {
+    fn default_length() -> usize {
         25
     }
 }
@@ -176,9 +178,9 @@ impl ConfigBlock for Pomodoro {
 
         Ok(Pomodoro {
             id: id_copy,
-            time: TextWidget::new(config),
-            state: State::stopped("stopped".to_string()),
-            pomodoro_length: block_config.pomodoro_length,
+            time: TextWidget::new(config).with_icon("pomodoro"),
+            state: State::stopped("\u{25a0} 0:00".to_string()),
+            length: block_config.length * 60, // convert to minutes
             update_interval: Duration::from_millis(1000),
         })
     }
@@ -196,7 +198,7 @@ impl Block for Pomodoro {
 
         if let Some(seconds) = self.state.seconds() {
             // TODO add * 60 to converto to minutes
-            if seconds > &self.pomodoro_length {
+            if seconds > &self.length {
                 std::thread::spawn(|| -> Result<()> {
                     match Command::new("i3-nagbar").args(&["-m", "Pomodoro over"]).output() {
                         Ok(_raw_output) => Ok(()),
@@ -218,6 +220,9 @@ impl Block for Pomodoro {
         match event.button {
             MouseButton::Right => match &self.state {
                 State::Started(_state) => {
+                    self.state = self.state.on_stop(Stop);
+                }
+                State::Paused(_state) => {
                     self.state = self.state.on_stop(Stop);
                 }
                 _ => {}
