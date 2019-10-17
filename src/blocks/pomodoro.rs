@@ -18,6 +18,7 @@ machine!(
         Stopped { text: String },
         Started { text: String, seconds: usize },
         Paused { text: String, seconds: usize },
+        Breaking { text: String, seconds: usize },
     }
 );
 
@@ -27,6 +28,8 @@ pub struct Start;
 pub struct Pause;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Stop;
+#[derive(Clone, Debug, PartialEq)]
+pub struct Break;
 
 /*
  * can't use macro because we're borrowing as mut
@@ -46,6 +49,7 @@ pub enum StateMessages {
     Start(Start),
     Stop(Stop),
     Pause(Pause),
+    Break(Break),
 }
 
 impl State {
@@ -53,6 +57,7 @@ impl State {
         match self {
             State::Stopped(state) => State::Started(state.on_start(input)),
             State::Paused(state) => State::Started(state.on_start(input)),
+            State::Breaking(state) => State::Started(state.on_start(input)),
             _ => State::Error,
         }
     }
@@ -61,6 +66,7 @@ impl State {
         match self {
             State::Started(state) => State::Stopped(state.on_stop(input)),
             State::Paused(state) => State::Stopped(state.on_stop(input)),
+            State::Breaking(state) => State::Stopped(state.on_stop(input)),
             _ => State::Error,
         }
     }
@@ -68,6 +74,13 @@ impl State {
     pub fn on_pause(&mut self, input: Pause) -> State {
         match self {
             State::Started(state) => State::Paused(state.on_pause(input)),
+            _ => State::Error,
+        }
+    }
+
+    pub fn on_break(&mut self, input: Break) -> State {
+        match self {
+            State::Started(state) => State::Breaking(state.on_break(input)),
             _ => State::Error,
         }
     }
@@ -93,6 +106,13 @@ impl Started {
     pub fn on_stop(&mut self, _: Stop) -> Stopped {
         Stopped { text: "\u{25a0} 0:00".to_string() }
     }
+
+    pub fn on_break(&mut self, _: Break) -> Breaking {
+        Breaking {
+            seconds: 0,
+            text: "\u{2615}".to_string(),
+        }
+    }
 }
 
 impl Paused {
@@ -108,10 +128,23 @@ impl Paused {
     }
 }
 
+impl Breaking {
+    pub fn on_stop(&mut self, _: Stop) -> Stopped {
+        Stopped { text: "\u{25a0} 0:00".to_string() }
+    }
+
+    pub fn on_start(&mut self, _: Start) -> Started {
+        Started {
+            seconds: 0,
+            text: "\u{f04b}".to_string(),
+        }
+    }
+}
+
 methods!(State,
   [
-    Stopped, Started, Paused => fn get_text(&self) -> String,
-    Started => get seconds: usize
+    Stopped, Started, Paused, Breaking => fn get_text(&self) -> String,
+    Started, Breaking => get seconds: usize
   ]
 );
 
@@ -125,6 +158,7 @@ impl State {
     pub fn tick(&mut self) -> Option<()> {
         match self {
             State::Started(ref mut v) => Some(v.tick()),
+            State::Breaking(ref mut v) => Some(v.tick()),
             _ => None,
         }
     }
@@ -148,11 +182,22 @@ impl Paused {
     }
 }
 
+impl Breaking {
+    pub fn get_text(&self) -> String {
+        format!("{} {}:{:02}", self.text, self.seconds / 60, self.seconds % 60)
+    }
+
+    pub fn tick(&mut self) -> () {
+        self.seconds = self.seconds + 1;
+    }
+}
+
 pub struct Pomodoro {
     id: String,
     time: TextWidget,
     state: State,
     length: usize,
+    break_length: usize,
     update_interval: Duration,
 }
 
@@ -161,11 +206,17 @@ pub struct Pomodoro {
 pub struct PomodoroConfig {
     #[serde(default = "PomodoroConfig::default_length")]
     pub length: usize,
+    #[serde(default = "PomodoroConfig::default_break_length")]
+    pub break_length: usize,
 }
 
 impl PomodoroConfig {
     fn default_length() -> usize {
         25
+    }
+
+    fn default_break_length() -> usize {
+        5
     }
 }
 
@@ -180,7 +231,8 @@ impl ConfigBlock for Pomodoro {
             id: id_copy,
             time: TextWidget::new(config).with_icon("pomodoro"),
             state: State::stopped("\u{25a0} 0:00".to_string()),
-            length: block_config.length * 60, // convert to minutes
+            length: block_config.length * 60,             // convert to minutes
+            break_length: block_config.break_length * 60, // convert to minutes
             update_interval: Duration::from_millis(1000),
         })
     }
@@ -196,20 +248,40 @@ impl Block for Pomodoro {
 
         self.time.set_text(format!("{}", self.state.get_text().unwrap()));
 
+        //TODO add break state and pomodoro count
         if let Some(seconds) = self.state.seconds() {
-            // TODO add * 60 to converto to minutes
-            if seconds >= &self.length {
-                std::thread::spawn(|| -> Result<()> {
-                    match Command::new("i3-nagbar").args(&["-m", "Pomodoro over! Take a break!"]).output() {
-                        Ok(_raw_output) => Ok(()),
-                        Err(_) => {
-                            // We don't want the bar to crash if i3-nagbar fails
-                            Ok(())
-                        }
-                    }
-                });
+            match &self.state {
+                State::Started(_state) => {
+                    if seconds >= &self.length {
+                        std::thread::spawn(|| -> Result<()> {
+                            match Command::new("i3-nagbar").args(&["-m", "Pomodoro over! Take a break!"]).output() {
+                                Ok(_raw_output) => Ok(()),
+                                Err(_) => {
+                                    // We don't want the bar to crash if i3-nagbar fails
+                                    Ok(())
+                                }
+                            }
+                        });
 
-                self.state = self.state.on_stop(Stop);
+                        self.state = self.state.on_break(Break);
+                    }
+                }
+                State::Breaking(_state) => {
+                    if seconds >= &self.break_length {
+                        std::thread::spawn(|| -> Result<()> {
+                            match Command::new("i3-nagbar").args(&["-t", "warning", "-m", "Break over! Time to work!"]).output() {
+                                Ok(_raw_output) => Ok(()),
+                                Err(_) => {
+                                    // We don't want the bar to crash if i3-nagbar fails
+                                    Ok(())
+                                }
+                            }
+                        });
+
+                        self.state = self.state.on_stop(Stop);
+                    }
+                }
+                _ => {}
             }
         }
 
@@ -225,6 +297,9 @@ impl Block for Pomodoro {
                 State::Paused(_state) => {
                     self.state = self.state.on_stop(Stop);
                 }
+                State::Breaking(_state) => {
+                    self.state = self.state.on_stop(Stop);
+                }
                 _ => {}
             },
             _ => match &self.state {
@@ -235,6 +310,9 @@ impl Block for Pomodoro {
                     self.state = self.state.on_pause(Pause);
                 }
                 State::Paused(_state) => {
+                    self.state = self.state.on_start(Start);
+                }
+                State::Breaking(_state) => {
                     self.state = self.state.on_start(Start);
                 }
                 _ => {}
