@@ -199,6 +199,7 @@ pub struct Pomodoro {
     length: usize,
     break_length: usize,
     update_interval: Duration,
+    count: usize,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -234,6 +235,7 @@ impl ConfigBlock for Pomodoro {
             length: block_config.length * 60,             // convert to minutes
             break_length: block_config.break_length * 60, // convert to minutes
             update_interval: Duration::from_millis(1000),
+            count: 0,
         })
     }
 }
@@ -245,8 +247,7 @@ impl Block for Pomodoro {
 
     fn update(&mut self) -> Result<Option<Duration>> {
         self.state.tick();
-
-        self.time.set_text(format!("{}", self.state.get_text().unwrap()));
+        self.set_text();
 
         //TODO add break state and pomodoro count
         if let Some(seconds) = self.state.seconds() {
@@ -264,6 +265,7 @@ impl Block for Pomodoro {
                         });
 
                         self.state = self.state.on_break(Break);
+                        self.count = self.count + 1;
                     }
                 }
                 State::Breaking(_state) => {
@@ -290,18 +292,22 @@ impl Block for Pomodoro {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         match event.button {
-            MouseButton::Right => match &self.state {
-                State::Started(_state) => {
-                    self.state = self.state.on_stop(Stop);
-                }
-                State::Paused(_state) => {
-                    self.state = self.state.on_stop(Stop);
-                }
-                State::Breaking(_state) => {
-                    self.state = self.state.on_stop(Stop);
-                }
-                _ => {}
-            },
+            MouseButton::Right => {
+                match &self.state {
+                    State::Started(_state) => {
+                        self.state = self.state.on_stop(Stop);
+                    }
+                    State::Paused(_state) => {
+                        self.state = self.state.on_stop(Stop);
+                    }
+                    State::Breaking(_state) => {
+                        self.state = self.state.on_stop(Stop);
+                    }
+                    _ => {}
+                };
+
+                self.count = 0;
+            }
             _ => match &self.state {
                 State::Stopped(_state) => {
                     self.state = self.state.on_start(Start);
@@ -319,11 +325,17 @@ impl Block for Pomodoro {
             },
         }
 
-        self.time.set_text(self.state.get_text().unwrap());
+        self.set_text();
         Ok(())
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.time]
+    }
+}
+
+impl Pomodoro {
+    fn set_text(&mut self) {
+        self.time.set_text(format!("{} | {}", self.count, self.state.get_text().unwrap()));
     }
 }
