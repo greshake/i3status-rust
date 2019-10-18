@@ -166,8 +166,6 @@ impl State {
 
 impl Started {
     pub fn get_text(&self) -> String {
-        // TODO change formatting
-        // show minutes and seconds
         format!("{} {}:{:02}", self.text, self.seconds / 60, self.seconds % 60)
     }
 
@@ -249,7 +247,6 @@ impl Block for Pomodoro {
         self.state.tick();
         self.set_text();
 
-        //TODO add break state and pomodoro count
         if let Some(seconds) = self.state.seconds() {
             match &self.state {
                 State::Started(_state) => {
