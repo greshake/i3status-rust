@@ -3,6 +3,7 @@ use std::process::Command;
 use std::iter::{Cycle, Peekable};
 use std::vec;
 use std::env;
+use std::convert::TryInto;
 use crossbeam_channel::Sender;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -11,6 +12,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::widgets::button::ButtonWidget;
 use crate::widget::I3BarWidget;
+use crate::widget::State;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 
@@ -21,6 +23,7 @@ pub struct Custom {
     update_interval: Duration,
     output: ButtonWidget,
     command: Option<String>,
+    state_command: Option<String>,
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
     tx_update_request: Sender<Task>,
@@ -35,6 +38,9 @@ pub struct CustomConfig {
 
     /// Shell Command to execute & display
     pub command: Option<String>,
+
+    /// Shell command to get the block state
+    pub state_command: Option<String>,
 
     /// Command to execute when the button is clicked
     pub on_click: Option<String>,
@@ -58,6 +64,7 @@ impl ConfigBlock for Custom {
             update_interval: block_config.interval,
             output: ButtonWidget::new(config.clone(), ""),
             command: None,
+            state_command: None,
             on_click: None,
             cycle: None,
             tx_update_request: tx,
@@ -75,6 +82,10 @@ impl ConfigBlock for Custom {
 
         if let Some(command) = block_config.command {
             custom.command = Some(command.to_string())
+        };
+
+        if let Some(state_command) = block_config.state_command {
+            custom.state_command = Some(state_command.to_string())
         };
 
         Ok(custom)
@@ -96,6 +107,18 @@ impl Block for Custom {
             .unwrap_or_else(|e| e.description().to_owned());
 
         self.output.set_text(output);
+
+        if let Some(state_command) = self.state_command.clone() {
+            let state = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                .args(&["-c", &state_command.clone()])
+                .output()
+                .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+                .unwrap_or_else(|e| e.description().to_owned())
+                .try_into()
+                .unwrap_or(State::Critical);
+
+            self.output.set_state(state);
+        }
 
         Ok(Some(self.update_interval))
     }
