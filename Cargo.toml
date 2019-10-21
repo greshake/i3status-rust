@@ -38,7 +38,6 @@ notmuch = { optional = true, version = "0.1.1" }
 # for profiling blocks
 cpuprofiler = { version = "0.0.3", optional = true }
 progress = { version = "0.2", optional = true }
-machine = "0.3.0"
 
 [dependencies.regex]
 version = "1.3.0"
