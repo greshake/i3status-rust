@@ -30,6 +30,7 @@ pub struct Pomodoro {
     message: String,
     break_message: String,
     count: usize,
+    enable_i3nagbar: bool,
 }
 
 impl Pomodoro {
@@ -71,6 +72,8 @@ pub struct PomodoroConfig {
     pub message: String,
     #[serde(default = "PomodoroConfig::default_break_message")]
     pub break_message: String,
+    #[serde(default = "PomodoroConfig::default_use_nag")]
+    pub use_nag: bool,
 }
 
 impl PomodoroConfig {
@@ -88,6 +91,10 @@ impl PomodoroConfig {
 
     fn default_break_message() -> String {
         "Break over! Time to work!".to_owned()
+    }
+
+    fn default_enable_i3nagbar() -> bool {
+        false
     }
 }
 
@@ -107,6 +114,7 @@ impl ConfigBlock for Pomodoro {
             update_interval: Duration::from_millis(1000),
             message: block_config.message,
             break_message: block_config.break_message,
+            enable_i3nagbar: block_config.enable_i3nagbar,
             elapsed: 0,
             count: 0,
         })
@@ -125,12 +133,9 @@ impl Block for Pomodoro {
         match &self.state {
             State::Started => {
                 if self.elapsed >= self.length {
-                    let message = self.message.to_owned();
-                    Command::new("i3-nagbar")
-                        .stdout(Stdio::null())
-                        .args(&["-t", "error", "-m", &message])
-                        .spawn()
-                        .expect("Failed to start i3-nagbar");
+                    if self.enable_i3nagbar {
+                        nag(&self.message, "error");
+                    }
 
                     self.state = State::OnBreak;
                     self.elapsed = 0;
@@ -139,12 +144,9 @@ impl Block for Pomodoro {
             }
             State::OnBreak => {
                 if self.elapsed >= self.break_length {
-                    let message = self.break_message.to_owned();
-                    Command::new("i3-nagbar")
-                        .stdout(Stdio::null())
-                        .args(&["-t", "warning", "-m", &message])
-                        .spawn()
-                        .expect("Failed to start i3-nagbar");
+                    if self.enable_i3nagbar {
+                        nag(&self.break_message, "warning");
+                    }
                     self.state = State::Stopped;
                 }
             }
@@ -186,4 +188,12 @@ impl Block for Pomodoro {
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.time]
     }
+}
+
+fn nag(message: &str, level: &str) {
+    Command::new("i3-nagbar")
+        .stdout(Stdio::null())
+        .args(&["-t", level, "-m", message])
+        .spawn()
+        .expect("Failed to start i3-nagbar");
 }
