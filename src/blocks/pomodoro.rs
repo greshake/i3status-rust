@@ -1,5 +1,5 @@
 use crossbeam_channel::Sender;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -126,15 +126,11 @@ impl Block for Pomodoro {
             State::Started => {
                 if self.elapsed >= self.length {
                     let message = self.message.to_owned();
-                    std::thread::spawn(move || -> Result<()> {
-                        match Command::new("i3-nagbar").args(&["-m", &message]).output() {
-                            Ok(_raw_output) => Ok(()),
-                            Err(_) => {
-                                // We don't want the bar to crash if i3-nagbar fails
-                                Ok(())
-                            }
-                        }
-                    });
+                    Command::new("i3-nagbar")
+                        .stdout(Stdio::null())
+                        .args(&["-t", "error", "-m", &message])
+                        .spawn()
+                        .expect("Failed to start i3-nagbar");
 
                     self.state = State::OnBreak;
                     self.elapsed = 0;
@@ -144,16 +140,11 @@ impl Block for Pomodoro {
             State::OnBreak => {
                 if self.elapsed >= self.break_length {
                     let message = self.break_message.to_owned();
-                    std::thread::spawn(move || -> Result<()> {
-                        match Command::new("i3-nagbar").args(&["-t", "warning", "-m", &message]).output() {
-                            Ok(_raw_output) => Ok(()),
-                            Err(_) => {
-                                // We don't want the bar to crash if i3-nagbar fails
-                                Ok(())
-                            }
-                        }
-                    });
-
+                    Command::new("i3-nagbar")
+                        .stdout(Stdio::null())
+                        .args(&["-t", "warning", "-m", &message])
+                        .spawn()
+                        .expect("Failed to start i3-nagbar");
                     self.state = State::Stopped;
                 }
             }
