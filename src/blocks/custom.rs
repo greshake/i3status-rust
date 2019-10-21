@@ -113,8 +113,7 @@ impl Block for Custom {
                 .args(&["-c", &state_command.clone()])
                 .output()
                 .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-                .unwrap_or_else(|e| e.description().to_owned())
-                .try_into()
+                .map(|o| o.try_into().unwrap_or(State::Critical))
                 .unwrap_or(State::Critical);
 
             self.output.set_state(state);
