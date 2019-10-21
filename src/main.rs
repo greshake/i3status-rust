@@ -23,9 +23,6 @@ extern crate toml;
 extern crate uuid;
 
 #[macro_use]
-extern crate machine;
-
-#[macro_use]
 mod de;
 #[macro_use]
 mod util;
