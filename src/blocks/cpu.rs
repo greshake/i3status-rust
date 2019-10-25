@@ -1,6 +1,6 @@
-use crossbeam_channel::Sender;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
+use crossbeam_channel::Sender;
 use std::time::Duration;
 
 use crate::block::{Block, ConfigBlock};
@@ -80,9 +80,8 @@ impl CpuConfig {
     }
 
     fn default_frequency() -> bool {
-      false
-  }
-
+        false
+    }
 }
 
 impl ConfigBlock for Cpu {
@@ -103,8 +102,7 @@ impl ConfigBlock for Cpu {
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            format: FormatTemplate::from_string(&format)
-                .block_error("cpu", "Invalid format specified for cpu")?,
+            format: FormatTemplate::from_string(&format).block_error("cpu", "Invalid format specified for cpu")?,
             has_frequency: format.contains("{frequency}"),
             has_barchart: format.contains("{barchart}"),
         })
@@ -141,9 +139,14 @@ impl Block for Cpu {
 
         let mut cpu_i = 0;
         for line in f.lines().scan((), |_, x| x.ok()) {
-
             if line.starts_with("cpu") {
-                let data: Vec<u64> = (&line).split(' ').collect::<Vec<&str>>().iter().skip(if cpu_i == 0 { 2 } else { 1 }).filter_map(|x| x.parse::<u64>().ok()).collect::<Vec<_>>();
+                let data: Vec<u64> = (&line)
+                    .split(' ')
+                    .collect::<Vec<&str>>()
+                    .iter()
+                    .skip(if cpu_i == 0 { 2 } else { 1 })
+                    .filter_map(|x| x.parse::<u64>().ok())
+                    .collect::<Vec<_>>();
 
                 // idle = idle + iowait
                 let idle = data[3] + data[4];
@@ -171,7 +174,9 @@ impl Block for Cpu {
                 self.prev_idles[cpu_i] = idle;
                 self.prev_non_idles[cpu_i] = non_idle;
                 cpu_i += 1;
-                if cpu_i >= max_cpus { break; };
+                if cpu_i >= max_cpus {
+                    break;
+                };
             }
         }
 
@@ -187,13 +192,15 @@ impl Block for Cpu {
         let mut barchart = String::new();
 
         if self.has_barchart {
-            let boxchars = vec!['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+            const BOXCHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
             for i in 1..cpu_i {
-                barchart.push(boxchars[((7.5 * cpu_utilizations[i]) as usize)
-                    // TODO: Replace with .clamp once the feature is stable
-                    // upper bound just in case the value is negative, e.g. USIZE MAX after conversion
-                    .min(boxchars.len() - 1)]);
+                barchart.push(
+                    BOXCHARS[((7.5 * cpu_utilizations[i]) as usize)
+                        // TODO: Replace with .clamp once the feature is stable
+                        // upper bound just in case the value is negative, e.g. USIZE MAX after conversion
+                        .min(BOXCHARS.len() - 1)],
+                );
             }
         }
 
