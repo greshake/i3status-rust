@@ -93,7 +93,7 @@ impl PomodoroConfig {
         "Break over! Time to work!".to_owned()
     }
 
-    fn default_enable_i3nagbar() -> bool {
+    fn default_use_nag() -> bool {
         false
     }
 }
@@ -114,7 +114,7 @@ impl ConfigBlock for Pomodoro {
             update_interval: Duration::from_millis(1000),
             message: block_config.message,
             break_message: block_config.break_message,
-            enable_i3nagbar: block_config.enable_i3nagbar,
+            enable_i3nagbar: block_config.use_nag,
             elapsed: 0,
             count: 0,
         })
