@@ -1,4 +1,4 @@
-use crate::block::Block;
+use crate::blocks::Block;
 use crate::errors::*;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;

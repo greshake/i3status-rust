@@ -78,7 +78,7 @@ use crate::util::*;
 use crossbeam_channel::Sender;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::input::{I3BarEvent, MouseButton};
 use std::str::FromStr;
 use uuid::Uuid;

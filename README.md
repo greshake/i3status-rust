@@ -71,7 +71,7 @@ Finally, reload i3: `i3 reload`.
 
 ## Contributing
 
-We welcome new contributors looking to implement new blocks or add features to existing blocks. If you are interested in doing so, it's generally a good idea to file an issue for discussion first.
+We welcome new contributors! Take a gander at [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

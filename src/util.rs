@@ -1,4 +1,4 @@
-use crate::block::Block;
+use crate::blocks::Block;
 use crate::config::Config;
 use crate::errors::*;
 use std::collections::HashMap;

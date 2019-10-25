@@ -16,14 +16,16 @@ extern crate inotify;
 extern crate maildir;
 extern crate chrono;
 extern crate chrono_tz;
+extern crate dbus;
 #[cfg(feature = "pulseaudio")]
 extern crate libpulse_binding as pulse;
+#[cfg(feature = "notmuch")]
+extern crate notmuch;
 
 #[macro_use]
 mod de;
 #[macro_use]
 mod util;
-mod block;
 pub mod blocks;
 mod config;
 mod errors;
@@ -46,7 +48,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use std::ops::DerefMut;
 
-use crate::block::Block;
+use crate::blocks::Block;
 
 use crate::blocks::create_block;
 use crate::config::Config;
@@ -63,7 +65,7 @@ use crossbeam_channel::{Receiver, Sender};
 
 fn main() {
     let mut builder = App::new("i3status-rs")
-        .version("0.9")
+        .version("0.11.0")
         .author(
             "Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
              https://github.com/greshake/i3status-rust/graphs/contributors",

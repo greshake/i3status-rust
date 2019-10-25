@@ -9,15 +9,15 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::input::I3BarEvent;
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::de::deserialize_duration;
 use crate::widgets::rotatingtext::RotatingTextWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widget::{I3BarWidget, State};
 
-use crate::blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
-use crate::blocks::dbus::arg::{Array, RefArg};
-use self::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{arg, BusType, Connection, ConnectionItem, Message};
+use dbus::arg::{Array, RefArg};
+use dbus::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
 pub struct Music {

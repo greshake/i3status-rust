@@ -1,4 +1,5 @@
 use std::fs::OpenOptions;
+use std::fs::read_to_string;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -6,7 +7,7 @@ use std::time::{Duration, Instant};
 use std::ffi::OsStr;
 use crossbeam_channel::Sender;
 
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -24,6 +25,7 @@ pub struct NetworkDevice {
     device_path: PathBuf,
     wireless: bool,
     tun: bool,
+    wg: bool,
 }
 
 impl NetworkDevice {
@@ -36,11 +38,18 @@ impl NetworkDevice {
         let wireless = device_path.join("wireless").exists();
         let tun = device_path.join("tun_flags").exists() || device.starts_with("tun") || device.starts_with("tap");
 
+        let wg_uevent_path = device_path.join("uevent");
+        let wg = match read_to_string(&wg_uevent_path) {
+                Ok(s) => s.contains("wireguard"),
+                Err(_e) => false,
+        };
+
         NetworkDevice {
             device,
             device_path,
             wireless,
             tun,
+            wg,
         }
     }
 
@@ -58,6 +67,8 @@ impl NetworkDevice {
             // opposed to erroring out the entire block.
             Ok(false)
         } else if self.tun {
+            Ok(true)
+        } else if self.wg {
             Ok(true)
         } else {
             let operstate = read_file(&operstate_file)?;
@@ -86,7 +97,7 @@ impl NetworkDevice {
 
     /// Checks whether this device is vpn network.
     pub fn is_vpn(&self) -> bool {
-        self.tun
+        self.tun || self.wg
     }
 
     /// Queries the wireless SSID of this device (using `iw`), if it is

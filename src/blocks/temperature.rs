@@ -3,7 +3,7 @@ use std::process::Command;
 use crossbeam_channel::Sender;
 use crate::util::FormatTemplate;
 use crate::scheduler::Task;
-use crate::block::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;

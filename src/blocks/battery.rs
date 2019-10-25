@@ -5,22 +5,21 @@
 //! internal power supply.
 
 use std::path::{Path, PathBuf};
-use crate::util::FormatTemplate;
 use std::time::{Duration, Instant};
 use std::thread;
 
 use crossbeam_channel::Sender;
+use dbus;
+use dbus::arg::Array;
+use dbus::stdintf::org_freedesktop_dbus::Properties;
 use uuid::Uuid;
 
-use crate::block::{Block, ConfigBlock};
-use crate::blocks::dbus;
-use crate::blocks::dbus::stdintf::org_freedesktop_dbus::Properties;
-use crate::blocks::dbus::arg::Array;
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::read_file;
+use crate::util::{FormatTemplate, read_file};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
