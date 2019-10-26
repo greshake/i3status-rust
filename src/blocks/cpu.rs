@@ -187,13 +187,13 @@ impl Block for Cpu {
         let mut barchart = String::new();
 
         if self.has_barchart {
-            let boxchars = vec!['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+            const BOXCHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
             for i in 1..cpu_i {
-                barchart.push(boxchars[((7.5 * cpu_utilizations[i]) as usize)
+                barchart.push(BOXCHARS[((7.5 * cpu_utilizations[i]) as usize)
                     // TODO: Replace with .clamp once the feature is stable
                     // upper bound just in case the value is negative, e.g. USIZE MAX after conversion
-                    .min(boxchars.len() - 1)]);
+                    .min(BOXCHARS.len() - 1)]);
             }
         }
 
