@@ -11,6 +11,7 @@ addons:
       - libdbus-1-dev
       - libgoogle-perftools-dev
       - libnotmuch-dev
+cache: cargo
 os:
   - linux
 matrix:
