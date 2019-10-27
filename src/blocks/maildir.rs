@@ -1,14 +1,14 @@
-use std::time::Duration;
 use crossbeam_channel::Sender;
+use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::widgets::text::TextWidget;
-use crate::widget::{I3BarWidget, State};
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::text::TextWidget;
 use maildir::Maildir as ExtMaildir;
 
 use uuid::Uuid;
@@ -51,7 +51,10 @@ pub struct Maildir {
 #[serde(deny_unknown_fields)]
 pub struct MaildirConfig {
     /// Update interval in seconds
-    #[serde(default = "MaildirConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "MaildirConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
     pub inboxes: Vec<String>,
     #[serde(default = "MaildirConfig::default_threshold_warning")]
@@ -82,12 +85,20 @@ impl MaildirConfig {
 impl ConfigBlock for Maildir {
     type Config = MaildirConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let widget = TextWidget::new(config.clone()).with_text("");
         Ok(Maildir {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
-            text: if block_config.icon { widget.with_icon("mail") } else { widget },
+            text: if block_config.icon {
+                widget.with_icon("mail")
+            } else {
+                widget
+            },
             inboxes: block_config.inboxes,
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,

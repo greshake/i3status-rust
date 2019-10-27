@@ -1,6 +1,6 @@
-use crossbeam_channel::Sender;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
+use crossbeam_channel::Sender;
 use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -34,7 +34,10 @@ pub struct Cpu {
 #[serde(deny_unknown_fields)]
 pub struct CpuConfig {
     /// Update interval in seconds
-    #[serde(default = "CpuConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "CpuConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Minimum usage, where state is set to info
@@ -80,15 +83,18 @@ impl CpuConfig {
     }
 
     fn default_frequency() -> bool {
-      false
-  }
-
+        false
+    }
 }
 
 impl ConfigBlock for Cpu {
     type Config = CpuConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let mut format = block_config.format;
         if block_config.frequency {
             format = "{utilization}% {frequency}GHz".into();
@@ -113,20 +119,26 @@ impl ConfigBlock for Cpu {
 
 impl Block for Cpu {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let f = File::open("/proc/stat").block_error("cpu", "Your system doesn't support /proc/stat")?;
+        let f = File::open("/proc/stat")
+            .block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
         let mut n_cpu = 0;
         let mut freq: f32 = 0.0;
         if self.has_frequency {
-            let freq_file = File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
+            let freq_file =
+                File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
             let freq_file_content = BufReader::new(freq_file);
             // read frequency of each cpu and calculate the average which we will display
             for line in freq_file_content.lines().scan((), |_, x| x.ok()) {
                 if line.starts_with("cpu MHz") {
                     let words = line.split(' ');
-                    let last = words.last().expect("failed to get last word of line while getting cpu frequency");
-                    let numb = last.parse::<f32>().expect("failed to parse String to f32 while getting cpu frequency");
+                    let last = words
+                        .last()
+                        .expect("failed to get last word of line while getting cpu frequency");
+                    let numb = last
+                        .parse::<f32>()
+                        .expect("failed to parse String to f32 while getting cpu frequency");
                     freq += numb;
                     n_cpu += 1;
                 }
@@ -141,9 +153,14 @@ impl Block for Cpu {
 
         let mut cpu_i = 0;
         for line in f.lines().scan((), |_, x| x.ok()) {
-
             if line.starts_with("cpu") {
-                let data: Vec<u64> = (&line).split(' ').collect::<Vec<&str>>().iter().skip(if cpu_i == 0 { 2 } else { 1 }).filter_map(|x| x.parse::<u64>().ok()).collect::<Vec<_>>();
+                let data: Vec<u64> = (&line)
+                    .split(' ')
+                    .collect::<Vec<&str>>()
+                    .iter()
+                    .skip(if cpu_i == 0 { 2 } else { 1 })
+                    .filter_map(|x| x.parse::<u64>().ok())
+                    .collect::<Vec<_>>();
 
                 // idle = idle + iowait
                 let idle = data[3] + data[4];
@@ -160,18 +177,21 @@ impl Block for Cpu {
                 // This check is needed because the new values may be reset, for
                 // example after hibernation.
 
-                let (total_delta, idle_delta) = if prev_total < total && self.prev_idles[cpu_i] <= idle {
-                    (total - prev_total, idle - self.prev_idles[cpu_i])
-                } else {
-                    (1, 1)
-                };
+                let (total_delta, idle_delta) =
+                    if prev_total < total && self.prev_idles[cpu_i] <= idle {
+                        (total - prev_total, idle - self.prev_idles[cpu_i])
+                    } else {
+                        (1, 1)
+                    };
 
                 cpu_utilizations[cpu_i] = (total_delta - idle_delta) as f64 / total_delta as f64;
 
                 self.prev_idles[cpu_i] = idle;
                 self.prev_non_idles[cpu_i] = non_idle;
                 cpu_i += 1;
-                if cpu_i >= max_cpus { break; };
+                if cpu_i >= max_cpus {
+                    break;
+                };
             }
         }
 
@@ -190,10 +210,12 @@ impl Block for Cpu {
             const BOXCHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
             for i in 1..cpu_i {
-                barchart.push(BOXCHARS[((7.5 * cpu_utilizations[i]) as usize)
-                    // TODO: Replace with .clamp once the feature is stable
-                    // upper bound just in case the value is negative, e.g. USIZE MAX after conversion
-                    .min(BOXCHARS.len() - 1)]);
+                barchart.push(
+                    BOXCHARS[((7.5 * cpu_utilizations[i]) as usize)
+                        // TODO: Replace with .clamp once the feature is stable
+                        // upper bound just in case the value is negative, e.g. USIZE MAX after conversion
+                        .min(BOXCHARS.len() - 1)],
+                );
             }
         }
 
@@ -201,7 +223,8 @@ impl Block for Cpu {
                           "{barchart}" => barchart,
                           "{utilization}" => format!("{:02}", avg_utilization));
 
-        self.output.set_text(self.format.render_static_str(&values)?);
+        self.output
+            .set_text(self.format.render_static_str(&values)?);
 
         Ok(Some(self.update_interval))
     }

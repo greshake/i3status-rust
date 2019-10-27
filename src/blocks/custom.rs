@@ -1,18 +1,18 @@
-use std::time::{Duration, Instant};
-use std::process::Command;
-use std::iter::{Cycle, Peekable};
-use std::vec;
-use std::env;
 use crossbeam_channel::Sender;
+use std::env;
+use std::iter::{Cycle, Peekable};
+use std::process::Command;
+use std::time::{Duration, Instant};
+use std::vec;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::widgets::button::ButtonWidget;
-use crate::widget::I3BarWidget;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::widget::I3BarWidget;
+use crate::widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -30,7 +30,10 @@ pub struct Custom {
 #[serde(deny_unknown_fields)]
 pub struct CustomConfig {
     /// Update interval in seconds
-    #[serde(default = "CustomConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "CustomConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Shell Command to execute & display
@@ -83,7 +86,8 @@ impl ConfigBlock for Custom {
 
 impl Block for Custom {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let command_str = self.cycle
+        let command_str = self
+            .cycle
             .as_mut()
             .map(|c| c.peek().cloned().unwrap_or_else(|| "".to_owned()))
             .or_else(|| self.command.clone())
@@ -116,8 +120,10 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new(env::var("SHELL").unwrap_or_else(|_|"sh".to_owned()))
-                    .args(&["-c", on_click]).output().ok();
+            Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+                .args(&["-c", on_click])
+                .output()
+                .ok();
             update = true;
         }
 

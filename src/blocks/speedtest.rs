@@ -1,17 +1,17 @@
-use std::time::{Duration, Instant};
-use std::process::Command;
-use std::thread::spawn;
-use std::sync::{Arc, Mutex};
-use crossbeam_channel::{unbounded, Receiver, Sender};
 use crate::scheduler::Task;
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use std::process::Command;
+use std::sync::{Arc, Mutex};
+use std::thread::spawn;
+use std::time::{Duration, Instant};
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::widgets::button::ButtonWidget;
-use crate::widget::{I3BarWidget, State};
 use crate::input::{I3BarEvent, MouseButton};
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -27,7 +27,10 @@ pub struct SpeedTest {
 #[serde(deny_unknown_fields)]
 pub struct SpeedTestConfig {
     /// Update interval in seconds
-    #[serde(default = "SpeedTestConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "SpeedTestConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Mode of speed display, true => MB/s, false => Mb/s
@@ -55,7 +58,8 @@ fn get_values(bytes: bool) -> Result<String> {
         cmd.output()
             .block_error("speedtest", "could not get speedtest-cli output")?
             .stdout,
-    ).block_error("speedtest", "could not parse speedtest-cli output")
+    )
+    .block_error("speedtest", "could not parse speedtest-cli output")
 }
 
 fn parse_values(output: &str) -> Result<Vec<f32>> {
@@ -64,16 +68,24 @@ fn parse_values(output: &str) -> Result<Vec<f32>> {
     for line in output.lines() {
         let mut word = line.split_whitespace();
         word.next();
-        vals.push(word.next()
-            .block_error("speedtest", "missing data")?
-            .parse::<f32>()
-            .block_error("speedtest", "Unable to parse data")?);
+        vals.push(
+            word.next()
+                .block_error("speedtest", "missing data")?
+                .parse::<f32>()
+                .block_error("speedtest", "Unable to parse data")?,
+        );
     }
 
     Ok(vals)
 }
 
-fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, Vec<f32>)>>, config: SpeedTestConfig, id: String) {
+fn make_thread(
+    recv: Receiver<()>,
+    done: Sender<Task>,
+    values: Arc<Mutex<(bool, Vec<f32>)>>,
+    config: SpeedTestConfig,
+    id: String,
+) {
     spawn(move || loop {
         if !recv.recv().is_err() {
             if let Ok(output) = get_values(config.bytes) {
@@ -89,7 +101,8 @@ fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, 
                         done.send(Task {
                             id: id.clone(),
                             update_time: Instant::now(),
-                        }).unwrap();
+                        })
+                        .unwrap();
                     }
                 }
             }
@@ -132,7 +145,8 @@ impl ConfigBlock for SpeedTest {
 
 impl Block for SpeedTest {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let (ref mut updated, ref vals) = *self.vals
+        let (ref mut updated, ref vals) = *self
+            .vals
             .lock()
             .block_error("speedtest", "mutext poisoned")?;
 

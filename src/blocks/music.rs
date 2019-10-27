@@ -1,23 +1,23 @@
+use crossbeam_channel::Sender;
+use std::boxed::Box;
 use std::ffi::OsStr;
 use std::process::Command;
-use std::time::{Duration, Instant};
-use crossbeam_channel::Sender;
 use std::thread;
-use std::boxed::Box;
+use std::time::{Duration, Instant};
 
-use crate::config::Config;
-use crate::errors::*;
-use crate::scheduler::Task;
-use crate::input::I3BarEvent;
 use crate::blocks::{Block, ConfigBlock};
+use crate::config::Config;
 use crate::de::deserialize_duration;
-use crate::widgets::rotatingtext::RotatingTextWidget;
-use crate::widgets::button::ButtonWidget;
+use crate::errors::*;
+use crate::input::I3BarEvent;
+use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
+use crate::widgets::rotatingtext::RotatingTextWidget;
 
-use dbus::{arg, BusType, Connection, ConnectionItem, Message};
 use dbus::arg::{Array, RefArg};
 use dbus::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{arg, BusType, Connection, ConnectionItem, Message};
 use uuid::Uuid;
 
 pub struct Music {
@@ -32,7 +32,7 @@ pub struct Music {
     player_avail: bool,
     marquee: bool,
     player: Option<String>,
-    auto_discover: bool
+    auto_discover: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -51,11 +51,17 @@ pub struct MusicConfig {
     pub marquee: bool,
 
     /// Marquee interval in seconds. This is the delay between each rotation.
-    #[serde(default = "MusicConfig::default_marquee_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "MusicConfig::default_marquee_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub marquee_interval: Duration,
 
     /// Marquee speed in seconds. This is the scrolling time used per character.
-    #[serde(default = "MusicConfig::default_marquee_speed", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "MusicConfig::default_marquee_speed",
+        deserialize_with = "deserialize_duration"
+    )]
     pub marquee_speed: Duration,
 
     /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
@@ -101,16 +107,16 @@ impl ConfigBlock for Music {
 
         thread::spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
-            c.add_match(
-                "interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'",
-            ).unwrap();
+            c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'")
+                .unwrap();
             loop {
                 for ci in c.iter(100_000) {
                     if let ConnectionItem::Signal(_) = ci {
                         send.send(Task {
                             id: id.clone(),
                             update_time: Instant::now(),
-                        }).unwrap();
+                        })
+                        .unwrap();
                     }
                 }
             }
@@ -156,27 +162,28 @@ impl ConfigBlock for Music {
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
                 config.clone(),
-            ).with_icon("music")
-                .with_state(State::Info),
+            )
+            .with_icon("music")
+            .with_state(State::Info),
             prev,
             play,
             next,
-            on_collapsed_click_widget: ButtonWidget::new(
-                config.clone(),
-                "on_collapsed_click",
-            ).with_icon("music")
+            on_collapsed_click_widget: ButtonWidget::new(config.clone(), "on_collapsed_click")
+                .with_icon("music")
                 .with_state(State::Info),
             on_collapsed_click: block_config.on_collapsed_click,
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
             auto_discover: block_config.player.is_none(),
-            player: if block_config.player.is_none()
-                {
-                    block_config.player
-                } else {
-                    Some(format!("org.mpris.MediaPlayer2.{}", block_config.player.unwrap()))
-                },
+            player: if block_config.player.is_none() {
+                block_config.player
+            } else {
+                Some(format!(
+                    "org.mpris.MediaPlayer2.{}",
+                    block_config.player.unwrap()
+                ))
+            },
             marquee: block_config.marquee,
         })
     }
@@ -205,7 +212,8 @@ impl Block for Music {
             let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
             if let Ok(metadata) = data {
-                let (title, artist) = extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
+                let (title, artist) =
+                    extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
                 if title.is_empty() && artist.is_empty() {
                     self.player_avail = false;
@@ -241,7 +249,7 @@ impl Block for Music {
         }
         Ok(match (next, self.marquee) {
             (Some(_), _) => next,
-            (None, _) => Some(Duration::new(2, 0))
+            (None, _) => Some(Duration::new(2, 0)),
         })
     }
 
@@ -259,7 +267,8 @@ impl Block for Music {
                     "/org/mpris/MediaPlayer2",
                     "org.mpris.MediaPlayer2.Player",
                     action,
-                ).block_error("music", "failed to create D-Bus method call")?;
+                )
+                .block_error("music", "failed to create D-Bus method call")?;
                 self.dbus_conn
                     .send(m)
                     .block_error("music", "failed to call method via D-Bus")
@@ -313,32 +322,38 @@ fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, Str
         .block_error("music", "failed to extract metadata")?;
 
     while let Some(key) = iter.next() {
-        let value = iter.next()
+        let value = iter
+            .next()
             .block_error("music", "failed to extract metadata")?;
-        match key.as_str()
+        match key
+            .as_str()
             .block_error("music", "failed to extract metadata")?
         {
             "xesam:artist" => {
-                artist = String::from(value
-                    .as_iter()
-                    .block_error("music", "failed to extract metadata")?
-                    .nth(0)
-                    .block_error("music", "failed to extract metadata")?
-                    .as_iter()
-                    .block_error("music", "failed to extract metadata")?
-                    .nth(0)
-                    .block_error("music", "failed to extract metadata")?
-                    .as_iter()
-                    .block_error("music", "failed to extract metadata")?
-                    .nth(0)
-                    .block_error("music", "failed to extract metadata")?
-                    .as_str()
-                    .block_error("music", "failed to extract metadata")?)
+                artist = String::from(
+                    value
+                        .as_iter()
+                        .block_error("music", "failed to extract metadata")?
+                        .nth(0)
+                        .block_error("music", "failed to extract metadata")?
+                        .as_iter()
+                        .block_error("music", "failed to extract metadata")?
+                        .nth(0)
+                        .block_error("music", "failed to extract metadata")?
+                        .as_iter()
+                        .block_error("music", "failed to extract metadata")?
+                        .nth(0)
+                        .block_error("music", "failed to extract metadata")?
+                        .as_str()
+                        .block_error("music", "failed to extract metadata")?,
+                )
             }
             "xesam:title" => {
-                title = String::from(value
-                    .as_str()
-                    .block_error("music", "failed to extract metadata")?)
+                title = String::from(
+                    value
+                        .as_str()
+                        .block_error("music", "failed to extract metadata")?,
+                )
             }
             _ => {}
         };
@@ -347,10 +362,16 @@ fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, Str
 }
 
 fn get_first_available_player(connection: &Connection) -> Option<String> {
-    let m = Message::new_method_call("org.freedesktop.DBus", "/", "org.freedesktop.DBus", "ListNames").unwrap();
+    let m = Message::new_method_call(
+        "org.freedesktop.DBus",
+        "/",
+        "org.freedesktop.DBus",
+        "ListNames",
+    )
+    .unwrap();
     let r = connection.send_with_reply_and_block(m, 2000).unwrap();
     // ListNames returns one argument, which is an array of strings.
-    let mut arr: Array<&str, _>  = r.get1().unwrap();
+    let mut arr: Array<&str, _> = r.get1().unwrap();
     if let Some(name) = arr.find(|entry| entry.starts_with("org.mpris.MediaPlayer2")) {
         Some(String::from(name))
     } else {

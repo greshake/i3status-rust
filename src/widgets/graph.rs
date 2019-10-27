@@ -1,8 +1,8 @@
+use super::super::widget::I3BarWidget;
 use crate::config::Config;
 use crate::widget::State;
-use serde_json::value::Value;
-use super::super::widget::I3BarWidget;
 use num::{clamp, ToPrimitive};
+use serde_json::value::Value;
 
 #[derive(Clone, Debug)]
 pub struct GraphWidget {

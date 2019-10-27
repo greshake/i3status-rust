@@ -1,3 +1,4 @@
+use chrono_tz::Tz;
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use std::collections::{BTreeMap, HashMap as Map};
 use std::error::Error;
@@ -7,7 +8,6 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::time::Duration;
 use toml::{self, value};
-use chrono_tz::Tz;
 
 pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
@@ -82,12 +82,16 @@ macro_rules! map_type {
                 $fromstr_expr
             }
         }
-    }
+    };
 }
 
 impl<'de, T, V> DeserializeSeed<'de> for MapType<T, V>
 where
-    T: Deserialize<'de> + Default + FromStr<Err = String> + From<Map<String, V>> + Deref<Target = Map<String, V>>,
+    T: Deserialize<'de>
+        + Default
+        + FromStr<Err = String>
+        + From<Map<String, V>>
+        + Deref<Target = Map<String, V>>,
     V: Deserialize<'de> + Clone,
 {
     type Value = Map<String, V>;
@@ -102,7 +106,11 @@ where
 
 impl<'de, T, V> de::Visitor<'de> for MapType<T, V>
 where
-    T: Deserialize<'de> + Default + FromStr<Err = String> + From<Map<String, V>> + Deref<Target = Map<String, V>>,
+    T: Deserialize<'de>
+        + Default
+        + FromStr<Err = String>
+        + From<Map<String, V>>
+        + Deref<Target = Map<String, V>>,
     V: Deserialize<'de> + Clone,
 {
     type Value = Map<String, V>;
@@ -124,8 +132,8 @@ where
         A: de::SeqAccess<'de>,
     {
         let mut vec: Vec<Self::Value> = Vec::new();
-        while let Some(element) = visitor
-            .next_element_seed(MapType::<T, V>(PhantomData, PhantomData))?
+        while let Some(element) =
+            visitor.next_element_seed(MapType::<T, V>(PhantomData, PhantomData))?
         {
             vec.push(element);
         }
@@ -158,7 +166,8 @@ where
     where
         A: de::MapAccess<'de>,
     {
-        let mut map: BTreeMap<String, value::Value> = Deserialize::deserialize(de::value::MapAccessDeserializer::new(visitor))?;
+        let mut map: BTreeMap<String, value::Value> =
+            Deserialize::deserialize(de::value::MapAccessDeserializer::new(visitor))?;
         let mut combined: Map<String, V> = Map::new();
 
         if let Some(raw_names) = map.remove("name") {

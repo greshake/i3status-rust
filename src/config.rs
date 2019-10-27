@@ -1,12 +1,12 @@
 use crate::de::*;
 use crate::icons;
+use crate::themes::{self, Theme};
 use serde::de::{self, Deserialize, Deserializer};
-use toml::value;
 use std::collections::HashMap as Map;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::str::FromStr;
-use crate::themes::{self, Theme};
+use toml::value;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
@@ -62,8 +62,8 @@ where
     map_type!(ThemeIntermediary, String;
               s => Ok(ThemeIntermediary(themes::get_theme(s).ok_or_else(|| "cannot find specified theme")?.owned_map())));
 
-    let intermediary: Map<String, String> = deserializer
-        .deserialize_any(MapType::<ThemeIntermediary, String>(
+    let intermediary: Map<String, String> =
+        deserializer.deserialize_any(MapType::<ThemeIntermediary, String>(
             PhantomData,
             PhantomData,
         ))?;

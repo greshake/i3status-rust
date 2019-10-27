@@ -1,15 +1,15 @@
-use std::time::Duration;
-use std::process::Command;
-use crossbeam_channel::Sender;
-use crate::util::FormatTemplate;
-use crate::scheduler::Task;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::widgets::button::ButtonWidget;
-use crate::widget::{I3BarWidget, State};
 use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::util::FormatTemplate;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
+use crossbeam_channel::Sender;
+use std::process::Command;
+use std::time::Duration;
 
 use uuid::Uuid;
 
@@ -31,7 +31,10 @@ pub struct Temperature {
 #[serde(deny_unknown_fields)]
 pub struct TemperatureConfig {
     /// Update interval in seconds
-    #[serde(default = "TemperatureConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "TemperatureConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Collapsed by default?
@@ -100,7 +103,11 @@ impl TemperatureConfig {
 impl ConfigBlock for Temperature {
     type Config = TemperatureConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         Ok(Temperature {
             update_interval: block_config.interval,
@@ -170,7 +177,8 @@ impl Block for Temperature {
                 .iter()
                 .min()
                 .block_error("temperature", "failed to get min temperature")?;
-            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
+            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
+                .round() as i64;
 
             let values = map!("{average}" => avg,
                               "{min}" => min,

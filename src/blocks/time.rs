@@ -1,18 +1,18 @@
 use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};
-use crossbeam_channel::Sender;
-use chrono::offset::{Local, Utc};
-use chrono_tz::Tz;
 use crate::config::Config;
 use crate::de::{deserialize_duration, deserialize_timezone};
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use uuid::Uuid;
+use crate::subprocess::{parse_command, spawn_child_async};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-use crate::subprocess::{parse_command, spawn_child_async};
+use chrono::offset::{Local, Utc};
+use chrono_tz::Tz;
+use crossbeam_channel::Sender;
+use uuid::Uuid;
 
 pub struct Time {
     time: ButtonWidget,
@@ -31,13 +31,19 @@ pub struct TimeConfig {
     pub format: String,
 
     /// Update interval in seconds
-    #[serde(default = "TimeConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "TimeConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     #[serde(default = "TimeConfig::default_on_click")]
     pub on_click: Option<String>,
 
-    #[serde(default = "TimeConfig::default_timezone", deserialize_with = "deserialize_timezone")]
+    #[serde(
+        default = "TimeConfig::default_timezone",
+        deserialize_with = "deserialize_timezone"
+    )]
     pub timezone: Option<Tz>,
 }
 
@@ -62,7 +68,11 @@ impl TimeConfig {
 impl ConfigBlock for Time {
     type Config = TimeConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let i = Uuid::new_v4().simple().to_string();
         Ok(Time {
             id: i.clone(),

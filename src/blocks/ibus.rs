@@ -6,8 +6,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus::{arg, Connection, ConnectionItem};
 use dbus::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{arg, Connection, ConnectionItem};
 use regex::Regex;
 use uuid::Uuid;
 
@@ -78,7 +78,8 @@ impl ConfigBlock for IBus {
                         send.send(Task {
                             id: id.clone(),
                             update_time: Instant::now(),
-                        }).unwrap();
+                        })
+                        .unwrap();
                     };
                 }
             }

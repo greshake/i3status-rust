@@ -5,8 +5,8 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use dbus;
-use dbus::{Message, MsgHandlerResult, MsgHandlerType};
 use dbus::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{Message, MsgHandlerResult, MsgHandlerType};
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -144,10 +144,12 @@ impl KeyboardLayoutMonitor for LocaleBus {
                 // TODO: This actually seems to trigger twice for each localectl
                 // change.
                 if con.incoming(10_000).next().is_some() {
-                    update_request.send(Task {
-                        id: id.clone(),
-                        update_time: Instant::now(),
-                    }).unwrap();
+                    update_request
+                        .send(Task {
+                            id: id.clone(),
+                            update_time: Instant::now(),
+                        })
+                        .unwrap();
                 }
             }
         });
@@ -182,16 +184,21 @@ impl KbdDaemonBus {
         let c = dbus::Connection::get_private(dbus::BusType::Session)
             .block_error("kbddaemonbus", "can't connect to dbus")?;
 
-        let send_msg = Message::new_method_call("ru.gentoo.KbddService",
-                                                "/ru/gentoo/KbddService",
-                                                "ru.gentoo.kbdd",
-                                                "getCurrentLayout")
-            .block_error("kbddaemonbus", "Create get-layout-id message failure")?;
+        let send_msg = Message::new_method_call(
+            "ru.gentoo.KbddService",
+            "/ru/gentoo/KbddService",
+            "ru.gentoo.kbdd",
+            "getCurrentLayout",
+        )
+        .block_error("kbddaemonbus", "Create get-layout-id message failure")?;
 
-        let repl_msg = c.send_with_reply_and_block(send_msg, 5000)
+        let repl_msg = c
+            .send_with_reply_and_block(send_msg, 5000)
             .block_error("kbddaemonbus", "Is kbdd running?")?;
 
-        let current_layout_id: u32 = repl_msg.get1().ok_or("")
+        let current_layout_id: u32 = repl_msg
+            .get1()
+            .ok_or("")
             .block_error("kbddaemonbus", "dbus kbdd response error")?;
 
         Ok(current_layout_id)
@@ -203,9 +210,7 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
         let layouts_str = setxkbmap_layouts()?;
         let idx = *self.kbdd_layout_id.lock().unwrap();
 
-        let split = layouts_str
-            .split(",")
-            .nth(idx as usize);
+        let split = layouts_str.split(",").nth(idx as usize);
 
         match split {
             Some(s) => Ok(s.to_string()),
@@ -215,11 +220,13 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
             //frankly I can't reproduce this without thread sleep in monitor function, so instead
             //of block_error I think showing all layouts will be better until the next
             //toggling happens
-            None=> Ok(layouts_str)
+            None => Ok(layouts_str),
         }
     }
 
-    fn must_poll(&self) -> bool { false }
+    fn must_poll(&self) -> bool {
+        false
+    }
 
     // Monitor KbdDaemon 'layoutChanged' property in a separate thread and send updates
     // via the `update_request` channel.
@@ -229,9 +236,10 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
             let c = dbus::Connection::get_private(dbus::BusType::Session).unwrap();
             c.add_match(
                 "interface='ru.gentoo.kbdd',\
-                member='layoutChanged',\
-                path='/ru/gentoo/KbddService'",
-            ).expect("Failed to add D-Bus match rule, is kbdd started?");
+                 member='layoutChanged',\
+                 path='/ru/gentoo/KbddService'",
+            )
+            .expect("Failed to add D-Bus match rule, is kbdd started?");
 
             // skip NameAcquired
             c.incoming(10_000).next();
@@ -240,10 +248,12 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
             loop {
                 for ci in c.iter(100_000) {
                     if let dbus::ConnectionItem::Signal(_) = ci {
-                        update_request.send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        }).unwrap();
+                        update_request
+                            .send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
                     }
                 }
             }
@@ -265,7 +275,11 @@ impl dbus::MsgHandler for KbddMessageHandler {
             *val = idx;
         }
         //handled=false - because we still need to call update_request.send in monitor
-        Some(MsgHandlerResult { handled: false, done: false, reply: vec![] })
+        Some(MsgHandlerResult {
+            handled: false,
+            done: false,
+            reply: vec![],
+        })
     }
 }
 
