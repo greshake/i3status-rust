@@ -8,7 +8,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
-use crate::widgets::text::TextWidget;
+use crate::widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -21,7 +21,7 @@ enum State {
 
 pub struct Pomodoro {
     id: String,
-    time: TextWidget,
+    time: ButtonWidget,
     state: State,
     elapsed: usize,
     length: usize,
@@ -103,11 +103,10 @@ impl ConfigBlock for Pomodoro {
 
     fn new(block_config: Self::Config, config: Config, _send: Sender<Task>) -> Result<Self> {
         let id: String = Uuid::new_v4().simple().to_string();
-        let id_copy = id.clone();
 
         Ok(Pomodoro {
-            id: id_copy,
-            time: TextWidget::new(config).with_icon("pomodoro"),
+            id: id.clone(),
+            time: ButtonWidget::new(config, &id).with_icon("pomodoro"),
             state: State::Stopped,
             length: block_config.length * 60,             // convert to minutes
             break_length: block_config.break_length * 60, // convert to minutes
@@ -157,28 +156,32 @@ impl Block for Pomodoro {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        match event.button {
-            MouseButton::Right => {
-                self.state = State::Stopped;
-                self.elapsed = 0;
-                self.count = 0;
+        if let Some(ref name) = event.name {
+            if name.as_str() == self.id {
+                match event.button {
+                    MouseButton::Right => {
+                        self.state = State::Stopped;
+                        self.elapsed = 0;
+                        self.count = 0;
+                    }
+                    _ => match &self.state {
+                        State::Stopped => {
+                            self.state = State::Started;
+                            self.elapsed = 0;
+                        }
+                        State::Started => {
+                            self.state = State::Paused;
+                        }
+                        State::Paused => {
+                            self.state = State::Started;
+                        }
+                        State::OnBreak => {
+                            self.state = State::Started;
+                            self.elapsed = 0;
+                        }
+                    },
+                }
             }
-            _ => match &self.state {
-                State::Stopped => {
-                    self.state = State::Started;
-                    self.elapsed = 0;
-                }
-                State::Started => {
-                    self.state = State::Paused;
-                }
-                State::Paused => {
-                    self.state = State::Started;
-                }
-                State::OnBreak => {
-                    self.state = State::Started;
-                    self.elapsed = 0;
-                }
-            },
         }
 
         self.set_text();
