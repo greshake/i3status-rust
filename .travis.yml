@@ -20,5 +20,7 @@ matrix:
 env:
   - RUSTFLAGS="-D warnings"
 script:
-  - cargo build
-  - cargo test
+  - rustup component add rustfmt
+  - cargo fmt -- --check
+  - cargo build --verbose
+  - cargo test --verbose
