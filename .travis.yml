@@ -11,6 +11,7 @@ addons:
       - libdbus-1-dev
       - libgoogle-perftools-dev
       - libnotmuch-dev
+cache: cargo
 os:
   - linux
 matrix:
@@ -19,5 +20,7 @@ matrix:
 env:
   - RUSTFLAGS="-D warnings"
 script:
-  - cargo build
-  - cargo test
+  - rustup component add rustfmt
+  - cargo fmt -- --check
+  - cargo build --verbose
+  - cargo test --verbose

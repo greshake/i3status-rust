@@ -31,7 +31,10 @@ pub struct Notmuch {
 #[serde(deny_unknown_fields)]
 pub struct NotmuchConfig {
     /// Update interval in seconds
-    #[serde(default = "NotmuchConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "NotmuchConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
     #[serde(default = "NotmuchConfig::default_maildir")]
     pub maildir: String,
@@ -98,13 +101,22 @@ fn run_query(db_path: &String, query_string: &String) -> Result<u32> {
     notmuch::Database::open(db_path, notmuch::DatabaseMode::ReadOnly)
         .and_then(|db| db.create_query(query_string))
         .and_then(|q| q.count_messages())
-        .or_else(|e| Err(BlockError("notmuch".to_string(), e.description().to_owned())))
+        .or_else(|e| {
+            Err(BlockError(
+                "notmuch".to_string(),
+                e.description().to_owned(),
+            ))
+        })
 }
 
 impl ConfigBlock for Notmuch {
     type Config = NotmuchConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let mut widget = TextWidget::new(config.clone());
         if !block_config.no_icon {
             widget.set_icon("mail");
@@ -120,7 +132,7 @@ impl ConfigBlock for Notmuch {
             threshold_critical: block_config.threshold_critical,
             name: block_config.name,
 
-            text: widget
+            text: widget,
         })
     }
 }
@@ -151,14 +163,13 @@ impl Notmuch {
 
 impl Block for Notmuch {
     fn update(&mut self) -> Result<Option<Duration>> {
-
         match run_query(&self.db, &self.query) {
             Ok(count) => {
                 self.update_text(count);
                 self.update_state(count);
                 Ok(Some(self.update_interval))
-            },
-            Err(e) => Err(e)
+            }
+            Err(e) => Err(e),
         }
     }
 
@@ -167,7 +178,9 @@ impl Block for Notmuch {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == "notmuch").unwrap_or(false) && event.button == MouseButton::Left {
+        if event.name.as_ref().map(|s| s == "notmuch").unwrap_or(false)
+            && event.button == MouseButton::Left
+        {
             self.update()?;
         }
 

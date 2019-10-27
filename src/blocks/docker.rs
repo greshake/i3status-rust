@@ -43,7 +43,10 @@ struct Status {
 #[serde(deny_unknown_fields)]
 pub struct DockerConfig {
     /// Update interval in seconds
-    #[serde(default = "DockerConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "DockerConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Format override
@@ -66,8 +69,11 @@ impl ConfigBlock for Docker {
     fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
         Ok(Docker {
             id: Uuid::new_v4().simple().to_string(),
-            text: TextWidget::new(config.clone()).with_text("N/A").with_icon("docker"),
-            format: FormatTemplate::from_string(&block_config.format).block_error("docker", "Invalid format specified")?,
+            text: TextWidget::new(config.clone())
+                .with_text("N/A")
+                .with_icon("docker"),
+            format: FormatTemplate::from_string(&block_config.format)
+                .block_error("docker", "Invalid format specified")?,
             update_interval: block_config.interval,
         })
     }
@@ -75,8 +81,16 @@ impl ConfigBlock for Docker {
 
 impl Block for Docker {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let output = match Command::new("sh").args(&["-c", "curl --fail --unix-socket /var/run/docker.sock http:/api/info"]).output() {
-            Ok(raw_output) => String::from_utf8(raw_output.stdout).block_error("docker", "Failed to decode")?,
+        let output = match Command::new("sh")
+            .args(&[
+                "-c",
+                "curl --fail --unix-socket /var/run/docker.sock http:/api/info",
+            ])
+            .output()
+        {
+            Ok(raw_output) => {
+                String::from_utf8(raw_output.stdout).block_error("docker", "Failed to decode")?
+            }
             Err(_) => {
                 // We don't want the bar to crash if we can't reach the docker daemon.
                 self.text.set_text("N/A".to_string());
@@ -89,7 +103,8 @@ impl Block for Docker {
             return Ok(Some(self.update_interval));
         }
 
-        let status: Status = serde_json::from_str(&output).block_error("docker", "Failed to parse JSON response.")?;
+        let status: Status = serde_json::from_str(&output)
+            .block_error("docker", "Failed to parse JSON response.")?;
 
         let values = map!(
             "{total}" => format!("{}", status.total),

@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::errors::*;
-use std::time::{Duration, Instant};
 use crate::widget::{I3BarWidget, State};
 use serde_json::value::Value;
+use std::time::{Duration, Instant};
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {
@@ -22,7 +22,12 @@ pub struct RotatingTextWidget {
 
 #[allow(dead_code)]
 impl RotatingTextWidget {
-    pub fn new(interval: Duration, speed: Duration, width: usize, config: Config) -> RotatingTextWidget {
+    pub fn new(
+        interval: Duration,
+        speed: Duration,
+        width: usize,
+        config: Config,
+    ) -> RotatingTextWidget {
         RotatingTextWidget {
             rotation_pos: 0,
             width,
@@ -106,7 +111,8 @@ impl RotatingTextWidget {
                     .take(self.width)
                     .collect()
             } else {
-                let mut avail: String = self.content
+                let mut avail: String = self
+                    .content
                     .chars()
                     .skip(self.rotation_pos)
                     .take(self.width)
@@ -115,7 +121,6 @@ impl RotatingTextWidget {
                 avail.push_str(&self.content.chars().take(missing - 1).collect::<String>());
                 avail
             }
-
         } else {
             self.content.clone()
         }

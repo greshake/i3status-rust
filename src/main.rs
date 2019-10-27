@@ -7,20 +7,20 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate crossbeam_channel;
-extern crate toml;
-extern crate clap;
-extern crate uuid;
-extern crate regex;
-extern crate num;
-extern crate inotify;
-extern crate maildir;
 extern crate chrono;
 extern crate chrono_tz;
+extern crate clap;
 extern crate dbus;
+extern crate inotify;
 #[cfg(feature = "pulseaudio")]
 extern crate libpulse_binding as pulse;
+extern crate maildir;
 #[cfg(feature = "notmuch")]
 extern crate notmuch;
+extern crate num;
+extern crate regex;
+extern crate toml;
+extern crate uuid;
 
 #[macro_use]
 mod de;
@@ -29,11 +29,11 @@ mod util;
 pub mod blocks;
 mod config;
 mod errors;
-mod input;
 mod icons;
-mod themes;
+mod input;
 mod scheduler;
 mod subprocess;
+mod themes;
 mod widget;
 mod widgets;
 
@@ -45,8 +45,8 @@ use cpuprofiler::PROFILER;
 extern crate progress;
 
 use std::collections::HashMap;
-use std::time::Duration;
 use std::ops::DerefMut;
+use std::time::Duration;
 
 use crate::blocks::Block;
 
@@ -80,9 +80,7 @@ fn main() {
         )
         .arg(
             Arg::with_name("exit-on-error")
-                .help(
-                    "exit on error rather than printing the error to i3bar and keep running",
-                )
+                .help("exit on error rather than printing the error to i3bar and keep running")
                 .long("exit-on-error")
                 .takes_value(false),
         );
@@ -140,39 +138,55 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
 
     // Update request channel
-    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) = crossbeam_channel::unbounded();
+    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =
+        crossbeam_channel::unbounded();
 
     // In dev build, we might diverge into profiling blocks here
     if let Some(name) = matches.value_of("profile") {
-        profile_config(name, matches.value_of("profile-runs").unwrap(), &config, &tx_update_requests)?;
+        profile_config(
+            name,
+            matches.value_of("profile-runs").unwrap(),
+            &config,
+            &tx_update_requests,
+        )?;
         return Ok(());
     }
 
     let mut config_alternating_tint = config.clone();
     {
         let tint_bg = &config.theme.alternating_tint_bg;
-        config_alternating_tint.theme.idle_bg = util::add_colors(&config_alternating_tint.theme.idle_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.info_bg = util::add_colors(&config_alternating_tint.theme.info_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.good_bg = util::add_colors(&config_alternating_tint.theme.good_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.warning_bg = util::add_colors(&config_alternating_tint.theme.warning_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.critical_bg = util::add_colors(&config_alternating_tint.theme.critical_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.idle_bg =
+            util::add_colors(&config_alternating_tint.theme.idle_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.info_bg =
+            util::add_colors(&config_alternating_tint.theme.info_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.good_bg =
+            util::add_colors(&config_alternating_tint.theme.good_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.warning_bg =
+            util::add_colors(&config_alternating_tint.theme.warning_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.critical_bg =
+            util::add_colors(&config_alternating_tint.theme.critical_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
 
         let tint_fg = &config.theme.alternating_tint_fg;
-        config_alternating_tint.theme.idle_fg = util::add_colors(&config_alternating_tint.theme.idle_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.info_fg = util::add_colors(&config_alternating_tint.theme.info_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.good_fg = util::add_colors(&config_alternating_tint.theme.good_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.warning_fg = util::add_colors(&config_alternating_tint.theme.warning_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.critical_fg = util::add_colors(&config_alternating_tint.theme.critical_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.idle_fg =
+            util::add_colors(&config_alternating_tint.theme.idle_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.info_fg =
+            util::add_colors(&config_alternating_tint.theme.info_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.good_fg =
+            util::add_colors(&config_alternating_tint.theme.good_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.warning_fg =
+            util::add_colors(&config_alternating_tint.theme.warning_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.critical_fg =
+            util::add_colors(&config_alternating_tint.theme.critical_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
     }
 
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
@@ -195,7 +209,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // We save the order of the blocks here,
     // because they will be passed to an unordered HashMap
-    let order = blocks.iter().map(|x| String::from(x.id())).collect::<Vec<_>>();
+    let order = blocks
+        .iter()
+        .map(|x| String::from(x.id()))
+        .collect::<Vec<_>>();
 
     let mut scheduler = UpdateScheduler::new(&blocks);
 
@@ -206,7 +223,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     // We wait for click events in a separate thread, to avoid blocking to wait for stdin
-    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) = crossbeam_channel::unbounded();
+    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =
+        crossbeam_channel::unbounded();
     process_events(tx_clicks);
 
     // Time to next update channel.
@@ -255,8 +273,7 @@ fn profile(iterations: i32, name: &str, block: &mut Block) {
     println!(
         "Now profiling the {0} block by executing {1} updates.\n \
          Use pprof to analyze {0}.profile later.",
-        name,
-        iterations
+        name, iterations
     );
 
     PROFILER
@@ -277,7 +294,8 @@ fn profile(iterations: i32, name: &str, block: &mut Block) {
 
 #[cfg(feature = "profiling")]
 fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>) -> Result<()> {
-    let profile_runs = runs.parse::<i32>()
+    let profile_runs = runs
+        .parse::<i32>()
         .configuration_error("failed to parse --profile-runs as an integer")?;
     for &(ref block_name, ref block_config) in &config.blocks {
         if block_name == name {
@@ -295,7 +313,12 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
 }
 
 #[cfg(not(feature = "profiling"))]
-fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: &Sender<Task>) -> Result<()> {
+fn profile_config(
+    _name: &str,
+    _runs: &str,
+    _config: &Config,
+    _update: &Sender<Task>,
+) -> Result<()> {
     // TODO: Maybe we should just panic! here.
     Err(InternalError(
         "profile".to_string(),

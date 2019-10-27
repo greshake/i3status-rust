@@ -1,16 +1,16 @@
-use std::env;
-use std::time::Duration;
-use std::process::Command;
-use crossbeam_channel::Sender;
 use crate::scheduler::Task;
+use crossbeam_channel::Sender;
+use std::env;
+use std::process::Command;
+use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_opt_duration;
 use crate::errors::*;
-use crate::widgets::button::ButtonWidget;
-use crate::widget::I3BarWidget;
 use crate::input::I3BarEvent;
+use crate::widget::I3BarWidget;
+use crate::widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -67,7 +67,11 @@ impl ToggleConfig {
 impl ConfigBlock for Toggle {
     type Config = ToggleConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         Ok(Toggle {
             text: ButtonWidget::new(config, &id).with_content(block_config.text),

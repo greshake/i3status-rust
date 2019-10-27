@@ -72,27 +72,27 @@
 //! {SUpi} | Swap used (%) as integer
 
 //!
-use std::time::{Duration, Instant};
-use std::collections::HashMap;
-use crate::util::*;
-use crossbeam_channel::Sender;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 use crate::blocks::{Block, ConfigBlock};
 use crate::input::{I3BarEvent, MouseButton};
-use std::str::FromStr;
-use uuid::Uuid;
+use crate::util::*;
+use crossbeam_channel::Sender;
+use std::collections::HashMap;
 use std::fmt;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::str::FromStr;
+use std::time::{Duration, Instant};
+use uuid::Uuid;
 
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::widgets::button::ButtonWidget;
-use crate::widget::{I3BarWidget, State};
 use crate::scheduler::Task;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
 
-use std::io::Write;
 use std::fs::OpenOptions;
+use std::io::Write;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
@@ -219,7 +219,14 @@ impl Memstate {
     }
 
     fn done(&self) -> bool {
-        self.mem_total.1 && self.mem_free.1 && self.buffers.1 && self.cached.1 && self.s_reclaimable.1 && self.shmem.1 && self.swap_total.1 && self.swap_free.1
+        self.mem_total.1
+            && self.mem_free.1
+            && self.buffers.1
+            && self.cached.1
+            && self.s_reclaimable.1
+            && self.shmem.1
+            && self.swap_total.1
+            && self.swap_free.1
     }
 }
 
@@ -260,7 +267,10 @@ pub struct MemoryConfig {
     pub clickable: bool,
 
     /// The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only.
-    #[serde(default = "MemoryConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "MemoryConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Percentage of memory usage, where state is set to warning
@@ -331,9 +341,7 @@ impl Memory {
         let swap_used = Unit::KiB(mem_state.swap_total() - mem_state.swap_free());
         let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
         let buffers = Unit::KiB(mem_state.buffers());
-        let cached = Unit::KiB(
-            mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem(),
-        );
+        let cached = Unit::KiB(mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem());
         let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
         let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
 
@@ -448,13 +456,14 @@ impl Memory {
                 x if f64::from(x) > self.warning.0 => State::Warning,
                 _ => State::Idle,
             }),
-            Memtype::Swap => self.output.1.set_state(
-                match swap_used.percent(swap_total) {
-                    x if f64::from(x)  > self.critical.1 => State::Critical,
+            Memtype::Swap => self
+                .output
+                .1
+                .set_state(match swap_used.percent(swap_total) {
+                    x if f64::from(x) > self.critical.1 => State::Critical,
                     x if f64::from(x) > self.warning.1 => State::Warning,
                     _ => State::Idle,
-                },
-            ),
+                }),
         };
 
         if_debug!({
@@ -513,15 +522,14 @@ impl ConfigBlock for Memory {
     }
 }
 
-
 impl Block for Memory {
     fn id(&self) -> &str {
         &self.id
     }
 
     fn update(&mut self) -> Result<Option<Duration>> {
-        let f = File::open("/proc/meminfo")
-            .block_error("memory", "/proc/meminfo does not exist")?;
+        let f =
+            File::open("/proc/meminfo").block_error("memory", "/proc/meminfo does not exist")?;
         let f = BufReader::new(f);
 
         let mut mem_state = Memstate::new();
@@ -559,24 +567,21 @@ impl Block for Memory {
                 }
                 "MemFree:" => {
                     mem_state.mem_free = (
-                        u64::from_str(line[1])
-                            .block_error("memory", "failed to parse mem_free")?,
+                        u64::from_str(line[1]).block_error("memory", "failed to parse mem_free")?,
                         true,
                     );
                     continue;
                 }
                 "Buffers:" => {
                     mem_state.buffers = (
-                        u64::from_str(line[1])
-                            .block_error("memory", "failed to parse buffers")?,
+                        u64::from_str(line[1]).block_error("memory", "failed to parse buffers")?,
                         true,
                     );
                     continue;
                 }
                 "Cached:" => {
                     mem_state.cached = (
-                        u64::from_str(line[1])
-                            .block_error("memory", "failed to parse cached")?,
+                        u64::from_str(line[1]).block_error("memory", "failed to parse cached")?,
                         true,
                     );
                     continue;
@@ -591,8 +596,7 @@ impl Block for Memory {
                 }
                 "Shmem:" => {
                     mem_state.shmem = (
-                        u64::from_str(line[1])
-                            .block_error("memory", "failed to parse shmem")?,
+                        u64::from_str(line[1]).block_error("memory", "failed to parse shmem")?,
                         true,
                     );
                     continue;
@@ -665,11 +669,9 @@ impl Block for Memory {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![
-            match self.memtype {
-                Memtype::Memory => &self.output.0,
-                Memtype::Swap => &self.output.1,
-            },
-        ]
+        vec![match self.memtype {
+            Memtype::Memory => &self.output.0,
+            Memtype::Swap => &self.output.1,
+        }]
     }
 }

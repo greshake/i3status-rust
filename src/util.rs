@@ -1,24 +1,26 @@
 use crate::blocks::Block;
 use crate::config::Config;
 use crate::errors::*;
-use std::collections::HashMap;
+use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde_json::value::Value;
-use toml;
-use regex::Regex;
-use std::prelude::v1::String;
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs::{File, OpenOptions};
-use std::io::BufReader;
 use std::io::prelude::*;
+use std::io::BufReader;
 use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
+use std::prelude::v1::String;
+use toml;
 
 pub fn xdg_config_home() -> PathBuf {
     // In the unlikely event that $HOME is not set, it doesn't really matter
     // what we fall back on, so use /.config.
-    let config_path = std::env::var("XDG_CONFIG_HOME")
-        .unwrap_or(format!("{}/.config", std::env::var("HOME").unwrap_or("".to_string())));
+    let config_path = std::env::var("XDG_CONFIG_HOME").unwrap_or(format!(
+        "{}/.config",
+        std::env::var("HOME").unwrap_or("".to_string())
+    ));
     PathBuf::from(&config_path)
 }
 
@@ -27,21 +29,24 @@ where
     T: DeserializeOwned,
 {
     let mut contents = String::new();
-    let mut file = BufReader::new(File::open(file)
-        .internal_error("util",&format!("failed to open file: {}", file))?);
+    let mut file = BufReader::new(
+        File::open(file).internal_error("util", &format!("failed to open file: {}", file))?,
+    );
     file.read_to_string(&mut contents)
         .internal_error("util", "failed to read file")?;
     toml::from_str(&contents).configuration_error("failed to parse TOML from file contents")
 }
 
 pub fn read_file(blockname: &str, path: &Path) -> Result<String> {
-    let mut f = OpenOptions::new()
-        .read(true)
-        .open(path)
-        .block_error(blockname, &format!("failed to open file {}", path.to_string_lossy()))?;
+    let mut f = OpenOptions::new().read(true).open(path).block_error(
+        blockname,
+        &format!("failed to open file {}", path.to_string_lossy()),
+    )?;
     let mut content = String::new();
-    f.read_to_string(&mut content)
-        .block_error(blockname, &format!("failed to read {}", path.to_string_lossy()))?;
+    f.read_to_string(&mut content).block_error(
+        blockname,
+        &format!("failed to read {}", path.to_string_lossy()),
+    )?;
     // Removes trailing newline
     content.pop();
     Ok(content)
@@ -50,8 +55,7 @@ pub fn read_file(blockname: &str, path: &Path) -> Result<String> {
 #[allow(dead_code)]
 pub fn get_file(name: &str) -> Result<String> {
     let mut file_contents = String::new();
-    let mut file = File::open(name)
-        .internal_error("util", &format!("Unable to open {}", name))?;
+    let mut file = File::open(name).internal_error("util", &format!("Unable to open {}", name))?;
     file.read_to_string(&mut file_contents)
         .internal_error("util", &format!("Unable to read {}", name))?;
     Ok(file_contents)
@@ -106,7 +110,11 @@ impl PrintState {
     }
 }
 
-pub fn print_blocks(order: &[String], block_map: &HashMap<String, &mut dyn Block>, config: &Config) -> Result<()> {
+pub fn print_blocks(
+    order: &[String],
+    block_map: &HashMap<String, &mut dyn Block>,
+    config: &Config,
+) -> Result<()> {
     let mut state = PrintState {
         has_predecessor: false,
         last_bg: None,
@@ -139,22 +147,28 @@ pub fn print_blocks(order: &[String], block_map: &HashMap<String, &mut dyn Block
         };
 
         let separator = json!({
-                    "full_text": config.theme.separator,
-                    "separator": false,
-                    "separator_block_width": 0,
-                    "background": if sep_bg.is_some() { Value::String(sep_bg.unwrap()) } else { Value::Null },
-                    "color": sep_fg,
-                    "markup": "pango"
-                });
-        print!("{}{},", if state.has_predecessor { "," } else { "" },
-               separator.to_string());
+            "full_text": config.theme.separator,
+            "separator": false,
+            "separator_block_width": 0,
+            "background": if sep_bg.is_some() { Value::String(sep_bg.unwrap()) } else { Value::Null },
+            "color": sep_fg,
+            "markup": "pango"
+        });
+        print!(
+            "{}{},",
+            if state.has_predecessor { "," } else { "" },
+            separator.to_string()
+        );
         print!("{}", first.to_string());
         state.set_last_bg(color.to_owned());
         state.set_predecessor(true);
 
         for widget in widgets.iter().skip(1) {
-            print!("{}{}", if state.has_predecessor { "," } else { "" },
-                   widget.to_string());
+            print!(
+                "{}{}",
+                if state.has_predecessor { "," } else { "" },
+                widget.to_string()
+            );
             state.set_last_bg(String::from(
                 widget.get_rendered()["background"]
                     .as_str()
@@ -178,7 +192,10 @@ pub fn color_from_rgba(color: &str) -> ::std::result::Result<(u8, u8, u8, u8), P
 }
 
 pub fn color_to_rgba(color: (u8, u8, u8, u8)) -> String {
-    format!("#{:02X}{:02X}{:02X}{:02X}", color.0, color.1, color.2, color.3)
+    format!(
+        "#{:02X}{:02X}{:02X}{:02X}",
+        color.0, color.1, color.2, color.3
+    )
 }
 
 // TODO: Allow for other non-additive tints
@@ -205,8 +222,7 @@ impl FormatTemplate {
         let s_as_bytes = s.as_bytes();
 
         //valid var tokens: {} containing any amount of alphanumericals
-        let re = Regex::new(r"\{[a-zA-Z0-9]+?\}")
-            .internal_error("util", "invalid regex")?;
+        let re = Regex::new(r"\{[a-zA-Z0-9]+?\}").internal_error("util", "invalid regex")?;
 
         let mut token_vec: Vec<FormatTemplate> = vec![];
         let mut start: usize = 0;
@@ -254,9 +270,11 @@ impl FormatTemplate {
                 };
             }
             Var(ref key, ref next) => {
-                rendered.push_str(
-                    &format!("{}", vars.get(key).unwrap_or_else(|| panic!("Unknown placeholder in format string: {}", key))),
-                );
+                rendered.push_str(&format!(
+                    "{}",
+                    vars.get(key)
+                        .unwrap_or_else(|| panic!("Unknown placeholder in format string: {}", key))
+                ));
                 if let Some(ref next) = *next {
                     rendered.push_str(&*next.render(vars));
                 };
@@ -276,9 +294,13 @@ impl FormatTemplate {
                 };
             }
             Var(ref key, ref next) => {
-                rendered.push_str(&format!("{}",
-                                           vars.get(&**key)
-                                               .internal_error("util", &format!("Unknown placeholder in format string: {}", key))?));
+                rendered.push_str(&format!(
+                    "{}",
+                    vars.get(&**key).internal_error(
+                        "util",
+                        &format!("Unknown placeholder in format string: {}", key)
+                    )?
+                ));
                 if let Some(ref next) = *next {
                     rendered.push_str(&*next.render_static_str(vars)?);
                 };

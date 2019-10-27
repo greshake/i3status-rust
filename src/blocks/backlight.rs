@@ -28,20 +28,17 @@ use crate::widgets::button::ButtonWidget;
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
     let mut file = OpenOptions::new()
-            .read(true)
-            .open(device_file)
-            .block_error("backlight", "Failed to open brightness file")?;
+        .read(true)
+        .open(device_file)
+        .block_error("backlight", "Failed to open brightness file")?;
     let mut content = String::new();
-    file.read_to_string(&mut content).block_error(
-        "backlight",
-        "Failed to read brightness file",
-    )?;
+    file.read_to_string(&mut content)
+        .block_error("backlight", "Failed to read brightness file")?;
     // Removes trailing newline.
     content.pop();
-    content.parse::<u64>().block_error(
-        "backlight",
-        "Failed to read value from brightness file",
-    )
+    content
+        .parse::<u64>()
+        .block_error("backlight", "Failed to read value from brightness file")
 }
 
 /// Represents a physical backlit device whose brightness level can be queried.
@@ -55,23 +52,20 @@ impl BacklitDevice {
     /// `/sys/class/backlight` directory.
     pub fn default() -> Result<Self> {
         let devices = Path::new("/sys/class/backlight")
-                           .read_dir() // Iterate over entries in the directory.
-                           .block_error("backlight",
-                                        "Failed to read backlight device directory")?;
+            .read_dir() // Iterate over entries in the directory.
+            .block_error("backlight", "Failed to read backlight device directory")?;
 
         let first_device = match devices.take(1).next() {
             None => Err(BlockError(
                 "backlight".to_string(),
                 "No backlit devices found".to_string(),
             )),
-            Some(device) => {
-                device.map_err(|_| {
-                    BlockError(
-                        "backlight".to_string(),
-                        "Failed to read default device file".to_string(),
-                    )
-                })
-            }
+            Some(device) => device.map_err(|_| {
+                BlockError(
+                    "backlight".to_string(),
+                    "Failed to read default device file".to_string(),
+                )
+            }),
         }?;
 
         let max_brightness = read_brightness(&first_device.path().join("max_brightness"))?;
@@ -116,9 +110,9 @@ impl BacklitDevice {
 
     /// Set the brightness value for this backlit device, as a percent.
     pub fn set_brightness(&self, value: u64) -> Result<()> {
-        let file = OpenOptions::new().write(true).open(self.device_path.join(
-            "brightness",
-        ));
+        let file = OpenOptions::new()
+            .write(true)
+            .open(self.device_path.join("brightness"));
         if file.is_err() {
             // TODO: Find a way to issue a non-fatal error, since this is likely
             // due to a permissions issue and not the fault of the user. It
@@ -177,7 +171,11 @@ impl BacklightConfig {
 impl ConfigBlock for Backlight {
     type Config = BacklightConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let device = match block_config.device {
             Some(path) => BacklitDevice::from_device(path),
             None => BacklitDevice::default(),
@@ -203,15 +201,17 @@ impl ConfigBlock for Backlight {
 
             let mut buffer = [0; 1024];
             loop {
-                let mut events = notify.read_events_blocking(&mut buffer).expect(
-                    "Error while reading inotify events",
-                );
+                let mut events = notify
+                    .read_events_blocking(&mut buffer)
+                    .expect("Error while reading inotify events");
 
                 if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
-                    tx_update_request.send(Task {
-                        id: id.clone(),
-                        update_time: Instant::now(),
-                    }).unwrap();
+                    tx_update_request
+                        .send(Task {
+                            id: id.clone(),
+                            update_time: Instant::now(),
+                        })
+                        .unwrap();
                 }
 
                 // Avoid update spam.

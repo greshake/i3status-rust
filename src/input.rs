@@ -1,10 +1,10 @@
+use crossbeam_channel::Sender;
 use serde::{de, Deserializer};
 use serde_json;
 use std::fmt;
 use std::io;
 use std::option::Option;
 use std::string::*;
-use crossbeam_channel::Sender;
 use std::thread;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

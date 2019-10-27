@@ -49,7 +49,8 @@ impl BluetoothDevice {
                     .unwrap()
                     .to_string();
                 (path, address)
-            }).collect();
+            })
+            .collect();
 
         // If we need to suppress errors from missing devices, this is the place
         // to do it. We could also pick the "default" device here, although that
@@ -63,7 +64,8 @@ impl BluetoothDevice {
             .block_error(
                 "bluetooth",
                 "Failed find a device with matching MAC address.",
-            )?.to_string();
+            )?
+            .to_string();
 
         // Swallow errors, since this is optional.
         let icon: Option<String> = con
@@ -133,10 +135,12 @@ impl BluetoothDevice {
 
             loop {
                 if con.incoming(10_000).next().is_some() {
-                    update_request.send(Task {
-                        id: id.clone(),
-                        update_time: Instant::now(),
-                    }).unwrap();
+                    update_request
+                        .send(Task {
+                            id: id.clone(),
+                            update_time: Instant::now(),
+                        })
+                        .unwrap();
                 }
             }
         });

@@ -5,8 +5,8 @@
 //! internal power supply.
 
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use dbus;
@@ -19,7 +19,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{FormatTemplate, read_file};
+use crate::util::{read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -66,18 +66,22 @@ impl PowerSupplyDevice {
 
         // Read charge_full exactly once, if it exists.
         let charge_full = if device_path.join("charge_full").exists() {
-            Some(read_file("battery", &device_path.join("charge_full"))?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse charge_full")?)
+            Some(
+                read_file("battery", &device_path.join("charge_full"))?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse charge_full")?,
+            )
         } else {
             None
         };
 
         // Read energy_full exactly once, if it exists.
         let energy_full = if device_path.join("energy_full").exists() {
-            Some(read_file("battery", &device_path.join("energy_full"))?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse energy_full")?)
+            Some(
+                read_file("battery", &device_path.join("energy_full"))?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse energy_full")?,
+            )
         } else {
             None
         };
@@ -139,7 +143,7 @@ impl BatteryDevice for PowerSupplyDevice {
             return Err(BlockError(
                 "battery".to_string(),
                 "Device does not support reading energy".to_string(),
-            ))
+            ));
         };
 
         let energy_path = self.device_path.join("energy_now");
@@ -228,7 +232,13 @@ impl UpowerDevice {
         if device == "DisplayDevice" {
             device_path = String::from("/org/freedesktop/UPower/devices/DisplayDevice");
         } else {
-            let msg = dbus::Message::new_method_call("org.freedesktop.UPower", "/org/freedesktop/UPower", "org.freedesktop.UPower", "EnumerateDevices").unwrap();
+            let msg = dbus::Message::new_method_call(
+                "org.freedesktop.UPower",
+                "/org/freedesktop/UPower",
+                "org.freedesktop.UPower",
+                "EnumerateDevices",
+            )
+            .unwrap();
             let dbus_reply = con.send_with_reply_and_block(msg, 2000).unwrap();
 
             // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
@@ -255,10 +265,7 @@ impl UpowerDevice {
                 "UPower device is not a battery.".into(),
             ));
         }
-        Ok(UpowerDevice {
-            device_path,
-            con,
-        })
+        Ok(UpowerDevice { device_path, con })
     }
 
     /// Monitor UPower property changes in a separate thread and send updates
@@ -284,10 +291,12 @@ impl UpowerDevice {
 
             loop {
                 if con.incoming(10_000).next().is_some() {
-                    update_request.send(Task {
-                        id: id.clone(),
-                        update_time: Instant::now(),
-                    }).unwrap();
+                    update_request
+                        .send(Task {
+                            id: id.clone(),
+                            update_time: Instant::now(),
+                        })
+                        .unwrap();
                     // Avoid update spam.
                     // TODO: Is this necessary?
                     thread::sleep(Duration::from_millis(1000))
@@ -387,7 +396,10 @@ impl Default for BatteryDriver {
 #[serde(deny_unknown_fields)]
 pub struct BatteryConfig {
     /// Update interval in seconds
-    #[serde(default = "BatteryConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "BatteryConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// The internal power supply device in `/sys/class/power_supply/` to read
@@ -433,7 +445,11 @@ impl BatteryConfig {
 impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
-    fn new(block_config: Self::Config, config: Config, update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        update_request: Sender<Task>,
+    ) -> Result<Self> {
         // TODO: remove deprecated show types eventually
         let format = match block_config.show {
             Some(show) => match show.as_ref() {
@@ -441,13 +457,10 @@ impl ConfigBlock for Battery {
                 "percentage" => "{percentage}%".into(),
                 "both" => "{percentage}% {time}".into(),
                 _ => {
-                    return Err(BlockError(
-                        "battery".into(),
-                        "Unknown show option".into(),
-                    ));
+                    return Err(BlockError("battery".into(), "Unknown show option".into()));
                 }
             },
-            None => block_config.format
+            None => block_config.format,
         };
 
         // TODO: Remove the deprecated upower config eventually.
@@ -463,7 +476,7 @@ impl ConfigBlock for Battery {
                 let out = UpowerDevice::from_device(&block_config.device)?;
                 out.monitor(id.clone(), update_request);
                 Box::new(out)
-            },
+            }
             BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(&block_config.device)?),
         };
 
@@ -505,19 +518,22 @@ impl Block for Battery {
             let values = map!("{percentage}" => percentage,
                               "{time}" => time,
                               "{power}" => power);
-            self.output.set_text(self.format.render_static_str(&values)?);
+            self.output
+                .set_text(self.format.render_static_str(&values)?);
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.
             match status.as_str() {
-                "Charging" => { self.output.set_state(State::Good); },
-                _ =>
-                    { self.output.set_state(match capacity {
-                    Ok(0..=15) => State::Critical,
-                    Ok(16..=30) => State::Warning,
-                    Ok(31..=60) => State::Info,
-                    Ok(61..=100) => State::Good,
-                    _ => State::Warning,
+                "Charging" => {
+                    self.output.set_state(State::Good);
+                }
+                _ => {
+                    self.output.set_state(match capacity {
+                        Ok(0..=15) => State::Critical,
+                        Ok(16..=30) => State::Warning,
+                        Ok(31..=60) => State::Info,
+                        Ok(61..=100) => State::Good,
+                        _ => State::Warning,
                     });
                 }
             }

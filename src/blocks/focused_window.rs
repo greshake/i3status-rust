@@ -1,22 +1,22 @@
-use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
-use std::thread;
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
-use crate::widgets::text::TextWidget;
-use crate::widget::I3BarWidget;
 use crate::scheduler::Task;
+use crate::widget::I3BarWidget;
+use crate::widgets::text::TextWidget;
 
 use uuid::Uuid;
 
 extern crate i3ipc;
+use self::i3ipc::event::inner::{WindowChange, WorkspaceChange};
+use self::i3ipc::event::Event;
 use self::i3ipc::I3EventListener;
 use self::i3ipc::Subscription;
-use self::i3ipc::event::Event;
-use self::i3ipc::event::inner::{WindowChange, WorkspaceChange};
 
 pub struct FocusedWindow {
     text: TextWidget,
@@ -62,34 +62,43 @@ impl ConfigBlock for FocusedWindow {
                 match event.unwrap() {
                     Event::WindowEvent(e) => {
                         match e.change {
-                            WindowChange::Focus => if let Some(name) = e.container.name {
-                                let mut title = title_original.lock().unwrap();
-                                *title = name;
-                                tx.send(Task {
-                                    id: id_clone.clone(),
-                                    update_time: Instant::now(),
-                                }).unwrap();
-                            },
-                            WindowChange::Title => if e.container.focused {
+                            WindowChange::Focus => {
                                 if let Some(name) = e.container.name {
                                     let mut title = title_original.lock().unwrap();
                                     *title = name;
                                     tx.send(Task {
                                         id: id_clone.clone(),
                                         update_time: Instant::now(),
-                                    }).unwrap();
+                                    })
+                                    .unwrap();
                                 }
-                            },
-                            WindowChange::Close => if let Some(name) = e.container.name {
-                                let mut title = title_original.lock().unwrap();
-                                if name == *title {
-                                    *title = String::from("");
-                                    tx.send(Task {
-                                        id: id_clone.clone(),
-                                        update_time: Instant::now(),
-                                    }).unwrap();
+                            }
+                            WindowChange::Title => {
+                                if e.container.focused {
+                                    if let Some(name) = e.container.name {
+                                        let mut title = title_original.lock().unwrap();
+                                        *title = name;
+                                        tx.send(Task {
+                                            id: id_clone.clone(),
+                                            update_time: Instant::now(),
+                                        })
+                                        .unwrap();
+                                    }
                                 }
-                            },
+                            }
+                            WindowChange::Close => {
+                                if let Some(name) = e.container.name {
+                                    let mut title = title_original.lock().unwrap();
+                                    if name == *title {
+                                        *title = String::from("");
+                                        tx.send(Task {
+                                            id: id_clone.clone(),
+                                            update_time: Instant::now(),
+                                        })
+                                        .unwrap();
+                                    }
+                                }
+                            }
                             _ => {}
                         };
                     }
@@ -100,9 +109,10 @@ impl ConfigBlock for FocusedWindow {
                             tx.send(Task {
                                 id: id_clone.clone(),
                                 update_time: Instant::now(),
-                            }).unwrap();
+                            })
+                            .unwrap();
                         }
-                    },
+                    }
                     _ => unreachable!(),
                 }
             }
@@ -117,13 +127,13 @@ impl ConfigBlock for FocusedWindow {
     }
 }
 
-
 impl Block for FocusedWindow {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let mut string = (*self.title
+        let mut string = (*self
+            .title
             .lock()
             .block_error("focused_window", "failed to acquire lock")?)
-            .clone();
+        .clone();
         string = string.chars().take(self.max_width).collect();
         self.text.set_text(string);
         Ok(None)
