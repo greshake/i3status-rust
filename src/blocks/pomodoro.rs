@@ -35,7 +35,8 @@ pub struct Pomodoro {
 
 impl Pomodoro {
     fn set_text(&mut self) {
-        self.time.set_text(format!("{} | {}", self.count, self.get_text()));
+        self.time
+            .set_text(format!("{} | {}", self.count, self.get_text()));
     }
 
     fn get_text(&self) -> String {
@@ -108,7 +109,7 @@ impl ConfigBlock for Pomodoro {
             id: id.clone(),
             time: ButtonWidget::new(config, &id).with_icon("pomodoro"),
             state: State::Stopped,
-            length: block_config.length * 60,             // convert to minutes
+            length: block_config.length * 60, // convert to minutes
             break_length: block_config.break_length * 60, // convert to minutes
             update_interval: Duration::from_millis(1000),
             message: block_config.message,

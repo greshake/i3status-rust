@@ -14,7 +14,8 @@ pub mod memory;
 pub mod music;
 pub mod net;
 pub mod networkmanager;
-#[cfg(feature = "notmuch")] pub mod notmuch;
+#[cfg(feature = "notmuch")]
+pub mod notmuch;
 pub mod nvidia_gpu;
 pub mod pacman;
 pub mod pomodoro;
@@ -44,7 +45,8 @@ use self::memory::*;
 use self::music::*;
 use self::net::*;
 use self::networkmanager::*;
-#[cfg(feature = "notmuch")] use self::notmuch::*;
+#[cfg(feature = "notmuch")]
+use self::notmuch::*;
 use self::nvidia_gpu::*;
 use self::pacman::*;
 use self::pomodoro::*;
@@ -66,8 +68,8 @@ use toml::value::Value;
 
 use crate::config::Config;
 use crate::errors::*;
-use crate::scheduler::Task;
 use crate::input::I3BarEvent;
+use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 
 pub trait Block {
