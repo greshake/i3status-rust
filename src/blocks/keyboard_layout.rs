@@ -213,7 +213,11 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
         let split = layouts_str.split(",").nth(idx as usize);
 
         match split {
-            Some(s) => Ok(s.to_string()),
+            //sometimes (after keyboard attach/detach) setxkbmap reports variant in the layout line,
+            //e.g. 'layout:     us,bg:bas_phonetic,' instead of printing it in its own line,
+            //there is no need to waste space for it, because in most cases there will be only one
+            //variant per layout. TODO - add configuration option to show the variant?!
+            Some(s) => Ok(s.split(":").nth(0).unwrap().to_string()),
 
             //'None' may happen only if keyboard map is being toggled (by window focus or keyboard)
             //and keyboard layout replaced (by calling setxkmap) at almost the same time,
