@@ -65,7 +65,7 @@ impl RotatingTextWidget {
     pub fn with_text(mut self, content: &str) -> Self {
         self.content = String::from(content);
         self.rotation_pos = 0;
-        if self.content.len() > self.width {
+        if self.content.chars().count() > self.width {
             self.next_rotation = Some(Instant::now() + self.rotation_interval);
         } else {
             self.next_rotation = None;
@@ -88,7 +88,7 @@ impl RotatingTextWidget {
         if self.content != content {
             self.content = content;
             self.rotation_pos = 0;
-            if self.content.len() > self.width {
+            if self.content.chars().count() > self.width {
                 self.next_rotation = Some(Instant::now() + self.rotation_interval);
             } else {
                 self.next_rotation = None;
@@ -102,8 +102,9 @@ impl RotatingTextWidget {
     }
 
     fn get_rotated_content(&self) -> String {
-        if self.content.len() > self.width {
-            let missing = (self.rotation_pos + self.width).saturating_sub(self.content.len());
+        if self.content.chars().count() > self.width {
+            let missing =
+                (self.rotation_pos + self.width).saturating_sub(self.content.chars().count());
             if missing == 0 {
                 self.content
                     .chars()
@@ -135,7 +136,7 @@ impl RotatingTextWidget {
                                 self.get_rotated_content()),
             "separator": false,
             "separator_block_width": 0,
-            "min_width": if self.content == "" {"".to_string()} else {"0".repeat(self.width+5)},
+            "min_width": if self.content == "" {"".to_string()} else {"0".repeat(self.width+self.icon.clone().unwrap_or_else(|| String::from(" ")).chars().count()+1)},
             "align": "left",
             "background": key_bg,
             "color": key_fg
@@ -150,7 +151,7 @@ impl RotatingTextWidget {
             if next_rotation > now {
                 Ok((false, Some(next_rotation - now)))
             } else if self.rotating {
-                if self.rotation_pos < self.content.len() {
+                if self.rotation_pos < self.content.chars().count() {
                     self.rotation_pos += 1;
                     self.next_rotation = Some(now + self.rotation_speed);
                     self.update();
