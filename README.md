@@ -24,11 +24,15 @@ Optional:
 
 ## Getting Started
 
-We strongly recommend using the development version. Older versions are not supported at this time.
+Stable releases are packaged on some distributions:
 
-- If you are using Arch Linux, you can install from the AUR: [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/).
+- On Arch Linux, you can install from the AUR: [`i3status-rust`](https://aur.archlinux.org/packages/i3status-rust/) or [`i3status-rust-git`](https://aur.archlinux.org/packages/i3status-rust-git/).
 
-- If you are using Fedora or CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
+- On Fedora or CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
+
+- On Void Linux: `xbps-install -S i3status-rust`
+
+- On NixOS: `nix-env -iA nixos.i3status-rust`
 
 Otherwise, you can install from source:
 
