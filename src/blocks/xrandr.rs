@@ -114,7 +114,7 @@ macro_rules! unwrap_or_continue {
 
 impl Xrandr {
     fn get_active_monitors() -> Result<Option<Vec<String>>> {
-        let active_montiors_cli = String::from_utf8(
+        let active_monitors_cli = String::from_utf8(
             Command::new("sh")
                 .args(&["-c", "xrandr --listactivemonitors | grep \\/"])
                 .output()
@@ -122,7 +122,7 @@ impl Xrandr {
                 .stdout,
         )
         .block_error("xrandr", "couldn't parse xrandr monitor list")?;
-        let monitors: Vec<&str> = active_montiors_cli.split('\n').collect();
+        let monitors: Vec<&str> = active_monitors_cli.split('\n').collect();
         let mut active_monitors: Vec<String> = Vec::new();
         for monitor in monitors {
             if let Some((name, _)) = monitor
