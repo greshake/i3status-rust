@@ -13,6 +13,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -22,6 +23,8 @@ pub struct Pacman {
     output: ButtonWidget,
     id: String,
     update_interval: Duration,
+    format: FormatTemplate,
+    format_up_to_date: FormatTemplate,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -33,11 +36,23 @@ pub struct PacmanConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
+
+    /// Format override
+    #[serde(default = "PacmanConfig::default_format")]
+    pub format: String,
+
+    /// Alternative format override for when no updates are available
+    #[serde(default = "PacmanConfig::default_format")]
+    pub format_up_to_date: String,
 }
 
 impl PacmanConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(60 * 10)
+    }
+
+    fn default_format() -> String {
+        "{count}".to_owned()
     }
 }
 
@@ -52,6 +67,13 @@ impl ConfigBlock for Pacman {
         Ok(Pacman {
             id: Uuid::new_v4().simple().to_string(),
             update_interval: block_config.interval,
+            format: FormatTemplate::from_string(&block_config.format)
+                .block_error("pacman", "Invalid format specified for pacman::format")?,
+            format_up_to_date: FormatTemplate::from_string(&block_config.format_up_to_date)
+                .block_error(
+                    "pacman",
+                    "Invalid format specified for pacman::format_up_to_date",
+                )?,
             output: ButtonWidget::new(config, "pacman").with_icon("update"),
         })
     }
@@ -142,7 +164,11 @@ fn get_update_count() -> Result<usize> {
 impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
         let count = get_update_count()?;
-        self.output.set_text(format!("{}", count));
+        let values = map!("{count}" => count);
+        self.output.set_text(match count {
+            0 => self.format_up_to_date.render_static_str(&values)?,
+            _ => self.format.render_static_str(&values)?,
+        });
         self.output.set_state(match count {
             0 => State::Idle,
             _ => State::Info,
