@@ -106,9 +106,9 @@ impl fmt::Debug for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            BlockError(_, _) => "Block error occured in block '{}'",
-            ConfigurationError(_, _) => "Configuration error occured",
-            InternalError(_, _, _) => "Internal error occured",
+            BlockError(_, _) => "Block error occurred in block '{}'",
+            ConfigurationError(_, _) => "Configuration error occurred",
+            InternalError(_, _, _) => "Internal error occurred",
         }
     }
 
