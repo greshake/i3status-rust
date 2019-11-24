@@ -16,10 +16,6 @@ Bug fixes (or typos!), on the other hand, do not require a corresponding issue
 
 We will *not* generally accept the following:
 
-- **PRs that just run `rustfmt` on the existing codebase.** Yes, we are aware
-  that the code style is not consistent, but a blanket formatting change is not
-  helpful at this time. See #340 for a place to discuss this.
-
 - **PRs that just update dependencies to their newest version.** See below.
 
 ## Dependencies
@@ -66,8 +62,8 @@ We will generally squash PRs that have commits like "fix typo", "updates", etc.
 To avoid this, make your commit messages clear and the commits themselves as
 targeted as possible. Use `git rebase` if you need to do this after the fact.
 
-If you feel up to it, try to run `rustfmt` on new code, but be prepared to deal
-with the unrelated changes it makes in the process.
+Please format your code with `rustfmt` before submitting a PR.  The easiest way
+to do this is by running `cargo fmt`.
 
 ## Maintainership
 
