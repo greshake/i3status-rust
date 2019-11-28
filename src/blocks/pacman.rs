@@ -24,6 +24,7 @@ pub struct Pacman {
     id: String,
     update_interval: Duration,
     format: FormatTemplate,
+    format_singular: FormatTemplate,
     format_up_to_date: FormatTemplate,
 }
 
@@ -40,6 +41,10 @@ pub struct PacmanConfig {
     /// Format override
     #[serde(default = "PacmanConfig::default_format")]
     pub format: String,
+
+    /// Alternative format override for when exactly 1 update is available
+    #[serde(default = "PacmanConfig::default_format")]
+    pub format_singular: String,
 
     /// Alternative format override for when no updates are available
     #[serde(default = "PacmanConfig::default_format")]
@@ -69,6 +74,11 @@ impl ConfigBlock for Pacman {
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("pacman", "Invalid format specified for pacman::format")?,
+            format_singular: FormatTemplate::from_string(&block_config.format_singular)
+                .block_error(
+                    "pacman",
+                    "Invalid format specified for pacman::format_singular",
+                )?,
             format_up_to_date: FormatTemplate::from_string(&block_config.format_up_to_date)
                 .block_error(
                     "pacman",
@@ -167,6 +177,7 @@ impl Block for Pacman {
         let values = map!("{count}" => count);
         self.output.set_text(match count {
             0 => self.format_up_to_date.render_static_str(&values)?,
+            1 => self.format_singular.render_static_str(&values)?,
             _ => self.format.render_static_str(&values)?,
         });
         self.output.set_state(match count {
