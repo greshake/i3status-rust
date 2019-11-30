@@ -541,7 +541,7 @@ impl Block for Battery {
             self.output.set_icon(match status.as_str() {
                 "Discharging" => capacity_to_icon(capacity),
                 "Charging" => "bat_charging",
-                _ => capacity_to_icon(capacity)
+                _ => capacity_to_icon(capacity),
             });
         }
 
