@@ -538,10 +538,19 @@ impl Block for Battery {
                 }
             }
 
+            fn capacity_to_icon(cap: Result<u64>, default: &str) -> &str {
+                match cap {
+                    Ok(0...25) => "bat_quarter",
+                    Ok(26...50) => "bat_half",
+                    Ok(51...75) => "bat_three_quarters",
+                    _ => default,
+                }
+            }
+
             self.output.set_icon(match status.as_str() {
-                "Discharging" => "bat_discharging",
+                "Discharging" => capacity_to_icon(capacity, "bat_full"),
                 "Charging" => "bat_charging",
-                _ => "bat",
+                _ => capacity_to_icon(capacity, "bat_full")
             });
         }
 
