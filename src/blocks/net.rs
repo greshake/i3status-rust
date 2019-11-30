@@ -276,6 +276,7 @@ pub struct Net {
     rx_buff: Vec<u64>,
     tx_bytes: u64,
     rx_bytes: u64,
+    use_bits: bool,
     active: bool,
     hide_inactive: bool,
     hide_missing: bool,
@@ -328,6 +329,10 @@ pub struct NetConfig {
     /// Whether to show the upload throughput indicator of active networks.
     #[serde(default = "NetConfig::default_speed_up")]
     pub speed_up: bool,
+
+    /// Whether to show speeds in bits or bytes per second.
+    #[serde(default = "NetConfig::use_bits")]
+    pub use_bits: bool,
 
     /// Whether to show the download throughput indicator of active networks.
     #[serde(default = "NetConfig::default_speed_down")]
@@ -386,6 +391,10 @@ impl NetConfig {
         true
     }
 
+    fn use_bits() -> bool {
+        false
+    }
+
     fn default_speed_down() -> bool {
         true
     }
@@ -420,6 +429,7 @@ impl ConfigBlock for Net {
         Ok(Net {
             id: id.clone(),
             update_interval: block_config.interval,
+            use_bits: block_config.use_bits,
             network: ButtonWidget::new(config.clone(), &id).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
@@ -497,13 +507,19 @@ fn read_file(path: &Path) -> Result<String> {
     Ok(content)
 }
 
-fn convert_speed(speed: u64) -> (f64, &'static str) {
+fn convert_speed(speed: u64, use_bits: bool) -> (f64, &'static str) {
+    let mut multiplier = 1;
+    let mut b = "B";
+    if use_bits {
+        multiplier = 8;
+        b = "b";
+    }
     // the values for the match are so the speed doesn't go above 3 characters
     let (speed, unit) = match speed {
-        x if x > 999_999_999 => (speed as f64 / 1_000_000_000.0, "G"),
-        x if x > 999_999 => (speed as f64 / 1_000_000.0, "M"),
-        x if x > 999 => (speed as f64 / 1_000.0, "k"),
-        _ => (speed as f64, "B"),
+        x if (x * multiplier) > 999_999_999 => (speed as f64 / 1_000_000_000.0, "G"),
+        x if (x * multiplier) > 999_999 => (speed as f64 / 1_000_000.0, "M"),
+        x if (x * multiplier) > 999 => (speed as f64 / 1_000.0, "k"),
+        _ => (speed as f64, b),
     };
     (speed, unit)
 }
@@ -563,6 +579,12 @@ impl Block for Net {
             self.last_update = now;
         }
 
+        // allow us to display bits or bytes
+        // dependent on user's config setting
+        let mut multiplier = 1.0;
+        if self.use_bits {
+            multiplier = 8.0;
+        }
         // TODO: consider using `as_nanos`
         // Update the throughout/graph widgets if they are enabled
         let update_interval = (self.update_interval.as_secs() as f64)
@@ -570,11 +592,11 @@ impl Block for Net {
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
             let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
-            let (tx_speed, tx_unit) = convert_speed(tx_bytes);
+            let (tx_speed, tx_unit) = convert_speed(tx_bytes, self.use_bits);
             self.tx_bytes = current_tx;
 
             if let Some(ref mut tx_widget) = self.output_tx {
-                tx_widget.set_text(format!("{:5.1}{}", tx_speed, tx_unit));
+                tx_widget.set_text(format!("{:5.1}{}", tx_speed * multiplier, tx_unit));
             };
 
             if let Some(ref mut graph_tx_widget) = self.graph_tx {
@@ -586,11 +608,11 @@ impl Block for Net {
         if self.output_rx.is_some() || self.graph_rx.is_some() {
             let current_rx = self.device.rx_bytes()?;
             let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
-            let (rx_speed, rx_unit) = convert_speed(rx_bytes);
+            let (rx_speed, rx_unit) = convert_speed(rx_bytes, self.use_bits);
             self.rx_bytes = current_rx;
 
             if let Some(ref mut rx_widget) = self.output_rx {
-                rx_widget.set_text(format!("{:5.1}{}", rx_speed, rx_unit));
+                rx_widget.set_text(format!("{:5.1}{}", rx_speed * multiplier, rx_unit));
             };
 
             if let Some(ref mut graph_rx_widget) = self.graph_rx {

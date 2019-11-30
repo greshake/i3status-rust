@@ -476,7 +476,8 @@ Key | Values | Required | Default
 
 ## Net
 
-Creates a block which displays the upload and download throughput for a network interface. Units are in bytes per second (kB/s, MB/s, etc).
+Creates a block which displays the upload and download throughput for a network interface. Units are by default in bytes per second (kB/s, MB/s, etc), 
+but the 'use_bits' flag can be set to `true` to convert the units to bps (little b).
 
 ### Examples
 
@@ -490,6 +491,7 @@ ip = true
 speed_up = false
 graph_up = true
 interval = 5
+use_bits = false
 ```
 
 ### Options
