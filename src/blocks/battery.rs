@@ -539,9 +539,9 @@ impl Block for Battery {
             }
 
             self.output.set_icon(match status.as_str() {
-                "Discharging" => "bat_discharging",
+                "Discharging" => capacity_to_icon(capacity),
                 "Charging" => "bat_charging",
-                _ => "bat",
+                _ => capacity_to_icon(capacity),
             });
         }
 
@@ -557,5 +557,14 @@ impl Block for Battery {
 
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+fn capacity_to_icon(cap: Result<u64>) -> &'static str {
+    match cap {
+        Ok(0..=25) => "bat_quarter",
+        Ok(26..=50) => "bat_half",
+        Ok(51..=75) => "bat_three_quarters",
+        _ => "bat_full",
     }
 }

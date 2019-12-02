@@ -18,6 +18,7 @@ pub mod networkmanager;
 pub mod notmuch;
 pub mod nvidia_gpu;
 pub mod pacman;
+pub mod pomodoro;
 pub mod sound;
 pub mod speedtest;
 pub mod temperature;
@@ -48,6 +49,7 @@ use self::networkmanager::*;
 use self::notmuch::*;
 use self::nvidia_gpu::*;
 use self::pacman::*;
+use self::pomodoro::*;
 use self::sound::*;
 use self::speedtest::*;
 use self::temperature::*;
@@ -139,6 +141,7 @@ pub fn create_block(
         "notmuch" => block!(Notmuch, block_config, config, update_request),
         "nvidia_gpu" => block!(NvidiaGpu, block_config, config, update_request),
         "pacman" => block!(Pacman, block_config, config, update_request),
+        "pomodoro" => block!(Pomodoro, block_config, config, update_request),
         "sound" => block!(Sound, block_config, config, update_request),
         "speedtest" => block!(SpeedTest, block_config, config, update_request),
         "temperature" => block!(Temperature, block_config, config, update_request),

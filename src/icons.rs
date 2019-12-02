@@ -17,6 +17,8 @@ lazy_static! {
         "bat_full" => " FULL ",
         "bat_charging" => " CHG ",
         "bat_discharging" => " DCG ",
+        "bat_quarter" => " BAT ",
+        "bat_three_quarters" => " BAT ",
         "update" => " UPD ",
         "toggle_off" => " OFF ",
         "toggle_on" => " ON ",
@@ -52,7 +54,8 @@ lazy_static! {
         "joystick" => " JOY",
         "keyboard" => " KBD",
         "mouse" => " MOUSE",
-        "docker" => " DOCKER "
+        "docker" => " DOCKER ",
+        "pomodoro" => " POMODORO "
     };
 
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
@@ -67,10 +70,12 @@ lazy_static! {
         "memory_mem" => " \u{f2db} ",
         "memory_swap" => " \u{f0a0} ",
         "cpu" => " \u{f0e4} ",
-        "bat" => " \u{f242} ",
+        "bat_half" => " \u{f242} ",
         "bat_full" => " \u{f240} ",
         "bat_charging" => " \u{f1e6} ",
         "bat_discharging" => " \u{f242} ",
+        "bat_quarter" => " \u{f243} ",
+        "bat_three_quarters" => " \u{f241} ",
         "update" => " \u{f062} ",
         "toggle_off" => " \u{f204} ",
         "toggle_on" => " \u{f205} ",
@@ -108,7 +113,8 @@ lazy_static! {
         "joystick" => " \u{f11b}",
         "keyboard" => " \u{f11c}",
         "mouse" => " \u{f245}",
-        "docker" => " \u{f21a} "
+        "docker" => " \u{f21a} ",
+        "pomodoro" => " \u{1f345} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
@@ -123,10 +129,12 @@ lazy_static! {
         "memory_mem" => " \u{e322} ",
         "memory_swap" => " \u{e8d4} ",
         "cpu" => " \u{e640} ",
-        "bat" => " \u{e1a5} ",
+        "bat_half" => " \u{e1a5} ",
         "bat_full" => " \u{e1a4} ",
         "bat_charging" => " \u{e1a3} ",
         "bat_discharging" => " \u{e19c} ",
+        "bat_quarter" => " \u{e1a5} ",
+        "bat_three_quarters" => " \u{e1a5} ",
         "update" => " \u{e8d7} ",
         "toggle_off" => " \u{e836} ",
         "toggle_on" => " \u{e837} ",
@@ -146,7 +154,8 @@ lazy_static! {
         "joystick" => " \u{e30f}",
         "keyboard" => " \u{e312}",
         "mouse" => " \u{e323}",
-        "docker" => " \u{e532} "
+        "docker" => " \u{e532} ",
+        "pomodoro" => " \u{1f345} "
     };
 }
 
