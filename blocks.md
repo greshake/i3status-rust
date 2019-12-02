@@ -507,6 +507,8 @@ Key | Values | Required | Default
 `graph_up` | Display a bar graph for upload speed. | No | `false`
 `graph_down` | Display a bar graph for download speed. | No | `false`
 `interval` | Update interval, in seconds. | No | `1`
+`hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
+`hide_inactive` | Whether to hide networks that are missing. | No | `false`
 
 ## Nvidia Gpu
 
