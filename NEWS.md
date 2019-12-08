@@ -1,3 +1,39 @@
+# i3status-rust 0.12.0
+
+## New Blocks and Features
+
+* Wireguard devices are now correctly identified as VPNs in the net block. (#419
+  by @vvrein)
+
+* The keyboard layout block now has a `kbddbus` driver. (#451 by @sashomasho)
+
+* Adds a new Pomodoro block. (#453 by @ghedamat)
+
+## Bug Fixes and Improvements
+
+* Fixes a panic in the iBus block due to the use of Perl regex features. (#443
+  by @ammgws)
+
+* Fixes more 32-bit build issues (e.g. for armv6 and i686). (#449 and #450 by
+  @jcgruenhage)
+
+* We now enforce `cargo fmt` on the codebase and in Travis CI. (#457 by
+  @atheriel and @kennylevinsen, #474 by @ifreund)
+
+* Improves parsing of `setxkbmap` output. (#458 by @sashomasho)
+
+* Improvements to character width calculations in the rotating text widget.
+  (#437 by @ammgws)
+
+* Adds Fedora, NixOS, and Void Linux installation info to the `README`. (@tim77
+  and @atheriel)
+
+* The Font Awesome icons now use `bat_quarter` and `bat_three_quarters` for
+  battery ranges. (#393 by @Ma27)
+
+* Adds documentation for `hide_missing` and `hide_inactive` in the net block.
+  (#476 by @bascht)
+
 # i3status-rust 0.11.0
 
 ## New Blocks and Features
