@@ -64,11 +64,10 @@ The block allows for setting brightness with the mouse wheel. However, depending
 First, check that your user is a member of the "video" group using the `groups` command. Then add a rule in the `/etc/udev/rules.d/` directory containing the following, for example in `backlight.rules`:
 
 ```
-ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="acpi_video0", RUN+="/bin/chgrp video /sys/class/backlight/%k/brightness"
-ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="acpi_video0", RUN+="/bin/chmod g+w /sys/class/backlight/%k/brightness"
+ACTION=="add", SUBSYSTEM=="backlight", GROUP="video", MODE="0664"
 ```
 
-You will need to ensure that the value of the `KERNEL` parameter here is the same as the `device` used to configure the block. (You will also need to restart for this rule to take effect.)
+This will allow the video group to modify all backlight devices. You will also need to restart for this rule to take effect.
 
 ## Battery
 
@@ -535,8 +534,8 @@ interval = 1
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`gpu_id` | GPU id in system | No | 0
-`label` | Display custom gpu label | No | ""
+`gpu_id` | GPU id in system | No | `0`
+`label` | Display custom gpu label | No | `""`
 `interval` | Update interval, in seconds. | No | `1`
 `show_utilization` | Display gpu utilization. In percents. | No | `true`
 `show_memory` | Display memory information. | No | `true`
@@ -594,7 +593,7 @@ Key | Values | Required | Default
 `name` | PulseAudio / ALSA device name | No | Default Device (`@DEFAULT_SINK@` / `Master`)
 `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | `5`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
-`show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false
+`show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
 
 ## Speed Test
 
@@ -641,7 +640,7 @@ chip = "*-isa-*"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`interval` | Update interval, in seconds. | No | 5
+`interval` | Update interval, in seconds. | No | `5`
 `collapsed` | Whether the block will be collapsed by default. | No | `true`
 `good` | Maximum temperature to set state to good. | No | `20`
 `idle` | Maximum temperature to set state to idle. | No | `45`
@@ -677,7 +676,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `format` | Format string. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | `"%a %d/%m %R"`
 `on_click` | Shell command to run when the time block is clicked. | No | None
-`interval` | Update interval, in seconds. | No | 5
+`interval` | Update interval, in seconds. | No | `5`
 `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | No | Local timezone
 
 ## Toggle
@@ -705,12 +704,12 @@ interval = 5
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`text` | Label to include next to the toggle icon. | No | ""
+`text` | Label to include next to the toggle icon. | No | `""`
 `command_on` | Shell Command to enable the toggle | Yes | None
 `command_off` | Shell Command to disable the toggle | Yes | None
 `command_state` | Shell Command to determine toggle state. Empty output => off. Any output => on.| Yes | None
-`icon_on` | Icon override for the toggle button while on. | No | "toggle_on"
-`icon_off` | Icon override for the toggle button while off. | No | "toggle_off"
+`icon_on` | Icon override for the toggle button while on. | No | `"toggle_on"`
+`icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
 
 ## Weather
