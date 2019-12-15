@@ -251,8 +251,7 @@ impl PulseAudioConnection {
                 PulseState::Failed | PulseState::Terminated => Err(BlockError(
                     "sound".into(),
                     "pulseaudio context state failed/terminated".into(),
-                ))
-                .unwrap(),
+                ))?,
                 _ => {}
             }
         }
