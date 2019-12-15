@@ -87,7 +87,7 @@ Example configurations can be found as `example_theme.toml` and `example_icon.to
 * `xrandr`
 * `net_up`
 * `net_down`
-* `netw_wireless`
+* `net_wireless`
 * `net_wired`
 * `ping`
 * `backlight_empty`
