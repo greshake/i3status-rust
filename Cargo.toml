@@ -30,7 +30,7 @@ nix = "0.14.0"
 i3ipc = "0.10.1"
 num = "0.2.0"
 crossbeam-channel = "0.3"
-inotify = "0.7.0"
+inotify = "0.8.0"
 maildir = "0.3.4"
 libpulse-binding = { optional = true, version = "2.2.3", default-features = false }
 notmuch = { optional = true, version = "0.1.1" }
