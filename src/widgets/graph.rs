@@ -1,7 +1,7 @@
 use super::super::widget::I3BarWidget;
 use crate::config::Config;
 use crate::widget::State;
-use num::{clamp, ToPrimitive};
+use num_traits::{clamp, ToPrimitive};
 use serde_json::value::Value;
 
 #[derive(Clone, Debug)]
