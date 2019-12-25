@@ -17,7 +17,7 @@ extern crate libpulse_binding as pulse;
 extern crate maildir;
 #[cfg(feature = "notmuch")]
 extern crate notmuch;
-extern crate num;
+extern crate num_traits;
 extern crate regex;
 extern crate toml;
 extern crate uuid;
