@@ -7,7 +7,7 @@ use std::time::Duration;
 use crate::util::FormatTemplate;
 
 use crate::blocks::{Block, ConfigBlock};
-use crate::config::Config;
+use crate::config::{Config, LogicalDirection};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
@@ -273,21 +273,26 @@ impl Block for Xrandr {
                             self.current_idx = 0;
                         }
                     }
-                    MouseButton::WheelUp => {
-                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                            if monitor.brightness <= (100 - self.step_width) {
-                                monitor.set_brightness(self.step_width as i32);
+                    mb => {
+                        use LogicalDirection::*;
+                        match self.config.scrolling.to_logical_direction(mb) {
+                            Some(Up) => {
+                                if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                                    if monitor.brightness <= (100 - self.step_width) {
+                                        monitor.set_brightness(self.step_width as i32);
+                                    }
+                                }
                             }
+                            Some(Down) => {
+                                if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                                    if monitor.brightness >= self.step_width {
+                                        monitor.set_brightness(-(self.step_width as i32));
+                                    }
+                                }
+                            }
+                            None => {}
                         }
                     }
-                    MouseButton::WheelDown => {
-                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                            if monitor.brightness >= self.step_width {
-                                monitor.set_brightness(-(self.step_width as i32));
-                            }
-                        }
-                    }
-                    _ => {}
                 }
                 self.display()?;
             }

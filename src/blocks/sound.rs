@@ -20,7 +20,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::blocks::{Block, ConfigBlock};
-use crate::config::Config;
+use crate::config::{Config, LogicalDirection};
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
@@ -731,13 +731,14 @@ impl Block for Sound {
                                 .block_error("sound", "could not spawn child")?;
                         }
                     }
-                    MouseButton::WheelUp => {
-                        self.device.set_volume(self.step_width as i32)?;
+                    _ => {
+                        use LogicalDirection::*;
+                        match self.config.scrolling.to_logical_direction(e.button) {
+                            Some(Up) => self.device.set_volume(self.step_width as i32)?,
+                            Some(Down) => self.device.set_volume(-(self.step_width as i32))?,
+                            None => (),
+                        }
                     }
-                    MouseButton::WheelDown => {
-                        self.device.set_volume(-(self.step_width as i32))?;
-                    }
-                    _ => (),
                 }
                 self.display()?;
             }

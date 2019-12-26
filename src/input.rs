@@ -7,7 +7,7 @@ use std::option::Option;
 use std::string::*;
 use std::thread;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum MouseButton {
     Left,
     Middle,

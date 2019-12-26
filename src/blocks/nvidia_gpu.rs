@@ -3,7 +3,7 @@ use std::process::Command;
 use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};
-use crate::config::Config;
+use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
@@ -33,6 +33,7 @@ pub struct NvidiaGpu {
     fan_speed: u64,
     fan_speed_controlled: bool,
     show_clocks: Option<TextWidget>,
+    scrolling: Scrolling,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -132,6 +133,7 @@ impl ConfigBlock for NvidiaGpu {
         output.pop(); // Remove trailing newline.
         let result_str = String::from_utf8(output).unwrap();
         let result: Vec<&str> = result_str.split(", ").collect();
+        let scrolling = config.scrolling;
 
         Ok(NvidiaGpu {
             id: id.clone(),
@@ -173,6 +175,8 @@ impl ConfigBlock for NvidiaGpu {
             } else {
                 None
             },
+
+            scrolling,
         })
     }
 }
@@ -328,17 +332,22 @@ impl Block for NvidiaGpu {
                         self.fan_speed_controlled = !self.fan_speed_controlled;
                         controlled_changed = true;
                     }
-                    MouseButton::WheelUp => {
-                        if self.fan_speed < 100 && self.fan_speed_controlled {
-                            new_fan_speed += 1;
+                    _ => {
+                        use LogicalDirection::*;
+                        match self.scrolling.to_logical_direction(e.button) {
+                            Some(Up) => {
+                                if self.fan_speed < 100 && self.fan_speed_controlled {
+                                    new_fan_speed += 1;
+                                }
+                            }
+                            Some(Down) => {
+                                if self.fan_speed > 0 && self.fan_speed_controlled {
+                                    new_fan_speed -= 1;
+                                }
+                            }
+                            None => {}
                         }
                     }
-                    MouseButton::WheelDown => {
-                        if self.fan_speed > 0 && self.fan_speed_controlled {
-                            new_fan_speed -= 1;
-                        }
-                    }
-                    _ => {}
                 };
 
                 if let Some(ref mut fan_widget) = self.show_fan {
