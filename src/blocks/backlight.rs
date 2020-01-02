@@ -110,6 +110,12 @@ impl BacklitDevice {
 
     /// Set the brightness value for this backlit device, as a percent.
     pub fn set_brightness(&self, value: u64) -> Result<()> {
+        let safe_value = match value {
+            0..=100 => value,
+            _ => 100,
+        };
+        let raw = (((safe_value as f64) / 100.0) * (self.max_brightness as f64)).round() as u64;
+
         let file = OpenOptions::new()
             .write(true)
             .open(self.device_path.join("brightness"));
@@ -118,17 +124,34 @@ impl BacklitDevice {
             // due to a permissions issue and not the fault of the user. It
             // should not crash the bar.
             // Error: "Failed to open brightness file for writing"
-            return Ok(());
+            return self.set_brightness_via_dbus(raw);
         }
-        let safe_value = match value {
-            0..=100 => value,
-            _ => 100,
-        };
-        let raw = (((safe_value as f64) / 100.0) * (self.max_brightness as f64)).round() as u64;
+
         // It's safe to unwrap() here because we checked for errors above.
         file.unwrap()
             .write_fmt(format_args!("{}", raw))
             .block_error("backlight", "Failed to write into brightness file")
+    }
+
+    fn set_brightness_via_dbus(&self, raw_value: u64) -> Result<()> {
+        let device_name = self.device_path.file_name().and_then(|x| x.to_str())
+            .block_error("backlight", "Malformed device path")?;
+
+        let con = dbus::Connection::get_private(dbus::BusType::System)
+            .block_error("backlight", "Failed to establish D-Bus connection.")?;
+        let msg = dbus::Message::new_method_call(
+            "org.freedesktop.login1",
+            "/org/freedesktop/login1/session/auto",
+            "org.freedesktop.login1.Session",
+            "SetBrightness",
+        )
+        .block_error("backlight", "Failed to create D-Bus message")?
+        .append2("backlight", device_name)
+        .append(raw_value as u32);
+
+        con.send_with_reply_and_block(msg, 1000)
+            .block_error("backlight", "Failed to send D-Bus message")
+            .map(|_| ())
     }
 
     /// The brightness file itself.
