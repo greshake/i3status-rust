@@ -23,6 +23,7 @@
 - [Temperature](#temperature)
 - [Time](#time)
 - [Toggle](#toggle)
+- [Watson](#watson)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
 
@@ -771,6 +772,26 @@ Key | Values | Required | Default
 `icon_on` | Icon override for the toggle button while on. | No | `"toggle_on"`
 `icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
+
+## Watson
+
+[Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
+
+### Examples
+
+```toml
+[[block]]
+block = "watson"
+show_time = true
+state_path = "/home/user/.config/watson/state"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`show_time` | Wether to show recorded time | No | `false`
+`state_path` | Path to the Watson state file | No | `$XDG_CONFIG_HOME/watson/state`
 
 ## Weather
 
