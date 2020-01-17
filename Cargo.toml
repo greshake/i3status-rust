@@ -35,7 +35,7 @@ libpulse-binding = { optional = true, version = "2.2.3", default-features = fals
 notmuch = { optional = true, version = "0.1.1" }
 # Used only in debug build mode
 # for profiling blocks
-cpuprofiler = { version = "0.0.3", optional = true }
+cpuprofiler = { version = "0.0.4", optional = true }
 progress = { version = "0.2", optional = true }
 
 [dependencies.clap]
