@@ -220,9 +220,11 @@ impl NetworkDevice {
             Ok(None)
         } else {
             ip_output.pop(); // Remove trailing newline.
-            String::from_utf8(ip_output)
-                .block_error("net", "Non-UTF8 IP address.")
-                .map(Some)
+            let ip = String::from_utf8(ip_output)
+                .block_error("net", "Non-UTF8 IP address.")?
+                .trim()
+                .to_string();
+            Ok(Some(ip))
         }
     }
 
