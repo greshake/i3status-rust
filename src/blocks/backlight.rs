@@ -18,9 +18,9 @@ use inotify::{EventMask, Inotify, WatchMask};
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
-use crate::config::Config;
+use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
@@ -143,6 +143,7 @@ pub struct Backlight {
     output: ButtonWidget,
     device: BacklitDevice,
     step_width: u64,
+    scrolling: Scrolling,
 }
 
 /// Configuration for the [`Backlight`](./struct.Backlight.html) block.
@@ -184,11 +185,13 @@ impl ConfigBlock for Backlight {
         let id = Uuid::new_v4().simple().to_string();
         let brightness_file = device.brightness_file();
 
+        let scrolling = config.scrolling;
         let backlight = Backlight {
             output: ButtonWidget::new(config, &id),
             id: id.clone(),
             device,
             step_width: block_config.step_width,
+            scrolling,
         };
 
         // Spin up a thread to watch for changes to the brightness file for the
@@ -245,18 +248,19 @@ impl Block for Backlight {
         if let Some(ref name) = event.name {
             if name.as_str() == self.id {
                 let brightness = self.device.brightness()?;
-                match event.button {
-                    MouseButton::WheelUp => {
+                use LogicalDirection::*;
+                match self.scrolling.to_logical_direction(event.button) {
+                    Some(Up) => {
                         if brightness < 100 {
                             self.device.set_brightness(brightness + self.step_width)?;
                         }
                     }
-                    MouseButton::WheelDown => {
+                    Some(Down) => {
                         if brightness > self.step_width {
                             self.device.set_brightness(brightness - self.step_width)?;
                         }
                     }
-                    _ => {}
+                    None => {}
                 }
             }
         }

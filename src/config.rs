@@ -1,5 +1,6 @@
 use crate::de::*;
 use crate::icons;
+use crate::input::MouseButton;
 use crate::themes::{self, Theme};
 use serde::de::{self, Deserialize, Deserializer};
 use std::collections::HashMap as Map;
@@ -14,6 +15,13 @@ pub struct Config {
     pub icons: Map<String, String>,
     #[serde(default = "themes::default", deserialize_with = "deserialize_themes")]
     pub theme: Theme,
+    /// Direction of scrolling, "natural" or "reverse".
+    ///
+    /// Configuring natural scrolling on input devices changes the way i3status-rust
+    /// processes mouse wheel events: pushing the wheen away now is interpreted as downward
+    /// motion which is undesired for sliders. Use "natural" to invert this.
+    #[serde(default = "Scrolling::default", rename = "scrolling")]
+    pub scrolling: Scrolling,
     #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
     pub blocks: Vec<(String, value::Value)>,
 }
@@ -23,8 +31,41 @@ impl Default for Config {
         Config {
             icons: icons::default(),
             theme: themes::default(),
+            scrolling: Scrolling::default(),
             blocks: Vec::new(),
         }
+    }
+}
+
+#[derive(Deserialize, Copy, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum Scrolling {
+    Reverse,
+    Natural,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum LogicalDirection {
+    Up,
+    Down,
+}
+
+impl Scrolling {
+    pub fn to_logical_direction(self, button: MouseButton) -> Option<LogicalDirection> {
+        use LogicalDirection::*;
+        use MouseButton::*;
+        use Scrolling::*;
+        match (self, button) {
+            (Reverse, WheelUp) | (Natural, WheelDown) => Some(Up),
+            (Reverse, WheelDown) | (Natural, WheelUp) => Some(Down),
+            _ => None,
+        }
+    }
+}
+
+impl Default for Scrolling {
+    fn default() -> Self {
+        Scrolling::Reverse
     }
 }
 
