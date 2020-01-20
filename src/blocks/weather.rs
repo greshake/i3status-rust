@@ -90,7 +90,7 @@ impl Weather {
                     ])
                     .output()
                     .block_error("weather", "Failed to exectute curl.")
-                    .and_then(|raw_output| String::from_utf8(raw_output.stdout).block_error("weather", "Non-UTF8 SSID."))?;
+                    .and_then(|raw_output| String::from_utf8(raw_output.stdout).block_error("weather", "Received non-UTF8 characters in response."))?;
 
                 // Don't error out on empty responses e.g. for when not
                 // connected to the internet.
