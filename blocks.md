@@ -557,6 +557,9 @@ Update the list of pending updates every ten seconds:
 [[block]]
 block = "pacman"
 interval = 10
+format = "{count} updates available"
+format_singular = "{count} update available"
+format_up_to_date = "system up to date"
 ```
 
 ### Options
@@ -564,6 +567,15 @@ interval = 10
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `600` (10min)
+`format` | Format override | No | `"{count}"`
+`format_singular` | Format override if exactly one update is available | No | `"{count}"`
+`format_up_to_date` | Format override if no updates are available | No | `"{count}"`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{count}` | Number of updates available
 
 ## Sound
 
