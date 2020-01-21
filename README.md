@@ -32,7 +32,7 @@ Stable releases are packaged on some distributions:
 
 - On Void Linux: `xbps-install -S i3status-rust`
 
-- On NixOS: `nix-env -iA nixos.i3status-rust`
+- On NixOS: `nix-env -iA nixos.i3status-rust` (also, make sure to have `sysfsutils` for `sysfs`/battery, and `font-awesome_4` in the `fonts.fonts` list)
 
 Otherwise, you can install from source:
 
