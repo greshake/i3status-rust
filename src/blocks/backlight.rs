@@ -134,7 +134,10 @@ impl BacklitDevice {
     }
 
     fn set_brightness_via_dbus(&self, raw_value: u64) -> Result<()> {
-        let device_name = self.device_path.file_name().and_then(|x| x.to_str())
+        let device_name = self
+            .device_path
+            .file_name()
+            .and_then(|x| x.to_str())
             .block_error("backlight", "Malformed device path")?;
 
         let con = dbus::Connection::get_private(dbus::BusType::System)
