@@ -287,7 +287,7 @@ Listen to kbdd for changes:
 ```toml
 [[block]]
 block = "keyboard_layout"
-driver = "kbdd"
+driver = "kbddbus"
 ```
 
 ### Options
