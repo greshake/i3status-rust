@@ -261,7 +261,7 @@ block = "ibus"
 
 Creates a block to display the current keyboard layout.
 
-This block polls `setxkbmap` for the current layout by default, but can be configured to read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path. Which of these two methods is appropriate will depend on your system setup.
+This block polls `setxkbmap` for the current layout by default, also can be configured to read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path or `kbdd`. Which of these methods is appropriate will depend on your system setup.
 
 ### Examples
 
@@ -282,11 +282,19 @@ block = "keyboard_layout"
 driver = "localebus"
 ```
 
+Listen to kbdd for changes:
+
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "kbddbus"
+```
+
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`driver` | One of `"setxkbmap"` or `"localebus"`, depending on your system. | No | `"setxkbmap"`
+`driver` | One of `"setxkbmap"`, `"localebus"` or `"kbddbus"`, depending on your system. | No | `"setxkbmap"`
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
 
 ## Load
