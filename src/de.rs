@@ -1,7 +1,6 @@
 use chrono_tz::Tz;
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use std::collections::{BTreeMap, HashMap as Map};
-use std::error::Error;
 use std::fmt;
 use std::marker::PhantomData;
 use std::ops::Deref;
@@ -174,12 +173,12 @@ where
             combined.extend(
                 raw_names
                     .deserialize_any(MapType::<T, V>(PhantomData, PhantomData))
-                    .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?,
+                    .map_err(|e: toml::de::Error| de::Error::custom(e.to_string()))?,
             );
         }
         if let Some(raw_overrides) = map.remove("overrides") {
             let overrides: Map<String, V> = Map::<String, V>::deserialize(raw_overrides)
-                .map_err(|e: toml::de::Error| de::Error::custom(e.description()))?;
+                .map_err(|e: toml::de::Error| de::Error::custom(e.to_string()))?;
             combined.extend(overrides);
         }
 

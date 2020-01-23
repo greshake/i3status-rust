@@ -97,7 +97,7 @@ impl Block for Custom {
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.description().to_owned());
+            .unwrap_or_else(|e| e.to_string());
 
         self.output.set_text(output);
 

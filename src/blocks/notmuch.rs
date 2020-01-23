@@ -101,12 +101,7 @@ fn run_query(db_path: &String, query_string: &String) -> Result<u32> {
     notmuch::Database::open(db_path, notmuch::DatabaseMode::ReadOnly)
         .and_then(|db| db.create_query(query_string))
         .and_then(|q| q.count_messages())
-        .or_else(|e| {
-            Err(BlockError(
-                "notmuch".to_string(),
-                e.description().to_owned(),
-            ))
-        })
+        .or_else(|e| Err(BlockError("notmuch".to_string(), e.to_string())))
 }
 
 impl ConfigBlock for Notmuch {
