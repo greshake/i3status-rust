@@ -136,7 +136,7 @@ impl Block for Temperature {
             .args(&args)
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.description().to_owned());
+            .unwrap_or_else(|e| e.to_string());
 
         let mut temperatures: Vec<i64> = Vec::new();
 

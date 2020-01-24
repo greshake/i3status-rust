@@ -93,7 +93,7 @@ impl Block for Toggle {
             .args(&["-c", &self.command_state])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.description().to_owned());
+            .unwrap_or_else(|e| e.to_string());
 
         self.text.set_icon(match output.trim_start() {
             "" => {
