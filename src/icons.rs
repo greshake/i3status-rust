@@ -8,7 +8,7 @@ lazy_static! {
         "music_play" => " > ",
         "music_pause" => " || ",
         "music_next" => " > ",
-        "music_prev" => " < ",
+        "music_prev" => " &lt; ",
         "cogs" => " LOAD ",
         "memory_mem" => " MEM ",
         "memory_swap" => " SWAP ",
