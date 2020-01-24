@@ -8,6 +8,7 @@ use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::process::Command;
 use std::time::Duration;
 

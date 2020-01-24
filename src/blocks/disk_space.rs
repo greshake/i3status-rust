@@ -1,5 +1,6 @@
 use crate::scheduler::Task;
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::path::Path;
 use std::time::Duration;
 
@@ -12,9 +13,7 @@ use crate::widgets::text::TextWidget;
 
 use uuid::Uuid;
 
-extern crate nix;
-
-use self::nix::sys::statvfs::statvfs;
+use nix::sys::statvfs::statvfs;
 
 #[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq)]
 pub enum Unit {

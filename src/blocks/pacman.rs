@@ -1,5 +1,6 @@
 use crate::scheduler::Task;
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::env;
 use std::ffi::OsString;
 use std::fs;

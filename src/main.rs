@@ -1,26 +1,6 @@
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde;
-#[macro_use]
 extern crate serde_json;
-#[macro_use]
-extern crate crossbeam_channel;
-extern crate chrono;
-extern crate chrono_tz;
-extern crate clap;
-extern crate dbus;
-extern crate inotify;
-#[cfg(feature = "pulseaudio")]
-extern crate libpulse_binding as pulse;
-extern crate maildir;
-#[cfg(feature = "notmuch")]
-extern crate notmuch;
-extern crate num_traits;
-extern crate regex;
-extern crate toml;
-extern crate uuid;
+use libpulse_binding as pulse;
 
 #[macro_use]
 mod de;
@@ -38,11 +18,9 @@ mod widget;
 mod widgets;
 
 #[cfg(feature = "profiling")]
-extern crate cpuprofiler;
-#[cfg(feature = "profiling")]
 use cpuprofiler::PROFILER;
 #[cfg(feature = "profiling")]
-extern crate progress;
+use progress;
 
 use std::collections::HashMap;
 use std::ops::DerefMut;
@@ -60,8 +38,8 @@ use crate::widgets::text::TextWidget;
 
 use crate::util::deserialize_file;
 
-use self::clap::{App, Arg, ArgMatches};
-use crossbeam_channel::{Receiver, Sender};
+use clap::{App, Arg, ArgMatches};
+use crossbeam_channel::{select, Receiver, Sender};
 
 fn main() {
     let mut builder = App::new("i3status-rs")

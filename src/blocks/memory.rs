@@ -2,6 +2,7 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::input::{I3BarEvent, MouseButton};
 use crate::util::*;
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;

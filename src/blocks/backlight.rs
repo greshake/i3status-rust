@@ -15,6 +15,7 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
+use serde_derive::Deserialize;
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};

@@ -1,3 +1,4 @@
+use serde_derive::Deserialize;
 use std::thread;
 use std::time::{Duration, Instant};
 

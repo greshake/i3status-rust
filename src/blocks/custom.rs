@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;

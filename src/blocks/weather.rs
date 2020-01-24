@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use serde_json;
 use std::collections::HashMap;
 use std::env;

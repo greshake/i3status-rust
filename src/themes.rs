@@ -1,3 +1,5 @@
+use lazy_static::lazy_static;
+use serde_derive::Deserialize;
 use std::str::FromStr;
 
 lazy_static! {

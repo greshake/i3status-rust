@@ -44,6 +44,8 @@ use crate::pulse::proplist::{properties, Proplist};
 #[cfg(feature = "pulseaudio")]
 use crate::pulse::volume::{ChannelVolumes, VOLUME_MAX, VOLUME_NORM};
 
+use lazy_static::lazy_static;
+use serde_derive::Deserialize;
 use uuid::Uuid;
 
 trait SoundDevice {
