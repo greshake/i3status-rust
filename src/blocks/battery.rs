@@ -12,6 +12,7 @@ use crossbeam_channel::Sender;
 use dbus;
 use dbus::arg::Array;
 use dbus::stdintf::org_freedesktop_dbus::Properties;
+use serde_derive::Deserialize;
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};

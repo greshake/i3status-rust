@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::ffi::OsStr;
 use std::fs::read_to_string;
 use std::fs::OpenOptions;

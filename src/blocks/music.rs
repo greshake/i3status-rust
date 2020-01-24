@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::boxed::Box;
 use std::ffi::OsStr;
 use std::process::Command;

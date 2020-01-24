@@ -9,6 +9,7 @@ use crossbeam_channel::Sender;
 use dbus::stdintf::org_freedesktop_dbus::Properties;
 use dbus::{arg, Connection, ConnectionItem};
 use regex::Regex;
+use serde_derive::Deserialize;
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};

@@ -3,6 +3,7 @@ use crate::icons;
 use crate::input::MouseButton;
 use crate::themes::{self, Theme};
 use serde::de::{self, Deserialize, Deserializer};
+use serde_derive::Deserialize;
 use std::collections::HashMap as Map;
 use std::marker::PhantomData;
 use std::ops::Deref;

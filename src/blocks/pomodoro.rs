@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 

@@ -2,6 +2,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};

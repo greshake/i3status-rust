@@ -14,6 +14,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
+use serde_derive::Deserialize;
 use uuid::Uuid;
 
 struct Monitor {

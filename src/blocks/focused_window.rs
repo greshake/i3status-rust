@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -12,11 +13,10 @@ use crate::widgets::text::TextWidget;
 
 use uuid::Uuid;
 
-extern crate i3ipc;
-use self::i3ipc::event::inner::{WindowChange, WorkspaceChange};
-use self::i3ipc::event::Event;
-use self::i3ipc::I3EventListener;
-use self::i3ipc::Subscription;
+use i3ipc::event::inner::{WindowChange, WorkspaceChange};
+use i3ipc::event::Event;
+use i3ipc::I3EventListener;
+use i3ipc::Subscription;
 
 pub struct FocusedWindow {
     text: TextWidget,

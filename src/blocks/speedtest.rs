@@ -1,5 +1,6 @@
 use crate::scheduler::Task;
 use crossbeam_channel::{unbounded, Receiver, Sender};
+use serde_derive::Deserialize;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread::spawn;

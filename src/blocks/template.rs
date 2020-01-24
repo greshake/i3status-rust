@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
 use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};

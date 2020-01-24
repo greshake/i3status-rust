@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use std::collections::HashMap as Map;
 
 lazy_static! {

@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use dbus::arg::Variant;
 use dbus::{BusType, Connection, Message, MessageItem};
+use serde_derive::Deserialize;
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};

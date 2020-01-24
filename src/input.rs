@@ -1,5 +1,6 @@
 use crossbeam_channel::Sender;
 use serde::{de, Deserializer};
+use serde_derive::Deserialize;
 use serde_json;
 use std::fmt;
 use std::io;
