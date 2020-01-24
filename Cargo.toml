@@ -30,7 +30,7 @@ i3ipc = "0.8.2"
 num-traits = "0.2"
 crossbeam-channel = "0.3"
 inotify = "0.5.1"
-maildir = "0.1.1"
+maildir = "0.3"
 libpulse-binding = { optional = true, version = "2.2.3", default-features = false }
 notmuch = { optional = true, version = "0.1.1" }
 # Used only in debug build mode
