@@ -268,7 +268,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 }
 
 #[cfg(feature = "profiling")]
-fn profile(iterations: i32, name: &str, block: &mut Block) {
+fn profile(iterations: i32, name: &str, block: &mut dyn Block) {
     let mut bar = progress::Bar::new();
     println!(
         "Now profiling the {0} block by executing {1} updates.\n \
