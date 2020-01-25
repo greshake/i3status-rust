@@ -78,7 +78,7 @@ impl BluetoothDevice {
         Ok(BluetoothDevice {
             path: path,
             icon: icon,
-            label: label.unwrap_or("".to_string()), 
+            label: label.unwrap_or("".to_string()),
             con: con,
         })
     }
@@ -210,7 +210,8 @@ impl Block for Bluetooth {
                 61..=100 => State::Good,
                 _ => State::Warning,
             });
-            self.output.set_text(format!("{} {}%", self.device.label, value));
+            self.output
+                .set_text(format!("{} {}%", self.device.label, value));
         }
 
         Ok(None)
