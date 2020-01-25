@@ -134,6 +134,7 @@ A block for a Bluetooth device with the given MAC address:
 [[block]]
 block = "bluetooth"
 mac = "A0:8A:F5:B8:01:FD"
+label = " Rowkin"
 ```
 
 ### Options
@@ -141,6 +142,7 @@ mac = "A0:8A:F5:B8:01:FD"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `mac` | MAC address of the Bluetooth device. | Yes | None
+`label` | Text label to display next to the icon. | No | None
 
 ## CPU Utilization
 
