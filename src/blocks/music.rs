@@ -177,14 +177,9 @@ impl ConfigBlock for Music {
                 .block_error("music", "failed to establish D-Bus connection")?,
             player_avail: false,
             auto_discover: block_config.player.is_none(),
-            player: if block_config.player.is_none() {
-                block_config.player
-            } else {
-                Some(format!(
-                    "org.mpris.MediaPlayer2.{}",
-                    block_config.player.unwrap()
-                ))
-            },
+            player: block_config
+                .player
+                .map(|player| format!("org.mpris.MediaPlayer2.{}", player)),
             marquee: block_config.marquee,
         })
     }
@@ -292,18 +287,11 @@ impl Block for Music {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         if self.player_avail {
-            let mut elements: Vec<&dyn I3BarWidget> = Vec::new();
-            elements.push(&self.current_song);
-            if let Some(ref prev) = self.prev {
-                elements.push(prev);
-            }
-            if let Some(ref play) = self.play {
-                elements.push(play);
-            }
-            if let Some(ref next) = self.next {
-                elements.push(next);
-            }
-            elements
+            vec![self.prev.as_ref(), self.play.as_ref(), self.next.as_ref()]
+                .into_iter()
+                .filter_map(std::convert::identity)
+                .map(|element| element as &dyn I3BarWidget)
+                .collect()
         } else {
             if self.current_song.is_empty() {
                 vec![&self.on_collapsed_click_widget]
@@ -373,9 +361,6 @@ fn get_first_available_player(connection: &Connection) -> Option<String> {
     let r = connection.send_with_reply_and_block(m, 2000).unwrap();
     // ListNames returns one argument, which is an array of strings.
     let mut arr: Array<&str, _> = r.get1().unwrap();
-    if let Some(name) = arr.find(|entry| entry.starts_with("org.mpris.MediaPlayer2")) {
-        Some(String::from(name))
-    } else {
-        None
-    }
+    arr.find(|entry| entry.starts_with("org.mpris.MediaPlayer2"))
+        .map(String::from)
 }
