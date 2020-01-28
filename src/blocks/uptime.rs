@@ -63,34 +63,26 @@ impl ConfigBlock for Uptime {
 
 impl Block for Uptime {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let uptime_raw = match read_file("uptime", Path::new("/proc/uptime")) {
-            Ok(file) => file,
-            Err(e) => {
-                return Err(BlockError(
-                    "Uptime".to_owned(),
-                    format!("Uptime failed to read /proc/uptime: '{}'", e),
-                ));
-            }
-        };
-        let uptime = match uptime_raw.split_whitespace().nth(0) {
-            Some(uptime) => uptime,
-            None => {
-                return Err(BlockError(
-                    "Uptime".to_owned(),
-                    "Uptime failed to read uptime string.".to_owned(),
-                ));
-            }
-        };
+        let uptime_raw = read_file("uptime", Path::new("/proc/uptime")).map_err(|e| {
+            BlockError(
+                "Uptime".to_owned(),
+                format!("Uptime failed to read /proc/uptime: '{}'", e),
+            )
+        })?;
 
-        let total_seconds = match uptime.parse::<f64>() {
-            Ok(uptime) => uptime as u32,
-            Err(e) => {
-                return Err(BlockError(
-                    "Uptime".to_owned(),
-                    format!("Uptime failed to convert uptime float to integer: '{}')", e),
-                ));
-            }
-        };
+        let uptime = uptime_raw.split_whitespace().next().ok_or_else(|| {
+            BlockError(
+                "Uptime".to_owned(),
+                "Uptime failed to read uptime string.".to_owned(),
+            )
+        })?;
+
+        let total_seconds = uptime.parse::<f64>().map_err(|e| {
+            BlockError(
+                "Uptime".to_owned(),
+                format!("Uptime failed to convert uptime float to integer: '{}')", e),
+            )
+        })? as u32;
 
         // split up seconds into more human readable portions
         let weeks = (total_seconds / 604_800) as u32;
