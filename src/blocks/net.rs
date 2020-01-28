@@ -552,10 +552,9 @@ impl Block for Net {
         let now = Instant::now();
         if now.duration_since(self.last_update).as_secs() % 10 == 0 {
             if let Some(ref mut bitrate_widget) = self.bitrate {
-                let bitrate = self.device.bitrate()?;
-                if bitrate.is_some() {
-                    bitrate_widget.set_text(bitrate.unwrap());
-                }
+                self.device.bitrate()?.map(|bitrate| {
+                    bitrate_widget.set_text(bitrate);
+                });
             }
         }
         if now.duration_since(self.last_update).as_secs() > 30 {
@@ -567,18 +566,19 @@ impl Block for Net {
                     ssid_widget.set_text(truncated);
                 }
             }
+
             if let Some(ref mut signal_strength_widget) = self.signal_strength {
-                let value = self.device.relative_signal_strength()?;
-                if value.is_some() {
-                    signal_strength_widget.set_text(format!("{}%", value.unwrap()));
-                }
+                self.device.relative_signal_strength()?.map(|value| {
+                    signal_strength_widget.set_text(format!("{}%", value));
+                });
             }
+
             if let Some(ref mut ip_addr_widget) = self.ip_addr {
-                let ip_addr = self.device.ip_addr()?;
-                if ip_addr.is_some() {
-                    ip_addr_widget.set_text(ip_addr.unwrap());
-                }
+                self.device.ip_addr()?.map(|ip_addr| {
+                    ip_addr_widget.set_text(ip_addr);
+                });
             }
+
             self.last_update = now;
         }
 
