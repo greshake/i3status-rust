@@ -150,7 +150,7 @@ pub fn print_blocks(
             "full_text": config.theme.separator,
             "separator": false,
             "separator_block_width": 0,
-            "background": if sep_bg.is_some() { Value::String(sep_bg.unwrap()) } else { Value::Null },
+            "background": sep_bg.map_or_else(|| Value::Null, Value::String),
             "color": sep_fg,
             "markup": "pango"
         });
