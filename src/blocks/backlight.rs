@@ -25,6 +25,7 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use std::cmp::max;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
@@ -56,18 +57,21 @@ impl BacklitDevice {
             .read_dir() // Iterate over entries in the directory.
             .block_error("backlight", "Failed to read backlight device directory")?;
 
-        let first_device = match devices.take(1).next() {
-            None => Err(BlockError(
-                "backlight".to_string(),
-                "No backlit devices found".to_string(),
-            )),
-            Some(device) => device.map_err(|_| {
+        let first_device = devices
+            .take(1)
+            .next()
+            .ok_or_else(|| {
+                BlockError(
+                    "backlight".to_string(),
+                    "No backlit devices found".to_string(),
+                )
+            })?
+            .map_err(|_| {
                 BlockError(
                     "backlight".to_string(),
                     "Failed to read default device file".to_string(),
                 )
-            }),
-        }?;
+            })?;
 
         let max_brightness = read_brightness(&first_device.path().join("max_brightness"))?;
 
@@ -103,18 +107,13 @@ impl BacklitDevice {
     pub fn brightness(&self) -> Result<u64> {
         let raw = read_brightness(&self.brightness_file())?;
         let brightness = ((raw as f64 / self.max_brightness as f64) * 100.0).round() as u64;
-        match brightness {
-            0..=100 => Ok(brightness),
-            _ => Ok(100),
-        }
+
+        Ok(max(100, brightness))
     }
 
     /// Set the brightness value for this backlit device, as a percent.
     pub fn set_brightness(&self, value: u64) -> Result<()> {
-        let safe_value = match value {
-            0..=100 => value,
-            _ => 100,
-        };
+        let safe_value = max(100, value);
         let raw = (((safe_value as f64) / 100.0) * (self.max_brightness as f64)).round() as u64;
 
         let file = OpenOptions::new()
@@ -204,10 +203,9 @@ impl ConfigBlock for Backlight {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let device = match block_config.device {
-            Some(path) => BacklitDevice::from_device(path),
-            None => BacklitDevice::default(),
-        }?;
+        let device = block_config
+            .device
+            .map_or_else(BacklitDevice::default, BacklitDevice::from_device)?;
 
         let id = Uuid::new_v4().simple().to_string();
         let brightness_file = device.brightness_file();
@@ -257,13 +255,16 @@ impl Block for Backlight {
     fn update(&mut self) -> Result<Option<Duration>> {
         let brightness = self.device.brightness()?;
         self.output.set_text(format!("{}%", brightness));
-        match brightness {
-            0..=19 => self.output.set_icon("backlight_empty"),
-            20..=39 => self.output.set_icon("backlight_partial1"),
-            40..=59 => self.output.set_icon("backlight_partial2"),
-            60..=79 => self.output.set_icon("backlight_partial3"),
-            _ => self.output.set_icon("backlight_full"),
-        }
+
+        let icon = match brightness {
+            0..=19 => "backlight_empty",
+            20..=39 => "backlight_partial1",
+            40..=59 => "backlight_partial2",
+            60..=79 => "backlight_partial3",
+            _ => "backlight_full",
+        };
+        self.output.set_icon(icon);
+
         Ok(None)
     }
 
