@@ -136,16 +136,12 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn time_remaining(&self) -> Result<u64> {
-        let full = if self.energy_full.is_some() {
-            self.energy_full.unwrap()
-        } else if self.charge_full.is_some() {
-            self.charge_full.unwrap()
-        } else {
-            return Err(BlockError(
+        let full = self.energy_full.or(self.charge_full).ok_or_else(|| {
+            BlockError(
                 "battery".to_string(),
                 "Device does not support reading energy".to_string(),
-            ));
-        };
+            )
+        })?;
 
         let energy_path = self.device_path.join("energy_now");
         let charge_path = self.device_path.join("charge_now");
@@ -200,9 +196,9 @@ impl BatteryDevice for PowerSupplyDevice {
         let power_path = self.device_path.join("power_now");
 
         if power_path.exists() {
-            Ok(read_file("battery", &power_path)?
+            read_file("battery", &power_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse power_now")?)
+                .block_error("battery", "failed to parse power_now")
         } else {
             Err(BlockError(
                 "battery".to_string(),
@@ -244,14 +240,11 @@ impl UpowerDevice {
 
             // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
             let mut paths: Array<dbus::Path, _> = dbus_reply.get1().unwrap();
-            let path = paths.find(|entry| entry.ends_with(device));
-            if path.is_none() {
-                return Err(BlockError(
-                    "battery".into(),
-                    "UPower device could not be found.".into(),
-                ));
-            }
-            device_path = path.unwrap().as_cstr().to_string_lossy().into_owned();
+            let path = paths.find(|entry| entry.ends_with(device)).ok_or_else(|| {
+                BlockError("battery".into(), "UPower device could not be found.".into())
+            })?;
+
+            device_path = path.as_cstr().to_string_lossy().into_owned();
         }
         let upower_type: u32 = con
             .with_path("org.freedesktop.UPower", &device_path, 1000)
@@ -309,22 +302,22 @@ impl UpowerDevice {
 
 impl BatteryDevice for UpowerDevice {
     fn status(&self) -> Result<String> {
-        let status: u32 = self
-            .con
+        self.con
             .with_path("org.freedesktop.UPower", &self.device_path, 1000)
             .get("org.freedesktop.UPower.Device", "State")
-            .block_error("battery", "Failed to read UPower State property.")?;
-
-        // https://upower.freedesktop.org/docs/Device.html#Device:State
-        match status {
-            1 => Ok("Charging".to_string()),
-            2 => Ok("Discharging".to_string()),
-            3 => Ok("Empty".to_string()),
-            4 => Ok("Full".to_string()),
-            5 => Ok("Not charging".to_string()),
-            6 => Ok("Discharging".to_string()),
-            _ => Ok("Unknown".to_string()),
-        }
+            .block_error("battery", "Failed to read UPower State property.")
+            .map(|status| {
+                // https://upower.freedesktop.org/docs/Device.html#Device:State
+                match status {
+                    1 => "Charging".to_string(),
+                    2 => "Discharging".to_string(),
+                    3 => "Empty".to_string(),
+                    4 => "Full".to_string(),
+                    5 => "Not charging".to_string(),
+                    6 => "Discharging".to_string(),
+                    _ => "Unknown".to_string(),
+                }
+            })
     }
 
     fn capacity(&self) -> Result<u64> {
