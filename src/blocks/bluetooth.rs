@@ -164,7 +164,7 @@ impl ConfigBlock for Bluetooth {
     type Config = BluetoothConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().simple().to_string();
+        let id: String = Uuid::new_v4().unwrap().to_string();
         let device = BluetoothDevice::from_mac(block_config.mac)?;
         device.monitor(id.clone(), send);
 

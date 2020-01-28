@@ -58,7 +58,7 @@ impl ConfigBlock for Custom {
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let mut custom = Custom {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().unwrap().to_string(),
             update_interval: block_config.interval,
             output: ButtonWidget::new(config.clone(), ""),
             command: None,

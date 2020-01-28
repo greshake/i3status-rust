@@ -209,7 +209,7 @@ impl ConfigBlock for Backlight {
             None => BacklitDevice::default(),
         }?;
 
-        let id = Uuid::new_v4().simple().to_string();
+        let id = Uuid::new_v4().unwrap().to_string();
         let brightness_file = device.brightness_file();
 
         let scrolling = config.scrolling;
