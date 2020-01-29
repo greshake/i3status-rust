@@ -1,4 +1,5 @@
 use crossbeam_channel::Sender;
+use crate::de::deserialize_duration;
 use serde_derive::Deserialize;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -23,6 +24,7 @@ pub struct FocusedWindow {
     title: Arc<Mutex<String>>,
     max_width: usize,
     id: String,
+    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -31,11 +33,21 @@ pub struct FocusedWindowConfig {
     /// Truncates titles if longer than max-width
     #[serde(default = "FocusedWindowConfig::default_max_width")]
     pub max_width: usize,
+
+    #[serde(
+        default = "FocusedWindowConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
+    pub interval: Duration,
 }
 
 impl FocusedWindowConfig {
     fn default_max_width() -> usize {
         21
+    }
+
+    fn default_interval() -> Duration {
+        Duration::from_secs(30)
     }
 }
 
@@ -123,6 +135,7 @@ impl ConfigBlock for FocusedWindow {
             text: TextWidget::new(config),
             max_width: block_config.max_width,
             title,
+            update_interval: block_config.interval,
         })
     }
 }
@@ -136,7 +149,7 @@ impl Block for FocusedWindow {
         .clone();
         string = string.chars().take(self.max_width).collect();
         self.text.set_text(string);
-        Ok(None)
+        Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
