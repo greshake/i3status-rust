@@ -1,5 +1,5 @@
-use crossbeam_channel::Sender;
 use crate::de::deserialize_duration;
+use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use std::sync::{Arc, Mutex};
 use std::thread;
