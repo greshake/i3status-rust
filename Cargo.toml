@@ -23,7 +23,7 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 toml = "0.5"
-uuid = { version = "0.6", features = ["v4"] }
+uuid = { version = "0.8", features = ["v4"] }
 dbus = "0.6"
 nix = "0.16.0"
 i3ipc = "0.10.1"

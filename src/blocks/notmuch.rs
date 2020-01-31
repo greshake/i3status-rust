@@ -118,7 +118,7 @@ impl ConfigBlock for Notmuch {
             widget.set_icon("mail");
         }
         Ok(Notmuch {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
             db: block_config.maildir,
             query: block_config.query,

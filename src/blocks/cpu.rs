@@ -102,7 +102,7 @@ impl ConfigBlock for Cpu {
         }
 
         Ok(Cpu {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
             output: TextWidget::new(config).with_icon("cpu"),
             prev_idles: [0; 32],
