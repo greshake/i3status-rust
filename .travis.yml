@@ -22,5 +22,5 @@ env:
 script:
   - rustup component add rustfmt
   - cargo fmt -- --check
-  - cargo build --verbose
-  - cargo test --verbose
+  - cargo build --all-features --all-targets --verbose
+  - cargo test --all-features --all-targets --verbose
