@@ -52,7 +52,7 @@ impl ConfigBlock for Uptime {
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Uptime {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone()).with_icon("uptime"),
             tx_update_request,

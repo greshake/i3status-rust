@@ -98,11 +98,10 @@ impl NotmuchConfig {
     }
 }
 
-fn run_query(db_path: &String, query_string: &String) -> Result<u32> {
-    notmuch::Database::open(db_path, notmuch::DatabaseMode::ReadOnly)
-        .and_then(|db| db.create_query(query_string))
-        .and_then(|q| q.count_messages())
-        .or_else(|e| Err(BlockError("notmuch".to_string(), e.to_string())))
+fn run_query(db_path: &String, query_string: &String) -> std::result::Result<u32, notmuch::Error> {
+    let db = notmuch::Database::open(db_path, notmuch::DatabaseMode::ReadOnly)?;
+    let query = db.create_query(query_string)?;
+    Ok(query.count_messages()?)
 }
 
 impl ConfigBlock for Notmuch {
@@ -118,7 +117,7 @@ impl ConfigBlock for Notmuch {
             widget.set_icon("mail");
         }
         Ok(Notmuch {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
             db: block_config.maildir,
             query: block_config.query,
@@ -165,7 +164,7 @@ impl Block for Notmuch {
                 self.update_state(count);
                 Ok(Some(self.update_interval))
             }
-            Err(e) => Err(e),
+            Err(e) => Err(BlockError("notmuch".to_string(), e.to_string())),
         }
     }
 

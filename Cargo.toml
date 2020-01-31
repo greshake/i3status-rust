@@ -22,17 +22,17 @@ lazy_static = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-toml = "0.4"
-uuid = { version = "0.6", features = ["v4"] }
-dbus = "0.6"
-nix = "0.14.0"
-i3ipc = "0.8.2"
+toml = "0.5"
+uuid = { version = "0.8", features = ["v4"] }
+dbus = "0.8"
+nix = "0.16.0"
+i3ipc = "0.10.1"
 num-traits = "0.2"
 crossbeam-channel = "0.4"
-inotify = "0.5.1"
+inotify = "0.8.2"
 maildir = "0.3"
-libpulse-binding = { optional = true, version = "2.2.3", default-features = false }
-notmuch = { optional = true, version = "0.1.1" }
+libpulse-binding = { optional = true, version = "2.15.0", default-features = false }
+notmuch = { optional = true, version = "0.6.0" }
 # Used only in debug build mode
 # for profiling blocks
 cpuprofiler = { version = "0.0.4", optional = true }
