@@ -6,8 +6,11 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus::stdintf::org_freedesktop_dbus::Properties;
-use dbus::{arg, Connection, ConnectionItem};
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{
+    arg,
+    ffidisp::{Connection, ConnectionItem},
+};
 use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
@@ -35,7 +38,7 @@ impl ConfigBlock for IBus {
     type Config = IBusConfig;
 
     fn new(_block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().simple().to_string();
+        let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
         let ibus_address = get_ibus_address()?;
