@@ -49,13 +49,16 @@ impl ConfigBlock for FocusedWindow {
         let title_original = Arc::new(Mutex::new(String::from("")));
         let title = title_original.clone();
 
-        thread::spawn(move || {
+        let child = thread::spawn(move || {
             // establish connection.
-            let mut listener = I3EventListener::connect().unwrap();
+            let mut listener =
+                I3EventListener::connect().expect("Failed to estalish IPC connection.");
 
             // subscribe to a couple events.
             let subs = [Subscription::Window, Subscription::Workspace];
-            listener.subscribe(&subs).unwrap();
+            listener
+                .subscribe(&subs)
+                .expect("Failed to subscribe to events.");
 
             // handle them
             for event in listener.listen() {
@@ -117,6 +120,10 @@ impl ConfigBlock for FocusedWindow {
                 }
             }
         });
+
+        child
+            .join()
+            .block_error("focused_window", "thread panicked")?;
 
         Ok(FocusedWindow {
             id,
