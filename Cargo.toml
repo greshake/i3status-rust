@@ -31,7 +31,7 @@ num-traits = "0.2"
 crossbeam-channel = "0.4"
 inotify = "0.5.1"
 maildir = "0.3"
-libpulse-binding = { optional = true, version = "2.2.3", default-features = false }
+libpulse-binding = { optional = true, version = "2.15.0", default-features = false }
 notmuch = { optional = true, version = "0.1.1" }
 # Used only in debug build mode
 # for profiling blocks

@@ -224,7 +224,7 @@ impl PulseAudioConnection {
     fn new() -> Result<Self> {
         let mut proplist = Proplist::new().unwrap();
         proplist
-            .sets(properties::APPLICATION_NAME, "i3status-rs")
+            .set_str(properties::APPLICATION_NAME, "i3status-rs")
             .block_error("sound", "could not set pulseaudio APPLICATION_NAME poperty")?;
 
         let mainloop = Rc::new(RefCell::new(
@@ -512,7 +512,7 @@ impl SoundDevice for PulseAudioSoundDevice {
 
         // apply step to volumes
         let step = (step as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as i32;
-        for vol in volume.values.iter_mut() {
+        for vol in volume.get_mut().iter_mut() {
             vol.0 = min(max(0, vol.0 as i32 + step) as u32, VOLUME_MAX.0);
         }
 
