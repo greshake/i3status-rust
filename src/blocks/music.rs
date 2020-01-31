@@ -17,8 +17,12 @@ use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
 
 use dbus::arg::{Array, RefArg};
-use dbus::stdintf::org_freedesktop_dbus::Properties;
-use dbus::{arg, BusType, Connection, ConnectionItem, Message};
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{
+    arg,
+    ffidisp::{BusType, Connection, ConnectionItem},
+    Message,
+};
 use uuid::Uuid;
 
 pub struct Music {

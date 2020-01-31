@@ -141,7 +141,7 @@ impl BacklitDevice {
             .and_then(|x| x.to_str())
             .block_error("backlight", "Malformed device path")?;
 
-        let con = dbus::Connection::get_private(dbus::BusType::System)
+        let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("backlight", "Failed to establish D-Bus connection.")?;
         let msg = dbus::Message::new_method_call(
             "org.freedesktop.login1",
@@ -151,7 +151,7 @@ impl BacklitDevice {
         )
         .block_error("backlight", "Failed to create D-Bus message")?
         .append2("backlight", device_name)
-        .append(raw_value as u32);
+        .append1(raw_value as u32);
 
         con.send_with_reply_and_block(msg, 1000)
             .block_error("backlight", "Failed to send D-Bus message")

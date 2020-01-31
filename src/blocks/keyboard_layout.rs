@@ -5,8 +5,11 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use dbus;
-use dbus::stdintf::org_freedesktop_dbus::Properties;
-use dbus::{Message, MsgHandlerResult, MsgHandlerType};
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{
+    ffidisp::{MsgHandlerResult, MsgHandlerType},
+    Message,
+};
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -97,12 +100,12 @@ impl KeyboardLayoutMonitor for SetXkbMap {
 }
 
 pub struct LocaleBus {
-    con: dbus::Connection,
+    con: dbus::ffidisp::Connection,
 }
 
 impl LocaleBus {
     pub fn new() -> Result<Self> {
-        let con = dbus::Connection::get_private(dbus::BusType::System)
+        let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("locale", "Failed to establish D-Bus connection.")?;
 
         Ok(LocaleBus { con: con })
@@ -128,7 +131,7 @@ impl KeyboardLayoutMonitor for LocaleBus {
     /// via the `update_request` channel.
     fn monitor(&self, id: String, update_request: Sender<Task>) {
         thread::spawn(move || {
-            let con = dbus::Connection::get_private(dbus::BusType::System)
+            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
                 .expect("Failed to establish D-Bus connection.");
             let rule = "type='signal',\
                         path='/org/freedesktop/locale1',\
@@ -182,7 +185,7 @@ impl KbdDaemonBus {
     }
 
     fn get_initial_layout_id() -> Result<u32> {
-        let c = dbus::Connection::get_private(dbus::BusType::Session)
+        let c = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::Session)
             .block_error("kbddaemonbus", "can't connect to dbus")?;
 
         let send_msg = Message::new_method_call(
@@ -238,7 +241,8 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
     fn monitor(&self, id: String, update_request: Sender<Task>) {
         let arc = Arc::clone(&self.kbdd_layout_id);
         thread::spawn(move || {
-            let c = dbus::Connection::get_private(dbus::BusType::Session).unwrap();
+            let c =
+                dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::Session).unwrap();
             c.add_match(
                 "interface='ru.gentoo.kbdd',\
                  member='layoutChanged',\
@@ -252,7 +256,7 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
             c.add_handler(KbddMessageHandler(arc));
             loop {
                 for ci in c.iter(100_000) {
-                    if let dbus::ConnectionItem::Signal(_) = ci {
+                    if let dbus::ffidisp::ConnectionItem::Signal(_) = ci {
                         update_request
                             .send(Task {
                                 id: id.clone(),
@@ -268,9 +272,9 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
 
 struct KbddMessageHandler(Arc<Mutex<u32>>);
 
-impl dbus::MsgHandler for KbddMessageHandler {
+impl dbus::ffidisp::MsgHandler for KbddMessageHandler {
     fn handler_type(&self) -> MsgHandlerType {
-        return dbus::MsgHandlerType::MsgType(dbus::MessageType::Signal);
+        return dbus::ffidisp::MsgHandlerType::MsgType(dbus::MessageType::Signal);
     }
 
     fn handle_msg(&mut self, msg: &Message) -> Option<MsgHandlerResult> {

@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use dbus;
 use dbus::arg::Array;
-use dbus::stdintf::org_freedesktop_dbus::Properties;
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -215,7 +215,7 @@ impl BatteryDevice for PowerSupplyDevice {
 /// Represents a battery known to UPower.
 pub struct UpowerDevice {
     device_path: String,
-    con: dbus::Connection,
+    con: dbus::ffidisp::Connection,
 }
 
 impl UpowerDevice {
@@ -227,7 +227,7 @@ impl UpowerDevice {
     /// battery.
     pub fn from_device(device: &str) -> Result<Self> {
         let device_path;
-        let con = dbus::Connection::get_private(dbus::BusType::System)
+        let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
         if device == "DisplayDevice" {
@@ -274,7 +274,7 @@ impl UpowerDevice {
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.device_path.clone();
         thread::spawn(move || {
-            let con = dbus::Connection::get_private(dbus::BusType::System)
+            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
                 .expect("Failed to establish D-Bus connection.");
             let rule = format!(
                 "type='signal',\

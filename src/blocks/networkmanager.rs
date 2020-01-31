@@ -4,7 +4,10 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use dbus::arg::Variant;
-use dbus::{BusType, Connection, Message, MessageItem};
+use dbus::{
+    ffidisp::{BusType, Connection},
+    Message,
+};
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -99,10 +102,7 @@ impl ConnectionManager {
             "Get",
         )
         .block_error("networkmanager", "Failed to create message")?
-        .append2(
-            MessageItem::Str("org.freedesktop.NetworkManager".to_string()),
-            MessageItem::Str(property.to_string()),
-        );
+        .append2("org.freedesktop.NetworkManager", property);
 
         let r = c.send_with_reply_and_block(m, 1000);
 
