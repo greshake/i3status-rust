@@ -1,3 +1,56 @@
+# i3status-rust 0.13.0
+
+## New Blocks and Features
+
+* The Net block now takes a `use_bits` parameter to display speeds in bit-based
+  instead of byte-based units. (#496 by @hlmtre)
+
+* The Pacman block now supports a `format` parameter. (#473 by @ifreund)
+
+* The top-level config now takes a `scrolling` parameter that can be used to
+  turn on `"natural"` mouse scrolling in the bar. (#494 by @bakhtiyarneyman)
+
+* The Brightness block will now fall back to using D-Bus for changing the
+  brightness if it cannot modify it via `sysfs`. (#499 by @majewsky)
+
+* The Bluetooth block now allows for setting a text `label` parameter to keep
+  track of devices. (#528 by @jeffw387)
+
+## Bug Fixes and Improvements
+
+* Fixes a panic that could sometimes manifest when restarting Pulseaudio. (#484
+  by @ammgws)
+
+* Fixes errors in the Pango markup we generate. (#518 by @ammgws)
+
+* Fixes a potential panic when the Focused Window block was the only one in the
+  configuration. (#535 by @ammgws)
+
+* Fixes potential issues due to not ignoring `stdin` and `stdout` when spawning
+  child processes. (#530 by @Celti)
+
+* Improvements to the spacing around icons and IP addresses in the Net block.
+  (#505 and #507 by @ammgws)
+
+* Bumps several dependencies to fix security issues and reduce the number of
+  transitive dependencies, which should improve build times. (#491, #492, #493,
+  #510, #523 by @ammgws)
+
+* Updates the installation documentation for Fedora. The project is now in the
+  official repos! (#488 by @tim77)
+
+* Simplifies the `udev` rule in the Brightness block docs. (#481 by @hellow554)
+
+* Fixes a typo in the theme documentation. (#485 by @peeweep)
+
+* Adds mention in the documentation that the Focused Window block is compatible
+  with Sway. (#497 by @NilsIrl)
+
+* Adds documentation for the optional Notmuch mail block. (#527 by @ammgws)
+
+* Travis CI will now compile the project with all features enabled, which would
+  have caught several bugs long ago. (#539 by @rotty)
+
 # i3status-rust 0.12.0
 
 ## New Blocks and Features
