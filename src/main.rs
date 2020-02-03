@@ -125,7 +125,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             name,
             matches.value_of("profile-runs").unwrap(),
             &config,
-            &tx_update_requests,
+            tx_update_requests,
         )?;
         return Ok(());
     }
@@ -291,12 +291,7 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
 }
 
 #[cfg(not(feature = "profiling"))]
-fn profile_config(
-    _name: &str,
-    _runs: &str,
-    _config: &Config,
-    _update: &Sender<Task>,
-) -> Result<()> {
+fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: Sender<Task>) -> Result<()> {
     // TODO: Maybe we should just panic! here.
     Err(InternalError(
         "profile".to_string(),
