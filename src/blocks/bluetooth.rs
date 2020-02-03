@@ -18,11 +18,12 @@ use crate::widgets::button::ButtonWidget;
 pub struct BluetoothDevice {
     pub path: String,
     pub icon: Option<String>,
+    pub label: String,
     con: dbus::Connection,
 }
 
 impl BluetoothDevice {
-    pub fn from_mac(mac: String) -> Result<Self> {
+    pub fn new(mac: String, label: Option<String>) -> Result<Self> {
         let con = dbus::Connection::get_private(dbus::BusType::System)
             .block_error("bluetooth", "Failed to establish D-Bus connection.")?;
 
@@ -77,6 +78,7 @@ impl BluetoothDevice {
         Ok(BluetoothDevice {
             path: path,
             icon: icon,
+            label: label.unwrap_or("".to_string()),
             con: con,
         })
     }
@@ -158,6 +160,7 @@ pub struct Bluetooth {
 #[serde(deny_unknown_fields)]
 pub struct BluetoothConfig {
     pub mac: String,
+    pub label: Option<String>,
 }
 
 impl ConfigBlock for Bluetooth {
@@ -165,7 +168,7 @@ impl ConfigBlock for Bluetooth {
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
         let id: String = Uuid::new_v4().simple().to_string();
-        let device = BluetoothDevice::from_mac(block_config.mac)?;
+        let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
         device.monitor(id.clone(), send);
 
         Ok(Bluetooth {
@@ -190,8 +193,8 @@ impl Block for Bluetooth {
     fn update(&mut self) -> Result<Option<Duration>> {
         let connected = self.device.connected();
         self.output.set_text(match connected {
-            true => "".to_string(),
-            false => " ×".to_string(),
+            true => format!("{}", self.device.label).to_string(),
+            false => format!("{} ×", self.device.label).to_string(),
         });
         self.output.set_state(match connected {
             true => State::Good,
@@ -207,7 +210,8 @@ impl Block for Bluetooth {
                 61..=100 => State::Good,
                 _ => State::Warning,
             });
-            self.output.set_text(format!(" {}%", value));
+            self.output
+                .set_text(format!("{} {}%", self.device.label, value));
         }
 
         Ok(None)
