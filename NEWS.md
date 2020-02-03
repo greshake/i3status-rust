@@ -43,7 +43,7 @@
 
 * Adds a new Notmuch block for querying information from a Notmuch mail
   database. This block is currently an optional feature and must be enabled with
-  `cargo build --feature notmuch`. (#215 by @bobthemighty and @atheriel)
+  `cargo build --features notmuch`. (#215 by @bobthemighty and @atheriel)
 
 * The Weather block will now obey the `OPENWEATHERMAP_API_KEY` and
   `OPENWEATHERMAP_CITY_ID` environment variables. (#410 by @nicholasfagan)
