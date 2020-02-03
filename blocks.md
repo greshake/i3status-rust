@@ -319,6 +319,9 @@ interval = 1
 
 Key | Values | Required | Default
 ----|--------|----------|--------
+`info` | Minimum load, where state is set to info. | No | `0.3`
+`warning` | Minimum load, where state is set to warning. | No | `0.6`
+`critical` | Minimum load, where state is set to critical. | No | `0.9`
 `format` | Format string. You can use the placeholders 1m 5m and 15m, e.g. `"1min avg: {1m}"`. | No | `"{1m}"`
 `interval` | Update interval, in seconds. | No | `3`
 
