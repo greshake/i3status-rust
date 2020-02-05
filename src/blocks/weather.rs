@@ -79,8 +79,11 @@ impl Weather {
                 let output = Command::new("sh")
                     .args(&[
                         "-c",
+                        // with these options curl will print http response body to stdout, http status code to stderr
                         &format!(
-                            "curl -m 3 \"http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}\" 2> /dev/null",
+                            r#"curl -m 3 --silent \
+                                "http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}" \
+                                --write-out "%{{stderr}} %{{http_code}}""#,
                             city_id = city_id,
                             api_key = api_key,
                             units = match *units {
@@ -90,8 +93,23 @@ impl Weather {
                         ),
                     ])
                     .output()
-                    .block_error("weather", "Failed to exectute curl.")
-                    .and_then(|raw_output| String::from_utf8(raw_output.stdout).block_error("weather", "Received non-UTF8 characters in response."))?;
+                    .block_error("weather", "Failed to execute curl.")
+                    .and_then(|raw_output| {
+                        let status_code = String::from_utf8(raw_output.stderr)
+                            .block_error("weather", "Invalid curl output")
+                            .and_then(|out|
+                                out.trim().parse::<i32>()
+                                    .block_error("weather", &format!("Unexpected curl output {}", out))
+                            )?;
+
+                        // All 300-399 and >500 http codes should be considered as temporary error,
+                        // and not result in block error, i.e. leave the output empty.
+                        match status_code {
+                            code if (code >= 300 && code < 400) || code >= 500 => Ok("".to_string()),
+                            _ => String::from_utf8(raw_output.stdout)
+                                .block_error("weather", "Received non-UTF8 characters in response."),
+                        }
+                    })?;
 
                 // Don't error out on empty responses e.g. for when not
                 // connected to the internet.
