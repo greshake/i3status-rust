@@ -61,6 +61,9 @@ impl ConfigBlock for FocusedWindow {
         let title_original = Arc::new(Mutex::new(String::from("")));
         let title = title_original.clone();
 
+        let _test_conn = I3EventListener::connect()
+            .block_error("focused_window", "failed to acquire connect to IPC")?;
+
         thread::spawn(move || {
             // establish connection.
             let mut listener = I3EventListener::connect().unwrap();
