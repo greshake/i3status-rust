@@ -1,3 +1,9 @@
+# i3status-rust 0.13.1
+
+* Dependent crates have been updated to their latest versions to make downstream
+  packaging easier. This will become part of the normal release process in the
+  future. (#540 by @rotty, #551 by @atheriel)
+
 # i3status-rust 0.13.0
 
 ## New Blocks and Features
