@@ -99,16 +99,14 @@ fn main() {
         return;
     }
     let exit_on_error = matches.opt_present("exit-on-error");
-    let profile_target = matches.opt_str("profile");
-    let profile_runs = matches
-        .opt_get_default("profile-runs", "1000".to_owned())
-        .unwrap();
 
     let config_path = if !matches.free.is_empty() {
         std::path::PathBuf::from(matches.free[0].clone())
     } else {
         util::xdg_config_home().join("i3status-rust/config.toml")
     };
+
+    let (profile_target, profile_runs) = gen_profiler_args(&matches);
 
     // Run and match for potential error
     if let Err(error) = run(&config_path, profile_target, &profile_runs) {
@@ -319,4 +317,18 @@ fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: Sender<Ta
         "The 'profiling' feature was not enabled at compile time.".to_string(),
         None,
     ))
+}
+
+#[cfg(not(feature = "profiling"))]
+fn gen_profiler_args(_matches: &getopts::Matches) -> (Option<String>, &str) {
+    (None, "no-profiling")
+}
+
+#[cfg(feature = "profiling")]
+fn gen_profiler_args(matches: &getopts::Matches) -> (Option<String>, &str) {
+    let profile_target = matches.opt_str("profile");
+    let profile_runs = matches
+        .opt_get_default("profile-runs", "1000".to_owned())
+        .unwrap();
+    (profile_target, profile_runs)
 }
