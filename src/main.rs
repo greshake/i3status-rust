@@ -43,7 +43,7 @@ use crossbeam_channel::{select, Receiver, Sender};
 
 fn main() {
     let mut builder = App::new("i3status-rs")
-        .version("0.13.0")
+        .version("0.13.1")
         .author(
             "Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
              https://github.com/greshake/i3status-rust/graphs/contributors",
