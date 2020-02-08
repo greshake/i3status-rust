@@ -1,3 +1,9 @@
+i3status-rust (0.13.1) UNRELEASED; urgency=low
+
+  * Upstream release.
+
+ -- Aaron Jacobs <atheriel@gmail.com>  Thu, 06 Feb 2020 21:31:23 -0500
+
 i3status-rust (0.13.0) UNRELEASED; urgency=low
 
   * Upstream release.
