@@ -57,6 +57,2865 @@ might look as follows:
   [[block]]
   block = "sound"
 .EE
+.PP
+For available blocks, see
+.BR BLOCKS .
+For theme and icon configuration, see
+.BR THEMES.
+.SH BLOCKS
+
+.SS Backlight
+.PP
+Creates a block to display screen brightness.
+This is a simplified version of the Xrandr block that reads brightness
+information directly from the filesystem, so it works under Wayland.
+The block uses \f[C]inotify\f[R] to listen for changes in the
+device\[cq]s brightness directly, so there is no need to set an update
+interval.
+.PP
+When there is no \f[C]device\f[R] specified, this block will display
+information from the first device found in the
+\f[C]/sys/class/backlight\f[R] directory.
+If you only have one display, this approach should find it correctly.
+.PP
+It is possible to set the brightness using this block as well \[en] see
+below for details.
+.SS Examples
+.PP
+Show brightness for a specific device:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]backlight\[dq]
+device = \[dq]intel_backlight\[dq]
+\f[R]
+.fi
+.PP
+Show brightness for the default device:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]backlight\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]device\f[R]
+T}@T{
+The \f[C]/sys/class/backlight\f[R] device to read brightness information
+from.
+T}@T{
+No
+T}@T{
+Default device
+T}
+T{
+\f[C]step_width\f[R]
+T}@T{
+The brightness increment to use when scrolling, in percent.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+.TE
+.SS Setting Brightness with the Mouse Wheel
+.PP
+The block allows for setting brightness with the mouse wheel.
+However, depending on how you installed i3status-rust, it may not have
+the appropriate permissions to modify these files, and will fail
+silently.
+To remedy this you can write a \f[C]udev\f[R] rule for your system (if
+you are comfortable doing so).
+.PP
+First, check that your user is a member of the \[lq]video\[rq] group
+using the \f[C]groups\f[R] command.
+Then add a rule in the \f[C]/etc/udev/rules.d/\f[R] directory containing
+the following, for example in \f[C]backlight.rules\f[R]:
+.IP
+.nf
+\f[C]
+ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]backlight\[dq], GROUP=\[dq]video\[dq], MODE=\[dq]0664\[dq]
+\f[R]
+.fi
+.PP
+This will allow the video group to modify all backlight devices.
+You will also need to restart for this rule to take effect.
+.SS Battery
+.PP
+Creates a block which displays the current battery state (Full, Charging
+or Discharging), percentage charged and estimate time until
+(dis)charged.
+.PP
+The battery block collapses when the battery is fully charged \[en] or,
+in the case of some Thinkpad batteries, when it reports \[lq]Not
+charging\[rq].
+.PP
+The battery block supports reading charging and status information from
+either \f[C]sysfs\f[R] or the UPower (https://upower.freedesktop.org/)
+D-Bus interface.
+These \[lq]drivers\[rq] have largely identical features, but UPower does
+include support for \f[C]device = \[dq]DisplayDevice\[dq]\f[R], which
+treats all physical power sources as a single logical battery.
+This is particularly useful if your system has multiple batteries.
+.SS Examples
+.PP
+Update the battery state every ten seconds, and show the time remaining
+until (dis)charging is complete:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]battery\[dq]
+interval = 10
+format = \[dq]{percentage}% {time}\[dq]
+\f[R]
+.fi
+.PP
+Rely on Upower for battery updates and information:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]battery\[dq]
+driver = \[dq]upower\[dq]
+format = \[dq]{percentage}% {time}\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]device\f[R]
+T}@T{
+The device in \f[C]/sys/class/power_supply/\f[R] to read from.
+When using UPower, this can also be \f[C]\[dq]DisplayDevice\[dq]\f[R].
+T}@T{
+No
+T}@T{
+\f[C]\[dq]BAT0\[dq]\f[R]
+T}
+T{
+\f[C]driver\f[R]
+T}@T{
+One of \f[C]\[dq]sysfs\[dq]\f[R] or \f[C]\[dq]upower\[dq]\f[R].
+T}@T{
+No
+T}@T{
+\f[C]\[dq]sysfs\[dq]\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+Only relevant for \f[C]driver = \[dq]sysfs\[dq]\f[R].
+T}@T{
+No
+T}@T{
+\f[C]10\f[R]
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+A format string.
+See below for available placeholders.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{percentage}%\[dq]\f[R]
+T}
+T{
+\f[C]show\f[R]
+T}@T{
+Deprecated in favour of \f[C]format\f[R].
+Show remaining \f[C]\[dq]time\[dq]\f[R], \f[C]\[dq]percentage\[dq]\f[R]
+or \f[C]\[dq]both\[dq]\f[R]
+T}@T{
+No
+T}@T{
+\f[C]\[dq]percentage\[dq]\f[R]
+T}
+T{
+\f[C]upower\f[R]
+T}@T{
+Deprecated in favour of \f[C]device\f[R].
+When \f[C]true\f[R], use the Upower D-Bus driver.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.PP
+The \f[C]show\f[R] option is deprecated, and will be removed in future
+versions.
+In the meantime, it will override the \f[C]format\f[R] option when
+present.
+.SS Format string
+.PP
+.TS
+tab(@);
+lw(33.6n) lw(36.4n).
+T{
+Placeholder
+T}@T{
+Description
+T}
+_
+T{
+\f[C]{percentage}\f[R]
+T}@T{
+Battery level, in percent.
+T}
+T{
+\f[C]{time}\f[R]
+T}@T{
+Time remaining until (dis)charge is complete.
+T}
+T{
+\f[C]{power}\f[R]
+T}@T{
+Power consumption (in watts) by the battery or from the power supply
+when charging.
+T}
+.TE
+.SS Bluetooth
+.PP
+Creates a block which displays the connectivity of a given Bluetooth
+device, or the battery level if this is supported.
+Relies on the Bluez D-Bus API, and is therefore asynchronous.
+.PP
+When the device can be identified as an audio headset, a keyboard,
+joystick, or mouse, use the relevant icon.
+Otherwise, fall back on the generic Bluetooth symbol.
+.PP
+Right-clicking the block will attempt to connect (or disconnect) the
+device.
+.SS Examples
+.PP
+A block for a Bluetooth device with the given MAC address:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]bluetooth\[dq]
+mac = \[dq]A0:8A:F5:B8:01:FD\[dq]
+label = \[dq] Rowkin\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]mac\f[R]
+T}@T{
+MAC address of the Bluetooth device.
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]label\f[R]
+T}@T{
+Text label to display next to the icon.
+T}@T{
+No
+T}@T{
+None
+T}
+.TE
+.SS CPU Utilization
+.PP
+Creates a block which displays the overall CPU utilization, calculated
+from \f[C]/proc/stat\f[R].
+.SS Examples
+.PP
+Update CPU usage every second:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]cpu\[dq]
+interval = 1
+format = \[dq]{barchart} {utilization}% {frequency}GHz\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]info\f[R]
+T}@T{
+Minimum usage, where state is set to info.
+T}@T{
+No
+T}@T{
+\f[C]30\f[R]
+T}
+T{
+\f[C]warning\f[R]
+T}@T{
+Minimum usage, where state is set to warning.
+T}@T{
+No
+T}@T{
+\f[C]60\f[R]
+T}
+T{
+\f[C]critical\f[R]
+T}@T{
+Minimum usage, where state is set to critical.
+T}@T{
+No
+T}@T{
+\f[C]90\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]1\f[R]
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+A format string.
+Possible placeholders: \f[C]{barchart}\f[R] (barchart of each CPU\[cq]s
+core utilization), \f[C]{utilization}\f[R] (average CPU utilization in
+percent) and \f[C]{frequency}\f[R] (CPU frequency).
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{utilization}%\[dq]\f[R]
+T}
+T{
+\f[C]frequency\f[R]
+T}@T{
+Deprecated in favour of \f[C]format\f[R].
+Sets format to \f[C]{utilization}% {frequency}GHz\f[R]
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.SS Custom
+.PP
+Creates a block that display the output of custom shell commands.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]custom\[dq]
+command = \[dq]uname\[dq]
+interval = 100
+\f[R]
+.fi
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]custom\[dq]
+cycle = [\[dq]echo ON\[dq], \[dq]echo OFF\[dq]]
+on_click = \[dq]<command>\[dq]
+interval = 1
+\f[R]
+.fi
+.SS Options
+.PP
+Note that \f[C]command\f[R] and \f[C]cycle\f[R] are mutually exclusive.
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]command\f[R]
+T}@T{
+Shell command to execute & display.
+T}@T{
+No
+T}@T{
+None
+T}
+T{
+\f[C]on_click\f[R]
+T}@T{
+Command to execute when the button is clicked.
+The command will be passed to whatever is specified in your
+\f[C]$SHELL\f[R] variable and - if not set - fallback to \f[C]sh\f[R].
+T}@T{
+No
+T}@T{
+None
+T}
+T{
+\f[C]cycle\f[R]
+T}@T{
+Commands to execute and change when the button is clicked.
+T}@T{
+No
+T}@T{
+None
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]10\f[R]
+T}
+.TE
+.SS Disk Space
+.PP
+Creates a block which displays disk space information.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]disk_space\[dq]
+path = \[dq]/\[dq]
+alias = \[dq]/\[dq]
+info_type = \[dq]available\[dq]
+unit = \[dq]GB\[dq]
+interval = 20
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]path\f[R]
+T}@T{
+Path to collect information from
+T}@T{
+No
+T}@T{
+\f[C]\[dq]/\[dq]\f[R]
+T}
+T{
+\f[C]alias\f[R]
+T}@T{
+Alias that is displayed for path
+T}@T{
+No
+T}@T{
+\f[C]\[dq]/\[dq]\f[R]
+T}
+T{
+\f[C]info_type\f[R]
+T}@T{
+Currently supported options are \f[C]available\f[R] and \f[C]free\f[R]
+T}@T{
+No
+T}@T{
+\f[C]\[dq]available\[dq]\f[R]
+T}
+T{
+\f[C]unit\f[R]
+T}@T{
+Unit that is used to display disk space.
+Options are MB, MiB, GB, GiB, TB and TiB
+T}@T{
+No
+T}@T{
+\f[C]\[dq]GB\[dq]\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]20\f[R]
+T}
+T{
+\f[C]show_percentage\f[R]
+T}@T{
+Show percentage of used/available disk space depending on info_type.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.SS Focused Window
+.PP
+Creates a block which displays the title of the currently focused
+window.
+Uses push updates from i3 IPC, so no need to worry about resource usage.
+The block only updates when the focused window changes title or the
+focus changes.
+Also works with sway, due to it having compatibility with i3\[cq]s IPC.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]focused_window\[dq]
+max_width = 21
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]max_width\f[R]
+T}@T{
+Truncates titles to this length.
+T}@T{
+No
+T}@T{
+\f[C]21\f[R]
+T}
+.TE
+.SS IBus
+.PP
+Creates a block which displays the current global engine set in
+IBus (https://wiki.archlinux.org/index.php/IBus).
+Updates are instant as D-Bus signalling is used.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]ibus\[dq]
+\f[R]
+.fi
+.SS Keyboard Layout
+.PP
+Creates a block to display the current keyboard layout.
+.PP
+This block polls \f[C]setxkbmap\f[R] for the current layout by default,
+also can be configured to read asynchronous updates from the systemd
+\f[C]org.freedesktop.locale1\f[R] D-Bus path or \f[C]kbdd\f[R].
+Which of these methods is appropriate will depend on your system setup.
+.SS Examples
+.PP
+Check \f[C]setxkbmap\f[R] every 15 seconds:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]keyboard_layout\[dq]
+driver = \[dq]setxkbmap\[dq]
+interval = 15
+\f[R]
+.fi
+.PP
+Listen to D-Bus for changes:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]keyboard_layout\[dq]
+driver = \[dq]localebus\[dq]
+\f[R]
+.fi
+.PP
+Listen to kbdd for changes:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]keyboard_layout\[dq]
+driver = \[dq]kbddbus\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]driver\f[R]
+T}@T{
+One of \f[C]\[dq]setxkbmap\[dq]\f[R], \f[C]\[dq]localebus\[dq]\f[R] or
+\f[C]\[dq]kbddbus\[dq]\f[R], depending on your system.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]setxkbmap\[dq]\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+Only used by the \f[C]\[dq]setxkbmap\[dq]\f[R] driver.
+T}@T{
+No
+T}@T{
+\f[C]60\f[R]
+T}
+.TE
+.SS Load
+.PP
+Creates a block which displays the system load average.
+.SS Examples
+.PP
+Display the 1-minute and 5-minute load averages, updated once per
+second:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]load\[dq]
+format = \[dq]{1m} {5m}\[dq]
+interval = 1
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]info\f[R]
+T}@T{
+Minimum load, where state is set to info.
+T}@T{
+No
+T}@T{
+\f[C]0.3\f[R]
+T}
+T{
+\f[C]warning\f[R]
+T}@T{
+Minimum load, where state is set to warning.
+T}@T{
+No
+T}@T{
+\f[C]0.6\f[R]
+T}
+T{
+\f[C]critical\f[R]
+T}@T{
+Minimum load, where state is set to critical.
+T}@T{
+No
+T}@T{
+\f[C]0.9\f[R]
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+Format string.
+You can use the placeholders 1m 5m and 15m,
+e.g.\ \f[C]\[dq]1min avg: {1m}\[dq]\f[R].
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{1m}\[dq]\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]3\f[R]
+T}
+.TE
+.SS Maildir
+.PP
+Creates a block which shows unread mails.
+Only supports maildir format.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]maildir\[dq]
+interval = 60
+inboxes = [\[dq]/home/user/mail/local\[dq], \[dq]/home/user/mail/gmail/Inbox\[dq]]
+threshold_warning = 1
+threshold_critical = 10
+display_type = \[dq]new\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]inboxes\f[R]
+T}@T{
+List of maildir inboxes to look for mails in
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]threshold_warning\f[R]
+T}@T{
+Number of unread mails where state is set to warning
+T}@T{
+No
+T}@T{
+\f[C]1\f[R]
+T}
+T{
+\f[C]threshold_critical\f[R]
+T}@T{
+Number of unread mails where state is set to critical
+T}@T{
+No
+T}@T{
+\f[C]10\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+T{
+\f[C]display_type\f[R]
+T}@T{
+Which part of the maildir to count.
+One of \[lq]new\[rq], \[lq]cur\[rq], or \[lq]all\[rq]
+T}@T{
+No
+T}@T{
+\f[C]\[dq]new\[dq]\f[R]
+T}
+T{
+\f[C]icon\f[R]
+T}@T{
+Whether or not to prepend the output with the mail icon
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+.TE
+.SS Memory
+.PP
+Creates a block displaying memory and swap usage.
+.PP
+By default, the format of this module is \[lq]:
+{MFm}MB/{MTm}MB({Mp}%)\[rq] (Swap values accordingly).
+That behaviour can be changed within your config.
+.PP
+This module keeps track of both Swap and Memory.
+By default, a click switches between them.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]memory\[dq]
+format_mem = \[dq]{Mum}MB/{MTm}MB({Mup}%)\[dq]
+format_swap = \[dq]{SUm}MB/{STm}MB({SUp}%)\[dq]
+display_type = \[dq]memory\[dq]
+icons = true
+clickable = true
+interval = 5
+warning_mem = 80
+warning_swap = 80
+critical_mem = 95
+critical_swap = 95
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]format_mem\f[R]
+T}@T{
+Format string for Memory view.
+All format values are described below.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{MFm}MB/{MTm}MB({Mp}%)\[dq]\f[R]
+T}
+T{
+\f[C]format_swap\f[R]
+T}@T{
+Format string for Swap view.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{SFm}MB/{STm}MB({Sp}%)\[dq]\f[R]
+T}
+T{
+\f[C]display_type\f[R]
+T}@T{
+Default view displayed on startup.
+Options are memory, swap
+T}@T{
+No
+T}@T{
+\f[C]\[dq]memory\[dq]\f[R]
+T}
+T{
+\f[C]icons\f[R]
+T}@T{
+Whether the format string should be prepended with Icons.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]clickable\f[R]
+T}@T{
+Whether the view should switch between memory and swap on click.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]warning_mem\f[R]
+T}@T{
+Percentage of memory usage, where state is set to warning.
+T}@T{
+No
+T}@T{
+\f[C]80.0\f[R]
+T}
+T{
+\f[C]warning_swap\f[R]
+T}@T{
+Percentage of swap usage, where state is set to warning.
+T}@T{
+No
+T}@T{
+\f[C]80.0\f[R]
+T}
+T{
+\f[C]critical_mem\f[R]
+T}@T{
+Percentage of memory usage, where state is set to critical.
+T}@T{
+No
+T}@T{
+\f[C]95.0\f[R]
+T}
+T{
+\f[C]critical_swap\f[R]
+T}@T{
+Percentage of swap usage, where state is set to critical.
+T}@T{
+No
+T}@T{
+\f[C]95.0\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+The delay in seconds between an update.
+If \f[C]clickable\f[R], an update is triggered on click.
+Integer values only.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+.TE
+.SS Format string specification
+.PP
+.TS
+tab(@);
+lw(39.4n) lw(30.6n).
+T{
+Key
+T}@T{
+Value
+T}
+_
+T{
+\f[C]{MTg}\f[R]
+T}@T{
+Memory total (GiB).
+T}
+T{
+\f[C]{MTm}\f[R]
+T}@T{
+Memory total (MiB).
+T}
+T{
+\f[C]{MAg}\f[R]
+T}@T{
+Available memory, including cached memory and buffers (GiB).
+T}
+T{
+\f[C]{MAm}\f[R]
+T}@T{
+Available memory, including cached memory and buffers (MiB).
+T}
+T{
+\f[C]{MAp}\f[R]
+T}@T{
+Available memory, including cached memory and buffers (%).
+T}
+T{
+\f[C]{MApi}\f[R]
+T}@T{
+Available memory, including cached memory and buffers (%) as integer.
+T}
+T{
+\f[C]{MFg}\f[R]
+T}@T{
+Memory free (GiB).
+T}
+T{
+\f[C]{MFm}\f[R]
+T}@T{
+Memory free (MiB).
+T}
+T{
+\f[C]{MFp}\f[R]
+T}@T{
+Memory free (%).
+T}
+T{
+\f[C]{MFpi}\f[R]
+T}@T{
+Memory free (%) as integer.
+T}
+T{
+\f[C]{Mug}\f[R]
+T}@T{
+Memory used, excluding cached memory and buffers; similar to htop\[cq]s
+green bar (GiB).
+T}
+T{
+\f[C]{Mum}\f[R]
+T}@T{
+Memory used, excluding cached memory and buffers; similar to htop\[cq]s
+green bar (MiB).
+T}
+T{
+\f[C]{Mup}\f[R]
+T}@T{
+Memory used, excluding cached memory and buffers; similar to htop\[cq]s
+green bar (%).
+T}
+T{
+\f[C]{Mupi}\f[R]
+T}@T{
+Memory used, excluding cached memory and buffers; similar to htop\[cq]s
+green bar (%) as integer.
+T}
+T{
+\f[C]{MUg}\f[R]
+T}@T{
+Total memory used (GiB).
+T}
+T{
+\f[C]{MUm}\f[R]
+T}@T{
+Total memory used (MiB).
+T}
+T{
+\f[C]{MUp}\f[R]
+T}@T{
+Total memory used (%).
+T}
+T{
+\f[C]{MUpi}\f[R]
+T}@T{
+Total memory used (%) as integer.
+T}
+T{
+\f[C]{Cg}\f[R]
+T}@T{
+Cached memory, similar to htop\[cq]s yellow bar (GiB).
+T}
+T{
+\f[C]{Cm}\f[R]
+T}@T{
+Cached memory, similar to htop\[cq]s yellow bar (MiB).
+T}
+T{
+\f[C]{Cp}\f[R]
+T}@T{
+Cached memory, similar to htop\[cq]s yellow bar (%).
+T}
+T{
+\f[C]{Cpi}\f[R]
+T}@T{
+Cached memory, similar to htop\[cq]s yellow bar (%) as integer.
+T}
+T{
+\f[C]{Bg}\f[R]
+T}@T{
+Buffers, similar to htop\[cq]s blue bar (GiB).
+T}
+T{
+\f[C]{Bm}\f[R]
+T}@T{
+Buffers, similar to htop\[cq]s blue bar (MiB).
+T}
+T{
+\f[C]{Bp}\f[R]
+T}@T{
+Buffers, similar to htop\[cq]s blue bar (%).
+T}
+T{
+\f[C]{Bpi}\f[R]
+T}@T{
+Buffers, similar to htop\[cq]s blue bar (%) as integer.
+T}
+T{
+\f[C]{STg}\f[R]
+T}@T{
+Swap total (GiB).
+T}
+T{
+\f[C]{STm}\f[R]
+T}@T{
+Swap total (MiB).
+T}
+T{
+\f[C]{SFg}\f[R]
+T}@T{
+Swap free (GiB).
+T}
+T{
+\f[C]{SFm}\f[R]
+T}@T{
+Swap free (MiB).
+T}
+T{
+\f[C]{SFp}\f[R]
+T}@T{
+Swap free (%).
+T}
+T{
+\f[C]{SFpi}\f[R]
+T}@T{
+Swap free (%) as integer.
+T}
+T{
+\f[C]{SUg}\f[R]
+T}@T{
+Swap used (GiB).
+T}
+T{
+\f[C]{SUm}\f[R]
+T}@T{
+Swap used (MiB).
+T}
+T{
+\f[C]{SUp}\f[R]
+T}@T{
+Swap used (%).
+T}
+T{
+\f[C]{SUpi}\f[R]
+T}@T{
+Swap used (%) as integer.
+T}
+.TE
+.SS Music
+.PP
+Creates a block to display the current song title and artist in a
+fixed-width marquee.
+Also provides buttons for play/pause, previous and next.
+.PP
+Supports all music players that implement the MediaPlayer2
+Interface (https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html).
+This includes:
+.IP \[bu] 2
+Spotify
+.IP \[bu] 2
+VLC
+.IP \[bu] 2
+mpd (via mpDris2 (https://github.com/eonpatapon/mpDris2))
+.PP
+and many others.
+.PP
+The block can be configured to drive a specific music player by name or
+automatically discover the currently active one.
+.SS Examples
+.PP
+Show the currently playing song on Spotify only, with play & next
+buttons:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]music\[dq]
+player = \[dq]spotify\[dq]
+buttons = [\[dq]play\[dq], \[dq]next\[dq]]
+\f[R]
+.fi
+.PP
+Same thing for any compatible player, takes the first active on the bus:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]music\[dq]
+buttons = [\[dq]play\[dq], \[dq]next\[dq]]
+\f[R]
+.fi
+.PP
+Start Spotify if the block is clicked whilst it\[cq]s collapsed:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]music\[dq]
+on_collapsed_click = \[dq]spotify\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]player\f[R]
+T}@T{
+Name of the music player.
+Must be the same name the player is registered with the MediaPlayer2
+Interface.
+If unset, it will automatically discover the active player.
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]max_width\f[R]
+T}@T{
+Max width of the block in characters, not including the buttons
+T}@T{
+No
+T}@T{
+\f[C]21\f[R]
+T}
+T{
+\f[C]marquee\f[R]
+T}@T{
+Bool to specify if a marquee style rotation should be used if the title
++ artist is longer than max-width
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]marquee_interval\f[R]
+T}@T{
+Marquee interval in seconds.
+This is the delay between each rotation.
+T}@T{
+No
+T}@T{
+\f[C]10\f[R]
+T}
+T{
+\f[C]marquee_speed\f[R]
+T}@T{
+Marquee speed in seconds.
+This is the scrolling time used per character.
+T}@T{
+No
+T}@T{
+\f[C]0.5\f[R]
+T}
+T{
+\f[C]buttons\f[R]
+T}@T{
+Array of control buttons to be displayed.
+Options are prev (previous title), play (play/pause) and next (next
+title)
+T}@T{
+No
+T}@T{
+\f[C][]\f[R]
+T}
+T{
+\f[C]on_collapsed_click\f[R]
+T}@T{
+Shell command to run when the music block is clicked while collapsed.
+T}@T{
+No
+T}@T{
+None
+T}
+.TE
+.SS Net
+.PP
+Creates a block which displays the upload and download throughput for a
+network interface.
+Units are by default in bytes per second (kB/s, MB/s, etc), but the
+`use_bits' flag can be set to \f[C]true\f[R] to convert the units to bps
+(little b).
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]net\[dq]
+device = \[dq]wlp2s0\[dq]
+ssid = true
+signal_strength = true
+ip = true
+speed_up = false
+graph_up = true
+interval = 5
+use_bits = false
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]device\f[R]
+T}@T{
+Network interface to moniter (name from /sys/class/net)
+T}@T{
+Yes
+T}@T{
+\f[C]lo\f[R] (loopback interface)
+T}
+T{
+\f[C]ssid\f[R]
+T}@T{
+Display network SSID (wireless only).
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]signal_strength\f[R]
+T}@T{
+Display WiFi signal strength (wireless only).
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]bitrate\f[R]
+T}@T{
+Display connection bitrate.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]ip\f[R]
+T}@T{
+Display connection IP address.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]speed_up\f[R]
+T}@T{
+Display upload speed.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]speed_down\f[R]
+T}@T{
+Display download speed.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]graph_up\f[R]
+T}@T{
+Display a bar graph for upload speed.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]graph_down\f[R]
+T}@T{
+Display a bar graph for download speed.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]1\f[R]
+T}
+T{
+\f[C]hide_missing\f[R]
+T}@T{
+Whether to hide networks that are down/inactive completely.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]hide_inactive\f[R]
+T}@T{
+Whether to hide networks that are missing.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.SS Notmuch
+.PP
+Creates a block which queries a notmuch database and displays the count
+of messages.
+.PP
+The simplest configuration will return the total count of messages in
+the notmuch database stored at $HOME/.mail
+.PP
+NOTE: This block can only be used if you build with
+\f[C]cargo build --features=notmuch\f[R]
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]notmuch\[dq]
+query = \[dq]tag:alert and not tag:trash\[dq]
+threshold_warning = 1
+threshold_critical = 10
+name = \[dq]A\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]maildir\f[R]
+T}@T{
+Path to the directory containing the notmuch database
+T}@T{
+No
+T}@T{
+\f[C]$HOME/.mail\f[R]
+T}
+T{
+\f[C]query\f[R]
+T}@T{
+Query to run on the database
+T}@T{
+No
+T}@T{
+\f[C]\[dq]\[dq]\f[R]
+T}
+T{
+\f[C]threshold_critical\f[R]
+T}@T{
+Mail count that triggers \f[C]critical\f[R] state
+T}@T{
+No
+T}@T{
+\f[C]99999\f[R]
+T}
+T{
+\f[C]threshold_warning\f[R]
+T}@T{
+Mail count that triggers \f[C]warning\f[R] state
+T}@T{
+No
+T}@T{
+\f[C]99999\f[R]
+T}
+T{
+\f[C]threshold_good\f[R]
+T}@T{
+Mail count that triggers \f[C]good\f[R] state
+T}@T{
+No
+T}@T{
+\f[C]99999\f[R]
+T}
+T{
+\f[C]threshold_info\f[R]
+T}@T{
+Mail count that triggers \f[C]info\f[R] state
+T}@T{
+No
+T}@T{
+\f[C]99999\f[R]
+T}
+T{
+\f[C]name\f[R]
+T}@T{
+Label to show before the mail count
+T}@T{
+No
+T}@T{
+\f[C]\[dq]\[dq]\f[R]
+T}
+T{
+\f[C]no_icon\f[R]
+T}@T{
+Disable the mail icon
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.SS Nvidia Gpu
+.PP
+Proprietary nvidia driver required.
+.PP
+Creates a block which displays the Nvidia GPU utilization, temperature,
+used and total memory, fan speed, gpu clocks.
+You can set gpu label, that displayed by default.
+.PP
+Clicking the left button on the icon changes the output of the label to
+the output of the gpu name.
+Same with memory: used/total.
+.PP
+Clicking the left button on the fans turns on the mode of changing the
+speed of the fans using the wheel.
+Press again to turn off the mode.
+For this opportunity you need nvidia-settings!
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]nvidia_gpu\[dq]
+label = \[dq]GT 1030\[dq]
+show_memory = false
+show_clocks = true
+interval = 1
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]gpu_id\f[R]
+T}@T{
+GPU id in system
+T}@T{
+No
+T}@T{
+\f[C]0\f[R]
+T}
+T{
+\f[C]label\f[R]
+T}@T{
+Display custom gpu label
+T}@T{
+No
+T}@T{
+\f[C]\[dq]\[dq]\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]1\f[R]
+T}
+T{
+\f[C]show_utilization\f[R]
+T}@T{
+Display gpu utilization.
+In percents.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]show_memory\f[R]
+T}@T{
+Display memory information.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]show_temperature\f[R]
+T}@T{
+Display gpu temperature.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]show_fan_speed\f[R]
+T}@T{
+Display fan speed.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]show_clocks\f[R]
+T}@T{
+Display gpu clocks.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.SS Pacman
+.PP
+Creates a block which displays the pending updates available on pacman.
+.SS Examples
+.PP
+Update the list of pending updates every ten seconds:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]pacman\[dq]
+interval = 10
+format = \[dq]{count} updates available\[dq]
+format_singular = \[dq]{count} update available\[dq]
+format_up_to_date = \[dq]system up to date\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]600\f[R] (10min)
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+Format override
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{count}\[dq]\f[R]
+T}
+T{
+\f[C]format_singular\f[R]
+T}@T{
+Format override if exactly one update is available
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{count}\[dq]\f[R]
+T}
+T{
+\f[C]format_up_to_date\f[R]
+T}@T{
+Format override if no updates are available
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{count}\[dq]\f[R]
+T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l.
+T{
+Key
+T}@T{
+Value
+T}
+_
+T{
+\f[C]{count}\f[R]
+T}@T{
+Number of updates available
+T}
+.TE
+.SS Sound
+.PP
+Creates a block which displays the volume level (according to PulseAudio
+or ALSA).
+Right click to toggle mute, scroll to adjust volume.
+.PP
+Requires a PulseAudio installation or \f[C]alsa-utils\f[R] for ALSA.
+.PP
+PulseAudio support is a feature and can be turned on
+(\f[C]--features \[dq]pulseaudio\[dq]\f[R]) / off
+(\f[C]--no-default-features\f[R]) during build with \f[C]cargo\f[R].
+If PulseAudio support is enabled the \f[C]\[dq]auto\[dq]\f[R] driver
+will first try to connect to PulseAudio and then fallback to ALSA on
+error.
+.PP
+Note that if you are using PulseAudio commands (such as \f[C]pactl\f[R])
+to control your volume, you should select the
+\f[C]\[dq]pulseaudio\[dq]\f[R] (or \f[C]\[dq]auto\[dq]\f[R]) driver to
+see volume changes that exceed 100%.
+.SS Examples
+.PP
+Change the default scrolling step width to 3 percent:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]sound\[dq]
+step_width = 3
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]driver\f[R]
+T}@T{
+\f[C]\[dq]auto\[dq]\f[R], \f[C]\[dq]pulseaudio\[dq]\f[R],
+\f[C]\[dq]alsa\[dq]\f[R]
+T}@T{
+No
+T}@T{
+\f[C]\[dq]auto\[dq]\f[R] (Pulseaudio with ALSA fallback)
+T}
+T{
+\f[C]name\f[R]
+T}@T{
+PulseAudio / ALSA device name
+T}@T{
+No
+T}@T{
+Default Device (\f[C]\[at]DEFAULT_SINK\[at]\f[R] / \f[C]Master\f[R])
+T}
+T{
+\f[C]step_width\f[R]
+T}@T{
+The percent volume level is increased/decreased for the selected audio
+device when scrolling.
+Capped automatically at 50.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+T{
+\f[C]on_click\f[R]
+T}@T{
+Shell command to run when the sound block is clicked.
+T}@T{
+No
+T}@T{
+None
+T}
+T{
+\f[C]show_volume_when_muted\f[R]
+T}@T{
+Show the volume even if it is currently muted.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.SS Speed Test
+.PP
+Creates a block which uses
+\f[C]speedtest-cli\f[R] (https://github.com/sivel/speedtest-cli) to
+measure your ping, download, and upload speeds.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]speedtest\[dq]
+bytes = true
+interval = 1800
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]bytes\f[R]
+T}@T{
+Whether to use bytes or bits in the display (true for bytes, false for
+bits).
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]1800\f[R]
+T}
+.TE
+.SS Temperature
+.PP
+Creates a block which displays the system temperature, based on
+lm_sensors\[cq] \f[C]sensors -u\f[R] output.
+The block has two modes: \[lq]collapsed\[rq], which uses only colour as
+an indicator, and \[lq]expanded\[rq], which shows the content of a
+\f[C]format\f[R] string.
+.PP
+Requires \f[C]lm_sensors\f[R] and appropriate kernel modules for your
+hardware.
+.PP
+The average, minimum, and maximum temperatures are computed using all
+sensors displayed by \f[C]sensors -u\f[R], or the subset matching the
+chip name, if \f[C]chip\f[R] is specified.
+.PP
+Note that the colour of the block is always determined by the maximum
+temperature across all sensors, not the average.
+You may need to keep this in mind if you have a misbehaving sensor.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]temperature\[dq]
+collapsed = false
+interval = 10
+format = \[dq]{min}\[de] min, {max}\[de] max, {average}\[de] avg\[dq]
+chip = \[dq]*-isa-*\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+T{
+\f[C]collapsed\f[R]
+T}@T{
+Whether the block will be collapsed by default.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]good\f[R]
+T}@T{
+Maximum temperature to set state to good.
+T}@T{
+No
+T}@T{
+\f[C]20\f[R]
+T}
+T{
+\f[C]idle\f[R]
+T}@T{
+Maximum temperature to set state to idle.
+T}@T{
+No
+T}@T{
+\f[C]45\f[R]
+T}
+T{
+\f[C]info\f[R]
+T}@T{
+Maximum temperature to set state to info.
+T}@T{
+No
+T}@T{
+\f[C]60\f[R]
+T}
+T{
+\f[C]warning\f[R]
+T}@T{
+Maximum temperature to set state to warning.
+Beyond this temperature, state is set to critical.
+T}@T{
+No
+T}@T{
+\f[C]80\f[R]
+T}
+T{
+\f[C]chip\f[R]
+T}@T{
+Narrows the results to a given chip name.
+\f[C]*\f[R] may be used as a wildcard.
+T}@T{
+No
+T}@T{
+None
+T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l.
+T{
+Key
+T}@T{
+Value
+T}
+_
+T{
+\f[C]{min}\f[R]
+T}@T{
+Minimum temperature among all sensors.
+T}
+T{
+\f[C]{average}\f[R]
+T}@T{
+Average temperature among all sensors.
+T}
+T{
+\f[C]{max}\f[R]
+T}@T{
+Maximum temperature among all sensors.
+T}
+.TE
+.SS Time
+.PP
+Creates a block which display the current time.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]time\[dq]
+format = \[dq]%a %d/%m %R\[dq]
+timezone = \[dq]US/Pacific\[dq]
+interval = 60
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]format\f[R]
+T}@T{
+Format string.
+See the chrono
+docs (https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers)
+for all options.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]%a %d/%m %R\[dq]\f[R]
+T}
+T{
+\f[C]on_click\f[R]
+T}@T{
+Shell command to run when the time block is clicked.
+T}@T{
+No
+T}@T{
+None
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+T{
+\f[C]timezone\f[R]
+T}@T{
+A timezone specifier (e.g.\ \[lq]Europe/Lisbon\[rq])
+T}@T{
+No
+T}@T{
+Local timezone
+T}
+.TE
+.SS Toggle
+.PP
+Creates a toggle block.
+You can add commands to be executed to disable the toggle
+(\f[C]command_off\f[R]), and to enable it (\f[C]command_on\f[R]).
+You also need to specify a command to determine the (initial) state of
+the toggle (\f[C]command_state\f[R]).
+When the command outputs nothing, the toggle is disabled, otherwise
+enabled.
+By specifying the \f[C]interval\f[R] property you can let the
+\f[C]command_state\f[R] be executed continuously.
+.SS Examples
+.PP
+This is what I use to toggle my external monitor configuration:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]toggle\[dq]
+
+text = \[dq]4k\[dq]
+command_state = \[dq]xrandr | grep DP1\[rs]\[rs] connected\[rs]\[rs] 38 | grep -v eDP1\[dq]
+command_on = \[dq]\[ti]/.screenlayout/4kmon_default.sh\[dq]
+command_off = \[dq]\[ti]/.screenlayout/builtin.sh\[dq]
+interval = 5
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]text\f[R]
+T}@T{
+Label to include next to the toggle icon.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]\[dq]\f[R]
+T}
+T{
+\f[C]command_on\f[R]
+T}@T{
+Shell Command to enable the toggle
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]command_off\f[R]
+T}@T{
+Shell Command to disable the toggle
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]command_state\f[R]
+T}@T{
+Shell Command to determine toggle state.
+Empty output => off.
+Any output => on.
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]icon_on\f[R]
+T}@T{
+Icon override for the toggle button while on.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]toggle_on\[dq]\f[R]
+T}
+T{
+\f[C]icon_off\f[R]
+T}@T{
+Icon override for the toggle button while off.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]toggle_off\[dq]\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+None
+T}
+.TE
+.SS Weather
+.PP
+Creates a block which displays local weather and temperature
+information.
+In order to use this block, you will need access to a supported weather
+API service.
+At the time of writing, OpenWeatherMap is the only supported service.
+.PP
+Configuring the Weather block requires configuring a weather service,
+which may require API keys and other parameters.
+.SS Examples
+.PP
+Show detailed weather in San Francisco through the OpenWeatherMap
+service:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]weather\[dq]
+format = \[dq]{weather} ({location}) {temp}\[de], {wind} m/s {direction}\[dq]
+service = { name = \[dq]openweathermap\[dq], api_key = \[dq]XXX\[dq], city_id = \[dq]5398563\[dq], units = \[dq]metric\[dq] }
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]format\f[R]
+T}@T{
+The text format of the weather display.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{weather} {temp}\[de]\[dq]\f[R]
+T}
+T{
+\f[C]service\f[R]
+T}@T{
+The configuration of a weather service (see below).
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]600\f[R]
+T}
+.TE
+.SS OpenWeatherMap Options
+.PP
+To use the service you will need a (free) API key.
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]name\f[R]
+T}@T{
+\f[C]openweathermap\f[R]
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]api_key\f[R]
+T}@T{
+Your OpenWeatherMap API key.
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]city_id\f[R]
+T}@T{
+OpenWeatherMap\[cq]s ID for the city.
+T}@T{
+Yes
+T}@T{
+None
+T}
+T{
+\f[C]units\f[R]
+T}@T{
+One of \f[C]metric\f[R] or \f[C]imperial\f[R].
+T}@T{
+Yes
+T}@T{
+None
+T}
+.TE
+.PP
+The options \f[C]api_key\f[R] and/or \f[C]city_id\f[R] can be omitted
+from configuration, in which case they must be provided in the
+environment variables \f[C]OPENWEATHERMAP_API_KEY\f[R] and/or
+\f[C]OPENWEATHERMAP_CITY_ID\f[R].
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l.
+T{
+Key
+T}@T{
+Value
+T}
+_
+T{
+\f[C]{location}\f[R]
+T}@T{
+Location name (exact format depends on the service).
+T}
+T{
+\f[C]{temp}\f[R]
+T}@T{
+Temperature.
+T}
+T{
+\f[C]{weather}\f[R]
+T}@T{
+Textual description of the weather, e.g.\ \[lq]Raining\[rq].
+T}
+T{
+\f[C]{wind}\f[R]
+T}@T{
+Wind speed.
+T}
+T{
+\f[C]{direction}\f[R]
+T}@T{
+Wind direction, e.g.\ \[lq]NE\[rq].
+T}
+.TE
+.SS Uptime
+.PP
+Creates a block which displays system uptime.
+The block will always display the 2 biggest units, so minutes and
+seconds, or hours and minutes or days and hours or weeks and days.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]uptime\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+None
+.SS Xrandr
+.PP
+Creates a block which shows screen information (name, brightness,
+resolution).
+With a click you can toggle through your active screens and with wheel
+up and down you can adjust the selected screens brightness.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]xrandr\[dq]
+icons = true
+resolution = true
+interval = 2
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]icons\f[R]
+T}@T{
+Show icons for brightness and resolution (needs awesome fonts support)
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
+T}
+T{
+\f[C]resolution\f[R]
+T}@T{
+Shows the screens resolution
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]step_width\f[R]
+T}@T{
+The steps brightness is in/decreased for the selected screen (When
+greater than 50 it gets limited to 50)
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+.TE
+.SS Docker
+.PP
+Creates a block which shows the local docker daemon status (containers
+running, paused, stopped, total and image count).
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]docker\[dq]
+interval = 2
+format = \[dq]{running}/{total}\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]interval\f[R]
+T}@T{
+Update interval, in seconds.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+A format string.
+See below for available placeholders.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{running}\[dq]\f[R]
+T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l.
+T{
+Key
+T}@T{
+Value
+T}
+_
+T{
+\f[C]{total}\f[R]
+T}@T{
+Total containers on the host.
+T}
+T{
+\f[C]{running}\f[R]
+T}@T{
+Containers running on the host.
+T}
+T{
+\f[C]{stopped}\f[R]
+T}@T{
+Containers stopped on the host.
+T}
+T{
+\f[C]{paused}\f[R]
+T}@T{
+Containers paused on the host.
+T}
+T{
+\f[C]{images}\f[R]
+T}@T{
+Total images on the host.
+T}
+.TE
+.SS Pomodoro
+.PP
+Creates a block which runs a pomodoro
+timer (https://en.wikipedia.org/wiki/Pomodoro_Technique).
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]pomodoro\[dq]
+length = 25
+break_length = 5
+message = \[dq]Take a break!\[dq]
+break_message = \[dq]Back to work!\[dq]
+enable_i3nagbar = false
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]length\f[R]
+T}@T{
+Timer duration in minutes.
+T}@T{
+No
+T}@T{
+\f[C]25\f[R]
+T}
+T{
+\f[C]break_length\f[R]
+T}@T{
+Break duration in minutes.
+T}@T{
+No
+T}@T{
+\f[C]5\f[R]
+T}
+T{
+\f[C]enable_i3nagbar\f[R]
+T}@T{
+i3-nagbar enabled
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]message\f[R]
+T}@T{
+i3-nagbar message when timer expires.
+T}@T{
+No
+T}@T{
+\f[C]Pomodoro over! Take a break!\f[R]
+T}
+T{
+\f[C]break_message\f[R]
+T}@T{
+i3-nagbar message when break is over.
+T}@T{
+No
+T}@T{
+\f[C]Break over! Time to work!\f[R]
+T}
+.TE
+.SH THEMES
+
+.PP
+The bar can be themed either by specifying a pre-complied theme or
+overriding defaults in the configuration.
+.PD 0
+.P
+.PD
+We differentiate between themes and icon sets.
+.SS Choosing your theme and icon set
+.PP
+To use a theme or icon set other than the default, add them to your
+configuration file like so:
+.IP
+.nf
+\f[C]
+theme = \[dq]solarized-dark\[dq]
+icons = \[dq]awesome\[dq]
+\f[R]
+.fi
+.SS Available themes:
+.IP \[bu] 2
+\f[C]plain\f[R] (default)
+.IP \[bu] 2
+\f[C]solarized-dark\f[R]
+.IP \[bu] 2
+\f[C]solarized-light\f[R]
+.IP \[bu] 2
+\f[C]slick\f[R]
+.IP \[bu] 2
+\f[C]modern\f[R]
+.IP \[bu] 2
+\f[C]bad-wolf\f[R]
+.IP \[bu] 2
+\f[C]gruvbox-light\f[R]
+.IP \[bu] 2
+\f[C]gruvbox-dark\f[R]
+.SS Available icon sets:
+.IP \[bu] 2
+\f[C]none\f[R] (default)
+.IP \[bu] 2
+\f[C]awesome\f[R]
+.IP \[bu] 2
+\f[C]material\f[R]
+.RS
+.PP
+\f[B]Note\f[R]: In order to use the material icon set, you need a
+patched material icons font which can be found
+here (https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf).
+Make sure to pass it in your i3 configuration bar block.
+.RE
+.SS Overriding themes and icon sets
+.PP
+Create a block in the configuration called \f[C]theme\f[R] or
+\f[C]icons\f[R] like so:
+.IP
+.nf
+\f[C]
+[theme]
+name = \[dq]solarized-dark\[dq]
+[theme.overrides]
+idle_bg = \[dq]#123456\[dq]
+idle_fg = \[dq]#abcdef\[dq]
+
+[icons]
+name = \[dq]awesome\[dq]
+[icons.overrides]
+bat = \[dq] | | \[dq]
+bat_full = \[dq] |X| \[dq]
+bat_charging = \[dq] |\[ha]| \[dq]
+bat_discharging = \[dq] |v| \[dq]
+\f[R]
+.fi
+.PP
+Example configurations can be found as \f[C]example_theme.toml\f[R] and
+\f[C]example_icon.toml\f[R].
+.SS Available theme overrides
+.IP \[bu] 2
+\f[C]idle_bg\f[R]
+.IP \[bu] 2
+\f[C]idle_fg\f[R]
+.IP \[bu] 2
+\f[C]info_bg\f[R]
+.IP \[bu] 2
+\f[C]info_fg\f[R]
+.IP \[bu] 2
+\f[C]good_bg\f[R]
+.IP \[bu] 2
+\f[C]good_fg\f[R]
+.IP \[bu] 2
+\f[C]warning_bg\f[R]
+.IP \[bu] 2
+\f[C]warning_fg\f[R]
+.IP \[bu] 2
+\f[C]critical_bg\f[R]
+.IP \[bu] 2
+\f[C]critical_fg\f[R]
+.IP \[bu] 2
+\f[C]separator\f[R]
+.IP \[bu] 2
+\f[C]separator_bg\f[R]
+.IP \[bu] 2
+\f[C]separator_fg\f[R]
+.IP \[bu] 2
+\f[C]alternating_tint_bg\f[R]
+.IP \[bu] 2
+\f[C]alternating_tint_fg\f[R]
+.SS Available icon overrides
+.IP \[bu] 2
+\f[C]time\f[R]
+.IP \[bu] 2
+\f[C]music\f[R]
+.IP \[bu] 2
+\f[C]music_play\f[R]
+.IP \[bu] 2
+\f[C]music_pause\f[R]
+.IP \[bu] 2
+\f[C]music_next\f[R]
+.IP \[bu] 2
+\f[C]music_prev\f[R]
+.IP \[bu] 2
+\f[C]cogs\f[R]
+.IP \[bu] 2
+\f[C]memory_mem\f[R]
+.IP \[bu] 2
+\f[C]memory_swap\f[R]
+.IP \[bu] 2
+\f[C]cpu\f[R]
+.IP \[bu] 2
+\f[C]bat\f[R]
+.IP \[bu] 2
+\f[C]bat_full\f[R]
+.IP \[bu] 2
+\f[C]bat_charging\f[R]
+.IP \[bu] 2
+\f[C]bat_discharging\f[R]
+.IP \[bu] 2
+\f[C]update\f[R]
+.IP \[bu] 2
+\f[C]toggle_off\f[R]
+.IP \[bu] 2
+\f[C]toggle_on\f[R]
+.IP \[bu] 2
+\f[C]volume_full\f[R]
+.IP \[bu] 2
+\f[C]volume_half\f[R]
+.IP \[bu] 2
+\f[C]volume_empty\f[R]
+.IP \[bu] 2
+\f[C]volume_muted\f[R]
+.IP \[bu] 2
+\f[C]thermometer\f[R]
+.IP \[bu] 2
+\f[C]xrandr\f[R]
+.IP \[bu] 2
+\f[C]net_up\f[R]
+.IP \[bu] 2
+\f[C]net_down\f[R]
+.IP \[bu] 2
+\f[C]net_wireless\f[R]
+.IP \[bu] 2
+\f[C]net_wired\f[R]
+.IP \[bu] 2
+\f[C]ping\f[R]
+.IP \[bu] 2
+\f[C]backlight_empty\f[R]
+.IP \[bu] 2
+\f[C]backlight_partial1\f[R]
+.IP \[bu] 2
+\f[C]backlight_partial2\f[R]
+.IP \[bu] 2
+\f[C]backlight_partial3\f[R]
+.IP \[bu] 2
+\f[C]backlight_full\f[R]
+.IP \[bu] 2
+\f[C]weather_sun\f[R]
+.IP \[bu] 2
+\f[C]weather_snow\f[R]
+.IP \[bu] 2
+\f[C]weather_thunder\f[R]
+.IP \[bu] 2
+\f[C]weather_clouds\f[R]
+.IP \[bu] 2
+\f[C]weather_rain\f[R]
+.IP \[bu] 2
+\f[C]weather_default\f[R]
+.IP \[bu] 2
+\f[C]uptime\f[R]
+.IP \[bu] 2
+\f[C]gpu\f[R]
+.IP \[bu] 2
+\f[C]mail\f[R]
 .SH CONFORMING TO
 The JSON output produced by this program and understood by compatible bars is
 described at <https://i3wm.org/docs/i3bar-protocol.html> and in
