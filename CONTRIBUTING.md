@@ -52,6 +52,9 @@ For cases where this is not true, we will consider using Cargo's feature flags
 to make the dependency optional, or offer suggestions on how to avoid using the
 dependency.
 
+To make downstream packaging easier, maintainers bump dependencies as part of
+the release process.
+
 ## Code and Git Commits
 
 If you are new to Rust, Cargo and the compiler will be your best friends...
