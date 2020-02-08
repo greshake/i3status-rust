@@ -38,80 +38,54 @@ use crate::widgets::text::TextWidget;
 
 use crate::util::deserialize_file;
 
+use clap::{App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
-use getopts::Options;
-use std::env;
-use std::path::PathBuf;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 const AUTHORS: Option<&'static str> = option_env!("CARGO_PKG_AUTHORS");
 const DESCRIPTION: Option<&'static str> = option_env!("CARGO_PKG_DESCRIPTION");
 
-fn print_version(program: &str) {
-    print!("{} {}", program, VERSION.unwrap_or("unknown"));
-}
-
-fn print_help(program: &str, opts: Options) {
-    print_version(program);
-    let header_msg = format!(
-        "\n{}\n{}\n",
-        AUTHORS.unwrap_or(""),
-        DESCRIPTION.unwrap_or("")
-    );
-    println!("{}", header_msg);
-    let usage_msg = format!("USAGE: {} [FLAGS] [OPTIONS] [CONFIG FILE]", program);
-    print!("{}", opts.usage(&usage_msg));
-}
-
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let program_name = args[0].clone();
-
-    let mut opts = Options::new();
-    opts.optflag(
-        "",
-        "exit-on-error",
-        "Exit rather than printing errors to i3bar and continuing",
-    );
-    opts.optflag("h", "help", "Prints help information");
-    opts.optflag("V", "version", "Prints version information");
+    let mut builder = App::new("i3status-rs")
+        .version(VERSION.unwrap_or("unknown"))
+        .author(AUTHORS.unwrap_or(""))
+        .about(DESCRIPTION.unwrap_or(""))
+        .arg(
+            Arg::with_name("config")
+                .value_name("CONFIG_FILE")
+                .help("Sets a toml config file")
+                .required(false)
+                .index(1),
+        )
+        .arg(
+            Arg::with_name("exit-on-error")
+                .help("Exit rather than printing errors to i3bar and continuing")
+                .long("exit-on-error")
+                .takes_value(false),
+        );
 
     if_debug!({
-        opts.optopt("", "profile", "A block to be profiled. Creates a `block.profile` file that can be analyzed with `pprof`", "BLOCK NAME");
-        opts.optopt(
-            "",
-            "profile-runs",
-            "Number of times to execute update when profiling",
-            "POSITIVE NUMBER",
-        );
+        builder = builder
+            .arg(
+                Arg::with_name("profile")
+                    .long("profile")
+                    .takes_value(true)
+                    .help("A block to be profiled. Creates a `block.profile` file that can be analyzed with `pprof`"),
+            )
+            .arg(
+                Arg::with_name("profile-runs")
+                    .long("profile-runs")
+                    .takes_value(true)
+                    .default_value("10000")
+                    .help("Number of times to execute update when profiling"),
+            );
     });
 
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(f) => panic!(f.to_string()),
-    };
-    if matches.opt_present("h") {
-        print_help(&program_name, opts);
-        return;
-    }
-    if matches.opt_present("V") {
-        print_version(&program_name);
-        return;
-    }
-    let exit_on_error = matches.opt_present("exit-on-error");
-    let profile_target = matches.opt_str("profile");
-    let profile_runs = matches
-        .opt_get_default("profile-runs", "1000".to_owned())
-        .unwrap();
-
-    let config_path = if !matches.free.is_empty() {
-        std::path::PathBuf::from(matches.free[0].clone())
-    } else {
-        util::xdg_config_home().join("i3status-rust/config.toml")
-    };
+    let matches = builder.get_matches();
+    let exit_on_error = matches.is_present("exit-on-error");
 
     // Run and match for potential error
-    if let Err(error) = run(&config_path, profile_target, &profile_runs) {
+    if let Err(error) = run(&matches) {
         if exit_on_error {
             eprintln!("{:?}", error);
             ::std::process::exit(1);
@@ -135,10 +109,15 @@ fn main() {
 }
 
 #[allow(unused_mut)] // TODO: Remove when fixed in chan_select
-fn run(config_path: &PathBuf, profile_target: Option<String>, profile_runs: &str) -> Result<()> {
+fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
     print!("{{\"version\": 1, \"click_events\": true}}\n[");
 
+    // Read & parse the config file
+    let config_path = match matches.value_of("config") {
+        Some(config_path) => std::path::PathBuf::from(config_path),
+        None => util::xdg_config_home().join("i3status-rust/config.toml"),
+    };
     let config: Config = deserialize_file(config_path.to_str().unwrap())?;
 
     // Update request channel
@@ -146,8 +125,13 @@ fn run(config_path: &PathBuf, profile_target: Option<String>, profile_runs: &str
         crossbeam_channel::unbounded();
 
     // In dev build, we might diverge into profiling blocks here
-    if let Some(name) = profile_target {
-        profile_config(&name, profile_runs, &config, tx_update_requests)?;
+    if let Some(name) = matches.value_of("profile") {
+        profile_config(
+            name,
+            matches.value_of("profile-runs").unwrap(),
+            &config,
+            tx_update_requests,
+        )?;
         return Ok(());
     }
 

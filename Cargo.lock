@@ -83,6 +83,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap"
+version = "2.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "textwrap 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-width 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "cpuprofiler"
 version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -161,14 +171,6 @@ version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "getopts"
-version = "0.2.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "unicode-width 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "i3ipc"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -185,10 +187,10 @@ version = "0.13.0"
 dependencies = [
  "chrono 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono-tz 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cpuprofiler 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dbus 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "getopts 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "i3ipc 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "inotify 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -464,6 +466,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "textwrap"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "unicode-width 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "time"
 version = "0.1.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -551,6 +561,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum charset 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "4f426e64df1c3de26cbf44593c6ffff5dbfd43bbf9de0d075058558126b3fc73"
 "checksum chrono 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1cce36c92cb605414e9b824f866f5babe0a0368e39ea07393b9b63cf3844c0e6"
 "checksum chrono-tz 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e0e430fad0384e4defc3dc6b1223d1b886087a8bf9b7080e5ae027f73851ea15"
+"checksum clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5067f5bb2d80ef5d68b4c87db81601f0b75bca627bc2ef76b141d7b846a3c6d9"
 "checksum cpuprofiler 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "43f8479dbcfd2bbaa0c0c26779b913052b375981cdf533091f2127ea3d42e52b"
 "checksum crossbeam-channel 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "acec9a3b0b3559f15aee4f90746c4e5e293b701c0f7d3925d24e01645267b68c"
 "checksum crossbeam-utils 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ce446db02cdc3165b94ae73111e570793400d0794e46125cc4056c81cbb039f4"
@@ -561,7 +572,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum fuchsia-zircon 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"
 "checksum fuchsia-zircon-sys 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
 "checksum futures 0.1.21 (registry+https://github.com/rust-lang/crates.io-index)" = "1a70b146671de62ec8c8ed572219ca5d594d9b06c0b364d5e67b722fc559b48c"
-"checksum getopts 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)" = "14dbbfd5c71d70241ecf9e6f13737f7b5ce823821063188d7e46c41d371eebd5"
 "checksum i3ipc 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)" = "8a4e0c68a50475f32bf9a728de1198a8acc573ccdb24212db1192c874e37f302"
 "checksum inotify 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "3ad0bfe014aafc0f4e177fbe66c5f2b59ba59f66f58b022aa1963bbe71ab4118"
 "checksum inotify-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7dceb94c43f70baf4c4cd6afbc1e9037d4161dbe68df8a2cd4351a23319ee4fb"
@@ -596,6 +606,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum serde_json 1.0.17 (registry+https://github.com/rust-lang/crates.io-index)" = "f3ad6d546e765177cf3dded3c2e424a8040f870083a0e64064746b958ece9cb1"
 "checksum syn 0.13.7 (registry+https://github.com/rust-lang/crates.io-index)" = "61b8f1b737f929c6516ba46a3133fd6d5215ad8a62f66760f851f7048aebedfb"
 "checksum terminal_size 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "ef4f7fdb2a063032d361d9a72539380900bc3e0cd9ffc9ca8b677f8c855bae0f"
+"checksum textwrap 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 "checksum time 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)" = "d825be0eb33fda1a7e68012d51e9c7f451dc1a69391e7fdc197060bb8c56667b"
 "checksum toml 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "a0263c6c02c4db6c8f7681f9fd35e90de799ebd4cfdeab77a38f4ff6b3d8c0d9"
 "checksum unicode-width 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "caaa9d531767d1ff2150b9332433f32a24622147e5ebb1f26409d5da67afd479"
