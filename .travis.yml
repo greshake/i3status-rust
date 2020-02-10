@@ -11,6 +11,7 @@ addons:
       - libdbus-1-dev
       - libgoogle-perftools-dev
       - libnotmuch-dev
+      - pandoc
 cache: cargo
 os:
   - linux
@@ -20,6 +21,7 @@ matrix:
 env:
   - RUSTFLAGS="-D warnings"
 script:
+  - man/generate.sh man/test.1 && diff man/test.1 man/i3status-rs.1 || true
   - rustup component add rustfmt
   - cargo fmt -- --check
   - cargo build --all-features --all-targets --verbose
