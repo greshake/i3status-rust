@@ -318,6 +318,20 @@ impl Block for Music {
     }
 }
 
+fn extract_artist_from_value(value: &dyn arg::RefArg) -> Result<&str> {
+    if let Some(artist) = value.as_str() {
+        Ok(artist)
+    } else {
+        extract_artist_from_value(
+            value
+                .as_iter()
+                .block_error("music", "failed to extract artist")?
+                .next()
+                .block_error("music", "failed to extract artist")?,
+        )
+    }
+}
+
 fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();
@@ -334,25 +348,7 @@ fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, Str
             .as_str()
             .block_error("music", "failed to extract metadata")?
         {
-            "xesam:artist" => {
-                artist = String::from(
-                    value
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_str()
-                        .block_error("music", "failed to extract metadata")?,
-                )
-            }
+            "xesam:artist" => artist = String::from(extract_artist_from_value(value)?),
             "xesam:title" => {
                 title = String::from(
                     value
