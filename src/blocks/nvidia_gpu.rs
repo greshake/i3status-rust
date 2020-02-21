@@ -219,7 +219,7 @@ impl Block for NvidiaGpu {
 
         let mut count: usize = 0;
         if let Some(ref mut utilization_widget) = self.show_utilization {
-            utilization_widget.set_text(format!("{}%", result[count]));
+            utilization_widget.set_text(format!("{:02}%", result[count]));
             count += 1;
         }
         if let Some(ref mut memory_widget) = self.show_memory {
