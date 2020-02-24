@@ -26,6 +26,7 @@ pub struct NetworkDevice {
     wireless: bool,
     tun: bool,
     wg: bool,
+    ppp: bool,
 }
 
 impl NetworkDevice {
@@ -40,9 +41,15 @@ impl NetworkDevice {
             || device.starts_with("tun")
             || device.starts_with("tap");
 
-        let wg_uevent_path = device_path.join("uevent");
-        let wg = match read_to_string(&wg_uevent_path) {
+        let uevent_path = device_path.join("uevent");
+        let uevent_content = read_to_string(&uevent_path);
+
+        let wg = match &uevent_content {
             Ok(s) => s.contains("wireguard"),
+            Err(_e) => false,
+        };
+        let ppp = match &uevent_content {
+            Ok(s) => s.contains("ppp"),
             Err(_e) => false,
         };
 
@@ -52,6 +59,7 @@ impl NetworkDevice {
             wireless,
             tun,
             wg,
+            ppp,
         }
     }
 
@@ -71,6 +79,8 @@ impl NetworkDevice {
         } else if self.tun {
             Ok(true)
         } else if self.wg {
+            Ok(true)
+        } else if self.ppp {
             Ok(true)
         } else {
             let operstate = read_file(&operstate_file)?;
@@ -99,7 +109,7 @@ impl NetworkDevice {
 
     /// Checks whether this device is vpn network.
     pub fn is_vpn(&self) -> bool {
-        self.tun || self.wg
+        self.tun || self.wg || self.ppp
     }
 
     /// Queries the wireless SSID of this device (using `iw`), if it is
