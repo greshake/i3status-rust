@@ -26,8 +26,7 @@ lazy_static! {
         "volume_full" => " VOL ",
         "volume_half" => " VOL ",
         "volume_empty" => " VOL ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "volume_muted" => "MUTED",
+        "volume_muted" => " VOL MUTED ",
         "thermometer" => " TEMP ",
         "xrandr" => " SCREEN ",
         "net_up" => " UP ",
@@ -83,8 +82,7 @@ lazy_static! {
         "volume_full" => " \u{f028} ",
         "volume_half" => " \u{f027} ",
         "volume_empty" => " \u{f026} ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "volume_muted" => "\u{f00d}",
+        "volume_muted" => " \u{f6a9} ",
         "thermometer" => " \u{f2c8} ",
         "xrandr" => " \u{f26c} ",
         "net_up" => " \u{2b06} ",
@@ -142,8 +140,7 @@ lazy_static! {
         "volume_full" => " \u{e050} ",
         "volume_half" => " \u{e04d} ",
         "volume_empty" => " \u{e04e} ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "volume_muted" => "\u{e04f}",
+        "volume_muted" => " \u{e04e} \u{e04f} ",
         "thermometer" => " \u{f2c8} ", // TODO
         "xrandr" => " \u{e31e} ",
         // Same as time symbol.

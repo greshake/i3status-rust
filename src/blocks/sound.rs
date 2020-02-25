@@ -627,22 +627,15 @@ impl Sound {
 
         let volume = self.device.volume();
         if self.device.muted() {
-            self.text.set_icon("volume_empty");
-            let icon = self
-                .config
-                .icons
-                .get("volume_muted")
-                .block_error("sound", "cannot find icon")?
-                .to_owned();
+            self.text.set_icon("volume_muted");
             if self.show_volume_when_muted {
                 if self.bar {
-                    self.text
-                        .set_text(format!("{} {}", icon, format_percent_bar(volume as f32)));
+                    self.text.set_text(format_percent_bar(volume as f32));
                 } else {
-                    self.text.set_text(format!("{} {:02}%", icon, volume));
+                    self.text.set_text(format!("{:02}%", volume));
                 }
             } else {
-                self.text.set_text(icon);
+                self.text.set_text("");
             }
             self.text.set_state(State::Warning);
         } else {
