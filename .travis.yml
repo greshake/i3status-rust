@@ -13,6 +13,14 @@ addons:
       - libnotmuch-dev
       - pandoc
 cache: cargo
+before_cache:
+  - rm -rfv target/debug/incremental/i3status_rs-*
+  - rm -rfv target/debug/.fingerprint/i3status-rs-*
+  - rm -rfv target/debug/build/i3status_rs-*
+  - rm -rfv target/debug/deps/libi3status_rs-*
+  - rm -rfv target/debug/deps/i3status_rs-*
+  - rm -rfv target/debug/i3status-rs.d
+  - cargo clean --package i3status-rs
 os:
   - linux
 matrix:
