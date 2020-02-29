@@ -260,6 +260,16 @@ Creates a block which displays the current global engine set in [IBus](https://w
 block = "ibus"
 ```
 
+With optional mappings:
+
+```toml
+[[block]]
+block = "ibus"
+[block.mappings]
+"mozc-jp" = "JP"
+"xkb:us::eng" = "EN"
+```
+
 ## Keyboard Layout
 
 Creates a block to display the current keyboard layout.
