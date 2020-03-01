@@ -38,18 +38,14 @@ use crate::widgets::text::TextWidget;
 
 use crate::util::deserialize_file;
 
-use clap::{App, Arg, ArgMatches};
+use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
-
-const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
-const AUTHORS: Option<&'static str> = option_env!("CARGO_PKG_AUTHORS");
-const DESCRIPTION: Option<&'static str> = option_env!("CARGO_PKG_DESCRIPTION");
 
 fn main() {
     let mut builder = App::new("i3status-rs")
-        .version(VERSION.unwrap_or("unknown"))
-        .author(AUTHORS.unwrap_or(""))
-        .about(DESCRIPTION.unwrap_or(""))
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about(crate_description!())
         .arg(
             Arg::with_name("config")
                 .value_name("CONFIG_FILE")
