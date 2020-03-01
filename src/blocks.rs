@@ -3,6 +3,7 @@ pub mod battery;
 pub mod bluetooth;
 pub mod cpu;
 pub mod custom;
+pub mod custom_dbus;
 pub mod disk_space;
 pub mod docker;
 pub mod focused_window;
@@ -34,6 +35,7 @@ use self::battery::*;
 use self::bluetooth::*;
 use self::cpu::*;
 use self::custom::*;
+use self::custom_dbus::*;
 use self::disk_space::*;
 use self::docker::*;
 use self::focused_window::*;
@@ -126,6 +128,7 @@ pub fn create_block(
         "bluetooth" => block!(Bluetooth, block_config, config, update_request),
         "cpu" => block!(Cpu, block_config, config, update_request),
         "custom" => block!(Custom, block_config, config, update_request),
+        "custom_dbus" => block!(CustomDBus, block_config, config, update_request),
         "disk_space" => block!(DiskSpace, block_config, config, update_request),
         "docker" => block!(Docker, block_config, config, update_request),
         "focused_window" => block!(FocusedWindow, block_config, config, update_request),
