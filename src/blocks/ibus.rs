@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::env;
 use std::fs::{read_dir, File};
 use std::io::prelude::*;
@@ -28,16 +29,26 @@ pub struct IBus {
     id: String,
     text: TextWidget,
     engine: Arc<Mutex<String>>,
+    mappings: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct IBusConfig {}
+pub struct IBusConfig {
+    #[serde(default = "IBusConfig::default_mappings")]
+    pub mappings: Option<BTreeMap<String, String>>,
+}
+
+impl IBusConfig {
+    fn default_mappings() -> Option<BTreeMap<String, String>> {
+        None
+    }
+}
 
 impl ConfigBlock for IBus {
     type Config = IBusConfig;
 
-    fn new(_block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
+    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
@@ -65,9 +76,10 @@ impl ConfigBlock for IBus {
             .block_error("ibus", "Failed to parse D-Bus message (step 2)")?
             .as_str()
             .unwrap_or("??");
-        let engine_original = Arc::new(Mutex::new(String::from(current_engine)));
 
+        let engine_original = Arc::new(Mutex::new(String::from(current_engine)));
         let engine = engine_original.clone();
+
         thread::spawn(move || {
             let c = Connection::open_private(&ibus_address)
                 .expect("Failed to establish D-Bus connection in thread");
@@ -93,6 +105,7 @@ impl ConfigBlock for IBus {
             id: id_copy,
             text: TextWidget::new(config.clone()).with_text("IBus"),
             engine,
+            mappings: block_config.mappings,
         })
     }
 }
@@ -109,7 +122,16 @@ impl Block for IBus {
             .lock()
             .block_error("ibus", "failed to acquire lock")?)
         .clone();
-        self.text.set_text(engine);
+        let display_engine = if let Some(m) = &self.mappings {
+            match m.get(&engine) {
+                Some(mapping) => mapping.to_string(),
+                None => engine,
+            }
+        } else {
+            engine
+        };
+
+        self.text.set_text(display_engine);
         Ok(None)
     }
 
