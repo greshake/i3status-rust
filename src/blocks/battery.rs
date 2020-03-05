@@ -20,7 +20,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{read_file, FormatTemplate};
+use crate::util::{format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -413,7 +413,7 @@ pub struct BatteryConfig {
     pub show: Option<String>,
 
     /// Format string for displaying battery information.
-    /// placeholders: {percentage}, {time} and {power}
+    /// placeholders: {percentage}, {bar}, {time} and {power}
     #[serde(default = "BatteryConfig::default_format")]
     pub format: String,
 
@@ -508,6 +508,10 @@ impl Block for Battery {
                 Ok(capacity) => format!("{}", capacity),
                 Err(_) => "×".into(),
             };
+            let bar = match capacity {
+                Ok(capacity) => format_percent_bar(capacity as f32),
+                Err(_) => "×".into(),
+            };
             let time = match self.device.time_remaining() {
                 Ok(time) => format!("{}:{:02}", time / 60, time % 60),
                 Err(_) => "×".into(),
@@ -517,6 +521,7 @@ impl Block for Battery {
                 Err(_) => "×".into(),
             };
             let values = map!("{percentage}" => percentage,
+                              "{bar}" => bar,
                               "{time}" => time,
                               "{power}" => power);
             self.output
