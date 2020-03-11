@@ -25,6 +25,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::{parse_command, spawn_child_async};
+use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -554,6 +555,7 @@ pub struct Sound {
     config: Config,
     on_click: Option<String>,
     show_volume_when_muted: bool,
+    bar: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -576,6 +578,10 @@ pub struct SoundConfig {
 
     #[serde(default = "SoundConfig::default_show_volume_when_muted")]
     pub show_volume_when_muted: bool,
+
+    /// Show volume as bar instead of percent
+    #[serde(default = "SoundConfig::default_bar")]
+    pub bar: bool,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -609,6 +615,10 @@ impl SoundConfig {
     fn default_show_volume_when_muted() -> bool {
         false
     }
+
+    fn default_bar() -> bool {
+        false
+    }
 }
 
 impl Sound {
@@ -618,24 +628,21 @@ impl Sound {
         let volume = self.device.volume();
         if self.device.muted() {
             self.text.set_icon("volume_empty");
+            let icon = self
+                .config
+                .icons
+                .get("volume_muted")
+                .block_error("sound", "cannot find icon")?
+                .to_owned();
             if self.show_volume_when_muted {
-                self.text.set_text(format!(
-                    "{} {:02}%",
-                    self.config
-                        .icons
-                        .get("volume_muted")
-                        .block_error("sound", "cannot find icon")?
-                        .to_owned(),
-                    volume
-                ));
+                if self.bar {
+                    self.text
+                        .set_text(format!("{} {}", icon, format_percent_bar(volume as f32)));
+                } else {
+                    self.text.set_text(format!("{} {:02}%", icon, volume));
+                }
             } else {
-                self.text.set_text(
-                    self.config
-                        .icons
-                        .get("volume_muted")
-                        .block_error("sound", "cannot find icon")?
-                        .to_owned(),
-                );
+                self.text.set_text(icon);
             }
             self.text.set_state(State::Warning);
         } else {
@@ -644,7 +651,11 @@ impl Sound {
                 21..=70 => "volume_half",
                 _ => "volume_full",
             });
-            self.text.set_text(format!("{:02}%", volume));
+            self.text.set_text(if self.bar {
+                format_percent_bar(volume as f32)
+            } else {
+                format!("{:02}%", volume)
+            });
             self.text.set_state(State::Idle);
         }
 
@@ -698,6 +709,7 @@ impl ConfigBlock for Sound {
             config,
             on_click: block_config.on_click,
             show_volume_when_muted: block_config.show_volume_when_muted,
+            bar: block_config.bar,
         };
 
         sound

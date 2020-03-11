@@ -14,6 +14,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::util::format_percent_bar;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::graph::GraphWidget;
@@ -276,6 +277,7 @@ pub struct Net {
     ssid: Option<ButtonWidget>,
     max_ssid_width: usize,
     signal_strength: Option<ButtonWidget>,
+    signal_strength_bar: bool,
     ip_addr: Option<ButtonWidget>,
     bitrate: Option<ButtonWidget>,
     output_tx: Option<ButtonWidget>,
@@ -322,6 +324,10 @@ pub struct NetConfig {
     /// Whether to show the signal strength of active wireless networks.
     #[serde(default = "NetConfig::default_signal_strength")]
     pub signal_strength: bool,
+
+    /// Whether to show the signal strength of active wireless networks as a bar.
+    #[serde(default = "NetConfig::default_signal_strength_bar")]
+    pub signal_strength_bar: bool,
 
     /// Whether to show the bitrate of active wireless networks.
     #[serde(default = "NetConfig::default_bitrate")]
@@ -389,6 +395,10 @@ impl NetConfig {
     }
 
     fn default_signal_strength() -> bool {
+        false
+    }
+
+    fn default_signal_strength_bar() -> bool {
         false
     }
 
@@ -463,6 +473,7 @@ impl ConfigBlock for Net {
             } else {
                 None
             },
+            signal_strength_bar: block_config.signal_strength_bar,
             bitrate: if block_config.bitrate {
                 Some(ButtonWidget::new(config.clone(), &id))
             } else {
@@ -580,7 +591,11 @@ impl Block for Net {
             if let Some(ref mut signal_strength_widget) = self.signal_strength {
                 let value = self.device.relative_signal_strength()?;
                 if value.is_some() {
-                    signal_strength_widget.set_text(format!("{}%", value.unwrap()));
+                    signal_strength_widget.set_text(if self.signal_strength_bar {
+                        format_percent_bar(value.unwrap() as f32)
+                    } else {
+                        format!("{}%", value.unwrap())
+                    });
                 }
             }
             if let Some(ref mut ip_addr_widget) = self.ip_addr {

@@ -1,5 +1,5 @@
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
+use crate::util::{format_percent_bar, FormatTemplate};
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use std::time::Duration;
@@ -222,7 +222,8 @@ impl Block for Cpu {
 
         let values = map!("{frequency}" => format!("{:.*}", 1, freq),
                           "{barchart}" => barchart,
-                          "{utilization}" => format!("{:02}", avg_utilization));
+                          "{utilization}" => format!("{:02}", avg_utilization),
+                          "{utilizationbar}" => format_percent_bar(avg_utilization as f32));
 
         self.output
             .set_text(self.format.render_static_str(&values)?);

@@ -8,6 +8,7 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -60,6 +61,7 @@ pub struct DiskSpace {
     warning: f64,
     alert: f64,
     show_percentage: bool,
+    show_bar: bool,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -99,6 +101,10 @@ pub struct DiskSpaceConfig {
     /// Show percentage
     #[serde(default = "DiskSpaceConfig::default_show_percentage")]
     pub show_percentage: bool,
+
+    /// Show percentage
+    #[serde(default = "DiskSpaceConfig::default_show_bar")]
+    pub show_bar: bool,
 }
 
 impl DiskSpaceConfig {
@@ -131,6 +137,10 @@ impl DiskSpaceConfig {
     }
 
     fn default_show_percentage() -> bool {
+        false
+    }
+
+    fn default_show_bar() -> bool {
         false
     }
 }
@@ -188,6 +198,7 @@ impl ConfigBlock for DiskSpace {
             warning: block_config.warning,
             alert: block_config.alert,
             show_percentage: block_config.show_percentage,
+            show_bar: block_config.show_bar,
         })
     }
 }
@@ -238,6 +249,14 @@ impl Block for DiskSpace {
             self.disk_space.set_text(format!(
                 "{0} {1} ({2:.2}%) {3:?}",
                 self.alias, converted_str, percentage, self.unit
+            ));
+        } else if self.show_bar {
+            self.disk_space.set_text(format!(
+                "{0} {1} {2:?} {3}",
+                self.alias,
+                converted_str,
+                self.unit,
+                format_percent_bar(percentage)
             ));
         } else {
             self.disk_space.set_text(format!(
