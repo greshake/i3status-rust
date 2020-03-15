@@ -79,27 +79,29 @@ impl ConfigBlock for IBus {
 
         let engine_original = Arc::new(Mutex::new(String::from(current_engine)));
         let engine = engine_original.clone();
-
-        thread::spawn(move || {
-            let c = Connection::open_private(&ibus_address)
-                .expect("Failed to establish D-Bus connection in thread");
-            c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
-                .expect("Failed to add D-Bus message rule - has IBus interface changed?");
-            loop {
-                for ci in c.iter(100000) {
-                    if let Some(engine_name) = parse_msg(&ci) {
-                        let mut engine = engine_original.lock().unwrap();
-                        *engine = engine_name.to_string();
-                        // Tell block to update now.
-                        send.send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
-                    };
+        thread::Builder::new()
+            .name("ibus".into())
+            .spawn(move || {
+                let c = Connection::open_private(&ibus_address)
+                    .expect("Failed to establish D-Bus connection in thread");
+                c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
+                    .expect("Failed to add D-Bus message rule - has IBus interface changed?");
+                loop {
+                    for ci in c.iter(100000) {
+                        if let Some(engine_name) = parse_msg(&ci) {
+                            let mut engine = engine_original.lock().unwrap();
+                            *engine = engine_name.to_string();
+                            // Tell block to update now.
+                            send.send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                        };
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
 
         Ok(IBus {
             id: id_copy,

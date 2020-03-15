@@ -141,34 +141,37 @@ impl SoundDevice for AlsaSoundDevice {
 
     fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
         // Monitor volume changes in a separate thread.
-        thread::spawn(move || {
-            // Line-buffer to reduce noise.
-            let mut monitor = Command::new("stdbuf")
-                .args(&["-oL", "alsactl", "monitor"])
-                .stdout(Stdio::piped())
-                .spawn()
-                .expect("Failed to start alsactl monitor")
-                .stdout
-                .expect("Failed to pipe alsactl monitor output");
+        thread::Builder::new()
+            .name("sound_alsa".into())
+            .spawn(move || {
+                // Line-buffer to reduce noise.
+                let mut monitor = Command::new("stdbuf")
+                    .args(&["-oL", "alsactl", "monitor"])
+                    .stdout(Stdio::piped())
+                    .spawn()
+                    .expect("Failed to start alsactl monitor")
+                    .stdout
+                    .expect("Failed to pipe alsactl monitor output");
 
-            let mut buffer = [0; 1024]; // Should be more than enough.
-            loop {
-                // Block until we get some output. Doesn't really matter what
-                // the output actually is -- these are events -- we just update
-                // the sound information if *something* happens.
-                if monitor.read(&mut buffer).is_ok() {
-                    tx_update_request
-                        .send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
+                let mut buffer = [0; 1024]; // Should be more than enough.
+                loop {
+                    // Block until we get some output. Doesn't really matter what
+                    // the output actually is -- these are events -- we just update
+                    // the sound information if *something* happens.
+                    if monitor.read(&mut buffer).is_ok() {
+                        tx_update_request
+                            .send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                    }
+                    // Don't update too often. Wait 1/4 second, fast enough for
+                    // volume button mashing but slow enough to skip event spam.
+                    thread::sleep(Duration::new(0, 250_000_000))
                 }
-                // Don't update too often. Wait 1/4 second, fast enough for
-                // volume button mashing but slow enough to skip event spam.
-                thread::sleep(Duration::new(0, 250_000_000))
-            }
-        });
+            })
+            .unwrap();
 
         Ok(())
     }
@@ -303,70 +306,76 @@ impl PulseAudioClient {
         };
 
         // requests
-        thread::spawn(move || {
-            let mut connection = new_connection(send_result);
+        thread::Builder::new()
+            .name("sound_pulseaudio_req".into())
+            .spawn(move || {
+                let mut connection = new_connection(send_result);
 
-            loop {
-                // make sure mainloop dispatched everything
-                for _ in 0..10 {
-                    connection.iterate(false).unwrap();
-                }
+                loop {
+                    // make sure mainloop dispatched everything
+                    for _ in 0..10 {
+                        connection.iterate(false).unwrap();
+                    }
 
-                match recv_req.recv() {
-                    Err(_) => {}
-                    Ok(req) => {
-                        let mut introspector = connection.context.borrow_mut().introspect();
+                    match recv_req.recv() {
+                        Err(_) => {}
+                        Ok(req) => {
+                            let mut introspector = connection.context.borrow_mut().introspect();
 
-                        match req {
-                            PulseAudioClientRequest::GetDefaultDevice => {
-                                introspector
-                                    .get_server_info(PulseAudioClient::server_info_callback);
-                            }
-                            PulseAudioClientRequest::GetSinkInfoByIndex(index) => {
-                                introspector.get_sink_info_by_index(
-                                    index,
-                                    PulseAudioClient::sink_info_callback,
-                                );
-                            }
-                            PulseAudioClientRequest::GetSinkInfoByName(name) => {
-                                introspector.get_sink_info_by_name(
-                                    &name,
-                                    PulseAudioClient::sink_info_callback,
-                                );
-                            }
-                            PulseAudioClientRequest::SetSinkVolumeByName(name, volumes) => {
-                                introspector.set_sink_volume_by_name(&name, &volumes, None);
-                            }
-                            PulseAudioClientRequest::SetSinkMuteByName(name, mute) => {
-                                introspector.set_sink_mute_by_name(&name, mute, None);
-                            }
-                        };
+                            match req {
+                                PulseAudioClientRequest::GetDefaultDevice => {
+                                    introspector
+                                        .get_server_info(PulseAudioClient::server_info_callback);
+                                }
+                                PulseAudioClientRequest::GetSinkInfoByIndex(index) => {
+                                    introspector.get_sink_info_by_index(
+                                        index,
+                                        PulseAudioClient::sink_info_callback,
+                                    );
+                                }
+                                PulseAudioClientRequest::GetSinkInfoByName(name) => {
+                                    introspector.get_sink_info_by_name(
+                                        &name,
+                                        PulseAudioClient::sink_info_callback,
+                                    );
+                                }
+                                PulseAudioClientRequest::SetSinkVolumeByName(name, volumes) => {
+                                    introspector.set_sink_volume_by_name(&name, &volumes, None);
+                                }
+                                PulseAudioClientRequest::SetSinkMuteByName(name, mute) => {
+                                    introspector.set_sink_mute_by_name(&name, mute, None);
+                                }
+                            };
 
-                        // send request and receive response
-                        connection.iterate(true).unwrap();
-                        connection.iterate(true).unwrap();
+                            // send request and receive response
+                            connection.iterate(true).unwrap();
+                            connection.iterate(true).unwrap();
+                        }
                     }
                 }
-            }
-        });
+            })
+            .unwrap();
         thread_result()?;
 
         // subscribe
-        thread::spawn(move || {
-            let connection = new_connection(send_result2);
+        thread::Builder::new()
+            .name("sound_pulseaudio_sub".into())
+            .spawn(move || {
+                let connection = new_connection(send_result2);
 
-            // subcribe for events
-            connection
-                .context
-                .borrow_mut()
-                .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
-            connection.context.borrow_mut().subscribe(
-                subscription_masks::SERVER | subscription_masks::SINK,
-                |_| {},
-            );
+                // subcribe for events
+                connection
+                    .context
+                    .borrow_mut()
+                    .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
+                connection.context.borrow_mut().subscribe(
+                    subscription_masks::SERVER | subscription_masks::SINK,
+                    |_| {},
+                );
 
-            connection.mainloop.borrow_mut().run().unwrap();
-        });
+                connection.mainloop.borrow_mut().run().unwrap();
+            })
+            .unwrap();
         thread_result()?;
 
         Ok(PulseAudioClient { sender: send_req })
