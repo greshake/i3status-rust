@@ -176,6 +176,11 @@ Key | Values | Required | Default
 
 Creates a block that display the output of custom shell commands.
 
+For further customisation, have the shell command output valid JSON in the schema below:
+`{"icon": "ICON", state": "STATE", "text": "YOURTEXT"}`
+`icon` is optional, it may be an icon name from `icons.rs`
+`state` is optonal, it may be Info, Good, Warning, Critical
+
 ### Examples
 
 ```toml

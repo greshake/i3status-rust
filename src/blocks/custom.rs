@@ -1,5 +1,6 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
+use serde_json;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
@@ -12,7 +13,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 use uuid::Uuid;
@@ -85,6 +86,13 @@ impl ConfigBlock for Custom {
     }
 }
 
+#[derive(Deserialize)]
+struct Output {
+    icon: String,
+    state: State,
+    text: String,
+}
+
 impl Block for Custom {
     fn update(&mut self) -> Result<Option<Duration>> {
         let command_str = self
@@ -94,13 +102,21 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+        let raw_output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.to_string());
 
-        self.output.set_text(output);
+        let output: Output = serde_json::from_str(&*raw_output).unwrap_or_else(|_e| Output {
+            icon: String::from(""),
+            state: State::Idle,
+            text: raw_output,
+        });
+
+        self.output.set_icon(&output.icon);
+        self.output.set_state(output.state);
+        self.output.set_text(output.text);
 
         Ok(Some(self.update_interval))
     }
