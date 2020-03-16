@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use dbus;
-use dbus::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -18,12 +18,13 @@ use crate::widgets::button::ButtonWidget;
 pub struct BluetoothDevice {
     pub path: String,
     pub icon: Option<String>,
-    con: dbus::Connection,
+    pub label: String,
+    con: dbus::ffidisp::Connection,
 }
 
 impl BluetoothDevice {
-    pub fn from_mac(mac: String) -> Result<Self> {
-        let con = dbus::Connection::get_private(dbus::BusType::System)
+    pub fn new(mac: String, label: Option<String>) -> Result<Self> {
+        let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("bluetooth", "Failed to establish D-Bus connection.")?;
 
         // Bluez does not provide a convenient way to, say, list devices, so we
@@ -77,6 +78,7 @@ impl BluetoothDevice {
         Ok(BluetoothDevice {
             path: path,
             icon: icon,
+            label: label.unwrap_or("".to_string()),
             con: con,
         })
     }
@@ -118,7 +120,7 @@ impl BluetoothDevice {
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.path.clone();
         thread::spawn(move || {
-            let con = dbus::Connection::get_private(dbus::BusType::System)
+            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
                 .expect("Failed to establish D-Bus connection.");
             let rule = format!(
                 "type='signal',\
@@ -158,14 +160,15 @@ pub struct Bluetooth {
 #[serde(deny_unknown_fields)]
 pub struct BluetoothConfig {
     pub mac: String,
+    pub label: Option<String>,
 }
 
 impl ConfigBlock for Bluetooth {
     type Config = BluetoothConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().simple().to_string();
-        let device = BluetoothDevice::from_mac(block_config.mac)?;
+        let id: String = Uuid::new_v4().to_simple().to_string();
+        let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
         device.monitor(id.clone(), send);
 
         Ok(Bluetooth {
@@ -190,8 +193,8 @@ impl Block for Bluetooth {
     fn update(&mut self) -> Result<Option<Duration>> {
         let connected = self.device.connected();
         self.output.set_text(match connected {
-            true => "".to_string(),
-            false => " ×".to_string(),
+            true => format!("{}", self.device.label).to_string(),
+            false => format!("{} ×", self.device.label).to_string(),
         });
         self.output.set_state(match connected {
             true => State::Good,
@@ -207,7 +210,8 @@ impl Block for Bluetooth {
                 61..=100 => State::Good,
                 _ => State::Warning,
             });
-            self.output.set_text(format!(" {}%", value));
+            self.output
+                .set_text(format!("{} {}%", self.device.label, value));
         }
 
         Ok(None)

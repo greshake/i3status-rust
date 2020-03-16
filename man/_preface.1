@@ -1,0 +1,64 @@
+.TH I3STATUS-RS 1 2020-02-08
+.SH NAME
+i3status-rs \- Generates a status line for
+.BR i3bar (1)-compatible
+bars
+.SH SYNOPSIS
+.B i3status-rs
+.RB [ -h ]
+.RB [ -V ]
+.RB [ --exit-on-error ]
+.RI [ CONFIGFILE ]
+.SH DESCRIPTION
+A feature-rich and resource-friendly replacement for
+.BR i3status (1),
+written in Rust. The
+.B i3status-rs
+program writes a stream of configurable \*(lqblocks\*(rq of system information
+(time, battery status, volume, etc.) to standard output in the JSON format
+understood by
+.BR i3bar (1)
+and
+.BR sway-bar (5).
+.SH OPTIONS
+.TP
+.B \-h, \--help
+Print help message and exit.
+.TP
+.B \-V, \--version
+Print version information and exit.
+.TP
+.B \--exit-on-error
+Exit rather than printing errors to the bar and continuing. Useful for debugging
+in the console.
+.TP
+.I CONFIGFILE
+Read the configuration from this file. Otherwise, we fall back on
+$XDG_CONFIG_HOME/i3status-rust/config.toml.
+.SH CONFIGURATION
+.B i3status-rs
+uses a TOML-based format for specifying an array of \*(lqblocks\*(rq. There are
+also a small number of top-level theme and icon settings. A simple configuration
+might look as follows:
+.PP
+.EX
+  theme = "solarized-dark"
+  icons = "awesome"
+
+  [[block]]
+  block = "cpu"
+  interval = 1
+
+  [[block]]
+  block = "load"
+  interval = 1
+  format = "{1m}"
+
+  [[block]]
+  block = "sound"
+.EE
+.PP
+For available blocks, see
+.BR BLOCKS .
+For theme and icon configuration, see
+.BR THEMES.

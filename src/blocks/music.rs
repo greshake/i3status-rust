@@ -17,8 +17,12 @@ use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
 
 use dbus::arg::{Array, RefArg};
-use dbus::stdintf::org_freedesktop_dbus::Properties;
-use dbus::{arg, BusType, Connection, ConnectionItem, Message};
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{
+    arg,
+    ffidisp::{BusType, Connection, ConnectionItem},
+    Message,
+};
 use uuid::Uuid;
 
 pub struct Music {
@@ -103,7 +107,7 @@ impl ConfigBlock for Music {
     type Config = MusicConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().simple().to_string();
+        let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
         thread::spawn(move || {
@@ -302,6 +306,20 @@ impl Block for Music {
     }
 }
 
+fn extract_artist_from_value(value: &dyn arg::RefArg) -> Result<&str> {
+    if let Some(artist) = value.as_str() {
+        Ok(artist)
+    } else {
+        extract_artist_from_value(
+            value
+                .as_iter()
+                .block_error("music", "failed to extract artist")?
+                .next()
+                .block_error("music", "failed to extract artist")?,
+        )
+    }
+}
+
 fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();
@@ -318,25 +336,7 @@ fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, Str
             .as_str()
             .block_error("music", "failed to extract metadata")?
         {
-            "xesam:artist" => {
-                artist = String::from(
-                    value
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_iter()
-                        .block_error("music", "failed to extract metadata")?
-                        .nth(0)
-                        .block_error("music", "failed to extract metadata")?
-                        .as_str()
-                        .block_error("music", "failed to extract metadata")?,
-                )
-            }
+            "xesam:artist" => artist = String::from(extract_artist_from_value(value)?),
             "xesam:title" => {
                 title = String::from(
                     value

@@ -23,6 +23,9 @@ pub struct Load {
     format: FormatTemplate,
     id: String,
     update_interval: Duration,
+    minimum_info: f32,
+    minimum_warning: f32,
+    minimum_critical: f32,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -35,6 +38,18 @@ pub struct LoadConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
+
+    /// Minimum load, where state is set to info
+    #[serde(default = "LoadConfig::default_info")]
+    pub info: f32,
+
+    /// Minimum load, where state is set to warning
+    #[serde(default = "LoadConfig::default_warning")]
+    pub warning: f32,
+
+    /// Minimum load, where state is set to critical
+    #[serde(default = "LoadConfig::default_critical")]
+    pub critical: f32,
 }
 
 impl LoadConfig {
@@ -44,6 +59,18 @@ impl LoadConfig {
 
     fn default_interval() -> Duration {
         Duration::from_secs(5)
+    }
+
+    fn default_info() -> f32 {
+        0.3
+    }
+
+    fn default_warning() -> f32 {
+        0.6
+    }
+
+    fn default_critical() -> f32 {
+        0.9
     }
 }
 
@@ -77,9 +104,12 @@ impl ConfigBlock for Load {
         }
 
         Ok(Load {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().to_simple().to_string(),
             logical_cores,
             update_interval: block_config.interval,
+            minimum_info: block_config.info,
+            minimum_warning: block_config.warning,
+            minimum_critical: block_config.critical,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("load", "Invalid format specified for load")?,
             text,
@@ -110,12 +140,13 @@ impl Block for Load {
             .parse::<f32>()
             .block_error("load", "failed to parse float percentage")?
             / self.logical_cores as f32;
-        self.text
-            .set_state(match_range!(used_perc, default: (State::Idle) {
-                    0.0 ; 0.3 => State::Idle,
-                    0.3 ; 0.6 => State::Info,
-                    0.6 ; 0.9 => State::Warning
-            }));
+
+        self.text.set_state(match used_perc {
+            x if x > self.minimum_critical => State::Critical,
+            x if x > self.minimum_warning => State::Warning,
+            x if x > self.minimum_info => State::Info,
+            _ => State::Idle,
+        });
 
         self.text.set_text(self.format.render_static_str(&values)?);
 

@@ -4,7 +4,7 @@ description = "A feature-rich and resource-friendly replacement for i3status, wr
 repository = "https://github.com/greshake/i3status-rust/"
 readme = "README.md"
 license = "GPLv3"
-version = "0.12.0"
+version = "0.13.0"
 authors = ["Kai Greshake <development@kai-greshake.de>",
            "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
 edition = "2018"
@@ -18,23 +18,23 @@ profiling = ["cpuprofiler", "progress"]
 [dependencies]
 chrono = "0.4"
 chrono-tz = "0.5"
+crossbeam-channel = "0.4"
+dbus = "0.8"
+i3ipc = "0.10.1"
+inotify = "0.8.2"
 lazy_static = "1.0"
+maildir = "0.3"
+nix = "0.16.0"
+num-traits = "0.2"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-toml = "0.4"
-uuid = { version = "0.6", features = ["v4"] }
-dbus = "0.6"
-nix = "0.14.0"
-i3ipc = "0.8.2"
-num-traits = "0.2"
-crossbeam-channel = "0.4"
-inotify = "0.5.1"
-maildir = "0.3"
-libpulse-binding = { optional = true, version = "2.2.3", default-features = false }
-notmuch = { optional = true, version = "0.1.1" }
-# Used only in debug build mode
-# for profiling blocks
+toml = "0.5"
+uuid = { version = "0.8", features = ["v4"] }
+# Optional features/blocks
+libpulse-binding = { optional = true, version = "2.15.0", default-features = false }
+notmuch = { optional = true, version = "0.6.0" }
+# Used only in debug build for profiling blocks
 cpuprofiler = { version = "0.0.4", optional = true }
 progress = { version = "0.2", optional = true }
 

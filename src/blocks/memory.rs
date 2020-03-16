@@ -288,6 +288,10 @@ impl Memory {
             "{MFpi}".to_string(),
             format!("{:02}", mem_free.percent(mem_total) as i32),
         );
+        self.values.insert(
+            "{MFpb}".to_string(),
+            format_percent_bar(mem_free.percent(mem_total)),
+        );
         self.values
             .insert("{MUg}".to_string(), format!("{:.1}", mem_total_used.gib()));
         self.values
@@ -299,6 +303,10 @@ impl Memory {
         self.values.insert(
             "{MUpi}".to_string(),
             format!("{:02}", mem_total_used.percent(mem_total) as i32),
+        );
+        self.values.insert(
+            "{MUpb}".to_string(),
+            format_percent_bar(mem_total_used.percent(mem_total)),
         );
         self.values
             .insert("{Mug}".to_string(), format!("{:.1}", mem_used.gib()));
@@ -312,6 +320,10 @@ impl Memory {
             "{Mupi}".to_string(),
             format!("{:02}", mem_used.percent(mem_total) as i32),
         );
+        self.values.insert(
+            "{Mupb}".to_string(),
+            format_percent_bar(mem_used.percent(mem_total)),
+        );
         self.values
             .insert("{MAg}".to_string(), format!("{:.1}", mem_avail.gib()));
         self.values
@@ -323,6 +335,10 @@ impl Memory {
         self.values.insert(
             "{MApi}".to_string(),
             format!("{:02}", mem_avail.percent(mem_total) as i32),
+        );
+        self.values.insert(
+            "{MApb}".to_string(),
+            format_percent_bar(mem_avail.percent(mem_total)),
         );
         self.values
             .insert("{STg}".to_string(), format!("{:.1}", swap_total.gib()));
@@ -340,6 +356,10 @@ impl Memory {
             "{SFpi}".to_string(),
             format!("{:02}", swap_free.percent(swap_total) as i32),
         );
+        self.values.insert(
+            "{SFpb}".to_string(),
+            format_percent_bar(swap_free.percent(swap_total)),
+        );
         self.values
             .insert("{SUg}".to_string(), format!("{:.1}", swap_used.gib()));
         self.values
@@ -351,6 +371,10 @@ impl Memory {
         self.values.insert(
             "{SUpi}".to_string(),
             format!("{:02}", swap_used.percent(swap_total) as i32),
+        );
+        self.values.insert(
+            "{SUpb}".to_string(),
+            format_percent_bar(swap_used.percent(swap_total)),
         );
         self.values
             .insert("{Bg}".to_string(), format!("{:.1}", buffers.gib()));
@@ -364,6 +388,10 @@ impl Memory {
             "{Bpi}".to_string(),
             format!("{:02}", buffers.percent(mem_total) as i32),
         );
+        self.values.insert(
+            "{Bpb}".to_string(),
+            format_percent_bar(buffers.percent(mem_total)),
+        );
         self.values
             .insert("{Cg}".to_string(), format!("{:.1}", cached.gib()));
         self.values
@@ -375,6 +403,10 @@ impl Memory {
         self.values.insert(
             "{Cpi}".to_string(),
             format!("{:02}", cached.percent(mem_total) as i32),
+        );
+        self.values.insert(
+            "{Cpb}".to_string(),
+            format_percent_bar(cached.percent(mem_total)),
         );
 
         match self.memtype {
@@ -425,7 +457,7 @@ impl ConfigBlock for Memory {
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, "memory").with_text("");
         Ok(Memory {
-            id: Uuid::new_v4().simple().to_string(),
+            id: Uuid::new_v4().to_simple().to_string(),
             memtype: block_config.display_type,
             output: if icons {
                 (

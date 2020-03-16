@@ -14,6 +14,7 @@
 - [Memory](#memory)
 - [Music](#music)
 - [Net](#net)
+- [Notmuch](#notmuch)
 - [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
 - [Pomodoro](#pomodoro)
@@ -134,6 +135,7 @@ A block for a Bluetooth device with the given MAC address:
 [[block]]
 block = "bluetooth"
 mac = "A0:8A:F5:B8:01:FD"
+label = " Rowkin"
 ```
 
 ### Options
@@ -141,6 +143,7 @@ mac = "A0:8A:F5:B8:01:FD"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `mac` | MAC address of the Bluetooth device. | Yes | None
+`label` | Text label to display next to the icon. | No | None
 
 ## CPU Utilization
 
@@ -257,6 +260,16 @@ Creates a block which displays the current global engine set in [IBus](https://w
 block = "ibus"
 ```
 
+With optional mappings:
+
+```toml
+[[block]]
+block = "ibus"
+[block.mappings]
+"mozc-jp" = "JP"
+"xkb:us::eng" = "EN"
+```
+
 ## Keyboard Layout
 
 Creates a block to display the current keyboard layout.
@@ -316,6 +329,9 @@ interval = 1
 
 Key | Values | Required | Default
 ----|--------|----------|--------
+`info` | Minimum load, where state is set to info. | No | `0.3`
+`warning` | Minimum load, where state is set to warning. | No | `0.6`
+`critical` | Minimum load, where state is set to critical. | No | `0.9`
 `format` | Format string. You can use the placeholders 1m 5m and 15m, e.g. `"1min avg: {1m}"`. | No | `"{1m}"`
 `interval` | Update interval, in seconds. | No | `3`
 
@@ -518,6 +534,38 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `1`
 `hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
 `hide_inactive` | Whether to hide networks that are missing. | No | `false`
+
+## Notmuch
+
+Creates a block which queries a notmuch database and displays the count of messages.
+
+The simplest configuration will return the total count of messages in the notmuch database stored at $HOME/.mail
+
+NOTE: This block can only be used if you build with `cargo build --features=notmuch`
+
+### Examples
+
+```toml
+[[block]]
+block = "notmuch"
+query = "tag:alert and not tag:trash"
+threshold_warning = 1
+threshold_critical = 10
+name = "A"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`maildir` | Path to the directory containing the notmuch database | No | `$HOME/.mail`
+`query` | Query to run on the database | No | `""`
+`threshold_critical` | Mail count that triggers `critical` state | No | `99999`
+`threshold_warning` | Mail count that triggers `warning` state | No | `99999`
+`threshold_good` | Mail count that triggers `good` state | No | `99999`
+`threshold_info` | Mail count that triggers `info` state | No | `99999`
+`name` | Label to show before the mail count | No | `""`
+`no_icon` | Disable the mail icon | No | `false`
 
 ## Nvidia Gpu
 

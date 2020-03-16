@@ -38,27 +38,24 @@ use crate::widgets::text::TextWidget;
 
 use crate::util::deserialize_file;
 
-use clap::{App, Arg, ArgMatches};
+use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
 
 fn main() {
     let mut builder = App::new("i3status-rs")
-        .version("0.12.0")
-        .author(
-            "Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
-             https://github.com/greshake/i3status-rust/graphs/contributors",
-        )
-        .about("Replacement for i3status for Linux, written in Rust")
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about(crate_description!())
         .arg(
             Arg::with_name("config")
                 .value_name("CONFIG_FILE")
-                .help("sets a toml config file")
-                .required(true)
+                .help("Sets a toml config file")
+                .required(false)
                 .index(1),
         )
         .arg(
             Arg::with_name("exit-on-error")
-                .help("exit on error rather than printing the error to i3bar and keep running")
+                .help("Exit rather than printing errors to i3bar and continuing")
                 .long("exit-on-error")
                 .takes_value(false),
         );
@@ -69,14 +66,14 @@ fn main() {
                 Arg::with_name("profile")
                     .long("profile")
                     .takes_value(true)
-                    .help("A block to be profiled. Analyze block.profile with pprof"),
+                    .help("A block to be profiled. Creates a `block.profile` file that can be analyzed with `pprof`"),
             )
             .arg(
                 Arg::with_name("profile-runs")
                     .long("profile-runs")
                     .takes_value(true)
                     .default_value("10000")
-                    .help("How many times to execute update when profiling."),
+                    .help("Number of times to execute update when profiling"),
             );
     });
 
@@ -113,7 +110,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     print!("{{\"version\": 1, \"click_events\": true}}\n[");
 
     // Read & parse the config file
-    let config: Config = deserialize_file(matches.value_of("config").unwrap())?;
+    let config_path = match matches.value_of("config") {
+        Some(config_path) => std::path::PathBuf::from(config_path),
+        None => util::xdg_config_home().join("i3status-rust/config.toml"),
+    };
+    let config: Config = deserialize_file(config_path.to_str().unwrap())?;
 
     // Update request channel
     let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =
@@ -125,7 +126,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             name,
             matches.value_of("profile-runs").unwrap(),
             &config,
-            &tx_update_requests,
+            tx_update_requests,
         )?;
         return Ok(());
     }
@@ -291,12 +292,7 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
 }
 
 #[cfg(not(feature = "profiling"))]
-fn profile_config(
-    _name: &str,
-    _runs: &str,
-    _config: &Config,
-    _update: &Sender<Task>,
-) -> Result<()> {
+fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: Sender<Task>) -> Result<()> {
     // TODO: Maybe we should just panic! here.
     Err(InternalError(
         "profile".to_string(),

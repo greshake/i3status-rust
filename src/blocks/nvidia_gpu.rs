@@ -118,9 +118,9 @@ impl ConfigBlock for NvidiaGpu {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = Uuid::new_v4().simple().to_string();
-        let id_memory = Uuid::new_v4().simple().to_string();
-        let id_fans = Uuid::new_v4().simple().to_string();
+        let id = Uuid::new_v4().to_simple().to_string();
+        let id_memory = Uuid::new_v4().to_simple().to_string();
+        let id_fans = Uuid::new_v4().to_simple().to_string();
         let mut output = Command::new("nvidia-smi")
             .args(&[
                 "-i",
@@ -219,7 +219,7 @@ impl Block for NvidiaGpu {
 
         let mut count: usize = 0;
         if let Some(ref mut utilization_widget) = self.show_utilization {
-            utilization_widget.set_text(format!("{}%", result[count]));
+            utilization_widget.set_text(format!("{:02}%", result[count]));
             count += 1;
         }
         if let Some(ref mut memory_widget) = self.show_memory {

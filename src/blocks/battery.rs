@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use dbus;
 use dbus::arg::Array;
-use dbus::stdintf::org_freedesktop_dbus::Properties;
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -20,7 +20,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{read_file, FormatTemplate};
+use crate::util::{format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -211,7 +211,7 @@ impl BatteryDevice for PowerSupplyDevice {
 /// Represents a battery known to UPower.
 pub struct UpowerDevice {
     device_path: String,
-    con: dbus::Connection,
+    con: dbus::ffidisp::Connection,
 }
 
 impl UpowerDevice {
@@ -223,7 +223,7 @@ impl UpowerDevice {
     /// battery.
     pub fn from_device(device: &str) -> Result<Self> {
         let device_path;
-        let con = dbus::Connection::get_private(dbus::BusType::System)
+        let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
         if device == "DisplayDevice" {
@@ -267,7 +267,7 @@ impl UpowerDevice {
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.device_path.clone();
         thread::spawn(move || {
-            let con = dbus::Connection::get_private(dbus::BusType::System)
+            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
                 .expect("Failed to establish D-Bus connection.");
             let rule = format!(
                 "type='signal',\
@@ -406,7 +406,7 @@ pub struct BatteryConfig {
     pub show: Option<String>,
 
     /// Format string for displaying battery information.
-    /// placeholders: {percentage}, {time} and {power}
+    /// placeholders: {percentage}, {bar}, {time} and {power}
     #[serde(default = "BatteryConfig::default_format")]
     pub format: String,
 
@@ -464,7 +464,7 @@ impl ConfigBlock for Battery {
             _ => BatteryDriver::Sysfs,
         };
 
-        let id = Uuid::new_v4().simple().to_string();
+        let id = Uuid::new_v4().to_simple().to_string();
         let device: Box<dyn BatteryDevice> = match driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
@@ -501,6 +501,10 @@ impl Block for Battery {
                 Ok(capacity) => format!("{}", capacity),
                 Err(_) => "×".into(),
             };
+            let bar = match capacity {
+                Ok(capacity) => format_percent_bar(capacity as f32),
+                Err(_) => "×".into(),
+            };
             let time = match self.device.time_remaining() {
                 Ok(time) => format!("{}:{:02}", time / 60, time % 60),
                 Err(_) => "×".into(),
@@ -510,6 +514,7 @@ impl Block for Battery {
                 Err(_) => "×".into(),
             };
             let values = map!("{percentage}" => percentage,
+                              "{bar}" => bar,
                               "{time}" => time,
                               "{power}" => power);
             self.output
