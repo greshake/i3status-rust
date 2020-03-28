@@ -51,6 +51,10 @@ pub struct MusicConfig {
     #[serde(default = "MusicConfig::default_max_width")]
     pub max_width: usize,
 
+    /// Min width of the block in characters, not including the buttons
+    #[serde(default = "MusicConfig::default_min_width")]
+    pub min_width: usize,
+
     /// Bool to specify if a marquee style rotation should be used<br/> if the title + artist is longer than max-width
     #[serde(default = "MusicConfig::default_marquee")]
     pub marquee: bool,
@@ -79,6 +83,10 @@ pub struct MusicConfig {
 
 impl MusicConfig {
     fn default_max_width() -> usize {
+        21
+    }
+    
+    fn default_min_width() -> usize {
         21
     }
 
@@ -166,6 +174,7 @@ impl ConfigBlock for Music {
                 Duration::new(block_config.marquee_interval.as_secs(), 0),
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
+                block_config.min_width,
                 config.clone(),
             )
             .with_icon("music")
