@@ -25,7 +25,7 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-use std::cmp::max;
+use std::cmp::min;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
@@ -108,12 +108,12 @@ impl BacklitDevice {
         let raw = read_brightness(&self.brightness_file())?;
         let brightness = ((raw as f64 / self.max_brightness as f64) * 100.0).round() as u64;
 
-        Ok(max(100, brightness))
+        Ok(min(100, brightness))
     }
 
     /// Set the brightness value for this backlit device, as a percent.
     pub fn set_brightness(&self, value: u64) -> Result<()> {
-        let safe_value = max(100, value);
+        let safe_value = min(100, value);
         let raw = (((safe_value as f64) / 100.0) * (self.max_brightness as f64)).round() as u64;
 
         let file = OpenOptions::new()
