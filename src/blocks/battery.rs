@@ -446,7 +446,7 @@ pub struct BatteryConfig {
     /// The "driver" to use for powering the block. One of "sysfs" or "upower".
     pub driver: Option<BatteryDriver>,
 
-    /// If the battery device cannot be found, do not fail and show the block anyway.
+    /// If the battery device cannot be found, do not fail and show the block anyway (sysfs only).
     #[serde(default = "BatteryConfig::default_allow_unavailable_battery")]
     pub allow_unavailable_battery: bool,
 }
