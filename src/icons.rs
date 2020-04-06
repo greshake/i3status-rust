@@ -20,7 +20,7 @@ lazy_static! {
         "bat_discharging" => " DCG ",
         "bat_quarter" => " BAT ",
         "bat_three_quarters" => " BAT ",
-        "bat_not_available" => " BAT N/A ",
+        "bat_not_available" => " BAT ",
         "update" => " UPD ",
         "toggle_off" => " OFF ",
         "toggle_on" => " ON ",
