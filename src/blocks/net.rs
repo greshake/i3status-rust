@@ -350,7 +350,7 @@ pub struct NetConfig {
     pub speed_up: bool,
 
     /// Whether to show speeds in bits or bytes per second.
-    #[serde(default = "NetConfig::use_bits")]
+    #[serde(default = "NetConfig::default_use_bits")]
     pub use_bits: bool,
 
     /// Whether to show the download throughput indicator of active networks.
@@ -414,10 +414,6 @@ impl NetConfig {
         true
     }
 
-    fn use_bits() -> bool {
-        false
-    }
-
     fn default_speed_down() -> bool {
         true
     }
@@ -427,6 +423,10 @@ impl NetConfig {
     }
 
     fn default_graph_down() -> bool {
+        false
+    }
+
+    fn default_use_bits() -> bool {
         false
     }
 
