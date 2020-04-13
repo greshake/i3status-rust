@@ -7,7 +7,7 @@ use crate::de::{deserialize_duration, deserialize_timezone};
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::subprocess::{parse_command, spawn_child_async};
+use crate::subprocess::spawn_child_async;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 use chrono::offset::{Local, Utc};
@@ -102,8 +102,7 @@ impl Block for Time {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 if let Some(ref cmd) = self.on_click {
-                    let (cmd_name, cmd_args) = parse_command(cmd);
-                    spawn_child_async(cmd_name, &cmd_args)
+                    spawn_child_async("sh", &["-c", cmd])
                         .block_error("time", "could not spawn child")?;
                 }
             }

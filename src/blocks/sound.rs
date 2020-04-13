@@ -24,7 +24,7 @@ use crate::config::{Config, LogicalDirection};
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::subprocess::{parse_command, spawn_child_async};
+use crate::subprocess::spawn_child_async;
 use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
@@ -740,8 +740,7 @@ impl Block for Sound {
                     MouseButton::Right => self.device.toggle()?,
                     MouseButton::Left => {
                         if let Some(ref cmd) = self.on_click {
-                            let (cmd_name, cmd_args) = parse_command(cmd);
-                            spawn_child_async(cmd_name, &cmd_args)
+                            spawn_child_async("sh", &["-c", cmd])
                                 .block_error("sound", "could not spawn child")?;
                         }
                     }
