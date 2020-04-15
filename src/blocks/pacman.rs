@@ -27,6 +27,7 @@ pub struct Pacman {
     format: FormatTemplate,
     format_singular: FormatTemplate,
     format_up_to_date: FormatTemplate,
+    kernel_updates_are_critical: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -95,6 +96,7 @@ impl ConfigBlock for Pacman {
                     "Invalid format specified for pacman::format_up_to_date",
                 )?,
             output: ButtonWidget::new(config, "pacman").with_icon("update"),
+            kernel_updates_are_critical: block_config.kernel_updates_are_critical,
         })
     }
 }
@@ -181,9 +183,47 @@ fn get_update_count() -> Result<usize> {
     .count())
 }
 
+fn has_kernel_update() -> Result<bool> {
+    let tmp_dir = env::temp_dir()
+        .into_os_string()
+        .into_string()
+        .block_error("pacman", "There's something wrong with your $TMP variable")?;
+    let user = env::var_os("USER")
+        .unwrap_or_else(|| OsString::from(""))
+        .into_string()
+        .block_error("pacman", "There's a problem with your $USER")?;
+    let updates_db = env::var_os("CHECKUPDATES_DB")
+        .unwrap_or_else(|| OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
+        .into_string()
+        .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
+
+    // check if there are linux kernel updates
+    Ok(String::from_utf8(
+        Command::new("sh")
+            .env("LC_ALL", "C")
+            .args(&[
+                "-c",
+                &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db),
+            ])
+            .output()
+            .block_error("pacman", "There was a problem running the pacman commands")?
+            .stdout,
+    )
+    .block_error("pacman", "there was a problem parsing the output")?
+    .lines()
+    .filter(|line| line.starts_with("linux "))
+    .count()
+        > 0)
+}
+
 impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
         let count = get_update_count()?;
+        let has_kernel_update = if count > 0 {
+            has_kernel_update()?
+        } else {
+            false
+        };
         let values = map!("{count}" => count);
         self.output.set_text(match count {
             0 => self.format_up_to_date.render_static_str(&values)?,
@@ -192,7 +232,13 @@ impl Block for Pacman {
         });
         self.output.set_state(match count {
             0 => State::Idle,
-            _ => State::Info,
+            _ => {
+                if self.kernel_updates_are_critical && has_kernel_update {
+                    State::Critical
+                } else {
+                    State::Info
+                }
+            }
         });
         Ok(Some(self.update_interval))
     }
