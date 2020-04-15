@@ -50,6 +50,11 @@ pub struct PacmanConfig {
     /// Alternative format override for when no updates are available
     #[serde(default = "PacmanConfig::default_format")]
     pub format_up_to_date: String,
+
+    /// Indicate a `critical` state for the block if there are kernel updates available. Default
+    /// behaviour is that kernel updates are treated as any other package update
+    #[serde(default = "PacmanConfig::default_kernel_updates_are_critical")]
+    pub kernel_updates_are_critical: bool,
 }
 
 impl PacmanConfig {
@@ -59,6 +64,10 @@ impl PacmanConfig {
 
     fn default_format() -> String {
         "{count}".to_owned()
+    }
+
+    fn default_kernel_updates_are_critical() -> bool {
+        false
     }
 }
 
