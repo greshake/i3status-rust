@@ -1,6 +1,3 @@
-use crate::scheduler::Task;
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -9,16 +6,19 @@ use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
 
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
+
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use uuid::Uuid;
 
 pub struct Pacman {
     output: ButtonWidget,
