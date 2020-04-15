@@ -124,10 +124,7 @@ fn has_fake_root() -> Result<bool> {
         != "")
 }
 
-fn get_update_count() -> Result<usize> {
-    if !has_fake_root()? {
-        return Ok(0 as usize);
-    }
+fn get_updates_db_dir() -> Result<String> {
     let tmp_dir = env::temp_dir()
         .into_os_string()
         .into_string()
@@ -136,10 +133,17 @@ fn get_update_count() -> Result<usize> {
         .unwrap_or_else(|| OsString::from(""))
         .into_string()
         .block_error("pacman", "There's a problem with your $USER")?;
-    let updates_db = env::var_os("CHECKUPDATES_DB")
+    env::var_os("CHECKUPDATES_DB")
         .unwrap_or_else(|| OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
         .into_string()
-        .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
+        .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")
+}
+
+fn get_update_count() -> Result<usize> {
+    if !has_fake_root()? {
+        return Ok(0 as usize);
+    }
+    let updates_db = get_updates_db_dir()?;
 
     // Determine pacman database path
     let db_path = env::var_os("DBPath")
@@ -184,18 +188,7 @@ fn get_update_count() -> Result<usize> {
 }
 
 fn has_kernel_update() -> Result<bool> {
-    let tmp_dir = env::temp_dir()
-        .into_os_string()
-        .into_string()
-        .block_error("pacman", "There's something wrong with your $TMP variable")?;
-    let user = env::var_os("USER")
-        .unwrap_or_else(|| OsString::from(""))
-        .into_string()
-        .block_error("pacman", "There's a problem with your $USER")?;
-    let updates_db = env::var_os("CHECKUPDATES_DB")
-        .unwrap_or_else(|| OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
-        .into_string()
-        .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
+    let updates_db = get_updates_db_dir()?;
 
     // check if there are linux kernel updates
     Ok(String::from_utf8(
