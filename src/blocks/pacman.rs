@@ -212,11 +212,6 @@ fn has_kernel_update() -> Result<bool> {
 impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
         let count = get_update_count()?;
-        let has_kernel_update = if count > 0 {
-            has_kernel_update()?
-        } else {
-            false
-        };
         let values = map!("{count}" => count);
         self.output.set_text(match count {
             0 => self.format_up_to_date.render_static_str(&values)?,
@@ -226,7 +221,7 @@ impl Block for Pacman {
         self.output.set_state(match count {
             0 => State::Idle,
             _ => {
-                if self.kernel_updates_are_critical && has_kernel_update {
+                if self.kernel_updates_are_critical && has_kernel_update()? {
                     State::Critical
                 } else {
                     State::Info
