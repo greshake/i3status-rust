@@ -21,6 +21,7 @@ pub mod pacman;
 pub mod pomodoro;
 pub mod sound;
 pub mod speedtest;
+pub mod taskwarrior;
 pub mod temperature;
 pub mod template;
 pub mod time;
