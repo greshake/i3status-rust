@@ -634,6 +634,7 @@ interval = 10
 format = "{count} updates available"
 format_singular = "{count} update available"
 format_up_to_date = "system up to date"
+critical_updates_regex = "(linux |linux-lts|linux-zen)"
 ```
 
 ### Options
@@ -644,6 +645,7 @@ Key | Values | Required | Default
 `format` | Format override | No | `"{count}"`
 `format_singular` | Format override if exactly one update is available | No | `"{count}"`
 `format_up_to_date` | Format override if no updates are available | No | `"{count}"`
+`critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
 
 ### Available Format Keys
 

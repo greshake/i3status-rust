@@ -19,6 +19,7 @@ use crate::scheduler::Task;
 use crate::util::{has_command, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use regex::Regex;
 
 pub struct Pacman {
     output: ButtonWidget,
@@ -27,7 +28,7 @@ pub struct Pacman {
     format: FormatTemplate,
     format_singular: FormatTemplate,
     format_up_to_date: FormatTemplate,
-    kernel_updates_are_critical: bool,
+    critical_updates_regex: Option<Regex>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -52,10 +53,10 @@ pub struct PacmanConfig {
     #[serde(default = "PacmanConfig::default_format")]
     pub format_up_to_date: String,
 
-    /// Indicate a `critical` state for the block if there are kernel updates available. Default
-    /// behaviour is that kernel updates are treated as any other package update
-    #[serde(default = "PacmanConfig::default_kernel_updates_are_critical")]
-    pub kernel_updates_are_critical: bool,
+    /// Indicate a `critical` state for the block if any pending update match the following regex.
+    /// Default behaviour is that no package updates are deemed critical
+    #[serde(default = "PacmanConfig::default_critical_updates_regex")]
+    pub critical_updates_regex: Option<String>,
 }
 
 impl PacmanConfig {
@@ -67,8 +68,8 @@ impl PacmanConfig {
         "{count}".to_owned()
     }
 
-    fn default_kernel_updates_are_critical() -> bool {
-        false
+    fn default_critical_updates_regex() -> Option<String> {
+        None
     }
 }
 
@@ -96,7 +97,21 @@ impl ConfigBlock for Pacman {
                     "Invalid format specified for pacman::format_up_to_date",
                 )?,
             output: ButtonWidget::new(config, "pacman").with_icon("update"),
-            kernel_updates_are_critical: block_config.kernel_updates_are_critical,
+            critical_updates_regex: match block_config.critical_updates_regex {
+                None => None, // no regex configured
+                Some(regex_str) => {
+                    let regex = Regex::new(regex_str.as_ref()).or_else(|_| {
+                        Err(ConfigurationError(
+                            "pacman".to_string(),
+                            (
+                                "invalid critical updates regex".to_string(),
+                                "invalid regex".to_string(),
+                            ),
+                        ))
+                    })?;
+                    Some(regex)
+                }
+            },
         })
     }
 }
@@ -175,29 +190,15 @@ fn get_updated_package_list_to_update() -> Result<String> {
     )
 }
 
-fn get_update_count(list_of_packages: &String) -> Result<usize> {
-    if !has_fake_root()? {
-        return Ok(0 as usize);
-    }
-    // Get update count
-    Ok(list_of_packages
+fn get_update_count(updates: &str) -> usize {
+    updates
         .lines()
         .filter(|line| !line.contains("[ignored]"))
-        .count())
+        .count()
 }
 
-fn has_kernel_update(list_of_packages: &String) -> Result<bool> {
-    // check if there are linux kernel updates
-    Ok(list_of_packages
-        .lines()
-        .filter(|line| {
-            line.starts_with("linux ")
-                || line.starts_with("linux-hardened ")
-                || line.starts_with("linux-lts ")
-                || line.starts_with("linux-zen ")
-        })
-        .count()
-        > 0)
+fn has_critical_update(updates: &str, regex: &Regex) -> bool {
+    updates.lines().filter(|line| regex.is_match(line)).count() > 0
 }
 
 impl Block for Pacman {
@@ -209,7 +210,7 @@ impl Block for Pacman {
             ));
         }
         let packages_to_update = get_updated_package_list_to_update()?;
-        let count = get_update_count(&packages_to_update)?;
+        let count = get_update_count(&packages_to_update);
         let values = map!("{count}" => count);
         self.output.set_text(match count {
             0 => self.format_up_to_date.render_static_str(&values)?,
@@ -219,7 +220,9 @@ impl Block for Pacman {
         self.output.set_state(match count {
             0 => State::Idle,
             _ => {
-                if self.kernel_updates_are_critical && has_kernel_update(&packages_to_update)? {
+                if self.critical_updates_regex.as_ref().map_or(false, |regex| {
+                    has_critical_update(&packages_to_update, regex)
+                }) {
                     State::Critical
                 } else {
                     State::Info
@@ -245,5 +248,21 @@ impl Block for Pacman {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::blocks::pacman::get_update_count;
+
+    #[test]
+    fn test_get_update_count() {
+        let no_update = "";
+        assert_eq!(get_update_count(no_update), 0);
+        let two_updates_available = concat!(
+            "systemd 245.4-2 -> 245.5-1\n",
+            "systemd-libs 245.4-2 -> 245.5-1\n"
+        );
+        assert_eq!(get_update_count(two_updates_available), 2);
     }
 }
