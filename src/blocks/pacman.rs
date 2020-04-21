@@ -1,6 +1,3 @@
-use crate::scheduler::Task;
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -9,16 +6,19 @@ use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
 
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
+
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use uuid::Uuid;
 
 pub struct Pacman {
     output: ButtonWidget,
@@ -27,6 +27,7 @@ pub struct Pacman {
     format: FormatTemplate,
     format_singular: FormatTemplate,
     format_up_to_date: FormatTemplate,
+    kernel_updates_are_critical: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -50,6 +51,11 @@ pub struct PacmanConfig {
     /// Alternative format override for when no updates are available
     #[serde(default = "PacmanConfig::default_format")]
     pub format_up_to_date: String,
+
+    /// Indicate a `critical` state for the block if there are kernel updates available. Default
+    /// behaviour is that kernel updates are treated as any other package update
+    #[serde(default = "PacmanConfig::default_kernel_updates_are_critical")]
+    pub kernel_updates_are_critical: bool,
 }
 
 impl PacmanConfig {
@@ -59,6 +65,10 @@ impl PacmanConfig {
 
     fn default_format() -> String {
         "{count}".to_owned()
+    }
+
+    fn default_kernel_updates_are_critical() -> bool {
+        false
     }
 }
 
@@ -86,6 +96,7 @@ impl ConfigBlock for Pacman {
                     "Invalid format specified for pacman::format_up_to_date",
                 )?,
             output: ButtonWidget::new(config, "pacman").with_icon("update"),
+            kernel_updates_are_critical: block_config.kernel_updates_are_critical,
         })
     }
 }
@@ -113,10 +124,7 @@ fn has_fake_root() -> Result<bool> {
         != "")
 }
 
-fn get_update_count() -> Result<usize> {
-    if !has_fake_root()? {
-        return Ok(0 as usize);
-    }
+fn get_updates_db_dir() -> Result<String> {
     let tmp_dir = env::temp_dir()
         .into_os_string()
         .into_string()
@@ -125,10 +133,14 @@ fn get_update_count() -> Result<usize> {
         .unwrap_or_else(|| OsString::from(""))
         .into_string()
         .block_error("pacman", "There's a problem with your $USER")?;
-    let updates_db = env::var_os("CHECKUPDATES_DB")
+    env::var_os("CHECKUPDATES_DB")
         .unwrap_or_else(|| OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
         .into_string()
-        .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
+        .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")
+}
+
+fn get_updated_package_list_to_update() -> Result<String> {
+    let updates_db = get_updates_db_dir()?;
 
     // Determine pacman database path
     let db_path = env::var_os("DBPath")
@@ -155,7 +167,7 @@ fn get_update_count() -> Result<usize> {
     ))?;
 
     // Get update count
-    Ok(String::from_utf8(
+    String::from_utf8(
         Command::new("sh")
             .env("LC_ALL", "C")
             .args(&[
@@ -166,15 +178,41 @@ fn get_update_count() -> Result<usize> {
             .block_error("pacman", "There was a problem running the pacman commands")?
             .stdout,
     )
-    .block_error("pacman", "there was a problem parsing the output")?
-    .lines()
-    .filter(|line| !line.contains("[ignored]"))
-    .count())
+    .block_error(
+        "pacman",
+        "There was an problem while converting the output of the pacman command to a string",
+    )
+}
+
+fn get_update_count(list_of_packages: &String) -> Result<usize> {
+    if !has_fake_root()? {
+        return Ok(0 as usize);
+    }
+    // Get update count
+    Ok(list_of_packages
+        .lines()
+        .filter(|line| !line.contains("[ignored]"))
+        .count())
+}
+
+fn has_kernel_update(list_of_packages: &String) -> Result<bool> {
+    // check if there are linux kernel updates
+    Ok(list_of_packages
+        .lines()
+        .filter(|line| {
+            line.starts_with("linux ")
+                || line.starts_with("linux-hardened ")
+                || line.starts_with("linux-lts ")
+                || line.starts_with("linux-zen ")
+        })
+        .count()
+        > 0)
 }
 
 impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let count = get_update_count()?;
+        let packages_to_update = get_updated_package_list_to_update()?;
+        let count = get_update_count(&packages_to_update)?;
         let values = map!("{count}" => count);
         self.output.set_text(match count {
             0 => self.format_up_to_date.render_static_str(&values)?,
@@ -183,7 +221,13 @@ impl Block for Pacman {
         });
         self.output.set_state(match count {
             0 => State::Idle,
-            _ => State::Info,
+            _ => {
+                if self.kernel_updates_are_critical && has_kernel_update(&packages_to_update)? {
+                    State::Critical
+                } else {
+                    State::Info
+                }
+            }
         });
         Ok(Some(self.update_interval))
     }

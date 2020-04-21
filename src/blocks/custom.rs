@@ -1,5 +1,6 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
+use serde_json;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
@@ -13,7 +14,7 @@ use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 use uuid::Uuid;
@@ -26,6 +27,7 @@ pub struct Custom {
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
     tx_update_request: Sender<Task>,
+    pub json: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -46,11 +48,19 @@ pub struct CustomConfig {
 
     /// Commands to execute and change when the button is clicked
     pub cycle: Option<Vec<String>>,
+
+    /// Parse command output if it contains valid bar JSON
+    #[serde(default = "CustomConfig::default_json")]
+    pub json: bool,
 }
 
 impl CustomConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(10)
+    }
+
+    fn default_json() -> bool {
+        false
     }
 }
 
@@ -66,6 +76,7 @@ impl ConfigBlock for Custom {
             on_click: None,
             cycle: None,
             tx_update_request: tx,
+            json: block_config.json,
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
@@ -86,6 +97,23 @@ impl ConfigBlock for Custom {
     }
 }
 
+fn default_icon() -> String {
+    String::from("")
+}
+
+fn default_state() -> State {
+    State::Idle
+}
+
+#[derive(Deserialize)]
+struct Output {
+    #[serde(default = "default_icon")]
+    icon: String,
+    #[serde(default = "default_state")]
+    state: State,
+    text: String,
+}
+
 impl Block for Custom {
     fn update(&mut self) -> Result<Option<Duration>> {
         let command_str = self
@@ -95,13 +123,21 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+        let raw_output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.to_string());
 
-        self.output.set_text(output);
+        if self.json {
+            let output: Output =
+                serde_json::from_str(&*raw_output).block_error("custom", "invalid JSON")?;
+            self.output.set_icon(&output.icon);
+            self.output.set_state(output.state);
+            self.output.set_text(output.text);
+        } else {
+            self.output.set_text(raw_output);
+        }
 
         Ok(Some(self.update_interval))
     }
