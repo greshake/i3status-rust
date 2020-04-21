@@ -139,10 +139,7 @@ fn get_updates_db_dir() -> Result<String> {
         .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")
 }
 
-fn get_update_count() -> Result<usize> {
-    if !has_fake_root()? {
-        return Ok(0 as usize);
-    }
+fn get_updated_package_list_to_update() -> Result<String> {
     let updates_db = get_updates_db_dir()?;
 
     // Determine pacman database path
@@ -170,7 +167,7 @@ fn get_update_count() -> Result<usize> {
     ))?;
 
     // Get update count
-    Ok(String::from_utf8(
+    String::from_utf8(
         Command::new("sh")
             .env("LC_ALL", "C")
             .args(&[
@@ -181,37 +178,36 @@ fn get_update_count() -> Result<usize> {
             .block_error("pacman", "There was a problem running the pacman commands")?
             .stdout,
     )
-    .block_error("pacman", "there was a problem parsing the output")?
-    .lines()
-    .filter(|line| !line.contains("[ignored]"))
-    .count())
+    .block_error(
+        "pacman",
+        "There was an problem while converting the output of the pacman command to a string",
+    )
 }
 
-fn has_kernel_update() -> Result<bool> {
-    let updates_db = get_updates_db_dir()?;
+fn get_update_count(list_of_packages: &String) -> Result<usize> {
+    if !has_fake_root()? {
+        return Ok(0 as usize);
+    }
+    // Get update count
+    Ok(list_of_packages
+        .lines()
+        .filter(|line| !line.contains("[ignored]"))
+        .count())
+}
 
+fn has_kernel_update(list_of_packages: &String) -> Result<bool> {
     // check if there are linux kernel updates
-    Ok(String::from_utf8(
-        Command::new("sh")
-            .env("LC_ALL", "C")
-            .args(&[
-                "-c",
-                &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db),
-            ])
-            .output()
-            .block_error("pacman", "There was a problem running the pacman commands")?
-            .stdout,
-    )
-    .block_error("pacman", "there was a problem parsing the output")?
-    .lines()
-    .filter(|line| line.starts_with("linux "))
-    .count()
+    Ok(list_of_packages
+        .lines()
+        .filter(|line| line.starts_with("linux "))
+        .count()
         > 0)
 }
 
 impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let count = get_update_count()?;
+        let packages_to_update = get_updated_package_list_to_update()?;
+        let count = get_update_count(&packages_to_update)?;
         let values = map!("{count}" => count);
         self.output.set_text(match count {
             0 => self.format_up_to_date.render_static_str(&values)?,
@@ -221,7 +217,7 @@ impl Block for Pacman {
         self.output.set_state(match count {
             0 => State::Idle,
             _ => {
-                if self.kernel_updates_are_critical && has_kernel_update()? {
+                if self.kernel_updates_are_critical && has_kernel_update(&packages_to_update)? {
                     State::Critical
                 } else {
                     State::Info
