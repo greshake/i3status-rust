@@ -116,11 +116,11 @@ impl Block for Maildir {
             let maildir = ExtMaildir::from(isl);
             newmails += self.display_type.count_mail(&maildir)
         }
-        let mut state = { State::Idle };
+        let mut state = State::Idle;
         if newmails >= self.threshold_critical {
-            state = { State::Critical };
+            state = State::Critical;
         } else if newmails >= self.threshold_warning {
-            state = { State::Warning };
+            state = State::Warning;
         }
         self.text.set_state(state);
         self.text.set_text(format!("{}", newmails));
