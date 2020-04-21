@@ -1,6 +1,5 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use std::ffi::OsStr;
 use std::fs::read_to_string;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -14,6 +13,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::util::format_percent_bar;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
@@ -695,11 +695,8 @@ impl Block for Net {
                 match e.button {
                     MouseButton::Left => match self.on_click {
                         Some(ref cmd) => {
-                            let command_broken: Vec<&str> = cmd.split_whitespace().collect();
-                            let mut itr = command_broken.iter();
-                            let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                                .args(itr)
-                                .spawn();
+                            spawn_child_async("sh", &["-c", cmd])
+                                .block_error("net", "could not spawn child")?;
                         }
                         _ => (),
                     },

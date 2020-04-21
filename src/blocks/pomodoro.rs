@@ -1,6 +1,5 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -8,6 +7,7 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -196,9 +196,6 @@ impl Block for Pomodoro {
 }
 
 fn nag(message: &str, level: &str) {
-    Command::new("i3-nagbar")
-        .stdout(Stdio::null())
-        .args(&["-t", level, "-m", message])
-        .spawn()
+    spawn_child_async("i3-nagbar", &["-t", level, "-m", message])
         .expect("Failed to start i3-nagbar");
 }

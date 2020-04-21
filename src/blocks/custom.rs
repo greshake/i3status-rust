@@ -13,6 +13,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -157,10 +158,7 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-                .args(&["-c", on_click])
-                .output()
-                .ok();
+            spawn_child_async("sh", &["-c", on_click]).ok();
             update = true;
         }
 
