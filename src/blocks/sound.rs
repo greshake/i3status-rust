@@ -586,7 +586,7 @@ pub struct SoundConfig {
     pub bar: bool,
 
     #[serde(
-        default = "FocusedWindowConfig::default_interval",
+        default = "SoundConfig::default_interval",
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
