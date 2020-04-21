@@ -16,6 +16,7 @@ icons = "awesome"
 * `bad-wolf`
 * `gruvbox-light`
 * `gruvbox-dark`
+* `space-villain`
 
 # Available icon sets:
 * `none` (default)
