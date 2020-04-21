@@ -151,6 +151,7 @@ impl Block for Temperature {
 
                 if rest[1].starts_with("input") {
                     match rest[2].parse::<i64>() {
+                        Ok(t) if t == 0 => Ok(()),
                         Ok(t) if t > -101 && t < 151 => {
                             temperatures.push(t);
                             Ok(())
