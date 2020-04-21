@@ -146,6 +146,24 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
+
+    pub static ref SPACE_VILLAIN: Theme = Theme {
+        idle_bg: "#06060f".to_owned(), //Rich black
+        idle_fg: "#c1c1c1".to_owned(), //Silver
+        info_bg: "#00223f".to_owned(), //Maastricht Blue
+        info_fg: "#c1c1c1".to_owned(), //Silver
+        good_bg: "#394049".to_owned(), //Arsenic
+        good_fg: "#c1c1c1".to_owned(), //Silver
+        warning_bg: "#2d1637".to_owned(), //Dark Purple
+        warning_fg: "#c1c1c1".to_owned(), //Silver
+        critical_bg: "#c1c1c1".to_owned(), //Silver
+        critical_fg: "#2c1637".to_owned(), //Dark Purple
+        separator: "\u{e0b2}".to_owned(),
+        separator_bg: "auto".to_owned(),
+        separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#00000000".to_owned(),
+        alternating_tint_fg: "#00000000".to_owned(),
+    };
 }
 
 mapped_struct! {
@@ -188,6 +206,7 @@ pub fn get_theme(name: &str) -> Option<Theme> {
         "bad-wolf" => Some(BAD_WOLF.clone()),
         "gruvbox-light" => Some(GRUVBOX_LIGHT.clone()),
         "gruvbox-dark" => Some(GRUVBOX_DARK.clone()),
+        "space-villain" => Some(SPACE_VILLAIN.clone()),
         _ => None,
     }
 }
