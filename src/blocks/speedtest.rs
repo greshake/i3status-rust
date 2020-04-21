@@ -3,7 +3,7 @@ use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde_derive::Deserialize;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
-use std::thread::spawn;
+use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::blocks::{Block, ConfigBlock};
@@ -87,28 +87,31 @@ fn make_thread(
     config: SpeedTestConfig,
     id: String,
 ) {
-    spawn(move || loop {
-        if !recv.recv().is_err() {
-            if let Ok(output) = get_values(config.bytes) {
-                if let Ok(vals) = parse_values(&output) {
-                    if vals.len() == 3 {
-                        let (ref mut update, ref mut values) = *values
-                            .lock()
-                            .expect("main thread paniced while holding speedtest-values mutex");
-                        *values = vals;
+    thread::Builder::new()
+        .name("speedtest".into())
+        .spawn(move || loop {
+            if !recv.recv().is_err() {
+                if let Ok(output) = get_values(config.bytes) {
+                    if let Ok(vals) = parse_values(&output) {
+                        if vals.len() == 3 {
+                            let (ref mut update, ref mut values) = *values
+                                .lock()
+                                .expect("main thread paniced while holding speedtest-values mutex");
+                            *values = vals;
 
-                        *update = true;
+                            *update = true;
 
-                        done.send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
+                            done.send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                        }
                     }
                 }
             }
-        }
-    });
+        })
+        .unwrap();
 }
 
 impl ConfigBlock for SpeedTest {

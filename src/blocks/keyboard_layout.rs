@@ -130,33 +130,36 @@ impl KeyboardLayoutMonitor for LocaleBus {
     /// Monitor Locale property changes in a separate thread and send updates
     /// via the `update_request` channel.
     fn monitor(&self, id: String, update_request: Sender<Task>) {
-        thread::spawn(move || {
-            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-                .expect("Failed to establish D-Bus connection.");
-            let rule = "type='signal',\
+        thread::Builder::new()
+            .name("keyboard_layout".into())
+            .spawn(move || {
+                let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
+                    .expect("Failed to establish D-Bus connection.");
+                let rule = "type='signal',\
                         path='/org/freedesktop/locale1',\
                         interface='org.freedesktop.DBus.Properties',\
                         member='PropertiesChanged'";
 
-            // Skip the NameAcquired event.
-            con.incoming(10_000).next();
+                // Skip the NameAcquired event.
+                con.incoming(10_000).next();
 
-            con.add_match(&rule)
-                .expect("Failed to add D-Bus match rule.");
+                con.add_match(&rule)
+                    .expect("Failed to add D-Bus match rule.");
 
-            loop {
-                // TODO: This actually seems to trigger twice for each localectl
-                // change.
-                if con.incoming(10_000).next().is_some() {
-                    update_request
-                        .send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
+                loop {
+                    // TODO: This actually seems to trigger twice for each localectl
+                    // change.
+                    if con.incoming(10_000).next().is_some() {
+                        update_request
+                            .send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
     }
 }
 
@@ -240,33 +243,36 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
     // via the `update_request` channel.
     fn monitor(&self, id: String, update_request: Sender<Task>) {
         let arc = Arc::clone(&self.kbdd_layout_id);
-        thread::spawn(move || {
-            let c =
-                dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::Session).unwrap();
-            c.add_match(
-                "interface='ru.gentoo.kbdd',\
+        thread::Builder::new()
+            .name("keyboard_layout".into())
+            .spawn(move || {
+                let c = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::Session)
+                    .unwrap();
+                c.add_match(
+                    "interface='ru.gentoo.kbdd',\
                  member='layoutChanged',\
                  path='/ru/gentoo/KbddService'",
-            )
-            .expect("Failed to add D-Bus match rule, is kbdd started?");
+                )
+                .expect("Failed to add D-Bus match rule, is kbdd started?");
 
-            // skip NameAcquired
-            c.incoming(10_000).next();
+                // skip NameAcquired
+                c.incoming(10_000).next();
 
-            c.add_handler(KbddMessageHandler(arc));
-            loop {
-                for ci in c.iter(100_000) {
-                    if let dbus::ffidisp::ConnectionItem::Signal(_) = ci {
-                        update_request
-                            .send(Task {
-                                id: id.clone(),
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
+                c.add_handler(KbddMessageHandler(arc));
+                loop {
+                    for ci in c.iter(100_000) {
+                        if let dbus::ffidisp::ConnectionItem::Signal(_) = ci {
+                            update_request
+                                .send(Task {
+                                    id: id.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+                        }
                     }
                 }
-            }
-        });
+            })
+            .unwrap();
     }
 }
 

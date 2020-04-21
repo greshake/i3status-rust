@@ -119,34 +119,37 @@ impl BluetoothDevice {
     /// via the `update_request` channel.
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.path.clone();
-        thread::spawn(move || {
-            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-                .expect("Failed to establish D-Bus connection.");
-            let rule = format!(
-                "type='signal',\
+        thread::Builder::new()
+            .name("bluetooth".into())
+            .spawn(move || {
+                let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
+                    .expect("Failed to establish D-Bus connection.");
+                let rule = format!(
+                    "type='signal',\
                  path='{}',\
                  interface='org.freedesktop.DBus.Properties',\
                  member='PropertiesChanged'",
-                path
-            );
+                    path
+                );
 
-            // Skip the NameAcquired event.
-            con.incoming(10_000).next();
+                // Skip the NameAcquired event.
+                con.incoming(10_000).next();
 
-            con.add_match(&rule)
-                .expect("Failed to add D-Bus match rule.");
+                con.add_match(&rule)
+                    .expect("Failed to add D-Bus match rule.");
 
-            loop {
-                if con.incoming(10_000).next().is_some() {
-                    update_request
-                        .send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
+                loop {
+                    if con.incoming(10_000).next().is_some() {
+                        update_request
+                            .send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
     }
 }
 

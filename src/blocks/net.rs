@@ -1,6 +1,5 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use std::ffi::OsStr;
 use std::fs::read_to_string;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -14,6 +13,8 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
+use crate::util::format_percent_bar;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::graph::GraphWidget;
@@ -26,6 +27,7 @@ pub struct NetworkDevice {
     wireless: bool,
     tun: bool,
     wg: bool,
+    ppp: bool,
 }
 
 impl NetworkDevice {
@@ -40,9 +42,15 @@ impl NetworkDevice {
             || device.starts_with("tun")
             || device.starts_with("tap");
 
-        let wg_uevent_path = device_path.join("uevent");
-        let wg = match read_to_string(&wg_uevent_path) {
+        let uevent_path = device_path.join("uevent");
+        let uevent_content = read_to_string(&uevent_path);
+
+        let wg = match &uevent_content {
             Ok(s) => s.contains("wireguard"),
+            Err(_e) => false,
+        };
+        let ppp = match &uevent_content {
+            Ok(s) => s.contains("ppp"),
             Err(_e) => false,
         };
 
@@ -52,6 +60,7 @@ impl NetworkDevice {
             wireless,
             tun,
             wg,
+            ppp,
         }
     }
 
@@ -71,6 +80,8 @@ impl NetworkDevice {
         } else if self.tun {
             Ok(true)
         } else if self.wg {
+            Ok(true)
+        } else if self.ppp {
             Ok(true)
         } else {
             let operstate = read_file(&operstate_file)?;
@@ -99,7 +110,7 @@ impl NetworkDevice {
 
     /// Checks whether this device is vpn network.
     pub fn is_vpn(&self) -> bool {
-        self.tun || self.wg
+        self.tun || self.wg || self.ppp
     }
 
     /// Queries the wireless SSID of this device (using `iw`), if it is
@@ -266,6 +277,7 @@ pub struct Net {
     ssid: Option<ButtonWidget>,
     max_ssid_width: usize,
     signal_strength: Option<ButtonWidget>,
+    signal_strength_bar: bool,
     ip_addr: Option<ButtonWidget>,
     bitrate: Option<ButtonWidget>,
     output_tx: Option<ButtonWidget>,
@@ -312,6 +324,10 @@ pub struct NetConfig {
     /// Whether to show the signal strength of active wireless networks.
     #[serde(default = "NetConfig::default_signal_strength")]
     pub signal_strength: bool,
+
+    /// Whether to show the signal strength of active wireless networks as a bar.
+    #[serde(default = "NetConfig::default_signal_strength_bar")]
+    pub signal_strength_bar: bool,
 
     /// Whether to show the bitrate of active wireless networks.
     #[serde(default = "NetConfig::default_bitrate")]
@@ -379,6 +395,10 @@ impl NetConfig {
     }
 
     fn default_signal_strength() -> bool {
+        false
+    }
+
+    fn default_signal_strength_bar() -> bool {
         false
     }
 
@@ -453,6 +473,7 @@ impl ConfigBlock for Net {
             } else {
                 None
             },
+            signal_strength_bar: block_config.signal_strength_bar,
             bitrate: if block_config.bitrate {
                 Some(ButtonWidget::new(config.clone(), &id))
             } else {
@@ -570,7 +591,11 @@ impl Block for Net {
             if let Some(ref mut signal_strength_widget) = self.signal_strength {
                 let value = self.device.relative_signal_strength()?;
                 if value.is_some() {
-                    signal_strength_widget.set_text(format!("{}%", value.unwrap()));
+                    signal_strength_widget.set_text(if self.signal_strength_bar {
+                        format_percent_bar(value.unwrap() as f32)
+                    } else {
+                        format!("{}%", value.unwrap())
+                    });
                 }
             }
             if let Some(ref mut ip_addr_widget) = self.ip_addr {
@@ -670,11 +695,8 @@ impl Block for Net {
                 match e.button {
                     MouseButton::Left => match self.on_click {
                         Some(ref cmd) => {
-                            let command_broken: Vec<&str> = cmd.split_whitespace().collect();
-                            let mut itr = command_broken.iter();
-                            let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                                .args(itr)
-                                .spawn();
+                            spawn_child_async("sh", &["-c", cmd])
+                                .block_error("net", "could not spawn child")?;
                         }
                         _ => (),
                     },

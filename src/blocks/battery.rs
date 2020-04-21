@@ -20,7 +20,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{read_file, FormatTemplate};
+use crate::util::{format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -273,37 +273,40 @@ impl UpowerDevice {
     /// via the `update_request` channel.
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.device_path.clone();
-        thread::spawn(move || {
-            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-                .expect("Failed to establish D-Bus connection.");
-            let rule = format!(
-                "type='signal',\
+        thread::Builder::new()
+            .name("battery".into())
+            .spawn(move || {
+                let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
+                    .expect("Failed to establish D-Bus connection.");
+                let rule = format!(
+                    "type='signal',\
                  path='{}',\
                  interface='org.freedesktop.DBus.Properties',\
                  member='PropertiesChanged'",
-                path
-            );
+                    path
+                );
 
-            // First we're going to get an (irrelevant) NameAcquired event.
-            con.incoming(10_000).next();
+                // First we're going to get an (irrelevant) NameAcquired event.
+                con.incoming(10_000).next();
 
-            con.add_match(&rule)
-                .expect("Failed to add D-Bus match rule.");
+                con.add_match(&rule)
+                    .expect("Failed to add D-Bus match rule.");
 
-            loop {
-                if con.incoming(10_000).next().is_some() {
-                    update_request
-                        .send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
-                    // Avoid update spam.
-                    // TODO: Is this necessary?
-                    thread::sleep(Duration::from_millis(1000))
+                loop {
+                    if con.incoming(10_000).next().is_some() {
+                        update_request
+                            .send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                        // Avoid update spam.
+                        // TODO: Is this necessary?
+                        thread::sleep(Duration::from_millis(1000))
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
     }
 }
 
@@ -413,7 +416,7 @@ pub struct BatteryConfig {
     pub show: Option<String>,
 
     /// Format string for displaying battery information.
-    /// placeholders: {percentage}, {time} and {power}
+    /// placeholders: {percentage}, {bar}, {time} and {power}
     #[serde(default = "BatteryConfig::default_format")]
     pub format: String,
 
@@ -508,6 +511,10 @@ impl Block for Battery {
                 Ok(capacity) => format!("{}", capacity),
                 Err(_) => "×".into(),
             };
+            let bar = match capacity {
+                Ok(capacity) => format_percent_bar(capacity as f32),
+                Err(_) => "×".into(),
+            };
             let time = match self.device.time_remaining() {
                 Ok(time) => format!("{}:{:02}", time / 60, time % 60),
                 Err(_) => "×".into(),
@@ -517,6 +524,7 @@ impl Block for Battery {
                 Err(_) => "×".into(),
             };
             let values = map!("{percentage}" => percentage,
+                              "{bar}" => bar,
                               "{time}" => time,
                               "{power}" => power);
             self.output

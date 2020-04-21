@@ -142,15 +142,15 @@ impl Notmuch {
     }
 
     fn update_state(&mut self, count: u32) {
-        let mut state = { State::Idle };
+        let mut state = State::Idle;
         if count >= self.threshold_critical {
-            state = { State::Critical };
+            state = State::Critical;
         } else if count >= self.threshold_warning {
-            state = { State::Warning };
+            state = State::Warning;
         } else if count >= self.threshold_good {
-            state = { State::Good };
+            state = State::Good;
         } else if count >= self.threshold_info {
-            state = { State::Info };
+            state = State::Info;
         }
         self.text.set_state(state);
     }

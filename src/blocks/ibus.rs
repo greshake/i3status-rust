@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::env;
 use std::fs::{read_dir, File};
 use std::io::prelude::*;
@@ -17,6 +18,7 @@ use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
+use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
@@ -28,16 +30,37 @@ pub struct IBus {
     id: String,
     text: TextWidget,
     engine: Arc<Mutex<String>>,
+    mappings: Option<BTreeMap<String, String>>,
+    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct IBusConfig {}
+pub struct IBusConfig {
+    #[serde(default = "IBusConfig::default_mappings")]
+    pub mappings: Option<BTreeMap<String, String>>,
+
+    #[serde(
+        default = "IBusConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
+    pub interval: Duration,
+}
+
+impl IBusConfig {
+    fn default_mappings() -> Option<BTreeMap<String, String>> {
+        None
+    }
+
+    fn default_interval() -> Duration {
+        Duration::from_secs(30)
+    }
+}
 
 impl ConfigBlock for IBus {
     type Config = IBusConfig;
 
-    fn new(_block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
+    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
@@ -65,34 +88,39 @@ impl ConfigBlock for IBus {
             .block_error("ibus", "Failed to parse D-Bus message (step 2)")?
             .as_str()
             .unwrap_or("??");
-        let engine_original = Arc::new(Mutex::new(String::from(current_engine)));
 
+        let engine_original = Arc::new(Mutex::new(String::from(current_engine)));
         let engine = engine_original.clone();
-        thread::spawn(move || {
-            let c = Connection::open_private(&ibus_address)
-                .expect("Failed to establish D-Bus connection in thread");
-            c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
-                .expect("Failed to add D-Bus message rule - has IBus interface changed?");
-            loop {
-                for ci in c.iter(100000) {
-                    if let Some(engine_name) = parse_msg(&ci) {
-                        let mut engine = engine_original.lock().unwrap();
-                        *engine = engine_name.to_string();
-                        // Tell block to update now.
-                        send.send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
-                    };
+        thread::Builder::new()
+            .name("ibus".into())
+            .spawn(move || {
+                let c = Connection::open_private(&ibus_address)
+                    .expect("Failed to establish D-Bus connection in thread");
+                c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
+                    .expect("Failed to add D-Bus message rule - has IBus interface changed?");
+                loop {
+                    for ci in c.iter(100000) {
+                        if let Some(engine_name) = parse_msg(&ci) {
+                            let mut engine = engine_original.lock().unwrap();
+                            *engine = engine_name.to_string();
+                            // Tell block to update now.
+                            send.send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                        };
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
 
         Ok(IBus {
             id: id_copy,
             text: TextWidget::new(config.clone()).with_text("IBus"),
             engine,
+            mappings: block_config.mappings,
+            update_interval: block_config.interval,
         })
     }
 }
@@ -109,8 +137,17 @@ impl Block for IBus {
             .lock()
             .block_error("ibus", "failed to acquire lock")?)
         .clone();
-        self.text.set_text(engine);
-        Ok(None)
+        let display_engine = if let Some(m) = &self.mappings {
+            match m.get(&engine) {
+                Some(mapping) => mapping.to_string(),
+                None => engine,
+            }
+        } else {
+            engine
+        };
+
+        self.text.set_text(display_engine);
+        Ok(Some(self.update_interval))
     }
 
     // Returns the view of the block, comprised of widgets.
