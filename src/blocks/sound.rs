@@ -89,7 +89,7 @@ impl SoundDevice for AlsaSoundDevice {
 
     fn get_info(&mut self) -> Result<()> {
         let output = Command::new("amixer")
-            .args(&["get", &self.name])
+            .args(&["-M", "get", &self.name])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .block_error("sound", "could not run amixer to get sound info")?;
