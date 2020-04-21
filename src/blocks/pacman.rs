@@ -199,7 +199,12 @@ fn has_kernel_update(list_of_packages: &String) -> Result<bool> {
     // check if there are linux kernel updates
     Ok(list_of_packages
         .lines()
-        .filter(|line| line.starts_with("linux "))
+        .filter(|line| {
+            line.starts_with("linux ")
+                || line.starts_with("linux-hardened ")
+                || line.starts_with("linux-lts ")
+                || line.starts_with("linux-zen ")
+        })
         .count()
         > 0)
 }
