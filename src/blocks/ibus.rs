@@ -41,7 +41,7 @@ pub struct IBusConfig {
     pub mappings: Option<BTreeMap<String, String>>,
 
     #[serde(
-        default = "FocusedWindowConfig::default_interval",
+        default = "IBusConfig::default_interval",
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,

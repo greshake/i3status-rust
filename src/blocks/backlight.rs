@@ -188,7 +188,7 @@ pub struct BacklightConfig {
     pub step_width: u64,
 
     #[serde(
-        default = "FocusedWindowConfig::default_interval",
+        default = "BacklightConfig::default_interval",
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
