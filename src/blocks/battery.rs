@@ -380,6 +380,10 @@ pub struct Battery {
     device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
     driver: BatteryDriver,
+    good: u64,
+    info: u64,
+    warning: u64,
+    critical: u64,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -426,6 +430,22 @@ pub struct BatteryConfig {
 
     /// The "driver" to use for powering the block. One of "sysfs" or "upower".
     pub driver: Option<BatteryDriver>,
+
+    /// The threshold above which the remaining capacity is shown as good
+    #[serde(default = "BatteryConfig::default_good")]
+    pub good: u64,
+
+    /// The threshold below which the remaining capacity is shown as info
+    #[serde(default = "BatteryConfig::default_info")]
+    pub info: u64,
+
+    /// The threshold below which the remaining capacity is shown as warning
+    #[serde(default = "BatteryConfig::default_warning")]
+    pub warning: u64,
+
+    /// The threshold below which the remaining capacity is shown as critical
+    #[serde(default = "BatteryConfig::default_critical")]
+    pub critical: u64,
 }
 
 impl BatteryConfig {
@@ -443,6 +463,22 @@ impl BatteryConfig {
 
     fn default_upower() -> bool {
         false
+    }
+
+    fn default_critical() -> u64 {
+        15
+    }
+
+    fn default_warning() -> u64 {
+        30
+    }
+
+    fn default_info() -> u64 {
+        60
+    }
+
+    fn default_good() -> u64 {
+        60
     }
 }
 
@@ -491,6 +527,10 @@ impl ConfigBlock for Battery {
             device,
             format: FormatTemplate::from_string(&format)?,
             driver,
+            good: block_config.good,
+            info: block_config.info,
+            warning: block_config.warning,
+            critical: block_config.critical,
         })
     }
 }
@@ -538,11 +578,20 @@ impl Block for Battery {
                 }
                 _ => {
                     self.output.set_state(match capacity {
-                        Ok(0..=15) => State::Critical,
-                        Ok(16..=30) => State::Warning,
-                        Ok(31..=60) => State::Info,
-                        Ok(61..=100) => State::Good,
-                        _ => State::Warning,
+                        Ok(capacity) => {
+                            if capacity <= self.critical {
+                                State::Critical
+                            } else if capacity <= self.warning {
+                                State::Warning
+                            } else if capacity <= self.info {
+                                State::Info
+                            } else if capacity > self.good {
+                                State::Good
+                            } else {
+                                State::Idle
+                            }
+                        }
+                        Err(_) => State::Warning,
                     });
                 }
             }
