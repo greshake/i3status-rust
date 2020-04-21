@@ -537,7 +537,7 @@ use_bits = false
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | Network interface to moniter (name from /sys/class/net) | Yes | `lo` (loopback interface)
+`device` | Network interface to monitor (name from /sys/class/net) | Yes | `lo` (loopback interface)
 `ssid` | Display network SSID (wireless only). | No | `false`
 `signal_strength` | Display WiFi signal strength (wireless only). | No | `false`
 `bitrate` | Display connection bitrate. | No | `false`
@@ -546,6 +546,7 @@ Key | Values | Required | Default
 `speed_down` | Display download speed. | No | `true`
 `graph_up` | Display a bar graph for upload speed. | No | `false`
 `graph_down` | Display a bar graph for download speed. | No | `false`
+`use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. | No | `1`
 `hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
 `hide_inactive` | Whether to hide networks that are missing. | No | `false`
