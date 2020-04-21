@@ -177,10 +177,10 @@ Key | Values | Required | Default
 
 Creates a block that display the output of custom shell commands.
 
-For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
-`{"icon": "ICON", state": "STATE", "text": "YOURTEXT"}`
-`icon` is optional, it may be an icon name from `icons.rs` (default "")
-`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)
+For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  
+`{"icon": "ICON", state": "STATE", "text": "YOURTEXT"}`  
+`icon` is optional, it may be an icon name from `icons.rs` (default "")  
+`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
 
 ### Examples
 
