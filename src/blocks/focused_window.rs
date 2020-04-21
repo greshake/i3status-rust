@@ -64,32 +64,22 @@ impl ConfigBlock for FocusedWindow {
         let _test_conn = I3EventListener::connect()
             .block_error("focused_window", "failed to acquire connect to IPC")?;
 
-        thread::spawn(move || {
-            // establish connection.
-            let mut listener = I3EventListener::connect().unwrap();
+        thread::Builder::new()
+            .name("focused_window".into())
+            .spawn(move || {
+                // establish connection.
+                let mut listener = I3EventListener::connect().unwrap();
 
-            // subscribe to a couple events.
-            let subs = [Subscription::Window, Subscription::Workspace];
-            listener.subscribe(&subs).unwrap();
+                // subscribe to a couple events.
+                let subs = [Subscription::Window, Subscription::Workspace];
+                listener.subscribe(&subs).unwrap();
 
-            // handle them
-            for event in listener.listen() {
-                match event.unwrap() {
-                    Event::WindowEvent(e) => {
-                        match e.change {
-                            WindowChange::Focus => {
-                                if let Some(name) = e.container.name {
-                                    let mut title = title_original.lock().unwrap();
-                                    *title = name;
-                                    tx.send(Task {
-                                        id: id_clone.clone(),
-                                        update_time: Instant::now(),
-                                    })
-                                    .unwrap();
-                                }
-                            }
-                            WindowChange::Title => {
-                                if e.container.focused {
+                // handle them
+                for event in listener.listen() {
+                    match event.unwrap() {
+                        Event::WindowEvent(e) => {
+                            match e.change {
+                                WindowChange::Focus => {
                                     if let Some(name) = e.container.name {
                                         let mut title = title_original.lock().unwrap();
                                         *title = name;
@@ -100,38 +90,51 @@ impl ConfigBlock for FocusedWindow {
                                         .unwrap();
                                     }
                                 }
-                            }
-                            WindowChange::Close => {
-                                if let Some(name) = e.container.name {
-                                    let mut title = title_original.lock().unwrap();
-                                    if name == *title {
-                                        *title = String::from("");
-                                        tx.send(Task {
-                                            id: id_clone.clone(),
-                                            update_time: Instant::now(),
-                                        })
-                                        .unwrap();
+                                WindowChange::Title => {
+                                    if e.container.focused {
+                                        if let Some(name) = e.container.name {
+                                            let mut title = title_original.lock().unwrap();
+                                            *title = name;
+                                            tx.send(Task {
+                                                id: id_clone.clone(),
+                                                update_time: Instant::now(),
+                                            })
+                                            .unwrap();
+                                        }
                                     }
                                 }
-                            }
-                            _ => {}
-                        };
-                    }
-                    Event::WorkspaceEvent(e) => {
-                        if let WorkspaceChange::Init = e.change {
-                            let mut title = title_original.lock().unwrap();
-                            *title = String::from("");
-                            tx.send(Task {
-                                id: id_clone.clone(),
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
+                                WindowChange::Close => {
+                                    if let Some(name) = e.container.name {
+                                        let mut title = title_original.lock().unwrap();
+                                        if name == *title {
+                                            *title = String::from("");
+                                            tx.send(Task {
+                                                id: id_clone.clone(),
+                                                update_time: Instant::now(),
+                                            })
+                                            .unwrap();
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            };
                         }
+                        Event::WorkspaceEvent(e) => {
+                            if let WorkspaceChange::Init = e.change {
+                                let mut title = title_original.lock().unwrap();
+                                *title = String::from("");
+                                tx.send(Task {
+                                    id: id_clone.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+                            }
+                        }
+                        _ => unreachable!(),
                     }
-                    _ => unreachable!(),
                 }
-            }
-        });
+            })
+            .unwrap();
 
         Ok(FocusedWindow {
             id,

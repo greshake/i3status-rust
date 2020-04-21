@@ -109,7 +109,7 @@ impl ConfigBlock for Music {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
-        thread::spawn(move || {
+        thread::Builder::new().name("music".into()).spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
             c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'")
                 .unwrap();
@@ -124,7 +124,7 @@ impl ConfigBlock for Music {
                     }
                 }
             }
-        });
+        }).unwrap();
 
         let mut play: Option<ButtonWidget> = None;
         let mut prev: Option<ButtonWidget> = None;

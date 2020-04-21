@@ -10,6 +10,9 @@ pub fn spawn_child_async(name: &str, args: &[&str]) -> io::Result<()> {
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .spawn()?;
-    thread::spawn(move || child.wait());
+    thread::Builder::new()
+        .name("subprocess".into())
+        .spawn(move || child.wait())
+        .unwrap();
     Ok(())
 }
