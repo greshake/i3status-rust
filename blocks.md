@@ -145,6 +145,7 @@ Key | Values | Required | Default
 `mac` | MAC address of the Bluetooth device. | Yes | None
 `label` | Text label to display next to the icon. | No | None
 
+
 ## CPU Utilization
 
 Creates a block which displays the overall CPU utilization, calculated from `/proc/stat`.
@@ -176,6 +177,11 @@ Key | Values | Required | Default
 
 Creates a block that display the output of custom shell commands.
 
+For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
+`{"icon": "ICON", state": "STATE", "text": "YOURTEXT"}`
+`icon` is optional, it may be an icon name from `icons.rs` (default "")
+`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)
+
 ### Examples
 
 ```toml
@@ -193,6 +199,13 @@ on_click = "<command>"
 interval = 1
 ```
 
+```toml
+[[block]]
+block = "custom"
+command = "echo '{\"icon\":\"weather_thunder\",\"state\":\"Critical\", \"text\": \"Danger!\"}'"
+json = true
+```
+
 ### Options
 
 Note that `command` and `cycle` are mutually exclusive.
@@ -203,6 +216,7 @@ Key | Values | Required | Default
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `10`
+`json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
 
 ## Disk Space
 
