@@ -54,7 +54,7 @@ pub struct TaskwarriorConfig {
 
 impl TaskwarriorConfig {
     fn default_interval() -> Duration {
-        Duration::from_secs(60)
+        Duration::from_secs(600)
     }
 
     fn default_threshold_warning() -> u32 {
