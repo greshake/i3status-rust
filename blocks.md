@@ -20,6 +20,7 @@
 - [Pomodoro](#pomodoro)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
+- [Taskwarrior](#taskwarrior)
 - [Temperature](#temperature)
 - [Time](#time)
 - [Toggle](#toggle)
@@ -700,6 +701,48 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `bytes` | Whether to use bytes or bits in the display (true for bytes, false for bits). | No | `false`
 `interval` | Update interval, in seconds. | No | `1800`
+
+## Taskwarrior
+
+Creates a block which displays number of pending and started tasks of the current users taskwarrior list.
+
+Clicking the left mouse button on the icon updates the number of pending tasks immediately.
+
+Clicking the right mouse button on the icon toggles the view of the block between filtered (default) and non-filtered
+tasks. If there are no filters configured, the number of tasks stays the same and both modes are behaving
+equally.  
+
+### Examples
+
+```toml
+[[block]]
+block = "taskwarrior"
+interval = 60
+format = "{count} open tasks"
+format_singular = "{count} open task"
+format_everything_done = "nothing to do!"
+warning_threshold = 10
+critical_threshold = 20
+filter_tags = ["work", "important"]
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `600` (10min)
+`warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
+`critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
+`filter_tags` | A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
+`format` | Format override | No | `"{count}"`
+`format_singular` | Format override if exactly one task is pending | No | `"{count}"`
+`format_everything_done` | Format override if all tasks are completed | No | `"{count}"`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{count}` | The number of pending tasks.
 
 ## Temperature
 
