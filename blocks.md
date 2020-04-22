@@ -714,6 +714,7 @@ block = "taskwarrior"
 interval = 60
 warning_threshold = 10
 critical_threshold = 20
+filter_tags = work,important
 ```
 
 ### Options
@@ -723,6 +724,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `60`
 `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
 `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
+`filter_tags` | A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
 
 ## Temperature
 
