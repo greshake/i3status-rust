@@ -18,6 +18,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
+use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -301,6 +302,9 @@ impl dbus::ffidisp::MsgHandler for KbddMessageHandler {
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(default, deny_unknown_fields)]
 pub struct KeyboardLayoutConfig {
+    #[serde(default = "KeyboardLayoutConfig::default_format")]
+    pub format: String,
+
     driver: KeyboardLayoutDriver,
     #[serde(
         default = "KeyboardLayoutConfig::default_interval",
@@ -310,6 +314,10 @@ pub struct KeyboardLayoutConfig {
 }
 
 impl KeyboardLayoutConfig {
+    fn default_format() -> String {
+        "{layout}".to_owned()
+    }
+
     fn default_interval() -> Duration {
         Duration::from_secs(60)
     }
@@ -320,6 +328,7 @@ pub struct KeyboardLayout {
     output: TextWidget,
     monitor: Box<dyn KeyboardLayoutMonitor>,
     update_interval: Option<Duration>,
+    format: FormatTemplate,
 }
 
 impl ConfigBlock for KeyboardLayout {
@@ -349,6 +358,10 @@ impl ConfigBlock for KeyboardLayout {
             output: TextWidget::new(config),
             monitor,
             update_interval,
+            format: FormatTemplate::from_string(&block_config.format).block_error(
+                "keyboard_layout",
+                "Invalid format specified for keyboard_layout",
+            )?,
         })
     }
 }
@@ -359,7 +372,11 @@ impl Block for KeyboardLayout {
     }
 
     fn update(&mut self) -> Result<Option<Duration>> {
-        self.output.set_text(self.monitor.keyboard_layout()?);
+        let layout = self.monitor.keyboard_layout()?;
+        let values = map!("{layout}" => layout);
+
+        self.output
+            .set_text(self.format.render_static_str(&values)?);
         Ok(self.update_interval)
     }
 
