@@ -166,7 +166,7 @@ fn get_number_of_pending_tasks(tags: &Vec<String>) -> Result<u32> {
         Command::new("sh")
             .args(&[
                 "-c",
-                &format!("task -COMPLETED {} count", tags_to_filter(tags)),
+                &format!("task rc.gc=off -COMPLETED {} count", tags_to_filter(tags)),
             ])
             .output()
             .block_error(
