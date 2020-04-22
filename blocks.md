@@ -706,6 +706,8 @@ Key | Values | Required | Default
 
 Creates a block which displays number of pending and started tasks of the current users taskwarrior list.
 
+Clicking the left button on the icon updates the number of pending tasks immediately. 
+
 ### Examples
 
 ```toml

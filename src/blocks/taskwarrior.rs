@@ -9,7 +9,7 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
@@ -165,6 +165,18 @@ impl Block for Taskwarrior {
     }
 
     fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+        if event
+            .name
+            .as_ref()
+            .map(|s| s == "taskwarrior")
+            .unwrap_or(false)
+        {
+            match event.button {
+                MouseButton::Left => self.update()?,
+                _ => {}
+            }
+        }
+
         Ok(())
     }
 
