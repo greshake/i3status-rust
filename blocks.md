@@ -20,6 +20,7 @@
 - [Pomodoro](#pomodoro)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
+- [Taskwarrior](#taskwarrior)
 - [Temperature](#temperature)
 - [Time](#time)
 - [Toggle](#toggle)
@@ -684,6 +685,28 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `bytes` | Whether to use bytes or bits in the display (true for bytes, false for bits). | No | `false`
 `interval` | Update interval, in seconds. | No | `1800`
+
+## Taskwarrior
+
+Creates a block which displays number of pending and started tasks of the current users taskwarrior list.
+
+### Examples
+
+```toml
+[[block]]
+block = "taskwarrior"
+interval = 60
+warning_threshold = 10
+critical_threshold = 20
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `60`
+`warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
+`critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
 
 ## Temperature
 
