@@ -718,6 +718,9 @@ equally.
 [[block]]
 block = "taskwarrior"
 interval = 60
+format = "{count} open tasks"
+format_singular = "{count} open task"
+format_everything_done = "nothing to do!"
 warning_threshold = 10
 critical_threshold = 20
 filter_tags = ["work", "important"]
@@ -731,6 +734,15 @@ Key | Values | Required | Default
 `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
 `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
 `filter_tags` | A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
+`format` | Format override | No | `"{count}"`
+`format_singular` | Format override if exactly one task is pending | No | `"{count}"`
+`format_everything_done` | Format override if all tasks are completed | No | `"{count}"`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{count}` | The number of pending tasks.
 
 ## Temperature
 
