@@ -21,6 +21,7 @@ pub struct Taskwarrior {
     warning_threshold: u32,
     critical_threshold: u32,
     filter_tags: Vec<String>,
+    block_mode: TaskwarriorBlockMode,
 
     //useful, but optional
     #[allow(dead_code)]
@@ -50,6 +51,13 @@ pub struct TaskwarriorConfig {
     // A list of tags a task has to have before it's used for counting pending tasks
     #[serde(default = "TaskwarriorConfig::default_filter_tags")]
     pub filter_tags: Vec<String>,
+}
+
+enum TaskwarriorBlockMode {
+    // Show only the tasks which are filtered by the set tags and which are not completed.
+    OnlyFilteredPendingTasks,
+    // Show all pending tasks and ignore the filtering tags.
+    AllPendingTasks,
 }
 
 impl TaskwarriorConfig {
@@ -84,6 +92,7 @@ impl ConfigBlock for Taskwarrior {
             warning_threshold: block_config.warning_threshold,
             critical_threshold: block_config.critical_threshold,
             filter_tags: block_config.filter_tags,
+            block_mode: TaskwarriorBlockMode::OnlyFilteredPendingTasks,
             output: ButtonWidget::new(config.clone(), "taskwarrior")
                 .with_icon("tasks")
                 .with_text("-"),
@@ -145,7 +154,11 @@ impl Block for Taskwarrior {
         if !has_taskwarrior()? {
             self.output.set_text("?")
         } else {
-            let number_of_pending_tasks = get_number_of_pending_tasks(&self.filter_tags)?;
+            let filter_tags = match self.block_mode {
+                TaskwarriorBlockMode::OnlyFilteredPendingTasks => self.filter_tags.clone(),
+                TaskwarriorBlockMode::AllPendingTasks => vec![],
+            };
+            let number_of_pending_tasks = get_number_of_pending_tasks(&filter_tags)?;
             self.output.set_text(format!("{}", number_of_pending_tasks));
             if number_of_pending_tasks >= self.critical_threshold {
                 self.output.set_state(State::Critical);
@@ -164,7 +177,7 @@ impl Block for Taskwarrior {
         vec![&self.output]
     }
 
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if event
             .name
             .as_ref()
@@ -172,7 +185,20 @@ impl Block for Taskwarrior {
             .unwrap_or(false)
         {
             match event.button {
-                MouseButton::Left => self.update()?,
+                MouseButton::Left => {
+                    self.update()?;
+                }
+                MouseButton::Right => {
+                    match self.block_mode {
+                        TaskwarriorBlockMode::OnlyFilteredPendingTasks => {
+                            self.block_mode = TaskwarriorBlockMode::AllPendingTasks
+                        }
+                        TaskwarriorBlockMode::AllPendingTasks => {
+                            self.block_mode = TaskwarriorBlockMode::OnlyFilteredPendingTasks
+                        }
+                    }
+                    self.update()?;
+                }
                 _ => {}
             }
         }
