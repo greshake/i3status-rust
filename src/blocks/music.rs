@@ -1,8 +1,6 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use std::boxed::Box;
-use std::ffi::OsStr;
-use std::process::Command;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -12,6 +10,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
@@ -110,7 +109,7 @@ impl ConfigBlock for Music {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
-        thread::spawn(move || {
+        thread::Builder::new().name("music".into()).spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
             c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'")
                 .unwrap();
@@ -125,7 +124,7 @@ impl ConfigBlock for Music {
                     }
                 }
             }
-        });
+        }).unwrap();
 
         let mut play: Option<ButtonWidget> = None;
         let mut prev: Option<ButtonWidget> = None;
@@ -280,12 +279,9 @@ impl Block for Music {
                     .map(|_| ())
             } else {
                 if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
-                    let command = self.on_collapsed_click.clone().unwrap();
-                    let command_broken: Vec<&str> = command.split_whitespace().collect();
-                    let mut itr = command_broken.iter();
-                    let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                        .args(itr)
-                        .spawn();
+                    let command = self.on_collapsed_click.as_ref().unwrap();
+                    spawn_child_async("sh", &["-c", command])
+                        .block_error("music", "could not spawn child")?;
                 }
                 Ok(())
             }

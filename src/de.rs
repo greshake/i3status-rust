@@ -1,3 +1,4 @@
+use chrono::{DateTime, Local};
 use chrono_tz::Tz;
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use std::collections::{BTreeMap, HashMap as Map};
@@ -198,4 +199,12 @@ where
 {
     let s = String::deserialize(deserializer)?;
     Tz::from_str(&s).map(Some).map_err(de::Error::custom)
+}
+
+pub fn deserialize_local_timestamp<'de, D>(deserializer: D) -> Result<DateTime<Local>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use chrono::TimeZone;
+    i64::deserialize(deserializer).map(|seconds| Local.timestamp(seconds, 0))
 }

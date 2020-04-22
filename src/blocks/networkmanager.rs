@@ -162,27 +162,30 @@ impl ConfigBlock for NetworkManager {
             .block_error("networkmanager", "failed to establish D-Bus connection")?;
         let manager = ConnectionManager::new();
 
-        thread::spawn(move || {
-            let c = Connection::get_private(BusType::System).unwrap();
-            let rule = "type='signal',\
-                        path='/org/freedesktop/NetworkManager',\
-                        interface='org.freedesktop.NetworkManager',\
-                        member='StateChanged'";
+        thread::Builder::new()
+            .name("networkmanager".into())
+            .spawn(move || {
+                let c = Connection::get_private(BusType::System).unwrap();
+                let rule = "type='signal',\
+                            path='/org/freedesktop/NetworkManager',\
+                            interface='org.freedesktop.NetworkManager',\
+                            member='StateChanged'";
 
-            c.add_match(&rule).unwrap();
+                c.add_match(&rule).unwrap();
 
-            loop {
-                let timeout = 100_000;
+                loop {
+                    let timeout = 100_000;
 
-                for _event in c.iter(timeout) {
-                    send.send(Task {
-                        id: id.clone(),
-                        update_time: Instant::now(),
-                    })
-                    .unwrap();
+                    for _event in c.iter(timeout) {
+                        send.send(Task {
+                            id: id.clone(),
+                            update_time: Instant::now(),
+                        })
+                        .unwrap();
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
 
         Ok(NetworkManager {
             id: id_copy,

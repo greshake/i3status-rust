@@ -24,6 +24,7 @@
 - [Temperature](#temperature)
 - [Time](#time)
 - [Toggle](#toggle)
+- [Watson](#watson)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
 
@@ -146,6 +147,7 @@ Key | Values | Required | Default
 `mac` | MAC address of the Bluetooth device. | Yes | None
 `label` | Text label to display next to the icon. | No | None
 
+
 ## CPU Utilization
 
 Creates a block which displays the overall CPU utilization, calculated from `/proc/stat`.
@@ -177,6 +179,11 @@ Key | Values | Required | Default
 
 Creates a block that display the output of custom shell commands.
 
+For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  
+`{"icon": "ICON", "state": "STATE", "text": "YOURTEXT"}`  
+`icon` is optional, it may be an icon name from `icons.rs` (default "")  
+`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
+
 ### Examples
 
 ```toml
@@ -194,6 +201,13 @@ on_click = "<command>"
 interval = 1
 ```
 
+```toml
+[[block]]
+block = "custom"
+command = "echo '{\"icon\":\"weather_thunder\",\"state\":\"Critical\", \"text\": \"Danger!\"}'"
+json = true
+```
+
 ### Options
 
 Note that `command` and `cycle` are mutually exclusive.
@@ -204,6 +218,7 @@ Key | Values | Required | Default
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `10`
+`json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
 
 ## Disk Space
 
@@ -523,7 +538,7 @@ use_bits = false
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | Network interface to moniter (name from /sys/class/net) | Yes | `lo` (loopback interface)
+`device` | Network interface to monitor (name from /sys/class/net) | Yes | `lo` (loopback interface)
 `ssid` | Display network SSID (wireless only). | No | `false`
 `signal_strength` | Display WiFi signal strength (wireless only). | No | `false`
 `bitrate` | Display connection bitrate. | No | `false`
@@ -532,6 +547,7 @@ Key | Values | Required | Default
 `speed_down` | Display download speed. | No | `true`
 `graph_up` | Display a bar graph for upload speed. | No | `false`
 `graph_down` | Display a bar graph for download speed. | No | `false`
+`use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. | No | `1`
 `hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
 `hide_inactive` | Whether to hide networks that are missing. | No | `false`
@@ -804,6 +820,26 @@ Key | Values | Required | Default
 `icon_on` | Icon override for the toggle button while on. | No | `"toggle_on"`
 `icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
+
+## Watson
+
+[Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
+
+### Examples
+
+```toml
+[[block]]
+block = "watson"
+show_time = true
+state_path = "/home/user/.config/watson/state"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`show_time` | Wether to show recorded time | No | `false`
+`state_path` | Path to the Watson state file | No | `$XDG_CONFIG_HOME/watson/state`
 
 ## Weather
 

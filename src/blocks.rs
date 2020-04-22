@@ -27,6 +27,7 @@ pub mod template;
 pub mod time;
 pub mod toggle;
 pub mod uptime;
+pub mod watson;
 pub mod weather;
 pub mod xrandr;
 
@@ -59,6 +60,7 @@ use self::template::*;
 use self::time::*;
 use self::toggle::*;
 use self::uptime::*;
+use self::watson::*;
 use self::weather::*;
 use self::xrandr::*;
 
@@ -152,6 +154,7 @@ pub fn create_block(
         "time" => block!(Time, block_config, config, update_request),
         "toggle" => block!(Toggle, block_config, config, update_request),
         "uptime" => block!(Uptime, block_config, config, update_request),
+        "watson" => block!(Watson, block_config, config, update_request),
         "weather" => block!(Weather, block_config, config, update_request),
         "xrandr" => block!(Xrandr, block_config, config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
