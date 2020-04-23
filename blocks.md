@@ -173,6 +173,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `1`
 `format` | A format string. Possible placeholders: `{barchart}` (barchart of each CPU's core utilization), `{utilization}` (average CPU utilization in percent) and `{frequency}` (CPU frequency). | No | `"{utilization}%"`
 `frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
+`per_core` | Display CPU frequencies and utilization per core. | No | `false`
 
 
 ## Custom
