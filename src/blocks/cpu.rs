@@ -157,10 +157,7 @@ impl Block for Cpu {
             freq = (freq / (n_cpu as f32) / 1000.0) as f32;
         }
 
-        // Read data from a maximum of `MAX_CPUS` CPU cores, if a barchart is displayed
-        let max_cpus = if self.has_barchart { MAX_CPUS } else { 1 };
-        let mut cpu_utilizations = vec![0.0; max_cpus];
-
+        let mut cpu_utilizations: [f64; MAX_CPUS] = [0.0; MAX_CPUS];
         let mut cpu_i = 0;
         for line in f.lines().scan((), |_, x| x.ok()) {
             if line.starts_with("cpu") {
@@ -231,7 +228,7 @@ impl Block for Cpu {
 
         let values = map!("{frequency}" => format!("{:.*}", 1, freq),
                           "{barchart}" => barchart,
-                          "{utilization}" => format!("{:02}", avg_utilization),
+                          "{utilization}" => format_utilization(&cpu_utilizations, cpu_i, self.per_core),
                           "{utilizationbar}" => format_percent_bar(avg_utilization as f32));
 
         self.output
@@ -246,5 +243,20 @@ impl Block for Cpu {
 
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+#[inline]
+fn format_utilization(values: &[f64], count: usize, per_core: bool) -> String {
+    if per_core {
+        values
+            .iter()
+            .take(count)
+            .skip(1) // The first value is a global one.
+            .map(|v| format!("{:02.0}%", 100.0 * v))
+            .collect::<Vec<String>>()
+            .join(" ")
+    } else {
+        format!("{:02.0}", 100.0 * values[0])
     }
 }
