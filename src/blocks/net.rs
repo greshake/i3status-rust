@@ -72,8 +72,8 @@ impl NetworkDevice {
     /// Check whether this network device is in the `up` state. Note that a
     /// device that is not `up` is not necessarily `down`.
     pub fn is_up(&self) -> Result<bool> {
-        let operstate_file = self.device_path.join("operstate");
-        if !operstate_file.exists() {
+        let carrier_file = self.device_path.join("carrier");
+        if !carrier_file.exists() {
             // It seems more reasonable to treat these as inactive networks as
             // opposed to erroring out the entire block.
             Ok(false)
@@ -84,8 +84,8 @@ impl NetworkDevice {
         } else if self.ppp {
             Ok(true)
         } else {
-            let operstate = read_file(&operstate_file)?;
-            Ok(operstate == "up")
+            let carrier = read_file(&carrier_file)?;
+            Ok(carrier == "1")
         }
     }
 
