@@ -17,10 +17,13 @@ use std::io::BufReader;
 
 use uuid::Uuid;
 
+/// Maximum number of CPUs we support.
+const MAX_CPUS: usize = 32;
+
 pub struct Cpu {
     output: TextWidget,
-    prev_idles: [u64; 32],
-    prev_non_idles: [u64; 32],
+    prev_idles: [u64; MAX_CPUS],
+    prev_non_idles: [u64; MAX_CPUS],
     id: String,
     update_interval: Duration,
     minimum_info: u64,
@@ -110,8 +113,8 @@ impl ConfigBlock for Cpu {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
             output: TextWidget::new(config).with_icon("cpu"),
-            prev_idles: [0; 32],
-            prev_non_idles: [0; 32],
+            prev_idles: [0; MAX_CPUS],
+            prev_non_idles: [0; MAX_CPUS],
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
@@ -154,8 +157,8 @@ impl Block for Cpu {
             freq = (freq / (n_cpu as f32) / 1000.0) as f32;
         }
 
-        // Read data from a maximum of 32 CPU cores, if a barchart is displayed
-        let max_cpus = if self.has_barchart { 32 } else { 1 };
+        // Read data from a maximum of `MAX_CPUS` CPU cores, if a barchart is displayed
+        let max_cpus = if self.has_barchart { MAX_CPUS } else { 1 };
         let mut cpu_utilizations = vec![0.0; max_cpus];
 
         let mut cpu_i = 0;
@@ -196,7 +199,7 @@ impl Block for Cpu {
                 self.prev_idles[cpu_i] = idle;
                 self.prev_non_idles[cpu_i] = non_idle;
                 cpu_i += 1;
-                if cpu_i >= max_cpus {
+                if cpu_i >= MAX_CPUS {
                     break;
                 };
             }
