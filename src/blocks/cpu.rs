@@ -133,8 +133,8 @@ impl Block for Cpu {
             .block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
+        let mut cpu_freqs: [f32; MAX_CPUS] = [0.0; MAX_CPUS];
         let mut n_cpu = 0;
-        let mut freq: f32 = 0.0;
         if self.has_frequency {
             let freq_file =
                 File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
@@ -149,12 +149,10 @@ impl Block for Cpu {
                     let numb = last
                         .parse::<f32>()
                         .expect("failed to parse String to f32 while getting cpu frequency");
-                    freq += numb;
+                    cpu_freqs[n_cpu] = numb;
                     n_cpu += 1;
                 }
             }
-            // get the average
-            freq = (freq / (n_cpu as f32) / 1000.0) as f32;
         }
 
         let mut cpu_utilizations: [f64; MAX_CPUS] = [0.0; MAX_CPUS];
@@ -225,8 +223,7 @@ impl Block for Cpu {
                 );
             }
         }
-
-        let values = map!("{frequency}" => format!("{:.*}", 1, freq),
+        let values = map!("{frequency}" => format_frequency(&cpu_freqs, n_cpu, self.per_core),
                           "{barchart}" => barchart,
                           "{utilization}" => format_utilization(&cpu_utilizations, cpu_i, self.per_core),
                           "{utilizationbar}" => format_percent_bar(avg_utilization as f32));
@@ -258,5 +255,20 @@ fn format_utilization(values: &[f64], count: usize, per_core: bool) -> String {
             .join(" ")
     } else {
         format!("{:02.0}", 100.0 * values[0])
+    }
+}
+
+#[inline]
+fn format_frequency(cpu_freqs: &[f32], count: usize, per_core: bool) -> String {
+    if per_core {
+        cpu_freqs
+            .iter()
+            .take(count)
+            .map(|v| format!("{0:.1}GHz", v / 1000.0))
+            .collect::<Vec<String>>()
+            .join(" ")
+    } else {
+        let avg = cpu_freqs.iter().take(count).sum::<f32>() / (count as f32) / 1000.0;
+        format!("{:.1}", avg)
     }
 }
