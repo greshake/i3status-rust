@@ -29,6 +29,7 @@ pub struct Cpu {
     format: FormatTemplate,
     has_barchart: bool,
     has_frequency: bool,
+    per_core: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -60,6 +61,10 @@ pub struct CpuConfig {
     /// Format override
     #[serde(default = "CpuConfig::default_format")]
     pub format: String,
+
+    /// Compute the metrics (utilization and frequency) per core.
+    #[serde(default)]
+    pub per_core: bool,
 }
 
 impl CpuConfig {
@@ -114,6 +119,7 @@ impl ConfigBlock for Cpu {
                 .block_error("cpu", "Invalid format specified for cpu")?,
             has_frequency: format.contains("{frequency}"),
             has_barchart: format.contains("{barchart}"),
+            per_core: block_config.per_core,
         })
     }
 }
