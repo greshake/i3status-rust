@@ -7,6 +7,21 @@ To use a theme or icon set other than the default, add them to your configuratio
 theme = "solarized-dark"
 icons = "awesome"
 ```
+
+You can also use your own custom theme:
+
+```toml
+[theme]
+file = "<file>"
+```
+
+where `<file>` can be either (checked in this order):
+0. full path e.g. `"/home/foo/.custom_theme.toml"`
+1. file name e.g. `"custom_theme.toml"` (i3status-rs will look for it in `XDG_CONFIG_HOME`)
+2. file name e.g. `"custom_theme.toml"` (i3status-rs will look for it in `/usr/share/i3status-rs/themes`)
+
+Example theme file can be found in `example/theme/solarized-dark.toml`.
+
 # Available themes:
 * `plain` (default)
 * `solarized-dark`
