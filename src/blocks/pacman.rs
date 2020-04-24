@@ -112,22 +112,14 @@ fn run_command(var: &str) -> Result<()> {
 }
 
 fn has_command(command: &str) -> Result<bool> {
-    Ok(String::from_utf8(
-        Command::new("sh")
-            .args(&["-c", format!("type -p {}", command).as_ref()])
-            .output()
-            .block_error(
-                "pacman",
-                format!("failed to start command to check for {}", command).as_ref(),
-            )?
-            .stdout,
-    )
-    .block_error(
-        "pacman",
-        format!("failed to check for {}", command).as_ref(),
-    )?
-    .trim()
-        != "")
+    let exit_status = Command::new("sh")
+        .args(&["-c", format!("command -v {}", command).as_ref()])
+        .status()
+        .block_error(
+            "pacman",
+            format!("failed to start command to check for {}", command).as_ref(),
+        )?;
+    Ok(exit_status.success())
 }
 
 fn has_fake_root() -> Result<bool> {
