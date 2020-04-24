@@ -221,6 +221,12 @@ fn has_kernel_update(list_of_packages: &String) -> Result<bool> {
 
 impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
+        if !has_fake_root()? {
+            return Err(BlockError(
+                "pacman".to_string(),
+                "fakeroot not found".to_string(),
+            ));
+        }
         let packages_to_update = get_updated_package_list_to_update()?;
         let count = get_update_count(&packages_to_update)?;
         let values = map!("{count}" => count);
