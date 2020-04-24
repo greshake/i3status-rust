@@ -4,7 +4,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use dbus::{
     ffidisp::{MsgHandlerResult, MsgHandlerType},
@@ -70,8 +69,7 @@ fn setxkbmap_layouts() -> Result<String> {
     // Find the "layout:    xxxx" entry.
     let layout = output
         .split('\n')
-        .filter(|line| line.starts_with("layout"))
-        .next()
+        .find(|line| line.starts_with("layout"))
         .ok_or_else(|| {
             BlockError(
                 "keyboard_layout".to_string(),
@@ -109,7 +107,7 @@ impl LocaleBus {
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("locale", "Failed to establish D-Bus connection.")?;
 
-        Ok(LocaleBus { con: con })
+        Ok(LocaleBus { con })
     }
 }
 
@@ -218,14 +216,14 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
         let layouts_str = setxkbmap_layouts()?;
         let idx = *self.kbdd_layout_id.lock().unwrap();
 
-        let split = layouts_str.split(",").nth(idx as usize);
+        let split = layouts_str.split(',').nth(idx as usize);
 
         match split {
             //sometimes (after keyboard attach/detach) setxkbmap reports variant in the layout line,
             //e.g. 'layout:     us,bg:bas_phonetic,' instead of printing it in its own line,
             //there is no need to waste space for it, because in most cases there will be only one
             //variant per layout. TODO - add configuration option to show the variant?!
-            Some(s) => Ok(s.split(":").nth(0).unwrap().to_string()),
+            Some(s) => Ok(s.split(':').next().unwrap().to_string()),
 
             //'None' may happen only if keyboard map is being toggled (by window focus or keyboard)
             //and keyboard layout replaced (by calling setxkmap) at almost the same time,
@@ -281,7 +279,7 @@ struct KbddMessageHandler(Arc<Mutex<u32>>);
 
 impl dbus::ffidisp::MsgHandler for KbddMessageHandler {
     fn handler_type(&self) -> MsgHandlerType {
-        return dbus::ffidisp::MsgHandlerType::MsgType(dbus::MessageType::Signal);
+        dbus::ffidisp::MsgHandlerType::MsgType(dbus::MessageType::Signal)
     }
 
     fn handle_msg(&mut self, msg: &Message) -> Option<MsgHandlerResult> {
@@ -349,12 +347,13 @@ impl ConfigBlock for KeyboardLayout {
                 Box::new(monitor)
             }
         };
-        let update_interval = match monitor.must_poll() {
-            true => Some(block_config.interval),
-            false => None,
+        let update_interval = if monitor.must_poll() {
+            Some(block_config.interval)
+        } else {
+            None
         };
         Ok(KeyboardLayout {
-            id: id,
+            id,
             output: TextWidget::new(config),
             monitor,
             update_interval,

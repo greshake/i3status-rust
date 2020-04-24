@@ -99,7 +99,7 @@ impl ConfigBlock for IBus {
                 c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
                     .expect("Failed to add D-Bus message rule - has IBus interface changed?");
                 loop {
-                    for ci in c.iter(100000) {
+                    for ci in c.iter(100_000) {
                         if let Some(engine_name) = parse_msg(&ci) {
                             let mut engine = engine_original.lock().unwrap();
                             *engine = engine_name.to_string();
@@ -175,8 +175,7 @@ fn parse_msg(ci: &ConnectionItem) -> Option<&str> {
     if &*m.member().unwrap() != "GlobalEngineChanged" {
         return None;
     };
-    let engine = m.get1::<&str>();
-    engine
+    m.get1::<&str>()
 }
 
 // Gets the address being used by the currently running ibus daemon.
@@ -206,7 +205,7 @@ fn get_ibus_address() -> Result<String> {
         .map(|entry| entry.unwrap().file_name().into_string().unwrap())
         .collect();
 
-    if socket_files.len() == 0 {
+    if socket_files.is_empty() {
         return Err(BlockError(
             "ibus".to_string(),
             "Could not locate an IBus socket file.".to_string(),
@@ -237,7 +236,7 @@ fn get_ibus_address() -> Result<String> {
             .next()
             .block_error(
                 "ibus",
-                &format!("Could not find an IBus socket file matching $DISPLAY."),
+                &"Could not find an IBus socket file matching $DISPLAY.".to_string(),
             )?;
         socket_dir.join(candidate)
     };

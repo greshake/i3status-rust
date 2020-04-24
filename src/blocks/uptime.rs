@@ -72,7 +72,7 @@ impl Block for Uptime {
                 ));
             }
         };
-        let uptime = match uptime_raw.split_whitespace().nth(0) {
+        let uptime = match uptime_raw.split_whitespace().next() {
             Some(uptime) => uptime,
             None => {
                 return Err(BlockError(

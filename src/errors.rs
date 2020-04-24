@@ -124,6 +124,6 @@ where
     T: Send,
 {
     fn from(_err: ::crossbeam_channel::SendError<T>) -> Error {
-        InternalError("unknown".to_owned(), format!("send error"), None)
+        InternalError("unknown".to_string(), "send error".to_string(), None)
     }
 }
