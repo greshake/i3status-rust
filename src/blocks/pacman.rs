@@ -113,7 +113,10 @@ fn run_command(var: &str) -> Result<()> {
 
 fn has_command(command: &str) -> Result<bool> {
     let exit_status = Command::new("sh")
-        .args(&["-c", format!("command -v {}", command).as_ref()])
+        .args(&[
+            "-c",
+            format!("command -v {} >/dev/null 2>&1", command).as_ref(),
+        ])
         .status()
         .block_error(
             "pacman",
