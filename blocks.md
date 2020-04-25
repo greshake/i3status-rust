@@ -620,7 +620,7 @@ Key | Values | Required | Default
 
 ## Pacman
 
-Creates a block which displays the pending updates available on pacman.
+Creates a block which displays the pending updates available on pacman. Requires fakeroot to be installed.
 
 ### Examples
 
