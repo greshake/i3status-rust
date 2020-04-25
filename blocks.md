@@ -325,6 +325,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | One of `"setxkbmap"`, `"localebus"` or `"kbddbus"`, depending on your system. | No | `"setxkbmap"`
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
+`format` | Format string, e.g. " {layout}" | No | `"{layout}"`
 
 ## Load
 
