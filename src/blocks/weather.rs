@@ -1,6 +1,5 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use serde_json;
 use std::collections::HashMap;
 use std::env;
 use std::process::Command;
@@ -194,7 +193,7 @@ impl Weather {
                 ref city_id,
                 ..
             } => {
-                if let None = api_key {
+                if api_key.is_none() {
                     Err(BlockError(
                         "weather".to_string(),
                         format!(
@@ -202,7 +201,7 @@ impl Weather {
                             OPENWEATHERMAP_API_KEY_ENV.to_string()
                         ),
                     ))
-                } else if let None = city_id {
+                } else if city_id.is_none() {
                     Err(BlockError(
                         "weather".to_string(),
                         format!(

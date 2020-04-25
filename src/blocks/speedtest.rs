@@ -90,7 +90,7 @@ fn make_thread(
     thread::Builder::new()
         .name("speedtest".into())
         .spawn(move || loop {
-            if !recv.recv().is_err() {
+            if recv.recv().is_ok() {
                 if let Ok(output) = get_values(config.bytes) {
                     if let Ok(vals) = parse_values(&output) {
                         if vals.len() == 3 {

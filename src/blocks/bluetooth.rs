@@ -3,7 +3,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
 use uuid::Uuid;
 
@@ -76,10 +75,10 @@ impl BluetoothDevice {
             .ok();
 
         Ok(BluetoothDevice {
-            path: path,
-            icon: icon,
-            label: label.unwrap_or("".to_string()),
-            con: con,
+            path,
+            icon,
+            label: label.unwrap_or_else(|| "".to_string()),
+            con,
         })
     }
 
@@ -196,8 +195,8 @@ impl Block for Bluetooth {
     fn update(&mut self) -> Result<Option<Duration>> {
         let connected = self.device.connected();
         self.output.set_text(match connected {
-            true => format!("{}", self.device.label).to_string(),
-            false => format!("{} ×", self.device.label).to_string(),
+            true => self.device.label.to_string(),
+            false => self.device.label.to_string(),
         });
         self.output.set_state(match connected {
             true => State::Good,

@@ -77,11 +77,7 @@ impl NetworkDevice {
             // It seems more reasonable to treat these as inactive networks as
             // opposed to erroring out the entire block.
             Ok(false)
-        } else if self.tun {
-            Ok(true)
-        } else if self.wg {
-            Ok(true)
-        } else if self.ppp {
+        } else if self.tun || self.wg || self.ppp {
             Ok(true)
         } else {
             let operstate = read_file(&operstate_file)?;

@@ -12,7 +12,6 @@ use std::io::BufReader;
 use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
-use toml;
 
 pub fn xdg_config_home() -> PathBuf {
     // In the unlikely event that $HOME is not set, it doesn't really matter
@@ -207,10 +206,8 @@ pub fn format_percent_bar(percent: f32) -> String {
             let bucket_min = (index * 10) as f32;
             let fraction = percent - bucket_min;
             //println!("Fraction: {}", fraction);
-            if fraction < 0.0 {
+            if fraction < 1.25 {
                 '\u{2581}' // 1/8 block for empty so the whole bar is always visible
-            } else if fraction < 1.25 {
-                '\u{2581}' // 1/8 block
             } else if fraction < 2.5 {
                 '\u{2582}' // 2/8 block
             } else if fraction < 3.75 {
@@ -236,10 +233,10 @@ pub fn add_colors(a: &str, b: &str) -> ::std::result::Result<String, ParseIntErr
     let (r_b, g_b, b_b, a_b) = color_from_rgba(b)?;
 
     Ok(color_to_rgba((
-        r_a.checked_add(r_b).unwrap_or(255),
-        g_a.checked_add(g_b).unwrap_or(255),
-        b_a.checked_add(b_b).unwrap_or(255),
-        a_a.checked_add(a_b).unwrap_or(255),
+        r_a.saturating_add(r_b),
+        g_a.saturating_add(g_b),
+        b_a.saturating_add(b_b),
+        a_a.saturating_add(a_b),
     )))
 }
 

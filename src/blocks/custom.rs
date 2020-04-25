@@ -1,6 +1,5 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use serde_json;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
@@ -123,7 +122,7 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let raw_output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+        let raw_output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
