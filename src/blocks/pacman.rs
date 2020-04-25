@@ -16,7 +16,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
+use crate::util::{FormatTemplate, has_command};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -111,22 +111,8 @@ fn run_command(var: &str) -> Result<()> {
         .map(|_| ())
 }
 
-fn has_command(command: &str) -> Result<bool> {
-    let exit_status = Command::new("sh")
-        .args(&[
-            "-c",
-            format!("command -v {} >/dev/null 2>&1", command).as_ref(),
-        ])
-        .status()
-        .block_error(
-            "pacman",
-            format!("failed to start command to check for {}", command).as_ref(),
-        )?;
-    Ok(exit_status.success())
-}
-
 fn has_fake_root() -> Result<bool> {
-    has_command("fakeroot")
+    has_command("pacman", "fakeroot")
 }
 
 fn get_updates_db_dir() -> Result<String> {
@@ -259,28 +245,5 @@ impl Block for Pacman {
         }
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::blocks::pacman::has_command;
-
-    #[test]
-    // we assume sh is always available
-    fn test_has_command_ok() {
-        let has_command = has_command("sh");
-        assert!(has_command.is_ok());
-        let has_command = has_command.unwrap();
-        assert!(has_command);
-    }
-
-    #[test]
-    // we assume thequickbrownfoxjumpsoverthelazydog command does not exist
-    fn test_has_command_err() {
-        let has_command = has_command("thequickbrownfoxjumpsoverthelazydog");
-        assert!(has_command.is_ok());
-        let has_command = has_command.unwrap();
-        assert!(!has_command)
     }
 }
