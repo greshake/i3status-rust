@@ -111,17 +111,22 @@ fn run_command(var: &str) -> Result<()> {
         .map(|_| ())
 }
 
+fn has_command(command: &str) -> Result<bool> {
+    let exit_status = Command::new("sh")
+        .args(&[
+            "-c",
+            format!("command -v {} >/dev/null 2>&1", command).as_ref(),
+        ])
+        .status()
+        .block_error(
+            "pacman",
+            format!("failed to start command to check for {}", command).as_ref(),
+        )?;
+    Ok(exit_status.success())
+}
+
 fn has_fake_root() -> Result<bool> {
-    Ok(String::from_utf8(
-        Command::new("sh")
-            .args(&["-c", "type -P fakeroot"])
-            .output()
-            .block_error("pacman", "failed to start command to check for fakeroot")?
-            .stdout,
-    )
-    .block_error("pacman", "failed to check for fakeroot")?
-    .trim()
-        != "")
+    has_command("fakeroot")
 }
 
 fn get_updates_db_dir() -> Result<String> {
@@ -211,6 +216,12 @@ fn has_kernel_update(list_of_packages: &String) -> Result<bool> {
 
 impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
+        if !has_fake_root()? {
+            return Err(BlockError(
+                "pacman".to_string(),
+                "fakeroot not found".to_string(),
+            ));
+        }
         let packages_to_update = get_updated_package_list_to_update()?;
         let count = get_update_count(&packages_to_update)?;
         let values = map!("{count}" => count);
@@ -248,5 +259,28 @@ impl Block for Pacman {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::blocks::pacman::has_command;
+
+    #[test]
+    // we assume sh is always available
+    fn test_has_command_ok() {
+        let has_command = has_command("sh");
+        assert!(has_command.is_ok());
+        let has_command = has_command.unwrap();
+        assert!(has_command);
+    }
+
+    #[test]
+    // we assume thequickbrownfoxjumpsoverthelazydog command does not exist
+    fn test_has_command_err() {
+        let has_command = has_command("thequickbrownfoxjumpsoverthelazydog");
+        assert!(has_command.is_ok());
+        let has_command = has_command.unwrap();
+        assert!(!has_command)
     }
 }
