@@ -214,7 +214,7 @@ impl Theme {
     pub fn from_file(file: &str) -> Option<Theme> {
         let full_path = Path::new(file);
         let xdg_path = util::xdg_config_home()
-            .join("i3status-rs/themes")
+            .join("i3status-rust/themes")
             .join(file);
         let share_path = Path::new(util::USR_SHARE_PATH).join("themes").join(file);
 

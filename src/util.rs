@@ -14,7 +14,7 @@ use std::prelude::v1::String;
 use std::process::Command;
 use toml;
 
-pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rs";
+pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 
 pub fn xdg_config_home() -> PathBuf {
     // In the unlikely event that $HOME is not set, it doesn't really matter
