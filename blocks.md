@@ -520,6 +520,8 @@ Key | Values | Required | Default
 Creates a block which displays the upload and download throughput for a network interface. Units are by default in bytes per second (kB/s, MB/s, etc), 
 but the 'use_bits' flag can be set to `true` to convert the units to bps (little b).
 
+Note: `bitrate` for wired devices requires `ethtool` to be installed
+
 ### Examples
 
 ```toml
