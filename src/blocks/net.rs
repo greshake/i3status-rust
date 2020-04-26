@@ -239,20 +239,25 @@ impl NetworkDevice {
     /// Queries the bitrate of this device (using `iwlist`)
     pub fn bitrate(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
-        if !self.wireless || !up {
+        if !up {
             return Err(BlockError(
                 "net".to_string(),
-                "Bitrate is only available for connected wireless devices.".to_string(),
+                "Bitrate is only available for connected devices.".to_string(),
             ));
         }
+        let command = if self.wireless {
+            format!(
+                "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
+                self.device
+            )
+        } else {
+            format!(
+                "ethtool {} 2>/dev/null | awk '/Speed:/ {{print $2}}'",
+                self.device
+            )
+        };
         let mut bitrate_output = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!(
-                    "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
-                    self.device
-                ),
-            ])
+            .args(&["-c", &command])
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
