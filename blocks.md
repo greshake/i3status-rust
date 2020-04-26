@@ -657,6 +657,8 @@ Creates a block which displays the volume level (according to PulseAudio or ALSA
 
 Requires a PulseAudio installation or `alsa-utils` for ALSA.
 
+The ALSA device name can be found in the output of `amixer`, e.g. 'Master'.
+
 PulseAudio support is a feature and can be turned on (`--features "pulseaudio"`) / off (`--no-default-features`) during build with `cargo`.
 If PulseAudio support is enabled the `"auto"` driver will first try to connect to PulseAudio and then fallback to ALSA on error.
 
