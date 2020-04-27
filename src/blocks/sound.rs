@@ -120,7 +120,7 @@ impl SoundDevice for AlsaSoundDevice {
         let volume = max(0, self.volume as i32 + step) as u32;
 
         Command::new("amixer")
-            .args(&["set", &self.name, &format!("{}%", volume)])
+            .args(&["-M", "set", &self.name, &format!("{}%", volume)])
             .output()
             .block_error("sound", "failed to set volume")?;
 
