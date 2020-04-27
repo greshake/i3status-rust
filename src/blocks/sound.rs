@@ -674,7 +674,7 @@ impl Sound {
                     self.text
                         .set_text(format!("{} {}", icon, format_percent_bar(volume as f32)));
                 } else {
-                    self.text.set_text(format!("{} {:02}%", icon, volume));
+                    self.text.set_text(format!("{} {}", icon, text));
                 }
             } else {
                 self.text.set_text(icon);
@@ -690,7 +690,7 @@ impl Sound {
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
-                format!("{:02}%", volume)
+                format!("{}", text)
             });
             self.text.set_state(State::Idle);
         }
