@@ -35,6 +35,10 @@ pub struct NvidiaGpu {
     fan_speed_controlled: bool,
     show_clocks: Option<TextWidget>,
     scrolling: Scrolling,
+    maximum_idle: u64,
+    maximum_good: u64,
+    maximum_info: u64,
+    maximum_warning: u64,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -74,6 +78,22 @@ pub struct NvidiaGpuConfig {
     /// GPU clocks. In percents.
     #[serde(default = "NvidiaGpuConfig::default_show_clocks")]
     pub show_clocks: bool,
+
+    /// Maximum temperature, below which state is set to idle
+    #[serde(default = "NvidiaGpuConfig::default_idle")]
+    pub idle: u64,
+
+    /// Maximum temperature, below which state is set to good
+    #[serde(default = "NvidiaGpuConfig::default_good")]
+    pub good: u64,
+
+    /// Maximum temperature, below which state is set to info
+    #[serde(default = "NvidiaGpuConfig::default_info")]
+    pub info: u64,
+
+    /// Maximum temperature, below which state is set to warning
+    #[serde(default = "NvidiaGpuConfig::default_warning")]
+    pub warning: u64,
 }
 
 impl NvidiaGpuConfig {
@@ -107,6 +127,22 @@ impl NvidiaGpuConfig {
 
     fn default_show_clocks() -> bool {
         false
+    }
+
+    fn default_idle() -> u64 {
+        50
+    }
+
+    fn default_good() -> u64 {
+        70
+    }
+
+    fn default_info() -> u64 {
+        75
+    }
+
+    fn default_warning() -> u64 {
+        80
     }
 }
 
@@ -178,6 +214,10 @@ impl ConfigBlock for NvidiaGpu {
             },
 
             scrolling,
+            maximum_idle: block_config.idle,
+            maximum_good: block_config.good,
+            maximum_info: block_config.info,
+            maximum_warning: block_config.warning,
         })
     }
 }
@@ -233,10 +273,10 @@ impl Block for NvidiaGpu {
         if let Some(ref mut temperature_widget) = self.show_temperature {
             let temp = result[count].parse::<u64>().unwrap();
             temperature_widget.set_state(match temp {
-                0..=50 => State::Good,
-                51..=70 => State::Idle,
-                71..=75 => State::Info,
-                76..=80 => State::Warning,
+                t if t <= self.maximum_idle => State::Idle,
+                t if t <= self.maximum_good => State::Good,
+                t if t <= self.maximum_info => State::Info,
+                t if t <= self.maximum_warning => State::Warning,
                 _ => State::Critical,
             });
             temperature_widget.set_text(format!("{:02}°C", temp));
