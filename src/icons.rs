@@ -27,8 +27,7 @@ lazy_static! {
         "volume_full" => " VOL ",
         "volume_half" => " VOL ",
         "volume_empty" => " VOL ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "volume_muted" => "MUTED",
+        "volume_muted" => " VOL MUTED ",
         "thermometer" => " TEMP ",
         "xrandr" => " SCREEN ",
         "net_up" => " UP ",
@@ -71,7 +70,7 @@ lazy_static! {
         "cogs" => " \u{f085} ",
         "memory_mem" => " \u{f2db} ",
         "memory_swap" => " \u{f0a0} ",
-        "cpu" => " \u{f0e4} ",
+        "cpu" => " \u{f3fd} ",
         "bat_half" => " \u{f242} ",
         "bat_full" => " \u{f240} ",
         "bat_charging" => " \u{f1e6} ",
@@ -85,18 +84,17 @@ lazy_static! {
         "volume_full" => " \u{f028} ",
         "volume_half" => " \u{f027} ",
         "volume_empty" => " \u{f026} ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "volume_muted" => "\u{f00d}",
+        "volume_muted" => " \u{f6a9} ",
         "thermometer" => " \u{f2c8} ",
         "xrandr" => " \u{f26c} ",
-        "net_up" => " \u{2b06} ",
-        "net_down" => " \u{2b07} ",
+        "net_up" => " \u{f093} ",
+        "net_down" => " \u{f019} ",
         "net_wireless" => " \u{f1eb} ",
-        "net_wired" => " \u{f0ac} ",
+        "net_wired" => " \u{f6ff} ",
         "net_bridge" => " \u{f0e8} ",
         "net_vpn" => " \u{f023} ",
         "net_modem" => " \u{f095} ",
-        "ping" => " \u{21ba} ",
+        "ping" => " \u{f362} ",
         "backlight_empty" => " \u{1f315} ",
         "backlight_partial1" => " \u{1f314} ",
         "backlight_partial2" => " \u{1f313} ",
@@ -109,8 +107,7 @@ lazy_static! {
         "weather_rain" => " \u{f043} ",
         // Cloud symbol as default
         "weather_default" => " \u{f0c2} ",
-        // Same as time symbol.
-        "uptime" => " \u{f017} ",
+        "uptime" => " \u{f2f2} ",
         "gpu" => " \u{f26c} ",
         "mail" => " \u{f0e0} ",
         "bluetooth" => " \u{f294}",
@@ -148,8 +145,7 @@ lazy_static! {
         "volume_full" => " \u{e050} ",
         "volume_half" => " \u{e04d} ",
         "volume_empty" => " \u{e04e} ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "volume_muted" => "\u{e04f}",
+        "volume_muted" => " \u{e04e} \u{e04f} ",
         "thermometer" => " \u{f2c8} ", // TODO
         "xrandr" => " \u{e31e} ",
         // Same as time symbol.
