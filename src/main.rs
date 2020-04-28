@@ -29,14 +29,12 @@ use std::time::Duration;
 use crate::blocks::Block;
 
 use crate::blocks::create_block;
-use crate::config::Config;
+use crate::config::{load_config, Config};
 use crate::errors::*;
 use crate::input::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-
-use crate::util::deserialize_file;
 
 use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
@@ -114,7 +112,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         Some(config_path) => std::path::PathBuf::from(config_path),
         None => util::xdg_config_home().join("i3status-rust/config.toml"),
     };
-    let config: Config = deserialize_file(config_path.to_str().unwrap())?;
+    let config = load_config(&config_path)?;
 
     // Update request channel
     let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =

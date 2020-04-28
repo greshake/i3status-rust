@@ -9,16 +9,19 @@ use std::fmt::Display;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
+use std::process::Command;
+use toml;
+
+pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 
 pub fn xdg_config_home() -> PathBuf {
     // In the unlikely event that $HOME is not set, it doesn't really matter
     // what we fall back on, so use /.config.
     let config_path = std::env::var("XDG_CONFIG_HOME").unwrap_or(format!(
         "{}/.config",
-        std::env::var("HOME").unwrap_or("".to_string())
+        std::env::var("HOME").unwrap_or_else(|_| "".to_string())
     ));
     PathBuf::from(&config_path)
 }
@@ -58,6 +61,20 @@ pub fn get_file(name: &str) -> Result<String> {
     file.read_to_string(&mut file_contents)
         .internal_error("util", &format!("Unable to read {}", name))?;
     Ok(file_contents)
+}
+
+pub fn has_command(block_name: &str, command: &str) -> Result<bool> {
+    let exit_status = Command::new("sh")
+        .args(&[
+            "-c",
+            format!("command -v {} >/dev/null 2>&1", command).as_ref(),
+        ])
+        .status()
+        .block_error(
+            block_name,
+            format!("failed to start command to check for {}", command).as_ref(),
+        )?;
+    Ok(exit_status.success())
 }
 
 macro_rules! match_range {
@@ -149,7 +166,10 @@ pub fn print_blocks(
             "full_text": config.theme.separator,
             "separator": false,
             "separator_block_width": 0,
-            "background": if sep_bg.is_some() { Value::String(sep_bg.unwrap()) } else { Value::Null },
+            "background": match sep_bg {
+                Some(bg) => Value::String(bg),
+                None => Value::Null
+            },
             "color": sep_fg,
             "markup": "pango"
         });
@@ -181,11 +201,13 @@ pub fn print_blocks(
     Ok(())
 }
 
-pub fn color_from_rgba(color: &str) -> ::std::result::Result<(u8, u8, u8, u8), ParseIntError> {
+pub fn color_from_rgba(
+    color: &str,
+) -> ::std::result::Result<(u8, u8, u8, u8), Box<dyn std::error::Error>> {
     Ok((
-        u8::from_str_radix(&color[1..3], 16)?,
-        u8::from_str_radix(&color[3..5], 16)?,
-        u8::from_str_radix(&color[5..7], 16)?,
+        u8::from_str_radix(&color.get(1..3).ok_or("invalid rgba color")?, 16)?,
+        u8::from_str_radix(&color.get(3..5).ok_or("invalid rgba color")?, 16)?,
+        u8::from_str_radix(&color.get(5..7).ok_or("invalid rgba color")?, 16)?,
         u8::from_str_radix(&color.get(7..9).unwrap_or("FF"), 16)?,
     ))
 }
@@ -228,7 +250,7 @@ pub fn format_percent_bar(percent: f32) -> String {
 }
 
 // TODO: Allow for other non-additive tints
-pub fn add_colors(a: &str, b: &str) -> ::std::result::Result<String, ParseIntError> {
+pub fn add_colors(a: &str, b: &str) -> ::std::result::Result<String, Box<dyn std::error::Error>> {
     let (r_a, g_a, b_a, a_a) = color_from_rgba(a)?;
     let (r_b, g_b, b_b, a_b) = color_from_rgba(b)?;
 
@@ -343,26 +365,49 @@ macro_rules! if_debug {
     ($x:block) => (if cfg!(debug_assertions) $x)
 }
 
-macro_rules! mapped_struct {
-    ($( #[$attr:meta] )* pub struct $name:ident : $fieldtype:ty { $( pub $fname:ident ),* }) => {
-        $( #[$attr] )*
-        pub struct $name {
-            $( pub $fname : $fieldtype ),*
-        }
+#[cfg(test)]
+mod tests {
+    use crate::util::{color_from_rgba, has_command};
 
-        impl $name {
-            #[allow(dead_code)]
-            pub fn map(&self) -> ::std::collections::HashMap<&'static str, &$fieldtype> {
-                let mut m = ::std::collections::HashMap::new();
-                $( m.insert(stringify!($fname), &self.$fname); )*
-                m
-            }
+    #[test]
+    // we assume sh is always available
+    fn test_has_command_ok() {
+        let has_command = has_command("none", "sh");
+        assert!(has_command.is_ok());
+        let has_command = has_command.unwrap();
+        assert!(has_command);
+    }
 
-            pub fn owned_map(&self) -> ::std::collections::HashMap<String, $fieldtype> {
-                let mut m = ::std::collections::HashMap::new();
-                $( m.insert(stringify!($fname).to_owned(), self.$fname.to_owned()); )*
-                m
-            }
-        }
+    #[test]
+    // we assume thequickbrownfoxjumpsoverthelazydog command does not exist
+    fn test_has_command_err() {
+        let has_command = has_command("none", "thequickbrownfoxjumpsoverthelazydog");
+        assert!(has_command.is_ok());
+        let has_command = has_command.unwrap();
+        assert!(!has_command)
+    }
+    #[test]
+    fn test_color_from_rgba() {
+        let valid_rgb = "#AABBCC"; //rgb
+        let rgba = color_from_rgba(valid_rgb);
+        assert!(rgba.is_ok());
+        assert_eq!(rgba.unwrap(), (0xAA, 0xBB, 0xCC, 0xFF));
+        let valid_rgba = "#AABBCC00"; // rgba
+        let rgba = color_from_rgba(valid_rgba);
+        assert!(rgba.is_ok());
+        assert_eq!(rgba.unwrap(), (0xAA, 0xBB, 0xCC, 0x00));
+    }
+
+    #[test]
+    fn test_color_from_rgba_invalid() {
+        let invalid = "invalid";
+        let rgba = color_from_rgba(invalid);
+        assert!(rgba.is_err());
+        let invalid = "AA"; // too short
+        let rgba = color_from_rgba(invalid);
+        assert!(rgba.is_err());
+        let invalid = "AABBCC"; // invalid rgba (missing #)
+        let rgba = color_from_rgba(invalid);
+        assert!(rgba.is_err());
     }
 }
