@@ -27,6 +27,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::format_percent_bar;
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -562,6 +563,7 @@ pub struct Sound {
     id: String,
     device: Box<dyn SoundDevice>,
     step_width: u32,
+    format: FormatTemplate,
     config: Config,
     on_click: Option<String>,
     show_volume_when_muted: bool,
@@ -583,6 +585,11 @@ pub struct SoundConfig {
     /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
     #[serde(default = "SoundConfig::default_step_width")]
     pub step_width: u32,
+
+    /// Format string for displaying sound information.
+    /// placeholders: {volume}
+    #[serde(default = "SoundConfig::default_format")]
+    pub format: String,
 
     #[serde(default = "SoundConfig::default_on_click")]
     pub on_click: Option<String>,
@@ -625,6 +632,10 @@ impl SoundConfig {
         5
     }
 
+    fn default_format() -> String {
+        "{volume}%".into()
+    }
+
     fn default_on_click() -> Option<String> {
         None
     }
@@ -647,6 +658,9 @@ impl Sound {
         self.device.get_info()?;
 
         let volume = self.device.volume();
+        let values = map!("{volume}" => format!("{:02}", volume));
+        let text = self.format.render_static_str(&values)?;
+
         if self.device.muted() {
             self.text.set_icon("volume_empty");
             let icon = self
@@ -660,11 +674,12 @@ impl Sound {
                     self.text
                         .set_text(format!("{} {}", icon, format_percent_bar(volume as f32)));
                 } else {
-                    self.text.set_text(format!("{} {:02}%", icon, volume));
+                    self.text.set_text(format!("{} {}", icon, text));
                 }
             } else {
                 self.text.set_text(icon);
             }
+
             self.text.set_state(State::Warning);
         } else {
             self.text.set_icon(match volume {
@@ -675,7 +690,7 @@ impl Sound {
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
-                format!("{:02}%", volume)
+                format!("{}", text)
             });
             self.text.set_state(State::Idle);
         }
@@ -726,6 +741,7 @@ impl ConfigBlock for Sound {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
             device,
+            format: FormatTemplate::from_string(&block_config.format)?,
             step_width,
             config,
             on_click: block_config.on_click,
