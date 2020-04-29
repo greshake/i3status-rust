@@ -63,14 +63,18 @@ trait SoundDevice {
 
 struct AlsaSoundDevice {
     name: String,
+    device: String,
+    natural_mapping: bool,
     volume: u32,
     muted: bool,
 }
 
 impl AlsaSoundDevice {
-    fn new(name: String) -> Result<Self> {
+    fn new(name: String, device: String, natural_mapping: bool) -> Result<Self> {
         let mut sd = AlsaSoundDevice {
             name,
+            device,
+            natural_mapping,
             volume: 0,
             muted: false,
         };
@@ -89,8 +93,14 @@ impl SoundDevice for AlsaSoundDevice {
     }
 
     fn get_info(&mut self) -> Result<()> {
+        let mut args = Vec::new();
+        if self.natural_mapping {
+            args.push("-M")
+        };
+        args.extend(&["-D", &self.device, "get", &self.name]);
+
         let output = Command::new("amixer")
-            .args(&["-M", "get", &self.name])
+            .args(&args)
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .block_error("sound", "could not run amixer to get sound info")?;
@@ -120,8 +130,15 @@ impl SoundDevice for AlsaSoundDevice {
     fn set_volume(&mut self, step: i32) -> Result<()> {
         let volume = max(0, self.volume as i32 + step) as u32;
 
+        let mut args = Vec::new();
+        if self.natural_mapping {
+            args.push("-M")
+        };
+        let vol_str = &format!("{}%", volume);
+        args.extend(&["-D", &self.device, "set", &self.name, &vol_str]);
+
         Command::new("amixer")
-            .args(&["set", &self.name, &format!("{}%", volume)])
+            .args(&args)
             .output()
             .block_error("sound", "failed to set volume")?;
 
@@ -131,8 +148,14 @@ impl SoundDevice for AlsaSoundDevice {
     }
 
     fn toggle(&mut self) -> Result<()> {
+        let mut args = Vec::new();
+        if self.natural_mapping {
+            args.push("-M")
+        };
+        args.extend(&["-D", &self.device, "set", &self.name, "toggle"]);
+
         Command::new("amixer")
-            .args(&["set", &self.name, "toggle"])
+            .args(&args)
             .output()
             .block_error("sound", "failed to toggle mute")?;
 
@@ -578,9 +601,18 @@ pub struct SoundConfig {
     #[serde(default = "SoundDriver::default")]
     pub driver: SoundDriver,
 
-    /// ALSA / PulseAudio sound device name
+    /// PulseAudio device name, or
+    /// ALSA control name as listed in the output of `amixer -D yourdevice scontrols` (default is "Master")
     #[serde(default = "SoundConfig::default_name")]
     pub name: Option<String>,
+
+    /// ALSA device name, usually in the form "hw:#" where # is the number of the card desired (default is "default")
+    #[serde(default = "SoundConfig::default_device")]
+    pub device: Option<String>,
+
+    /// Use the mapped volume for evaluating the percentage representation like alsamixer, to be more natural for human ear
+    #[serde(default = "SoundConfig::default_natural_mapping")]
+    pub natural_mapping: bool,
 
     /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
     #[serde(default = "SoundConfig::default_step_width")]
@@ -626,6 +658,14 @@ impl Default for SoundDriver {
 impl SoundConfig {
     fn default_name() -> Option<String> {
         None
+    }
+
+    fn default_device() -> Option<String> {
+        None
+    }
+
+    fn default_natural_mapping() -> bool {
+        false
     }
 
     fn default_step_width() -> u32 {
@@ -729,11 +769,13 @@ impl ConfigBlock for Sound {
             )),
         };
 
-        // prefere PulseAudio if available and selected, fallback to ALSA
+        // prefer PulseAudio if available and selected, fallback to ALSA
         let device: Box<dyn SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
             Err(_) => Box::new(AlsaSoundDevice::new(
                 block_config.name.unwrap_or_else(|| "Master".into()),
+                block_config.device.unwrap_or_else(|| "default".into()),
+                block_config.natural_mapping,
             )?),
         };
 
