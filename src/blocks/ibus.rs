@@ -164,7 +164,7 @@ impl Block for IBus {
 }
 
 fn parse_msg(ci: &ConnectionItem) -> Option<&str> {
-    let m = if let &ConnectionItem::Signal(ref s) = ci {
+    let m = if let ConnectionItem::Signal(ref s) = *ci {
         s
     } else {
         return None;

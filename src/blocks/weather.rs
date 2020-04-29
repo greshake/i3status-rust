@@ -146,7 +146,7 @@ impl Weather {
 
                 let raw_wind_direction: Option<f64> = json
                     .pointer("/wind/deg")
-                    .map_or(Some(None), |v| v.as_f64().and_then(|v| Some(Some(v)))) // provide default value None
+                    .map_or(Some(None), |v| v.as_f64().map(Some)) // provide default value None
                     .ok_or_else(malformed_json_error)?; // error when conversion to f64 fails
 
                 let raw_location = json

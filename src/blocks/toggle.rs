@@ -90,7 +90,7 @@ impl ConfigBlock for Toggle {
 
 impl Block for Toggle {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+        let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &self.command_state])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
@@ -127,7 +127,7 @@ impl Block for Toggle {
                     &self.command_on
                 };
 
-                Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
                     .args(&["-c", cmd])
                     .output()
                     .block_error("toggle", "failed to run toggle command")?;
