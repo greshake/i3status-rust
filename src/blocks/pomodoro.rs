@@ -140,7 +140,7 @@ impl Block for Pomodoro {
 
                     self.state = State::OnBreak;
                     self.elapsed = 0;
-                    self.count = self.count + 1;
+                    self.count += 1;
                 }
             }
             State::OnBreak => {

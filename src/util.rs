@@ -12,7 +12,6 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
-use toml;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 

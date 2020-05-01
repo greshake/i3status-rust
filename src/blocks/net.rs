@@ -529,11 +529,12 @@ fn read_file(path: &Path) -> Result<String> {
 
 fn convert_speed(speed: u64, use_bits: bool) -> (f64, &'static str) {
     let mut multiplier = 1;
-    let mut b = "B";
-    if use_bits {
+    let b = if use_bits {
         multiplier = 8;
-        b = "b";
-    }
+        "b"
+    } else {
+        "B"
+    };
     // the values for the match are so the speed doesn't go above 3 characters
     let (speed, unit) = match speed {
         x if (x * multiplier) > 999_999_999 => (speed as f64 / 1_000_000_000.0, "G"),
@@ -570,34 +571,34 @@ impl Block for Net {
         if now.duration_since(self.last_update).as_secs() % 10 == 0 {
             if let Some(ref mut bitrate_widget) = self.bitrate {
                 let bitrate = self.device.bitrate()?;
-                if bitrate.is_some() {
-                    bitrate_widget.set_text(bitrate.unwrap());
+                if let Some(b) = bitrate {
+                    bitrate_widget.set_text(b);
                 }
             }
         }
         if now.duration_since(self.last_update).as_secs() > 30 {
             if let Some(ref mut ssid_widget) = self.ssid {
                 let ssid = self.device.ssid()?;
-                if ssid.is_some() {
-                    let mut truncated = ssid.unwrap();
+                if let Some(s) = ssid {
+                    let mut truncated = s;
                     truncated.truncate(self.max_ssid_width);
                     ssid_widget.set_text(truncated);
                 }
             }
             if let Some(ref mut signal_strength_widget) = self.signal_strength {
                 let value = self.device.relative_signal_strength()?;
-                if value.is_some() {
+                if let Some(v) = value {
                     signal_strength_widget.set_text(if self.signal_strength_bar {
-                        format_percent_bar(value.unwrap() as f32)
+                        format_percent_bar(v as f32)
                     } else {
-                        format!("{}%", value.unwrap())
+                        format!("{}%", v)
                     });
                 }
             }
             if let Some(ref mut ip_addr_widget) = self.ip_addr {
                 let ip_addr = self.device.ip_addr()?;
-                if ip_addr.is_some() {
-                    ip_addr_widget.set_text(ip_addr.unwrap());
+                if let Some(ip) = ip_addr {
+                    ip_addr_widget.set_text(ip);
                 }
             }
             self.last_update = now;
@@ -605,10 +606,7 @@ impl Block for Net {
 
         // allow us to display bits or bytes
         // dependent on user's config setting
-        let mut multiplier = 1.0;
-        if self.use_bits {
-            multiplier = 8.0;
-        }
+        let multiplier = if self.use_bits { 8.0 } else { 1.0 };
         // TODO: consider using `as_nanos`
         // Update the throughout/graph widgets if they are enabled
         let update_interval = (self.update_interval.as_secs() as f64)

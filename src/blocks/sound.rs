@@ -279,10 +279,12 @@ impl PulseAudioConnection {
                 PulseState::Ready => {
                     break;
                 }
-                PulseState::Failed | PulseState::Terminated => Err(BlockError(
-                    "sound".into(),
-                    "pulseaudio context state failed/terminated".into(),
-                ))?,
+                PulseState::Failed | PulseState::Terminated => {
+                    return Err(BlockError(
+                        "sound".into(),
+                        "pulseaudio context state failed/terminated".into(),
+                    ))
+                }
                 _ => {}
             }
         }
@@ -730,7 +732,7 @@ impl Sound {
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
-                format!("{}", text)
+                text.to_string()
             });
             self.text.set_state(State::Idle);
         }

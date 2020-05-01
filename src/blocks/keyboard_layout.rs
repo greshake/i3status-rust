@@ -90,7 +90,7 @@ fn setxkbmap_layouts() -> Result<String> {
 
 impl KeyboardLayoutMonitor for SetXkbMap {
     fn keyboard_layout(&self) -> Result<String> {
-        return setxkbmap_layouts();
+        setxkbmap_layouts()
     }
 
     fn must_poll(&self) -> bool {

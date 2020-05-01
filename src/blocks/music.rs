@@ -152,10 +152,12 @@ impl ConfigBlock for Music {
                             .with_state(State::Info),
                     )
                 }
-                x => Err(BlockError(
-                    "music".to_owned(),
-                    format!("unknown music button identifier: '{}'", x),
-                ))?,
+                x => {
+                    return Err(BlockError(
+                        "music".to_owned(),
+                        format!("unknown music button identifier: '{}'", x),
+                    ))
+                }
             };
         }
 
@@ -304,12 +306,10 @@ impl Block for Music {
                 elements.push(next);
             }
             elements
+        } else if self.current_song.is_empty() {
+            vec![&self.on_collapsed_click_widget]
         } else {
-            if self.current_song.is_empty() {
-                vec![&self.on_collapsed_click_widget]
-            } else {
-                vec![&self.current_song]
-            }
+            vec![&self.current_song]
         }
     }
 }

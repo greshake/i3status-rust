@@ -96,10 +96,11 @@ impl ConfigBlock for Cpu {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut format = block_config.format;
-        if block_config.frequency {
-            format = "{utilization}% {frequency}GHz".into();
-        }
+        let format = if block_config.frequency {
+            "{utilization}% {frequency}GHz".into()
+        } else {
+            block_config.format
+        };
 
         Ok(Cpu {
             id: Uuid::new_v4().to_simple().to_string(),

@@ -101,9 +101,10 @@ impl BluetoothDevice {
     }
 
     pub fn toggle(&self) -> Result<()> {
-        let method = match self.connected() {
-            true => "Disconnect",
-            false => "Connect",
+        let method = if self.connected() {
+            "Disconnect"
+        } else {
+            "Connect"
         };
         let msg =
             dbus::Message::new_method_call("org.bluez", &self.path, "org.bluez.Device1", method)
@@ -194,14 +195,9 @@ impl Block for Bluetooth {
 
     fn update(&mut self) -> Result<Option<Duration>> {
         let connected = self.device.connected();
-        self.output.set_text(match connected {
-            true => self.device.label.to_string(),
-            false => self.device.label.to_string(),
-        });
-        self.output.set_state(match connected {
-            true => State::Good,
-            false => State::Idle,
-        });
+        self.output.set_text(self.device.label.to_string());
+        self.output
+            .set_state(if connected { State::Good } else { State::Idle });
 
         // Use battery info, when available.
         if let Some(value) = self.device.battery() {
