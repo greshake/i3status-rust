@@ -81,7 +81,17 @@ impl NetworkDevice {
             Ok(true)
         } else {
             let operstate = read_file(&operstate_file)?;
-            Ok(operstate == "up")
+            let carrier_file = self.device_path.join("carrier");
+            if !carrier_file.exists() {
+                Ok(operstate == "up")
+            } else {
+                if operstate == "up" {
+                    Ok(true)
+                } else {
+                    let carrier = read_file(&carrier_file)?;
+                    Ok(carrier == "1")
+                }
+            }
         }
     }
 
