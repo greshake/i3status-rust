@@ -72,18 +72,21 @@ impl NetworkDevice {
     /// A default device is usually selected by the network manager
     /// and will change when the status of devices change.
     pub fn default_device() -> Option<String> {
-        String::from_utf8(Command::new("sh")
-            .args(&[
-                "-c",
-                "ip route show default|head -n1|sed -n 's/^default.*dev \\(\\w*\\).*/\\1/p'"
-            ])
-            .output()
-            .ok()
-            .map(|o| {
-                let mut v = o.stdout;
-                v.pop(); // remove newline
-                v})?
-            ).ok()
+        String::from_utf8(
+            Command::new("sh")
+                .args(&[
+                    "-c",
+                    "ip route show default|head -n1|sed -n 's/^default.*dev \\(\\w*\\).*/\\1/p'",
+                ])
+                .output()
+                .ok()
+                .map(|o| {
+                    let mut v = o.stdout;
+                    v.pop(); // remove newline
+                    v
+                })?,
+        )
+        .ok()
     }
 
     /// Check whether the device exists.
@@ -602,8 +605,10 @@ impl Block for Net {
             if self.device.device() != dev {
                 self.device = NetworkDevice::from_device(dev);
                 self.network.set_icon(if self.device.is_wireless() {
-                    "net_wireless" } else if self.device.is_vpn() {
-                    "net_vpn" } else {
+                    "net_wireless"
+                } else if self.device.is_vpn() {
+                    "net_vpn"
+                } else {
                     "net_wired"
                 });
             }
