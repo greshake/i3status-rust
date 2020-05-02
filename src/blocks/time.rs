@@ -5,7 +5,7 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::{deserialize_duration, deserialize_timezone};
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::I3BarWidget;
@@ -101,9 +101,14 @@ impl Block for Time {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                if let Some(ref cmd) = self.on_click {
-                    spawn_child_async("sh", &["-c", cmd])
-                        .block_error("time", "could not spawn child")?;
+                match e.button {
+                    MouseButton::Left => {
+                        if let Some(ref cmd) = self.on_click {
+                            spawn_child_async("sh", &["-c", cmd])
+                                .block_error("time", "could not spawn child")?;
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
