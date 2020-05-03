@@ -903,12 +903,15 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `name` | `openweathermap` | Yes | None
 `api_key` | Your OpenWeatherMap API key. | Yes | None
-`city_id` | OpenWeatherMap's ID for the city. | Yes | None
+`city_id` | OpenWeatherMap's ID for the city. | Yes* | None
+`place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
 `units` | One of `metric` or `imperial`. | Yes | None
 
-The options `api_key` and/or `city_id` can be omitted from configuration,
+Either one of `city_id` or `place` is required.
+
+The options `api_key`, `city_id`, `place` can be omitted from configuration,
 in which case they must be provided in the environment variables
-`OPENWEATHERMAP_API_KEY` and/or `OPENWEATHERMAP_CITY_ID`.
+`OPENWEATHERMAP_API_KEY`, `OPENWEATHERMAP_CITY_ID`, `OPENWEATHERMAP_PLACE`.
 
 ### Available Format Keys
 
