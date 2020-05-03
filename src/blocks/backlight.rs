@@ -161,7 +161,7 @@ impl BacklitDevice {
 
     /// The brightness file itself.
     pub fn brightness_file(&self) -> PathBuf {
-        self.device_path.join("brightness")
+        self.device_path.join("actual_brightness")
     }
 }
 
