@@ -113,8 +113,11 @@ impl NetworkDevice {
                 if operstate == "up" {
                     Ok(true)
                 } else {
-                    let carrier = read_file(&carrier_file)?;
-                    Ok(carrier == "1")
+                    let carrier = read_file(&carrier_file);
+                    match carrier {
+                        Ok(carrier) => Ok(carrier == "1"),
+                        Err(_e) => Ok(operstate == "up"),
+                    }
                 }
             }
         }
