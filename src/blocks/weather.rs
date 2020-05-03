@@ -18,6 +18,7 @@ use crate::widgets::button::ButtonWidget;
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
+const OPENWEATHERMAP_PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -34,6 +35,8 @@ pub enum WeatherService {
         api_key: Option<String>,
         #[serde(default = "WeatherService::getenv_openweathermap_city_id")]
         city_id: Option<String>,
+        #[serde(default = "WeatherService::getenv_openweathermap_place")]
+        place: Option<String>,
         units: OpenWeatherMapUnits,
     },
 }
@@ -44,6 +47,9 @@ impl WeatherService {
     }
     fn getenv_openweathermap_city_id() -> Option<String> {
         env::var(OPENWEATHERMAP_CITY_ID_ENV).ok()
+    }
+    fn getenv_openweathermap_place() -> Option<String> {
+        env::var(OPENWEATHERMAP_PLACE_ENV).ok()
     }
 }
 
@@ -72,18 +78,33 @@ impl Weather {
         match self.service {
             WeatherService::OpenWeatherMap {
                 api_key: Some(ref api_key),
-                city_id: Some(ref city_id),
+                ref city_id,
+                ref place,
                 ref units,
             } => {
+                let location_query = if city_id.is_some() {
+                    format!("id={}", city_id.as_ref().unwrap())
+                } else if place.is_some() {
+                    format!("q={}", place.as_ref().unwrap())
+                } else {
+                    return Err(BlockError(
+                        "weather".to_string(),
+                        format!(
+                            "Either 'service.city_id' or 'service.place' must be provided. Add one to your config file or set with the environment variables {} or {}",
+                            OPENWEATHERMAP_CITY_ID_ENV.to_string(),
+                            OPENWEATHERMAP_PLACE_ENV.to_string(),
+                        ),
+                    ));
+                };
                 let output = Command::new("sh")
                     .args(&[
                         "-c",
                         // with these options curl will print http response body to stdout, http status code to stderr
                         &format!(
                             r#"curl -m 3 --silent \
-                                "http://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={api_key}&units={units}" \
+                                "http://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}" \
                                 --write-out "%{{stderr}} %{{http_code}}""#,
-                            city_id = city_id,
+                            location_query = location_query,
                             api_key = api_key,
                             units = match *units {
                                 OpenWeatherMapUnits::Metric => "metric",
@@ -188,25 +209,13 @@ impl Weather {
                                   "{location}" => raw_location);
                 Ok(())
             }
-            WeatherService::OpenWeatherMap {
-                ref api_key,
-                ref city_id,
-                ..
-            } => {
+            WeatherService::OpenWeatherMap { ref api_key, .. } => {
                 if api_key.is_none() {
                     Err(BlockError(
                         "weather".to_string(),
                         format!(
                             "Missing member 'service.api_key'. Add the member or configure with the environment variable {}",
                             OPENWEATHERMAP_API_KEY_ENV.to_string()
-                        ),
-                    ))
-                } else if city_id.is_none() {
-                    Err(BlockError(
-                        "weather".to_string(),
-                        format!(
-                            "Missing member 'service.city_id'. Add the member or configure with the environment variable {}",
-                            OPENWEATHERMAP_CITY_ID_ENV.to_string()
                         ),
                     ))
                 } else {
