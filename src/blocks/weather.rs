@@ -102,7 +102,7 @@ impl Weather {
                         // with these options curl will print http response body to stdout, http status code to stderr
                         &format!(
                             r#"curl -m 3 --silent \
-                                "http://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}" \
+                                "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}" \
                                 --write-out "%{{stderr}} %{{http_code}}""#,
                             location_query = location_query,
                             api_key = api_key,
