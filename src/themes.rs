@@ -272,6 +272,8 @@ impl ThemeConfig {
             theme.idle_fg = overrides.idle_fg.unwrap_or(theme.idle_fg);
             theme.info_bg = overrides.info_bg.unwrap_or(theme.info_bg);
             theme.info_fg = overrides.info_fg.unwrap_or(theme.info_fg);
+            theme.good_bg = overrides.good_bg.unwrap_or(theme.good_bg);
+            theme.good_fg = overrides.good_fg.unwrap_or(theme.good_fg);
             theme.warning_bg = overrides.warning_bg.unwrap_or(theme.warning_bg);
             theme.warning_fg = overrides.warning_fg.unwrap_or(theme.warning_fg);
             theme.critical_bg = overrides.critical_bg.unwrap_or(theme.critical_bg);
