@@ -10,8 +10,7 @@ use dbus::arg::{Array, Iter, Variant};
 use dbus::{
     arg::messageitem::MessageItem,
     ffidisp::{BusType, Connection, ConnectionItem},
-    Message,
-    Path
+    Message, Path,
 };
 use serde_derive::Deserialize;
 use uuid::Uuid;
@@ -208,7 +207,8 @@ impl ConnectionManager {
     }
 
     pub fn primary_connection(&self, c: &Connection) -> Result<NmConnection> {
-        let m = Self::get_property(c, "PrimaryConnection").block_error("networkmanager", "Failed to retrieve primary connection")?;
+        let m = Self::get_property(c, "PrimaryConnection")
+            .block_error("networkmanager", "Failed to retrieve primary connection")?;
 
         let primary_connection: Variant<Path> = m
             .get1()
@@ -223,17 +223,24 @@ impl ConnectionManager {
             }
         }
 
-        Ok(NmConnection { path: primary_connection.0.clone() })
+        Ok(NmConnection {
+            path: primary_connection.0.clone(),
+        })
     }
 
     pub fn active_connections(&self, c: &Connection) -> Result<Vec<NmConnection>> {
-        let m = Self::get_property(c, "ActiveConnections").block_error("networkmanager", "Failed to retrieve active connections")?;
+        let m = Self::get_property(c, "ActiveConnections")
+            .block_error("networkmanager", "Failed to retrieve active connections")?;
 
         let active_connections: Variant<Array<Path, Iter>> = m
             .get1()
             .block_error("networkmanager", "Failed to read active connections")?;
 
-        Ok(active_connections.0.into_iter().map(|x| NmConnection { path: x }).collect())
+        Ok(active_connections
+            .0
+            .into_iter()
+            .map(|x| NmConnection { path: x })
+            .collect())
     }
 }
 
@@ -259,17 +266,37 @@ impl<'a> NmConnection<'a> {
     }
 
     fn id(&self, c: &Connection) -> Result<String> {
-        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Connection.Active", "Id").block_error("networkmanager", "Failed to retrieve connection ID")?;
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.Connection.Active",
+            "Id",
+        )
+        .block_error("networkmanager", "Failed to retrieve connection ID")?;
 
-        let id: Variant<String> = m.get1().block_error("networkmanager", "Failed to read Id")?;
+        let id: Variant<String> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read Id")?;
         Ok(id.0)
     }
 
     fn devices(&self, c: &Connection) -> Result<Vec<NmDevice>> {
-        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Connection.Active", "Devices").block_error("networkmanager", "Failed to retrieve connection device")?;
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.Connection.Active",
+            "Devices",
+        )
+        .block_error("networkmanager", "Failed to retrieve connection device")?;
 
-        let devices: Variant<Array<Path, Iter>> = m.get1().block_error("networkmanager", "Failed to read devices")?;
-        Ok(devices.0.into_iter().map(|x| NmDevice { path: x }).collect())
+        let devices: Variant<Array<Path, Iter>> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read devices")?;
+        Ok(devices
+            .0
+            .into_iter()
+            .map(|x| NmDevice { path: x })
+            .collect())
     }
 }
 
@@ -295,17 +322,35 @@ impl<'a> NmDevice<'a> {
     }
 
     fn ip4config(&self, c: &Connection) -> Result<NmIp4Config> {
-        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Device", "Ip4Config").block_error("networkmanager", "Failed to retrieve device ip4config")?;
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.Device",
+            "Ip4Config",
+        )
+        .block_error("networkmanager", "Failed to retrieve device ip4config")?;
 
-        let ip4config: Variant<Path> = m.get1().block_error("networkmanager", "Failed to read ip4config")?;
+        let ip4config: Variant<Path> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read ip4config")?;
         Ok(NmIp4Config { path: ip4config.0 })
     }
 
     fn active_access_point(&self, c: &Connection) -> Result<NmAccessPoint> {
-        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.Device.Wireless", "ActiveAccessPoint")
-            .block_error("networkmanager", "Failed to retrieve device active access point")?;
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.Device.Wireless",
+            "ActiveAccessPoint",
+        )
+        .block_error(
+            "networkmanager",
+            "Failed to retrieve device active access point",
+        )?;
 
-        let active_ap: Variant<Path> = m.get1().block_error("networkmanager", "Failed to read active access point")?;
+        let active_ap: Variant<Path> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read active access point")?;
         Ok(NmAccessPoint { path: active_ap.0 })
     }
 }
@@ -336,16 +381,32 @@ impl<'a> NmAccessPoint<'a> {
     }
 
     fn strength(&self, c: &Connection) -> Result<u8> {
-        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.AccessPoint", "Strength").block_error("networkmanager", "Failed to retrieve strength")?;
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.AccessPoint",
+            "Strength",
+        )
+        .block_error("networkmanager", "Failed to retrieve strength")?;
 
-        let strength: Variant<u8> = m.get1().block_error("networkmanager", "Failed to read strength")?;
+        let strength: Variant<u8> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read strength")?;
         Ok(strength.0)
     }
 
     fn frequency(&self, c: &Connection) -> Result<u32> {
-        let m = ConnectionManager::get(c, self.path.clone(), "org.freedesktop.NetworkManager.AccessPoint", "Frequency").block_error("networkmanager", "Failed to retrieve frequency")?;
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.AccessPoint",
+            "Frequency",
+        )
+        .block_error("networkmanager", "Failed to retrieve frequency")?;
 
-        let frequency: Variant<u32> = m.get1().block_error("networkmanager", "Failed to read frequency")?;
+        let frequency: Variant<u32> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read frequency")?;
         Ok(frequency.0)
     }
 }
@@ -471,10 +532,12 @@ impl ConfigBlock for NetworkManager {
                     for event in c.iter(timeout) {
                         match event {
                             ConnectionItem::Nothing => (),
-                            _ => send.send(Task {
-                                id: id_copy.clone(),
-                                update_time: Instant::now(),
-                            }).unwrap(),
+                            _ => send
+                                .send(Task {
+                                    id: id_copy.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap(),
                         }
                     }
                 }
@@ -570,20 +633,35 @@ impl Block for NetworkManager {
                         let mut devicevec: Vec<String> = Vec::new();
                         if let Ok(devices) = conn.devices(&self.dbus_conn) {
                             for device in devices {
-                                let (icon, type_name) = if let Ok(dev_type) = device.device_type(&self.dbus_conn) {
+                                let (icon, type_name) = if let Ok(dev_type) =
+                                    device.device_type(&self.dbus_conn)
+                                {
                                     match dev_type.to_icon_name() {
                                         Some(icon_name) => {
-                                            let i = self.config.icons.get(&icon_name).cloned().unwrap_or("".to_string());
+                                            let i = self
+                                                .config
+                                                .icons
+                                                .get(&icon_name)
+                                                .cloned()
+                                                .unwrap_or("".to_string());
                                             (i.to_string(), format!("{:?}", dev_type).to_string())
                                         }
-                                        None => (self.config.icons.get("unknown").cloned().unwrap_or("".to_string()), format!("{:?}", dev_type).to_string()),
+                                        None => (
+                                            self.config
+                                                .icons
+                                                .get("unknown")
+                                                .cloned()
+                                                .unwrap_or("".to_string()),
+                                            format!("{:?}", dev_type).to_string(),
+                                        ),
                                     }
                                 } else {
                                     // TODO: Communicate the error to the user?
                                     ("".to_string(), "".to_string())
                                 };
 
-                                let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn) {
+                                let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn)
+                                {
                                     let ssid = match ap.ssid(&self.dbus_conn) {
                                         Ok(ssid) => {
                                             let mut truncated = ssid.to_string();
@@ -617,7 +695,11 @@ impl Block for NetworkManager {
                                 if let Ok(ip4config) = device.ip4config(&self.dbus_conn) {
                                     if let Ok(addresses) = ip4config.addresses(&self.dbus_conn) {
                                         if addresses.len() > 0 {
-                                            ips = addresses.into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join(",");
+                                            ips = addresses
+                                                .into_iter()
+                                                .map(|x| x.to_string())
+                                                .collect::<Vec<String>>()
+                                                .join(",");
                                         }
                                     }
                                 }
