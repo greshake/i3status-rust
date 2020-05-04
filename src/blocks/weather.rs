@@ -160,6 +160,11 @@ impl Weather {
                     .and_then(|v| v.as_f64())
                     .ok_or_else(malformed_json_error)?;
 
+                let raw_humidity = json
+                    .pointer("/main/humidity")
+                    .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
+                    .ok_or_else(malformed_json_error)?;
+
                 let raw_wind_speed: f64 = json
                     .pointer("/wind/speed")
                     .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
@@ -175,6 +180,39 @@ impl Weather {
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string())
                     .ok_or_else(malformed_json_error)?;
+
+                // Compute the Australian Apparent Temperature (AT),
+                // using the metric formula found on Wikipedia.
+                // If using imperial units, we must first convert to metric.
+                let metric = match *units {
+                    OpenWeatherMapUnits::Metric => true,
+                    OpenWeatherMapUnits::Imperial => false,
+                };
+
+                let temp_celsius = if metric {
+                    raw_temp
+                } else {
+                    // convert Fahrenheit to Celsius
+                    (raw_temp - 32.0) * 0.556
+                };
+
+                let exponent = 17.27 * temp_celsius / (237.7 + temp_celsius);
+                let water_vapor_pressure = raw_humidity * 0.06105 * exponent.exp();
+
+                let metric_wind_speed = if metric {
+                    raw_wind_speed
+                } else {
+                    // convert mph to m/s
+                    raw_wind_speed * 0.447
+                };
+
+                let metric_apparent_temp =
+                    temp_celsius + 0.33 * water_vapor_pressure - 0.7 * metric_wind_speed - 4.0;
+                let apparent_temp = if metric {
+                    metric_apparent_temp
+                } else {
+                    1.8 * metric_apparent_temp + 32.0
+                };
 
                 // Convert wind direction in azimuth degrees to abbreviation names
                 fn convert_wind_direction(direction_opt: Option<f64>) -> String {
@@ -204,6 +242,8 @@ impl Weather {
 
                 self.weather_keys = map_to_owned!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
+                                  "{humidity}" => format!("{:.0}", raw_humidity),
+                                  "{apparent}" => format!("{:.0}",apparent_temp),
                                   "{wind}" => format!("{:.1}", raw_wind_speed),
                                   "{direction}" => convert_wind_direction(raw_wind_direction),
                                   "{location}" => raw_location);

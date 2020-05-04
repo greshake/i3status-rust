@@ -969,6 +969,8 @@ Key | Value
 ----|-------
 `{location}` | Location name (exact format depends on the service).
 `{temp}` | Temperature.
+`{apparent}` | Australian Apparent Temperature.
+`{humidity}` | Humidity.
 `{weather}` | Textual description of the weather, e.g. "Raining".
 `{wind}` | Wind speed.
 `{direction}` | Wind direction, e.g. "NE".
