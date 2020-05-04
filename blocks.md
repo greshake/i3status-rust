@@ -909,7 +909,7 @@ Key | Values | Required | Default
 `place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
 `units` | One of `metric` or `imperial`. | Yes | None
 
-Either one of `city_id` or `place` is required.
+Either one of `city_id` or `place` is required. If both are supplied, `city_id` takes precedence.
 
 The options `api_key`, `city_id`, `place` can be omitted from configuration,
 in which case they must be provided in the environment variables
