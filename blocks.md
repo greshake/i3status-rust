@@ -14,6 +14,7 @@
 - [Memory](#memory)
 - [Music](#music)
 - [Net](#net)
+- [NetworkManager](#networkmanager)
 - [Notmuch](#notmuch)
 - [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
@@ -557,6 +558,25 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `1`
 `hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
 `hide_inactive` | Whether to hide networks that are missing. | No | `false`
+
+## NetworkManager
+
+Creates a block which displays network connection information from NetworkManager using DBus.
+The block can determine the network status and the device you're connected with your network (primary device).
+
+### Examples
+
+```toml
+[[block]]
+block = "networkmanager"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|---------
+`show_type` | Whether to show the connection type or not. | No | `true`
+
 
 ## Notmuch
 
