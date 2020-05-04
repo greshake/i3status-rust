@@ -152,6 +152,9 @@ impl Block for Cpu {
                         .expect("failed to parse String to f32 while getting cpu frequency");
                     cpu_freqs[n_cpu] = numb;
                     n_cpu += 1;
+                    if n_cpu >= MAX_CPUS {
+                        break;
+                    };
                 }
             }
         }
