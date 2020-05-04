@@ -6,24 +6,24 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus::arg::Variant;
+use dbus::arg::{Array, Iter, Variant};
 use dbus::{
-    ffidisp::{BusType, Connection},
+    arg::messageitem::MessageItem,
+    ffidisp::{BusType, Connection, ConnectionItem},
     Message,
+    Path
 };
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use block::{Block, ConfigBlock};
-use blocks::dbus::arg::{Array, Iter, Variant};
-use blocks::dbus::{BusType, Connection, ConnectionItem, Message, MessageItem, Path};
-use config::Config;
-use errors::*;
-use input::{I3BarEvent, MouseButton};
-use scheduler::Task;
-use util::FormatTemplate;
-use widget::{I3BarWidget, State};
-use widgets::button::ButtonWidget;
+use crate::blocks::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::util::FormatTemplate;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
 
 enum NetworkState {
     Unknown,
@@ -474,7 +474,7 @@ impl ConfigBlock for NetworkManager {
                             _ => send.send(Task {
                                 id: id_copy.clone(),
                                 update_time: Instant::now(),
-                            }),
+                            }).unwrap(),
                         }
                     }
                 }
@@ -657,11 +657,11 @@ impl Block for NetworkManager {
         Ok(None)
     }
 
-    fn view(&self) -> Vec<&I3BarWidget> {
+    fn view(&self) -> Vec<&dyn I3BarWidget> {
         if self.output.len() == 0 {
             vec![&self.indicator]
         } else {
-            self.output.iter().map(|x| x as &I3BarWidget).collect()
+            self.output.iter().map(|x| x as &dyn I3BarWidget).collect()
         }
     }
 

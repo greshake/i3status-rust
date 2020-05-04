@@ -119,7 +119,7 @@ lazy_static! {
         "keyboard" => " \u{f11c}",
         "mouse" => " \u{f245}",
         "docker" => " \u{f21a} ",
-        "pomodoro" => " \u{1f345} "
+        "pomodoro" => " \u{1f345} ",
         "unknown" => " \u{f128} "
     };
 
