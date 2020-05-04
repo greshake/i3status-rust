@@ -658,6 +658,34 @@ Key | Value
 ----|-------
 `{count}` | Number of updates available
 
+
+## Pomodoro
+
+Creates a block which runs a [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique).
+
+### Examples
+
+```toml
+[[block]]
+block = "pomodoro"
+length = 25
+break_length = 5
+message = "Take a break!"
+break_message = "Back to work!"
+enable_i3nagbar = false
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`length` | Timer duration in minutes. | No | `25`
+`break_length` | Break duration in minutes. | No | `5`
+`enable_i3nagbar` | i3-nagbar enabled | No | `false`
+`message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
+`break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
+
+
 ## Sound
 
 Creates a block which displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -991,29 +1019,3 @@ Key | Value
 `{stopped}` | Containers stopped on the host.
 `{paused}` | Containers paused on the host.
 `{images}` | Total images on the host.
-
-## Pomodoro
-
-Creates a block which runs a [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique).
-
-### Examples
-
-```toml
-[[block]]
-block = "pomodoro"
-length = 25
-break_length = 5
-message = "Take a break!"
-break_message = "Back to work!"
-enable_i3nagbar = false
-```
-
-### Options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`length` | Timer duration in minutes. | No | `25`
-`break_length` | Break duration in minutes. | No | `5`
-`enable_i3nagbar` | i3-nagbar enabled | No | `false`
-`message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
-`break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
