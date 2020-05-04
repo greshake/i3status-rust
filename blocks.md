@@ -559,56 +559,6 @@ Key | Values | Required | Default
 `hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
 `hide_inactive` | Whether to hide networks that are missing. | No | `false`
 
-## NetworkManager
-
-Creates a block which displays network connection information from NetworkManager using DBus.
-The block can determine the network status and the device you're connected with your network (primary device).
-
-### Examples
-
-```toml
-[[block]]
-block = "networkmanager"
-```
-
-### Options
-
-Key | Values | Required | Default
-----|--------|----------|---------
-`show_type` | Whether to show the connection type or not. | No | `true`
-
-
-## Notmuch
-
-Creates a block which queries a notmuch database and displays the count of messages.
-
-The simplest configuration will return the total count of messages in the notmuch database stored at $HOME/.mail
-
-NOTE: This block can only be used if you build with `cargo build --features=notmuch`
-
-### Examples
-
-```toml
-[[block]]
-block = "notmuch"
-query = "tag:alert and not tag:trash"
-threshold_warning = 1
-threshold_critical = 10
-name = "A"
-```
-
-### Options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`maildir` | Path to the directory containing the notmuch database | No | `$HOME/.mail`
-`query` | Query to run on the database | No | `""`
-`threshold_critical` | Mail count that triggers `critical` state | No | `99999`
-`threshold_warning` | Mail count that triggers `warning` state | No | `99999`
-`threshold_good` | Mail count that triggers `good` state | No | `99999`
-`threshold_info` | Mail count that triggers `info` state | No | `99999`
-`name` | Label to show before the mail count | No | `""`
-`no_icon` | Disable the mail icon | No | `false`
 
 ## NetworkManager
 
@@ -654,6 +604,40 @@ Placeholder | Description
 Placeholder | Description
 ------------|-------------
 `{devices}` | The list of devices, each formatted with the device format string.
+
+
+## Notmuch
+
+Creates a block which queries a notmuch database and displays the count of messages.
+
+The simplest configuration will return the total count of messages in the notmuch database stored at $HOME/.mail
+
+NOTE: This block can only be used if you build with `cargo build --features=notmuch`
+
+### Examples
+
+```toml
+[[block]]
+block = "notmuch"
+query = "tag:alert and not tag:trash"
+threshold_warning = 1
+threshold_critical = 10
+name = "A"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`maildir` | Path to the directory containing the notmuch database | No | `$HOME/.mail`
+`query` | Query to run on the database | No | `""`
+`threshold_critical` | Mail count that triggers `critical` state | No | `99999`
+`threshold_warning` | Mail count that triggers `warning` state | No | `99999`
+`threshold_good` | Mail count that triggers `good` state | No | `99999`
+`threshold_info` | Mail count that triggers `info` state | No | `99999`
+`name` | Label to show before the mail count | No | `""`
+`no_icon` | Disable the mail icon | No | `false`
+
 
 ## Nvidia Gpu
 
