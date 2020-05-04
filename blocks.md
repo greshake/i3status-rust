@@ -559,23 +559,51 @@ Key | Values | Required | Default
 `hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
 `hide_inactive` | Whether to hide networks that are missing. | No | `false`
 
+
 ## NetworkManager
 
-Creates a block which displays network connection information from NetworkManager using DBus.
-The block can determine the network status and the device you're connected with your network (primary device).
+Creates a block which displays network connection information from NetworkManager.
 
 ### Examples
 
 ```toml
 [[block]]
 block = "networkmanager"
+on_click = "alacritty -e nmtui"
 ```
 
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|---------
-`show_type` | Whether to show the connection type or not. | No | `true`
+`primary_only` | Whether to show only the primary active connection or all active connections | No | `false`
+`max_ssid_width` | Truncation length for SSID | No | `21`
+`device_format` | Device string formatter. See below for available placeholders. | No | `"{icon}{ssid}"`
+`connection_format` | Connection string formatter. See below for available placeholders. | No | `"{devices} {ips}"`
+`on_click` | On-click handler | No | `""`
+
+### AP format string
+
+Placeholder | Description
+------------|-------------
+`{ssid}` | The SSID for this AP.
+`{strength}` | The signal strength in percent for this AP.
+`{frequency}` | The frequency of this AP in MHz.
+
+### Device format string
+
+Placeholder | Description
+------------|-------------
+`{icon}` | The icon matching the device type.
+`{typename}` | The name of the device type.
+`{ap}` | The connected AP if available, formatted with the AP format string.
+`{ips}` | The list of IPs for this device.
+
+### Connection format string
+
+Placeholder | Description
+------------|-------------
+`{devices}` | The list of devices, each formatted with the device format string.
 
 
 ## Notmuch
@@ -609,6 +637,7 @@ Key | Values | Required | Default
 `threshold_info` | Mail count that triggers `info` state | No | `99999`
 `name` | Label to show before the mail count | No | `""`
 `no_icon` | Disable the mail icon | No | `false`
+
 
 ## Nvidia Gpu
 
