@@ -160,8 +160,14 @@ impl BacklitDevice {
     }
 
     /// The brightness file itself.
+    // amdgpu drivers set the actual_brightness in a different scale than [0, max_brightness],
+    // so we have to use the 'brightness' file instead. This may be fixed in the new 5.7 kernel?
     pub fn brightness_file(&self) -> PathBuf {
-        self.device_path.join("actual_brightness")
+        if self.device_path.ends_with("amdgpu_bl0") {
+            self.device_path.join("brightness")
+        } else {
+            self.device_path.join("actual_brightness")
+        }
     }
 }
 
