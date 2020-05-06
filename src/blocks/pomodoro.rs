@@ -74,8 +74,8 @@ pub struct PomodoroConfig {
     pub message: String,
     #[serde(default = "PomodoroConfig::default_break_message")]
     pub break_message: String,
-    #[serde(default = "PomodoroConfig::default_use_nag")]
-    pub use_nag: bool,
+    #[serde(default = "PomodoroConfig::default_enable_i3nagbar")]
+    pub enable_i3nagbar: bool,
 }
 
 impl PomodoroConfig {
@@ -95,7 +95,7 @@ impl PomodoroConfig {
         "Break over! Time to work!".to_owned()
     }
 
-    fn default_use_nag() -> bool {
+    fn default_enable_i3nagbar() -> bool {
         false
     }
 }
@@ -115,7 +115,7 @@ impl ConfigBlock for Pomodoro {
             update_interval: Duration::from_millis(1000),
             message: block_config.message,
             break_message: block_config.break_message,
-            enable_i3nagbar: block_config.use_nag,
+            enable_i3nagbar: block_config.enable_i3nagbar,
             elapsed: 0,
             count: 0,
         })
