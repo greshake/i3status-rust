@@ -31,7 +31,7 @@ pub struct Pomodoro {
     message: String,
     break_message: String,
     count: usize,
-    enable_i3nagbar: bool,
+    use_nag: bool,
 }
 
 impl Pomodoro {
@@ -115,7 +115,7 @@ impl ConfigBlock for Pomodoro {
             update_interval: Duration::from_millis(1000),
             message: block_config.message,
             break_message: block_config.break_message,
-            enable_i3nagbar: block_config.use_nag,
+            use_nag: block_config.use_nag,
             elapsed: 0,
             count: 0,
         })
@@ -134,7 +134,7 @@ impl Block for Pomodoro {
         match &self.state {
             State::Started => {
                 if self.elapsed >= self.length {
-                    if self.enable_i3nagbar {
+                    if self.use_nag {
                         nag(&self.message, "error");
                     }
 
@@ -145,7 +145,7 @@ impl Block for Pomodoro {
             }
             State::OnBreak => {
                 if self.elapsed >= self.break_length {
-                    if self.enable_i3nagbar {
+                    if self.use_nag {
                         nag(&self.break_message, "warning");
                     }
                     self.state = State::Stopped;
