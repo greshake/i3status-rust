@@ -191,7 +191,7 @@ For further customisation, use the `json` option and have the shell command outp
 ```toml
 [[block]]
 block = "custom"
-command = ''' e | awk '{printf("%.1f\n",$1/1000)}' '''
+command = ''' cat /sys/class/thermal/thermal_zone0/temp | awk '{printf("%.1f\n",$1/1000)}' '''
 ```
 
 ```toml
