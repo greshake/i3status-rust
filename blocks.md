@@ -191,8 +191,7 @@ For further customisation, use the `json` option and have the shell command outp
 ```toml
 [[block]]
 block = "custom"
-command = "uname"
-interval = 100
+command = ''' e | awk '{printf("%.1f\n",$1/1000)}' '''
 ```
 
 ```toml
