@@ -109,15 +109,13 @@ impl NetworkDevice {
             let carrier_file = self.device_path.join("carrier");
             if !carrier_file.exists() {
                 Ok(operstate == "up")
+            } else if operstate == "up" {
+                Ok(true)
             } else {
-                if operstate == "up" {
-                    Ok(true)
-                } else {
-                    let carrier = read_file(&carrier_file);
-                    match carrier {
-                        Ok(carrier) => Ok(carrier == "1"),
-                        Err(_e) => Ok(operstate == "up"),
-                    }
+                let carrier = read_file(&carrier_file);
+                match carrier {
+                    Ok(carrier) => Ok(carrier == "1"),
+                    Err(_e) => Ok(operstate == "up"),
                 }
             }
         }
