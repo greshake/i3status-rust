@@ -182,6 +182,10 @@ impl BatteryDevice for PowerSupplyDevice {
             ));
         };
 
+        // If the device driver uses the combination of energy_full, energy_now and power_now,
+        // all values (full, fill, and usage) are in Watts, while if it uses charge_full, charge_now
+        // and current_now, they're in Amps. In all 3 equations below the units cancel out and
+        // we're left with a time value.
         let status = self.status()?;
         match status.as_str() {
             "Full" => Ok(((full as f64 / usage) * 60.0) as u64),
@@ -573,6 +577,7 @@ impl Block for Battery {
                 Ok(time) => format!("{}:{:02}", time / 60, time % 60),
                 Err(_) => "×".into(),
             };
+            // convert µW to W for display
             let power = match self.device.power_consumption() {
                 Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
                 Err(_) => "×".into(),
