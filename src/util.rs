@@ -15,6 +15,18 @@ use std::process::Command;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 
+pub fn escape_pango_text(text: String) -> String {
+    text.chars()
+        .map(|x| match x {
+            '&' => "&amp;".to_string(),
+            '<' => "&lt;".to_string(),
+            '>' => "&gt;".to_string(),
+            '\'' => "&#39;".to_string(),
+            _ => x.to_string(),
+        })
+        .collect()
+}
+
 pub fn xdg_config_home() -> PathBuf {
     // In the unlikely event that $HOME is not set, it doesn't really matter
     // what we fall back on, so use /.config.
