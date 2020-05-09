@@ -15,11 +15,11 @@ You can also use your own custom theme:
 file = "<file>"
 ```
 
-where `<file>` can be either (checked in this order):
+where `<file>` can be either a filename or a full path and will be checked in this order:
 
-1. full path e.g. `"/home/foo/custom_theme.toml"`
-2. file name e.g. `"custom_theme.toml"` (i3status-rs will look for it in `XDG_CONFIG_HOME`)
-3. file name e.g. `"custom_theme.toml"` (i3status-rs will look for it in `/usr/share/i3status-rust/themes`)
+1. If full path given, then use it as is: `"/home/foo/custom_theme.toml"`
+2. If filename given, e.g. `"custom_theme.toml"`, then first check `XDG_CONFIG_HOME/i3status-rust/themes`
+3. Otherwise look for it in `/usr/share/i3status-rust/themes`
 
 Example theme file can be found in `example/theme/solarized-dark.toml`.
 
