@@ -16,9 +16,10 @@ file = "<file>"
 ```
 
 where `<file>` can be either (checked in this order):
-0. full path e.g. `"/home/foo/.custom_theme.toml"`
-1. file name e.g. `"custom_theme.toml"` (i3status-rs will look for it in `XDG_CONFIG_HOME`)
-2. file name e.g. `"custom_theme.toml"` (i3status-rs will look for it in `/usr/share/i3status-rust/themes`)
+
+1. full path e.g. `"/home/foo/custom_theme.toml"`
+2. file name e.g. `"custom_theme.toml"` (i3status-rs will look for it in `XDG_CONFIG_HOME`)
+3. file name e.g. `"custom_theme.toml"` (i3status-rs will look for it in `/usr/share/i3status-rust/themes`)
 
 Example theme file can be found in `example/theme/solarized-dark.toml`.
 
