@@ -137,16 +137,16 @@ trait ByteOrderSwap {
 
 impl ByteOrderSwap for u32 {
     fn swap(&self) -> u32 {
-        ((self & 0x000000FF) << 24)
-            | ((self & 0x0000FF00) << 8)
-            | ((self & 0x00FF0000) >> 8)
-            | ((self & 0xFF000000) >> 24)
+        ((self & 0x0000_00FF) << 24)
+            | ((self & 0x0000_FF00) << 8)
+            | ((self & 0x00FF_0000) >> 8)
+            | ((self & 0xFF00_0000) >> 24)
     }
 }
 
 impl<'a> From<Array<'a, u32, Iter<'a>>> for Ipv4Address {
     fn from(s: Array<'a, u32, Iter<'a>>) -> Ipv4Address {
-        let mut i = s.into_iter();
+        let mut i = s;
         Ipv4Address {
             address: Ipv4Addr::from(i.next().unwrap().swap()),
             prefix: i.next().unwrap(),
@@ -238,7 +238,6 @@ impl ConnectionManager {
 
         Ok(active_connections
             .0
-            .into_iter()
             .map(|x| NmConnection { path: x })
             .collect())
     }
@@ -292,11 +291,7 @@ impl<'a> NmConnection<'a> {
         let devices: Variant<Array<Path, Iter>> = m
             .get1()
             .block_error("networkmanager", "Failed to read devices")?;
-        Ok(devices
-            .0
-            .into_iter()
-            .map(|x| NmDevice { path: x })
-            .collect())
+        Ok(devices.0.map(|x| NmDevice { path: x }).collect())
     }
 }
 
@@ -373,11 +368,9 @@ impl<'a> NmAccessPoint<'a> {
         let ssid: Variant<Array<u8, Iter>> = m
             .get1()
             .block_error("networkmanager", "Failed to read ssid")?;
-        Ok(
-            std::str::from_utf8(&ssid.0.into_iter().collect::<Vec<u8>>())
-                .block_error("networkmanager", "Failed to parse ssid")?
-                .to_string(),
-        )
+        Ok(std::str::from_utf8(&ssid.0.collect::<Vec<u8>>())
+            .block_error("networkmanager", "Failed to parse ssid")?
+            .to_string())
     }
 
     fn strength(&self, c: &Connection) -> Result<u8> {
@@ -429,11 +422,7 @@ impl<'a> NmIp4Config<'a> {
         let addresses: Variant<Array<Array<u32, Iter>, Iter>> = m
             .get1()
             .block_error("networkmanager", "Failed to read addresses")?;
-        Ok(addresses
-            .0
-            .into_iter()
-            .map(|addr| Ipv4Address::from(addr))
-            .collect())
+        Ok(addresses.0.map(Ipv4Address::from).collect())
     }
 }
 
@@ -643,7 +632,7 @@ impl Block for NetworkManager {
                                                 .icons
                                                 .get(&icon_name)
                                                 .cloned()
-                                                .unwrap_or("".to_string());
+                                                .unwrap_or_else(|| "".to_string());
                                             (i.to_string(), format!("{:?}", dev_type).to_string())
                                         }
                                         None => (
@@ -651,7 +640,7 @@ impl Block for NetworkManager {
                                                 .icons
                                                 .get("unknown")
                                                 .cloned()
-                                                .unwrap_or("".to_string()),
+                                                .unwrap_or_else(|| "".to_string()),
                                             format!("{:?}", dev_type).to_string(),
                                         ),
                                     }
@@ -694,7 +683,7 @@ impl Block for NetworkManager {
                                 let mut ips = "×".to_string();
                                 if let Ok(ip4config) = device.ip4config(&self.dbus_conn) {
                                     if let Ok(addresses) = ip4config.addresses(&self.dbus_conn) {
-                                        if addresses.len() > 0 {
+                                        if !addresses.is_empty() {
                                             ips = addresses
                                                 .into_iter()
                                                 .map(|x| x.to_string())
@@ -740,7 +729,7 @@ impl Block for NetworkManager {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if self.output.len() == 0 {
+        if self.output.is_empty() {
             vec![&self.indicator]
         } else {
             self.output.iter().map(|x| x as &dyn I3BarWidget).collect()
