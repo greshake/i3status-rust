@@ -1,10 +1,12 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
 use std::time::{Duration, Instant};
 use std::vec;
+
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -15,8 +17,6 @@ use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use uuid::Uuid;
 
 pub struct Custom {
     id: String,

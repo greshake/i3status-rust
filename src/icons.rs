@@ -1,5 +1,6 @@
-use lazy_static::lazy_static;
 use std::collections::HashMap as Map;
+
+use lazy_static::lazy_static;
 
 lazy_static! {
     pub static ref NONE: Map<String, String> = map_to_owned! {

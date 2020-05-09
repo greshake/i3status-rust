@@ -1,16 +1,18 @@
-use crate::de::*;
-use crate::input::MouseButton;
-use crate::themes::{Theme, ThemeConfig};
-use crate::util::deserialize_file;
-use crate::{errors, icons};
-use serde::de::{Deserialize, Deserializer, Error};
-use serde_derive::Deserialize;
 use std::collections::HashMap as Map;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::path::Path;
 use std::str::FromStr;
+
+use serde::de::{Deserialize, Deserializer, Error};
+use serde_derive::Deserialize;
 use toml::value;
+
+use crate::de::*;
+use crate::input::MouseButton;
+use crate::themes::{Theme, ThemeConfig};
+use crate::util::deserialize_file;
+use crate::{errors, icons};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {

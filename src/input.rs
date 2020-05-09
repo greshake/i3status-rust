@@ -1,11 +1,12 @@
-use crossbeam_channel::Sender;
-use serde::{de, Deserializer};
-use serde_derive::Deserialize;
 use std::fmt;
 use std::io;
 use std::option::Option;
 use std::string::*;
 use std::thread;
+
+use crossbeam_channel::Sender;
+use serde::{de, Deserializer};
+use serde_derive::Deserialize;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum MouseButton {

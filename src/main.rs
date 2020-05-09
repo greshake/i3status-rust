@@ -26,18 +26,17 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::time::Duration;
 
-use crate::blocks::Block;
+use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
+use crossbeam_channel::{select, Receiver, Sender};
 
 use crate::blocks::create_block;
+use crate::blocks::Block;
 use crate::config::{load_config, Config};
 use crate::errors::*;
 use crate::input::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-
-use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
-use crossbeam_channel::{select, Receiver, Sender};
 
 fn main() {
     let mut builder = App::new("i3status-rs")

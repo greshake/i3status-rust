@@ -1,12 +1,13 @@
-use chrono::{DateTime, Local};
-use chrono_tz::Tz;
-use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use std::collections::{BTreeMap, HashMap as Map};
 use std::fmt;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::time::Duration;
+
+use chrono::{DateTime, Local};
+use chrono_tz::Tz;
+use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use toml::{self, value};
 
 pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>

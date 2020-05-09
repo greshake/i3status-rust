@@ -7,6 +7,7 @@ use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
+use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -19,7 +20,6 @@ use crate::scheduler::Task;
 use crate::util::{has_command, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use regex::Regex;
 
 pub struct Pacman {
     output: ButtonWidget,

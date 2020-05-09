@@ -1,8 +1,17 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::boxed::Box;
 use std::thread;
 use std::time::{Duration, Instant};
+
+use crossbeam_channel::Sender;
+use dbus::arg::{Array, RefArg};
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
+use dbus::{
+    arg,
+    ffidisp::{BusType, Connection, ConnectionItem},
+    Message,
+};
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -14,15 +23,6 @@ use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
-
-use dbus::arg::{Array, RefArg};
-use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
-use dbus::{
-    arg,
-    ffidisp::{BusType, Connection, ConnectionItem},
-    Message,
-};
-use uuid::Uuid;
 
 pub struct Music {
     id: String,

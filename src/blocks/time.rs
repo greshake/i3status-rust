@@ -1,5 +1,10 @@
-use serde_derive::Deserialize;
 use std::time::Duration;
+
+use chrono::offset::{Local, Utc};
+use chrono_tz::Tz;
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -10,10 +15,6 @@ use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-use chrono::offset::{Local, Utc};
-use chrono_tz::Tz;
-use crossbeam_channel::Sender;
-use uuid::Uuid;
 
 pub struct Time {
     time: ButtonWidget,
