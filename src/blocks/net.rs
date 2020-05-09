@@ -166,14 +166,28 @@ impl NetworkDevice {
                 ),
             ])
             .output()
-            .block_error("net", "Failed to execute SSID query.")?
+            .block_error("net", "Failed to execute SSID query using iw.")?
             .stdout;
+
+        if iw_output.is_empty() {
+            iw_output = Command::new("sh")
+                .args(&[
+                    "-c",
+                    &format!(
+                        "wpa_cli status -i{} | sed -n 's/^ssid=\\(.*\\)/\\1/p'",
+                        self.device
+                    ),
+                ])
+                .output()
+                .block_error("net", "Failed to execute SSID query using wpa_cli.")?
+                .stdout;
+        }
 
         if iw_output.is_empty() {
             iw_output = Command::new("nmcli")
                 .args(&["-g", "general.connection", "device", "show", &self.device])
                 .output()
-                .block_error("net", "Failed to execute SSID query.")?
+                .block_error("net", "Failed to execute SSID query using nmcli.")?
                 .stdout;
         }
 
