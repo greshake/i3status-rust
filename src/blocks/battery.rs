@@ -198,12 +198,25 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn power_consumption(&self) -> Result<u64> {
+        // power consumption in µWh
         let power_path = self.device_path.join("power_now");
+        // current consumption in µA
+        let current_path = self.device_path.join("current_now");
+        // voltage in µV
+        let voltage_path = self.device_path.join("voltage_now");
 
         if power_path.exists() {
             Ok(read_file("battery", &power_path)?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse power_now")?)
+        } else if current_path.exists() && voltage_path.exists() {
+            let current = read_file("battery", &current_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse current_now")?;
+            let voltage = read_file("battery", &voltage_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse voltage_now")?;
+            Ok(current * voltage)
         } else {
             Err(BlockError(
                 "battery".to_string(),
