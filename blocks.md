@@ -897,7 +897,7 @@ Key | Values | Required | Default
 
 ## Toggle
 
-Creates a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`).
+Creates a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`). If these command exit with a non-zero status, the block will not be toggled.
 You also need to specify a command to determine the (initial) state of the toggle (`command_state`). When the command outputs nothing, the toggle is disabled, otherwise enabled.
 By specifying the `interval` property you can let the `command_state` be executed continuously.
 

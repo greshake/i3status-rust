@@ -118,19 +118,24 @@ impl Block for Toggle {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 let cmd = if self.toggled {
-                    self.toggled = false;
-                    self.text.set_icon(self.icon_off.as_str());
                     &self.command_off
                 } else {
-                    self.toggled = true;
-                    self.text.set_icon(self.icon_on.as_str());
                     &self.command_on
                 };
 
-                Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+                let status = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
                     .args(&["-c", cmd])
-                    .output()
+                    .status()
                     .block_error("toggle", "failed to run toggle command")?;
+
+                if status.success() {
+                    self.toggled = !self.toggled;
+                    self.text.set_icon(if self.toggled {
+                        self.icon_on.as_str()
+                    } else {
+                        self.icon_off.as_str()
+                    })
+                };
             }
         }
 
