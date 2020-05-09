@@ -216,7 +216,7 @@ impl BatteryDevice for PowerSupplyDevice {
             let voltage = read_file("battery", &voltage_path)?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse voltage_now")?;
-            Ok(current * voltage)
+            Ok((current * voltage) / 1_000_000)
         } else {
             Err(BlockError(
                 "battery".to_string(),
