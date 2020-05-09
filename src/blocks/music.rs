@@ -37,6 +37,8 @@ pub struct Music {
     marquee: bool,
     player: Option<String>,
     auto_discover: bool,
+    smart_trim: bool,
+    max_width: usize,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -68,6 +70,10 @@ pub struct MusicConfig {
     )]
     pub marquee_speed: Duration,
 
+    /// Bool to specify whether smart trimming should be used when marquee rotation is disabled<br/> and the title + artist is longer than max-width. It will trim from both the artist and the title in proportion to their lengths, to try and show the most information possible.
+    #[serde(default = "MusicConfig::default_smart_trim")]
+    pub smart_trim: bool,
+
     /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
     #[serde(default = "MusicConfig::default_buttons")]
     pub buttons: Vec<String>,
@@ -91,6 +97,10 @@ impl MusicConfig {
 
     fn default_marquee_speed() -> Duration {
         Duration::from_millis(500)
+    }
+
+    fn default_smart_trim() -> bool {
+        false
     }
 
     fn default_buttons() -> Vec<String> {
@@ -191,6 +201,8 @@ impl ConfigBlock for Music {
                 ))
             },
             marquee: block_config.marquee,
+            smart_trim: block_config.smart_trim,
+            max_width: block_config.max_width,
         })
     }
 }
@@ -218,7 +230,7 @@ impl Block for Music {
             let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
             if let Ok(metadata) = data {
-                let (title, artist) =
+                let (mut title, mut artist) =
                     extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
                 if title.is_empty() && artist.is_empty() {
@@ -226,8 +238,96 @@ impl Block for Music {
                     self.current_song.set_text(String::new());
                 } else {
                     self.player_avail = true;
-                    self.current_song
-                        .set_text(format!("{} | {}", title, artist));
+
+                    if !self.smart_trim {
+                        self.current_song
+                            .set_text(format!("{} | {}", title, artist));
+                    } else if title.is_empty() {
+                        // Only display artist, truncated appropriately
+                        self.current_song.set_text({
+                            match artist.char_indices().nth(self.max_width) {
+                                None => artist.to_string(),
+                                Some((i, _)) => {
+                                    artist.truncate(i);
+                                    artist.to_string()
+                                }
+                            }
+                        });
+                    } else if artist.is_empty() {
+                        // Only display title, truncated appropriately
+                        self.current_song.set_text({
+                            match title.char_indices().nth(self.max_width) {
+                                None => title.to_string(),
+                                Some((i, _)) => {
+                                    title.truncate(i);
+                                    title.to_string()
+                                }
+                            }
+                        });
+                    } else {
+                        // Below code is by https://github.com/jgbyrne
+                        let text = format!("{} | {}", title, artist);
+                        let textlen = title.chars().count() + artist.chars().count() + 3;
+                        if textlen > self.max_width {
+                            // overshoot: # of chars we need to trim
+                            // substance: # of chars available for trimming
+                            let overshoot = (textlen - self.max_width) as f32;
+                            let substance = (textlen - 3) as f32;
+
+                            // Calculate number of chars to trim from title
+                            let tlen = title.chars().count();
+                            let tblm = tlen as f32 / substance;
+                            let mut tnum = (overshoot * tblm).ceil() as usize;
+
+                            // Calculate number of chars to trim from artist
+                            let alen = artist.chars().count();
+                            let ablm = alen as f32 / substance;
+                            let mut anum = (overshoot * ablm).ceil() as usize;
+
+                            // Prefer to only trim one of the title and artist
+                            if anum < tnum && anum <= 3 && (tnum + anum < tlen) {
+                                anum = 0;
+                                tnum += anum;
+                            }
+
+                            if tnum < anum && tnum <= 3 && (anum + tnum < alen) {
+                                tnum = 0;
+                                anum += tnum;
+                            }
+
+                            // Calculate how many chars to keep from title and artist
+                            let mut ttrc = tlen - tnum;
+                            if ttrc < 1 || ttrc > 5000 {
+                                ttrc = 1
+                            }
+
+                            let mut atrc = alen - anum;
+                            if atrc < 1 || atrc > 5000 {
+                                atrc = 1
+                            }
+
+                            // Truncate artist and title to appropriate lengths
+                            let tidx = title
+                                .char_indices()
+                                .nth(ttrc)
+                                .unwrap_or((title.len(), 'a'))
+                                .0;
+                            title.truncate(tidx);
+
+                            let aidx = artist
+                                .char_indices()
+                                .nth(atrc)
+                                .unwrap_or((artist.len(), 'a'))
+                                .0;
+                            artist.truncate(aidx);
+
+                            // Produce final formatted string
+                            self.current_song
+                                .set_text(format!("{} | {}", title, artist));
+                        } else {
+                            self.current_song.set_text(text);
+                        }
+                    }
                 }
             } else {
                 self.current_song.set_text(String::from(""));
