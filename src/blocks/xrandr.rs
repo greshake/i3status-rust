@@ -1,21 +1,20 @@
-use crate::scheduler::Task;
-use crossbeam_channel::Sender;
 use std::process::Command;
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::util::FormatTemplate;
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-
-use serde_derive::Deserialize;
-use uuid::Uuid;
 
 struct Monitor {
     name: String,
