@@ -64,7 +64,7 @@ impl PowerSupplyDevice {
             ));
         }
 
-        // Read charge_full exactly once, if it exists.
+        // Read charge_full exactly once, if it exists, units are µAh
         let charge_full = if device_path.join("charge_full").exists() {
             Some(
                 read_file("battery", &device_path.join("charge_full"))?
@@ -75,7 +75,7 @@ impl PowerSupplyDevice {
             None
         };
 
-        // Read energy_full exactly once, if it exists.
+        // Read energy_full exactly once, if it exists. Units are µWh.
         let energy_full = if device_path.join("energy_full").exists() {
             Some(
                 read_file("battery", &device_path.join("energy_full"))?
@@ -135,6 +135,7 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn time_remaining(&self) -> Result<u64> {
+        // Units are µWh
         let full = if self.energy_full.is_some() {
             self.energy_full.unwrap()
         } else if self.charge_full.is_some() {
@@ -146,6 +147,7 @@ impl BatteryDevice for PowerSupplyDevice {
             ));
         };
 
+        // Units are µWh/µAh
         let energy_path = self.device_path.join("energy_now");
         let charge_path = self.device_path.join("charge_now");
         let fill = if energy_path.exists() {
