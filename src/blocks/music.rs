@@ -39,6 +39,7 @@ pub struct Music {
     auto_discover: bool,
     smart_trim: bool,
     max_width: usize,
+    separator: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -74,6 +75,10 @@ pub struct MusicConfig {
     #[serde(default = "MusicConfig::default_smart_trim")]
     pub smart_trim: bool,
 
+    /// Separator to use between artist and title.
+    #[serde(default = "MusicConfig::default_separator")]
+    pub separator: String,
+
     /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
     #[serde(default = "MusicConfig::default_buttons")]
     pub buttons: Vec<String>,
@@ -101,6 +106,10 @@ impl MusicConfig {
 
     fn default_smart_trim() -> bool {
         false
+    }
+
+    fn default_separator() -> String {
+        " - ".to_string()
     }
 
     fn default_buttons() -> Vec<String> {
@@ -203,6 +212,7 @@ impl ConfigBlock for Music {
             marquee: block_config.marquee,
             smart_trim: block_config.smart_trim,
             max_width: block_config.max_width,
+            separator: block_config.separator,
         })
     }
 }
@@ -241,7 +251,7 @@ impl Block for Music {
 
                     if !self.smart_trim {
                         self.current_song
-                            .set_text(format!("{} | {}", title, artist));
+                            .set_text(format!("{}{}{}", title, self.separator, artist));
                     } else if title.is_empty() {
                         // Only display artist, truncated appropriately
                         self.current_song.set_text({
@@ -266,7 +276,7 @@ impl Block for Music {
                         });
                     } else {
                         // Below code is by https://github.com/jgbyrne
-                        let text = format!("{} | {}", title, artist);
+                        let text = format!("{}{}{}", title, self.separator, artist);
                         let textlen = title.chars().count() + artist.chars().count() + 3;
                         if textlen > self.max_width {
                             // overshoot: # of chars we need to trim
@@ -323,7 +333,7 @@ impl Block for Music {
 
                             // Produce final formatted string
                             self.current_song
-                                .set_text(format!("{} | {}", title, artist));
+                                .set_text(format!("{}{}{}", title, self.separator, artist));
                         } else {
                             self.current_song.set_text(text);
                         }
