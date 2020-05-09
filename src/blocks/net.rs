@@ -274,6 +274,36 @@ impl NetworkDevice {
         }
     }
 
+    /// Queries the inet IPv6 of this device (using `ip`).
+    pub fn ipv6_addr(&self) -> Result<Option<String>> {
+        if !self.is_up()? {
+            return Ok(None);
+        }
+
+        let mut ip_output = Command::new("sh")
+            .args(&[
+                "-c",
+                &format!(
+                    "ip -oneline -family inet6 address show {} | sed -e 's/^.*inet6 \\([^ ]\\+\\).*/\\1/'",
+                    self.device
+                ),
+            ])
+            .output()
+            .block_error("net", "Failed to execute IPv6 address query.")?
+            .stdout;
+
+        if ip_output.is_empty() {
+            Ok(None)
+        } else {
+            ip_output.pop(); // Remove trailing newline.
+            let ip = String::from_utf8(ip_output)
+                .block_error("net", "Non-UTF8 IP address.")?
+                .trim()
+                .to_string();
+            Ok(Some(ip))
+        }
+    }
+
     /// Queries the bitrate of this device (using `iwlist`)
     pub fn bitrate(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
@@ -318,6 +348,7 @@ pub struct Net {
     signal_strength: Option<ButtonWidget>,
     signal_strength_bar: bool,
     ip_addr: Option<ButtonWidget>,
+    ipv6_addr: Option<ButtonWidget>,
     bitrate: Option<ButtonWidget>,
     output_tx: Option<ButtonWidget>,
     graph_tx: Option<GraphWidget>,
@@ -379,6 +410,10 @@ pub struct NetConfig {
     /// Whether to show the IP address of active networks.
     #[serde(default = "NetConfig::default_ip")]
     pub ip: bool,
+
+    /// Whether to show the IPv6 address of active networks.
+    #[serde(default = "NetConfig::default_ipv6")]
+    pub ipv6: bool,
 
     /// Whether to hide networks that are down/inactive completely.
     #[serde(default = "NetConfig::default_hide_inactive")]
@@ -460,6 +495,10 @@ impl NetConfig {
         false
     }
 
+    fn default_ipv6() -> bool {
+        false
+    }
+
     fn default_speed_up() -> bool {
         true
     }
@@ -530,6 +569,11 @@ impl ConfigBlock for Net {
                 None
             },
             ip_addr: if block_config.ip {
+                Some(ButtonWidget::new(config.clone(), &id))
+            } else {
+                None
+            },
+            ipv6_addr: if block_config.ipv6 {
                 Some(ButtonWidget::new(config.clone(), &id))
             } else {
                 None
@@ -670,6 +714,12 @@ impl Block for Net {
                     ip_addr_widget.set_text(ip);
                 }
             }
+            if let Some(ref mut ipv6_addr_widget) = self.ipv6_addr {
+                let ipv6_addr = self.device.ipv6_addr()?;
+                if let Some(ip) = ipv6_addr {
+                    ipv6_addr_widget.set_text(ip);
+                }
+            }
             self.last_update = now;
         }
 
@@ -731,6 +781,9 @@ impl Block for Net {
             }
             if let Some(ref ip_addr_widget) = self.ip_addr {
                 widgets.push(ip_addr_widget);
+            };
+            if let Some(ref ipv6_addr_widget) = self.ipv6_addr {
+                widgets.push(ipv6_addr_widget);
             };
             if let Some(ref tx_widget) = self.output_tx {
                 widgets.push(tx_widget);

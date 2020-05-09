@@ -549,6 +549,7 @@ Key | Values | Required | Default
 `signal_strength` | Display WiFi signal strength (wireless only). | No | `false`
 `bitrate` | Display connection bitrate. | No | `false`
 `ip` | Display connection IP address. | No | `false`
+`ipv6` | Display connection IPv6 address. | No | `false`
 `speed_up` | Display upload speed. | No | `true`
 `speed_down` | Display download speed. | No | `true`
 `graph_up` | Display a bar graph for upload speed. | No | `false`
