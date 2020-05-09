@@ -1,24 +1,21 @@
-use crate::blocks::{Block, ConfigBlock};
-use crate::input::{I3BarEvent, MouseButton};
-use crate::util::*;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use std::fmt;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::fs::{File, OpenOptions};
+use std::io::{BufRead, BufReader, Write};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::util::*;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use std::fs::OpenOptions;
-use std::io::Write;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]

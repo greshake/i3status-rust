@@ -13,7 +13,6 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::de::deserialize_duration;
 use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
@@ -21,6 +20,7 @@ use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection, Scrolling};
+use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;

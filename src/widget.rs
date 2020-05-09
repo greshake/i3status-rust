@@ -1,6 +1,7 @@
-use crate::themes::Theme;
 use serde_derive::Deserialize;
 use serde_json::value::Value;
+
+use crate::themes::Theme;
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 pub enum State {

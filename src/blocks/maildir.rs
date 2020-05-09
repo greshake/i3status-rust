@@ -1,6 +1,9 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::time::Duration;
+
+use crossbeam_channel::Sender;
+use maildir::Maildir as ExtMaildir;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -10,9 +13,6 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-use maildir::Maildir as ExtMaildir;
-
-use uuid::Uuid;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]

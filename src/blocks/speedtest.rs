@@ -1,20 +1,20 @@
-use crate::scheduler::Task;
-use crossbeam_channel::{unbounded, Receiver, Sender};
-use serde_derive::Deserialize;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use uuid::Uuid;
 
 pub struct SpeedTest {
     vals: Arc<Mutex<(bool, Vec<f32>)>>,

@@ -1,9 +1,3 @@
-use crate::blocks::Block;
-use crate::config::Config;
-use crate::errors::*;
-use regex::Regex;
-use serde::de::DeserializeOwned;
-use serde_json::value::Value;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs::{File, OpenOptions};
@@ -12,6 +6,14 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
+
+use regex::Regex;
+use serde::de::DeserializeOwned;
+use serde_json::value::Value;
+
+use crate::blocks::Block;
+use crate::config::Config;
+use crate::errors::*;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 

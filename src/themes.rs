@@ -1,7 +1,8 @@
-use lazy_static::lazy_static;
-use serde_derive::Deserialize;
 use std::default::Default;
 use std::path::Path;
+
+use lazy_static::lazy_static;
+use serde_derive::Deserialize;
 
 use crate::util;
 

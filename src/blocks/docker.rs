@@ -1,7 +1,9 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::process::Command;
 use std::time::Duration;
+
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -12,8 +14,6 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
-
-use uuid::Uuid;
 
 pub struct Docker {
     text: TextWidget,

@@ -1,5 +1,11 @@
 use serde_derive::Deserialize;
+use std::fs::{File, OpenOptions};
+use std::io::prelude::*;
+use std::io::BufReader;
 use std::time::Duration;
+
+use crossbeam_channel::Sender;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -9,13 +15,6 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-use crossbeam_channel::Sender;
-
-use std::fs::{File, OpenOptions};
-use std::io::prelude::*;
-use std::io::BufReader;
-
-use uuid::Uuid;
 
 pub struct Load {
     text: TextWidget,

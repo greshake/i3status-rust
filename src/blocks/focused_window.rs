@@ -1,23 +1,22 @@
-use crate::de::deserialize_duration;
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::blocks::{Block, ConfigBlock};
-use crate::config::Config;
-use crate::errors::*;
-use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
-use crate::widgets::text::TextWidget;
-
-use uuid::Uuid;
-
+use crossbeam_channel::Sender;
 use i3ipc::event::inner::{WindowChange, WorkspaceChange};
 use i3ipc::event::Event;
 use i3ipc::I3EventListener;
 use i3ipc::Subscription;
+use serde_derive::Deserialize;
+use uuid::Uuid;
+
+use crate::blocks::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::scheduler::Task;
+use crate::widget::I3BarWidget;
+use crate::widgets::text::TextWidget;
 
 pub struct FocusedWindow {
     text: TextWidget,

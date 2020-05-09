@@ -1,11 +1,13 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::fs::read_to_string;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
+
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -18,8 +20,6 @@ use crate::util::format_percent_bar;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::graph::GraphWidget;
-
-use uuid::Uuid;
 
 pub struct NetworkDevice {
     device: String,

@@ -1,21 +1,20 @@
-use crate::scheduler::Task;
-use crate::util::{format_percent_bar, FormatTemplate};
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufReader;
+use std::time::Duration;
+
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use std::time::Duration;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::scheduler::Task;
+use crate::util::{format_percent_bar, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
-
-use uuid::Uuid;
 
 /// Maximum number of CPUs we support.
 const MAX_CPUS: usize = 32;
