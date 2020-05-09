@@ -1,5 +1,6 @@
 use super::super::widget::I3BarWidget;
 use crate::config::Config;
+use crate::util::escape_pango_text;
 use crate::widget::State;
 use serde_json::value::Value;
 
@@ -79,7 +80,7 @@ impl ButtonWidget {
         self.rendered = json!({
             "full_text": format!("{}{} ",
                                 self.icon.clone().unwrap_or_else(|| String::from(" ")),
-                                self.content.clone().unwrap_or_else(|| String::from(""))),
+                                escape_pango_text(self.content.clone().unwrap_or_else(|| String::from("")))),
             "separator": false,
             "name": self.id.clone(),
             "separator_block_width": 0,
