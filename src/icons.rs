@@ -86,8 +86,7 @@ lazy_static! {
         "volume_full" => " \u{f028} ",
         "volume_half" => " \u{f027} ",
         "volume_empty" => " \u{f026} ",
-        // This icon has no spaces around it because it is manually set as text. (sound.rs)
-        "volume_muted" => "\u{f00d}",
+        "volume_muted" => " \u{f026} \u{f00d} ",
         "thermometer" => " \u{f2c8} ",
         "xrandr" => " \u{f26c} ",
         "net_up" => " \u{2b06} ",
@@ -232,7 +231,7 @@ pub fn get_icons(name: &str) -> Option<Map<String, String>> {
     match name {
         "material" => Some(MATERIAL.clone()),
         "awesome" => Some(AWESOME.clone()),
-        "awesome5" => Some(AWESOME.clone()),
+        "awesome5" => Some(AWESOME5.clone()),
         "none" => Some(NONE.clone()),
         _ => None,
     }
