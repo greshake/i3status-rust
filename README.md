@@ -18,7 +18,7 @@ Most blocks assume you are running Linux, and some have their own system require
 
 Optional:
 
-* Font Awesome 4.x is required when using the icons config `name = "awesome"`. For version 5, use `name = "awesome5"`. If you have access to the AUR, check out [`ttf-font-awesome-4`](https://aur.archlinux.org/packages/ttf-font-awesome-4/) for version 4 and [`ttf-font-awesome`](https://aur.archlinux.org/packages/ttf-font-awesome/) for version 5..
+* Font Awesome 4.x is required when using the icons config `name = "awesome"`. For version 5, use `name = "awesome5"`. On Arch Linux version 4 is available in the [`AUR`](https://aur.archlinux.org/packages/ttf-font-awesome-4/), and version 5 is available [`here`](https://www.archlinux.org/packages/community/any/ttf-font-awesome/).
 * Powerline Fonts are required for all themes using the powerline arrow char.
 * `gperftools` is required for building with the `"profiling"` feature flag (disabled by default).
 
