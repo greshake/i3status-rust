@@ -79,7 +79,7 @@ impl PacmanConfig {
     }
 
     fn default_format() -> String {
-        "{count}".to_owned()
+        "{pacman}".to_owned()
     }
 
     fn default_critical_updates_regex() -> Option<String> {
