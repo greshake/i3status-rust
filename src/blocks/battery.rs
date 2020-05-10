@@ -135,16 +135,36 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn time_remaining(&self) -> Result<u64> {
+        let time_to_empty_now_path = self.device_path.join("time_to_empty_now");
+        let time_to_empty = if time_to_empty_now_path.exists() {
+            read_file("battery", &time_to_empty_now_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse time to empty")
+        } else {
+            Err(BlockError(
+                "battery".to_string(),
+                "Device does not support reading time to empty directly".to_string(),
+            ))
+        };
+        let time_to_full_now_path = self.device_path.join("time_to_full_now");
+        let time_to_full = if time_to_full_now_path.exists() {
+            read_file("battery", &time_to_full_now_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse time to full")
+        } else {
+            Err(BlockError(
+                "battery".to_string(),
+                "Device does not support reading time to full directly".to_string(),
+            ))
+        };
+
         // Units are µWh
         let full = if self.energy_full.is_some() {
-            self.energy_full.unwrap()
+            self.energy_full
         } else if self.charge_full.is_some() {
-            self.charge_full.unwrap()
+            self.charge_full
         } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading energy".to_string(),
-            ));
+            None
         };
 
         // Units are µWh/µAh
@@ -153,16 +173,16 @@ impl BatteryDevice for PowerSupplyDevice {
         let fill = if energy_path.exists() {
             read_file("battery", &energy_path)?
                 .parse::<f64>()
-                .block_error("battery", "failed to parse energy_now")?
+                .block_error("battery", "failed to parse energy_now")
         } else if charge_path.exists() {
             read_file("battery", &charge_path)?
                 .parse::<f64>()
-                .block_error("battery", "failed to parse charge_now")?
+                .block_error("battery", "failed to parse charge_now")
         } else {
-            return Err(BlockError(
+            Err(BlockError(
                 "battery".to_string(),
                 "Device does not support reading energy".to_string(),
-            ));
+            ))
         };
 
         let power_path = self.device_path.join("power_now");
@@ -170,16 +190,16 @@ impl BatteryDevice for PowerSupplyDevice {
         let usage = if power_path.exists() {
             read_file("battery", &power_path)?
                 .parse::<f64>()
-                .block_error("battery", "failed to parse power_now")?
+                .block_error("battery", "failed to parse power_now")
         } else if current_path.exists() {
             read_file("battery", &current_path)?
                 .parse::<f64>()
-                .block_error("battery", "failed to parse current_now")?
+                .block_error("battery", "failed to parse current_now")
         } else {
-            return Err(BlockError(
+            Err(BlockError(
                 "battery".to_string(),
                 "Device does not support reading power".to_string(),
-            ));
+            ))
         };
 
         // If the device driver uses the combination of energy_full, energy_now and power_now,
@@ -188,9 +208,32 @@ impl BatteryDevice for PowerSupplyDevice {
         // we're left with a time value.
         let status = self.status()?;
         match status.as_str() {
-            "Full" => Ok(((full as f64 / usage) * 60.0) as u64),
-            "Discharging" => Ok(((fill / usage) * 60.0) as u64),
-            "Charging" => Ok((((full as f64 - fill) / usage) * 60.0) as u64),
+            "Discharging" => {
+                if time_to_empty.is_ok() {
+                    time_to_empty
+                } else if fill.is_ok() && usage.is_ok() {
+                    Ok(((fill.unwrap() / usage.unwrap()) * 60.0) as u64)
+                } else {
+                    Err(BlockError(
+                        "battery".to_string(),
+                        "Device does not support any method of calculating time to empty"
+                            .to_string(),
+                    ))
+                }
+            }
+            "Charging" => {
+                if time_to_full.is_ok() {
+                    time_to_full
+                } else if full.is_some() && fill.is_ok() && usage.is_ok() {
+                    Ok((((full.unwrap() as f64 - fill.unwrap()) / usage.unwrap()) * 60.0) as u64)
+                } else {
+                    Err(BlockError(
+                        "battery".to_string(),
+                        "Device does not support any method of calculating time to full"
+                            .to_string(),
+                    ))
+                }
+            }
             _ => {
                 // TODO: What should we return in this case? It seems that under
                 // some conditions sysfs will return 0 for some readings (energy
