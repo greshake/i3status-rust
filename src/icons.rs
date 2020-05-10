@@ -59,7 +59,72 @@ lazy_static! {
         "pomodoro" => " POMODORO "
     };
 
+    // FontAwesome 4
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
+        "" => "",
+        "time" => " \u{f017} ",
+        "music" => " \u{f001} ",
+        "music_play" => " \u{f04b} ",
+        "music_pause" => " \u{f04c} ",
+        "music_next" => " \u{f061} ",
+        "music_prev" => " \u{f060} ",
+        "cogs" => " \u{f085} ",
+        "memory_mem" => " \u{f2db} ",
+        "memory_swap" => " \u{f0a0} ",
+        "cpu" => " \u{f0e4} ",
+        "bat_half" => " \u{f242} ",
+        "bat_full" => " \u{f240} ",
+        "bat_charging" => " \u{f1e6} ",
+        "bat_discharging" => " \u{f242} ",
+        "bat_quarter" => " \u{f243} ",
+        "bat_three_quarters" => " \u{f241} ",
+        "update" => " \u{f062} ",
+        "tasks" => " \u{f0ae} ",
+        "toggle_off" => " \u{f204} ",
+        "toggle_on" => " \u{f205} ",
+        "volume_full" => " \u{f028} ",
+        "volume_half" => " \u{f027} ",
+        "volume_empty" => " \u{f026} ",
+        // This icon has no spaces around it because it is manually set as text. (sound.rs)
+        "volume_muted" => "\u{f00d}",
+        "thermometer" => " \u{f2c8} ",
+        "xrandr" => " \u{f26c} ",
+        "net_up" => " \u{2b06} ",
+        "net_down" => " \u{2b07} ",
+        "net_wireless" => " \u{f1eb} ",
+        "net_wired" => " \u{f0ac} ",
+        "net_bridge" => " \u{f0e8} ",
+        "net_vpn" => " \u{f023} ",
+        "net_modem" => " \u{f095} ",
+        "ping" => " \u{21ba} ",
+        "backlight_empty" => " \u{1f315} ",
+        "backlight_partial1" => " \u{1f314} ",
+        "backlight_partial2" => " \u{1f313} ",
+        "backlight_partial3" => " \u{1f312} ",
+        "backlight_full" => " \u{1f311} ",
+        "weather_sun" => " \u{f185} ",
+        "weather_snow" => " \u{f2dc} ",
+        "weather_thunder" => " \u{f0e7} ",
+        "weather_clouds" => " \u{f0c2} ",
+        "weather_rain" => " \u{f043} ",
+        // Cloud symbol as default
+        "weather_default" => " \u{f0c2} ",
+        // Same as time symbol.
+        "uptime" => " \u{f017} ",
+        "gpu" => " \u{f26c} ",
+        "mail" => " \u{f0e0} ",
+        "bluetooth" => " \u{f294}",
+        "headphones" => " \u{f025}",
+        "joystick" => " \u{f11b}",
+        "keyboard" => " \u{f11c}",
+        "mouse" => " \u{f245}",
+        "docker" => " \u{f21a} ",
+        "pomodoro" => " \u{1f345} ",
+        "unknown" => " \u{f128} "
+    };
+
+    // FontAwesome 5
+    pub static ref AWESOME5: Map<String, String> = map_to_owned! {
         "" => "",
         "time" => " \u{f017} ",
         "music" => " \u{f001} ",
@@ -166,6 +231,7 @@ pub fn get_icons(name: &str) -> Option<Map<String, String>> {
     match name {
         "material" => Some(MATERIAL.clone()),
         "awesome" => Some(AWESOME.clone()),
+        "awesome5" => Some(AWESOME.clone()),
         "none" => Some(NONE.clone()),
         _ => None,
     }
