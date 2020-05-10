@@ -363,7 +363,6 @@ impl Block for Pacman {
 
 #[cfg(test)]
 mod tests {
-    use crate::blocks::pacman::Watched::Pacman;
     use crate::blocks::pacman::{
         get_aur_available_updates, get_update_count, PacmanConfig, Watched,
     };
