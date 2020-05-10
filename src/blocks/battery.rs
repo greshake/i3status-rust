@@ -555,7 +555,10 @@ impl Block for Battery {
                 Err(_) => "×".into(),
             };
             let time = match self.device.time_remaining() {
-                Ok(time) => format!("{}:{:02}", time / 60, time % 60),
+                Ok(time) => match time {
+                    0 => "".into(),
+                    _ => format!("{}:{:02}", time / 60, time % 60),
+                },
                 Err(_) => "×".into(),
             };
             let power = match self.device.power_consumption() {
