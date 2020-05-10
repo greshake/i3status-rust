@@ -102,14 +102,11 @@ impl Block for Time {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                match e.button {
-                    MouseButton::Left => {
-                        if let Some(ref cmd) = self.on_click {
-                            spawn_child_async("sh", &["-c", cmd])
-                                .block_error("time", "could not spawn child")?;
-                        }
+                if let MouseButton::Left = e.button {
+                    if let Some(ref cmd) = self.on_click {
+                        spawn_child_async("sh", &["-c", cmd])
+                            .block_error("time", "could not spawn child")?;
                     }
-                    _ => {}
                 }
             }
         }

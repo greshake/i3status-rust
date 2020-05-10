@@ -709,7 +709,7 @@ impl Sound {
                 if self.bar {
                     self.text.set_text(format_percent_bar(volume as f32));
                 } else {
-                    self.text.set_text(format!("{}", text));
+                    self.text.set_text(text);
                 }
             } else {
                 self.text.set_text("");
@@ -724,7 +724,7 @@ impl Sound {
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
-                text.to_string()
+                text
             });
             self.text.set_state(State::Idle);
         }
@@ -786,9 +786,7 @@ impl ConfigBlock for Sound {
             update_interval: block_config.interval,
         };
 
-        sound
-            .device
-            .monitor(id.clone(), tx_update_request.clone())?;
+        sound.device.monitor(id, tx_update_request)?;
 
         Ok(sound)
     }

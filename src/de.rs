@@ -142,7 +142,7 @@ where
         if vec.is_empty() {
             Err(de::Error::custom("seq is empty"))
         } else {
-            let mut combined = vec.remove(0).clone();
+            let mut combined = vec.remove(0);
             for other in vec {
                 combined.extend(other);
             }

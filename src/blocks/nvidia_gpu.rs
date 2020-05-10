@@ -209,7 +209,7 @@ impl ConfigBlock for NvidiaGpu {
             fan_speed: 0,
             fan_speed_controlled: false,
             show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(config.clone()))
+                Some(TextWidget::new(config))
             } else {
                 None
             },

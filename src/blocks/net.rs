@@ -606,7 +606,7 @@ impl ConfigBlock for Net {
                 None
             },
             graph_rx: if block_config.graph_down {
-                Some(GraphWidget::new(config.clone()))
+                Some(GraphWidget::new(config))
             } else {
                 None
             },
@@ -820,15 +820,11 @@ impl Block for Net {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                match e.button {
-                    MouseButton::Left => match self.on_click {
-                        Some(ref cmd) => {
-                            spawn_child_async("sh", &["-c", cmd])
-                                .block_error("net", "could not spawn child")?;
-                        }
-                        _ => (),
-                    },
-                    _ => (),
+                if let MouseButton::Left = e.button {
+                    if let Some(ref cmd) = self.on_click {
+                        spawn_child_async("sh", &["-c", cmd])
+                            .block_error("net", "could not spawn child")?;
+                    }
                 }
             }
         }

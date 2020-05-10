@@ -218,9 +218,8 @@ impl Block for Bluetooth {
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
             if name.as_str() == self.id {
-                match event.button {
-                    MouseButton::Right => self.device.toggle()?,
-                    _ => (),
+                if let MouseButton::Right = event.button {
+                    self.device.toggle()?;
                 }
             }
         }
