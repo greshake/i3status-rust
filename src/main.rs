@@ -55,6 +55,13 @@ fn main() {
                 .help("Exit rather than printing errors to i3bar and continuing")
                 .long("exit-on-error")
                 .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("one-shot")
+                .help("Print blocks once and exit")
+                .long("one-shot")
+                .takes_value(false)
+                .hidden(true),
         );
 
     if_debug!({
@@ -207,6 +214,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     // Fires immediately for first updates
     let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
 
+    let one_shot = matches.is_present("one-shot");
     loop {
         // We use the message passing concept of channel selection
         // to avoid busy wait
@@ -239,6 +247,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
         match scheduler.time_to_next_update() {
             Some(time) => ttnu = crossbeam_channel::after(time),
             None => ttnu = crossbeam_channel::after(Duration::from_secs(std::u64::MAX)),
+        }
+        if one_shot == true {
+            break Ok(());
         }
     }
 }
