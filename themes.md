@@ -36,7 +36,8 @@ Example theme file can be found in `example/theme/solarized-dark.toml`.
 
 # Available icon sets:
 * `none` (default)
-* `awesome`
+* `awesome` (Font Awesome 4.x)
+* `awesome5` (Font Awesome 5.x)
 * `material`
 
 > **Note**: In order to use the material icon set, you need a patched material icons font which can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf). Make sure to pass it in your i3 configuration bar block.
