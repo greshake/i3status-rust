@@ -1,0 +1,7 @@
+[theme]
+name = "plain"
+
+[[block]]
+block = "time"
+interval = 1
+format = "%a %d/%m %H:%M"

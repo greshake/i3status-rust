@@ -33,4 +33,5 @@ script:
   - rustup component add rustfmt
   - cargo fmt -- --check
   - cargo build --all-features --all-targets --verbose
+  - cargo build --all-features --all-targets --verbose --release
   - cargo test --all-features --all-targets --verbose
