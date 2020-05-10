@@ -64,7 +64,7 @@ impl PowerSupplyDevice {
             ));
         }
 
-        // Read charge_full exactly once, if it exists.
+        // Read charge_full exactly once, if it exists, units are µAh
         let charge_full = if device_path.join("charge_full").exists() {
             Some(
                 read_file("battery", &device_path.join("charge_full"))?
@@ -75,7 +75,7 @@ impl PowerSupplyDevice {
             None
         };
 
-        // Read energy_full exactly once, if it exists.
+        // Read energy_full exactly once, if it exists. Units are µWh.
         let energy_full = if device_path.join("energy_full").exists() {
             Some(
                 read_file("battery", &device_path.join("energy_full"))?
@@ -135,6 +135,7 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn time_remaining(&self) -> Result<u64> {
+        // Units are µWh
         let full = if self.energy_full.is_some() {
             self.energy_full.unwrap()
         } else if self.charge_full.is_some() {
@@ -146,6 +147,7 @@ impl BatteryDevice for PowerSupplyDevice {
             ));
         };
 
+        // Units are µWh/µAh
         let energy_path = self.device_path.join("energy_now");
         let charge_path = self.device_path.join("charge_now");
         let fill = if energy_path.exists() {
@@ -180,6 +182,10 @@ impl BatteryDevice for PowerSupplyDevice {
             ));
         };
 
+        // If the device driver uses the combination of energy_full, energy_now and power_now,
+        // all values (full, fill, and usage) are in Watts, while if it uses charge_full, charge_now
+        // and current_now, they're in Amps. In all 3 equations below the units cancel out and
+        // we're left with a time value.
         let status = self.status()?;
         match status.as_str() {
             "Full" => Ok(((full as f64 / usage) * 60.0) as u64),
@@ -196,12 +202,25 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn power_consumption(&self) -> Result<u64> {
+        // power consumption in µWh
         let power_path = self.device_path.join("power_now");
+        // current consumption in µA
+        let current_path = self.device_path.join("current_now");
+        // voltage in µV
+        let voltage_path = self.device_path.join("voltage_now");
 
         if power_path.exists() {
             Ok(read_file("battery", &power_path)?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse power_now")?)
+        } else if current_path.exists() && voltage_path.exists() {
+            let current = read_file("battery", &current_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse current_now")?;
+            let voltage = read_file("battery", &voltage_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse voltage_now")?;
+            Ok((current * voltage) / 1_000_000)
         } else {
             Err(BlockError(
                 "battery".to_string(),
@@ -561,6 +580,7 @@ impl Block for Battery {
                 },
                 Err(_) => "×".into(),
             };
+            // convert µW to W for display
             let power = match self.device.power_consumption() {
                 Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
                 Err(_) => "×".into(),
