@@ -656,10 +656,9 @@ fn convert_speed(speed: u64, use_bits: bool) -> (f64, &'static str) {
     (speed, unit)
 }
 
-impl Block for Net {
-    fn update(&mut self) -> Result<Option<Duration>> {
+impl Net {
+    fn update_device(&mut self) {
         if self.auto_device {
-            // update the device and icon to the device currently marked as default
             let dev = NetConfig::default_device();
             if self.device.device() != dev {
                 self.device = NetworkDevice::from_device(dev);
@@ -672,75 +671,67 @@ impl Block for Net {
                 });
             }
         }
-        // Skip updating tx/rx if device is not up.
-        let exists = self.device.exists()?;
-        let is_up = self.device.is_up()?;
-        if !exists || !is_up {
-            self.active = false;
-            self.network.set_text(" ×".to_string());
-            if let Some(ref mut tx_widget) = self.output_tx {
-                tx_widget.set_text("×".to_string());
-            };
-            if let Some(ref mut rx_widget) = self.output_rx {
-                rx_widget.set_text("×".to_string());
-            };
+    }
 
-            return Ok(Some(self.update_interval));
-        } else {
-            self.active = true;
-            self.network.set_text("".to_string());
-        }
-
-        // Update SSID and IP address every 30s and the bitrate every 10s
-        let now = Instant::now();
-        if now.duration_since(self.last_update).as_secs() % 10 == 0 {
-            if let Some(ref mut bitrate_widget) = self.bitrate {
-                let bitrate = self.device.bitrate()?;
-                if let Some(b) = bitrate {
-                    bitrate_widget.set_text(b);
-                }
+    fn update_bitrate(&mut self) -> Result<()> {
+        if let Some(ref mut bitrate_widget) = self.bitrate {
+            let bitrate = self.device.bitrate()?;
+            if let Some(b) = bitrate {
+                bitrate_widget.set_text(b);
             }
         }
-        if now.duration_since(self.last_update).as_secs() > 30 {
-            if let Some(ref mut ssid_widget) = self.ssid {
-                let ssid = self.device.ssid()?;
-                if let Some(s) = ssid {
-                    let mut truncated = s;
-                    truncated.truncate(self.max_ssid_width);
-                    ssid_widget.set_text(truncated);
-                }
-            }
-            if let Some(ref mut signal_strength_widget) = self.signal_strength {
-                let value = self.device.relative_signal_strength()?;
-                if let Some(v) = value {
-                    signal_strength_widget.set_text(if self.signal_strength_bar {
-                        format_percent_bar(v as f32)
-                    } else {
-                        format!("{}%", v)
-                    });
-                }
-            }
-            if let Some(ref mut ip_addr_widget) = self.ip_addr {
-                let ip_addr = self.device.ip_addr()?;
-                if let Some(ip) = ip_addr {
-                    ip_addr_widget.set_text(ip);
-                }
-            }
-            if let Some(ref mut ipv6_addr_widget) = self.ipv6_addr {
-                let ipv6_addr = self.device.ipv6_addr()?;
-                if let Some(ip) = ipv6_addr {
-                    ipv6_addr_widget.set_text(ip);
-                }
-            }
-            self.last_update = now;
-        }
+        Ok(())
+    }
 
+    fn update_ssid(&mut self) -> Result<()> {
+        if let Some(ref mut ssid_widget) = self.ssid {
+            let ssid = self.device.ssid()?;
+            if let Some(s) = ssid {
+                let mut truncated = s;
+                truncated.truncate(self.max_ssid_width);
+                ssid_widget.set_text(truncated);
+            }
+        }
+        Ok(())
+    }
+
+    fn update_signal_strength(&mut self) -> Result<()> {
+        if let Some(ref mut signal_strength_widget) = self.signal_strength {
+            let value = self.device.relative_signal_strength()?;
+            if let Some(v) = value {
+                signal_strength_widget.set_text(if self.signal_strength_bar {
+                    format_percent_bar(v as f32)
+                } else {
+                    format!("{}%", v)
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn update_ip_addr(&mut self) -> Result<()> {
+        if let Some(ref mut ip_addr_widget) = self.ip_addr {
+            let ip_addr = self.device.ip_addr()?;
+            if let Some(ip) = ip_addr {
+                ip_addr_widget.set_text(ip);
+            }
+        }
+        if let Some(ref mut ipv6_addr_widget) = self.ipv6_addr {
+            let ipv6_addr = self.device.ipv6_addr()?;
+            if let Some(ip) = ipv6_addr {
+                ipv6_addr_widget.set_text(ip);
+            }
+        }
+        Ok(())
+    }
+
+    fn update_tx_rx(&mut self) -> Result<()> {
         // allow us to display bits or bytes
         // dependent on user's config setting
         let multiplier = if self.use_bits { 8.0 } else { 1.0 };
         // TODO: consider using `as_nanos`
-        // Update the throughout/graph widgets if they are enabled
         let update_interval = (self.update_interval.as_secs() as f64)
+        // Update the throughput/graph widgets if they are enabled
             + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
@@ -774,6 +765,46 @@ impl Block for Net {
                 graph_rx_widget.set_values(&self.rx_buff, None, None);
             }
         }
+        Ok(())
+    }
+}
+
+impl Block for Net {
+    fn update(&mut self) -> Result<Option<Duration>> {
+        self.update_device();
+
+        // skip updating if device is not up.
+        let exists = self.device.exists()?;
+        let is_up = self.device.is_up()?;
+        if !exists || !is_up {
+            self.active = false;
+            self.network.set_text(" ×".to_string());
+            if let Some(ref mut tx_widget) = self.output_tx {
+                tx_widget.set_text("×".to_string());
+            };
+            if let Some(ref mut rx_widget) = self.output_rx {
+                rx_widget.set_text("×".to_string());
+            };
+
+            return Ok(Some(self.update_interval));
+        }
+
+        self.active = true;
+        self.network.set_text("".to_string());
+
+        // Update SSID and IP address every 30s and the bitrate every 10s
+        let now = Instant::now();
+        if now.duration_since(self.last_update).as_secs() % 10 == 0 {
+            self.update_bitrate()?;
+        }
+        if now.duration_since(self.last_update).as_secs() > 30 {
+            self.update_ssid()?;
+            self.update_signal_strength()?;
+            self.update_ip_addr()?;
+            self.last_update = now;
+        }
+
+        self.update_tx_rx()?;
 
         Ok(Some(self.update_interval))
     }
