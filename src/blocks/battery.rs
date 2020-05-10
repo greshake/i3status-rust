@@ -135,68 +135,75 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn time_remaining(&self) -> Result<u64> {
-        // Units are µWh
-        let full = if self.energy_full.is_some() {
-            self.energy_full.unwrap()
-        } else if self.charge_full.is_some() {
-            self.charge_full.unwrap()
+        let time_to_empty_now_path = self.device_path.join("time_to_empty_now");
+        if time_to_empty_now_path.exists() {
+            read_file("battery", &time_to_empty_now_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse time to empty")
         } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading energy".to_string(),
-            ));
-        };
+            // Units are µWh
+            let full = if self.energy_full.is_some() {
+                self.energy_full.unwrap()
+            } else if self.charge_full.is_some() {
+                self.charge_full.unwrap()
+            } else {
+                return Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support reading energy".to_string(),
+                ));
+            };
 
-        // Units are µWh/µAh
-        let energy_path = self.device_path.join("energy_now");
-        let charge_path = self.device_path.join("charge_now");
-        let fill = if energy_path.exists() {
-            read_file("battery", &energy_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse energy_now")?
-        } else if charge_path.exists() {
-            read_file("battery", &charge_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse charge_now")?
-        } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading energy".to_string(),
-            ));
-        };
+            // Units are µWh/µAh
+            let energy_path = self.device_path.join("energy_now");
+            let charge_path = self.device_path.join("charge_now");
+            let fill = if energy_path.exists() {
+                read_file("battery", &energy_path)?
+                    .parse::<f64>()
+                    .block_error("battery", "failed to parse energy_now")?
+            } else if charge_path.exists() {
+                read_file("battery", &charge_path)?
+                    .parse::<f64>()
+                    .block_error("battery", "failed to parse charge_now")?
+            } else {
+                return Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support reading energy".to_string(),
+                ));
+            };
 
-        let power_path = self.device_path.join("power_now");
-        let current_path = self.device_path.join("current_now");
-        let usage = if power_path.exists() {
-            read_file("battery", &power_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse power_now")?
-        } else if current_path.exists() {
-            read_file("battery", &current_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse current_now")?
-        } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading power".to_string(),
-            ));
-        };
+            let power_path = self.device_path.join("power_now");
+            let current_path = self.device_path.join("current_now");
+            let usage = if power_path.exists() {
+                read_file("battery", &power_path)?
+                    .parse::<f64>()
+                    .block_error("battery", "failed to parse power_now")?
+            } else if current_path.exists() {
+                read_file("battery", &current_path)?
+                    .parse::<f64>()
+                    .block_error("battery", "failed to parse current_now")?
+            } else {
+                return Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support reading power".to_string(),
+                ));
+            };
 
-        // If the device driver uses the combination of energy_full, energy_now and power_now,
-        // all values (full, fill, and usage) are in Watts, while if it uses charge_full, charge_now
-        // and current_now, they're in Amps. In all 3 equations below the units cancel out and
-        // we're left with a time value.
-        let status = self.status()?;
-        match status.as_str() {
-            "Full" => Ok(((full as f64 / usage) * 60.0) as u64),
-            "Discharging" => Ok(((fill / usage) * 60.0) as u64),
-            "Charging" => Ok((((full as f64 - fill) / usage) * 60.0) as u64),
-            _ => {
-                // TODO: What should we return in this case? It seems that under
-                // some conditions sysfs will return 0 for some readings (energy
-                // or power), so perhaps the most natural thing to do is emulate
-                // that.
-                Ok(0)
+            // If the device driver uses the combination of energy_full, energy_now and power_now,
+            // all values (full, fill, and usage) are in Watts, while if it uses charge_full, charge_now
+            // and current_now, they're in Amps. In all 3 equations below the units cancel out and
+            // we're left with a time value.
+            let status = self.status()?;
+            match status.as_str() {
+                "Full" => Ok(((full as f64 / usage) * 60.0) as u64),
+                "Discharging" => Ok(((fill / usage) * 60.0) as u64),
+                "Charging" => Ok((((full as f64 - fill) / usage) * 60.0) as u64),
+                _ => {
+                    // TODO: What should we return in this case? It seems that under
+                    // some conditions sysfs will return 0 for some readings (energy
+                    // or power), so perhaps the most natural thing to do is emulate
+                    // that.
+                    Ok(0)
+                }
             }
         }
     }
