@@ -677,20 +677,40 @@ Key | Values | Required | Default
 
 ## Pacman
 
-Creates a block which displays the pending updates available on pacman. Requires fakeroot to be installed.
+Creates a block which displays the pending updates available on pacman or an AUR helper.
+
+Requires fakeroot to be installed (only required for pacman).
 
 ### Examples
 
-Update the list of pending updates every ten seconds:
+Update the list of pending updates every ten minutes (600 seconds):
+
+Update interval should be set appropriately as to not exceed the AUR's daily rate limit.
+
+pacman only config:
 
 ```toml
 [[block]]
 block = "pacman"
-interval = 10
-format = "{count} updates available"
-format_singular = "{count} update available"
+interval = 600
+format = "{pacman} updates available"
+format_singular = "{pacman} update available"
 format_up_to_date = "system up to date"
 critical_updates_regex = "(linux |linux-lts|linux-zen)"
+```
+
+pacman and AUR helper config:
+
+```toml
+[[block]]
+block = "pacman"
+interval = 600
+format = "{pacman} + {aur} (AUR) = {both} updates available"
+format_singular = "{both} update available"
+format_up_to_date = "system up to date"
+critical_updates_regex = "(linux |linux-lts|linux-zen)"
+# aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
+aur_command = "echo -ne 'an AUR update'"
 ```
 
 ### Options
@@ -698,16 +718,20 @@ critical_updates_regex = "(linux |linux-lts|linux-zen)"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `600` (10min)
-`format` | Format override | No | `"{count}"`
-`format_singular` | Format override if exactly one update is available | No | `"{count}"`
-`format_up_to_date` | Format override if no updates are available | No | `"{count}"`
+`format` | Format override | No | `"{pacman}"`
+`format_singular` | Format override if exactly one update is available | No | `"{pacman}"`
+`format_up_to_date` | Format override if no updates are available | No | `"{pacman}"`
 `critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
+`aur_command` | AUR command to check available updates | if `{both}` or `{aur}` are used | `None`
 
 ### Available Format Keys
 
 Key | Value
 ----|-------
-`{count}` | Number of updates available
+`{count}` | Number of pacman updates available (**deprecated**: use `{pacman}` instead)
+`{pacman}`| Number of updates available according to `pacman`
+`{aur}` | Number of updates available according to `<aur_command>`
+`{both}` | Cumulative number of updates available according to `pacman` and `<aur_commad>` 
 
 
 ## Pomodoro
