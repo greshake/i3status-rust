@@ -710,7 +710,7 @@ format_singular = "{both} update available"
 format_up_to_date = "system up to date"
 critical_updates_regex = "(linux |linux-lts|linux-zen)"
 # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
-aur_command = "echo -ne 'an AUR update'"
+aur_command = "pikaur -Qua"
 ```
 
 ### Options
@@ -722,7 +722,7 @@ Key | Values | Required | Default
 `format_singular` | Format override if exactly one update is available | No | `"{pacman}"`
 `format_up_to_date` | Format override if no updates are available | No | `"{pacman}"`
 `critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
-`aur_command` | AUR command to check available updates | if `{both}` or `{aur}` are used | `None`
+`aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `pikaur -Qua` | if `{both}` or `{aur}` are used | `None`
 
 ### Available Format Keys
 
