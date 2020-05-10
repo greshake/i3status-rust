@@ -18,7 +18,7 @@ Most blocks assume you are running Linux, and some have their own system require
 
 Optional:
 
-* Font Awesome is required for `icons="awesome"`. Version 5 of the font is causing some issues (see [#130](https://github.com/greshake/i3status-rust/issues/130)), so for now we recommend version 4. If you have access to the AUR, check out [`ttf-font-awesome-4`](https://aur.archlinux.org/packages/ttf-font-awesome-4/).
+* Font Awesome 4.x is required when using the icons config `name = "awesome"`. For version 5, use `name = "awesome5"`. If you have access to the AUR, check out [`ttf-font-awesome-4`](https://aur.archlinux.org/packages/ttf-font-awesome-4/) for version 4 and [`ttf-font-awesome`](https://aur.archlinux.org/packages/ttf-font-awesome/) for version 5..
 * Powerline Fonts are required for all themes using the powerline arrow char.
 * `gperftools` is required for building with the `"profiling"` feature flag (disabled by default).
 
