@@ -89,18 +89,18 @@ impl PacmanConfig {
     fn watched(
         format: &str,
         format_singular: &str,
+        format_up_to_date: &str,
         aur_command: Option<String>,
     ) -> Result<Watched> {
         let aur_format = "{aur}";
         let pacman_format = "{pacman}";
         let both_format = "{both}";
         let pacman_deprecated_format = "{count}";
-        let aur = format.contains(aur_format) || format_singular.contains(aur_format);
-        let pacman = format.contains(pacman_format)
-            || format.contains(pacman_deprecated_format)
-            || format_singular.contains(pacman_format)
-            || format_singular.contains(pacman_deprecated_format);
-        let both = format.contains(both_format) || format_singular.contains(both_format);
+        let concatenated_format_str = format!("{}{}{}", format, format_singular, format_up_to_date);
+        let aur = concatenated_format_str.contains(aur_format);
+        let pacman = concatenated_format_str.contains(pacman_format)
+            || concatenated_format_str.contains(pacman_deprecated_format);
+        let both = concatenated_format_str.contains(both_format);
         if both || (pacman && aur) {
             let aur_command = aur_command.block_error(
                 "pacman",
@@ -171,6 +171,7 @@ impl ConfigBlock for Pacman {
             watched: PacmanConfig::watched(
                 &block_config.format,
                 &block_config.format_singular,
+                &block_config.format_up_to_date,
                 block_config.aur_command,
             )?,
         })
@@ -380,19 +381,20 @@ mod tests {
 
     #[test]
     fn test_watched() {
-        let watched = PacmanConfig::watched("foo {count} bar", "foo {count} bar", None);
+        let watched = PacmanConfig::watched("foo {count} bar", "foo {count} bar", "", None);
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Pacman);
-        let watched = PacmanConfig::watched("foo {pacman} bar", "foo {pacman} bar", None);
+        let watched = PacmanConfig::watched("foo {pacman} bar", "foo {pacman} bar", "", None);
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Pacman);
-        let watched = PacmanConfig::watched("foo bar", "foo bar", None);
+        let watched = PacmanConfig::watched("foo bar", "foo bar", "", None);
         assert!(watched.is_err()); // missing formatter
-        let watched = PacmanConfig::watched("foo bar", "foo bar", Some("aur cmd".to_string()));
+        let watched = PacmanConfig::watched("foo bar", "foo bar", "", Some("aur cmd".to_string()));
         assert!(watched.is_err()); // missing formatter
         let watched = PacmanConfig::watched(
             "foo {aur} bar",
             "foo {aur} bar",
+            "",
             Some("aur cmd".to_string()),
         );
         assert!(watched.is_ok());
@@ -400,18 +402,20 @@ mod tests {
         let watched = PacmanConfig::watched(
             "foo {pacman} {aur} bar",
             "foo {pacman} {aur} bar",
+            "",
             Some("aur cmd".to_string()),
         );
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Both("aur cmd".to_string()));
         let watched =
-            PacmanConfig::watched("foo {pacman} {aur} bar", "foo {pacman} {aur} bar", None);
+            PacmanConfig::watched("foo {pacman} {aur} bar", "foo {pacman} {aur} bar", "", None);
         assert!(watched.is_err()); // missing aur command
-        let watched = PacmanConfig::watched("foo {both} bar", "foo {both} bar", None);
+        let watched = PacmanConfig::watched("foo {both} bar", "foo {both} bar", "", None);
         assert!(watched.is_err()); // missing aur command
         let watched = PacmanConfig::watched(
             "foo {both} bar",
             "foo {both} bar",
+            "",
             Some("aur cmd".to_string()),
         );
         assert!(watched.is_ok());
