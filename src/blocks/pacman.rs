@@ -425,7 +425,7 @@ mod tests {
     fn test_get_aur_available_updates() {
         // aur_command should behave as echo -ne "foo x.x -> y.y\n"
         let updates = "foo x.x -> y.y\nbar x.x -> y.y\n";
-        let aur_command = format!("echo -ne '{}'", updates);
+        let aur_command = format!("printf '{}'", updates);
         let available_updates = get_aur_available_updates(&aur_command);
         assert!(available_updates.is_ok());
         assert_eq!(available_updates.unwrap(), updates);
