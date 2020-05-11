@@ -193,7 +193,7 @@ impl ConfigBlock for Music {
             prev,
             play,
             next,
-            on_collapsed_click_widget: ButtonWidget::new(config.clone(), "on_collapsed_click")
+            on_collapsed_click_widget: ButtonWidget::new(config, "on_collapsed_click")
                 .with_icon("music")
                 .with_state(State::Info),
             on_collapsed_click: block_config.on_collapsed_click,

@@ -117,7 +117,7 @@ impl ConfigBlock for IBus {
 
         Ok(IBus {
             id: id_copy,
-            text: TextWidget::new(config.clone()).with_text("IBus"),
+            text: TextWidget::new(config).with_text("IBus"),
             engine,
             mappings: block_config.mappings,
             update_interval: block_config.interval,

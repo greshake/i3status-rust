@@ -154,14 +154,14 @@ fn has_taskwarrior() -> Result<bool> {
         != "")
 }
 
-fn tags_to_filter(tags: &Vec<String>) -> String {
+fn tags_to_filter(tags: &[String]) -> String {
     tags.iter()
         .map(|element| format!("+{}", element))
         .collect::<Vec<String>>()
         .join(" ")
 }
 
-fn get_number_of_pending_tasks(tags: &Vec<String>) -> Result<u32> {
+fn get_number_of_pending_tasks(tags: &[String]) -> Result<u32> {
     String::from_utf8(
         Command::new("sh")
             .args(&[

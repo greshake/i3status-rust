@@ -91,7 +91,7 @@ impl ConfigBlock for Maildir {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let widget = TextWidget::new(config.clone()).with_text("");
+        let widget = TextWidget::new(config).with_text("");
         Ok(Maildir {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,

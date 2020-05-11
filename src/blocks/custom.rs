@@ -80,7 +80,7 @@ impl ConfigBlock for Custom {
         custom.output = ButtonWidget::new(config, &custom.id);
 
         if let Some(on_click) = block_config.on_click {
-            custom.on_click = Some(on_click.to_string())
+            custom.on_click = Some(on_click)
         };
 
         if let Some(cycle) = block_config.cycle {
@@ -89,7 +89,7 @@ impl ConfigBlock for Custom {
         };
 
         if let Some(command) = block_config.command {
-            custom.command = Some(command.to_string())
+            custom.command = Some(command)
         };
 
         Ok(custom)

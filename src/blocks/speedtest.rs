@@ -136,7 +136,7 @@ impl ConfigBlock for SpeedTest {
                 ButtonWidget::new(config.clone(), &id)
                     .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
-                ButtonWidget::new(config.clone(), &id)
+                ButtonWidget::new(config, &id)
                     .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
             ],

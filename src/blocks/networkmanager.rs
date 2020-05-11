@@ -73,9 +73,9 @@ impl From<u32> for ActiveConnectionState {
 }
 
 impl ActiveConnectionState {
-    fn to_state(&self, good: &State) -> State {
+    fn to_state(&self, good: State) -> State {
         match self {
-            ActiveConnectionState::Activated => good.clone(),
+            ActiveConnectionState::Activated => good,
             ActiveConnectionState::Activating => State::Warning,
             ActiveConnectionState::Deactivating => State::Warning,
             ActiveConnectionState::Deactivated => State::Critical,
@@ -536,7 +536,7 @@ impl ConfigBlock for NetworkManager {
         Ok(NetworkManager {
             id: id.clone(),
             config: config.clone(),
-            indicator: ButtonWidget::new(config.clone(), &id),
+            indicator: ButtonWidget::new(config, &id),
             output: Vec::new(),
             dbus_conn,
             manager,
@@ -613,9 +613,9 @@ impl Block for NetworkManager {
 
                         // Set the state for this connection
                         widget.set_state(if let Ok(conn_state) = conn.state(&self.dbus_conn) {
-                            conn_state.to_state(&good_state)
+                            conn_state.to_state(good_state)
                         } else {
-                            ActiveConnectionState::Unknown.to_state(&good_state)
+                            ActiveConnectionState::Unknown.to_state(good_state)
                         });
 
                         // Get all devices for this connection
@@ -708,7 +708,7 @@ impl Block for NetworkManager {
 
                         let id = match conn.id(&self.dbus_conn) {
                             Ok(id) => id,
-                            Err(v) => format!("{:?}", v).to_string(),
+                            Err(v) => format!("{:?}", v),
                         };
 
                         let values = map!("{devices}" => devicevec.join(" "),
@@ -739,17 +739,14 @@ impl Block for NetworkManager {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                match e.button {
-                    MouseButton::Left => {
-                        if let Some(ref cmd) = self.on_click {
-                            let command_broken: Vec<&str> = cmd.split_whitespace().collect();
-                            let mut itr = command_broken.iter();
-                            let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                                .args(itr)
-                                .spawn();
-                        }
+                if let MouseButton::Left = e.button {
+                    if let Some(ref cmd) = self.on_click {
+                        let command_broken: Vec<&str> = cmd.split_whitespace().collect();
+                        let mut itr = command_broken.iter();
+                        let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
+                            .args(itr)
+                            .spawn();
                     }
-                    _ => (),
                 }
             }
         }

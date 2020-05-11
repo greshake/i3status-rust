@@ -248,7 +248,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             Some(time) => ttnu = crossbeam_channel::after(time),
             None => ttnu = crossbeam_channel::after(Duration::from_secs(std::u64::MAX)),
         }
-        if one_shot == true {
+        if one_shot {
             break Ok(());
         }
     }
