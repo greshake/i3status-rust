@@ -19,8 +19,6 @@ mod widgets;
 
 #[cfg(feature = "profiling")]
 use cpuprofiler::PROFILER;
-#[cfg(feature = "profiling")]
-use progress;
 
 use std::collections::HashMap;
 use std::ops::DerefMut;
@@ -286,12 +284,8 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
         .configuration_error("failed to parse --profile-runs as an integer")?;
     for &(ref block_name, ref block_config) in &config.blocks {
         if block_name == name {
-            let mut block = create_block(
-                &block_name,
-                block_config.clone(),
-                config.clone(),
-                update.clone(),
-            )?;
+            let mut block =
+                create_block(&block_name, block_config.clone(), config.clone(), update)?;
             profile(profile_runs, &block_name, block.deref_mut());
             break;
         }
