@@ -3,11 +3,10 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use i3ipc::event::inner::{WindowChange, WorkspaceChange};
-use i3ipc::event::Event;
-use i3ipc::I3EventListener;
-use i3ipc::Subscription;
 use serde_derive::Deserialize;
+use swayipc::reply::Event;
+use swayipc::reply::{WindowChange, WorkspaceChange};
+use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -60,23 +59,19 @@ impl ConfigBlock for FocusedWindow {
         let title_original = Arc::new(Mutex::new(String::from("")));
         let title = title_original.clone();
 
-        let _test_conn = I3EventListener::connect()
-            .block_error("focused_window", "failed to acquire connect to IPC")?;
+        let _test_conn =
+            Connection::new().block_error("focused_window", "failed to acquire connect to IPC")?;
 
         thread::Builder::new()
             .name("focused_window".into())
             .spawn(move || {
-                // establish connection.
-                let mut listener = I3EventListener::connect().unwrap();
-
-                // subscribe to a couple events.
-                let subs = [Subscription::Window, Subscription::Workspace];
-                listener.subscribe(&subs).unwrap();
-
-                // handle them
-                for event in listener.listen() {
+                for event in Connection::new()
+                    .unwrap()
+                    .subscribe(&[EventType::Window, EventType::Workspace])
+                    .unwrap()
+                {
                     match event.unwrap() {
-                        Event::WindowEvent(e) => {
+                        Event::Window(e) => {
                             match e.change {
                                 WindowChange::Focus => {
                                     if let Some(name) = e.container.name {
@@ -118,7 +113,7 @@ impl ConfigBlock for FocusedWindow {
                                 _ => {}
                             };
                         }
-                        Event::WorkspaceEvent(e) => {
+                        Event::Workspace(e) => {
                             if let WorkspaceChange::Init = e.change {
                                 let mut title = title_original.lock().unwrap();
                                 *title = String::from("");
