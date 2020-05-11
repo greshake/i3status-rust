@@ -20,6 +20,8 @@ use crate::widgets::text::TextWidget;
 pub struct FocusedWindow {
     text: TextWidget,
     title: Arc<Mutex<String>>,
+    marks: Arc<Mutex<String>>,
+    show_marks: bool,
     max_width: usize,
     id: String,
     update_interval: Duration,
@@ -37,6 +39,10 @@ pub struct FocusedWindowConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
+
+    /// Show marks in place of title (if exist)
+    #[serde(default = "FocusedWindowConfig::default_show_marks")]
+    pub show_marks: bool,
 }
 
 impl FocusedWindowConfig {
@@ -46,6 +52,10 @@ impl FocusedWindowConfig {
 
     fn default_interval() -> Duration {
         Duration::from_secs(30)
+    }
+
+    fn default_show_marks() -> bool {
+        false
     }
 }
 
@@ -58,6 +68,8 @@ impl ConfigBlock for FocusedWindow {
 
         let title_original = Arc::new(Mutex::new(String::from("")));
         let title = title_original.clone();
+        let marks_original = Arc::new(Mutex::new(String::from("")));
+        let marks = marks_original.clone();
 
         let _test_conn =
             Connection::new().block_error("focused_window", "failed to acquire connect to IPC")?;
@@ -77,12 +89,19 @@ impl ConfigBlock for FocusedWindow {
                                     if let Some(name) = e.container.name {
                                         let mut title = title_original.lock().unwrap();
                                         *title = name;
-                                        tx.send(Task {
-                                            id: id_clone.clone(),
-                                            update_time: Instant::now(),
-                                        })
-                                        .unwrap();
                                     }
+                                    let mut marks = marks_original.lock().unwrap();
+                                    if !e.container.marks.is_empty() {
+                                        *marks =
+                                            e.container.marks.iter().map(|x| x.as_str()).collect();
+                                    } else {
+                                        *marks = String::from("");
+                                    }
+                                    tx.send(Task {
+                                        id: id_clone.clone(),
+                                        update_time: Instant::now(),
+                                    })
+                                    .unwrap();
                                 }
                                 WindowChange::Title => {
                                     if e.container.focused {
@@ -95,6 +114,18 @@ impl ConfigBlock for FocusedWindow {
                                             })
                                             .unwrap();
                                         }
+                                    }
+                                }
+                                WindowChange::Mark => {
+                                    if !e.container.marks.is_empty() {
+                                        let mut marks = marks_original.lock().unwrap();
+                                        *marks =
+                                            e.container.marks.iter().map(|x| x.as_str()).collect();
+                                        tx.send(Task {
+                                            id: id_clone.clone(),
+                                            update_time: Instant::now(),
+                                        })
+                                        .unwrap();
                                     }
                                 }
                                 WindowChange::Close => {
@@ -134,7 +165,9 @@ impl ConfigBlock for FocusedWindow {
             id,
             text: TextWidget::new(config),
             max_width: block_config.max_width,
+            show_marks: block_config.show_marks,
             title,
+            marks,
             update_interval: block_config.interval,
         })
     }
@@ -142,13 +175,25 @@ impl ConfigBlock for FocusedWindow {
 
 impl Block for FocusedWindow {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let mut string = (*self
+        //WIP: check if marks are non-empty first
+        let mut marks_string = (*self
+            .marks
+            .lock()
+            .block_error("focused_window", "failed to acquire lock")?)
+        .clone();
+        marks_string = marks_string.chars().take(self.max_width).collect();
+        let mut title_string = (*self
             .title
             .lock()
             .block_error("focused_window", "failed to acquire lock")?)
         .clone();
-        string = string.chars().take(self.max_width).collect();
-        self.text.set_text(string);
+        title_string = title_string.chars().take(self.max_width).collect();
+        if self.show_marks && !marks_string.is_empty() {
+            self.text.set_text(marks_string);
+        } else {
+            self.text.set_text(title_string);
+        }
+
         Ok(Some(self.update_interval))
     }
 
