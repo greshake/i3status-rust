@@ -164,6 +164,9 @@ impl Block for SpeedTest {
                 self.text[1].set_text(format!("{}{}", vals[1], ty));
                 self.text[2].set_text(format!("{}{}", vals[2], ty));
 
+                // TODO: remove clippy workaround
+                #[allow(clippy::unknown_clippy_lints)]
+                #[allow(clippy::match_on_vec_items)]
                 self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
                             0.0 ; 25.0 => State::Good,
                             25.0 ; 60.0 => State::Info,

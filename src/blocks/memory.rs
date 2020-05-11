@@ -418,8 +418,8 @@ impl Block for Memory {
             };
             let line = line.split_whitespace().collect::<Vec<&str>>();
 
-            match line[0] {
-                "MemTotal:" => {
+            match line.get(0) {
+                Some(&"MemTotal:") => {
                     mem_state.mem_total = (
                         u64::from_str(line[1])
                             .block_error("memory", "failed to parse mem_total")?,
@@ -427,28 +427,28 @@ impl Block for Memory {
                     );
                     continue;
                 }
-                "MemFree:" => {
+                Some(&"MemFree:") => {
                     mem_state.mem_free = (
                         u64::from_str(line[1]).block_error("memory", "failed to parse mem_free")?,
                         true,
                     );
                     continue;
                 }
-                "Buffers:" => {
+                Some(&"Buffers:") => {
                     mem_state.buffers = (
                         u64::from_str(line[1]).block_error("memory", "failed to parse buffers")?,
                         true,
                     );
                     continue;
                 }
-                "Cached:" => {
+                Some(&"Cached:") => {
                     mem_state.cached = (
                         u64::from_str(line[1]).block_error("memory", "failed to parse cached")?,
                         true,
                     );
                     continue;
                 }
-                "SReclaimable:" => {
+                Some(&"SReclaimable:") => {
                     mem_state.s_reclaimable = (
                         u64::from_str(line[1])
                             .block_error("memory", "failed to parse s_reclaimable")?,
@@ -456,14 +456,14 @@ impl Block for Memory {
                     );
                     continue;
                 }
-                "Shmem:" => {
+                Some(&"Shmem:") => {
                     mem_state.shmem = (
                         u64::from_str(line[1]).block_error("memory", "failed to parse shmem")?,
                         true,
                     );
                     continue;
                 }
-                "SwapTotal:" => {
+                Some(&"SwapTotal:") => {
                     mem_state.swap_total = (
                         u64::from_str(line[1])
                             .block_error("memory", "failed to parse swap_total")?,
@@ -471,7 +471,7 @@ impl Block for Memory {
                     );
                     continue;
                 }
-                "SwapFree:" => {
+                Some(&"SwapFree:") => {
                     mem_state.swap_free = (
                         u64::from_str(line[1])
                             .block_error("memory", "failed to parse swap_free")?,
