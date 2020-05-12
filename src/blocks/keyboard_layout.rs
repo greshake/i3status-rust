@@ -10,6 +10,9 @@ use dbus::{
     Message,
 };
 use serde_derive::Deserialize;
+use swayipc::reply::Event;
+use swayipc::reply::InputChange;
+use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
@@ -27,6 +30,7 @@ pub enum KeyboardLayoutDriver {
     SetXkbMap,
     LocaleBus,
     KbddBus,
+    Sway,
 }
 
 impl Default for KeyboardLayoutDriver {
@@ -297,6 +301,86 @@ impl dbus::ffidisp::MsgHandler for KbddMessageHandler {
     }
 }
 
+pub struct Sway {
+    sway_kb_layout: Arc<Mutex<String>>,
+}
+
+impl Sway {
+    pub fn new(sway_kb_identifier: String) -> Result<Self> {
+        let layout = swayipc::Connection::new()
+            .unwrap()
+            .get_inputs()
+            .unwrap()
+            .into_iter()
+            .find(|input| input.identifier == sway_kb_identifier)
+            .and_then(|input| input.xkb_active_layout_name)
+            .ok_or("".to_string())
+            .block_error("sway", "Failed to get xkb_active_layout_name.")?;
+
+        Ok(Sway {
+            sway_kb_layout: Arc::new(Mutex::new(String::from(layout))),
+        })
+    }
+}
+
+impl KeyboardLayoutMonitor for Sway {
+    fn keyboard_layout(&self) -> Result<String> {
+        let layout = self.sway_kb_layout.lock().unwrap();
+        Ok(layout.to_string())
+    }
+
+    fn must_poll(&self) -> bool {
+        false
+    }
+
+    /// Monitor layout changes in a separate thread and send updates
+    /// via the `update_request` channel.
+    fn monitor(&self, id: String, update_request: Sender<Task>) {
+        let arc = Arc::clone(&self.sway_kb_layout);
+        thread::Builder::new()
+            .name("keyboard_layout".into())
+            .spawn(move || {
+                for event in Connection::new()
+                    .unwrap()
+                    .subscribe(&[EventType::Input])
+                    .unwrap()
+                {
+                    match event.unwrap() {
+                        Event::Input(e) => match e.change {
+                            InputChange::XkbLayout => {
+                                if let Some(name) = e.input.xkb_active_layout_name {
+                                    let mut layout = arc.lock().unwrap();
+                                    *layout = name;
+                                }
+                                update_request
+                                    .send(Task {
+                                        id: id.clone(),
+                                        update_time: Instant::now(),
+                                    })
+                                    .unwrap();
+                            }
+                            InputChange::XkbKeymap => {
+                                if let Some(name) = e.input.xkb_active_layout_name {
+                                    let mut layout = arc.lock().unwrap();
+                                    *layout = name;
+                                }
+                                update_request
+                                    .send(Task {
+                                        id: id.clone(),
+                                        update_time: Instant::now(),
+                                    })
+                                    .unwrap();
+                            }
+                            _ => {}
+                        },
+                        _ => unreachable!(),
+                    }
+                }
+            })
+            .unwrap();
+    }
+}
+
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(default, deny_unknown_fields)]
 pub struct KeyboardLayoutConfig {
@@ -309,6 +393,8 @@ pub struct KeyboardLayoutConfig {
         deserialize_with = "deserialize_duration"
     )]
     interval: Duration,
+
+    sway_kb_identifier: String,
 }
 
 impl KeyboardLayoutConfig {
@@ -343,6 +429,11 @@ impl ConfigBlock for KeyboardLayout {
             }
             KeyboardLayoutDriver::KbddBus => {
                 let monitor = KbdDaemonBus::new()?;
+                monitor.monitor(id.clone(), send);
+                Box::new(monitor)
+            }
+            KeyboardLayoutDriver::Sway => {
+                let monitor = Sway::new(block_config.sway_kb_identifier)?;
                 monitor.monitor(id.clone(), send);
                 Box::new(monitor)
             }
