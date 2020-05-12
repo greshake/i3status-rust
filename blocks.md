@@ -293,7 +293,12 @@ block = "ibus"
 
 Creates a block to display the current keyboard layout.
 
-This block polls `setxkbmap` for the current layout by default, also can be configured to read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path or `kbdd`. Which of these methods is appropriate will depend on your system setup.
+Four drivers are available:
+- `setxkbmap` which polls setxkbmap to get the current layout
+- `localebus` which can read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path
+- `kbdd` which uses [kbdd](https://github.com/qnikst/kbdd) to monitor per-window layout changes via DBus
+- `sway` which can read asynchronous updates from the sway IPC
+ Which of these methods is appropriate will depend on your system setup.
 
 ### Examples
 
@@ -322,13 +327,23 @@ block = "keyboard_layout"
 driver = "kbddbus"
 ```
 
+Listen to sway for changes:
+
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "sway"
+sway_kb_identifier = "1133:49706:Gaming_Keyboard_G110"
+```
+
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`driver` | One of `"setxkbmap"`, `"localebus"` or `"kbddbus"`, depending on your system. | No | `"setxkbmap"`
+`driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | No | `"setxkbmap"`
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
 `format` | Format string, e.g. " {layout}" | No | `"{layout}"`
+`sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs` | No | ""
 
 ## Load
 
