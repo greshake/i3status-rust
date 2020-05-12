@@ -16,7 +16,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::format_percent_bar;
+use crate::util::{escape_pango_text, format_percent_bar};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::graph::GraphWidget;
@@ -689,7 +689,8 @@ impl Net {
             if let Some(s) = ssid {
                 let mut truncated = s;
                 truncated.truncate(self.max_ssid_width);
-                ssid_widget.set_text(truncated);
+                // SSID names can contain chars that need escaping
+                ssid_widget.set_text(escape_pango_text(truncated));
             }
         }
         Ok(())
