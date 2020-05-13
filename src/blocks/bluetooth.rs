@@ -1,6 +1,6 @@
 use serde_derive::Deserialize;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 
 use crossbeam_channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
@@ -13,6 +13,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 pub struct BluetoothDevice {
     pub path: String,
@@ -193,7 +194,7 @@ impl Block for Bluetooth {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let connected = self.device.connected();
         self.output.set_text(self.device.label.to_string());
         self.output

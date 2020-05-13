@@ -14,6 +14,7 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 pub struct Docker {
     text: TextWidget,
@@ -79,7 +80,7 @@ impl ConfigBlock for Docker {
 }
 
 impl Block for Docker {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let output = match Command::new("sh")
             .args(&[
                 "-c",
@@ -93,13 +94,13 @@ impl Block for Docker {
             Err(_) => {
                 // We don't want the bar to crash if we can't reach the docker daemon.
                 self.text.set_text("N/A".to_string());
-                return Ok(Some(self.update_interval));
+                return Ok(Some(self.update_interval.into()));
             }
         };
 
         if output.is_empty() {
             self.text.set_text("N/A".to_string());
-            return Ok(Some(self.update_interval));
+            return Ok(Some(self.update_interval.into()));
         }
 
         let status: Status = serde_json::from_str(&output)
@@ -115,7 +116,7 @@ impl Block for Docker {
 
         self.text.set_text(self.format.render_static_str(&values)?);
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

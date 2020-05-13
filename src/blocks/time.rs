@@ -15,6 +15,7 @@ use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 pub struct Time {
     time: ButtonWidget,
@@ -90,13 +91,13 @@ impl ConfigBlock for Time {
 }
 
 impl Block for Time {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let time = match self.timezone {
             Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
             None => Local::now().format(&self.format),
         };
         self.time.set_text(format!("{}", time));
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {

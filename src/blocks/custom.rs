@@ -10,17 +10,18 @@ use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
-use crate::de::deserialize_duration;
+use crate::de::deserialize_opt_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 pub struct Custom {
     id: String,
-    update_interval: Duration,
+    update_interval: Refresh,
     output: ButtonWidget,
     command: Option<String>,
     on_click: Option<String>,
@@ -34,10 +35,10 @@ pub struct Custom {
 pub struct CustomConfig {
     /// Update interval in seconds
     #[serde(
-        default = "CustomConfig::default_interval",
-        deserialize_with = "deserialize_duration"
+    default = "CustomConfig::default_interval",
+    deserialize_with = "deserialize_opt_duration"
     )]
-    pub interval: Duration,
+    pub interval: Option<Duration>,
 
     /// Shell Command to execute & display
     pub command: Option<String>,
@@ -54,8 +55,8 @@ pub struct CustomConfig {
 }
 
 impl CustomConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(10)
+    fn default_interval() -> Option<Duration> {
+        None
     }
 
     fn default_json() -> bool {
@@ -69,7 +70,12 @@ impl ConfigBlock for Custom {
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let mut custom = Custom {
             id: Uuid::new_v4().to_simple().to_string(),
-            update_interval: block_config.interval,
+            update_interval:
+            match block_config.interval {
+                None => Refresh::Once,
+                Some(d) => Refresh::Every(d),
+            }
+            ,
             output: ButtonWidget::new(config.clone(), ""),
             command: None,
             on_click: None,
@@ -114,7 +120,7 @@ struct Output {
 }
 
 impl Block for Custom {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let command_str = self
             .cycle
             .as_mut()
@@ -134,7 +140,7 @@ impl Block for Custom {
                     return Err(BlockError(
                         "custom".to_string(),
                         format!("Error parsing JSON: {}", e),
-                    ))
+                    ));
                 }
                 Ok(s) => s,
             };
@@ -145,7 +151,7 @@ impl Block for Custom {
             self.output.set_text(raw_output);
         }
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.clone().into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

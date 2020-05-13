@@ -19,6 +19,7 @@ use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 use uuid::Uuid;
+use crate::blocks::Refresh;
 
 pub struct Watson {
     id: String,
@@ -114,7 +115,7 @@ impl ConfigBlock for Watson {
 }
 
 impl Block for Watson {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let state = {
             let file = BufReader::new(
                 File::open(&self.state_path).block_error("watson", "unable to open state file")?,
@@ -131,7 +132,7 @@ impl Block for Watson {
                 self.prev_state = Some(state);
                 Ok(if self.show_time {
                     // regular updates if time is enabled
-                    Some(Duration::from_secs(60))
+                    Some(Duration::from_secs(60).into())
                 } else {
                     None
                 })
@@ -150,7 +151,7 @@ impl Block for Watson {
                     self.prev_state = Some(state);
 
                     // Show stopped status for some seconds before returning to idle
-                    Ok(Some(Duration::from_secs(5)))
+                    Ok(Some(Duration::from_secs(5).into()))
                 } else {
                     // File is empty which means that there is currently no active time tracking,
                     // and the previous state wasn't time tracking neither so we reset the
@@ -162,7 +163,7 @@ impl Block for Watson {
                     self.prev_state = Some(state);
                     Ok(if self.show_time {
                         // regular updates if time is enabled
-                        Some(Duration::from_secs(60))
+                        Some(Duration::from_secs(60).into())
                     } else {
                         None
                     })

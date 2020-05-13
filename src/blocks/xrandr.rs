@@ -15,6 +15,7 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 struct Monitor {
     name: String,
@@ -247,7 +248,7 @@ impl ConfigBlock for Xrandr {
 }
 
 impl Block for Xrandr {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         if let Some(am) = Xrandr::get_active_monitors()? {
             if let Some(mm) = Xrandr::get_monitor_metrics(&am)? {
                 self.monitors = mm;
@@ -255,7 +256,7 @@ impl Block for Xrandr {
             }
         }
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

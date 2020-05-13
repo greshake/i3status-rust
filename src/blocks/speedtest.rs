@@ -15,6 +15,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 pub struct SpeedTest {
     vals: Arc<Mutex<(bool, Vec<f32>)>>,
@@ -148,7 +149,7 @@ impl ConfigBlock for SpeedTest {
 }
 
 impl Block for SpeedTest {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let (ref mut updated, ref vals) = *self
             .vals
             .lock()
@@ -177,7 +178,7 @@ impl Block for SpeedTest {
             Ok(None)
         } else {
             self.send.send(())?;
-            Ok(Some(self.config.interval))
+            Ok(Some(self.config.interval.into()))
         }
     }
 

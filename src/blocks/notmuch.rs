@@ -13,6 +13,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 pub struct Notmuch {
     text: TextWidget,
@@ -156,12 +157,12 @@ impl Notmuch {
 }
 
 impl Block for Notmuch {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         match run_query(&self.db, &self.query) {
             Ok(count) => {
                 self.update_text(count);
                 self.update_state(count);
-                Ok(Some(self.update_interval))
+                Ok(Some(self.update_interval.into()))
             }
             Err(e) => Err(BlockError("notmuch".to_string(), e.to_string())),
         }

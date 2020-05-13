@@ -14,6 +14,7 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 pub struct Temperature {
     text: ButtonWidget,
@@ -129,7 +130,7 @@ impl ConfigBlock for Temperature {
 }
 
 impl Block for Temperature {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let mut args = vec!["-u"];
         if let Some(ref chip) = &self.chip {
             args.push(chip);
@@ -203,7 +204,7 @@ impl Block for Temperature {
             self.text.set_state(state);
         }
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

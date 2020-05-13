@@ -15,6 +15,7 @@ use crate::errors::*;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -193,7 +194,7 @@ impl ConfigBlock for FocusedWindow {
 }
 
 impl Block for FocusedWindow {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let mut marks_string = (*self
             .marks
             .lock()

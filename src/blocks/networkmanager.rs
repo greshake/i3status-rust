@@ -3,7 +3,7 @@ use std::fmt;
 use std::net::Ipv4Addr;
 use std::process::Command;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 
 use crossbeam_channel::Sender;
 use dbus::arg::{Array, Iter, Variant};
@@ -23,6 +23,7 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 enum NetworkState {
     Unknown,
@@ -555,7 +556,7 @@ impl Block for NetworkManager {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let state = self.manager.state(&self.dbus_conn);
 
         self.indicator.set_state(match state {

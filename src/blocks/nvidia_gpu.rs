@@ -14,6 +14,7 @@ use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 pub struct NvidiaGpu {
     gpu_widget: ButtonWidget,
@@ -224,7 +225,7 @@ impl ConfigBlock for NvidiaGpu {
 }
 
 impl Block for NvidiaGpu {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let mut params = String::new();
         if self.show_utilization.is_some() {
             params += "utilization.gpu,";
@@ -298,7 +299,7 @@ impl Block for NvidiaGpu {
             self.gpu_widget.set_text(self.label.to_string());
         }
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

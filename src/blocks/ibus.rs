@@ -24,6 +24,7 @@ use crate::scheduler::Task;
 use crate::util;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 pub struct IBus {
     id: String,
@@ -118,7 +119,7 @@ impl Block for IBus {
     }
 
     // Updates the internal state of the block.
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let engine = (*self
             .engine
             .lock()

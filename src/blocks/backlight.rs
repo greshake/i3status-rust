@@ -25,6 +25,7 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
@@ -263,7 +264,7 @@ impl ConfigBlock for Backlight {
 }
 
 impl Block for Backlight {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let brightness = self.device.brightness()?;
         self.output.set_text(format!("{}%", brightness));
         match brightness {

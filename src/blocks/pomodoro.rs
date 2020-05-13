@@ -12,6 +12,7 @@ use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 enum State {
     Started,
@@ -127,7 +128,7 @@ impl Block for Pomodoro {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         self.tick();
         self.set_text();
 
@@ -154,7 +155,7 @@ impl Block for Pomodoro {
             _ => {}
         }
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {

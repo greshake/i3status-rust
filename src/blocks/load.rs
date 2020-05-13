@@ -15,6 +15,7 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 pub struct Load {
     text: TextWidget,
@@ -117,7 +118,7 @@ impl ConfigBlock for Load {
 }
 
 impl Block for Load {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let mut f = OpenOptions::new()
             .read(true)
             .open("/proc/loadavg")
@@ -149,7 +150,7 @@ impl Block for Load {
 
         self.text.set_text(self.format.render_static_str(&values)?);
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

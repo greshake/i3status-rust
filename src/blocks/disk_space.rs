@@ -14,6 +14,7 @@ use crate::scheduler::Task;
 use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 #[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq)]
 pub enum Unit {
@@ -203,7 +204,7 @@ impl ConfigBlock for DiskSpace {
 }
 
 impl Block for DiskSpace {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let statvfs = statvfs(Path::new(self.path.as_str()))
             .block_error("disk_space", "failed to retrieve statvfs")?;
         let mut result;
@@ -267,7 +268,7 @@ impl Block for DiskSpace {
         let state = self.compute_state(result, self.warning, self.alert);
         self.disk_space.set_state(state);
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

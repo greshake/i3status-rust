@@ -3,6 +3,7 @@ use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
 use std::thread;
 use std::time::{Duration, Instant};
+use crate::blocks::Refresh;
 
 use crate::blocks::Block;
 use crate::errors::*;
@@ -111,10 +112,16 @@ impl UpdateScheduler {
                 .internal_error("scheduler", "could not get required block")?
                 .update()?
             {
-                self.schedule.push(Task {
-                    id: task.id,
-                    update_time: now + dur,
-                })
+                match dur {
+                    Refresh::Every(d) => {
+                        self.schedule.push(Task {
+                            id: task.id,
+                            update_time: now + d,
+                        })
+                    },
+                    Refresh::Once => {
+                    }, // do not schedule this task again
+                }
             }
         }
 

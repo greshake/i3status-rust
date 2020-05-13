@@ -29,6 +29,7 @@ use crate::util::format_percent_bar;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 #[cfg(feature = "pulseaudio")]
 use crate::pulse::callbacks::ListResult;
@@ -783,7 +784,7 @@ impl ConfigBlock for Sound {
 const FILTER: &[char] = &['[', ']', '%'];
 
 impl Block for Sound {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         self.display()?;
         Ok(None)
     }

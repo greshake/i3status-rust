@@ -20,6 +20,7 @@ use crate::scheduler::Task;
 use crate::util::{has_command, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 pub struct Pacman {
     output: ButtonWidget,
@@ -297,7 +298,7 @@ impl Block for Pacman {
         vec![&self.output]
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let (formatting_map, critical, cum_count) = match &self.watched {
             Watched::Pacman => {
                 check_fakeroot_command_exists()?;
@@ -347,7 +348,7 @@ impl Block for Pacman {
                 }
             }
         });
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {

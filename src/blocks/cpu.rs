@@ -15,6 +15,7 @@ use crate::scheduler::Task;
 use crate::util::{format_percent_bar, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 /// Maximum number of CPUs we support.
 const MAX_CPUS: usize = 32;
@@ -130,7 +131,7 @@ impl ConfigBlock for Cpu {
 }
 
 impl Block for Cpu {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let f = File::open("/proc/stat")
             .block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
@@ -236,7 +237,7 @@ impl Block for Cpu {
         self.output
             .set_text(self.format.render_static_str(&values)?);
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

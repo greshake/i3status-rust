@@ -15,6 +15,7 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
@@ -303,7 +304,7 @@ impl ConfigBlock for Weather {
 }
 
 impl Block for Weather {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         self.update_weather()?;
         // Display an error/disabled-looking widget when we don't have any
         // weather information, which is likely due to internet connectivity.
@@ -313,7 +314,7 @@ impl Block for Weather {
             let fmt = FormatTemplate::from_string(&self.format)?;
             self.weather.set_text(fmt.render(&self.weather_keys));
         }
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

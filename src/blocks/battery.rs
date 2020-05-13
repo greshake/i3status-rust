@@ -22,6 +22,7 @@ use crate::scheduler::Task;
 use crate::util::{format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {
@@ -554,7 +555,7 @@ impl ConfigBlock for Battery {
 }
 
 impl Block for Battery {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
         let status = self.device.status()?;
@@ -626,7 +627,7 @@ impl Block for Battery {
         }
 
         match self.driver {
-            BatteryDriver::Sysfs => Ok(Some(self.update_interval)),
+            BatteryDriver::Sysfs => Ok(Some(self.update_interval.into())),
             BatteryDriver::Upower => Ok(None),
         }
     }

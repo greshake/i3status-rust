@@ -78,6 +78,18 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 
+#[derive(Clone)]
+pub enum Refresh {
+    Every(Duration),
+    Once,
+}
+
+impl Into<Refresh> for Duration {
+    fn into(self) -> Refresh {
+        Refresh::Every(self)
+    }
+}
+
 pub trait Block {
     /// A unique id for the block.
     fn id(&self) -> &str;
@@ -86,7 +98,7 @@ pub trait Block {
     fn view(&self) -> Vec<&dyn I3BarWidget>;
 
     /// Forces an update of the internal state of the block.
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         Ok(None)
     }
 

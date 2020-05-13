@@ -13,6 +13,7 @@ use crate::scheduler::Task;
 use crate::util::read_file;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::blocks::Refresh;
 
 pub struct Uptime {
     text: TextWidget,
@@ -62,7 +63,7 @@ impl ConfigBlock for Uptime {
 }
 
 impl Block for Uptime {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let uptime_raw = match read_file("uptime", Path::new("/proc/uptime")) {
             Ok(file) => file,
             Err(e) => {
@@ -118,7 +119,7 @@ impl Block for Uptime {
             unreachable!()
         };
         self.text.set_text(text);
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

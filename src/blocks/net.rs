@@ -20,6 +20,7 @@ use crate::util::{escape_pango_text, format_percent_bar};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::graph::GraphWidget;
+use crate::blocks::Refresh;
 
 pub struct NetworkDevice {
     device: String,
@@ -771,7 +772,7 @@ impl Net {
 }
 
 impl Block for Net {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         self.update_device();
 
         // skip updating if device is not up.
@@ -787,7 +788,7 @@ impl Block for Net {
                 rx_widget.set_text("×".to_string());
             };
 
-            return Ok(Some(self.update_interval));
+            return Ok(Some(self.update_interval.into()));
         }
 
         self.active = true;
@@ -807,7 +808,7 @@ impl Block for Net {
 
         self.update_tx_rx()?;
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

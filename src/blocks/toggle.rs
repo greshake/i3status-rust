@@ -12,6 +12,7 @@ use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::blocks::Refresh;
 
 use uuid::Uuid;
 
@@ -89,7 +90,7 @@ impl ConfigBlock for Toggle {
 }
 
 impl Block for Toggle {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &self.command_state])
             .output()
@@ -109,7 +110,7 @@ impl Block for Toggle {
 
         self.text.set_state(State::Idle);
 
-        Ok(self.update_interval)
+        Ok(self.update_interval.map(|d| d.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

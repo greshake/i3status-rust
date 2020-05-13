@@ -23,6 +23,7 @@ use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
+use crate::blocks::Refresh;
 
 pub struct Music {
     id: String,
@@ -222,7 +223,7 @@ impl Block for Music {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Refresh>> {
         let (rotated, next) = if self.marquee {
             self.current_song.next()?
         } else {
@@ -364,8 +365,8 @@ impl Block for Music {
             }
         }
         Ok(match (next, self.marquee) {
-            (Some(_), _) => next,
-            (None, _) => Some(Duration::new(2, 0)),
+            (Some(_), _) => next.map(|d| d.into()),
+            (None, _) => Some(Duration::new(2, 0).into()),
         })
     }
 
