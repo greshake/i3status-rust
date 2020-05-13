@@ -123,12 +123,12 @@ impl Block for Toggle {
                     &self.command_on
                 };
 
-                let status = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+                let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
                     .args(&["-c", cmd])
-                    .status()
+                    .output()
                     .block_error("toggle", "failed to run toggle command")?;
 
-                if status.success() {
+                if output.status.success() {
                     self.toggled = !self.toggled;
                     self.text.set_icon(if self.toggled {
                         self.icon_on.as_str()
