@@ -438,6 +438,7 @@ fn extract_artist_from_value(value: &dyn arg::RefArg) -> Result<&str> {
     }
 }
 
+#[allow(clippy::borrowed_box)] // TODO: remove clippy workaround
 fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();

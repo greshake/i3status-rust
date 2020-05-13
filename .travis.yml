@@ -28,10 +28,13 @@ matrix:
     - rust: nightly
 env:
   - RUSTFLAGS="-D warnings"
+before_script:
+  - rustup component add rustfmt
+  - rustup component add clippy || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
 script:
   - man/generate.sh man/test.1 && diff man/test.1 man/i3status-rs.1 || true
-  - rustup component add rustfmt
   - cargo fmt -- --check
+  - cargo clippy -- -D warnings
   - cargo build --all-features --all-targets --verbose
   - cargo build --all-features --all-targets --verbose --release
   - cargo test --all-features --all-targets --verbose
