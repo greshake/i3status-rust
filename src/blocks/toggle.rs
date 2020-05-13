@@ -10,7 +10,7 @@ use crate::config::Config;
 use crate::de::deserialize_opt_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 use uuid::Uuid;
@@ -107,6 +107,8 @@ impl Block for Toggle {
             }
         });
 
+        self.text.set_state(State::Idle);
+
         Ok(self.update_interval)
     }
 
@@ -129,12 +131,15 @@ impl Block for Toggle {
                     .block_error("toggle", "failed to run toggle command")?;
 
                 if output.status.success() {
+                    self.text.set_state(State::Idle);
                     self.toggled = !self.toggled;
                     self.text.set_icon(if self.toggled {
                         self.icon_on.as_str()
                     } else {
                         self.icon_off.as_str()
                     })
+                } else {
+                    self.text.set_state(State::Critical);
                 };
             }
         }
