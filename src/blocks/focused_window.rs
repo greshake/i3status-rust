@@ -90,17 +90,14 @@ impl ConfigBlock for FocusedWindow {
                                         let mut title = title_original.lock().unwrap();
                                         *title = name;
                                     }
-                                    let mut marks = marks_original.lock().unwrap();
-                                    if !e.container.marks.is_empty() {
-                                        let mut marks_str = String::from("");
-                                        for mark in e.container.marks {
-                                            marks_str.push_str(&format!("[{}]", mark));
-                                        }
-                                        let mut marks = marks_original.lock().unwrap();
-                                        *marks = marks_str;
-                                    } else {
-                                        *marks = String::from("");
+
+                                    let mut marks_str = String::from("");
+                                    for mark in e.container.marks {
+                                        marks_str.push_str(&format!("[{}]", mark));
                                     }
+                                    let mut marks = marks_original.lock().unwrap();
+                                    *marks = marks_str;
+
                                     tx.send(Task {
                                         id: id_clone.clone(),
                                         update_time: Instant::now(),
@@ -121,25 +118,26 @@ impl ConfigBlock for FocusedWindow {
                                     }
                                 }
                                 WindowChange::Mark => {
-                                    if !e.container.marks.is_empty() {
-                                        let mut marks_str = String::from("");
-                                        for mark in e.container.marks {
-                                            marks_str.push_str(&format!("[{}]", mark));
-                                        }
-                                        let mut marks = marks_original.lock().unwrap();
-                                        *marks = marks_str;
-                                        tx.send(Task {
-                                            id: id_clone.clone(),
-                                            update_time: Instant::now(),
-                                        })
-                                        .unwrap();
+                                    let mut marks_str = String::from("");
+                                    for mark in e.container.marks {
+                                        marks_str.push_str(&format!("[{}]", mark));
                                     }
+                                    let mut marks = marks_original.lock().unwrap();
+                                    *marks = marks_str;
+
+                                    tx.send(Task {
+                                        id: id_clone.clone(),
+                                        update_time: Instant::now(),
+                                    })
+                                    .unwrap();
                                 }
                                 WindowChange::Close => {
                                     if let Some(name) = e.container.name {
                                         let mut title = title_original.lock().unwrap();
                                         if name == *title {
                                             *title = String::from("");
+                                            let mut marks = title_original.lock().unwrap();
+                                            *marks = String::from("");
                                             tx.send(Task {
                                                 id: id_clone.clone(),
                                                 update_time: Instant::now(),
