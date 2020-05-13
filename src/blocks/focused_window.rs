@@ -136,8 +136,6 @@ impl ConfigBlock for FocusedWindow {
                                         let mut title = title_original.lock().unwrap();
                                         if name == *title {
                                             *title = String::from("");
-                                            let mut marks = title_original.lock().unwrap();
-                                            *marks = String::from("");
                                             tx.send(Task {
                                                 id: id_clone.clone(),
                                                 update_time: Instant::now(),
