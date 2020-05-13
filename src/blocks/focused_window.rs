@@ -92,8 +92,12 @@ impl ConfigBlock for FocusedWindow {
                                     }
                                     let mut marks = marks_original.lock().unwrap();
                                     if !e.container.marks.is_empty() {
-                                        *marks =
-                                            e.container.marks.iter().map(|x| x.as_str()).collect();
+                                        let mut marks_str = String::from("");
+                                        for mark in e.container.marks {
+                                            marks_str.push_str(&format!("[{}]", mark));
+                                        }
+                                        let mut marks = marks_original.lock().unwrap();
+                                        *marks = marks_str;
                                     } else {
                                         *marks = String::from("");
                                     }
@@ -118,9 +122,12 @@ impl ConfigBlock for FocusedWindow {
                                 }
                                 WindowChange::Mark => {
                                     if !e.container.marks.is_empty() {
+                                        let mut marks_str = String::from("");
+                                        for mark in e.container.marks {
+                                            marks_str.push_str(&format!("[{}]", mark));
+                                        }
                                         let mut marks = marks_original.lock().unwrap();
-                                        *marks =
-                                            e.container.marks.iter().map(|x| x.as_str()).collect();
+                                        *marks = marks_str;
                                         tx.send(Task {
                                             id: id_clone.clone(),
                                             update_time: Instant::now(),
