@@ -314,11 +314,11 @@ impl Sway {
             .into_iter()
             .find(|input| input.identifier == sway_kb_identifier)
             .and_then(|input| input.xkb_active_layout_name)
-            .ok_or("".to_string())
+            .ok_or_else(|| "".to_string())
             .block_error("sway", "Failed to get xkb_active_layout_name.")?;
 
         Ok(Sway {
-            sway_kb_layout: Arc::new(Mutex::new(String::from(layout))),
+            sway_kb_layout: Arc::new(Mutex::new(layout)),
         })
     }
 }
