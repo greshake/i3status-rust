@@ -7,6 +7,7 @@ use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -15,7 +16,6 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crate::blocks::Refresh;
 
 pub struct SpeedTest {
     vals: Arc<Mutex<(bool, Vec<f32>)>>,

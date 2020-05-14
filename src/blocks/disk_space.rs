@@ -6,6 +6,7 @@ use nix::sys::statvfs::statvfs;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -14,7 +15,6 @@ use crate::scheduler::Task;
 use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-use crate::blocks::Refresh;
 
 #[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq)]
 pub enum Unit {

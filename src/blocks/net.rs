@@ -9,6 +9,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -20,7 +21,6 @@ use crate::util::{escape_pango_text, format_percent_bar};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::graph::GraphWidget;
-use crate::blocks::Refresh;
 
 pub struct NetworkDevice {
     device: String,

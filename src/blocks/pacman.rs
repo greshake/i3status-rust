@@ -11,6 +11,7 @@ use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -20,7 +21,6 @@ use crate::scheduler::Task;
 use crate::util::{has_command, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crate::blocks::Refresh;
 
 pub struct Pacman {
     output: ButtonWidget,

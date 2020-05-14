@@ -19,6 +19,7 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection};
 use crate::errors::*;
@@ -29,7 +30,6 @@ use crate::util::format_percent_bar;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crate::blocks::Refresh;
 
 #[cfg(feature = "pulseaudio")]
 use crate::pulse::callbacks::ListResult;

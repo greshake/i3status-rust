@@ -14,6 +14,7 @@ use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -22,7 +23,6 @@ use crate::scheduler::Task;
 use crate::util::{format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-use crate::blocks::Refresh;
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {

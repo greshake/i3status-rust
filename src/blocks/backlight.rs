@@ -18,6 +18,7 @@ use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::errors::*;
@@ -25,7 +26,6 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-use crate::blocks::Refresh;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {

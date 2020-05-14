@@ -3,7 +3,7 @@ use std::fmt;
 use std::net::Ipv4Addr;
 use std::process::Command;
 use std::thread;
-use std::time::{Instant};
+use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use dbus::arg::{Array, Iter, Variant};
@@ -15,6 +15,7 @@ use dbus::{
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
@@ -23,7 +24,6 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crate::blocks::Refresh;
 
 enum NetworkState {
     Unknown,

@@ -1,9 +1,9 @@
+use crate::blocks::Refresh;
 use std::cmp;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
 use std::thread;
 use std::time::{Duration, Instant};
-use crate::blocks::Refresh;
 
 use crate::blocks::Block;
 use crate::errors::*;
@@ -113,14 +113,11 @@ impl UpdateScheduler {
                 .update()?
             {
                 match dur {
-                    Refresh::Every(d) => {
-                        self.schedule.push(Task {
-                            id: task.id,
-                            update_time: now + d,
-                        })
-                    },
-                    Refresh::Once => {
-                    }, // do not schedule this task again
+                    Refresh::Every(d) => self.schedule.push(Task {
+                        id: task.id,
+                        update_time: now + d,
+                    }),
+                    Refresh::Once => {} // do not schedule this task again
                 }
             }
         }

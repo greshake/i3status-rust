@@ -16,6 +16,7 @@ use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
@@ -24,7 +25,6 @@ use crate::scheduler::Task;
 use crate::util;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
-use crate::blocks::Refresh;
 
 pub struct IBus {
     id: String,

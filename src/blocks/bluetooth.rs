@@ -1,11 +1,12 @@
 use serde_derive::Deserialize;
 use std::thread;
-use std::time::{Instant};
+use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
@@ -13,7 +14,6 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crate::blocks::Refresh;
 
 pub struct BluetoothDevice {
     pub path: String,

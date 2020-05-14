@@ -8,6 +8,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_opt_duration;
@@ -17,7 +18,6 @@ use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crate::blocks::Refresh;
 
 pub struct Custom {
     id: String,
@@ -35,8 +35,8 @@ pub struct Custom {
 pub struct CustomConfig {
     /// Update interval in seconds
     #[serde(
-    default = "CustomConfig::default_interval",
-    deserialize_with = "deserialize_opt_duration"
+        default = "CustomConfig::default_interval",
+        deserialize_with = "deserialize_opt_duration"
     )]
     pub interval: Option<Duration>,
 
@@ -70,12 +70,10 @@ impl ConfigBlock for Custom {
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let mut custom = Custom {
             id: Uuid::new_v4().to_simple().to_string(),
-            update_interval:
-            match block_config.interval {
+            update_interval: match block_config.interval {
                 None => Refresh::Once,
                 Some(d) => Refresh::Every(d),
-            }
-            ,
+            },
             output: ButtonWidget::new(config.clone(), ""),
             command: None,
             on_click: None,

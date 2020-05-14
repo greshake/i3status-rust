@@ -5,6 +5,7 @@ use std::env;
 use std::process::Command;
 use std::time::Duration;
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_opt_duration;
@@ -12,7 +13,6 @@ use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crate::blocks::Refresh;
 
 use uuid::Uuid;
 

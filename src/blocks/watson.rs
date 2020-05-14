@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_local_timestamp;
@@ -19,7 +20,6 @@ use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 use uuid::Uuid;
-use crate::blocks::Refresh;
 
 pub struct Watson {
     id: String,
