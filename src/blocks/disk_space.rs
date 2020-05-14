@@ -74,7 +74,7 @@ pub struct DiskSpaceConfig {
     #[serde(default = "DiskSpaceConfig::default_alias")]
     pub alias: String,
 
-    /// Currently supported options are available and free
+    /// Currently supported options are available, free, total and used
     #[serde(default = "DiskSpaceConfig::default_info_type")]
     pub info_type: InfoType,
 
