@@ -23,13 +23,6 @@ const OPENWEATHERMAP_PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
 pub enum WeatherService {
-    // TODO:
-    // DarkSky {
-    //     token: String,
-    //     latitude: f64,
-    //     longitude: f64,
-    //     units: Option<InputUnit>
-    // },
     OpenWeatherMap {
         #[serde(default = "WeatherService::getenv_openweathermap_api_key")]
         api_key: Option<String>,
