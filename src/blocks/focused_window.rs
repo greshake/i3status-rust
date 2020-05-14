@@ -17,17 +17,25 @@ use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MarksType {
+    All,
+    Visible,
+    None,
+}
+
 pub struct FocusedWindow {
     text: TextWidget,
     title: Arc<Mutex<String>>,
     marks: Arc<Mutex<String>>,
-    show_marks: bool,
+    show_marks: MarksType,
     max_width: usize,
     id: String,
     update_interval: Duration,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct FocusedWindowConfig {
     /// Truncates titles if longer than max-width
@@ -42,7 +50,7 @@ pub struct FocusedWindowConfig {
 
     /// Show marks in place of title (if exist)
     #[serde(default = "FocusedWindowConfig::default_show_marks")]
-    pub show_marks: bool,
+    pub show_marks: MarksType,
 }
 
 impl FocusedWindowConfig {
@@ -54,8 +62,8 @@ impl FocusedWindowConfig {
         Duration::from_secs(30)
     }
 
-    fn default_show_marks() -> bool {
-        false
+    fn default_show_marks() -> MarksType {
+        MarksType::None
     }
 }
 
@@ -70,6 +78,7 @@ impl ConfigBlock for FocusedWindow {
         let title = title_original.clone();
         let marks_original = Arc::new(Mutex::new(String::from("")));
         let marks = marks_original.clone();
+        let marks_type = block_config.show_marks;
 
         let _test_conn =
             Connection::new().block_error("focused_window", "failed to acquire connect to IPC")?;
@@ -93,7 +102,17 @@ impl ConfigBlock for FocusedWindow {
 
                                     let mut marks_str = String::from("");
                                     for mark in e.container.marks {
-                                        marks_str.push_str(&format!("[{}]", mark));
+                                        match marks_type {
+                                            MarksType::All => {
+                                                marks_str.push_str(&format!("[{}]", mark));
+                                            }
+                                            MarksType::Visible => {
+                                                if !mark.starts_with('_') {
+                                                    marks_str.push_str(&format!("[{}]", mark));
+                                                }
+                                            }
+                                            _ => (),
+                                        }
                                     }
                                     let mut marks = marks_original.lock().unwrap();
                                     *marks = marks_str;
@@ -120,7 +139,17 @@ impl ConfigBlock for FocusedWindow {
                                 WindowChange::Mark => {
                                     let mut marks_str = String::from("");
                                     for mark in e.container.marks {
-                                        marks_str.push_str(&format!("[{}]", mark));
+                                        match marks_type {
+                                            MarksType::All => {
+                                                marks_str.push_str(&format!("[{}]", mark));
+                                            }
+                                            MarksType::Visible => {
+                                                if !mark.starts_with('_') {
+                                                    marks_str.push_str(&format!("[{}]", mark));
+                                                }
+                                            }
+                                            _ => (),
+                                        }
                                     }
                                     let mut marks = marks_original.lock().unwrap();
                                     *marks = marks_str;
@@ -178,7 +207,6 @@ impl ConfigBlock for FocusedWindow {
 
 impl Block for FocusedWindow {
     fn update(&mut self) -> Result<Option<Duration>> {
-        //WIP: check if marks are non-empty first
         let mut marks_string = (*self
             .marks
             .lock()
@@ -191,11 +219,17 @@ impl Block for FocusedWindow {
             .block_error("focused_window", "failed to acquire lock")?)
         .clone();
         title_string = title_string.chars().take(self.max_width).collect();
-        if self.show_marks && !marks_string.is_empty() {
-            self.text.set_text(marks_string);
-        } else {
-            self.text.set_text(title_string);
-        }
+        let out_str = match self.show_marks {
+            MarksType::None => title_string,
+            _ => {
+                if !marks_string.is_empty() {
+                    marks_string
+                } else {
+                    title_string
+                }
+            }
+        };
+        self.text.set_text(out_str);
 
         Ok(Some(self.update_interval))
     }
