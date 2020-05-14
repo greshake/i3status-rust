@@ -242,8 +242,8 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `path` | Path to collect information from | No | `"/"`
 `alias` | Alias that is displayed for path | No | `"/"`
-`info_type` | Currently supported options are `available`, `free`, `total` and `used` | No | `"available"`
-`unit` | Unit that is used to display disk space. Options are MB, MiB, GB, GiB, TB, TiB and `Percent` | No | `"GB"`
+`info_type` | Currently supported options are `"available"`, `"free"`, `"total"` and `"used"` | No | `"available"`
+`unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
 `warning` | Available disk space warning level in GiB. | No | `20.0`
 `alert` | Available disk space critical level in GiB. | No | `10.0`
 `interval` | Update interval, in seconds. | No | `20`
