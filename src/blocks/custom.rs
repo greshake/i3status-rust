@@ -149,7 +149,7 @@ impl Block for Custom {
             self.output.set_text(raw_output);
         }
 
-        Ok(Some(self.update_interval.clone().into()))
+        Ok(Some(self.update_interval.clone()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
