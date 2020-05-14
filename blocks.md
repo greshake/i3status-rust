@@ -259,7 +259,7 @@ Creates a block which displays the title or the active marks of the currently fo
 ```toml
 [[block]]
 block = "focused_window"
-max_width = 21
+max_width = 50
 show_marks = true
 ```
 
