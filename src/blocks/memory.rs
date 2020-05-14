@@ -418,7 +418,7 @@ impl Block for Memory {
             };
             let line = line.split_whitespace().collect::<Vec<&str>>();
 
-            match line[0] {
+            match line.get(0) {
                 "MemTotal:" => {
                     mem_state.mem_total = (
                         u64::from_str(line[1])
