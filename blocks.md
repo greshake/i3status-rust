@@ -252,7 +252,7 @@ Key | Values | Required | Default
 
 ## Focused Window
 
-Creates a block which displays the title of the currently focused window. Uses push updates from i3 IPC, so no need to worry about resource usage. The block only updates when the focused window changes title or the focus changes. Also works with sway, due to it having compatibility with i3's IPC.
+Creates a block which displays the title or the active marks of the currently focused window. Uses push updates from i3 IPC, so no need to worry about resource usage. The block only updates when the focused window changes title or the focus changes. Also works with sway, due to it having compatibility with i3's IPC.
 
 ### Examples
 
@@ -260,6 +260,7 @@ Creates a block which displays the title of the currently focused window. Uses p
 [[block]]
 block = "focused_window"
 max_width = 21
+show_marks = true
 ```
 
 ### Options
@@ -267,6 +268,7 @@ max_width = 21
 Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
+`show_marks` | Display marks instead of the title. | No | `false`
 
 ## IBus
 
