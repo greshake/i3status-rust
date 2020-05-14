@@ -259,7 +259,7 @@ Creates a block which displays the title or the active marks of the currently fo
 [[block]]
 block = "focused_window"
 max_width = 50
-show_marks = true
+show_marks = "visible"
 ```
 
 ### Options
@@ -267,7 +267,7 @@ show_marks = true
 Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
-`show_marks` | Display marks instead of the title. | No | `false`
+`show_marks` | Display marks instead of the title, if there are some. Options are `"none"`, `"all"` or `"visible"`, the latter of which ignores marks that start with an underscore. | No | `"none"`
 
 ## IBus
 
