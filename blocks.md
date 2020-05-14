@@ -234,7 +234,6 @@ path = "/"
 alias = "/"
 info_type = "available"
 unit = "GB"
-interval = 20
 ```
 
 ### Options
