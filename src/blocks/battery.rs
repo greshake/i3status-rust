@@ -19,7 +19,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, FormatTemplate, read_file};
+use crate::util::{format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -275,7 +275,7 @@ impl UpowerDevice {
                 "org.freedesktop.UPower",
                 "EnumerateDevices",
             )
-                .unwrap();
+            .unwrap();
             let dbus_reply = con.send_with_reply_and_block(msg, 2000).unwrap();
 
             // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
@@ -445,8 +445,8 @@ impl Default for BatteryDriver {
 pub struct BatteryConfig {
     /// Update interval in seconds
     #[serde(
-    default = "BatteryConfig::default_interval",
-    deserialize_with = "deserialize_duration"
+        default = "BatteryConfig::default_interval",
+        deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
 
