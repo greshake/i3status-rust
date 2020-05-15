@@ -209,3 +209,28 @@ where
     use chrono::TimeZone;
     i64::deserialize(deserializer).map(|seconds| Local.timestamp(seconds, 0))
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::de::deserialize_duration;
+    use serde_derive::Deserialize;
+    use std::time::Duration;
+
+    #[derive(Deserialize, Debug, Clone)]
+    #[serde(deny_unknown_fields)]
+    pub struct Config {
+        /// Update interval in seconds
+        #[serde(deserialize_with = "deserialize_duration")]
+        pub interval: Duration,
+    }
+
+    #[test]
+    fn test_deserialize_duration() {
+        let duration_toml = r#""interval"= 5"#;
+        let deserialized: Config = toml::from_str(duration_toml).unwrap();
+        assert_eq!(Duration::new(5, 0), deserialized.interval);
+        let duration_toml = r#""interval"= 0.5"#;
+        let deserialized: Config = toml::from_str(duration_toml).unwrap();
+        assert_eq!(Duration::new(0, 500_000_000), deserialized.interval);
+    }
+}
