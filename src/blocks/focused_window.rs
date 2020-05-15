@@ -1,33 +1,41 @@
-use crate::de::deserialize_duration;
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use swayipc::reply::Event;
+use swayipc::reply::{WindowChange, WorkspaceChange};
+use swayipc::{Connection, EventType};
+use uuid::Uuid;
+
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
+use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
-use uuid::Uuid;
-
-use i3ipc::event::inner::{WindowChange, WorkspaceChange};
-use i3ipc::event::Event;
-use i3ipc::I3EventListener;
-use i3ipc::Subscription;
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MarksType {
+    All,
+    Visible,
+    None,
+}
 
 pub struct FocusedWindow {
     text: TextWidget,
     title: Arc<Mutex<String>>,
+    marks: Arc<Mutex<String>>,
+    show_marks: MarksType,
     max_width: usize,
     id: String,
     update_interval: Duration,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct FocusedWindowConfig {
     /// Truncates titles if longer than max-width
@@ -39,6 +47,10 @@ pub struct FocusedWindowConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
+
+    /// Show marks in place of title (if exist)
+    #[serde(default = "FocusedWindowConfig::default_show_marks")]
+    pub show_marks: MarksType,
 }
 
 impl FocusedWindowConfig {
@@ -48,6 +60,10 @@ impl FocusedWindowConfig {
 
     fn default_interval() -> Duration {
         Duration::from_secs(30)
+    }
+
+    fn default_show_marks() -> MarksType {
+        MarksType::None
     }
 }
 
@@ -60,84 +76,130 @@ impl ConfigBlock for FocusedWindow {
 
         let title_original = Arc::new(Mutex::new(String::from("")));
         let title = title_original.clone();
+        let marks_original = Arc::new(Mutex::new(String::from("")));
+        let marks = marks_original.clone();
+        let marks_type = block_config.show_marks;
 
-        let _test_conn = I3EventListener::connect()
-            .block_error("focused_window", "failed to acquire connect to IPC")?;
+        let _test_conn =
+            Connection::new().block_error("focused_window", "failed to acquire connect to IPC")?;
 
-        thread::spawn(move || {
-            // establish connection.
-            let mut listener = I3EventListener::connect().unwrap();
+        thread::Builder::new()
+            .name("focused_window".into())
+            .spawn(move || {
+                for event in Connection::new()
+                    .unwrap()
+                    .subscribe(&[EventType::Window, EventType::Workspace])
+                    .unwrap()
+                {
+                    match event.unwrap() {
+                        Event::Window(e) => {
+                            match e.change {
+                                WindowChange::Focus => {
+                                    if let Some(name) = e.container.name {
+                                        let mut title = title_original.lock().unwrap();
+                                        *title = name;
+                                    }
 
-            // subscribe to a couple events.
-            let subs = [Subscription::Window, Subscription::Workspace];
-            listener.subscribe(&subs).unwrap();
+                                    let mut marks_str = String::from("");
+                                    for mark in e.container.marks {
+                                        match marks_type {
+                                            MarksType::All => {
+                                                marks_str.push_str(&format!("[{}]", mark));
+                                            }
+                                            MarksType::Visible => {
+                                                if !mark.starts_with('_') {
+                                                    marks_str.push_str(&format!("[{}]", mark));
+                                                }
+                                            }
+                                            _ => (),
+                                        }
+                                    }
+                                    let mut marks = marks_original.lock().unwrap();
+                                    *marks = marks_str;
 
-            // handle them
-            for event in listener.listen() {
-                match event.unwrap() {
-                    Event::WindowEvent(e) => {
-                        match e.change {
-                            WindowChange::Focus => {
-                                if let Some(name) = e.container.name {
-                                    let mut title = title_original.lock().unwrap();
-                                    *title = name;
                                     tx.send(Task {
                                         id: id_clone.clone(),
                                         update_time: Instant::now(),
                                     })
                                     .unwrap();
                                 }
-                            }
-                            WindowChange::Title => {
-                                if e.container.focused {
+                                WindowChange::Title => {
+                                    if e.container.focused {
+                                        if let Some(name) = e.container.name {
+                                            let mut title = title_original.lock().unwrap();
+                                            *title = name;
+                                            tx.send(Task {
+                                                id: id_clone.clone(),
+                                                update_time: Instant::now(),
+                                            })
+                                            .unwrap();
+                                        }
+                                    }
+                                }
+                                WindowChange::Mark => {
+                                    let mut marks_str = String::from("");
+                                    for mark in e.container.marks {
+                                        match marks_type {
+                                            MarksType::All => {
+                                                marks_str.push_str(&format!("[{}]", mark));
+                                            }
+                                            MarksType::Visible => {
+                                                if !mark.starts_with('_') {
+                                                    marks_str.push_str(&format!("[{}]", mark));
+                                                }
+                                            }
+                                            _ => (),
+                                        }
+                                    }
+                                    let mut marks = marks_original.lock().unwrap();
+                                    *marks = marks_str;
+
+                                    tx.send(Task {
+                                        id: id_clone.clone(),
+                                        update_time: Instant::now(),
+                                    })
+                                    .unwrap();
+                                }
+                                WindowChange::Close => {
                                     if let Some(name) = e.container.name {
                                         let mut title = title_original.lock().unwrap();
-                                        *title = name;
-                                        tx.send(Task {
-                                            id: id_clone.clone(),
-                                            update_time: Instant::now(),
-                                        })
-                                        .unwrap();
+                                        if name == *title {
+                                            *title = String::from("");
+                                            tx.send(Task {
+                                                id: id_clone.clone(),
+                                                update_time: Instant::now(),
+                                            })
+                                            .unwrap();
+                                        }
                                     }
                                 }
-                            }
-                            WindowChange::Close => {
-                                if let Some(name) = e.container.name {
-                                    let mut title = title_original.lock().unwrap();
-                                    if name == *title {
-                                        *title = String::from("");
-                                        tx.send(Task {
-                                            id: id_clone.clone(),
-                                            update_time: Instant::now(),
-                                        })
-                                        .unwrap();
-                                    }
-                                }
-                            }
-                            _ => {}
-                        };
-                    }
-                    Event::WorkspaceEvent(e) => {
-                        if let WorkspaceChange::Init = e.change {
-                            let mut title = title_original.lock().unwrap();
-                            *title = String::from("");
-                            tx.send(Task {
-                                id: id_clone.clone(),
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
+                                _ => {}
+                            };
                         }
+                        Event::Workspace(e) => {
+                            if let WorkspaceChange::Init = e.change {
+                                let mut title = title_original.lock().unwrap();
+                                *title = String::from("");
+                                tx.send(Task {
+                                    id: id_clone.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+                            }
+                        }
+                        _ => unreachable!(),
                     }
-                    _ => unreachable!(),
                 }
-            }
-        });
+            })
+            .unwrap();
 
         Ok(FocusedWindow {
             id,
             text: TextWidget::new(config),
             max_width: block_config.max_width,
+            show_marks: block_config.show_marks,
             title,
+            marks,
             update_interval: block_config.interval,
         })
     }
@@ -145,13 +207,30 @@ impl ConfigBlock for FocusedWindow {
 
 impl Block for FocusedWindow {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let mut string = (*self
+        let mut marks_string = (*self
+            .marks
+            .lock()
+            .block_error("focused_window", "failed to acquire lock")?)
+        .clone();
+        marks_string = marks_string.chars().take(self.max_width).collect();
+        let mut title_string = (*self
             .title
             .lock()
             .block_error("focused_window", "failed to acquire lock")?)
         .clone();
-        string = string.chars().take(self.max_width).collect();
-        self.text.set_text(string);
+        title_string = title_string.chars().take(self.max_width).collect();
+        let out_str = match self.show_marks {
+            MarksType::None => title_string,
+            _ => {
+                if !marks_string.is_empty() {
+                    marks_string
+                } else {
+                    title_string
+                }
+            }
+        };
+        self.text.set_text(out_str);
+
         Ok(Some(self.update_interval))
     }
 

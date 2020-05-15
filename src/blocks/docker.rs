@@ -1,7 +1,9 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::process::Command;
 use std::time::Duration;
+
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -12,8 +14,6 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
-
-use uuid::Uuid;
 
 pub struct Docker {
     text: TextWidget,
@@ -70,9 +70,7 @@ impl ConfigBlock for Docker {
     fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
         Ok(Docker {
             id: Uuid::new_v4().to_simple().to_string(),
-            text: TextWidget::new(config.clone())
-                .with_text("N/A")
-                .with_icon("docker"),
+            text: TextWidget::new(config).with_text("N/A").with_icon("docker"),
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("docker", "Invalid format specified")?,
             update_interval: block_config.interval,

@@ -1,6 +1,9 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::time::Duration;
+
+use crossbeam_channel::Sender;
+use maildir::Maildir as ExtMaildir;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -10,9 +13,6 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-use maildir::Maildir as ExtMaildir;
-
-use uuid::Uuid;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -91,7 +91,7 @@ impl ConfigBlock for Maildir {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let widget = TextWidget::new(config.clone()).with_text("");
+        let widget = TextWidget::new(config).with_text("");
         Ok(Maildir {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
@@ -116,11 +116,11 @@ impl Block for Maildir {
             let maildir = ExtMaildir::from(isl);
             newmails += self.display_type.count_mail(&maildir)
         }
-        let mut state = { State::Idle };
+        let mut state = State::Idle;
         if newmails >= self.threshold_critical {
-            state = { State::Critical };
+            state = State::Critical;
         } else if newmails >= self.threshold_warning {
-            state = { State::Warning };
+            state = State::Warning;
         }
         self.text.set_state(state);
         self.text.set_text(format!("{}", newmails));

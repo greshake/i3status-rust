@@ -1,21 +1,8 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::boxed::Box;
-use std::ffi::OsStr;
-use std::process::Command;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::blocks::{Block, ConfigBlock};
-use crate::config::Config;
-use crate::de::deserialize_duration;
-use crate::errors::*;
-use crate::input::I3BarEvent;
-use crate::scheduler::Task;
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
-use crate::widgets::rotatingtext::RotatingTextWidget;
-
+use crossbeam_channel::Sender;
 use dbus::arg::{Array, RefArg};
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use dbus::{
@@ -23,7 +10,19 @@ use dbus::{
     ffidisp::{BusType, Connection, ConnectionItem},
     Message,
 };
+use serde_derive::Deserialize;
 use uuid::Uuid;
+
+use crate::blocks::{Block, ConfigBlock};
+use crate::config::Config;
+use crate::de::deserialize_duration;
+use crate::errors::*;
+use crate::input::I3BarEvent;
+use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
+use crate::widgets::rotatingtext::RotatingTextWidget;
 
 pub struct Music {
     id: String,
@@ -38,6 +37,9 @@ pub struct Music {
     marquee: bool,
     player: Option<String>,
     auto_discover: bool,
+    smart_trim: bool,
+    max_width: usize,
+    separator: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -69,6 +71,14 @@ pub struct MusicConfig {
     )]
     pub marquee_speed: Duration,
 
+    /// Bool to specify whether smart trimming should be used when marquee rotation is disabled<br/> and the title + artist is longer than max-width. It will trim from both the artist and the title in proportion to their lengths, to try and show the most information possible.
+    #[serde(default = "MusicConfig::default_smart_trim")]
+    pub smart_trim: bool,
+
+    /// Separator to use between artist and title.
+    #[serde(default = "MusicConfig::default_separator")]
+    pub separator: String,
+
     /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
     #[serde(default = "MusicConfig::default_buttons")]
     pub buttons: Vec<String>,
@@ -94,6 +104,14 @@ impl MusicConfig {
         Duration::from_millis(500)
     }
 
+    fn default_smart_trim() -> bool {
+        false
+    }
+
+    fn default_separator() -> String {
+        " - ".to_string()
+    }
+
     fn default_buttons() -> Vec<String> {
         vec![]
     }
@@ -110,7 +128,7 @@ impl ConfigBlock for Music {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
-        thread::spawn(move || {
+        thread::Builder::new().name("music".into()).spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
             c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'")
                 .unwrap();
@@ -125,7 +143,7 @@ impl ConfigBlock for Music {
                     }
                 }
             }
-        });
+        }).unwrap();
 
         let mut play: Option<ButtonWidget> = None;
         let mut prev: Option<ButtonWidget> = None;
@@ -153,10 +171,12 @@ impl ConfigBlock for Music {
                             .with_state(State::Info),
                     )
                 }
-                x => Err(BlockError(
-                    "music".to_owned(),
-                    format!("unknown music button identifier: '{}'", x),
-                ))?,
+                x => {
+                    return Err(BlockError(
+                        "music".to_owned(),
+                        format!("unknown music button identifier: '{}'", x),
+                    ))
+                }
             };
         }
 
@@ -173,7 +193,7 @@ impl ConfigBlock for Music {
             prev,
             play,
             next,
-            on_collapsed_click_widget: ButtonWidget::new(config.clone(), "on_collapsed_click")
+            on_collapsed_click_widget: ButtonWidget::new(config, "on_collapsed_click")
                 .with_icon("music")
                 .with_state(State::Info),
             on_collapsed_click: block_config.on_collapsed_click,
@@ -190,6 +210,9 @@ impl ConfigBlock for Music {
                 ))
             },
             marquee: block_config.marquee,
+            smart_trim: block_config.smart_trim,
+            max_width: block_config.max_width,
+            separator: block_config.separator,
         })
     }
 }
@@ -217,7 +240,7 @@ impl Block for Music {
             let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
             if let Ok(metadata) = data {
-                let (title, artist) =
+                let (mut title, mut artist) =
                     extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
                 if title.is_empty() && artist.is_empty() {
@@ -225,8 +248,96 @@ impl Block for Music {
                     self.current_song.set_text(String::new());
                 } else {
                     self.player_avail = true;
-                    self.current_song
-                        .set_text(format!("{} | {}", title, artist));
+
+                    if !self.smart_trim {
+                        self.current_song
+                            .set_text(format!("{}{}{}", title, self.separator, artist));
+                    } else if title.is_empty() {
+                        // Only display artist, truncated appropriately
+                        self.current_song.set_text({
+                            match artist.char_indices().nth(self.max_width) {
+                                None => artist.to_string(),
+                                Some((i, _)) => {
+                                    artist.truncate(i);
+                                    artist.to_string()
+                                }
+                            }
+                        });
+                    } else if artist.is_empty() {
+                        // Only display title, truncated appropriately
+                        self.current_song.set_text({
+                            match title.char_indices().nth(self.max_width) {
+                                None => title.to_string(),
+                                Some((i, _)) => {
+                                    title.truncate(i);
+                                    title.to_string()
+                                }
+                            }
+                        });
+                    } else {
+                        // Below code is by https://github.com/jgbyrne
+                        let text = format!("{}{}{}", title, self.separator, artist);
+                        let textlen = title.chars().count() + artist.chars().count() + 3;
+                        if textlen > self.max_width {
+                            // overshoot: # of chars we need to trim
+                            // substance: # of chars available for trimming
+                            let overshoot = (textlen - self.max_width) as f32;
+                            let substance = (textlen - 3) as f32;
+
+                            // Calculate number of chars to trim from title
+                            let tlen = title.chars().count();
+                            let tblm = tlen as f32 / substance;
+                            let mut tnum = (overshoot * tblm).ceil() as usize;
+
+                            // Calculate number of chars to trim from artist
+                            let alen = artist.chars().count();
+                            let ablm = alen as f32 / substance;
+                            let mut anum = (overshoot * ablm).ceil() as usize;
+
+                            // Prefer to only trim one of the title and artist
+                            if anum < tnum && anum <= 3 && (tnum + anum < tlen) {
+                                anum = 0;
+                                tnum += anum;
+                            }
+
+                            if tnum < anum && tnum <= 3 && (anum + tnum < alen) {
+                                tnum = 0;
+                                anum += tnum;
+                            }
+
+                            // Calculate how many chars to keep from title and artist
+                            let mut ttrc = tlen - tnum;
+                            if ttrc < 1 || ttrc > 5000 {
+                                ttrc = 1
+                            }
+
+                            let mut atrc = alen - anum;
+                            if atrc < 1 || atrc > 5000 {
+                                atrc = 1
+                            }
+
+                            // Truncate artist and title to appropriate lengths
+                            let tidx = title
+                                .char_indices()
+                                .nth(ttrc)
+                                .unwrap_or((title.len(), 'a'))
+                                .0;
+                            title.truncate(tidx);
+
+                            let aidx = artist
+                                .char_indices()
+                                .nth(atrc)
+                                .unwrap_or((artist.len(), 'a'))
+                                .0;
+                            artist.truncate(aidx);
+
+                            // Produce final formatted string
+                            self.current_song
+                                .set_text(format!("{}{}{}", title, self.separator, artist));
+                        } else {
+                            self.current_song.set_text(text);
+                        }
+                    }
                 }
             } else {
                 self.current_song.set_text(String::from(""));
@@ -280,12 +391,9 @@ impl Block for Music {
                     .map(|_| ())
             } else {
                 if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
-                    let command = self.on_collapsed_click.clone().unwrap();
-                    let command_broken: Vec<&str> = command.split_whitespace().collect();
-                    let mut itr = command_broken.iter();
-                    let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                        .args(itr)
-                        .spawn();
+                    let command = self.on_collapsed_click.as_ref().unwrap();
+                    spawn_child_async("sh", &["-c", command])
+                        .block_error("music", "could not spawn child")?;
                 }
                 Ok(())
             }
@@ -308,12 +416,10 @@ impl Block for Music {
                 elements.push(next);
             }
             elements
+        } else if self.current_song.is_empty() {
+            vec![&self.on_collapsed_click_widget]
         } else {
-            if self.current_song.is_empty() {
-                vec![&self.on_collapsed_click_widget]
-            } else {
-                vec![&self.current_song]
-            }
+            vec![&self.current_song]
         }
     }
 }
@@ -332,6 +438,7 @@ fn extract_artist_from_value(value: &dyn arg::RefArg) -> Result<&str> {
     }
 }
 
+#[allow(clippy::borrowed_box)] // TODO: remove clippy workaround
 fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();

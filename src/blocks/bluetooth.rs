@@ -3,7 +3,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
 use uuid::Uuid;
 
@@ -76,10 +75,10 @@ impl BluetoothDevice {
             .ok();
 
         Ok(BluetoothDevice {
-            path: path,
-            icon: icon,
-            label: label.unwrap_or("".to_string()),
-            con: con,
+            path,
+            icon,
+            label: label.unwrap_or_else(|| "".to_string()),
+            con,
         })
     }
 
@@ -102,9 +101,10 @@ impl BluetoothDevice {
     }
 
     pub fn toggle(&self) -> Result<()> {
-        let method = match self.connected() {
-            true => "Disconnect",
-            false => "Connect",
+        let method = if self.connected() {
+            "Disconnect"
+        } else {
+            "Connect"
         };
         let msg =
             dbus::Message::new_method_call("org.bluez", &self.path, "org.bluez.Device1", method)
@@ -119,34 +119,37 @@ impl BluetoothDevice {
     /// via the `update_request` channel.
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.path.clone();
-        thread::spawn(move || {
-            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-                .expect("Failed to establish D-Bus connection.");
-            let rule = format!(
-                "type='signal',\
+        thread::Builder::new()
+            .name("bluetooth".into())
+            .spawn(move || {
+                let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
+                    .expect("Failed to establish D-Bus connection.");
+                let rule = format!(
+                    "type='signal',\
                  path='{}',\
                  interface='org.freedesktop.DBus.Properties',\
                  member='PropertiesChanged'",
-                path
-            );
+                    path
+                );
 
-            // Skip the NameAcquired event.
-            con.incoming(10_000).next();
+                // Skip the NameAcquired event.
+                con.incoming(10_000).next();
 
-            con.add_match(&rule)
-                .expect("Failed to add D-Bus match rule.");
+                con.add_match(&rule)
+                    .expect("Failed to add D-Bus match rule.");
 
-            loop {
-                if con.incoming(10_000).next().is_some() {
-                    update_request
-                        .send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
+                loop {
+                    if con.incoming(10_000).next().is_some() {
+                        update_request
+                            .send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
     }
 }
 
@@ -192,14 +195,9 @@ impl Block for Bluetooth {
 
     fn update(&mut self) -> Result<Option<Duration>> {
         let connected = self.device.connected();
-        self.output.set_text(match connected {
-            true => format!("{}", self.device.label).to_string(),
-            false => format!("{} ×", self.device.label).to_string(),
-        });
-        self.output.set_state(match connected {
-            true => State::Good,
-            false => State::Idle,
-        });
+        self.output.set_text(self.device.label.to_string());
+        self.output
+            .set_state(if connected { State::Good } else { State::Idle });
 
         // Use battery info, when available.
         if let Some(value) = self.device.battery() {
@@ -220,9 +218,8 @@ impl Block for Bluetooth {
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
             if name.as_str() == self.id {
-                match event.button {
-                    MouseButton::Right => self.device.toggle()?,
-                    _ => (),
+                if let MouseButton::Right = event.button {
+                    self.device.toggle()?;
                 }
             }
         }

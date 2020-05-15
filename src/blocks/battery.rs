@@ -9,7 +9,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus;
 use dbus::arg::Array;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use serde_derive::Deserialize;
@@ -20,7 +19,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, read_file, FormatTemplate};
+use crate::util::{format_percent_bar, FormatTemplate, read_file};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -78,7 +77,7 @@ impl PowerSupplyDevice {
             ));
         }
 
-        // Read charge_full exactly once, if it exists.
+        // Read charge_full exactly once, if it exists, units are µAh
         let charge_full = if device_path.join("charge_full").exists() {
             Some(
                 read_file("battery", &device_path.join("charge_full"))?
@@ -89,7 +88,7 @@ impl PowerSupplyDevice {
             None
         };
 
-        // Read energy_full exactly once, if it exists.
+        // Read energy_full exactly once, if it exists. Units are µWh.
         let energy_full = if device_path.join("energy_full").exists() {
             Some(
                 read_file("battery", &device_path.join("energy_full"))?
@@ -154,6 +153,7 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn time_remaining(&self) -> Result<u64> {
+        // Units are µWh
         let full = if self.energy_full.is_some() {
             self.energy_full.unwrap()
         } else if self.charge_full.is_some() {
@@ -165,6 +165,7 @@ impl BatteryDevice for PowerSupplyDevice {
             ));
         };
 
+        // Units are µWh/µAh
         let energy_path = self.device_path.join("energy_now");
         let charge_path = self.device_path.join("charge_now");
         let fill = if energy_path.exists() {
@@ -199,6 +200,10 @@ impl BatteryDevice for PowerSupplyDevice {
             ));
         };
 
+        // If the device driver uses the combination of energy_full, energy_now and power_now,
+        // all values (full, fill, and usage) are in Watts, while if it uses charge_full, charge_now
+        // and current_now, they're in Amps. In all 3 equations below the units cancel out and
+        // we're left with a time value.
         let status = self.status()?;
         match status.as_str() {
             "Full" => Ok(((full as f64 / usage) * 60.0) as u64),
@@ -215,12 +220,25 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn power_consumption(&self) -> Result<u64> {
+        // power consumption in µWh
         let power_path = self.device_path.join("power_now");
+        // current consumption in µA
+        let current_path = self.device_path.join("current_now");
+        // voltage in µV
+        let voltage_path = self.device_path.join("voltage_now");
 
         if power_path.exists() {
             Ok(read_file("battery", &power_path)?
                 .parse::<u64>()
                 .block_error("battery", "failed to parse power_now")?)
+        } else if current_path.exists() && voltage_path.exists() {
+            let current = read_file("battery", &current_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse current_now")?;
+            let voltage = read_file("battery", &voltage_path)?
+                .parse::<u64>()
+                .block_error("battery", "failed to parse voltage_now")?;
+            Ok((current * voltage) / 1_000_000)
         } else {
             Err(BlockError(
                 "battery".to_string(),
@@ -257,7 +275,7 @@ impl UpowerDevice {
                 "org.freedesktop.UPower",
                 "EnumerateDevices",
             )
-            .unwrap();
+                .unwrap();
             let dbus_reply = con.send_with_reply_and_block(msg, 2000).unwrap();
 
             // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
@@ -291,37 +309,40 @@ impl UpowerDevice {
     /// via the `update_request` channel.
     pub fn monitor(&self, id: String, update_request: Sender<Task>) {
         let path = self.device_path.clone();
-        thread::spawn(move || {
-            let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-                .expect("Failed to establish D-Bus connection.");
-            let rule = format!(
-                "type='signal',\
+        thread::Builder::new()
+            .name("battery".into())
+            .spawn(move || {
+                let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
+                    .expect("Failed to establish D-Bus connection.");
+                let rule = format!(
+                    "type='signal',\
                  path='{}',\
                  interface='org.freedesktop.DBus.Properties',\
                  member='PropertiesChanged'",
-                path
-            );
+                    path
+                );
 
-            // First we're going to get an (irrelevant) NameAcquired event.
-            con.incoming(10_000).next();
+                // First we're going to get an (irrelevant) NameAcquired event.
+                con.incoming(10_000).next();
 
-            con.add_match(&rule)
-                .expect("Failed to add D-Bus match rule.");
+                con.add_match(&rule)
+                    .expect("Failed to add D-Bus match rule.");
 
-            loop {
-                if con.incoming(10_000).next().is_some() {
-                    update_request
-                        .send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
-                    // Avoid update spam.
-                    // TODO: Is this necessary?
-                    thread::sleep(Duration::from_millis(1000))
+                loop {
+                    if con.incoming(10_000).next().is_some() {
+                        update_request
+                            .send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                        // Avoid update spam.
+                        // TODO: Is this necessary?
+                        thread::sleep(Duration::from_millis(1000))
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
     }
 }
 
@@ -399,6 +420,10 @@ pub struct Battery {
     device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
     driver: BatteryDriver,
+    good: u64,
+    info: u64,
+    warning: u64,
+    critical: u64,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -420,8 +445,8 @@ impl Default for BatteryDriver {
 pub struct BatteryConfig {
     /// Update interval in seconds
     #[serde(
-        default = "BatteryConfig::default_interval",
-        deserialize_with = "deserialize_duration"
+    default = "BatteryConfig::default_interval",
+    deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
 
@@ -449,6 +474,22 @@ pub struct BatteryConfig {
     /// If the battery device cannot be found, do not fail and show the block anyway (sysfs only).
     #[serde(default = "BatteryConfig::default_allow_unavailable_battery")]
     pub allow_unavailable_battery: bool,
+
+    /// The threshold above which the remaining capacity is shown as good
+    #[serde(default = "BatteryConfig::default_good")]
+    pub good: u64,
+
+    /// The threshold below which the remaining capacity is shown as info
+    #[serde(default = "BatteryConfig::default_info")]
+    pub info: u64,
+
+    /// The threshold below which the remaining capacity is shown as warning
+    #[serde(default = "BatteryConfig::default_warning")]
+    pub warning: u64,
+
+    /// The threshold below which the remaining capacity is shown as critical
+    #[serde(default = "BatteryConfig::default_critical")]
+    pub critical: u64,
 }
 
 impl BatteryConfig {
@@ -470,6 +511,22 @@ impl BatteryConfig {
 
     fn default_allow_unavailable_battery() -> bool {
         false
+    }
+
+    fn default_critical() -> u64 {
+        15
+    }
+
+    fn default_warning() -> u64 {
+        30
+    }
+
+    fn default_info() -> u64 {
+        60
+    }
+
+    fn default_good() -> u64 {
+        60
     }
 }
 
@@ -521,6 +578,10 @@ impl ConfigBlock for Battery {
             device,
             format: FormatTemplate::from_string(&format)?,
             driver,
+            good: block_config.good,
+            info: block_config.info,
+            warning: block_config.warning,
+            critical: block_config.critical,
         })
     }
 }
@@ -558,9 +619,13 @@ impl Block for Battery {
                 Err(_) => "×".into(),
             };
             let time = match self.device.time_remaining() {
-                Ok(time) => format!("{}:{:02}", time / 60, time % 60),
+                Ok(time) => match time {
+                    0 => "".into(),
+                    _ => format!("{}:{:02}", time / 60, time % 60),
+                },
                 Err(_) => "×".into(),
             };
+            // convert µW to W for display
             let power = match self.device.power_consumption() {
                 Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
                 Err(_) => "×".into(),
@@ -580,11 +645,20 @@ impl Block for Battery {
                 }
                 _ => {
                     self.output.set_state(match capacity {
-                        Ok(0..=15) => State::Critical,
-                        Ok(16..=30) => State::Warning,
-                        Ok(31..=60) => State::Info,
-                        Ok(61..=100) => State::Good,
-                        _ => State::Warning,
+                        Ok(capacity) => {
+                            if capacity <= self.critical {
+                                State::Critical
+                            } else if capacity <= self.warning {
+                                State::Warning
+                            } else if capacity <= self.info {
+                                State::Info
+                            } else if capacity > self.good {
+                                State::Good
+                            } else {
+                                State::Idle
+                            }
+                        }
+                        Err(_) => State::Warning,
                     });
                 }
             }

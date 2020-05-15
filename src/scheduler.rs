@@ -1,10 +1,11 @@
-use crate::blocks::Block;
-use crate::errors::*;
 use std::cmp;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
 use std::thread;
 use std::time::{Duration, Instant};
+
+use crate::blocks::Block;
+use crate::errors::*;
 
 #[derive(Debug, Clone)]
 pub struct Task {

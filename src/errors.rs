@@ -113,9 +113,7 @@ impl StdError for Error {
     }
 
     fn cause(&self) -> Option<&dyn StdError> {
-        match *self {
-            _ => None,
-        }
+        None
     }
 }
 
@@ -124,6 +122,6 @@ where
     T: Send,
 {
     fn from(_err: ::crossbeam_channel::SendError<T>) -> Error {
-        InternalError("unknown".to_owned(), format!("send error"), None)
+        InternalError("unknown".to_string(), "send error".to_string(), None)
     }
 }

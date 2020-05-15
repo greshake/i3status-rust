@@ -1,12 +1,12 @@
-use crossbeam_channel::Sender;
-use serde::{de, Deserializer};
-use serde_derive::Deserialize;
-use serde_json;
 use std::fmt;
 use std::io;
 use std::option::Option;
 use std::string::*;
 use std::thread;
+
+use crossbeam_channel::Sender;
+use serde::{de, Deserializer};
+use serde_derive::Deserialize;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum MouseButton {
@@ -41,19 +41,22 @@ impl I3BarEvent {
 }
 
 pub fn process_events(sender: Sender<I3BarEvent>) {
-    thread::spawn(move || loop {
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
+    thread::Builder::new()
+        .name("input".into())
+        .spawn(move || loop {
+            let mut input = String::new();
+            io::stdin().read_line(&mut input).unwrap();
 
-        // Take only the valid JSON object betweem curly braces (cut off leading bracket, commas and whitespace)
-        let slice = input.trim_start_matches(|c| c != '{');
-        let slice = slice.trim_end_matches(|c| c != '}');
+            // Take only the valid JSON object betweem curly braces (cut off leading bracket, commas and whitespace)
+            let slice = input.trim_start_matches(|c| c != '{');
+            let slice = slice.trim_end_matches(|c| c != '}');
 
-        if !slice.is_empty() {
-            let e: I3BarEvent = serde_json::from_str(slice).unwrap();
-            sender.send(e).unwrap();
-        }
-    });
+            if !slice.is_empty() {
+                let e: I3BarEvent = serde_json::from_str(slice).unwrap();
+                sender.send(e).unwrap();
+            }
+        })
+        .unwrap();
 }
 
 fn deserialize_mousebutton<'de, D>(deserializer: D) -> Result<MouseButton, D::Error>

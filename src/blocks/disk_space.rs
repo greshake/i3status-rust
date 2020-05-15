@@ -1,20 +1,19 @@
-use crate::scheduler::Task;
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::path::Path;
 use std::time::Duration;
+
+use crossbeam_channel::Sender;
+use nix::sys::statvfs::statvfs;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::scheduler::Task;
 use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-
-use uuid::Uuid;
-
-use nix::sys::statvfs::statvfs;
 
 #[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq)]
 pub enum Unit {
@@ -75,7 +74,7 @@ pub struct DiskSpaceConfig {
     #[serde(default = "DiskSpaceConfig::default_alias")]
     pub alias: String,
 
-    /// Currently supported options are available and free
+    /// Currently supported options are available, free, total and used
     #[serde(default = "DiskSpaceConfig::default_info_type")]
     pub info_type: InfoType,
 

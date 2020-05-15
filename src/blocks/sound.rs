@@ -21,11 +21,13 @@ use std::time::{Duration, Instant};
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection};
+use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::subprocess::{parse_command, spawn_child_async};
+use crate::subprocess::spawn_child_async;
 use crate::util::format_percent_bar;
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -61,14 +63,18 @@ trait SoundDevice {
 
 struct AlsaSoundDevice {
     name: String,
+    device: String,
+    natural_mapping: bool,
     volume: u32,
     muted: bool,
 }
 
 impl AlsaSoundDevice {
-    fn new(name: String) -> Result<Self> {
+    fn new(name: String, device: String, natural_mapping: bool) -> Result<Self> {
         let mut sd = AlsaSoundDevice {
             name,
+            device,
+            natural_mapping,
             volume: 0,
             muted: false,
         };
@@ -87,8 +93,14 @@ impl SoundDevice for AlsaSoundDevice {
     }
 
     fn get_info(&mut self) -> Result<()> {
+        let mut args = Vec::new();
+        if self.natural_mapping {
+            args.push("-M")
+        };
+        args.extend(&["-D", &self.device, "get", &self.name]);
+
         let output = Command::new("amixer")
-            .args(&["get", &self.name])
+            .args(&args)
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .block_error("sound", "could not run amixer to get sound info")?;
@@ -118,8 +130,15 @@ impl SoundDevice for AlsaSoundDevice {
     fn set_volume(&mut self, step: i32) -> Result<()> {
         let volume = max(0, self.volume as i32 + step) as u32;
 
+        let mut args = Vec::new();
+        if self.natural_mapping {
+            args.push("-M")
+        };
+        let vol_str = &format!("{}%", volume);
+        args.extend(&["-D", &self.device, "set", &self.name, &vol_str]);
+
         Command::new("amixer")
-            .args(&["set", &self.name, &format!("{}%", volume)])
+            .args(&args)
             .output()
             .block_error("sound", "failed to set volume")?;
 
@@ -129,8 +148,14 @@ impl SoundDevice for AlsaSoundDevice {
     }
 
     fn toggle(&mut self) -> Result<()> {
+        let mut args = Vec::new();
+        if self.natural_mapping {
+            args.push("-M")
+        };
+        args.extend(&["-D", &self.device, "set", &self.name, "toggle"]);
+
         Command::new("amixer")
-            .args(&["set", &self.name, "toggle"])
+            .args(&args)
             .output()
             .block_error("sound", "failed to toggle mute")?;
 
@@ -141,34 +166,37 @@ impl SoundDevice for AlsaSoundDevice {
 
     fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
         // Monitor volume changes in a separate thread.
-        thread::spawn(move || {
-            // Line-buffer to reduce noise.
-            let mut monitor = Command::new("stdbuf")
-                .args(&["-oL", "alsactl", "monitor"])
-                .stdout(Stdio::piped())
-                .spawn()
-                .expect("Failed to start alsactl monitor")
-                .stdout
-                .expect("Failed to pipe alsactl monitor output");
+        thread::Builder::new()
+            .name("sound_alsa".into())
+            .spawn(move || {
+                // Line-buffer to reduce noise.
+                let mut monitor = Command::new("stdbuf")
+                    .args(&["-oL", "alsactl", "monitor"])
+                    .stdout(Stdio::piped())
+                    .spawn()
+                    .expect("Failed to start alsactl monitor")
+                    .stdout
+                    .expect("Failed to pipe alsactl monitor output");
 
-            let mut buffer = [0; 1024]; // Should be more than enough.
-            loop {
-                // Block until we get some output. Doesn't really matter what
-                // the output actually is -- these are events -- we just update
-                // the sound information if *something* happens.
-                if monitor.read(&mut buffer).is_ok() {
-                    tx_update_request
-                        .send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
+                let mut buffer = [0; 1024]; // Should be more than enough.
+                loop {
+                    // Block until we get some output. Doesn't really matter what
+                    // the output actually is -- these are events -- we just update
+                    // the sound information if *something* happens.
+                    if monitor.read(&mut buffer).is_ok() {
+                        tx_update_request
+                            .send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                    }
+                    // Don't update too often. Wait 1/4 second, fast enough for
+                    // volume button mashing but slow enough to skip event spam.
+                    thread::sleep(Duration::new(0, 250_000_000))
                 }
-                // Don't update too often. Wait 1/4 second, fast enough for
-                // volume button mashing but slow enough to skip event spam.
-                thread::sleep(Duration::new(0, 250_000_000))
-            }
-        });
+            })
+            .unwrap();
 
         Ok(())
     }
@@ -251,10 +279,12 @@ impl PulseAudioConnection {
                 PulseState::Ready => {
                     break;
                 }
-                PulseState::Failed | PulseState::Terminated => Err(BlockError(
-                    "sound".into(),
-                    "pulseaudio context state failed/terminated".into(),
-                ))?,
+                PulseState::Failed | PulseState::Terminated => {
+                    return Err(BlockError(
+                        "sound".into(),
+                        "pulseaudio context state failed/terminated".into(),
+                    ))
+                }
                 _ => {}
             }
         }
@@ -303,70 +333,76 @@ impl PulseAudioClient {
         };
 
         // requests
-        thread::spawn(move || {
-            let mut connection = new_connection(send_result);
+        thread::Builder::new()
+            .name("sound_pulseaudio_req".into())
+            .spawn(move || {
+                let mut connection = new_connection(send_result);
 
-            loop {
-                // make sure mainloop dispatched everything
-                for _ in 0..10 {
-                    connection.iterate(false).unwrap();
-                }
+                loop {
+                    // make sure mainloop dispatched everything
+                    for _ in 0..10 {
+                        connection.iterate(false).unwrap();
+                    }
 
-                match recv_req.recv() {
-                    Err(_) => {}
-                    Ok(req) => {
-                        let mut introspector = connection.context.borrow_mut().introspect();
+                    match recv_req.recv() {
+                        Err(_) => {}
+                        Ok(req) => {
+                            let mut introspector = connection.context.borrow_mut().introspect();
 
-                        match req {
-                            PulseAudioClientRequest::GetDefaultDevice => {
-                                introspector
-                                    .get_server_info(PulseAudioClient::server_info_callback);
-                            }
-                            PulseAudioClientRequest::GetSinkInfoByIndex(index) => {
-                                introspector.get_sink_info_by_index(
-                                    index,
-                                    PulseAudioClient::sink_info_callback,
-                                );
-                            }
-                            PulseAudioClientRequest::GetSinkInfoByName(name) => {
-                                introspector.get_sink_info_by_name(
-                                    &name,
-                                    PulseAudioClient::sink_info_callback,
-                                );
-                            }
-                            PulseAudioClientRequest::SetSinkVolumeByName(name, volumes) => {
-                                introspector.set_sink_volume_by_name(&name, &volumes, None);
-                            }
-                            PulseAudioClientRequest::SetSinkMuteByName(name, mute) => {
-                                introspector.set_sink_mute_by_name(&name, mute, None);
-                            }
-                        };
+                            match req {
+                                PulseAudioClientRequest::GetDefaultDevice => {
+                                    introspector
+                                        .get_server_info(PulseAudioClient::server_info_callback);
+                                }
+                                PulseAudioClientRequest::GetSinkInfoByIndex(index) => {
+                                    introspector.get_sink_info_by_index(
+                                        index,
+                                        PulseAudioClient::sink_info_callback,
+                                    );
+                                }
+                                PulseAudioClientRequest::GetSinkInfoByName(name) => {
+                                    introspector.get_sink_info_by_name(
+                                        &name,
+                                        PulseAudioClient::sink_info_callback,
+                                    );
+                                }
+                                PulseAudioClientRequest::SetSinkVolumeByName(name, volumes) => {
+                                    introspector.set_sink_volume_by_name(&name, &volumes, None);
+                                }
+                                PulseAudioClientRequest::SetSinkMuteByName(name, mute) => {
+                                    introspector.set_sink_mute_by_name(&name, mute, None);
+                                }
+                            };
 
-                        // send request and receive response
-                        connection.iterate(true).unwrap();
-                        connection.iterate(true).unwrap();
+                            // send request and receive response
+                            connection.iterate(true).unwrap();
+                            connection.iterate(true).unwrap();
+                        }
                     }
                 }
-            }
-        });
+            })
+            .unwrap();
         thread_result()?;
 
         // subscribe
-        thread::spawn(move || {
-            let connection = new_connection(send_result2);
+        thread::Builder::new()
+            .name("sound_pulseaudio_sub".into())
+            .spawn(move || {
+                let connection = new_connection(send_result2);
 
-            // subcribe for events
-            connection
-                .context
-                .borrow_mut()
-                .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
-            connection.context.borrow_mut().subscribe(
-                subscription_masks::SERVER | subscription_masks::SINK,
-                |_| {},
-            );
+                // subcribe for events
+                connection
+                    .context
+                    .borrow_mut()
+                    .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
+                connection.context.borrow_mut().subscribe(
+                    subscription_masks::SERVER | subscription_masks::SINK,
+                    |_| {},
+                );
 
-            connection.mainloop.borrow_mut().run().unwrap();
-        });
+                connection.mainloop.borrow_mut().run().unwrap();
+            })
+            .unwrap();
         thread_result()?;
 
         Ok(PulseAudioClient { sender: send_req })
@@ -552,10 +588,12 @@ pub struct Sound {
     id: String,
     device: Box<dyn SoundDevice>,
     step_width: u32,
+    format: FormatTemplate,
     config: Config,
     on_click: Option<String>,
     show_volume_when_muted: bool,
     bar: bool,
+    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -565,13 +603,27 @@ pub struct SoundConfig {
     #[serde(default = "SoundDriver::default")]
     pub driver: SoundDriver,
 
-    /// ALSA / PulseAudio sound device name
+    /// PulseAudio device name, or
+    /// ALSA control name as listed in the output of `amixer -D yourdevice scontrols` (default is "Master")
     #[serde(default = "SoundConfig::default_name")]
     pub name: Option<String>,
+
+    /// ALSA device name, usually in the form "hw:#" where # is the number of the card desired (default is "default")
+    #[serde(default = "SoundConfig::default_device")]
+    pub device: Option<String>,
+
+    /// Use the mapped volume for evaluating the percentage representation like alsamixer, to be more natural for human ear
+    #[serde(default = "SoundConfig::default_natural_mapping")]
+    pub natural_mapping: bool,
 
     /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
     #[serde(default = "SoundConfig::default_step_width")]
     pub step_width: u32,
+
+    /// Format string for displaying sound information.
+    /// placeholders: {volume}
+    #[serde(default = "SoundConfig::default_format")]
+    pub format: String,
 
     #[serde(default = "SoundConfig::default_on_click")]
     pub on_click: Option<String>,
@@ -582,6 +634,12 @@ pub struct SoundConfig {
     /// Show volume as bar instead of percent
     #[serde(default = "SoundConfig::default_bar")]
     pub bar: bool,
+
+    #[serde(
+        default = "SoundConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
+    pub interval: Duration,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -604,8 +662,20 @@ impl SoundConfig {
         None
     }
 
+    fn default_device() -> Option<String> {
+        None
+    }
+
+    fn default_natural_mapping() -> bool {
+        false
+    }
+
     fn default_step_width() -> u32 {
         5
+    }
+
+    fn default_format() -> String {
+        "{volume}%".into()
     }
 
     fn default_on_click() -> Option<String> {
@@ -619,6 +689,10 @@ impl SoundConfig {
     fn default_bar() -> bool {
         false
     }
+
+    fn default_interval() -> Duration {
+        Duration::from_secs(30)
+    }
 }
 
 impl Sound {
@@ -626,23 +700,19 @@ impl Sound {
         self.device.get_info()?;
 
         let volume = self.device.volume();
+        let values = map!("{volume}" => format!("{:02}", volume));
+        let text = self.format.render_static_str(&values)?;
+
         if self.device.muted() {
-            self.text.set_icon("volume_empty");
-            let icon = self
-                .config
-                .icons
-                .get("volume_muted")
-                .block_error("sound", "cannot find icon")?
-                .to_owned();
+            self.text.set_icon("volume_muted");
             if self.show_volume_when_muted {
                 if self.bar {
-                    self.text
-                        .set_text(format!("{} {}", icon, format_percent_bar(volume as f32)));
+                    self.text.set_text(format_percent_bar(volume as f32));
                 } else {
-                    self.text.set_text(format!("{} {:02}%", icon, volume));
+                    self.text.set_text(text);
                 }
             } else {
-                self.text.set_text(icon);
+                self.text.set_text("");
             }
             self.text.set_state(State::Warning);
         } else {
@@ -654,7 +724,7 @@ impl Sound {
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
-                format!("{:02}%", volume)
+                text
             });
             self.text.set_state(State::Idle);
         }
@@ -693,11 +763,13 @@ impl ConfigBlock for Sound {
             )),
         };
 
-        // prefere PulseAudio if available and selected, fallback to ALSA
+        // prefer PulseAudio if available and selected, fallback to ALSA
         let device: Box<dyn SoundDevice> = match pulseaudio_device {
             Ok(dev) => Box::new(dev),
             Err(_) => Box::new(AlsaSoundDevice::new(
                 block_config.name.unwrap_or_else(|| "Master".into()),
+                block_config.device.unwrap_or_else(|| "default".into()),
+                block_config.natural_mapping,
             )?),
         };
 
@@ -705,16 +777,16 @@ impl ConfigBlock for Sound {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
             device,
+            format: FormatTemplate::from_string(&block_config.format)?,
             step_width,
             config,
             on_click: block_config.on_click,
             show_volume_when_muted: block_config.show_volume_when_muted,
             bar: block_config.bar,
+            update_interval: block_config.interval,
         };
 
-        sound
-            .device
-            .monitor(id.clone(), tx_update_request.clone())?;
+        sound.device.monitor(id, tx_update_request)?;
 
         Ok(sound)
     }
@@ -726,7 +798,7 @@ const FILTER: &[char] = &['[', ']', '%'];
 impl Block for Sound {
     fn update(&mut self) -> Result<Option<Duration>> {
         self.display()?;
-        Ok(None) // The monitor thread will call for updates when needed.
+        Ok(Some(self.update_interval))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
@@ -740,8 +812,7 @@ impl Block for Sound {
                     MouseButton::Right => self.device.toggle()?,
                     MouseButton::Left => {
                         if let Some(ref cmd) = self.on_click {
-                            let (cmd_name, cmd_args) = parse_command(cmd);
-                            spawn_child_async(cmd_name, &cmd_args)
+                            spawn_child_async("sh", &["-c", cmd])
                                 .block_error("sound", "could not spawn child")?;
                         }
                     }

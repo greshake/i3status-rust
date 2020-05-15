@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
+use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
@@ -30,6 +31,7 @@ pub struct IBus {
     text: TextWidget,
     engine: Arc<Mutex<String>>,
     mappings: Option<BTreeMap<String, String>>,
+    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -37,11 +39,21 @@ pub struct IBus {
 pub struct IBusConfig {
     #[serde(default = "IBusConfig::default_mappings")]
     pub mappings: Option<BTreeMap<String, String>>,
+
+    #[serde(
+        default = "IBusConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
+    pub interval: Duration,
 }
 
 impl IBusConfig {
     fn default_mappings() -> Option<BTreeMap<String, String>> {
         None
+    }
+
+    fn default_interval() -> Duration {
+        Duration::from_secs(30)
     }
 }
 
@@ -79,33 +91,36 @@ impl ConfigBlock for IBus {
 
         let engine_original = Arc::new(Mutex::new(String::from(current_engine)));
         let engine = engine_original.clone();
-
-        thread::spawn(move || {
-            let c = Connection::open_private(&ibus_address)
-                .expect("Failed to establish D-Bus connection in thread");
-            c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
-                .expect("Failed to add D-Bus message rule - has IBus interface changed?");
-            loop {
-                for ci in c.iter(100000) {
-                    if let Some(engine_name) = parse_msg(&ci) {
-                        let mut engine = engine_original.lock().unwrap();
-                        *engine = engine_name.to_string();
-                        // Tell block to update now.
-                        send.send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
-                    };
+        thread::Builder::new()
+            .name("ibus".into())
+            .spawn(move || {
+                let c = Connection::open_private(&ibus_address)
+                    .expect("Failed to establish D-Bus connection in thread");
+                c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
+                    .expect("Failed to add D-Bus message rule - has IBus interface changed?");
+                loop {
+                    for ci in c.iter(100_000) {
+                        if let Some(engine_name) = parse_msg(&ci) {
+                            let mut engine = engine_original.lock().unwrap();
+                            *engine = engine_name.to_string();
+                            // Tell block to update now.
+                            send.send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                        };
+                    }
                 }
-            }
-        });
+            })
+            .unwrap();
 
         Ok(IBus {
             id: id_copy,
-            text: TextWidget::new(config.clone()).with_text("IBus"),
+            text: TextWidget::new(config).with_text("IBus"),
             engine,
             mappings: block_config.mappings,
+            update_interval: block_config.interval,
         })
     }
 }
@@ -132,7 +147,7 @@ impl Block for IBus {
         };
 
         self.text.set_text(display_engine);
-        Ok(None)
+        Ok(Some(self.update_interval))
     }
 
     // Returns the view of the block, comprised of widgets.
@@ -149,7 +164,7 @@ impl Block for IBus {
 }
 
 fn parse_msg(ci: &ConnectionItem) -> Option<&str> {
-    let m = if let &ConnectionItem::Signal(ref s) = ci {
+    let m = if let ConnectionItem::Signal(ref s) = *ci {
         s
     } else {
         return None;
@@ -160,8 +175,7 @@ fn parse_msg(ci: &ConnectionItem) -> Option<&str> {
     if &*m.member().unwrap() != "GlobalEngineChanged" {
         return None;
     };
-    let engine = m.get1::<&str>();
-    engine
+    m.get1::<&str>()
 }
 
 // Gets the address being used by the currently running ibus daemon.
@@ -191,7 +205,7 @@ fn get_ibus_address() -> Result<String> {
         .map(|entry| entry.unwrap().file_name().into_string().unwrap())
         .collect();
 
-    if socket_files.len() == 0 {
+    if socket_files.is_empty() {
         return Err(BlockError(
             "ibus".to_string(),
             "Could not locate an IBus socket file.".to_string(),
@@ -222,7 +236,7 @@ fn get_ibus_address() -> Result<String> {
             .next()
             .block_error(
                 "ibus",
-                &format!("Could not find an IBus socket file matching $DISPLAY."),
+                &"Could not find an IBus socket file matching $DISPLAY.".to_string(),
             )?;
         socket_dir.join(candidate)
     };

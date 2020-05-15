@@ -1,20 +1,20 @@
-use crate::scheduler::Task;
-use crossbeam_channel::{unbounded, Receiver, Sender};
-use serde_derive::Deserialize;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
-use std::thread::spawn;
+use std::thread;
 use std::time::{Duration, Instant};
+
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use uuid::Uuid;
 
 pub struct SpeedTest {
     vals: Arc<Mutex<(bool, Vec<f32>)>>,
@@ -87,28 +87,31 @@ fn make_thread(
     config: SpeedTestConfig,
     id: String,
 ) {
-    spawn(move || loop {
-        if !recv.recv().is_err() {
-            if let Ok(output) = get_values(config.bytes) {
-                if let Ok(vals) = parse_values(&output) {
-                    if vals.len() == 3 {
-                        let (ref mut update, ref mut values) = *values
-                            .lock()
-                            .expect("main thread paniced while holding speedtest-values mutex");
-                        *values = vals;
+    thread::Builder::new()
+        .name("speedtest".into())
+        .spawn(move || loop {
+            if recv.recv().is_ok() {
+                if let Ok(output) = get_values(config.bytes) {
+                    if let Ok(vals) = parse_values(&output) {
+                        if vals.len() == 3 {
+                            let (ref mut update, ref mut values) = *values
+                                .lock()
+                                .expect("main thread paniced while holding speedtest-values mutex");
+                            *values = vals;
 
-                        *update = true;
+                            *update = true;
 
-                        done.send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
+                            done.send(Task {
+                                id: id.clone(),
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                        }
                     }
                 }
             }
-        }
-    });
+        })
+        .unwrap();
 }
 
 impl ConfigBlock for SpeedTest {
@@ -133,7 +136,7 @@ impl ConfigBlock for SpeedTest {
                 ButtonWidget::new(config.clone(), &id)
                     .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
-                ButtonWidget::new(config.clone(), &id)
+                ButtonWidget::new(config, &id)
                     .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
             ],
@@ -161,6 +164,9 @@ impl Block for SpeedTest {
                 self.text[1].set_text(format!("{}{}", vals[1], ty));
                 self.text[2].set_text(format!("{}{}", vals[2], ty));
 
+                // TODO: remove clippy workaround
+                #[allow(clippy::unknown_clippy_lints)]
+                #[allow(clippy::match_on_vec_items)]
                 self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
                             0.0 ; 25.0 => State::Good,
                             25.0 ; 60.0 => State::Info,

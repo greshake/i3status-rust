@@ -1,25 +1,21 @@
-use crate::blocks::{Block, ConfigBlock};
-use crate::input::{I3BarEvent, MouseButton};
-use crate::util::*;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use std::collections::HashMap;
 use std::fmt;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::fs::{File, OpenOptions};
+use std::io::{BufRead, BufReader, Write};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::util::*;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use std::fs::OpenOptions;
-use std::io::Write;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
@@ -166,7 +162,6 @@ pub struct Memory {
     format: (FormatTemplate, FormatTemplate),
     update_interval: Duration,
     tx_update_request: Sender<Task>,
-    values: HashMap<String, String>,
     warning: (f64, f64),
     critical: (f64, f64),
 }
@@ -272,142 +267,51 @@ impl Memory {
         let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
         let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
 
-        self.values
-            .insert("{MTg}".to_string(), format!("{:.1}", mem_total.gib()));
-        self.values
-            .insert("{MTm}".to_string(), format!("{}", mem_total.mib()));
-        self.values
-            .insert("{MFg}".to_string(), format!("{:.1}", mem_free.gib()));
-        self.values
-            .insert("{MFm}".to_string(), format!("{}", mem_free.mib()));
-        self.values.insert(
-            "{MFp}".to_string(),
-            format!("{:.2}", mem_free.percent(mem_total)),
-        );
-        self.values.insert(
-            "{MFpi}".to_string(),
-            format!("{:02}", mem_free.percent(mem_total) as i32),
-        );
-        self.values.insert(
-            "{MFpb}".to_string(),
-            format_percent_bar(mem_free.percent(mem_total)),
-        );
-        self.values
-            .insert("{MUg}".to_string(), format!("{:.1}", mem_total_used.gib()));
-        self.values
-            .insert("{MUm}".to_string(), format!("{}", mem_total_used.mib()));
-        self.values.insert(
-            "{MUp}".to_string(),
-            format!("{:.2}", mem_total_used.percent(mem_total)),
-        );
-        self.values.insert(
-            "{MUpi}".to_string(),
-            format!("{:02}", mem_total_used.percent(mem_total) as i32),
-        );
-        self.values.insert(
-            "{MUpb}".to_string(),
-            format_percent_bar(mem_total_used.percent(mem_total)),
-        );
-        self.values
-            .insert("{Mug}".to_string(), format!("{:.1}", mem_used.gib()));
-        self.values
-            .insert("{Mum}".to_string(), format!("{}", mem_used.mib()));
-        self.values.insert(
-            "{Mup}".to_string(),
-            format!("{:.2}", mem_used.percent(mem_total)),
-        );
-        self.values.insert(
-            "{Mupi}".to_string(),
-            format!("{:02}", mem_used.percent(mem_total) as i32),
-        );
-        self.values.insert(
-            "{Mupb}".to_string(),
-            format_percent_bar(mem_used.percent(mem_total)),
-        );
-        self.values
-            .insert("{MAg}".to_string(), format!("{:.1}", mem_avail.gib()));
-        self.values
-            .insert("{MAm}".to_string(), format!("{}", mem_avail.mib()));
-        self.values.insert(
-            "{MAp}".to_string(),
-            format!("{:.2}", mem_avail.percent(mem_total)),
-        );
-        self.values.insert(
-            "{MApi}".to_string(),
-            format!("{:02}", mem_avail.percent(mem_total) as i32),
-        );
-        self.values.insert(
-            "{MApb}".to_string(),
-            format_percent_bar(mem_avail.percent(mem_total)),
-        );
-        self.values
-            .insert("{STg}".to_string(), format!("{:.1}", swap_total.gib()));
-        self.values
-            .insert("{STm}".to_string(), format!("{}", swap_total.mib()));
-        self.values
-            .insert("{SFg}".to_string(), format!("{:.1}", swap_free.gib()));
-        self.values
-            .insert("{SFm}".to_string(), format!("{}", swap_free.mib()));
-        self.values.insert(
-            "{SFp}".to_string(),
-            format!("{:.2}", swap_free.percent(swap_total)),
-        );
-        self.values.insert(
-            "{SFpi}".to_string(),
-            format!("{:02}", swap_free.percent(swap_total) as i32),
-        );
-        self.values.insert(
-            "{SFpb}".to_string(),
-            format_percent_bar(swap_free.percent(swap_total)),
-        );
-        self.values
-            .insert("{SUg}".to_string(), format!("{:.1}", swap_used.gib()));
-        self.values
-            .insert("{SUm}".to_string(), format!("{}", swap_used.mib()));
-        self.values.insert(
-            "{SUp}".to_string(),
-            format!("{:.2}", swap_used.percent(swap_total)),
-        );
-        self.values.insert(
-            "{SUpi}".to_string(),
-            format!("{:02}", swap_used.percent(swap_total) as i32),
-        );
-        self.values.insert(
-            "{SUpb}".to_string(),
-            format_percent_bar(swap_used.percent(swap_total)),
-        );
-        self.values
-            .insert("{Bg}".to_string(), format!("{:.1}", buffers.gib()));
-        self.values
-            .insert("{Bm}".to_string(), format!("{}", buffers.mib()));
-        self.values.insert(
-            "{Bp}".to_string(),
-            format!("{:.2}", buffers.percent(mem_total)),
-        );
-        self.values.insert(
-            "{Bpi}".to_string(),
-            format!("{:02}", buffers.percent(mem_total) as i32),
-        );
-        self.values.insert(
-            "{Bpb}".to_string(),
-            format_percent_bar(buffers.percent(mem_total)),
-        );
-        self.values
-            .insert("{Cg}".to_string(), format!("{:.1}", cached.gib()));
-        self.values
-            .insert("{Cm}".to_string(), format!("{}", cached.mib()));
-        self.values.insert(
-            "{Cp}".to_string(),
-            format!("{:.2}", cached.percent(mem_total)),
-        );
-        self.values.insert(
-            "{Cpi}".to_string(),
-            format!("{:02}", cached.percent(mem_total) as i32),
-        );
-        self.values.insert(
-            "{Cpb}".to_string(),
-            format_percent_bar(cached.percent(mem_total)),
-        );
+        let values = map!(
+            "{MTg}" => format!("{:.1}", mem_total.gib()),
+            "{MTm}" => format!("{}", mem_total.mib()),
+            "{MFg}" => format!("{:.1}", mem_free.gib()),
+            "{MFm}" => format!("{}", mem_free.mib()),
+            "{MFp}" => format!("{:.2}", mem_free.percent(mem_total)),
+            "{MFpi}" => format!("{:02}", mem_free.percent(mem_total) as i32),
+            "{MFpb}" => format_percent_bar(mem_free.percent(mem_total)),
+            "{MUg}" => format!("{:.1}", mem_total_used.gib()),
+            "{MUm}" => format!("{}", mem_total_used.mib()),
+            "{MUp}" => format!("{:.2}", mem_total_used.percent(mem_total)),
+            "{MUpi}" => format!("{:02}", mem_total_used.percent(mem_total) as i32),
+            "{MUpb}" => format_percent_bar(mem_total_used.percent(mem_total)),
+            "{Mug}" => format!("{:.1}", mem_used.gib()),
+            "{Mum}" => format!("{}", mem_used.mib()),
+            "{Mup}" => format!("{:.2}", mem_used.percent(mem_total)),
+            "{Mupi}" => format!("{:02}", mem_used.percent(mem_total) as i32),
+            "{Mupb}" => format_percent_bar(mem_used.percent(mem_total)),
+            "{MAg}" => format!("{:.1}", mem_avail.gib()),
+            "{MAm}" => format!("{}", mem_avail.mib()),
+            "{MAp}" => format!("{:.2}", mem_avail.percent(mem_total)),
+            "{MApi}" => format!("{:02}", mem_avail.percent(mem_total) as i32),
+            "{MApb}" => format_percent_bar(mem_avail.percent(mem_total)),
+            "{STg}" => format!("{:.1}", swap_total.gib()),
+            "{STm}" => format!("{}", swap_total.mib()),
+            "{SFg}" => format!("{:.1}", swap_free.gib()),
+            "{SFm}" => format!("{}", swap_free.mib()),
+            "{SFp}" => format!("{:.2}", swap_free.percent(swap_total)),
+            "{SFpi}" => format!("{:02}", swap_free.percent(swap_total) as i32),
+            "{SFpb}" => format_percent_bar(swap_free.percent(swap_total)),
+            "{SUg}" => format!("{:.1}", swap_used.gib()),
+            "{SUm}" => format!("{}", swap_used.mib()),
+            "{SUp}" => format!("{:.2}", swap_used.percent(swap_total)),
+            "{SUpi}" => format!("{:02}", swap_used.percent(swap_total) as i32),
+            "{SUpb}" => format_percent_bar(swap_used.percent(swap_total)),
+            "{Bg}" => format!("{:.1}", buffers.gib()),
+            "{Bm}" => format!("{}", buffers.mib()),
+            "{Bp}" => format!("{:.2}", buffers.percent(mem_total)),
+            "{Bpi}" => format!("{:02}", buffers.percent(mem_total) as i32),
+            "{Bpb}" => format_percent_bar(buffers.percent(mem_total)),
+            "{Cg}" => format!("{:.1}", cached.gib()),
+            "{Cm}" => format!("{}", cached.mib()),
+            "{Cp}" => format!("{:.2}", cached.percent(mem_total)),
+            "{Cpi}" => format!("{:02}", cached.percent(mem_total) as i32),
+            "{Cpb}" => format_percent_bar(cached.percent(mem_total)));
 
         match self.memtype {
             Memtype::Memory => self.output.0.set_state(match mem_used.percent(mem_total) {
@@ -431,13 +335,13 @@ impl Memory {
                 .append(true)
                 .open("/tmp/i3log")
                 .block_error("memory", "can't open /tmp/i3log")?;
-            writeln!(f, "Inserted values: {:?}", self.values)
+            writeln!(f, "Inserted values: {:?}", values)
                 .block_error("memory", "failed to write to /tmp/i3log")?;
         });
 
         Ok(match self.memtype {
-            Memtype::Memory => self.format.0.render(&self.values),
-            Memtype::Swap => self.format.1.render(&self.values),
+            Memtype::Memory => self.format.0.render_static_str(&values)?,
+            Memtype::Swap => self.format.1.render_static_str(&values)?,
         })
     }
 
@@ -474,7 +378,6 @@ impl ConfigBlock for Memory {
             ),
             update_interval: block_config.interval,
             tx_update_request: tx,
-            values: HashMap::<String, String>::new(),
             warning: (block_config.warning_mem, block_config.warning_swap),
             critical: (block_config.critical_mem, block_config.critical_swap),
         })
@@ -515,8 +418,8 @@ impl Block for Memory {
             };
             let line = line.split_whitespace().collect::<Vec<&str>>();
 
-            match line[0] {
-                "MemTotal:" => {
+            match line.get(0) {
+                Some(&"MemTotal:") => {
                     mem_state.mem_total = (
                         u64::from_str(line[1])
                             .block_error("memory", "failed to parse mem_total")?,
@@ -524,28 +427,28 @@ impl Block for Memory {
                     );
                     continue;
                 }
-                "MemFree:" => {
+                Some(&"MemFree:") => {
                     mem_state.mem_free = (
                         u64::from_str(line[1]).block_error("memory", "failed to parse mem_free")?,
                         true,
                     );
                     continue;
                 }
-                "Buffers:" => {
+                Some(&"Buffers:") => {
                     mem_state.buffers = (
                         u64::from_str(line[1]).block_error("memory", "failed to parse buffers")?,
                         true,
                     );
                     continue;
                 }
-                "Cached:" => {
+                Some(&"Cached:") => {
                     mem_state.cached = (
                         u64::from_str(line[1]).block_error("memory", "failed to parse cached")?,
                         true,
                     );
                     continue;
                 }
-                "SReclaimable:" => {
+                Some(&"SReclaimable:") => {
                     mem_state.s_reclaimable = (
                         u64::from_str(line[1])
                             .block_error("memory", "failed to parse s_reclaimable")?,
@@ -553,14 +456,14 @@ impl Block for Memory {
                     );
                     continue;
                 }
-                "Shmem:" => {
+                Some(&"Shmem:") => {
                     mem_state.shmem = (
                         u64::from_str(line[1]).block_error("memory", "failed to parse shmem")?,
                         true,
                     );
                     continue;
                 }
-                "SwapTotal:" => {
+                Some(&"SwapTotal:") => {
                     mem_state.swap_total = (
                         u64::from_str(line[1])
                             .block_error("memory", "failed to parse swap_total")?,
@@ -568,7 +471,7 @@ impl Block for Memory {
                     );
                     continue;
                 }
-                "SwapFree:" => {
+                Some(&"SwapFree:") => {
                     mem_state.swap_free = (
                         u64::from_str(line[1])
                             .block_error("memory", "failed to parse swap_free")?,

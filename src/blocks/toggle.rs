@@ -10,7 +10,7 @@ use crate::config::Config;
 use crate::de::deserialize_opt_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 use uuid::Uuid;
@@ -90,7 +90,7 @@ impl ConfigBlock for Toggle {
 
 impl Block for Toggle {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+        let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &self.command_state])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
@@ -107,6 +107,8 @@ impl Block for Toggle {
             }
         });
 
+        self.text.set_state(State::Idle);
+
         Ok(self.update_interval)
     }
 
@@ -118,19 +120,27 @@ impl Block for Toggle {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
                 let cmd = if self.toggled {
-                    self.toggled = false;
-                    self.text.set_icon(self.icon_off.as_str());
                     &self.command_off
                 } else {
-                    self.toggled = true;
-                    self.text.set_icon(self.icon_on.as_str());
                     &self.command_on
                 };
 
-                Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
                     .args(&["-c", cmd])
                     .output()
                     .block_error("toggle", "failed to run toggle command")?;
+
+                if output.status.success() {
+                    self.text.set_state(State::Idle);
+                    self.toggled = !self.toggled;
+                    self.text.set_icon(if self.toggled {
+                        self.icon_on.as_str()
+                    } else {
+                        self.icon_off.as_str()
+                    })
+                } else {
+                    self.text.set_state(State::Critical);
+                };
             }
         }
 

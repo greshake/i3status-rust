@@ -1,10 +1,12 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
 use std::time::{Duration, Instant};
 use std::vec;
+
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
@@ -12,10 +14,9 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
+use crate::subprocess::spawn_child_async;
+use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use uuid::Uuid;
 
 pub struct Custom {
     id: String,
@@ -25,6 +26,7 @@ pub struct Custom {
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
     tx_update_request: Sender<Task>,
+    pub json: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -45,11 +47,19 @@ pub struct CustomConfig {
 
     /// Commands to execute and change when the button is clicked
     pub cycle: Option<Vec<String>>,
+
+    /// Parse command output if it contains valid bar JSON
+    #[serde(default = "CustomConfig::default_json")]
+    pub json: bool,
 }
 
 impl CustomConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(10)
+    }
+
+    fn default_json() -> bool {
+        false
     }
 }
 
@@ -65,11 +75,12 @@ impl ConfigBlock for Custom {
             on_click: None,
             cycle: None,
             tx_update_request: tx,
+            json: block_config.json,
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
         if let Some(on_click) = block_config.on_click {
-            custom.on_click = Some(on_click.to_string())
+            custom.on_click = Some(on_click)
         };
 
         if let Some(cycle) = block_config.cycle {
@@ -78,11 +89,28 @@ impl ConfigBlock for Custom {
         };
 
         if let Some(command) = block_config.command {
-            custom.command = Some(command.to_string())
+            custom.command = Some(command)
         };
 
         Ok(custom)
     }
+}
+
+fn default_icon() -> String {
+    String::from("")
+}
+
+fn default_state() -> State {
+    State::Idle
+}
+
+#[derive(Deserialize)]
+struct Output {
+    #[serde(default = "default_icon")]
+    icon: String,
+    #[serde(default = "default_state")]
+    state: State,
+    text: String,
 }
 
 impl Block for Custom {
@@ -94,13 +122,28 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+        let raw_output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.to_string());
 
-        self.output.set_text(output);
+        if self.json {
+            let output: Output = match serde_json::from_str(&*raw_output) {
+                Err(e) => {
+                    return Err(BlockError(
+                        "custom".to_string(),
+                        format!("Error parsing JSON: {}", e),
+                    ))
+                }
+                Ok(s) => s,
+            };
+            self.output.set_icon(&output.icon);
+            self.output.set_state(output.state);
+            self.output.set_text(output.text);
+        } else {
+            self.output.set_text(raw_output);
+        }
 
         Ok(Some(self.update_interval))
     }
@@ -121,10 +164,7 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-                .args(&["-c", on_click])
-                .output()
-                .ok();
+            spawn_child_async("sh", &["-c", on_click]).ok();
             update = true;
         }
 

@@ -14,15 +14,18 @@
 - [Memory](#memory)
 - [Music](#music)
 - [Net](#net)
+- [NetworkManager](#networkmanager)
 - [Notmuch](#notmuch)
 - [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
 - [Pomodoro](#pomodoro)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
+- [Taskwarrior](#taskwarrior)
 - [Temperature](#temperature)
 - [Time](#time)
 - [Toggle](#toggle)
+- [Watson](#watson)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
 
@@ -146,6 +149,7 @@ Key | Values | Required | Default
 `mac` | MAC address of the Bluetooth device. | Yes | None
 `label` | Text label to display next to the icon. | No | None
 
+
 ## CPU Utilization
 
 Creates a block which displays the overall CPU utilization, calculated from `/proc/stat`.
@@ -171,19 +175,24 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `1`
 `format` | A format string. Possible placeholders: `{barchart}` (barchart of each CPU's core utilization), `{utilization}` (average CPU utilization in percent) and `{frequency}` (CPU frequency). | No | `"{utilization}%"`
 `frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
+`per_core` | Display CPU frequencies and utilization per core. | No | `false`
 
 
 ## Custom
 
 Creates a block that display the output of custom shell commands.
 
+For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  
+`{"icon": "ICON", "state": "STATE", "text": "YOURTEXT"}`  
+`icon` is optional, it may be an icon name from `icons.rs` (default "")  
+`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
+
 ### Examples
 
 ```toml
 [[block]]
 block = "custom"
-command = "uname"
-interval = 100
+command = ''' cat /sys/class/thermal/thermal_zone0/temp | awk '{printf("%.1f\n",$1/1000)}' '''
 ```
 
 ```toml
@@ -192,6 +201,13 @@ block = "custom"
 cycle = ["echo ON", "echo OFF"]
 on_click = "<command>"
 interval = 1
+```
+
+```toml
+[[block]]
+block = "custom"
+command = "echo '{\"icon\":\"weather_thunder\",\"state\":\"Critical\", \"text\": \"Danger!\"}'"
+json = true
 ```
 
 ### Options
@@ -204,6 +220,7 @@ Key | Values | Required | Default
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `10`
+`json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
 
 ## Disk Space
 
@@ -218,7 +235,6 @@ path = "/"
 alias = "/"
 info_type = "available"
 unit = "GB"
-interval = 20
 ```
 
 ### Options
@@ -227,21 +243,24 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `path` | Path to collect information from | No | `"/"`
 `alias` | Alias that is displayed for path | No | `"/"`
-`info_type` | Currently supported options are `available` and `free` | No | `"available"`
-`unit` | Unit that is used to display disk space. Options are MB, MiB, GB, GiB, TB and TiB | No | `"GB"`
+`info_type` | Currently supported options are `"available"`, `"free"`, `"total"` and `"used"` | No | `"available"`
+`unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
+`warning` | Available disk space warning level in GiB. | No | `20.0`
+`alert` | Available disk space critical level in GiB. | No | `10.0`
 `interval` | Update interval, in seconds. | No | `20`
 `show_percentage` | Show percentage of used/available disk space depending on info_type. | No | `false`
 
 ## Focused Window
 
-Creates a block which displays the title of the currently focused window. Uses push updates from i3 IPC, so no need to worry about resource usage. The block only updates when the focused window changes title or the focus changes. Also works with sway, due to it having compatibility with i3's IPC.
+Creates a block which displays the title or the active marks of the currently focused window. Uses push updates from i3 IPC, so no need to worry about resource usage. The block only updates when the focused window changes title or the focus changes. Also works with sway, due to it having compatibility with i3's IPC.
 
 ### Examples
 
 ```toml
 [[block]]
 block = "focused_window"
-max_width = 21
+max_width = 50
+show_marks = "visible"
 ```
 
 ### Options
@@ -249,6 +268,7 @@ max_width = 21
 Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
+`show_marks` | Display marks instead of the title, if there are some. Options are `"none"`, `"all"` or `"visible"`, the latter of which ignores marks that start with an underscore. | No | `"none"`
 
 ## IBus
 
@@ -275,7 +295,12 @@ block = "ibus"
 
 Creates a block to display the current keyboard layout.
 
-This block polls `setxkbmap` for the current layout by default, also can be configured to read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path or `kbdd`. Which of these methods is appropriate will depend on your system setup.
+Four drivers are available:
+- `setxkbmap` which polls setxkbmap to get the current layout
+- `localebus` which can read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path
+- `kbdd` which uses [kbdd](https://github.com/qnikst/kbdd) to monitor per-window layout changes via DBus
+- `sway` which can read asynchronous updates from the sway IPC
+ Which of these methods is appropriate will depend on your system setup.
 
 ### Examples
 
@@ -304,12 +329,23 @@ block = "keyboard_layout"
 driver = "kbddbus"
 ```
 
+Listen to sway for changes:
+
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "sway"
+sway_kb_identifier = "1133:49706:Gaming_Keyboard_G110"
+```
+
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`driver` | One of `"setxkbmap"`, `"localebus"` or `"kbddbus"`, depending on your system. | No | `"setxkbmap"`
+`driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | No | `"setxkbmap"`
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
+`format` | Format string, e.g. " {layout}" | No | `"{layout}"`
+`sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs` | No | ""
 
 ## Load
 
@@ -496,6 +532,8 @@ Key | Values | Required | Default
 `marquee` | Bool to specify if a marquee style rotation should be used if the title + artist is longer than max-width | No | `true`
 `marquee_interval` | Marquee interval in seconds. This is the delay between each rotation. | No | `10`
 `marquee_speed` | Marquee speed in seconds. This is the scrolling time used per character. | No | `0.5`
+`smart_trim` | When marquee rotation is disabled and the title + artist is longer than max-width, trim from both the artist and the title in proportion to their lengths, to try and show the most information possible. | No | `false`
+`separator` | String to insert between artist and title | No | `" - "`
 `buttons` | Array of control buttons to be displayed. Options are prev (previous title), play (play/pause) and next (next title) | No | `[]`
 `on_collapsed_click` | Shell command to run when the music block is clicked while collapsed. | No | None
 
@@ -503,6 +541,8 @@ Key | Values | Required | Default
 
 Creates a block which displays the upload and download throughput for a network interface. Units are by default in bytes per second (kB/s, MB/s, etc), 
 but the 'use_bits' flag can be set to `true` to convert the units to bps (little b).
+
+Note: `bitrate` for wired devices requires `ethtool` to be installed
 
 ### Examples
 
@@ -523,18 +563,67 @@ use_bits = false
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | Network interface to moniter (name from /sys/class/net) | Yes | `lo` (loopback interface)
+`device` | Network interface to monitor (name from /sys/class/net) | Yes | `lo` (loopback interface)
 `ssid` | Display network SSID (wireless only). | No | `false`
 `signal_strength` | Display WiFi signal strength (wireless only). | No | `false`
 `bitrate` | Display connection bitrate. | No | `false`
 `ip` | Display connection IP address. | No | `false`
+`ipv6` | Display connection IPv6 address. | No | `false`
 `speed_up` | Display upload speed. | No | `true`
 `speed_down` | Display download speed. | No | `true`
 `graph_up` | Display a bar graph for upload speed. | No | `false`
 `graph_down` | Display a bar graph for download speed. | No | `false`
+`use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. | No | `1`
 `hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
 `hide_inactive` | Whether to hide networks that are missing. | No | `false`
+
+
+## NetworkManager
+
+Creates a block which displays network connection information from NetworkManager.
+
+### Examples
+
+```toml
+[[block]]
+block = "networkmanager"
+on_click = "alacritty -e nmtui"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|---------
+`primary_only` | Whether to show only the primary active connection or all active connections | No | `false`
+`max_ssid_width` | Truncation length for SSID | No | `21`
+`device_format` | Device string formatter. See below for available placeholders. | No | `"{icon}{ssid}"`
+`connection_format` | Connection string formatter. See below for available placeholders. | No | `"{devices} {ips}"`
+`on_click` | On-click handler | No | `""`
+
+### AP format string
+
+Placeholder | Description
+------------|-------------
+`{ssid}` | The SSID for this AP.
+`{strength}` | The signal strength in percent for this AP.
+`{frequency}` | The frequency of this AP in MHz.
+
+### Device format string
+
+Placeholder | Description
+------------|-------------
+`{icon}` | The icon matching the device type.
+`{typename}` | The name of the device type.
+`{ap}` | The connected AP if available, formatted with the AP format string.
+`{ips}` | The list of IPs for this device.
+
+### Connection format string
+
+Placeholder | Description
+------------|-------------
+`{devices}` | The list of devices, each formatted with the device format string.
+
 
 ## Notmuch
 
@@ -567,6 +656,7 @@ Key | Values | Required | Default
 `threshold_info` | Mail count that triggers `info` state | No | `99999`
 `name` | Label to show before the mail count | No | `""`
 `no_icon` | Disable the mail icon | No | `false`
+
 
 ## Nvidia Gpu
 
@@ -604,19 +694,40 @@ Key | Values | Required | Default
 
 ## Pacman
 
-Creates a block which displays the pending updates available on pacman.
+Creates a block which displays the pending updates available on pacman or an AUR helper.
+
+Requires fakeroot to be installed (only required for pacman).
 
 ### Examples
 
-Update the list of pending updates every ten seconds:
+Update the list of pending updates every ten minutes (600 seconds):
+
+Update interval should be set appropriately as to not exceed the AUR's daily rate limit.
+
+pacman only config:
 
 ```toml
 [[block]]
 block = "pacman"
-interval = 10
-format = "{count} updates available"
-format_singular = "{count} update available"
+interval = 600
+format = "{pacman} updates available"
+format_singular = "{pacman} update available"
 format_up_to_date = "system up to date"
+critical_updates_regex = "(linux |linux-lts|linux-zen)"
+```
+
+pacman and AUR helper config:
+
+```toml
+[[block]]
+block = "pacman"
+interval = 600
+format = "{pacman} + {aur} (AUR) = {both} updates available"
+format_singular = "{both} update available"
+format_up_to_date = "system up to date"
+critical_updates_regex = "(linux |linux-lts|linux-zen)"
+# aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
+aur_command = "pikaur -Qua"
 ```
 
 ### Options
@@ -624,15 +735,48 @@ format_up_to_date = "system up to date"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `600` (10min)
-`format` | Format override | No | `"{count}"`
-`format_singular` | Format override if exactly one update is available | No | `"{count}"`
-`format_up_to_date` | Format override if no updates are available | No | `"{count}"`
+`format` | Format override | No | `"{pacman}"`
+`format_singular` | Format override if exactly one update is available | No | `"{pacman}"`
+`format_up_to_date` | Format override if no updates are available | No | `"{pacman}"`
+`critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
+`aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `pikaur -Qua` | if `{both}` or `{aur}` are used | `None`
 
 ### Available Format Keys
 
 Key | Value
 ----|-------
-`{count}` | Number of updates available
+`{count}` | Number of pacman updates available (**deprecated**: use `{pacman}` instead)
+`{pacman}`| Number of updates available according to `pacman`
+`{aur}` | Number of updates available according to `<aur_command>`
+`{both}` | Cumulative number of updates available according to `pacman` and `<aur_commad>` 
+
+
+## Pomodoro
+
+Creates a block which runs a [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique).
+
+### Examples
+
+```toml
+[[block]]
+block = "pomodoro"
+length = 25
+break_length = 5
+message = "Take a break!"
+break_message = "Back to work!"
+use_nag = false
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`length` | Timer duration in minutes. | No | `25`
+`break_length` | Break duration in minutes. | No | `5`
+`use_nag` | i3-nagbar enabled | No | `false`
+`message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
+`break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
+
 
 ## Sound
 
@@ -661,7 +805,10 @@ step_width = 3
 Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | `"auto"`, `"pulseaudio"`, `"alsa"` | No | `"auto"` (Pulseaudio with ALSA fallback)
-`name` | PulseAudio / ALSA device name | No | Default Device (`@DEFAULT_SINK@` / `Master`)
+`format` | Any string to use next to the icon | No | `{volume}%`
+`name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols` | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
+`device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l` | No | `default`
+`natural_mapping` | Use the mapped volume for evaluating the percentage representation like `alsamixer`/`amixer -M`, to be more natural for human ear | No | `false`
 `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | `5`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
@@ -685,6 +832,48 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `bytes` | Whether to use bytes or bits in the display (true for bytes, false for bits). | No | `false`
 `interval` | Update interval, in seconds. | No | `1800`
+
+## Taskwarrior
+
+Creates a block which displays number of pending and started tasks of the current users taskwarrior list.
+
+Clicking the left mouse button on the icon updates the number of pending tasks immediately.
+
+Clicking the right mouse button on the icon toggles the view of the block between filtered (default) and non-filtered
+tasks. If there are no filters configured, the number of tasks stays the same and both modes are behaving
+equally.  
+
+### Examples
+
+```toml
+[[block]]
+block = "taskwarrior"
+interval = 60
+format = "{count} open tasks"
+format_singular = "{count} open task"
+format_everything_done = "nothing to do!"
+warning_threshold = 10
+critical_threshold = 20
+filter_tags = ["work", "important"]
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `600` (10min)
+`warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
+`critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
+`filter_tags` | A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
+`format` | Format override | No | `"{count}"`
+`format_singular` | Format override if exactly one task is pending | No | `"{count}"`
+`format_everything_done` | Format override if all tasks are completed | No | `"{count}"`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{count}` | The number of pending tasks.
 
 ## Temperature
 
@@ -752,7 +941,7 @@ Key | Values | Required | Default
 
 ## Toggle
 
-Creates a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`).
+Creates a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`). If these command exit with a non-zero status, the block will not be toggled.
 You also need to specify a command to determine the (initial) state of the toggle (`command_state`). When the command outputs nothing, the toggle is disabled, otherwise enabled.
 By specifying the `interval` property you can let the `command_state` be executed continuously.
 
@@ -782,6 +971,26 @@ Key | Values | Required | Default
 `icon_on` | Icon override for the toggle button while on. | No | `"toggle_on"`
 `icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
+
+## Watson
+
+[Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
+
+### Examples
+
+```toml
+[[block]]
+block = "watson"
+show_time = true
+state_path = "/home/user/.config/watson/state"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`show_time` | Wether to show recorded time | No | `false`
+`state_path` | Path to the Watson state file | No | `$XDG_CONFIG_HOME/watson/state`
 
 ## Weather
 
@@ -816,12 +1025,15 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `name` | `openweathermap` | Yes | None
 `api_key` | Your OpenWeatherMap API key. | Yes | None
-`city_id` | OpenWeatherMap's ID for the city. | Yes | None
+`city_id` | OpenWeatherMap's ID for the city. | Yes* | None
+`place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
 `units` | One of `metric` or `imperial`. | Yes | None
 
-The options `api_key` and/or `city_id` can be omitted from configuration,
+Either one of `city_id` or `place` is required. If both are supplied, `city_id` takes precedence.
+
+The options `api_key`, `city_id`, `place` can be omitted from configuration,
 in which case they must be provided in the environment variables
-`OPENWEATHERMAP_API_KEY` and/or `OPENWEATHERMAP_CITY_ID`.
+`OPENWEATHERMAP_API_KEY`, `OPENWEATHERMAP_CITY_ID`, `OPENWEATHERMAP_PLACE`.
 
 ### Available Format Keys
 
@@ -829,6 +1041,8 @@ Key | Value
 ----|-------
 `{location}` | Location name (exact format depends on the service).
 `{temp}` | Temperature.
+`{apparent}` | Australian Apparent Temperature.
+`{humidity}` | Humidity.
 `{weather}` | Textual description of the weather, e.g. "Raining".
 `{wind}` | Wind speed.
 `{direction}` | Wind direction, e.g. "NE".
@@ -899,29 +1113,3 @@ Key | Value
 `{stopped}` | Containers stopped on the host.
 `{paused}` | Containers paused on the host.
 `{images}` | Total images on the host.
-
-## Pomodoro
-
-Creates a block which runs a [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique).
-
-### Examples
-
-```toml
-[[block]]
-block = "pomodoro"
-length = 25
-break_length = 5
-message = "Take a break!"
-break_message = "Back to work!"
-enable_i3nagbar = false
-```
-
-### Options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`length` | Timer duration in minutes. | No | `25`
-`break_length` | Break duration in minutes. | No | `5`
-`enable_i3nagbar` | i3-nagbar enabled | No | `false`
-`message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
-`break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`

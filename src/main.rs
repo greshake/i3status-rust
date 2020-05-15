@@ -26,20 +26,17 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::time::Duration;
 
-use crate::blocks::Block;
+use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
+use crossbeam_channel::{select, Receiver, Sender};
 
 use crate::blocks::create_block;
-use crate::config::Config;
+use crate::blocks::Block;
+use crate::config::{load_config, Config};
 use crate::errors::*;
 use crate::input::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-
-use crate::util::deserialize_file;
-
-use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
-use crossbeam_channel::{select, Receiver, Sender};
 
 fn main() {
     let mut builder = App::new("i3status-rs")
@@ -58,6 +55,13 @@ fn main() {
                 .help("Exit rather than printing errors to i3bar and continuing")
                 .long("exit-on-error")
                 .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("one-shot")
+                .help("Print blocks once and exit")
+                .long("one-shot")
+                .takes_value(false)
+                .hidden(true),
         );
 
     if_debug!({
@@ -114,7 +118,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         Some(config_path) => std::path::PathBuf::from(config_path),
         None => util::xdg_config_home().join("i3status-rust/config.toml"),
     };
-    let config: Config = deserialize_file(config_path.to_str().unwrap())?;
+    let config = load_config(&config_path)?;
 
     // Update request channel
     let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =
@@ -210,6 +214,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     // Fires immediately for first updates
     let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
 
+    let one_shot = matches.is_present("one-shot");
     loop {
         // We use the message passing concept of channel selection
         // to avoid busy wait
@@ -242,6 +247,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
         match scheduler.time_to_next_update() {
             Some(time) => ttnu = crossbeam_channel::after(time),
             None => ttnu = crossbeam_channel::after(Duration::from_secs(std::u64::MAX)),
+        }
+        if one_shot {
+            break Ok(());
         }
     }
 }

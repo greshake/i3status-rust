@@ -1,19 +1,20 @@
-use serde_derive::Deserialize;
 use std::time::Duration;
+
+use chrono::offset::{Local, Utc};
+use chrono_tz::Tz;
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::{deserialize_duration, deserialize_timezone};
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::subprocess::{parse_command, spawn_child_async};
+use crate::subprocess::spawn_child_async;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-use chrono::offset::{Local, Utc};
-use chrono_tz::Tz;
-use crossbeam_channel::Sender;
-use uuid::Uuid;
 
 pub struct Time {
     time: ButtonWidget,
@@ -101,10 +102,11 @@ impl Block for Time {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                if let Some(ref cmd) = self.on_click {
-                    let (cmd_name, cmd_args) = parse_command(cmd);
-                    spawn_child_async(cmd_name, &cmd_args)
-                        .block_error("time", "could not spawn child")?;
+                if let MouseButton::Left = e.button {
+                    if let Some(ref cmd) = self.on_click {
+                        spawn_child_async("sh", &["-c", cmd])
+                            .block_error("time", "could not spawn child")?;
+                    }
                 }
             }
         }

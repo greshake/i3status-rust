@@ -1,6 +1,3 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
-use std::ffi::OsStr;
 use std::fs::read_to_string;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -8,18 +5,21 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
+
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::format_percent_bar;
+use crate::subprocess::spawn_child_async;
+use crate::util::{escape_pango_text, format_percent_bar};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::graph::GraphWidget;
-
-use uuid::Uuid;
 
 pub struct NetworkDevice {
     device: String,
@@ -64,6 +64,31 @@ impl NetworkDevice {
         }
     }
 
+    pub fn device(&self) -> String {
+        self.device.clone()
+    }
+
+    /// Grab the name of the 'default' device.
+    /// A default device is usually selected by the network manager
+    /// and will change when the status of devices change.
+    pub fn default_device() -> Option<String> {
+        String::from_utf8(
+            Command::new("sh")
+                .args(&[
+                    "-c",
+                    "ip route show default|head -n1|sed -n 's/^default.*dev \\(\\w*\\).*/\\1/p'",
+                ])
+                .output()
+                .ok()
+                .map(|o| {
+                    let mut v = o.stdout;
+                    v.pop(); // remove newline
+                    v
+                })?,
+        )
+        .ok()
+    }
+
     /// Check whether the device exists.
     pub fn exists(&self) -> Result<bool> {
         Ok(self.device_path.exists())
@@ -77,15 +102,22 @@ impl NetworkDevice {
             // It seems more reasonable to treat these as inactive networks as
             // opposed to erroring out the entire block.
             Ok(false)
-        } else if self.tun {
-            Ok(true)
-        } else if self.wg {
-            Ok(true)
-        } else if self.ppp {
+        } else if self.tun || self.wg || self.ppp {
             Ok(true)
         } else {
             let operstate = read_file(&operstate_file)?;
-            Ok(operstate == "up")
+            let carrier_file = self.device_path.join("carrier");
+            if !carrier_file.exists() {
+                Ok(operstate == "up")
+            } else if operstate == "up" {
+                Ok(true)
+            } else {
+                let carrier = read_file(&carrier_file);
+                match carrier {
+                    Ok(carrier) => Ok(carrier == "1"),
+                    Err(_e) => Ok(operstate == "up"),
+                }
+            }
         }
     }
 
@@ -132,14 +164,28 @@ impl NetworkDevice {
                 ),
             ])
             .output()
-            .block_error("net", "Failed to execute SSID query.")?
+            .block_error("net", "Failed to execute SSID query using iw.")?
             .stdout;
+
+        if iw_output.is_empty() {
+            iw_output = Command::new("sh")
+                .args(&[
+                    "-c",
+                    &format!(
+                        "wpa_cli status -i{} | sed -n 's/^ssid=\\(.*\\)/\\1/p'",
+                        self.device
+                    ),
+                ])
+                .output()
+                .block_error("net", "Failed to execute SSID query using wpa_cli.")?
+                .stdout;
+        }
 
         if iw_output.is_empty() {
             iw_output = Command::new("nmcli")
                 .args(&["-g", "general.connection", "device", "show", &self.device])
                 .output()
-                .block_error("net", "Failed to execute SSID query.")?
+                .block_error("net", "Failed to execute SSID query using nmcli.")?
                 .stdout;
         }
 
@@ -240,23 +286,58 @@ impl NetworkDevice {
         }
     }
 
-    /// Queries the bitrate of this device (using `iwlist`)
-    pub fn bitrate(&self) -> Result<Option<String>> {
-        let up = self.is_up()?;
-        if !self.wireless || !up {
-            return Err(BlockError(
-                "net".to_string(),
-                "Bitrate is only available for connected wireless devices.".to_string(),
-            ));
+    /// Queries the inet IPv6 of this device (using `ip`).
+    pub fn ipv6_addr(&self) -> Result<Option<String>> {
+        if !self.is_up()? {
+            return Ok(None);
         }
-        let mut bitrate_output = Command::new("sh")
+
+        let mut ip_output = Command::new("sh")
             .args(&[
                 "-c",
                 &format!(
-                    "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
+                    "ip -oneline -family inet6 address show {} | sed -e 's/^.*inet6 \\([^ ]\\+\\).*/\\1/'",
                     self.device
                 ),
             ])
+            .output()
+            .block_error("net", "Failed to execute IPv6 address query.")?
+            .stdout;
+
+        if ip_output.is_empty() {
+            Ok(None)
+        } else {
+            ip_output.pop(); // Remove trailing newline.
+            let ip = String::from_utf8(ip_output)
+                .block_error("net", "Non-UTF8 IP address.")?
+                .trim()
+                .to_string();
+            Ok(Some(ip))
+        }
+    }
+
+    /// Queries the bitrate of this device (using `iwlist`)
+    pub fn bitrate(&self) -> Result<Option<String>> {
+        let up = self.is_up()?;
+        if !up {
+            return Err(BlockError(
+                "net".to_string(),
+                "Bitrate is only available for connected devices.".to_string(),
+            ));
+        }
+        let command = if self.wireless {
+            format!(
+                "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
+                self.device
+            )
+        } else {
+            format!(
+                "ethtool {} 2>/dev/null | awk '/Speed:/ {{print $2}}'",
+                self.device
+            )
+        };
+        let mut bitrate_output = Command::new("sh")
+            .args(&["-c", &command])
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
@@ -279,6 +360,7 @@ pub struct Net {
     signal_strength: Option<ButtonWidget>,
     signal_strength_bar: bool,
     ip_addr: Option<ButtonWidget>,
+    ipv6_addr: Option<ButtonWidget>,
     bitrate: Option<ButtonWidget>,
     output_tx: Option<ButtonWidget>,
     graph_tx: Option<GraphWidget>,
@@ -287,6 +369,7 @@ pub struct Net {
     id: String,
     update_interval: Duration,
     device: NetworkDevice,
+    auto_device: bool,
     tx_buff: Vec<u64>,
     rx_buff: Vec<u64>,
     tx_bytes: u64,
@@ -313,6 +396,9 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_device")]
     pub device: String,
 
+    #[serde(default = "NetConfig::default_auto_device")]
+    pub auto_device: bool,
+
     /// Whether to show the SSID of active wireless networks.
     #[serde(default = "NetConfig::default_ssid")]
     pub ssid: bool,
@@ -337,6 +423,10 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_ip")]
     pub ip: bool,
 
+    /// Whether to show the IPv6 address of active networks.
+    #[serde(default = "NetConfig::default_ipv6")]
+    pub ipv6: bool,
+
     /// Whether to hide networks that are down/inactive completely.
     #[serde(default = "NetConfig::default_hide_inactive")]
     pub hide_inactive: bool,
@@ -350,7 +440,7 @@ pub struct NetConfig {
     pub speed_up: bool,
 
     /// Whether to show speeds in bits or bytes per second.
-    #[serde(default = "NetConfig::use_bits")]
+    #[serde(default = "NetConfig::default_use_bits")]
     pub use_bits: bool,
 
     /// Whether to show the download throughput indicator of active networks.
@@ -375,7 +465,14 @@ impl NetConfig {
     }
 
     fn default_device() -> String {
-        "lo".to_string()
+        match NetworkDevice::default_device() {
+            Some(ref s) if !s.is_empty() => s.to_string(),
+            _ => "lo".to_string(),
+        }
+    }
+
+    fn default_auto_device() -> bool {
+        false
     }
 
     fn default_hide_inactive() -> bool {
@@ -410,12 +507,12 @@ impl NetConfig {
         false
     }
 
-    fn default_speed_up() -> bool {
-        true
+    fn default_ipv6() -> bool {
+        false
     }
 
-    fn use_bits() -> bool {
-        false
+    fn default_speed_up() -> bool {
+        true
     }
 
     fn default_speed_down() -> bool {
@@ -427,6 +524,10 @@ impl NetConfig {
     }
 
     fn default_graph_down() -> bool {
+        false
+    }
+
+    fn default_use_bits() -> bool {
         false
     }
 
@@ -484,6 +585,11 @@ impl ConfigBlock for Net {
             } else {
                 None
             },
+            ipv6_addr: if block_config.ipv6 {
+                Some(ButtonWidget::new(config.clone(), &id))
+            } else {
+                None
+            },
             output_tx: if block_config.speed_up {
                 Some(ButtonWidget::new(config.clone(), &id).with_icon("net_up"))
             } else {
@@ -500,11 +606,12 @@ impl ConfigBlock for Net {
                 None
             },
             graph_rx: if block_config.graph_down {
-                Some(GraphWidget::new(config.clone()))
+                Some(GraphWidget::new(config))
             } else {
                 None
             },
             device,
+            auto_device: block_config.auto_device,
             rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             rx_bytes: init_rx_bytes,
@@ -533,11 +640,12 @@ fn read_file(path: &Path) -> Result<String> {
 
 fn convert_speed(speed: u64, use_bits: bool) -> (f64, &'static str) {
     let mut multiplier = 1;
-    let mut b = "B";
-    if use_bits {
+    let b = if use_bits {
         multiplier = 8;
-        b = "b";
-    }
+        "b"
+    } else {
+        "B"
+    };
     // the values for the match are so the speed doesn't go above 3 characters
     let (speed, unit) = match speed {
         x if (x * multiplier) > 999_999_999 => (speed as f64 / 1_000_000_000.0, "G"),
@@ -548,74 +656,83 @@ fn convert_speed(speed: u64, use_bits: bool) -> (f64, &'static str) {
     (speed, unit)
 }
 
-impl Block for Net {
-    fn update(&mut self) -> Result<Option<Duration>> {
-        // Skip updating tx/rx if device is not up.
-        let exists = self.device.exists()?;
-        let is_up = self.device.is_up()?;
-        if !exists || !is_up {
-            self.active = false;
-            self.network.set_text(" ×".to_string());
-            if let Some(ref mut tx_widget) = self.output_tx {
-                tx_widget.set_text("×".to_string());
-            };
-            if let Some(ref mut rx_widget) = self.output_rx {
-                rx_widget.set_text("×".to_string());
-            };
-
-            return Ok(Some(self.update_interval));
-        } else {
-            self.active = true;
-            self.network.set_text("".to_string());
-        }
-
-        // Update SSID and IP address every 30s and the bitrate every 10s
-        let now = Instant::now();
-        if now.duration_since(self.last_update).as_secs() % 10 == 0 {
-            if let Some(ref mut bitrate_widget) = self.bitrate {
-                let bitrate = self.device.bitrate()?;
-                if bitrate.is_some() {
-                    bitrate_widget.set_text(bitrate.unwrap());
-                }
+impl Net {
+    fn update_device(&mut self) {
+        if self.auto_device {
+            let dev = NetConfig::default_device();
+            if self.device.device() != dev {
+                self.device = NetworkDevice::from_device(dev);
+                self.network.set_icon(if self.device.is_wireless() {
+                    "net_wireless"
+                } else if self.device.is_vpn() {
+                    "net_vpn"
+                } else {
+                    "net_wired"
+                });
             }
         }
-        if now.duration_since(self.last_update).as_secs() > 30 {
-            if let Some(ref mut ssid_widget) = self.ssid {
-                let ssid = self.device.ssid()?;
-                if ssid.is_some() {
-                    let mut truncated = ssid.unwrap();
-                    truncated.truncate(self.max_ssid_width);
-                    ssid_widget.set_text(truncated);
-                }
-            }
-            if let Some(ref mut signal_strength_widget) = self.signal_strength {
-                let value = self.device.relative_signal_strength()?;
-                if value.is_some() {
-                    signal_strength_widget.set_text(if self.signal_strength_bar {
-                        format_percent_bar(value.unwrap() as f32)
-                    } else {
-                        format!("{}%", value.unwrap())
-                    });
-                }
-            }
-            if let Some(ref mut ip_addr_widget) = self.ip_addr {
-                let ip_addr = self.device.ip_addr()?;
-                if ip_addr.is_some() {
-                    ip_addr_widget.set_text(ip_addr.unwrap());
-                }
-            }
-            self.last_update = now;
-        }
+    }
 
+    fn update_bitrate(&mut self) -> Result<()> {
+        if let Some(ref mut bitrate_widget) = self.bitrate {
+            let bitrate = self.device.bitrate()?;
+            if let Some(b) = bitrate {
+                bitrate_widget.set_text(b);
+            }
+        }
+        Ok(())
+    }
+
+    fn update_ssid(&mut self) -> Result<()> {
+        if let Some(ref mut ssid_widget) = self.ssid {
+            let ssid = self.device.ssid()?;
+            if let Some(s) = ssid {
+                let mut truncated = s;
+                truncated.truncate(self.max_ssid_width);
+                // SSID names can contain chars that need escaping
+                ssid_widget.set_text(escape_pango_text(truncated));
+            }
+        }
+        Ok(())
+    }
+
+    fn update_signal_strength(&mut self) -> Result<()> {
+        if let Some(ref mut signal_strength_widget) = self.signal_strength {
+            let value = self.device.relative_signal_strength()?;
+            if let Some(v) = value {
+                signal_strength_widget.set_text(if self.signal_strength_bar {
+                    format_percent_bar(v as f32)
+                } else {
+                    format!("{}%", v)
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn update_ip_addr(&mut self) -> Result<()> {
+        if let Some(ref mut ip_addr_widget) = self.ip_addr {
+            let ip_addr = self.device.ip_addr()?;
+            if let Some(ip) = ip_addr {
+                ip_addr_widget.set_text(ip);
+            }
+        }
+        if let Some(ref mut ipv6_addr_widget) = self.ipv6_addr {
+            let ipv6_addr = self.device.ipv6_addr()?;
+            if let Some(ip) = ipv6_addr {
+                ipv6_addr_widget.set_text(ip);
+            }
+        }
+        Ok(())
+    }
+
+    fn update_tx_rx(&mut self) -> Result<()> {
         // allow us to display bits or bytes
         // dependent on user's config setting
-        let mut multiplier = 1.0;
-        if self.use_bits {
-            multiplier = 8.0;
-        }
+        let multiplier = if self.use_bits { 8.0 } else { 1.0 };
         // TODO: consider using `as_nanos`
-        // Update the throughout/graph widgets if they are enabled
         let update_interval = (self.update_interval.as_secs() as f64)
+        // Update the throughput/graph widgets if they are enabled
             + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
@@ -649,6 +766,46 @@ impl Block for Net {
                 graph_rx_widget.set_values(&self.rx_buff, None, None);
             }
         }
+        Ok(())
+    }
+}
+
+impl Block for Net {
+    fn update(&mut self) -> Result<Option<Duration>> {
+        self.update_device();
+
+        // skip updating if device is not up.
+        let exists = self.device.exists()?;
+        let is_up = self.device.is_up()?;
+        if !exists || !is_up {
+            self.active = false;
+            self.network.set_text(" ×".to_string());
+            if let Some(ref mut tx_widget) = self.output_tx {
+                tx_widget.set_text("×".to_string());
+            };
+            if let Some(ref mut rx_widget) = self.output_rx {
+                rx_widget.set_text("×".to_string());
+            };
+
+            return Ok(Some(self.update_interval));
+        }
+
+        self.active = true;
+        self.network.set_text("".to_string());
+
+        // Update SSID and IP address every 30s and the bitrate every 10s
+        let now = Instant::now();
+        if now.duration_since(self.last_update).as_secs() % 10 == 0 {
+            self.update_bitrate()?;
+        }
+        if now.duration_since(self.last_update).as_secs() > 30 {
+            self.update_ssid()?;
+            self.update_signal_strength()?;
+            self.update_ip_addr()?;
+            self.last_update = now;
+        }
+
+        self.update_tx_rx()?;
 
         Ok(Some(self.update_interval))
     }
@@ -668,6 +825,9 @@ impl Block for Net {
             }
             if let Some(ref ip_addr_widget) = self.ip_addr {
                 widgets.push(ip_addr_widget);
+            };
+            if let Some(ref ipv6_addr_widget) = self.ipv6_addr {
+                widgets.push(ipv6_addr_widget);
             };
             if let Some(ref tx_widget) = self.output_tx {
                 widgets.push(tx_widget);
@@ -692,18 +852,11 @@ impl Block for Net {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                match e.button {
-                    MouseButton::Left => match self.on_click {
-                        Some(ref cmd) => {
-                            let command_broken: Vec<&str> = cmd.split_whitespace().collect();
-                            let mut itr = command_broken.iter();
-                            let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                                .args(itr)
-                                .spawn();
-                        }
-                        _ => (),
-                    },
-                    _ => (),
+                if let MouseButton::Left = e.button {
+                    if let Some(ref cmd) = self.on_click {
+                        spawn_child_async("sh", &["-c", cmd])
+                            .block_error("net", "could not spawn child")?;
+                    }
                 }
             }
         }

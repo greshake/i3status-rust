@@ -1,3 +1,10 @@
+use std::process::Command;
+use std::time::Duration;
+
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+use uuid::Uuid;
+
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -7,12 +14,6 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
-use std::process::Command;
-use std::time::Duration;
-
-use uuid::Uuid;
 
 pub struct Temperature {
     text: ButtonWidget,
@@ -151,6 +152,7 @@ impl Block for Temperature {
 
                 if rest[1].starts_with("input") {
                     match rest[2].parse::<i64>() {
+                        Ok(t) if t == 0 => Ok(()),
                         Ok(t) if t > -101 && t < 151 => {
                             temperatures.push(t);
                             Ok(())

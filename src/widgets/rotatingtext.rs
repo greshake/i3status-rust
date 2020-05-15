@@ -1,8 +1,10 @@
+use std::time::{Duration, Instant};
+
+use serde_json::value::Value;
+
 use crate::config::Config;
 use crate::errors::*;
 use crate::widget::{I3BarWidget, State};
-use serde_json::value::Value;
-use std::time::{Duration, Instant};
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {

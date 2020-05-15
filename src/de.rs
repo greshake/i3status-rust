@@ -1,11 +1,13 @@
-use chrono_tz::Tz;
-use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use std::collections::{BTreeMap, HashMap as Map};
 use std::fmt;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::time::Duration;
+
+use chrono::{DateTime, Local};
+use chrono_tz::Tz;
+use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use toml::{self, value};
 
 pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
@@ -140,7 +142,7 @@ where
         if vec.is_empty() {
             Err(de::Error::custom("seq is empty"))
         } else {
-            let mut combined = vec.remove(0).clone();
+            let mut combined = vec.remove(0);
             for other in vec {
                 combined.extend(other);
             }
@@ -198,4 +200,12 @@ where
 {
     let s = String::deserialize(deserializer)?;
     Tz::from_str(&s).map(Some).map_err(de::Error::custom)
+}
+
+pub fn deserialize_local_timestamp<'de, D>(deserializer: D) -> Result<DateTime<Local>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use chrono::TimeZone;
+    i64::deserialize(deserializer).map(|seconds| Local.timestamp(seconds, 0))
 }

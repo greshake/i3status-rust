@@ -1,6 +1,10 @@
+use std::default::Default;
+use std::path::Path;
+
 use lazy_static::lazy_static;
 use serde_derive::Deserialize;
-use std::str::FromStr;
+
+use crate::util;
 
 lazy_static! {
     pub static ref SLICK: Theme = Theme {
@@ -146,52 +150,145 @@ lazy_static! {
         alternating_tint_bg: "#000000".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
+
+    pub static ref SPACE_VILLAIN: Theme = Theme {
+        idle_bg: "#06060f".to_owned(), //Rich black
+        idle_fg: "#c1c1c1".to_owned(), //Silver
+        info_bg: "#00223f".to_owned(), //Maastricht Blue
+        info_fg: "#c1c1c1".to_owned(), //Silver
+        good_bg: "#394049".to_owned(), //Arsenic
+        good_fg: "#c1c1c1".to_owned(), //Silver
+        warning_bg: "#2d1637".to_owned(), //Dark Purple
+        warning_fg: "#c1c1c1".to_owned(), //Silver
+        critical_bg: "#c1c1c1".to_owned(), //Silver
+        critical_fg: "#2c1637".to_owned(), //Dark Purple
+        separator: "\u{e0b2}".to_owned(),
+        separator_bg: "auto".to_owned(),
+        separator_fg: "auto".to_owned(),
+        alternating_tint_bg: "#00000000".to_owned(),
+        alternating_tint_fg: "#00000000".to_owned(),
+    };
 }
 
-mapped_struct! {
-    #[derive(Deserialize, Debug, Default, Clone)]
-    #[serde(deny_unknown_fields)]
-    pub struct Theme: String {
-        pub idle_bg,
-        pub idle_fg,
-        pub info_bg,
-        pub info_fg,
-        pub good_bg,
-        pub good_fg,
-        pub warning_bg,
-        pub warning_fg,
-        pub critical_bg,
-        pub critical_fg,
-        pub separator,
-        pub separator_bg,
-        pub separator_fg,
-        pub alternating_tint_bg,
-        pub alternating_tint_fg
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct Theme {
+    pub idle_bg: String,
+    pub idle_fg: String,
+    pub info_bg: String,
+    pub info_fg: String,
+    pub good_bg: String,
+    pub good_fg: String,
+    pub warning_bg: String,
+    pub warning_fg: String,
+    pub critical_bg: String,
+    pub critical_fg: String,
+    pub separator: String,
+    pub separator_bg: String,
+    pub separator_fg: String,
+    pub alternating_tint_bg: String,
+    pub alternating_tint_fg: String,
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        PLAIN.clone()
     }
 }
 
-impl FromStr for Theme {
-    type Err = String;
+impl Theme {
+    pub fn from_name(name: &str) -> Option<Theme> {
+        match name {
+            "slick" => Some(SLICK.clone()),
+            "solarized-dark" => Some(SOLARIZED_DARK.clone()),
+            "solarized-light" => Some(SOLARIZED_LIGHT.clone()),
+            "plain" => Some(PLAIN.clone()),
+            "modern" => Some(MODERN.clone()),
+            "bad-wolf" => Some(BAD_WOLF.clone()),
+            "gruvbox-light" => Some(GRUVBOX_LIGHT.clone()),
+            "gruvbox-dark" => Some(GRUVBOX_DARK.clone()),
+            "space-villain" => Some(SPACE_VILLAIN.clone()),
+            _ => None,
+        }
+    }
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        get_theme(s).ok_or_else(|| "unknown theme".into())
+    pub fn from_file(file: &str) -> Option<Theme> {
+        let full_path = Path::new(file);
+        let xdg_path = util::xdg_config_home()
+            .join("i3status-rust/themes")
+            .join(file);
+        let share_path = Path::new(util::USR_SHARE_PATH).join("themes").join(file);
+
+        if full_path.exists() {
+            util::deserialize_file(full_path.to_str().unwrap()).ok()
+        } else if xdg_path.exists() {
+            util::deserialize_file(xdg_path.to_str().unwrap()).ok()
+        } else if share_path.exists() {
+            util::deserialize_file(share_path.to_str().unwrap()).ok()
+        } else {
+            None
+        }
     }
 }
 
-pub fn get_theme(name: &str) -> Option<Theme> {
-    match name {
-        "slick" => Some(SLICK.clone()),
-        "solarized-dark" => Some(SOLARIZED_DARK.clone()),
-        "solarized-light" => Some(SOLARIZED_LIGHT.clone()),
-        "plain" => Some(PLAIN.clone()),
-        "modern" => Some(MODERN.clone()),
-        "bad-wolf" => Some(BAD_WOLF.clone()),
-        "gruvbox-light" => Some(GRUVBOX_LIGHT.clone()),
-        "gruvbox-dark" => Some(GRUVBOX_DARK.clone()),
-        _ => None,
-    }
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct ThemeOverrides {
+    idle_bg: Option<String>,
+    idle_fg: Option<String>,
+    info_bg: Option<String>,
+    info_fg: Option<String>,
+    good_bg: Option<String>,
+    good_fg: Option<String>,
+    warning_bg: Option<String>,
+    warning_fg: Option<String>,
+    critical_bg: Option<String>,
+    critical_fg: Option<String>,
+    separator: Option<String>,
+    separator_bg: Option<String>,
+    separator_fg: Option<String>,
+    alternating_tint_bg: Option<String>,
+    alternating_tint_fg: Option<String>,
 }
 
-pub fn default() -> Theme {
-    PLAIN.clone()
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct ThemeConfig {
+    name: Option<String>,
+    file: Option<String>,
+    overrides: Option<ThemeOverrides>,
+}
+
+impl ThemeConfig {
+    pub fn into_theme(self) -> Option<Theme> {
+        let mut theme = if let Some(name) = self.name {
+            Theme::from_name(&name)
+        } else if let Some(file) = self.file {
+            Theme::from_file(&file)
+        } else {
+            None
+        }?;
+        if let Some(overrides) = self.overrides {
+            theme.idle_bg = overrides.idle_bg.unwrap_or(theme.idle_bg);
+            theme.idle_fg = overrides.idle_fg.unwrap_or(theme.idle_fg);
+            theme.info_bg = overrides.info_bg.unwrap_or(theme.info_bg);
+            theme.info_fg = overrides.info_fg.unwrap_or(theme.info_fg);
+            theme.good_bg = overrides.good_bg.unwrap_or(theme.good_bg);
+            theme.good_fg = overrides.good_fg.unwrap_or(theme.good_fg);
+            theme.warning_bg = overrides.warning_bg.unwrap_or(theme.warning_bg);
+            theme.warning_fg = overrides.warning_fg.unwrap_or(theme.warning_fg);
+            theme.critical_bg = overrides.critical_bg.unwrap_or(theme.critical_bg);
+            theme.critical_fg = overrides.critical_fg.unwrap_or(theme.critical_fg);
+            theme.separator = overrides.separator.unwrap_or(theme.separator);
+            theme.separator_bg = overrides.separator_bg.unwrap_or(theme.separator_bg);
+            theme.separator_fg = overrides.separator_fg.unwrap_or(theme.separator_fg);
+            theme.alternating_tint_bg = overrides
+                .alternating_tint_bg
+                .unwrap_or(theme.alternating_tint_bg);
+            theme.alternating_tint_fg = overrides
+                .alternating_tint_fg
+                .unwrap_or(theme.alternating_tint_fg);
+        }
+        Some(theme)
+    }
 }

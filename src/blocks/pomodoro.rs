@@ -1,17 +1,17 @@
+use std::time::Duration;
+
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use std::process::{Command, Stdio};
-use std::time::Duration;
+use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-
-use uuid::Uuid;
 
 enum State {
     Started,
@@ -31,7 +31,7 @@ pub struct Pomodoro {
     message: String,
     break_message: String,
     count: usize,
-    enable_i3nagbar: bool,
+    use_nag: bool,
 }
 
 impl Pomodoro {
@@ -115,7 +115,7 @@ impl ConfigBlock for Pomodoro {
             update_interval: Duration::from_millis(1000),
             message: block_config.message,
             break_message: block_config.break_message,
-            enable_i3nagbar: block_config.use_nag,
+            use_nag: block_config.use_nag,
             elapsed: 0,
             count: 0,
         })
@@ -134,18 +134,18 @@ impl Block for Pomodoro {
         match &self.state {
             State::Started => {
                 if self.elapsed >= self.length {
-                    if self.enable_i3nagbar {
+                    if self.use_nag {
                         nag(&self.message, "error");
                     }
 
                     self.state = State::OnBreak;
                     self.elapsed = 0;
-                    self.count = self.count + 1;
+                    self.count += 1;
                 }
             }
             State::OnBreak => {
                 if self.elapsed >= self.break_length {
-                    if self.enable_i3nagbar {
+                    if self.use_nag {
                         nag(&self.break_message, "warning");
                     }
                     self.state = State::Stopped;
@@ -196,9 +196,6 @@ impl Block for Pomodoro {
 }
 
 fn nag(message: &str, level: &str) {
-    Command::new("i3-nagbar")
-        .stdout(Stdio::null())
-        .args(&["-t", level, "-m", message])
-        .spawn()
+    spawn_child_async("i3-nagbar", &["-t", level, "-m", message])
         .expect("Failed to start i3-nagbar");
 }

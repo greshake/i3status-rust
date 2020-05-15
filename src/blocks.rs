@@ -21,11 +21,13 @@ pub mod pacman;
 pub mod pomodoro;
 pub mod sound;
 pub mod speedtest;
+pub mod taskwarrior;
 pub mod temperature;
 pub mod template;
 pub mod time;
 pub mod toggle;
 pub mod uptime;
+pub mod watson;
 pub mod weather;
 pub mod xrandr;
 
@@ -52,11 +54,13 @@ use self::pacman::*;
 use self::pomodoro::*;
 use self::sound::*;
 use self::speedtest::*;
+use self::taskwarrior::*;
 use self::temperature::*;
 use self::template::*;
 use self::time::*;
 use self::toggle::*;
 use self::uptime::*;
+use self::watson::*;
 use self::weather::*;
 use self::xrandr::*;
 
@@ -144,11 +148,13 @@ pub fn create_block(
         "pomodoro" => block!(Pomodoro, block_config, config, update_request),
         "sound" => block!(Sound, block_config, config, update_request),
         "speedtest" => block!(SpeedTest, block_config, config, update_request),
+        "taskwarrior" => block!(Taskwarrior, block_config, config, update_request),
         "temperature" => block!(Temperature, block_config, config, update_request),
         "template" => block!(Template, block_config, config, update_request),
         "time" => block!(Time, block_config, config, update_request),
         "toggle" => block!(Toggle, block_config, config, update_request),
         "uptime" => block!(Uptime, block_config, config, update_request),
+        "watson" => block!(Watson, block_config, config, update_request),
         "weather" => block!(Weather, block_config, config, update_request),
         "xrandr" => block!(Xrandr, block_config, config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
