@@ -21,7 +21,6 @@ use std::time::{Duration, Instant};
 
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection};
-use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
@@ -593,7 +592,6 @@ pub struct Sound {
     on_click: Option<String>,
     show_volume_when_muted: bool,
     bar: bool,
-    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -634,12 +632,6 @@ pub struct SoundConfig {
     /// Show volume as bar instead of percent
     #[serde(default = "SoundConfig::default_bar")]
     pub bar: bool,
-
-    #[serde(
-        default = "SoundConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
-    pub interval: Duration,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -688,10 +680,6 @@ impl SoundConfig {
 
     fn default_bar() -> bool {
         false
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(30)
     }
 }
 
@@ -783,7 +771,6 @@ impl ConfigBlock for Sound {
             on_click: block_config.on_click,
             show_volume_when_muted: block_config.show_volume_when_muted,
             bar: block_config.bar,
-            update_interval: block_config.interval,
         };
 
         sound.device.monitor(id, tx_update_request)?;
@@ -798,7 +785,7 @@ const FILTER: &[char] = &['[', ']', '%'];
 impl Block for Sound {
     fn update(&mut self) -> Result<Option<Duration>> {
         self.display()?;
-        Ok(Some(self.update_interval))
+        Ok(None)
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
