@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::blocks::Refresh;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
-use crate::de::deserialize_opt_duration;
+use crate::de::deserialize_refresh;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
@@ -36,9 +36,9 @@ pub struct CustomConfig {
     /// Update interval in seconds
     #[serde(
         default = "CustomConfig::default_interval",
-        deserialize_with = "deserialize_opt_duration"
+        deserialize_with = "deserialize_refresh"
     )]
-    pub interval: Option<Duration>,
+    pub interval: Refresh,
 
     /// Shell Command to execute & display
     pub command: Option<String>,
@@ -55,8 +55,8 @@ pub struct CustomConfig {
 }
 
 impl CustomConfig {
-    fn default_interval() -> Option<Duration> {
-        None
+    fn default_interval() -> Refresh {
+        Refresh::Every(Duration::new(10, 0))
     }
 
     fn default_json() -> bool {
@@ -70,10 +70,7 @@ impl ConfigBlock for Custom {
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let mut custom = Custom {
             id: Uuid::new_v4().to_simple().to_string(),
-            update_interval: match block_config.interval {
-                None => Refresh::Once,
-                Some(d) => Refresh::Every(d),
-            },
+            update_interval: block_config.interval,
             output: ButtonWidget::new(config.clone(), ""),
             command: None,
             on_click: None,

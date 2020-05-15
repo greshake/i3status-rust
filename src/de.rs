@@ -5,10 +5,49 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::time::Duration;
 
+use crate::blocks::Refresh;
 use chrono::{DateTime, Local};
 use chrono_tz::Tz;
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use toml::{self, value};
+
+pub fn deserialize_refresh<'de, D>(deserializer: D) -> Result<Refresh, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct RefreshWrapper;
+
+    impl<'de> de::Visitor<'de> for RefreshWrapper {
+        type Value = Refresh;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("i64, f64")
+        }
+
+        fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(Duration::from_secs(value as u64).into())
+        }
+
+        fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(Duration::new(0, (value * 1_000_000_000f64) as u32).into())
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(Refresh::Once)
+        }
+    }
+
+    deserializer.deserialize_any(RefreshWrapper)
+}
 
 pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
@@ -212,13 +251,15 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::de::deserialize_duration;
+    use crate::blocks::Refresh;
+    use crate::blocks::Refresh::{Every, Once};
+    use crate::de::{deserialize_duration, deserialize_refresh};
     use serde_derive::Deserialize;
     use std::time::Duration;
 
     #[derive(Deserialize, Debug, Clone)]
     #[serde(deny_unknown_fields)]
-    pub struct Config {
+    pub struct DurationConfig {
         /// Update interval in seconds
         #[serde(deserialize_with = "deserialize_duration")]
         pub interval: Duration,
@@ -227,10 +268,31 @@ mod tests {
     #[test]
     fn test_deserialize_duration() {
         let duration_toml = r#""interval"= 5"#;
-        let deserialized: Config = toml::from_str(duration_toml).unwrap();
+        let deserialized: DurationConfig = toml::from_str(duration_toml).unwrap();
         assert_eq!(Duration::new(5, 0), deserialized.interval);
         let duration_toml = r#""interval"= 0.5"#;
-        let deserialized: Config = toml::from_str(duration_toml).unwrap();
+        let deserialized: DurationConfig = toml::from_str(duration_toml).unwrap();
         assert_eq!(Duration::new(0, 500_000_000), deserialized.interval);
+    }
+
+    #[derive(Deserialize, Debug, Clone)]
+    #[serde(deny_unknown_fields)]
+    pub struct RefreshConfig {
+        /// Update interval in seconds
+        #[serde(deserialize_with = "deserialize_refresh")]
+        pub interval: Refresh,
+    }
+
+    #[test]
+    fn test_deserialize_refresh() {
+        let duration_toml = r#""interval"= 5"#;
+        let deserialized: RefreshConfig = toml::from_str(duration_toml).unwrap();
+        assert_eq!(Every(Duration::new(5, 0)), deserialized.interval);
+        let duration_toml = r#""interval"= 0.5"#;
+        let deserialized: RefreshConfig = toml::from_str(duration_toml).unwrap();
+        assert_eq!(Every(Duration::new(0, 500_000_000)), deserialized.interval);
+        let duration_toml = r#""interval"= "Once""#;
+        let deserialized: RefreshConfig = toml::from_str(duration_toml).unwrap();
+        assert_eq!(Once, deserialized.interval);
     }
 }

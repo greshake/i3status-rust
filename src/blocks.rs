@@ -78,10 +78,16 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Refresh {
     Every(Duration),
     Once,
+}
+
+impl Default for Refresh {
+    fn default() -> Self {
+        Refresh::Once
+    }
 }
 
 impl Into<Refresh> for Duration {
