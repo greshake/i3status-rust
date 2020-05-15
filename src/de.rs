@@ -42,7 +42,11 @@ where
         where
             E: de::Error,
         {
-            Ok(Refresh::Once)
+            if value.to_lowercase() == "once" {
+                Ok(Refresh::Once)
+            } else {
+                Err(de::Error::custom(r#"expected "[Oo]nce""#))
+            }
         }
     }
 
