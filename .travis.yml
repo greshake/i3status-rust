@@ -34,7 +34,7 @@ before_script:
 script:
   - man/generate.sh man/test.1 && diff man/test.1 man/i3status-rs.1 || true
   - cargo fmt -- --check
-  - cargo clippy -- -D warnings
+  - cargo clippy --all-features --all-targets
   - cargo build --all-features --all-targets --verbose
   - cargo build --all-features --all-targets --verbose --release
   - cargo test --all-features --all-targets --verbose
