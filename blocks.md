@@ -191,11 +191,15 @@ For further customisation, use the `json` option and have the shell command outp
 
 ### Examples
 
+Display temperature, update every 10 seconds:
+
 ```toml
 [[block]]
 block = "custom"
 command = ''' cat /sys/class/thermal/thermal_zone0/temp | awk '{printf("%.1f\n",$1/1000)}' '''
 ```
+
+Display temperature, update every 1 second, run `<command` when block is clicked:
 
 ```toml
 [[block]]
@@ -205,11 +209,22 @@ on_click = "<command>"
 interval = 1
 ```
 
+Use JSON output:
+
 ```toml
 [[block]]
 block = "custom"
 command = "echo '{\"icon\":\"weather_thunder\",\"state\":\"Critical\", \"text\": \"Danger!\"}'"
 json = true
+```
+
+Display kernel, update the block only once:
+
+```toml
+[[block]]
+block = "custom"
+command = "uname -r"
+interval = "once"
 ```
 
 ### Options
@@ -221,7 +236,7 @@ Key | Values | Required | Default
 `command` | Shell command to execute & display. | No | None
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
-`interval` | Update interval, in seconds. | No | `10`
+`interval` | Update interval, in seconds (or `"once"` or `"Once"` to update only once). | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
 
 
