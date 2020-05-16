@@ -199,7 +199,7 @@ block = "custom"
 command = ''' cat /sys/class/thermal/thermal_zone0/temp | awk '{printf("%.1f\n",$1/1000)}' '''
 ```
 
-Display temperature, update every 1 second, run `<command` when block is clicked:
+Cycle between "ON" and "OFF", update every 1 second, run `<command>` when block is clicked:
 
 ```toml
 [[block]]
