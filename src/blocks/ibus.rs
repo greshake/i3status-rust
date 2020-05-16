@@ -4,7 +4,7 @@ use std::fs::{read_dir, File};
 use std::io::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
