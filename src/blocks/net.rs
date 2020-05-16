@@ -262,28 +262,28 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-        let mut ip_output = Command::new("sh")
+        let output = Command::new("sh")
             .args(&[
                 "-c",
-                &format!(
-                    "ip -oneline -family inet address show {} | sed -rn -e \"s/.*inet ([\\.0-9/]+).*/\\1/; G; s/\\n/ /;h\" -e \"$ P;\"",
-                    self.device
-                ),
+                &format!("ip -json -family inet address show {}", self.device),
             ])
             .output()
-            .block_error("net", "Failed to execute IP address query.")?
-            .stdout;
+            .block_error("net", "Failed to execute IP address query.")
+            .and_then(|raw_output| {
+                String::from_utf8(raw_output.stdout)
+                    .block_error("net", "Response contained non-UTF8 characters.")
+            })?;
 
-        if ip_output.is_empty() {
-            Ok(None)
-        } else {
-            ip_output.pop(); // Remove trailing newline.
-            let ip = String::from_utf8(ip_output)
-                .block_error("net", "Non-UTF8 IP address.")?
-                .trim()
-                .to_string();
-            Ok(Some(ip))
-        }
+        let json: serde_json::value::Value =
+            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response.")?;
+
+        let address = json
+            .pointer("/0/addr_info/0/local")
+            .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
+            .map(|s| s.to_string())
+            .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
+
+        Ok(Some(address))
     }
 
     /// Queries the inet IPv6 of this device (using `ip`).
@@ -291,29 +291,28 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-
-        let mut ip_output = Command::new("sh")
+        let output = Command::new("sh")
             .args(&[
                 "-c",
-                &format!(
-                    "ip -oneline -family inet6 address show {} | sed -e 's/^.*inet6 \\([^ ]\\+\\).*/\\1/'",
-                    self.device
-                ),
+                &format!("ip -json -family inet6 address show {}", self.device),
             ])
             .output()
-            .block_error("net", "Failed to execute IPv6 address query.")?
-            .stdout;
+            .block_error("net", "Failed to execute IPv6 address query.")
+            .and_then(|raw_output| {
+                String::from_utf8(raw_output.stdout)
+                    .block_error("net", "Response contained non-UTF8 characters.")
+            })?;
 
-        if ip_output.is_empty() {
-            Ok(None)
-        } else {
-            ip_output.pop(); // Remove trailing newline.
-            let ip = String::from_utf8(ip_output)
-                .block_error("net", "Non-UTF8 IP address.")?
-                .trim()
-                .to_string();
-            Ok(Some(ip))
-        }
+        let json: serde_json::value::Value =
+            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response.")?;
+
+        let address = json
+            .pointer("/0/addr_info/0/local")
+            .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
+            .map(|s| s.to_string())
+            .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
+
+        Ok(Some(address))
     }
 
     /// Queries the bitrate of this device (using `iwlist`)
