@@ -244,9 +244,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
 
         // Set the time-to-next-update timer
-        match scheduler.time_to_next_update() {
-            Some(time) => ttnu = crossbeam_channel::after(time),
-            None => ttnu = crossbeam_channel::after(Duration::from_secs(std::u64::MAX)),
+        if let Some(time) = scheduler.time_to_next_update() {
+            ttnu = crossbeam_channel::after(time)
         }
         if one_shot {
             break Ok(());
