@@ -5,7 +5,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -80,7 +80,7 @@ impl ConfigBlock for Docker {
 }
 
 impl Block for Docker {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let output = match Command::new("sh")
             .args(&[
                 "-c",

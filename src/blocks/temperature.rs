@@ -5,7 +5,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -130,7 +130,7 @@ impl ConfigBlock for Temperature {
 }
 
 impl Block for Temperature {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let mut args = vec!["-u"];
         if let Some(ref chip) = &self.chip {
             args.push(chip);

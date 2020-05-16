@@ -8,10 +8,10 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
-use crate::de::deserialize_refresh;
+use crate::de::deserialize_update;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
@@ -21,7 +21,7 @@ use crate::widgets::button::ButtonWidget;
 
 pub struct Custom {
     id: String,
-    update_interval: Refresh,
+    update_interval: Update,
     output: ButtonWidget,
     command: Option<String>,
     on_click: Option<String>,
@@ -36,9 +36,9 @@ pub struct CustomConfig {
     /// Update interval in seconds
     #[serde(
         default = "CustomConfig::default_interval",
-        deserialize_with = "deserialize_refresh"
+        deserialize_with = "deserialize_update"
     )]
-    pub interval: Refresh,
+    pub interval: Update,
 
     /// Shell Command to execute & display
     pub command: Option<String>,
@@ -55,8 +55,8 @@ pub struct CustomConfig {
 }
 
 impl CustomConfig {
-    fn default_interval() -> Refresh {
-        Refresh::Every(Duration::new(10, 0))
+    fn default_interval() -> Update {
+        Update::Every(Duration::new(10, 0))
     }
 
     fn default_json() -> bool {
@@ -115,7 +115,7 @@ struct Output {
 }
 
 impl Block for Custom {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let command_str = self
             .cycle
             .as_mut()

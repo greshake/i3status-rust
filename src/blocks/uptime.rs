@@ -5,7 +5,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -63,7 +63,7 @@ impl ConfigBlock for Uptime {
 }
 
 impl Block for Uptime {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let uptime_raw = match read_file("uptime", Path::new("/proc/uptime")) {
             Ok(file) => file,
             Err(e) => {

@@ -6,7 +6,7 @@ use crossbeam_channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
@@ -194,7 +194,7 @@ impl Block for Bluetooth {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let connected = self.device.connected();
         self.output.set_text(self.device.label.to_string());
         self.output

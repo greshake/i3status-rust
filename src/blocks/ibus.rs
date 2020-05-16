@@ -16,7 +16,7 @@ use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
@@ -119,7 +119,7 @@ impl Block for IBus {
     }
 
     // Updates the internal state of the block.
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let engine = (*self
             .engine
             .lock()

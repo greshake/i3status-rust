@@ -79,20 +79,20 @@ use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Refresh {
+pub enum Update {
     Every(Duration),
     Once,
 }
 
-impl Default for Refresh {
+impl Default for Update {
     fn default() -> Self {
-        Refresh::Once
+        Update::Once
     }
 }
 
-impl Into<Refresh> for Duration {
-    fn into(self) -> Refresh {
-        Refresh::Every(self)
+impl Into<Update> for Duration {
+    fn into(self) -> Update {
+        Update::Every(self)
     }
 }
 
@@ -104,7 +104,7 @@ pub trait Block {
     fn view(&self) -> Vec<&dyn I3BarWidget>;
 
     /// Forces an update of the internal state of the block.
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         Ok(None)
     }
 

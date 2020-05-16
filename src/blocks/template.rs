@@ -4,7 +4,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::{Block, ConfigBlock, Refresh};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -61,7 +61,7 @@ impl ConfigBlock for Template {
 }
 
 impl Block for Template {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         Ok(Some(self.update_interval.into()))
     }
 

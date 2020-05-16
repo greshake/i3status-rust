@@ -14,7 +14,7 @@ use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -555,7 +555,7 @@ impl ConfigBlock for Battery {
 }
 
 impl Block for Battery {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
         let status = self.device.status()?;

@@ -9,7 +9,7 @@ use swayipc::reply::{WindowChange, WorkspaceChange};
 use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
@@ -194,7 +194,7 @@ impl ConfigBlock for FocusedWindow {
 }
 
 impl Block for FocusedWindow {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let mut marks_string = (*self
             .marks
             .lock()

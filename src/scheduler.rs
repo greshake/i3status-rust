@@ -1,4 +1,4 @@
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use std::cmp;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
@@ -113,11 +113,11 @@ impl UpdateScheduler {
                 .update()?
             {
                 match dur {
-                    Refresh::Every(d) => self.schedule.push(Task {
+                    Update::Every(d) => self.schedule.push(Task {
                         id: task.id,
                         update_time: now + d,
                     }),
-                    Refresh::Once => {} // do not schedule this task again
+                    Update::Once => {} // do not schedule this task again
                 }
             }
         }

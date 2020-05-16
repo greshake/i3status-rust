@@ -7,7 +7,7 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -118,7 +118,7 @@ impl ConfigBlock for Load {
 }
 
 impl Block for Load {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let mut f = OpenOptions::new()
             .read(true)
             .open("/proc/loadavg")

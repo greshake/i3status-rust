@@ -5,23 +5,23 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use chrono::{DateTime, Local};
 use chrono_tz::Tz;
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use toml::{self, value};
 
-pub fn deserialize_refresh<'de, D>(deserializer: D) -> Result<Refresh, D::Error>
+pub fn deserialize_update<'de, D>(deserializer: D) -> Result<Update, D::Error>
 where
     D: Deserializer<'de>,
 {
-    struct RefreshWrapper;
+    struct UpdateWrapper;
 
-    impl<'de> de::Visitor<'de> for RefreshWrapper {
-        type Value = Refresh;
+    impl<'de> de::Visitor<'de> for UpdateWrapper {
+        type Value = Update;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("i64, f64")
+            formatter.write_str(r#"i64, f64 or "[Oo]nce" "#)
         }
 
         fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
@@ -43,14 +43,14 @@ where
             E: de::Error,
         {
             if value.to_lowercase() == "once" {
-                Ok(Refresh::Once)
+                Ok(Update::Once)
             } else {
                 Err(de::Error::custom(r#"expected "[Oo]nce""#))
             }
         }
     }
 
-    deserializer.deserialize_any(RefreshWrapper)
+    deserializer.deserialize_any(UpdateWrapper)
 }
 
 pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
@@ -255,9 +255,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::blocks::Refresh;
-    use crate::blocks::Refresh::{Every, Once};
-    use crate::de::{deserialize_duration, deserialize_refresh};
+    use crate::blocks::Update;
+    use crate::blocks::Update::{Every, Once};
+    use crate::de::{deserialize_duration, deserialize_update};
     use serde_derive::Deserialize;
     use std::time::Duration;
 
@@ -281,22 +281,22 @@ mod tests {
 
     #[derive(Deserialize, Debug, Clone)]
     #[serde(deny_unknown_fields)]
-    pub struct RefreshConfig {
+    pub struct UpdateConfig {
         /// Update interval in seconds
-        #[serde(deserialize_with = "deserialize_refresh")]
-        pub interval: Refresh,
+        #[serde(deserialize_with = "deserialize_update")]
+        pub interval: Update,
     }
 
     #[test]
-    fn test_deserialize_refresh() {
+    fn test_deserialize_update() {
         let duration_toml = r#""interval"= 5"#;
-        let deserialized: RefreshConfig = toml::from_str(duration_toml).unwrap();
+        let deserialized: UpdateConfig = toml::from_str(duration_toml).unwrap();
         assert_eq!(Every(Duration::new(5, 0)), deserialized.interval);
         let duration_toml = r#""interval"= 0.5"#;
-        let deserialized: RefreshConfig = toml::from_str(duration_toml).unwrap();
+        let deserialized: UpdateConfig = toml::from_str(duration_toml).unwrap();
         assert_eq!(Every(Duration::new(0, 500_000_000)), deserialized.interval);
         let duration_toml = r#""interval"= "Once""#;
-        let deserialized: RefreshConfig = toml::from_str(duration_toml).unwrap();
+        let deserialized: UpdateConfig = toml::from_str(duration_toml).unwrap();
         assert_eq!(Once, deserialized.interval);
     }
 }

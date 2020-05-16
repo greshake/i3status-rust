@@ -18,7 +18,7 @@ use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::errors::*;
@@ -264,7 +264,7 @@ impl ConfigBlock for Backlight {
 }
 
 impl Block for Backlight {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let brightness = self.device.brightness()?;
         self.output.set_text(format!("{}%", brightness));
         match brightness {

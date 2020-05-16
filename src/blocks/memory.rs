@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -390,7 +390,7 @@ impl Block for Memory {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let f =
             File::open("/proc/meminfo").block_error("memory", "/proc/meminfo does not exist")?;
         let f = BufReader::new(f);

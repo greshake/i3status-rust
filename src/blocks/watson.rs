@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_local_timestamp;
@@ -115,7 +115,7 @@ impl ConfigBlock for Watson {
 }
 
 impl Block for Watson {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let state = {
             let file = BufReader::new(
                 File::open(&self.state_path).block_error("watson", "unable to open state file")?,

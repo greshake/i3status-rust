@@ -13,7 +13,7 @@ use dbus::{
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -223,7 +223,7 @@ impl Block for Music {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let (rotated, next) = if self.marquee {
             self.current_song.next()?
         } else {

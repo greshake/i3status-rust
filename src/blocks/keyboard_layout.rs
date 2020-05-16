@@ -15,7 +15,7 @@ use swayipc::reply::InputChange;
 use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -462,7 +462,7 @@ impl Block for KeyboardLayout {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let layout = self.monitor.keyboard_layout()?;
         let values = map!("{layout}" => layout);
 

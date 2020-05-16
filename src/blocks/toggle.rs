@@ -5,7 +5,7 @@ use std::env;
 use std::process::Command;
 use std::time::Duration;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_opt_duration;
@@ -90,7 +90,7 @@ impl ConfigBlock for Toggle {
 }
 
 impl Block for Toggle {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &self.command_state])
             .output()

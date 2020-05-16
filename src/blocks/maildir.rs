@@ -5,7 +5,7 @@ use maildir::Maildir as ExtMaildir;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Refresh;
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -110,7 +110,7 @@ impl ConfigBlock for Maildir {
 }
 
 impl Block for Maildir {
-    fn update(&mut self) -> Result<Option<Refresh>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let mut newmails = 0;
         for inbox in &self.inboxes {
             let isl: &str = &inbox[..];
