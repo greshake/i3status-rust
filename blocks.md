@@ -5,6 +5,7 @@
 - [Bluetooth](#bluetooth)
 - [CPU Utilization](#cpu-utilization)
 - [Custom](#custom)
+- [Custom DBus](#custom-dbus)
 - [Disk Space](#disk-space)
 - [Focused Window](#focused-window)
 - [IBus](#ibus)
@@ -220,6 +221,27 @@ Key | Values | Required | Default
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
+
+
+## Custom DBus
+
+Creates a block that can be updated asynchronously using DBus.
+
+For example, updating the block using the command line tool `qdbus`: `qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus headphones`
+
+### Examples
+
+```toml
+[[block]]
+block = "custom_dbus"
+name = "CurrentSoundDevice"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`name` | Name of the DBus object. Must be unique. | Yes | None
 
 ## Disk Space
 
