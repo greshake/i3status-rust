@@ -223,7 +223,8 @@ Key | Values | Required | Default
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
 
 
-## Custom DBus
+
+## Custom DBus
 
 Creates a block that can be updated asynchronously using DBus.
 
@@ -241,7 +242,7 @@ name = "CurrentSoundDevice"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`name` | Name of the DBus object. Must be unique. | Yes | None
+`name` | Name of the DBus object that i3status-rs will create. Must be unique. | Yes | None
 
 ## Disk Space
 
