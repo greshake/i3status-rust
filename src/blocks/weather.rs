@@ -76,6 +76,7 @@ impl Weather {
                 ref place,
                 ref units,
             } => {
+                // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
                 let geoip_city = if self.autolocate {
                     let geoip_output = match Command::new("sh")
                         .args(&["-c", "curl --max-time 3 --silent 'https://ipapi.co/json/'"])
