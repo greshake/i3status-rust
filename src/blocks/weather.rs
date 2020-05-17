@@ -6,6 +6,7 @@ use std::process::Command;
 use std::time::Duration;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -303,7 +304,7 @@ impl ConfigBlock for Weather {
 }
 
 impl Block for Weather {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         self.update_weather()?;
         // Display an error/disabled-looking widget when we don't have any
         // weather information, which is likely due to internet connectivity.
@@ -313,7 +314,7 @@ impl Block for Weather {
             let fmt = FormatTemplate::from_string(&self.format)?;
             self.weather.set_text(fmt.render(&self.weather_keys));
         }
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

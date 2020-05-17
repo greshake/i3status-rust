@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -9,6 +9,7 @@ use swayipc::reply::{WindowChange, WorkspaceChange};
 use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
@@ -193,7 +194,7 @@ impl ConfigBlock for FocusedWindow {
 }
 
 impl Block for FocusedWindow {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let mut marks_string = (*self
             .marks
             .lock()

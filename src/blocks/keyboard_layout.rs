@@ -15,6 +15,7 @@ use swayipc::reply::InputChange;
 use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -461,13 +462,13 @@ impl Block for KeyboardLayout {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let layout = self.monitor.keyboard_layout()?;
         let values = map!("{layout}" => layout);
 
         self.output
             .set_text(self.format.render_static_str(&values)?);
-        Ok(self.update_interval)
+        Ok(self.update_interval.map(|d| d.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

@@ -7,6 +7,7 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -389,7 +390,7 @@ impl Block for Memory {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let f =
             File::open("/proc/meminfo").block_error("memory", "/proc/meminfo does not exist")?;
         let f = BufReader::new(f);
@@ -502,7 +503,7 @@ impl Block for Memory {
             writeln!(f, "Updated: {:?}", self)
                 .block_error("memory", "failed to write to /tmp/i3log")?;
         });
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {

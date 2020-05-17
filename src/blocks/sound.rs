@@ -19,6 +19,7 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection};
 use crate::errors::*;
@@ -783,7 +784,7 @@ impl ConfigBlock for Sound {
 const FILTER: &[char] = &['[', ']', '%'];
 
 impl Block for Sound {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         self.display()?;
         Ok(None)
     }

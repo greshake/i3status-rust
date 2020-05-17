@@ -5,6 +5,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -156,12 +157,12 @@ impl Notmuch {
 }
 
 impl Block for Notmuch {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         match run_query(&self.db, &self.query) {
             Ok(count) => {
                 self.update_text(count);
                 self.update_state(count);
-                Ok(Some(self.update_interval))
+                Ok(Some(self.update_interval.into()))
             }
             Err(e) => Err(BlockError("notmuch".to_string(), e.to_string())),
         }

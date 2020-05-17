@@ -8,7 +8,7 @@ use dbus::tree::Factory;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
@@ -102,7 +102,7 @@ impl Block for CustomDBus {
     }
 
     // Updates the internal state of the block.
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let status = (*self
             .status
             .lock()

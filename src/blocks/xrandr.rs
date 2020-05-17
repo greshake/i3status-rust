@@ -6,6 +6,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection};
 use crate::de::deserialize_duration;
@@ -247,7 +248,7 @@ impl ConfigBlock for Xrandr {
 }
 
 impl Block for Xrandr {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         if let Some(am) = Xrandr::get_active_monitors()? {
             if let Some(mm) = Xrandr::get_monitor_metrics(&am)? {
                 self.monitors = mm;
@@ -255,7 +256,7 @@ impl Block for Xrandr {
             }
         }
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

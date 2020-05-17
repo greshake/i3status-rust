@@ -13,6 +13,7 @@ use dbus::{
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -222,7 +223,7 @@ impl Block for Music {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let (rotated, next) = if self.marquee {
             self.current_song.next()?
         } else {
@@ -364,8 +365,8 @@ impl Block for Music {
             }
         }
         Ok(match (next, self.marquee) {
-            (Some(_), _) => next,
-            (None, _) => Some(Duration::new(2, 0)),
+            (Some(_), _) => next.map(|d| d.into()),
+            (None, _) => Some(Duration::new(2, 0).into()),
         })
     }
 

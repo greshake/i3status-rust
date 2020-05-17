@@ -6,6 +6,7 @@ use nix::sys::statvfs::statvfs;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -203,7 +204,7 @@ impl ConfigBlock for DiskSpace {
 }
 
 impl Block for DiskSpace {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let statvfs = statvfs(Path::new(self.path.as_str()))
             .block_error("disk_space", "failed to retrieve statvfs")?;
         let mut result;
@@ -267,7 +268,7 @@ impl Block for DiskSpace {
         let state = self.compute_state(result, self.warning, self.alert);
         self.disk_space.set_state(state);
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

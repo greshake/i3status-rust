@@ -5,6 +5,7 @@ use std::env;
 use std::process::Command;
 use std::time::Duration;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_opt_duration;
@@ -89,7 +90,7 @@ impl ConfigBlock for Toggle {
 }
 
 impl Block for Toggle {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &self.command_state])
             .output()
@@ -109,7 +110,7 @@ impl Block for Toggle {
 
         self.text.set_state(State::Idle);
 
-        Ok(self.update_interval)
+        Ok(self.update_interval.map(|d| d.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

@@ -6,6 +6,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::{deserialize_duration, deserialize_timezone};
@@ -90,13 +91,13 @@ impl ConfigBlock for Time {
 }
 
 impl Block for Time {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let time = match self.timezone {
             Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
             None => Local::now().format(&self.format),
         };
         self.time.set_text(format!("{}", time));
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {

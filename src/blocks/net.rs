@@ -9,6 +9,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -771,7 +772,7 @@ impl Net {
 }
 
 impl Block for Net {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         self.update_device();
 
         // skip updating if device is not up.
@@ -787,7 +788,7 @@ impl Block for Net {
                 rx_widget.set_text("×".to_string());
             };
 
-            return Ok(Some(self.update_interval));
+            return Ok(Some(self.update_interval.into()));
         }
 
         self.active = true;
@@ -807,7 +808,7 @@ impl Block for Net {
 
         self.update_tx_rx()?;
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

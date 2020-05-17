@@ -7,6 +7,7 @@ use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -148,7 +149,7 @@ impl ConfigBlock for SpeedTest {
 }
 
 impl Block for SpeedTest {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let (ref mut updated, ref vals) = *self
             .vals
             .lock()
@@ -177,7 +178,7 @@ impl Block for SpeedTest {
             Ok(None)
         } else {
             self.send.send(())?;
-            Ok(Some(self.config.interval))
+            Ok(Some(self.config.interval.into()))
         }
     }
 
