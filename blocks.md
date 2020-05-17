@@ -7,6 +7,7 @@
 - [Custom](#custom)
 - [Custom DBus](#custom-dbus)
 - [Disk Space](#disk-space)
+- [Docker](#docker)
 - [Focused Window](#focused-window)
 - [IBus](#ibus)
 - [Keyboard Layout](#keyboard-layout)
@@ -272,6 +273,38 @@ Key | Values | Required | Default
 `alert` | Available disk space critical level in GiB. | No | `10.0`
 `interval` | Update interval, in seconds. | No | `20`
 `show_percentage` | Show percentage of used/available disk space depending on info_type. | No | `false`
+
+
+## Docker
+
+Creates a block which shows the local docker daemon status (containers running, paused, stopped, total and image count).
+
+### Examples
+
+```toml
+[[block]]
+block = "docker"
+interval = 2
+format = "{running}/{total}"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `5`
+`format` | A format string. See below for available placeholders. | No | `"{running}"`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{total}` | Total containers on the host.
+`{running}` | Containers running on the host.
+`{stopped}` | Containers stopped on the host.
+`{paused}` | Containers paused on the host.
+`{images}` | Total images on the host.
+
 
 ## Focused Window
 
@@ -1111,33 +1144,3 @@ Key | Values | Required | Default
 `resolution` | Shows the screens resolution | No | `false`
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | `5`
 `interval` | Update interval, in seconds. | No | `5`
-
-## Docker
-
-Creates a block which shows the local docker daemon status (containers running, paused, stopped, total and image count).
-
-### Examples
-
-```toml
-[[block]]
-block = "docker"
-interval = 2
-format = "{running}/{total}"
-```
-
-### Options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`interval` | Update interval, in seconds. | No | `5`
-`format` | A format string. See below for available placeholders. | No | `"{running}"`
-
-### Available Format Keys
-
-Key | Value
-----|-------
-`{total}` | Total containers on the host.
-`{running}` | Containers running on the host.
-`{stopped}` | Containers stopped on the host.
-`{paused}` | Containers paused on the host.
-`{images}` | Total images on the host.
