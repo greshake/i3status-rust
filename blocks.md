@@ -679,7 +679,7 @@ Key | Values | Required | Default
 `threshold_info` | Mail count that triggers `info` state | No | `99999`
 `name` | Label to show before the mail count | No | `""`
 `no_icon` | Disable the mail icon | No | `false`
-
+`interval` | Update interval, in seconds. | No | `10`
 
 ## Nvidia Gpu
 
@@ -1008,7 +1008,9 @@ block = "uptime"
 
 ### Options
 
-None
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `60`
 
 
 ## Watson
