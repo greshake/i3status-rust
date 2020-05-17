@@ -105,6 +105,8 @@ impl ConfigBlock for Cpu {
     ) -> Result<Self> {
         let format = if block_config.frequency {
             "{utilization}% {frequency}GHz".into()
+        } else if block_config.per_core {
+            "{utilization}".to_owned()
         } else {
             block_config.format
         };
