@@ -21,7 +21,7 @@ where
         type Value = Update;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str(r#"i64, f64 or "[Oo]nce" "#)
+            formatter.write_str(r#"i64, f64 or "once" "#)
         }
 
         fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
@@ -42,10 +42,10 @@ where
         where
             E: de::Error,
         {
-            if value.to_lowercase() == "once" {
+            if value == "once" {
                 Ok(Update::Once)
             } else {
-                Err(de::Error::custom(r#"expected "[Oo]nce""#))
+                Err(de::Error::custom(r#"expected "once""#))
             }
         }
     }
@@ -295,7 +295,7 @@ mod tests {
         let duration_toml = r#""interval"= 0.5"#;
         let deserialized: UpdateConfig = toml::from_str(duration_toml).unwrap();
         assert_eq!(Every(Duration::new(0, 500_000_000)), deserialized.interval);
-        let duration_toml = r#""interval"= "Once""#;
+        let duration_toml = r#""interval"= "once""#;
         let deserialized: UpdateConfig = toml::from_str(duration_toml).unwrap();
         assert_eq!(Once, deserialized.interval);
     }
