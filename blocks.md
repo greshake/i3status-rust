@@ -26,6 +26,7 @@
 - [Temperature](#temperature)
 - [Time](#time)
 - [Toggle](#toggle)
+- [Uptime](#uptime)
 - [Watson](#watson)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
@@ -994,6 +995,22 @@ Key | Values | Required | Default
 `icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
 
+
+## Uptime
+Creates a block which displays system uptime. The block will always display the 2 biggest units, so minutes and seconds, or hours and minutes or days and hours or weeks and days.
+
+### Examples
+
+```toml
+[[block]]
+block = "uptime"
+```
+
+### Options
+
+None
+
+
 ## Watson
 
 [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
@@ -1069,19 +1086,6 @@ Key | Value
 `{wind}` | Wind speed.
 `{direction}` | Wind direction, e.g. "NE".
 
-## Uptime
-Creates a block which displays system uptime. The block will always display the 2 biggest units, so minutes and seconds, or hours and minutes or days and hours or weeks and days.
-
-### Examples
-
-```toml
-[[block]]
-block = "uptime"
-```
-
-### Options
-
-None
 
 ## Xrandr
 
