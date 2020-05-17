@@ -1030,7 +1030,7 @@ state_path = "/home/user/.config/watson/state"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`show_time` | Wether to show recorded time | No | `false`
+`show_time` | Whether to show recorded time | No | `false`
 `state_path` | Path to the Watson state file | No | `$XDG_CONFIG_HOME/watson/state`
 
 ## Weather
