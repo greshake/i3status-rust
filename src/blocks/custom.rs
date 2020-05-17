@@ -104,6 +104,10 @@ fn default_state() -> State {
     State::Idle
 }
 
+fn default_short_text() -> String {
+    String::from("")
+}
+
 #[derive(Deserialize)]
 struct Output {
     #[serde(default = "default_icon")]
@@ -111,6 +115,8 @@ struct Output {
     #[serde(default = "default_state")]
     state: State,
     text: String,
+    #[serde(default = "default_short_text")]
+    short_text: String,
 }
 
 impl Block for Custom {
@@ -141,6 +147,9 @@ impl Block for Custom {
             self.output.set_icon(&output.icon);
             self.output.set_state(output.state);
             self.output.set_text(output.text);
+            if !output.short_text.is_empty() {
+                self.output.set_short_text(output.short_text);
+            }
         } else {
             self.output.set_text(raw_output);
         }
