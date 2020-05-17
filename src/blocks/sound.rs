@@ -254,7 +254,7 @@ impl PulseAudioConnection {
         let mut proplist = Proplist::new().unwrap();
         proplist
             .set_str(properties::APPLICATION_NAME, "i3status-rs")
-            .block_error("sound", "could not set pulseaudio APPLICATION_NAME poperty")?;
+            .block_error("sound", "could not set pulseaudio APPLICATION_NAME property")?;
 
         let mainloop = Rc::new(RefCell::new(
             Mainloop::new().block_error("sound", "failed to create pulseaudio mainloop")?,
