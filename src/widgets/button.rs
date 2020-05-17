@@ -7,6 +7,7 @@ use crate::widget::State;
 #[derive(Clone, Debug)]
 pub struct ButtonWidget {
     content: Option<String>,
+    short_content: Option<String>,
     icon: Option<String>,
     state: State,
     id: String,
@@ -19,6 +20,7 @@ impl ButtonWidget {
     pub fn new(config: Config, id: &str) -> Self {
         ButtonWidget {
             content: None,
+            short_content: None,
             icon: None,
             state: State::Idle,
             id: String::from(id),
@@ -64,6 +66,11 @@ impl ButtonWidget {
         self.update();
     }
 
+    pub fn set_short_text<S: Into<String>>(&mut self, short_content: S) {
+        self.short_content = Some(short_content.into());
+        self.update();
+    }
+
     pub fn set_icon(&mut self, name: &str) {
         self.icon = self.config.icons.get(name).cloned();
         self.update();
@@ -77,17 +84,33 @@ impl ButtonWidget {
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
-        self.rendered = json!({
-            "full_text": format!("{}{} ",
-                                self.icon.clone().unwrap_or_else(|| String::from(" ")),
-                                self.content.clone().unwrap_or_else(|| String::from(""))),
-            "separator": false,
-            "name": self.id.clone(),
-            "separator_block_width": 0,
-            "background": key_bg,
-            "color": key_fg,
-            "markup": "pango"
-        });
+        self.rendered = match &self.short_content {
+            None => json!({
+                "full_text": format!("{}{} ",
+                                    self.icon.clone().unwrap_or_else(|| String::from(" ")),
+                                    self.content.clone().unwrap_or_else(|| String::from(""))),
+                "separator": false,
+                "name": self.id.clone(),
+                "separator_block_width": 0,
+                "background": key_bg,
+                "color": key_fg,
+                "markup": "pango"
+            }),
+            Some(x) => json!({
+                "full_text": format!("{}{} ",
+                                    self.icon.clone().unwrap_or_else(|| String::from(" ")),
+                                    self.content.clone().unwrap_or_else(|| String::from(""))),
+                "short_text": format!("{}{} ",
+                                    self.icon.clone().unwrap_or_else(|| String::from(" ")),
+                                    x),
+                "separator": false,
+                "name": self.id.clone(),
+                "separator_block_width": 0,
+                "background": key_bg,
+                "color": key_fg,
+                "markup": "pango"
+            }),
+        };
 
         self.cached_output = Some(self.rendered.to_string());
     }
