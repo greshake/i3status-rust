@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -179,8 +179,7 @@ impl KbdDaemonBus {
     pub fn new() -> Result<Self> {
         Command::new("setxkbmap")
             .arg("-version")
-            .stdout(Stdio::piped())
-            .spawn()
+            .output()
             .block_error("kbddaemonbus", "setxkbmap not found")?;
 
         // also verifies that kbdd daemon is registered in dbus
