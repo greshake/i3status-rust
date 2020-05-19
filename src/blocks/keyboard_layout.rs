@@ -66,7 +66,7 @@ fn setxkbmap_layouts() -> Result<String> {
     let output = Command::new("setxkbmap")
         .args(&["-query"])
         .output()
-        .block_error("keyboard_layout", "Failed to exectute setxkbmap.")
+        .block_error("keyboard_layout", "Failed to execute setxkbmap.")
         .and_then(|raw| {
             String::from_utf8(raw.stdout).block_error("keyboard_layout", "Non-UTF8 input.")
         })?;
