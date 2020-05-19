@@ -1087,6 +1087,8 @@ Creates a block which displays local weather and temperature information. In ord
 
 Configuring the Weather block requires configuring a weather service, which may require API keys and other parameters.
 
+If using the `autolocate` feature, set the block update interval such that you do not exceed ipapi.co's free daily limit of 1000 hits.
+
 ### Examples
 
 Show detailed weather in San Francisco through the OpenWeatherMap service:
@@ -1105,6 +1107,7 @@ Key | Values | Required | Default
 `format` | The text format of the weather display. | No | `"{weather} {temp}°"`
 `service` | The configuration of a weather service (see below). | Yes | None
 `interval` | Update interval, in seconds. | No | `600`
+`autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | No | false
 
 ### OpenWeatherMap Options
 

@@ -61,6 +61,7 @@ pub struct Weather {
     weather_keys: HashMap<String, String>,
     service: WeatherService,
     update_interval: Duration,
+    autolocate: bool,
 }
 
 fn malformed_json_error() -> Error {
@@ -76,7 +77,41 @@ impl Weather {
                 ref place,
                 ref units,
             } => {
-                let location_query = if city_id.is_some() {
+                // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
+                let geoip_city = if self.autolocate {
+                    let geoip_output = match Command::new("sh")
+                        .args(&["-c", "curl --max-time 3 --silent 'https://ipapi.co/json/'"])
+                        .output()
+                    {
+                        Ok(raw_output) => String::from_utf8(raw_output.stdout)
+                            .block_error("weather", "Failed to decode")?,
+                        Err(_) => {
+                            // We don't want the bar to crash if we can't reach the geoip service
+                            String::from("")
+                        }
+                    };
+
+                    if geoip_output.is_empty() {
+                        None
+                    } else {
+                        let geoip_json: serde_json::value::Value =
+                            serde_json::from_str(&geoip_output).block_error(
+                                "weather",
+                                "Failed to parse JSON response from geoip service.",
+                            )?;
+
+                        geoip_json
+                            .pointer("/city")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                    }
+                } else {
+                    None
+                };
+
+                let location_query = if let Some(city) = geoip_city {
+                    format!("q={}", city)
+                } else if city_id.is_some() {
                     format!("id={}", city_id.as_ref().unwrap())
                 } else if place.is_some() {
                     format!("q={}", place.as_ref().unwrap())
@@ -271,6 +306,8 @@ pub struct WeatherConfig {
     #[serde(default = "WeatherConfig::default_format")]
     pub format: String,
     pub service: WeatherService,
+    #[serde(default = "WeatherConfig::default_autolocate")]
+    pub autolocate: bool,
 }
 
 impl WeatherConfig {
@@ -280,6 +317,10 @@ impl WeatherConfig {
 
     fn default_format() -> String {
         "{weather} {temp}\u{00b0}".to_string()
+    }
+
+    fn default_autolocate() -> bool {
+        false
     }
 }
 
@@ -299,6 +340,7 @@ impl ConfigBlock for Weather {
             weather_keys: HashMap::new(),
             service: block_config.service,
             update_interval: block_config.interval,
+            autolocate: block_config.autolocate,
         })
     }
 }
