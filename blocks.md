@@ -1080,6 +1080,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `show_time` | Whether to show recorded time | No | `false`
 `state_path` | Path to the Watson state file | No | `$XDG_CONFIG_HOME/watson/state`
+`interval` | Update interval, in seconds. | No | `60`
 
 ## Weather
 
