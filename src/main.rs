@@ -109,7 +109,13 @@ fn main() {
 #[allow(unused_mut)] // TODO: Remove when fixed in chan_select
 fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
-    print!("{{\"version\": 1, \"click_events\": true}}\n[");
+    print!(
+        "{}",
+        format!(
+            "{{\"version\": 1, \"click_events\": true, \"stop_signal\": {}}}\n[",
+            nix::sys::signal::Signal::SIGUSR2
+        )
+    );
 
     // Read & parse the config file
     let config_path = match matches.value_of("config") {
