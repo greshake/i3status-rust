@@ -1,6 +1,6 @@
 use serde_json::value::Value;
 
-use super::super::widget::I3BarWidget;
+use super::super::widget::{I3BarWidget, WidgetWidth};
 use crate::config::Config;
 use crate::widget::Spacing;
 use crate::widget::State;
@@ -8,6 +8,7 @@ use crate::widget::State;
 #[derive(Clone, Debug)]
 pub struct ButtonWidget {
     content: Option<String>,
+    short_content: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
@@ -21,6 +22,7 @@ impl ButtonWidget {
     pub fn new(config: Config, id: &str) -> Self {
         ButtonWidget {
             content: None,
+            short_content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
@@ -46,12 +48,30 @@ impl ButtonWidget {
 
     pub fn with_content(mut self, content: Option<String>) -> Self {
         self.content = content;
+        if self.short_content == None {
+            self.short_content = self.content.clone();
+        }
+        self.update();
+        self
+    }
+
+    pub fn with_short_content(mut self, content: Option<String>) -> Self {
+        self.short_content = content;
         self.update();
         self
     }
 
     pub fn with_text(mut self, content: &str) -> Self {
         self.content = Some(String::from(content));
+        if self.short_content == None {
+            self.short_content = self.content.clone();
+        }
+        self.update();
+        self
+    }
+
+    pub fn with_short_text(mut self, content: &str) -> Self {
+        self.short_content = Some(String::from(content));
         self.update();
         self
     }
@@ -69,7 +89,16 @@ impl ButtonWidget {
     }
 
     pub fn set_text<S: Into<String>>(&mut self, content: S) {
-        self.content = Some(content.into());
+        let content = Some(content.into());
+        if self.short_content == None {
+            self.short_content = content.clone();
+        }
+        self.content = content;
+        self.update();
+    }
+
+    pub fn set_short_text<S: Into<String>>(&mut self, content: S) {
+        self.short_content = Some(content.into());
         self.update();
     }
 
@@ -88,6 +117,30 @@ impl ButtonWidget {
         self.update();
     }
 
+    /// Set full_text and short_text accordingly to the width parameter
+    /// WidgetWidth::Full forces both to content
+    /// WidgetWidth::Short forces both to short_content
+    pub fn set_text_with_width<S, T>(&mut self, width: &WidgetWidth, content: S, short_content: T)
+    where
+        T: Into<String> + Clone,
+        S: Into<String> + Clone,
+    {
+        match width {
+            WidgetWidth::Default => {
+                self.set_text(content);
+                self.set_short_text(short_content);
+            }
+            WidgetWidth::Short => {
+                self.set_text(short_content.clone());
+                self.set_short_text(short_content);
+            }
+            WidgetWidth::Full => {
+                self.set_text(content.clone());
+                self.set_short_text(content);
+            }
+        }
+    }
+
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
@@ -101,6 +154,19 @@ impl ButtonWidget {
                                     }
                                 }),
                                 self.content.clone().unwrap_or_else(|| String::from("")),
+                                match self.spacing {
+                                    Spacing::Hidden => String::from(""),
+                                    _ => String::from(" ")
+                                }
+                            ),
+            "short_text": format!("{}{}{}",
+                                self.icon.clone().unwrap_or_else(|| {
+                                    match self.spacing {
+                                        Spacing::Normal => String::from(" "),
+                                        _ => String::from("")
+                                    }
+                                }),
+                                self.short_content.clone().unwrap_or_else(|| String::from("")),
                                 match self.spacing {
                                     Spacing::Hidden => String::from(""),
                                     _ => String::from(" ")
