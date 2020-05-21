@@ -12,12 +12,12 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_update;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
 use crate::util::pseudo_uuid;
-use crate::widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, State, WidgetWidth};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Custom {
@@ -25,6 +25,7 @@ pub struct Custom {
     update_interval: Update,
     output: ButtonWidget,
     command: Option<String>,
+    short_command: Option<String>,
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
     signal: Option<i32>,
@@ -33,6 +34,7 @@ pub struct Custom {
     hide_when_empty: bool,
     is_empty: bool,
     shell: String,
+    width: WidgetWidth,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -47,6 +49,9 @@ pub struct CustomConfig {
 
     /// Shell Command to execute & display
     pub command: Option<String>,
+
+    /// Shell Command to execute & display for short_text
+    pub short_command: Option<String>,
 
     /// Command to execute when the button is clicked
     pub on_click: Option<String>,
@@ -68,6 +73,10 @@ pub struct CustomConfig {
 
     #[serde(default = "CustomConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
+
+    /// Wether to display wide or narrow (short) widget
+    #[serde(default = "CustomConfig::default_width")]
+    pub width: WidgetWidth,
 }
 
 impl CustomConfig {
@@ -86,6 +95,10 @@ impl CustomConfig {
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
+
+    fn default_width() -> WidgetWidth {
+        WidgetWidth::Default
+    }
 }
 
 impl ConfigBlock for Custom {
@@ -97,6 +110,7 @@ impl ConfigBlock for Custom {
             update_interval: block_config.interval,
             output: ButtonWidget::new(config.clone(), ""),
             command: None,
+            short_command: None,
             on_click: None,
             cycle: None,
             signal: None,
@@ -109,6 +123,7 @@ impl ConfigBlock for Custom {
             } else {
                 env::var("SHELL").unwrap_or_else(|_| "sh".to_owned())
             },
+            width: block_config.width,
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
@@ -137,6 +152,10 @@ impl ConfigBlock for Custom {
             custom.command = Some(command)
         };
 
+        if let Some(short_command) = block_config.short_command {
+            custom.short_command = Some(short_command)
+        };
+
         Ok(custom)
     }
 }
@@ -149,6 +168,10 @@ fn default_state() -> State {
     State::Idle
 }
 
+fn default_short_text() -> String {
+    String::from("")
+}
+
 #[derive(Deserialize)]
 struct Output {
     #[serde(default = "default_icon")]
@@ -156,6 +179,8 @@ struct Output {
     #[serde(default = "default_state")]
     state: State,
     text: String,
+    #[serde(default = "default_short_text")]
+    short_text: String,
 }
 
 impl Block for Custom {
@@ -185,11 +210,30 @@ impl Block for Custom {
             };
             self.output.set_icon(&output.icon);
             self.output.set_state(output.state);
-            self.is_empty = output.text.is_empty();
-            self.output.set_text(output.text);
+            self.is_empty = output.text.is_empty() && output.short_text.is_empty();
+            let short_text;
+            if !output.short_text.is_empty() {
+                short_text = output.short_text;
+            } else {
+                short_text = "".to_string();
+            }
+            self.output
+                .set_text_with_width(&self.width, output.text, short_text);
         } else {
-            self.is_empty = raw_output.is_empty();
-            self.output.set_text(raw_output);
+            let short_raw_output ;
+            if let Some(ref short_command) = self.short_command {
+                short_raw_output =
+                    Command::new(&self.shell)
+                        .args(&["-c", short_command])
+                        .output()
+                        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+                        .unwrap_or_else(|e| e.to_string());
+            } else {
+                short_raw_output = raw_output.clone();
+            }
+            self.is_empty = raw_output.is_empty() && short_raw_output.is_empty();
+            self.output
+                .set_text_with_width(&self.width, raw_output, short_raw_output);
         }
 
         Ok(Some(self.update_interval.clone()))
@@ -230,10 +274,23 @@ impl Block for Custom {
             spawn_child_async(&self.shell, &["-c", on_click]).ok();
             update = true;
         }
+        match event.button {
+            MouseButton::Left => {
+                if let Some(ref on_click) = self.on_click {
+                    spawn_child_async("sh", &["-c", on_click]).ok();
+                    update = true;
+                }
 
-        if let Some(ref mut cycle) = self.cycle {
-            cycle.next();
-            update = true;
+                if let Some(ref mut cycle) = self.cycle {
+                    cycle.next();
+                    update = true;
+                }
+            }
+            MouseButton::Middle => {
+                self.width = self.width.next();
+                update = true;
+            }
+            _ => (),
         }
 
         if update {
