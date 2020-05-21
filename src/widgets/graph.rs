@@ -1,7 +1,7 @@
 use num_traits::{clamp, ToPrimitive};
 use serde_json::value::Value;
 
-use super::super::widget::I3BarWidget;
+use super::super::widget::{I3BarWidget, WidgetWidth};
 use crate::config::Config;
 use crate::widget::Spacing;
 use crate::widget::State;
@@ -9,6 +9,7 @@ use crate::widget::State;
 #[derive(Clone, Debug)]
 pub struct GraphWidget {
     content: Option<String>,
+    short_content: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
@@ -21,6 +22,7 @@ impl GraphWidget {
     pub fn new(config: Config) -> Self {
         GraphWidget {
             content: None,
+            short_content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
@@ -54,6 +56,27 @@ impl GraphWidget {
         self
     }
 
+    pub fn set_values_with_width<T>(
+        &mut self,
+        width: &WidgetWidth,
+        content: &[T],
+        min: Option<T>,
+        max: Option<T>,
+    ) where
+        T: Ord + ToPrimitive,
+    {
+        self.set_values(content, min, max);
+        match width {
+            WidgetWidth::Short => {
+                self.content = self.short_content.clone();
+            }
+            WidgetWidth::Full => {
+                self.short_content = self.content.clone();
+            }
+            WidgetWidth::Default => (),
+        }
+    }
+
     pub fn set_values<T>(&mut self, content: &[T], min: Option<T>, max: Option<T>)
     where
         T: Ord + ToPrimitive,
@@ -77,13 +100,16 @@ impl GraphWidget {
                 })
                 .collect::<Vec<&'static str>>()
                 .concat();
-            self.content = Some(bar);
+            self.content = Some(bar.clone());
+            // short_content is set to the last bar value
+            self.short_content = Some(bar.chars().last().unwrap().to_string());
         } else {
             let bar = (0..content.len() - 1)
                 .map(|_| bars[0])
                 .collect::<Vec<&'static str>>()
                 .concat();
-            self.content = Some(bar);
+            self.content = Some(bar.clone());
+            self.short_content = Some(bar.chars().last().unwrap().to_string());
         }
         self.update();
     }
