@@ -8,6 +8,7 @@ use crate::widget::State;
 #[derive(Clone, Debug)]
 pub struct TextWidget {
     content: Option<String>,
+    short_content: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
@@ -20,6 +21,7 @@ impl TextWidget {
     pub fn new(config: Config) -> Self {
         TextWidget {
             content: None,
+            short_content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
@@ -43,6 +45,14 @@ impl TextWidget {
 
     pub fn with_text(mut self, content: &str) -> Self {
         self.content = Some(String::from(content));
+        self.short_content = self.content.clone();
+        self.update();
+        self
+    }
+
+    #[allow(dead_code)]
+    pub fn with_short_text(mut self, content: &str) -> Self {
+        self.short_content = Some(String::from(content));
         self.update();
         self
     }
@@ -61,6 +71,13 @@ impl TextWidget {
 
     pub fn set_text(&mut self, content: String) {
         self.content = Some(content);
+        self.short_content = self.content.clone();
+        self.update();
+    }
+
+    #[allow(dead_code)]
+    pub fn set_short_text(&mut self, content: String) {
+        self.short_content = Some(content);
         self.update();
     }
 
@@ -91,6 +108,19 @@ impl TextWidget {
                                     }
                                 }),
                                 self.content.clone().unwrap_or_else(|| String::from("")),
+                                match self.spacing {
+                                    Spacing::Hidden => String::from(""),
+                                    _ => String::from(" ")
+                                }
+                            ),
+            "short_text": format!("{}{}{}",
+                                self.icon.clone().unwrap_or_else(|| {
+                                    match self.spacing {
+                                        Spacing::Normal => String::from(" "),
+                                        _ => String::from("")
+                                    }
+                                }),
+                                self.short_content.clone().unwrap_or_else(|| String::from("")),
                                 match self.spacing {
                                     Spacing::Hidden => String::from(""),
                                     _ => String::from(" ")
