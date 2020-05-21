@@ -52,3 +52,29 @@ pub trait I3BarWidget {
     fn to_string(&self) -> String;
     fn get_rendered(&self) -> &Value;
 }
+
+#[derive(Deserialize, Debug, Clone)]
+pub enum WidgetWidth {
+    /// the widget width is choosen by i3bar
+    Default = 0,
+    /// the short_text is enforced
+    Short,
+    /// the full_text is enforced
+    Full,
+}
+
+impl std::default::Default for WidgetWidth {
+    fn default() -> WidgetWidth {
+        WidgetWidth::Default
+    }
+}
+
+impl WidgetWidth {
+    pub fn next(&self) -> WidgetWidth {
+        match self {
+            WidgetWidth::Default => WidgetWidth::Short,
+            WidgetWidth::Short => WidgetWidth::Full,
+            WidgetWidth::Full => WidgetWidth::Default,
+        }
+    }
+}
