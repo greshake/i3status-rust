@@ -24,7 +24,6 @@ use crate::widgets::button::ButtonWidget;
 
 pub struct Time {
     widget: ButtonWidget,
-    time: chrono::DateTime<Local>,
     id: String,
     update_interval: Duration,
     format: String,
@@ -105,26 +104,26 @@ impl TimeConfig {
 }
 
 impl Time {
-    fn format<'a>(& self, format: &'a str) -> Result<DelayedFormat<StrftimeItems<'a>>> {
-        let time = match &self.locale {
+    fn format<'a>(& self, time: &chrono::DateTime<Local>, format: &'a str) -> Result<DelayedFormat<StrftimeItems<'a>>> {
+        let formatted_time = match &self.locale {
             Some(l) => {
                 let locale: Locale = l
                     .as_str()
                     .try_into()
                     .block_error("time", "invalid locale")?;
                 match self.timezone {
-                    Some(tz) => self.time
+                    Some(tz) => time
                         .with_timezone(&tz)
                         .format_localized(format, locale),
-                    None => self.time.format_localized(format, locale),
+                    None => time.format_localized(format, locale),
                 }
             }
             None => match self.timezone {
-                Some(tz) => self.time.with_timezone(&tz).format(format),
-                None => self.time.format(format),
+                Some(tz) => time.with_timezone(&tz).format(format),
+                None => time.format(format),
             }
         };
-        Ok(time)
+        Ok(formatted_time)
     }
 }
 
@@ -138,7 +137,6 @@ impl ConfigBlock for Time {
     ) -> Result<Self> {
         let i = pseudo_uuid();
         Ok(Time {
-            time: Local::now(),
             id: i.clone(),
             format: block_config.format,
             format_short: block_config.format_short,
@@ -156,14 +154,14 @@ impl ConfigBlock for Time {
 }
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Update>> {
-        self.time = match self.timezone {
+        let time = match self.timezone {
             Some(tz) => Local.from_utc_datetime(&Utc::now().with_timezone(&tz).naive_local()),
             None => Local::now(),
         };
         self.widget.set_text_with_width(
             &self.width,
-            format!("{}", self.format(&self.format)?),
-            format!("{}", self.format(&self.format_short)?),
+            format!("{}", self.format(&time, &self.format)?),
+            format!("{}", self.format(&time, &self.format_short)?),
         );
         Ok(Some(self.update_interval.into()))
     }
