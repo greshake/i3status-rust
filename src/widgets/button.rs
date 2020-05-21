@@ -55,6 +55,7 @@ impl ButtonWidget {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_short_content(mut self, content: Option<String>) -> Self {
         self.short_content = content;
         self.update();
