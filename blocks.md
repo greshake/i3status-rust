@@ -826,6 +826,9 @@ Key | Value
 
 Creates a block which runs a [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique).
 
+You can face problems showing the nagbar if i3 is configured to hide the status bar. See
+[#701](https://github.com/greshake/i3status-rust/pull/701) to fix this.
+
 ### Examples
 
 ```toml
@@ -835,7 +838,8 @@ length = 25
 break_length = 5
 message = "Take a break!"
 break_message = "Back to work!"
-use_nag = false
+use_nag = true
+nag_path = "i3-nagbar"
 ```
 
 ### Options
@@ -847,6 +851,7 @@ Key | Values | Required | Default
 `use_nag` | i3-nagbar enabled | No | `false`
 `message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
 `break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
+`nag_path` | i3-nagbar binary path | No | `i3-nagbar`
 
 
 ## Sound
