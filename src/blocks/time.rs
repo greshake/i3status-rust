@@ -3,7 +3,8 @@ use std::convert::TryInto;
 use std::time::Duration;
 
 use chrono::{
-    offset::{Local, Utc},
+    offset::{Local, TimeZone, Utc},
+    format::{DelayedFormat, strftime::StrftimeItems},
     Locale,
 };
 use chrono_tz::Tz;
@@ -18,25 +19,32 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::pseudo_uuid;
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, WidgetWidth};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Time {
-    time: ButtonWidget,
+    widget: ButtonWidget,
+    time: chrono::DateTime<Local>,
     id: String,
     update_interval: Duration,
     format: String,
+    format_short: String,
     on_click: Option<String>,
     timezone: Option<Tz>,
     locale: Option<String>,
+    width: WidgetWidth,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct TimeConfig {
-    /// Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
+    /// Format string for wide widget.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
     #[serde(default = "TimeConfig::default_format")]
     pub format: String,
+
+    /// Format string for narrow widget.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
+    #[serde(default = "TimeConfig::default_format_short")]
+    pub format_short: String,
 
     /// Update interval in seconds
     #[serde(
@@ -56,11 +64,19 @@ pub struct TimeConfig {
 
     #[serde(default = "TimeConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
+
+    /// Wether to display wide or narrow (short) widget
+    #[serde(default = "TimeConfig::default_width")]
+    pub width: WidgetWidth,
 }
 
 impl TimeConfig {
     fn default_format() -> String {
         "%a %d/%m %R".to_owned()
+    }
+
+    fn default_format_short() -> String {
+        "%R".to_owned()
     }
 
     fn default_interval() -> Duration {
@@ -82,6 +98,34 @@ impl TimeConfig {
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
+
+    fn default_width() -> WidgetWidth {
+        WidgetWidth::Default
+    }
+}
+
+impl Time {
+    fn format<'a>(& self, format: &'a str) -> Result<DelayedFormat<StrftimeItems<'a>>> {
+        let time = match &self.locale {
+            Some(l) => {
+                let locale: Locale = l
+                    .as_str()
+                    .try_into()
+                    .block_error("time", "invalid locale")?;
+                match self.timezone {
+                    Some(tz) => self.time
+                        .with_timezone(&tz)
+                        .format_localized(format, locale),
+                    None => self.time.format_localized(format, locale),
+                }
+            }
+            None => match self.timezone {
+                Some(tz) => self.time.with_timezone(&tz).format(format),
+                None => self.time.format(format),
+            }
+        };
+        Ok(time)
+    }
 }
 
 impl ConfigBlock for Time {
@@ -94,51 +138,52 @@ impl ConfigBlock for Time {
     ) -> Result<Self> {
         let i = pseudo_uuid();
         Ok(Time {
+            time: Local::now(),
             id: i.clone(),
             format: block_config.format,
-            time: ButtonWidget::new(config, i.as_str())
+            format_short: block_config.format_short,
+            widget: ButtonWidget::new(config, i.as_str())
                 .with_text("")
+                .with_short_text("")
                 .with_icon("time"),
             update_interval: block_config.interval,
             on_click: block_config.on_click,
             timezone: block_config.timezone,
             locale: block_config.locale,
+            width: block_config.width,
         })
     }
 }
-
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Update>> {
-        let time = match &self.locale {
-            Some(l) => {
-                let locale: Locale = l
-                    .as_str()
-                    .try_into()
-                    .block_error("time", "invalid locale")?;
-                match self.timezone {
-                    Some(tz) => Utc::now()
-                        .with_timezone(&tz)
-                        .format_localized(&self.format, locale),
-                    None => Local::now().format_localized(&self.format, locale),
-                }
-            }
-            None => match self.timezone {
-                Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
-                None => Local::now().format(&self.format),
-            },
+        self.time = match self.timezone {
+            Some(tz) => Local.from_utc_datetime(&Utc::now().with_timezone(&tz).naive_local()),
+            None => Local::now(),
         };
-        self.time.set_text(format!("{}", time));
+        self.widget.set_text_with_width(
+            &self.width,
+            format!("{}", self.format(&self.format)?),
+            format!("{}", self.format(&self.format_short)?),
+        );
         Ok(Some(self.update_interval.into()))
     }
+
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                if let MouseButton::Left = e.button {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("time", "could not spawn child")?;
+                match e.button {
+                    MouseButton::Left => {
+                        if let Some(ref cmd) = self.on_click {
+                            spawn_child_async("sh", &["-c", cmd])
+                                .block_error("time", "could not spawn child")?;
+                        }
                     }
+                    MouseButton::Right | MouseButton::Middle => {
+                        self.width = self.width.next();
+                        let _ = self.update();
+                    }
+                    _ => (),
                 }
             }
         }
@@ -146,7 +191,7 @@ impl Block for Time {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.time]
+        vec![&self.widget]
     }
 
     fn id(&self) -> &str {
