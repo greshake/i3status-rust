@@ -1041,7 +1041,7 @@ impl Block for Net {
                                 .block_error("net", "could not spawn child")?;
                         }
                     }
-                    MouseButton::Right | MouseButton::Middle => {
+                    MouseButton::Middle => {
                         self.width = self.width.next();
                         let _ = self.update_widget(WidthChanged::Yes);
                     }

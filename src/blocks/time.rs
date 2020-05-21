@@ -177,7 +177,7 @@ impl Block for Time {
                                 .block_error("time", "could not spawn child")?;
                         }
                     }
-                    MouseButton::Right | MouseButton::Middle => {
+                    MouseButton::Middle => {
                         self.width = self.width.next();
                         let _ = self.update();
                     }
