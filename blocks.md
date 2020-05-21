@@ -915,6 +915,7 @@ but the 'use_bits' flag can be set to `true` to convert the units to bps (little
 block = "net"
 device = "wlp2s0"
 format = "{ssid} {signal_strength} {ip} {speed_down} {graph_down}"
+short_format = "{ssid}"
 interval = 5
 use_bits = false
 ```
@@ -925,12 +926,14 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | Network interface to monitor (name from /sys/class/net). | No | Automatically chosen from the output of `ip route show default`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | "{speed_up} {speed_down}" 
+`short_format` | A string to customise the short output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | "{ssid}" 
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`. | No | `"K"`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. Note: the update interval for SSID and IP address is fixed at 30 seconds, and bitrate fixed at 10 seconds. | No | `1`
 `hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
 `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
+`width` | Whether to force the widget to display `Full` or `Short` text (default is to let i3bar choose) | No | `Default`
 
 #### Available Format Keys
 

@@ -23,7 +23,7 @@ use crate::util::{
     escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, pseudo_uuid,
     FormatTemplate,
 };
-use crate::widget::{I3BarWidget, Spacing};
+use crate::widget::{I3BarWidget, Spacing, WidgetWidth};
 use crate::widgets::button::ButtonWidget;
 
 lazy_static! {
@@ -360,6 +360,7 @@ impl NetworkDevice {
 
 pub struct Net {
     format: FormatTemplate,
+    short_format: FormatTemplate,
     output: ButtonWidget,
     config: Config,
     network: ButtonWidget,
@@ -391,6 +392,7 @@ pub struct Net {
     hide_missing: bool,
     last_update: Instant,
     on_click: Option<String>,
+    width: WidgetWidth,
 }
 
 #[derive(Copy, Clone, Debug, Deserialize)]
@@ -426,6 +428,9 @@ pub struct NetConfig {
 
     #[serde(default = "NetConfig::default_format")]
     pub format: String,
+
+    #[serde(default = "NetConfig::default_short_format")]
+    pub short_format: String,
 
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
@@ -499,6 +504,10 @@ pub struct NetConfig {
 
     #[serde(default = "NetConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
+
+    /// Wether to display wide or narrow (short) widget
+    #[serde(default = "NetConfig::default_width")]
+    pub width: WidgetWidth,
 }
 
 impl NetConfig {
@@ -508,6 +517,10 @@ impl NetConfig {
 
     fn default_format() -> String {
         "{speed_up} {speed_down}".to_owned()
+    }
+
+    fn default_short_format() -> String {
+        "{ssid}".to_owned()
     }
 
     fn default_hide_inactive() -> bool {
@@ -581,6 +594,10 @@ impl NetConfig {
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
+
+    fn default_width() -> WidgetWidth {
+        WidgetWidth::Default
+    }
 }
 
 impl ConfigBlock for Net {
@@ -621,13 +638,22 @@ impl ConfigBlock for Net {
             // Default format
             block_config.format
         };
+        let short_format = if net_config.get("short_format").is_some() {
+            // if "format" option is present it will be preferred
+            block_config.short_format
+        } else {
+            // Default format
+            block_config.short_format
+        };
 
         Ok(Net {
             id: id.clone(),
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&format)
                 .block_error("net", "Invalid format specified")?,
-            output: ButtonWidget::new(config.clone(), "")
+            short_format: FormatTemplate::from_string(&short_format)
+                .block_error("net", "Invalid short_format specified")?,
+            output: ButtonWidget::new(config.clone(), &id)
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             config: config.clone(),
@@ -645,34 +671,34 @@ impl ConfigBlock for Net {
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: if wireless && format.contains("{ssid}") {
+            ssid: if wireless && (format.contains("{ssid}") || short_format.contains("{ssid}")) {
                 Some(" ".to_string())
             } else {
                 None
             },
             max_ssid_width: block_config.max_ssid_width,
-            signal_strength: if wireless && format.contains("{signal_strength}") {
+            signal_strength: if wireless && (format.contains("{signal_strength}") || short_format.contains("{signal_strength}")) {
                 Some(0.to_string())
             } else {
                 None
             },
-            signal_strength_bar: if wireless && format.contains("{signal_strength_bar}") {
+            signal_strength_bar: if wireless && (format.contains("{signal_strength_bar}") || short_format.contains("{signal_strength_bar}")) {
                 Some("".to_string())
             } else {
                 None
             },
             // TODO: a better way to deal with this?
-            bitrate: if format.contains("{bitrate}") {
+            bitrate: if format.contains("{bitrate}") || short_format.contains("{bitrate}") {
                 Some("".to_string())
             } else {
                 None
             },
-            ip_addr: if format.contains("{ip}") {
+            ip_addr: if format.contains("{ip}") || short_format.contains("{ip}") {
                 Some("".to_string())
             } else {
                 None
             },
-            ipv6_addr: if format.contains("{ipv6}") {
+            ipv6_addr: if format.contains("{ipv6}") || short_format.contains("{ipv6}") {
                 Some("".to_string())
             } else {
                 None
@@ -693,6 +719,7 @@ impl ConfigBlock for Net {
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
             on_click: block_config.on_click,
+            width: block_config.width,
         })
     }
 }
@@ -743,6 +770,13 @@ fn read_file(path: &Path) -> Result<String> {
     // Removes trailing newline
     content.pop();
     Ok(content)
+}
+
+
+#[derive(PartialEq,Debug)]
+enum WidthChanged {
+    Yes,
+    No,
 }
 
 impl Net {
@@ -888,10 +922,8 @@ impl Net {
         }
         Ok(())
     }
-}
 
-impl Block for Net {
-    fn update(&mut self) -> Result<Option<Update>> {
+    fn update_widget(&mut self, changed: WidthChanged) -> Result<()> {
         self.update_device();
 
         // skip updating if device is not up.
@@ -906,14 +938,15 @@ impl Block for Net {
                 *rx = "×".to_string();
             };
 
-            return Ok(Some(self.update_interval.into()));
+            return Ok(());
         }
 
         self.network.set_text("".to_string());
 
         // Update SSID and IP address every 30s and the bitrate every 10s
         let now = Instant::now();
-        if now.duration_since(self.last_update).as_secs() % 10 == 0 {
+        if changed == WidthChanged::Yes || now.duration_since(self.last_update).as_secs() % 10 == 0
+        {
             self.update_bitrate()?;
         }
 
@@ -932,6 +965,7 @@ impl Block for Net {
         if (now.duration_since(self.last_update).as_secs() > 30)
             || waiting_for_ip
             || waiting_for_ipv6
+            || changed == WidthChanged::Yes
         {
             self.update_ssid()?;
             self.update_signal_strength()?;
@@ -975,7 +1009,14 @@ impl Block for Net {
         );
 
         self.output
-            .set_text(self.format.render_static_str(&values)?);
+            .set_text_with_width(&self.width, self.format.render_static_str(&values)?, self.short_format.render_static_str(&values)?);
+        Ok(())
+    }
+}
+
+impl Block for Net {
+    fn update(&mut self) -> Result<Option<Update>> {
+        self.update_widget(WidthChanged::No)?;
 
         Ok(Some(self.update_interval.into()))
     }
@@ -993,11 +1034,18 @@ impl Block for Net {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                if let MouseButton::Left = e.button {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("net", "could not spawn child")?;
+                match e.button {
+                    MouseButton::Left => {
+                        if let Some(ref cmd) = self.on_click {
+                            spawn_child_async("sh", &["-c", cmd])
+                                .block_error("net", "could not spawn child")?;
+                        }
                     }
+                    MouseButton::Right | MouseButton::Middle => {
+                        self.width = self.width.next();
+                        let _ = self.update_widget(WidthChanged::Yes);
+                    }
+                    _ => (),
                 }
             }
         }
