@@ -1,4 +1,5 @@
-use std::time::Duration;
+use std::fmt;
+use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -15,52 +16,75 @@ use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
 enum State {
-    Started,
+    Started(Instant),
     Stopped,
-    Paused,
-    OnBreak,
+    Paused(Duration),
+    OnBreak(Instant),
+}
+
+impl State {
+    fn elapsed(&self) -> Duration {
+        match self {
+            State::Started(start) => Instant::now().duration_since(start.to_owned()),
+            State::Stopped => unreachable!(),
+            State::Paused(duration) => duration.to_owned(),
+            State::OnBreak(start) => Instant::now().duration_since(start.to_owned()),
+        }
+    }
+}
+
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            State::Stopped => write!(f, "\u{25a0} 0:00"),
+            State::Started(_) => write!(
+                f,
+                "\u{f04b} {}:{:02}",
+                self.elapsed().as_secs() / 60,
+                self.elapsed().as_secs() % 60
+            ),
+            State::OnBreak(_) => write!(
+                f,
+                "\u{2615} {}:{:02}",
+                self.elapsed().as_secs() / 60,
+                self.elapsed().as_secs() % 60
+            ),
+            State::Paused(duration) => write!(
+                f,
+                "\u{f04c} {}:{:02}",
+                duration.as_secs() / 60,
+                duration.as_secs() % 60
+            ),
+        }
+    }
 }
 
 pub struct Pomodoro {
     id: String,
     time: ButtonWidget,
     state: State,
-    elapsed: usize,
-    length: usize,
-    break_length: usize,
+    length: Duration,
+    break_length: Duration,
     update_interval: Duration,
     message: String,
     break_message: String,
     count: usize,
     use_nag: bool,
+    nag_path: std::path::PathBuf,
 }
 
 impl Pomodoro {
     fn set_text(&mut self) {
         self.time
-            .set_text(format!("{} | {}", self.count, self.get_text()));
+            .set_text(format!("{} | {}", self.count, self.state));
     }
 
-    fn get_text(&self) -> String {
-        match self.state {
-            State::Stopped => "\u{25a0} 0:00".to_string(),
-            State::Started => format!("\u{f04b} {}:{:02}", self.elapsed / 60, self.elapsed % 60),
-            State::Paused => format!("\u{f04c} {}:{:02}", self.elapsed / 60, self.elapsed % 60),
-            State::OnBreak => format!("\u{2615} {}:{:02}", self.elapsed / 60, self.elapsed % 60),
-        }
-    }
-
-    fn tick(&mut self) {
-        match &self.state {
-            State::Stopped => {}
-            State::Started => {
-                self.elapsed += 1;
-            }
-            State::Paused => {}
-            State::OnBreak => {
-                self.elapsed += 1;
-            }
-        };
+    fn nag(&self, message: &str, level: &str) {
+        spawn_child_async(
+            self.nag_path.to_str().unwrap(),
+            &["-t", level, "-m", message],
+        )
+        .expect("Failed to start i3-nagbar");
     }
 }
 
@@ -68,23 +92,25 @@ impl Pomodoro {
 #[serde(deny_unknown_fields)]
 pub struct PomodoroConfig {
     #[serde(default = "PomodoroConfig::default_length")]
-    pub length: usize,
+    pub length: u64,
     #[serde(default = "PomodoroConfig::default_break_length")]
-    pub break_length: usize,
+    pub break_length: u64,
     #[serde(default = "PomodoroConfig::default_message")]
     pub message: String,
     #[serde(default = "PomodoroConfig::default_break_message")]
     pub break_message: String,
     #[serde(default = "PomodoroConfig::default_use_nag")]
     pub use_nag: bool,
+    #[serde(default = "PomodoroConfig::default_nag_path")]
+    pub nag_path: std::path::PathBuf,
 }
 
 impl PomodoroConfig {
-    fn default_length() -> usize {
+    fn default_length() -> u64 {
         25
     }
 
-    fn default_break_length() -> usize {
+    fn default_break_length() -> u64 {
         5
     }
 
@@ -99,6 +125,10 @@ impl PomodoroConfig {
     fn default_use_nag() -> bool {
         false
     }
+
+    fn default_nag_path() -> std::path::PathBuf {
+        std::path::PathBuf::from("i3-nagbar")
+    }
 }
 
 impl ConfigBlock for Pomodoro {
@@ -111,14 +141,14 @@ impl ConfigBlock for Pomodoro {
             id: id.clone(),
             time: ButtonWidget::new(config, &id).with_icon("pomodoro"),
             state: State::Stopped,
-            length: block_config.length * 60, // convert to minutes
-            break_length: block_config.break_length * 60, // convert to minutes
+            length: Duration::from_secs(block_config.length * 60), // convert to minutes
+            break_length: Duration::from_secs(block_config.break_length * 60), // convert to minutes
             update_interval: Duration::from_millis(1000),
             message: block_config.message,
             break_message: block_config.break_message,
             use_nag: block_config.use_nag,
-            elapsed: 0,
             count: 0,
+            nag_path: block_config.nag_path,
         })
     }
 }
@@ -129,27 +159,24 @@ impl Block for Pomodoro {
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
-        self.tick();
         self.set_text();
-
         match &self.state {
-            State::Started => {
-                if self.elapsed >= self.length {
+            State::Started(_) => {
+                if self.state.elapsed() >= self.length {
                     if self.use_nag {
-                        nag(&self.message, "error");
+                        self.nag(&self.message, "error");
                     }
 
-                    self.state = State::OnBreak;
-                    self.elapsed = 0;
-                    self.count += 1;
+                    self.state = State::OnBreak(Instant::now());
                 }
             }
-            State::OnBreak => {
-                if self.elapsed >= self.break_length {
+            State::OnBreak(_) => {
+                if self.state.elapsed() >= self.break_length {
                     if self.use_nag {
-                        nag(&self.break_message, "warning");
+                        self.nag(&self.break_message, "warning");
                     }
                     self.state = State::Stopped;
+                    self.count += 1;
                 }
             }
             _ => {}
@@ -164,23 +191,22 @@ impl Block for Pomodoro {
                 match event.button {
                     MouseButton::Right => {
                         self.state = State::Stopped;
-                        self.elapsed = 0;
                         self.count = 0;
                     }
                     _ => match &self.state {
                         State::Stopped => {
-                            self.state = State::Started;
-                            self.elapsed = 0;
+                            self.state = State::Started(Instant::now());
                         }
-                        State::Started => {
-                            self.state = State::Paused;
+                        State::Started(_) => {
+                            self.state = State::Paused(self.state.elapsed());
                         }
-                        State::Paused => {
-                            self.state = State::Started;
+                        State::Paused(duration) => {
+                            self.state = State::Started(
+                                Instant::now().checked_sub(duration.to_owned()).unwrap(),
+                            );
                         }
-                        State::OnBreak => {
-                            self.state = State::Started;
-                            self.elapsed = 0;
+                        State::OnBreak(_) => {
+                            self.state = State::Started(Instant::now());
                         }
                     },
                 }
@@ -194,9 +220,4 @@ impl Block for Pomodoro {
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.time]
     }
-}
-
-fn nag(message: &str, level: &str) {
-    spawn_child_async("i3-nagbar", &["-t", level, "-m", message])
-        .expect("Failed to start i3-nagbar");
 }
