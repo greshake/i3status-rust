@@ -55,6 +55,12 @@ fn main() {
                 .takes_value(false),
         )
         .arg(
+            Arg::with_name("never-pause")
+                .help("Ignore any attempts by i3 to pause the bar when hidden/fullscreen")
+                .long("never-pause")
+                .takes_value(false),
+        )
+        .arg(
             Arg::with_name("one-shot")
                 .help("Print blocks once and exit")
                 .long("one-shot")
@@ -109,13 +115,15 @@ fn main() {
 #[allow(unused_mut)] // TODO: Remove when fixed in chan_select
 fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
-    print!(
-        "{}",
+    let initialise = if matches.is_present("never-pause") {
         format!(
-            "{{\"version\": 1, \"click_events\": true, \"stop_signal\": {}}}\n[",
-            nix::sys::signal::Signal::SIGUSR2
+            "\"version\": 1, \"click_events\": true, \"stop_signal\": {}",
+            nix::sys::signal::Signal::SIGUSR2 as i8
         )
-    );
+    } else {
+        "\"version\": 1, \"click_events\": true".to_string()
+    };
+    print!("{{{}}}\n[", initialise);
 
     // Read & parse the config file
     let config_path = match matches.value_of("config") {
