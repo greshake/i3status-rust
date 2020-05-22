@@ -361,7 +361,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `30`
 `format` | A format string. See below for available placeholders. | No | `"{total}"`
 
-It requires a github token, which must be passed using the `GITHUB_TOKEN` environment variable.
+It requires a Github [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope. It must be passed using the `GITHUB_TOKEN` environment variable.
 
 ### Available Format Keys
 
