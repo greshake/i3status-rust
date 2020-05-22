@@ -79,7 +79,7 @@ impl ConfigBlock for Github {
         Ok(Github {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
-            text: TextWidget::new(config).with_text("N/A").with_icon("github"),
+            text: TextWidget::new(config).with_text("x").with_icon("github"),
             api_server: block_config.api_server,
             token,
             format: FormatTemplate::from_string(&block_config.format)
@@ -103,8 +103,8 @@ impl Block for Github {
         ) {
             Ok(v) => v,
             Err(_) => {
-                // If there is a error reported, set the value to N/A
-                self.text.set_text("N/A".to_owned());
+                // If there is a error reported, set the value to x
+                self.text.set_text("x".to_owned());
                 return Ok(Some(self.update_interval.into()));
             }
         };
