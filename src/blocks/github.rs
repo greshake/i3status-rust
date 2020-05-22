@@ -79,11 +79,9 @@ impl ConfigBlock for Github {
         Ok(Github {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
-            text: TextWidget::new(config.clone())
-                .with_text("N/A")
-                .with_icon("github"),
+            text: TextWidget::new(config).with_text("N/A").with_icon("github"),
             api_server: block_config.api_server,
-            token: token,
+            token,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("github", "Invalid format specified")?,
         })
@@ -174,7 +172,7 @@ impl<'a> Notifications<'a> {
     fn new(api_server: &'a str, token: &'a str) -> Notifications<'a> {
         Notifications {
             next_page_url: format!("{}/notifications", api_server),
-            token: token,
+            token,
             notifications: vec![].into_iter(),
         }
     }
