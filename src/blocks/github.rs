@@ -1,7 +1,4 @@
-extern crate lazy_static;
-
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -19,7 +16,7 @@ use std::process::Command;
 use std::time::Duration;
 use uuid::Uuid;
 
-const GITHUB_TOKEN_ENV: &str = "GITHUB_TOKEN";
+const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
 pub struct Github {
     text: TextWidget,
@@ -71,7 +68,7 @@ impl ConfigBlock for Github {
             None => {
                 return Err(BlockError(
                     "github".to_owned(),
-                    "missing GITHUB_TOKEN environment variable".to_owned(),
+                    "missing I3RS_GITHUB_TOKEN environment variable".to_owned(),
                 ))
             }
         };
@@ -192,7 +189,7 @@ impl<'a> Notifications<'a> {
             .args(&[
                 "-c",
                 &format!(
-                    "curl -s -D - -H \"Authorization: Bearer {token}\" -m 3 \"{next_page_url}\"",
+                    "curl --silent --dump-header - --header \"Authorization: Bearer {token}\" -m 3 \"{next_page_url}\"",
                     token = self.token,
                     next_page_url = self.next_page_url,
                 ),

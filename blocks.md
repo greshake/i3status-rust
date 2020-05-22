@@ -360,13 +360,28 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `30`
 `format` | A format string. See below for available placeholders. | No | `"{total}"`
+`api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
 
-It requires a Github [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope. It must be passed using the `GITHUB_TOKEN` environment variable.
+It requires a Github [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope. It must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
 
 ### Available Format Keys
 
-The block maintains a count of all notifications under the `total` format key.
-It also maintains count per "notification reason". All specified [reasons](https://developer.github.com/v3/activity/notifications/#notification-reasons) are available as format keys.
+ Key | Value
+-----|-------
+`{total}` | Total of all notifications
+`{assign}` | Total of notifications related to issues you're assigned on.
+`{author}` | Total of notifications related to threads you are the author of.
+`{comment}` | Total of notifications related to threads you commented on.
+`{invitation}` | Total of notifications related to invitations.
+`{manual}` | Total of notifications related to threads you manually subscribed on.
+`{mention}` | Total of notifications related to content you were specifically mentioned on.
+`{review_requested}` | Total of notifications related to PR you were requested to review.
+`{security_alert}` | Total of notifications related to security vulnerabilities found on your repositories.
+`{state_change}` | Total of notifications related to thread state change.
+`{subscribed}` | Total of notifications related to repositories you're watching.
+`{team_mention}` | Total of notification related to thread where your team was mentioned.
+
+For more information about reasons, please see the [API documentation](https://developer.github.com/v3/activity/notifications/#notification-reasons).
 
 ## IBus
 
