@@ -1,3 +1,4 @@
+use std::fmt;
 use std::fs::read_to_string;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -376,11 +377,34 @@ pub struct Net {
     tx_bytes: u64,
     rx_bytes: u64,
     use_bits: bool,
+    speed_min_unit: Unit,
+    speed_digits: usize,
     active: bool,
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
     on_click: Option<String>,
+}
+
+#[derive(Copy, Clone, Debug, Deserialize)]
+pub enum Unit {
+    B,
+    K,
+    M,
+    G,
+    T,
+}
+
+impl Default for Unit {
+    fn default() -> Self {
+        Unit::K
+    }
+}
+
+impl fmt::Display for Unit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -443,6 +467,14 @@ pub struct NetConfig {
     /// Whether to show speeds in bits or bytes per second.
     #[serde(default = "NetConfig::default_use_bits")]
     pub use_bits: bool,
+
+    /// Number of digits to show for throughput indiciators.
+    #[serde(default = "NetConfig::default_speed_digits")]
+    pub speed_digits: usize,
+
+    /// Minimum unit to display for throughput indicators.
+    #[serde(default = "NetConfig::default_speed_min_unit")]
+    pub speed_min_unit: Unit,
 
     /// Whether to show the download throughput indicator of active networks.
     #[serde(default = "NetConfig::default_speed_down")]
@@ -532,6 +564,14 @@ impl NetConfig {
         false
     }
 
+    fn default_speed_min_unit() -> Unit {
+        Unit::K
+    }
+
+    fn default_speed_digits() -> usize {
+        3
+    }
+
     fn default_on_click() -> Option<String> {
         None
     }
@@ -555,6 +595,8 @@ impl ConfigBlock for Net {
             id: id.clone(),
             update_interval: block_config.interval,
             use_bits: block_config.use_bits,
+            speed_min_unit: block_config.speed_min_unit,
+            speed_digits: block_config.speed_digits,
             network: ButtonWidget::new(config.clone(), &id).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
@@ -639,24 +681,6 @@ fn read_file(path: &Path) -> Result<String> {
     Ok(content)
 }
 
-fn convert_speed(speed: u64, use_bits: bool) -> (f64, &'static str) {
-    let mut multiplier = 1;
-    let b = if use_bits {
-        multiplier = 8;
-        "b"
-    } else {
-        "B"
-    };
-    // the values for the match are so the speed doesn't go above 3 characters
-    let (speed, unit) = match speed {
-        x if (x * multiplier) > 999_999_999 => (speed as f64 / 1_000_000_000.0, "G"),
-        x if (x * multiplier) > 999_999 => (speed as f64 / 1_000_000.0, "M"),
-        x if (x * multiplier) > 999 => (speed as f64 / 1_000.0, "k"),
-        _ => (speed as f64, b),
-    };
-    (speed, unit)
-}
-
 impl Net {
     fn update_device(&mut self) {
         if self.auto_device {
@@ -728,9 +752,6 @@ impl Net {
     }
 
     fn update_tx_rx(&mut self) -> Result<()> {
-        // allow us to display bits or bytes
-        // dependent on user's config setting
-        let multiplier = if self.use_bits { 8.0 } else { 1.0 };
         // TODO: consider using `as_nanos`
         let update_interval = (self.update_interval.as_secs() as f64)
         // Update the throughput/graph widgets if they are enabled
@@ -738,11 +759,15 @@ impl Net {
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
             let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
-            let (tx_speed, tx_unit) = convert_speed(tx_bytes, self.use_bits);
             self.tx_bytes = current_tx;
 
             if let Some(ref mut tx_widget) = self.output_tx {
-                tx_widget.set_text(format!("{:5.1}{}", tx_speed * multiplier, tx_unit));
+                tx_widget.set_text(format_speed(
+                    tx_bytes,
+                    self.speed_digits,
+                    &self.speed_min_unit.to_string(),
+                    self.use_bits,
+                ));
             };
 
             if let Some(ref mut graph_tx_widget) = self.graph_tx {
@@ -754,11 +779,15 @@ impl Net {
         if self.output_rx.is_some() || self.graph_rx.is_some() {
             let current_rx = self.device.rx_bytes()?;
             let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
-            let (rx_speed, rx_unit) = convert_speed(rx_bytes, self.use_bits);
             self.rx_bytes = current_rx;
 
             if let Some(ref mut rx_widget) = self.output_rx {
-                rx_widget.set_text(format!("{:5.1}{}", rx_speed * multiplier, rx_unit));
+                rx_widget.set_text(format_speed(
+                    rx_bytes,
+                    self.speed_digits,
+                    &self.speed_min_unit.to_string(),
+                    self.use_bits,
+                ));
             };
 
             if let Some(ref mut graph_rx_widget) = self.graph_rx {
@@ -868,4 +897,66 @@ impl Block for Net {
     fn id(&self) -> &str {
         &self.id
     }
+}
+
+pub fn format_speed(
+    bytes_speed: u64,
+    total_digits: usize,
+    min_unit: &str,
+    use_bits: bool,
+) -> String {
+    let raw_value = if use_bits {
+        bytes_speed * 8
+    } else {
+        bytes_speed
+    };
+
+    let (min_unit_value, min_unit_level) = match min_unit {
+        "T" => (raw_value as f64 / 1_000_000_000_000.0, 4),
+        "G" => (raw_value as f64 / 1_000_000_000.0, 3),
+        "M" => (raw_value as f64 / 1_000_000.0, 2),
+        "K" => (raw_value as f64 / 1_000.0, 1),
+        _ => (raw_value as f64, 0),
+    };
+
+    let (magnitude_value, magnitude_level) = match raw_value {
+        x if x > 99_999_999_999 => (raw_value as f64 / 1_000_000_000_000.0, 4),
+        x if x > 99_999_999 => (raw_value as f64 / 1_000_000_000.0, 3),
+        x if x > 99_999 => (raw_value as f64 / 1_000_000.0, 2),
+        x if x > 99 => (raw_value as f64 / 1_000.0, 1),
+        _ => (raw_value as f64, 0),
+    };
+
+    let (value, level) = if magnitude_level < min_unit_level {
+        (min_unit_value, min_unit_level)
+    } else {
+        (magnitude_value, magnitude_level)
+    };
+
+    let unit = if use_bits {
+        match level {
+            4 => "Tb",
+            3 => "Gb",
+            2 => "Mb",
+            1 => "Kb",
+            _ => "b",
+        }
+    } else {
+        match level {
+            4 => "T",
+            3 => "G",
+            2 => "M",
+            1 => "K",
+            _ => "B",
+        }
+    };
+
+    let _decimal_precision = total_digits as i16 - if value >= 10.0 { 2 } else { 1 };
+    let decimal_precision = if _decimal_precision < 0 {
+        0
+    } else {
+        _decimal_precision
+    };
+
+    format!("{:.*}{}", decimal_precision as usize, value, unit)
 }
