@@ -1,3 +1,13 @@
+use std::collections::HashMap;
+use std::process::Command;
+use std::time::Duration;
+
+use crossbeam_channel::Sender;
+use lazy_static::lazy_static;
+use regex::Regex;
+use serde_derive::Deserialize;
+use uuid::Uuid;
+
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -7,14 +17,6 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
-use crossbeam_channel::Sender;
-use lazy_static::lazy_static;
-use regex::Regex;
-use serde_derive::Deserialize;
-use std::collections::HashMap;
-use std::process::Command;
-use std::time::Duration;
-use uuid::Uuid;
 
 const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
