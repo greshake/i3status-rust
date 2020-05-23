@@ -7,6 +7,7 @@ pub mod custom_dbus;
 pub mod disk_space;
 pub mod docker;
 pub mod focused_window;
+pub mod github;
 pub mod ibus;
 pub mod keyboard_layout;
 pub mod load;
@@ -41,6 +42,7 @@ use self::custom_dbus::*;
 use self::disk_space::*;
 use self::docker::*;
 use self::focused_window::*;
+use self::github::*;
 use self::ibus::*;
 use self::keyboard_layout::*;
 use self::load::*;
@@ -154,6 +156,7 @@ pub fn create_block(
         "disk_space" => block!(DiskSpace, block_config, config, update_request),
         "docker" => block!(Docker, block_config, config, update_request),
         "focused_window" => block!(FocusedWindow, block_config, config, update_request),
+        "github" => block!(Github, block_config, config, update_request),
         "ibus" => block!(IBus, block_config, config, update_request),
         "keyboard_layout" => block!(KeyboardLayout, block_config, config, update_request),
         "load" => block!(Load, block_config, config, update_request),

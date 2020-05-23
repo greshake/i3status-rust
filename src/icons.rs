@@ -57,7 +57,8 @@ lazy_static! {
         "keyboard" => " KBD",
         "mouse" => " MOUSE",
         "docker" => " DOCKER ",
-        "pomodoro" => " POMODORO "
+        "pomodoro" => " POMODORO ",
+        "github" => " GITHUB "
     };
 
     // FontAwesome 4
@@ -120,6 +121,7 @@ lazy_static! {
         "mouse" => " \u{f245}",
         "docker" => " \u{f21a} ",
         "pomodoro" => " \u{1f345} ",
+        "github" => " \u{f09b} ",
         "unknown" => " \u{f128} "
     };
 
@@ -182,6 +184,7 @@ lazy_static! {
         "mouse" => " \u{f245}",
         "docker" => " \u{f21a} ",
         "pomodoro" => " \u{1f345} ",
+        "github" => " \u{f09b} ",
         "unknown" => " \u{f128} "
     };
 
@@ -223,7 +226,8 @@ lazy_static! {
         "keyboard" => " \u{e312}",
         "mouse" => " \u{e323}",
         "docker" => " \u{e532} ",
-        "pomodoro" => " \u{1f345} "
+        "pomodoro" => " \u{1f345} ",
+        "github" => " \u{e86f} "
     };
 }
 
