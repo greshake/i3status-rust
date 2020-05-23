@@ -1,3 +1,4 @@
+use std::fmt;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -25,6 +26,27 @@ pub struct SpeedTest {
     send: Sender<()>,
 }
 
+#[derive(Copy, Clone, Debug, Deserialize)]
+pub enum Unit {
+    B,
+    K,
+    M,
+    G,
+    T,
+}
+
+impl Default for Unit {
+    fn default() -> Self {
+        Unit::K
+    }
+}
+
+impl fmt::Display for Unit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct SpeedTestConfig {
@@ -38,6 +60,14 @@ pub struct SpeedTestConfig {
     /// Mode of speed display, true => MB/s, false => Mb/s
     #[serde(default = "SpeedTestConfig::default_bytes")]
     pub bytes: bool,
+
+    /// Number of digits to show for throughput indiciators.
+    #[serde(default = "SpeedTestConfig::default_speed_digits")]
+    pub speed_digits: usize,
+
+    /// Minimum unit to display for throughput indicators.
+    #[serde(default = "SpeedTestConfig::default_speed_min_unit")]
+    pub speed_min_unit: Unit,
 }
 
 impl SpeedTestConfig {
@@ -48,6 +78,76 @@ impl SpeedTestConfig {
     fn default_bytes() -> bool {
         false
     }
+
+    fn default_speed_min_unit() -> Unit {
+        Unit::M
+    }
+
+    fn default_speed_digits() -> usize {
+        3
+    }
+}
+
+pub fn format_speed(
+    bytes_speed: u64,
+    total_digits: usize,
+    min_unit: &str,
+    use_bits: bool,
+) -> String {
+    let raw_value = if use_bits {
+        bytes_speed * 8
+    } else {
+        bytes_speed
+    };
+
+    let (min_unit_value, min_unit_level) = match min_unit {
+        "T" => (raw_value as f64 / 1_000_000_000_000.0, 4),
+        "G" => (raw_value as f64 / 1_000_000_000.0, 3),
+        "M" => (raw_value as f64 / 1_000_000.0, 2),
+        "K" => (raw_value as f64 / 1_000.0, 1),
+        _ => (raw_value as f64, 0),
+    };
+
+    let (magnitude_value, magnitude_level) = match raw_value {
+        x if x > 99_999_999_999 => (raw_value as f64 / 1_000_000_000_000.0, 4),
+        x if x > 99_999_999 => (raw_value as f64 / 1_000_000_000.0, 3),
+        x if x > 99_999 => (raw_value as f64 / 1_000_000.0, 2),
+        x if x > 99 => (raw_value as f64 / 1_000.0, 1),
+        _ => (raw_value as f64, 0),
+    };
+
+    let (value, level) = if magnitude_level < min_unit_level {
+        (min_unit_value, min_unit_level)
+    } else {
+        (magnitude_value, magnitude_level)
+    };
+
+    let unit = if use_bits {
+        match level {
+            4 => "Tb",
+            3 => "Gb",
+            2 => "Mb",
+            1 => "Kb",
+            _ => "b",
+        }
+    } else {
+        match level {
+            4 => "TB",
+            3 => "GB",
+            2 => "MB",
+            1 => "KB",
+            _ => "B",
+        }
+    };
+
+    let _decimal_precision = total_digits as i16 - if value >= 10.0 { 2 } else { 1 };
+    let decimal_precision = if _decimal_precision < 0 {
+        0
+    } else {
+        _decimal_precision
+    };
+
+    format!("{:.*}{}", decimal_precision as usize, value, unit)
 }
 
 fn get_values(bytes: bool) -> Result<String> {
@@ -159,11 +259,30 @@ impl Block for SpeedTest {
             *updated = false;
 
             if vals.len() == 3 {
-                let ty = if self.config.bytes { "MB/s" } else { "Mb/s" };
-
                 self.text[0].set_text(format!("{}ms", vals[0]));
-                self.text[1].set_text(format!("{}{}", vals[1], ty));
-                self.text[2].set_text(format!("{}{}", vals[2], ty));
+                let (down_bytes, up_bytes) = if self.config.bytes {
+                    (vals[1] * 1_000_000.0, vals[2] * 1_000_000.0)
+                } else {
+                    (vals[1] * 125_000.0, vals[2] * 125_000.0)
+                };
+                self.text[1].set_text(format!(
+                    "{}/s",
+                    format_speed(
+                        down_bytes as u64,
+                        self.config.speed_digits,
+                        &self.config.speed_min_unit.to_string(),
+                        !self.config.bytes
+                    )
+                ));
+                self.text[2].set_text(format!(
+                    "{}/s",
+                    format_speed(
+                        up_bytes as u64,
+                        self.config.speed_digits,
+                        &self.config.speed_min_unit.to_string(),
+                        !self.config.bytes
+                    )
+                ));
 
                 // TODO: remove clippy workaround
                 #[allow(clippy::unknown_clippy_lints)]
