@@ -684,6 +684,8 @@ Key | Values | Required | Default
 `ipv6` | Display connection IPv6 address. | No | `false`
 `speed_up` | Display upload speed. | No | `true`
 `speed_down` | Display download speed. | No | `true`
+`speed_digits` | Number of digits to use when displaying speeds. | No | `3`
+`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 `graph_up` | Display a bar graph for upload speed. | No | `false`
 `graph_down` | Display a bar graph for download speed. | No | `false`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
