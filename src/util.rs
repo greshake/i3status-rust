@@ -29,6 +29,68 @@ pub fn escape_pango_text(text: String) -> String {
         .collect()
 }
 
+pub fn format_speed(
+    bytes_speed: u64,
+    total_digits: usize,
+    min_unit: &str,
+    use_bits: bool,
+) -> String {
+    let raw_value = if use_bits {
+        bytes_speed * 8
+    } else {
+        bytes_speed
+    };
+
+    let (min_unit_value, min_unit_level) = match min_unit {
+        "T" => (raw_value as f64 / 1_000_000_000_000.0, 4),
+        "G" => (raw_value as f64 / 1_000_000_000.0, 3),
+        "M" => (raw_value as f64 / 1_000_000.0, 2),
+        "K" => (raw_value as f64 / 1_000.0, 1),
+        _ => (raw_value as f64, 0),
+    };
+
+    let (magnitude_value, magnitude_level) = match raw_value {
+        x if x > 99_999_999_999 => (raw_value as f64 / 1_000_000_000_000.0, 4),
+        x if x > 99_999_999 => (raw_value as f64 / 1_000_000_000.0, 3),
+        x if x > 99_999 => (raw_value as f64 / 1_000_000.0, 2),
+        x if x > 99 => (raw_value as f64 / 1_000.0, 1),
+        _ => (raw_value as f64, 0),
+    };
+
+    let (value, level) = if magnitude_level < min_unit_level {
+        (min_unit_value, min_unit_level)
+    } else {
+        (magnitude_value, magnitude_level)
+    };
+
+    let unit = if use_bits {
+        match level {
+            4 => "Tb",
+            3 => "Gb",
+            2 => "Mb",
+            1 => "Kb",
+            _ => "b",
+        }
+    } else {
+        match level {
+            4 => "TB",
+            3 => "GB",
+            2 => "MB",
+            1 => "KB",
+            _ => "B",
+        }
+    };
+
+    let _decimal_precision = total_digits as i16 - if value >= 10.0 { 2 } else { 1 };
+    let decimal_precision = if _decimal_precision < 0 {
+        0
+    } else {
+        _decimal_precision
+    };
+
+    format!("{:.*}{}", decimal_precision as usize, value, unit)
+}
+
 pub fn xdg_config_home() -> PathBuf {
     // In the unlikely event that $HOME is not set, it doesn't really matter
     // what we fall back on, so use /.config.
