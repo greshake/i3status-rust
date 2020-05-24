@@ -952,6 +952,8 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `bytes` | Whether to use bytes or bits in the display (true for bytes, false for bits). | No | `false`
 `interval` | Update interval, in seconds. | No | `1800`
+`speed_digits` | Number of digits to use when displaying speeds. | No | `3`
+`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 
 ## Taskwarrior
 
