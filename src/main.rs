@@ -118,7 +118,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let initialise = if matches.is_present("never-pause") {
         format!(
             "\"version\": 1, \"click_events\": true, \"stop_signal\": {}",
-            nix::sys::signal::Signal::SIGUSR2 as i8
+            nix::sys::signal::Signal::SIGCONT as i8
         )
     } else {
         "\"version\": 1, \"click_events\": true".to_string()
