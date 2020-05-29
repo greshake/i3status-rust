@@ -1,23 +1,34 @@
 #[cfg(feature = "pulseaudio")]
-use crossbeam_channel::unbounded;
-use crossbeam_channel::Sender;
-#[cfg(feature = "pulseaudio")]
-use std::cell::RefCell;
+use {
+    crate::pulse::callbacks::ListResult,
+    crate::pulse::context::{
+        flags, introspect::ServerInfo, introspect::SinkInfo, subscribe::subscription_masks,
+        subscribe::Facility, subscribe::Operation as SubscribeOperation, Context,
+        State as PulseState,
+    },
+    crate::pulse::mainloop::standard::IterateResult,
+    crate::pulse::mainloop::standard::Mainloop,
+    crate::pulse::proplist::{properties, Proplist},
+    crate::pulse::volume::{ChannelVolumes, VOLUME_MAX, VOLUME_NORM},
+    crossbeam_channel::unbounded,
+    std::cell::RefCell,
+    std::cmp::min,
+    std::collections::HashMap,
+    std::ops::Deref,
+    std::rc::Rc,
+    std::sync::Mutex,
+};
+
 use std::cmp::max;
-#[cfg(feature = "pulseaudio")]
-use std::cmp::min;
-#[cfg(feature = "pulseaudio")]
-use std::collections::HashMap;
 use std::io::Read;
-#[cfg(feature = "pulseaudio")]
-use std::ops::Deref;
 use std::process::{Command, Stdio};
-#[cfg(feature = "pulseaudio")]
-use std::rc::Rc;
-#[cfg(feature = "pulseaudio")]
-use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
+
+use crossbeam_channel::Sender;
+use lazy_static::lazy_static;
+use serde_derive::Deserialize;
+use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -29,26 +40,6 @@ use crate::subprocess::spawn_child_async;
 use crate::util::{format_percent_bar, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::callbacks::ListResult;
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::context::{
-    flags, introspect::ServerInfo, introspect::SinkInfo, subscribe::subscription_masks,
-    subscribe::Facility, subscribe::Operation as SubscribeOperation, Context, State as PulseState,
-};
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::mainloop::standard::IterateResult;
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::mainloop::standard::Mainloop;
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::proplist::{properties, Proplist};
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::volume::{ChannelVolumes, VOLUME_MAX, VOLUME_NORM};
-
-use lazy_static::lazy_static;
-use serde_derive::Deserialize;
-use uuid::Uuid;
 
 trait SoundDevice {
     fn volume(&self) -> u32;
