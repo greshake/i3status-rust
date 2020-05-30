@@ -920,12 +920,21 @@ block = "sound"
 step_width = 3
 ```
 
+```toml
+[[block]]
+block = "sound"
+format = "{output_name} {volume}"
+[block.mappings]
+"alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "🔈"
+"alsa_output.pci-0000_00_1b.0.analog-stereo" = "🎧"
+```
+
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | `"auto"`, `"pulseaudio"`, `"alsa"` | No | `"auto"` (Pulseaudio with ALSA fallback)
-`format` | Any string to use next to the icon | No | `{volume}%`
+`format` | Any string to use next to the icon. Available qualifiers: `volume`, `output_name` | No | `{volume}%`
 `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols` | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l` | No | `default`
 `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear | No | `false`

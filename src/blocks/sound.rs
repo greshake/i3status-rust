@@ -20,6 +20,7 @@ use {
 };
 
 use std::cmp::max;
+use std::collections::BTreeMap;
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -44,6 +45,7 @@ use crate::widgets::button::ButtonWidget;
 trait SoundDevice {
     fn volume(&self) -> u32;
     fn muted(&self) -> bool;
+    fn output_name(&self) -> String;
 
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32) -> Result<()>;
@@ -80,6 +82,9 @@ impl SoundDevice for AlsaSoundDevice {
     }
     fn muted(&self) -> bool {
         self.muted
+    }
+    fn output_name(&self) -> String {
+        self.name.clone()
     }
 
     fn get_info(&mut self) -> Result<()> {
@@ -216,6 +221,7 @@ struct PulseAudioSoundDevice {
 struct PulseAudioSinkInfo {
     volume: ChannelVolumes,
     mute: bool,
+    sink_name: String,
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -433,6 +439,7 @@ impl PulseAudioClient {
                     let info = PulseAudioSinkInfo {
                         volume: sink_info.volume,
                         mute: sink_info.mute,
+                        sink_name: name.to_string(),
                     };
                     PULSEAUDIO_SINKS.lock().unwrap().insert(name.into(), info);
                     PulseAudioClient::send_update_event();
@@ -521,6 +528,9 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn muted(&self) -> bool {
         self.muted
     }
+    fn output_name(&self) -> String {
+        self.name()
+    }
 
     fn get_info(&mut self) -> Result<()> {
         match PULSEAUDIO_SINKS.lock().unwrap().get(&self.name()) {
@@ -586,6 +596,7 @@ pub struct Sound {
     on_click: Option<String>,
     show_volume_when_muted: bool,
     bar: bool,
+    mappings: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -626,6 +637,9 @@ pub struct SoundConfig {
     /// Show volume as bar instead of percent
     #[serde(default = "SoundConfig::default_bar")]
     pub bar: bool,
+
+    #[serde(default = "SoundConfig::default_mappings")]
+    pub mappings: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -675,6 +689,10 @@ impl SoundConfig {
     fn default_bar() -> bool {
         false
     }
+
+    fn default_mappings() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl Sound {
@@ -682,7 +700,18 @@ impl Sound {
         self.device.get_info()?;
 
         let volume = self.device.volume();
-        let values = map!("{volume}" => format!("{:02}", volume));
+        let output_name = self.device.output_name();
+        let mapped_output_name = if let Some(m) = &self.mappings {
+            match m.get(&output_name) {
+                Some(mapping) => mapping.to_string(),
+                None => output_name,
+            }
+        } else {
+            output_name
+        };
+        let values = map!("{volume}" => format!("{:02}", volume),
+                          "{output_name}" => mapped_output_name
+        );
         let text = self.format.render_static_str(&values)?;
 
         if self.device.muted() {
@@ -765,6 +794,7 @@ impl ConfigBlock for Sound {
             on_click: block_config.on_click,
             show_volume_when_muted: block_config.show_volume_when_muted,
             bar: block_config.bar,
+            mappings: block_config.mappings,
         };
 
         sound.device.monitor(id, tx_update_request)?;
