@@ -58,7 +58,8 @@ lazy_static! {
         "mouse" => " MOUSE",
         "docker" => " DOCKER ",
         "pomodoro" => " POMODORO ",
-        "github" => " GITHUB "
+        "github" => " GITHUB ",
+        "disk_drive" => " DISK "
     };
 
     // FontAwesome 4
@@ -122,7 +123,8 @@ lazy_static! {
         "docker" => " \u{f21a} ",
         "pomodoro" => " \u{1f345} ",
         "github" => " \u{f09b} ",
-        "unknown" => " \u{f128} "
+        "unknown" => " \u{f128} ",
+        "disk_drive" => " \u{f0a0} "
     };
 
     // FontAwesome 5
@@ -185,7 +187,8 @@ lazy_static! {
         "docker" => " \u{f21a} ",
         "pomodoro" => " \u{1f345} ",
         "github" => " \u{f09b} ",
-        "unknown" => " \u{f128} "
+        "unknown" => " \u{f128} ",
+        "disk_drive" => " \u{f8b5} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
@@ -227,7 +230,8 @@ lazy_static! {
         "mouse" => " \u{e323}",
         "docker" => " \u{e532} ",
         "pomodoro" => " \u{1f345} ",
-        "github" => " \u{e86f} "
+        "github" => " \u{e86f} ",
+        "disk_drive" => " \u{e1db} "
     };
 }
 

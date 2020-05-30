@@ -57,6 +57,7 @@ pub struct DiskSpace {
     alias: String,
     path: String,
     info_type: InfoType,
+    icons: bool,
     unit: Unit,
     warning: f64,
     alert: f64,
@@ -78,6 +79,10 @@ pub struct DiskSpaceConfig {
     /// Currently supported options are available, free, total and used
     #[serde(default = "DiskSpaceConfig::default_info_type")]
     pub info_type: InfoType,
+
+    /// Whether the alias should be replace with an icon. Options are <br/> true, false
+    #[serde(default = "DiskSpaceConfig::default_icons")]
+    pub icons: bool,
 
     /// Unit that is used to display disk space. Options are MB, MiB, GB, GiB, TB and TiB
     #[serde(default = "DiskSpaceConfig::default_unit")]
@@ -126,6 +131,10 @@ impl DiskSpaceConfig {
 
     fn default_interval() -> Duration {
         Duration::from_secs(20)
+    }
+
+    fn default_icons() -> bool {
+        false
     }
 
     fn default_warning() -> f64 {
@@ -190,8 +199,13 @@ impl ConfigBlock for DiskSpace {
         Ok(DiskSpace {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
-            disk_space: TextWidget::new(config).with_text("DiskSpace"),
+            disk_space: if block_config.icons {
+                TextWidget::new(config).with_icon("disk_drive")
+            } else {
+                TextWidget::new(config).with_text("DiskSpace")
+            },
             alias: block_config.alias,
+            icons: block_config.icons,
             path: block_config.path,
             info_type: block_config.info_type,
             unit: block_config.unit,
@@ -241,27 +255,33 @@ impl Block for DiskSpace {
             converted_str = format!("{0:.2}", converted);
         }
 
+        let alias_prefix = if self.icons {
+            String::new()
+        } else {
+            format!("{0} ", self.alias)
+        };
+
         if self.unit == Unit::Percent {
             self.disk_space
-                .set_text(format!("{0} {1:.2}%", self.alias, percentage));
+                .set_text(format!("{0}{1:.2}%", alias_prefix, percentage));
             result = percentage as u64;
         } else if self.show_percentage {
             self.disk_space.set_text(format!(
-                "{0} {1} ({2:.2}%) {3:?}",
-                self.alias, converted_str, percentage, self.unit
+                "{0}{1} ({2:.2}%) {3:?}",
+                alias_prefix, converted_str, percentage, self.unit
             ));
         } else if self.show_bar {
             self.disk_space.set_text(format!(
-                "{0} {1} {2:?} {3}",
-                self.alias,
+                "{0}{1} {2:?} {3}",
+                alias_prefix,
                 converted_str,
                 self.unit,
                 format_percent_bar(percentage)
             ));
         } else {
             self.disk_space.set_text(format!(
-                "{0} {1} {2:?}",
-                self.alias, converted_str, self.unit
+                "{0}{1} {2:?}",
+                alias_prefix, converted_str, self.unit
             ));
         }
 

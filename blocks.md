@@ -283,6 +283,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `path` | Path to collect information from | No | `"/"`
 `alias` | Alias that is displayed for path | No | `"/"`
+`icons` | Whether to replace the alias with the disk icon | No | `false`
 `info_type` | Currently supported options are `"available"`, `"free"`, `"total"` and `"used"` | No | `"available"`
 `unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
 `warning` | Available disk space warning level in GiB. | No | `20.0`
