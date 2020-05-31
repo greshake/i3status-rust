@@ -20,7 +20,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, read_file, FormatTemplate};
+use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -663,9 +663,9 @@ impl Block for Battery {
             }
 
             self.output.set_icon(match status.as_str() {
-                "Discharging" => capacity_to_icon(capacity),
+                "Discharging" => battery_level_to_icon(capacity),
                 "Charging" => "bat_charging",
-                _ => capacity_to_icon(capacity),
+                _ => battery_level_to_icon(capacity),
             });
         }
 
@@ -681,14 +681,5 @@ impl Block for Battery {
 
     fn id(&self) -> &str {
         &self.id
-    }
-}
-
-fn capacity_to_icon(cap: Result<u64>) -> &'static str {
-    match cap {
-        Ok(0..=25) => "bat_quarter",
-        Ok(26..=50) => "bat_half",
-        Ok(51..=75) => "bat_three_quarters",
-        _ => "bat_full",
     }
 }

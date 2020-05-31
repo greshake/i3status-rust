@@ -9,6 +9,7 @@ pub mod docker;
 pub mod focused_window;
 pub mod github;
 pub mod ibus;
+pub mod kdeconnect;
 pub mod keyboard_layout;
 pub mod load;
 pub mod maildir;
@@ -44,6 +45,7 @@ use self::docker::*;
 use self::focused_window::*;
 use self::github::*;
 use self::ibus::*;
+use self::kdeconnect::*;
 use self::keyboard_layout::*;
 use self::load::*;
 use self::maildir::*;
@@ -158,6 +160,7 @@ pub fn create_block(
         "focused_window" => block!(FocusedWindow, block_config, config, update_request),
         "github" => block!(Github, block_config, config, update_request),
         "ibus" => block!(IBus, block_config, config, update_request),
+        "kdeconnect" => block!(KDEConnect, block_config, config, update_request),
         "keyboard_layout" => block!(KeyboardLayout, block_config, config, update_request),
         "load" => block!(Load, block_config, config, update_request),
         "maildir" => block!(Maildir, block_config, config, update_request),
