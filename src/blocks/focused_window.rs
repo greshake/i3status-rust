@@ -4,13 +4,11 @@ use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use swayipc::reply::Event;
-use swayipc::reply::{WindowChange, WorkspaceChange};
+use swayipc::reply::{Event, WindowChange, WorkspaceChange};
 use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
