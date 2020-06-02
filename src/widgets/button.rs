@@ -62,15 +62,16 @@ impl ButtonWidget {
         self
     }
 
+    /// Set the `full_text` adn `short_text` representation of the widget
     pub fn with_text(mut self, content: &str) -> Self {
         self.content = Some(String::from(content));
-        if self.short_content == None {
-            self.short_content = self.content.clone();
-        }
+        self.short_content = self.content.clone();
         self.update();
         self
     }
 
+    /// Set the `short_text` representation of the widget. Shall be call after `with_text`
+    /// to have any effect.
     pub fn with_short_text(mut self, content: &str) -> Self {
         self.short_content = Some(String::from(content));
         self.update();
@@ -91,9 +92,7 @@ impl ButtonWidget {
 
     pub fn set_text<S: Into<String>>(&mut self, content: S) {
         let content = Some(content.into());
-        if self.short_content == None {
-            self.short_content = content.clone();
-        }
+        self.short_content = content.clone();
         self.content = content;
         self.update();
     }
