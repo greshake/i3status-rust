@@ -115,6 +115,10 @@ Key | Values | Required | Default
 `format` | A format string. See below for available placeholders. | No | `"{percentage}%"`
 `show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
 `upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
+`info` | Minimum battery level, where state is set to info. | No | `60`
+`good` | Minimum battery level, where state is set to good. | No | `60`
+`warning` | Minimum battery level, where state is set to warning. | No | `30`
+`critical` | Minimum battery level, where state is set to critical. | No | `15`
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
