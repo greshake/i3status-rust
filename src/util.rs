@@ -91,6 +91,16 @@ pub fn format_speed(
     format!("{:.*}{}", decimal_precision as usize, value, unit)
 }
 
+pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
+    match charge_level {
+        Ok(0..=5) => "bat_empty",
+        Ok(6..=25) => "bat_quarter",
+        Ok(26..=50) => "bat_half",
+        Ok(51..=75) => "bat_three_quarters",
+        _ => "bat_full",
+    }
+}
+
 pub fn xdg_config_home() -> PathBuf {
     // In the unlikely event that $HOME is not set, it doesn't really matter
     // what we fall back on, so use /.config.
