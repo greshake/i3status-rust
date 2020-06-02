@@ -412,6 +412,7 @@ block = "ibus"
 ## KDEConnect
 
 Display info from the currently connected device in KDEConnect, updated asynchronously.
+
 Block colours are updated based on the battery level, unless all bat_* thresholds are set to 0, in which case the block colours will depend on the notification count instead.
 
 ```toml
