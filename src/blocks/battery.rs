@@ -641,7 +641,7 @@ impl Block for Battery {
             self.output.set_state(State::Idle);
 
             return match self.driver {
-                BatteryDriver::Sysfs => Ok(Some(self.update_interval)),
+                BatteryDriver::Sysfs => Ok(Some(Update::Every(self.update_interval))),
                 BatteryDriver::Upower => Ok(None),
             };
         }
