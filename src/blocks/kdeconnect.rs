@@ -33,6 +33,7 @@ pub struct KDEConnect {
     bat_warning: u64,
     bat_critical: u64,
     format: FormatTemplate,
+    format_disconnected: FormatTemplate,
     output: ButtonWidget,
     config: Config,
 }
@@ -62,6 +63,10 @@ pub struct KDEConnectConfig {
     /// Format string for displaying phone information.
     #[serde(default = "KDEConnectConfig::default_format")]
     pub format: String,
+
+    /// Format string for displaying phone information when it is disconnected.
+    #[serde(default = "KDEConnectConfig::default_format_disconnected")]
+    pub format_disconnected: String,
 }
 
 impl KDEConnectConfig {
@@ -87,6 +92,10 @@ impl KDEConnectConfig {
 
     fn default_format() -> String {
         "{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}".into()
+    }
+
+    fn default_format_disconnected() -> String {
+        "{name}".into()
     }
 }
 
@@ -143,23 +152,26 @@ impl ConfigBlock for KDEConnect {
 
         let initial_name: String = p2
             .get("org.kde.kdeconnect.device", "name")
-            .block_error("kdeconnect", "Failed to query `name`")?;
+            .unwrap_or_else(|_| String::from(""));
+
         let (initial_charge,): (i32,) = p2
             .method_call("org.kde.kdeconnect.device.battery", "charge", ())
-            .block_error("kdeconnect", "Failed to query `charge`")?;
+            .unwrap_or((0,));
+
         let (initial_charging,): (bool,) = p2
             .method_call("org.kde.kdeconnect.device.battery", "isCharging", ())
-            .block_error("kdeconnect", "Failed to query `isCharging`")?;
+            .unwrap_or((false,));
+
         let (initial_notifications,): (Vec<String>,) = p2
             .method_call(
                 "org.kde.kdeconnect.device.notifications",
                 "activeNotifications",
                 (),
             )
-            .block_error("kdeconnect", "Failed to query `activeNotifications`")?;
+            .unwrap_or((vec![String::from("")],));
         let initial_reachable: bool = p2
             .get("org.kde.kdeconnect.device", "isReachable")
-            .block_error("kdeconnect", "Failed to query `isReachable`")?;
+            .unwrap_or(false);
 
         let device_id_copy = device_id.clone();
         let device_name = Arc::new(Mutex::new(initial_name));
@@ -361,6 +373,7 @@ impl ConfigBlock for KDEConnect {
             bat_warning: block_config.bat_warning,
             bat_critical: block_config.bat_critical,
             format: FormatTemplate::from_string(&block_config.format)?,
+            format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
             output: ButtonWidget::new(config.clone(), "kdeconnect").with_icon("phone"),
             config,
         })
@@ -412,6 +425,7 @@ impl Block for KDEConnect {
         } else {
             battery_level_to_icon(Ok(charge))
         });
+
         let values = map!(
             "{bat_icon}" => bat_icon.unwrap().trim().to_string(),
             "{bat_charge}" => charge.to_string(),
@@ -423,8 +437,6 @@ impl Block for KDEConnect {
             "{name}" => name,
             "{id}" => self.device_id.to_string()
         );
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
 
         if (
             self.bat_critical,
@@ -454,9 +466,14 @@ impl Block for KDEConnect {
         }
 
         if !phone_reachable {
+            self.output.set_state(State::Critical);
             self.output.set_icon("phone_disconnected");
+            self.output
+                .set_text(self.format_disconnected.render_static_str(&values)?);
         } else {
             self.output.set_icon("phone");
+            self.output
+                .set_text(self.format.render_static_str(&values)?);
         }
 
         Ok(None)
