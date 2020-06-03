@@ -250,7 +250,7 @@ impl ConfigBlock for Music {
             on_click: block_config.on_click,
             on_collapsed_click_widget: ButtonWidget::new(config.clone(), "on_collapsed_click")
                 .with_icon("music")
-                .with_state(State::Info),
+                .with_state(State::Idle),
             on_collapsed_click: block_config.on_collapsed_click,
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,

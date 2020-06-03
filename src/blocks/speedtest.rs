@@ -227,9 +227,9 @@ impl Block for SpeedTest {
                 #[allow(clippy::unknown_clippy_lints)]
                 #[allow(clippy::match_on_vec_items)]
                 self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
-                            0.0 ; 25.0 => State::Good,
-                            25.0 ; 60.0 => State::Info,
-                            60.0 ; 100.0 => State::Warning
+                            0.0 ; 50.0 => State::Idle,
+                            50.0 ; 100.0 => State::Info,
+                            100.0 ; 200.0 => State::Warning
                 }));
             }
 
