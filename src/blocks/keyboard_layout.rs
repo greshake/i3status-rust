@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -15,6 +15,7 @@ use swayipc::reply::InputChange;
 use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -65,7 +66,7 @@ fn setxkbmap_layouts() -> Result<String> {
     let output = Command::new("setxkbmap")
         .args(&["-query"])
         .output()
-        .block_error("keyboard_layout", "Failed to exectute setxkbmap.")
+        .block_error("keyboard_layout", "Failed to execute setxkbmap.")
         .and_then(|raw| {
             String::from_utf8(raw.stdout).block_error("keyboard_layout", "Non-UTF8 input.")
         })?;
@@ -178,8 +179,7 @@ impl KbdDaemonBus {
     pub fn new() -> Result<Self> {
         Command::new("setxkbmap")
             .arg("-version")
-            .stdout(Stdio::piped())
-            .spawn()
+            .output()
             .block_error("kbddaemonbus", "setxkbmap not found")?;
 
         // also verifies that kbdd daemon is registered in dbus
@@ -461,13 +461,13 @@ impl Block for KeyboardLayout {
         &self.id
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let layout = self.monitor.keyboard_layout()?;
         let values = map!("{layout}" => layout);
 
         self.output
             .set_text(self.format.render_static_str(&values)?);
-        Ok(self.update_interval)
+        Ok(self.update_interval.map(|d| d.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

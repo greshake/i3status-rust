@@ -5,6 +5,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -185,7 +186,7 @@ fn get_number_of_pending_tasks(tags: &[String]) -> Result<u32> {
 }
 
 impl Block for Taskwarrior {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         if !has_taskwarrior()? {
             self.output.set_text("?")
         } else {
@@ -210,7 +211,7 @@ impl Block for Taskwarrior {
         }
 
         // continue updating the block in the configured interval
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

@@ -11,6 +11,7 @@ use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -297,7 +298,7 @@ impl Block for Pacman {
         vec![&self.output]
     }
 
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let (formatting_map, critical, cum_count) = match &self.watched {
             Watched::Pacman => {
                 check_fakeroot_command_exists()?;
@@ -347,7 +348,7 @@ impl Block for Pacman {
                 }
             }
         });
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {

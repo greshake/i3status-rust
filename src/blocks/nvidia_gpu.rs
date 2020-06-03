@@ -5,6 +5,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
@@ -224,7 +225,7 @@ impl ConfigBlock for NvidiaGpu {
 }
 
 impl Block for NvidiaGpu {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let mut params = String::new();
         if self.show_utilization.is_some() {
             params += "utilization.gpu,";
@@ -298,7 +299,7 @@ impl Block for NvidiaGpu {
             self.gpu_widget.set_text(self.label.to_string());
         }
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

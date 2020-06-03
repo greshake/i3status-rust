@@ -19,8 +19,6 @@ mod widgets;
 
 #[cfg(feature = "profiling")]
 use cpuprofiler::PROFILER;
-#[cfg(feature = "profiling")]
-use progress;
 
 use std::collections::HashMap;
 use std::ops::DerefMut;
@@ -54,6 +52,12 @@ fn main() {
             Arg::with_name("exit-on-error")
                 .help("Exit rather than printing errors to i3bar and continuing")
                 .long("exit-on-error")
+                .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("never-pause")
+                .help("Ignore any attempts by i3 to pause the bar when hidden/fullscreen")
+                .long("never-pause")
                 .takes_value(false),
         )
         .arg(
@@ -108,10 +112,17 @@ fn main() {
     }
 }
 
-#[allow(unused_mut)] // TODO: Remove when fixed in chan_select
 fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
-    print!("{{\"version\": 1, \"click_events\": true}}\n[");
+    let initialise = if matches.is_present("never-pause") {
+        format!(
+            "\"version\": 1, \"click_events\": true, \"stop_signal\": {}",
+            nix::sys::signal::Signal::SIGCONT as i8
+        )
+    } else {
+        "\"version\": 1, \"click_events\": true".to_string()
+    };
+    print!("{{{}}}\n[", initialise);
 
     // Read & parse the config file
     let config_path = match matches.value_of("config") {
@@ -244,9 +255,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
 
         // Set the time-to-next-update timer
-        match scheduler.time_to_next_update() {
-            Some(time) => ttnu = crossbeam_channel::after(time),
-            None => ttnu = crossbeam_channel::after(Duration::from_secs(std::u64::MAX)),
+        if let Some(time) = scheduler.time_to_next_update() {
+            ttnu = crossbeam_channel::after(time)
         }
         if one_shot {
             break Ok(());
@@ -286,12 +296,8 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
         .configuration_error("failed to parse --profile-runs as an integer")?;
     for &(ref block_name, ref block_config) in &config.blocks {
         if block_name == name {
-            let mut block = create_block(
-                &block_name,
-                block_config.clone(),
-                config.clone(),
-                update.clone(),
-            )?;
+            let mut block =
+                create_block(&block_name, block_config.clone(), config.clone(), update)?;
             profile(profile_runs, &block_name, block.deref_mut());
             break;
         }

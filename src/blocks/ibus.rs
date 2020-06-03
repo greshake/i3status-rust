@@ -4,7 +4,7 @@ use std::fs::{read_dir, File};
 use std::io::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
@@ -16,9 +16,9 @@ use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
-use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
@@ -31,7 +31,6 @@ pub struct IBus {
     text: TextWidget,
     engine: Arc<Mutex<String>>,
     mappings: Option<BTreeMap<String, String>>,
-    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -39,21 +38,11 @@ pub struct IBus {
 pub struct IBusConfig {
     #[serde(default = "IBusConfig::default_mappings")]
     pub mappings: Option<BTreeMap<String, String>>,
-
-    #[serde(
-        default = "IBusConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
-    pub interval: Duration,
 }
 
 impl IBusConfig {
     fn default_mappings() -> Option<BTreeMap<String, String>> {
         None
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(30)
     }
 }
 
@@ -120,7 +109,6 @@ impl ConfigBlock for IBus {
             text: TextWidget::new(config).with_text("IBus"),
             engine,
             mappings: block_config.mappings,
-            update_interval: block_config.interval,
         })
     }
 }
@@ -131,7 +119,7 @@ impl Block for IBus {
     }
 
     // Updates the internal state of the block.
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let engine = (*self
             .engine
             .lock()
@@ -147,7 +135,7 @@ impl Block for IBus {
         };
 
         self.text.set_text(display_engine);
-        Ok(Some(self.update_interval))
+        Ok(None)
     }
 
     // Returns the view of the block, comprised of widgets.

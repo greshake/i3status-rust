@@ -1,59 +1,51 @@
 #[cfg(feature = "pulseaudio")]
-use crossbeam_channel::unbounded;
-use crossbeam_channel::Sender;
-#[cfg(feature = "pulseaudio")]
-use std::cell::RefCell;
+use {
+    crate::pulse::callbacks::ListResult,
+    crate::pulse::context::{
+        flags, introspect::ServerInfo, introspect::SinkInfo, subscribe::subscription_masks,
+        subscribe::Facility, subscribe::Operation as SubscribeOperation, Context,
+        State as PulseState,
+    },
+    crate::pulse::mainloop::standard::IterateResult,
+    crate::pulse::mainloop::standard::Mainloop,
+    crate::pulse::proplist::{properties, Proplist},
+    crate::pulse::volume::{ChannelVolumes, VOLUME_MAX, VOLUME_NORM},
+    crossbeam_channel::unbounded,
+    std::cell::RefCell,
+    std::cmp::min,
+    std::collections::HashMap,
+    std::ops::Deref,
+    std::rc::Rc,
+    std::sync::Mutex,
+};
+
 use std::cmp::max;
-#[cfg(feature = "pulseaudio")]
-use std::cmp::min;
-#[cfg(feature = "pulseaudio")]
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::io::Read;
-#[cfg(feature = "pulseaudio")]
-use std::ops::Deref;
 use std::process::{Command, Stdio};
-#[cfg(feature = "pulseaudio")]
-use std::rc::Rc;
-#[cfg(feature = "pulseaudio")]
-use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::blocks::{Block, ConfigBlock};
-use crate::config::{Config, LogicalDirection};
-use crate::de::deserialize_duration;
-use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
-use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
-use crate::util::format_percent_bar;
-use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
-
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::callbacks::ListResult;
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::context::{
-    flags, introspect::ServerInfo, introspect::SinkInfo, subscribe::subscription_masks,
-    subscribe::Facility, subscribe::Operation as SubscribeOperation, Context, State as PulseState,
-};
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::mainloop::standard::IterateResult;
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::mainloop::standard::Mainloop;
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::proplist::{properties, Proplist};
-#[cfg(feature = "pulseaudio")]
-use crate::pulse::volume::{ChannelVolumes, VOLUME_MAX, VOLUME_NORM};
-
+use crossbeam_channel::Sender;
 use lazy_static::lazy_static;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
+use crate::blocks::{Block, ConfigBlock};
+use crate::config::{Config, LogicalDirection};
+use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
+use crate::util::{format_percent_bar, FormatTemplate};
+use crate::widget::{I3BarWidget, State};
+use crate::widgets::button::ButtonWidget;
+
 trait SoundDevice {
     fn volume(&self) -> u32;
     fn muted(&self) -> bool;
+    fn output_name(&self) -> String;
 
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32) -> Result<()>;
@@ -90,6 +82,9 @@ impl SoundDevice for AlsaSoundDevice {
     }
     fn muted(&self) -> bool {
         self.muted
+    }
+    fn output_name(&self) -> String {
+        self.name.clone()
     }
 
     fn get_info(&mut self) -> Result<()> {
@@ -226,6 +221,7 @@ struct PulseAudioSoundDevice {
 struct PulseAudioSinkInfo {
     volume: ChannelVolumes,
     mute: bool,
+    sink_name: String,
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -254,7 +250,10 @@ impl PulseAudioConnection {
         let mut proplist = Proplist::new().unwrap();
         proplist
             .set_str(properties::APPLICATION_NAME, "i3status-rs")
-            .block_error("sound", "could not set pulseaudio APPLICATION_NAME poperty")?;
+            .block_error(
+                "sound",
+                "could not set pulseaudio APPLICATION_NAME property",
+            )?;
 
         let mainloop = Rc::new(RefCell::new(
             Mainloop::new().block_error("sound", "failed to create pulseaudio mainloop")?,
@@ -440,6 +439,7 @@ impl PulseAudioClient {
                     let info = PulseAudioSinkInfo {
                         volume: sink_info.volume,
                         mute: sink_info.mute,
+                        sink_name: name.to_string(),
                     };
                     PULSEAUDIO_SINKS.lock().unwrap().insert(name.into(), info);
                     PulseAudioClient::send_update_event();
@@ -528,6 +528,9 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn muted(&self) -> bool {
         self.muted
     }
+    fn output_name(&self) -> String {
+        self.name()
+    }
 
     fn get_info(&mut self) -> Result<()> {
         match PULSEAUDIO_SINKS.lock().unwrap().get(&self.name()) {
@@ -593,7 +596,7 @@ pub struct Sound {
     on_click: Option<String>,
     show_volume_when_muted: bool,
     bar: bool,
-    update_interval: Duration,
+    mappings: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -635,11 +638,8 @@ pub struct SoundConfig {
     #[serde(default = "SoundConfig::default_bar")]
     pub bar: bool,
 
-    #[serde(
-        default = "SoundConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
-    pub interval: Duration,
+    #[serde(default = "SoundConfig::default_mappings")]
+    pub mappings: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -690,8 +690,8 @@ impl SoundConfig {
         false
     }
 
-    fn default_interval() -> Duration {
-        Duration::from_secs(30)
+    fn default_mappings() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -700,7 +700,18 @@ impl Sound {
         self.device.get_info()?;
 
         let volume = self.device.volume();
-        let values = map!("{volume}" => format!("{:02}", volume));
+        let output_name = self.device.output_name();
+        let mapped_output_name = if let Some(m) = &self.mappings {
+            match m.get(&output_name) {
+                Some(mapping) => mapping.to_string(),
+                None => output_name,
+            }
+        } else {
+            output_name
+        };
+        let values = map!("{volume}" => format!("{:02}", volume),
+                          "{output_name}" => mapped_output_name
+        );
         let text = self.format.render_static_str(&values)?;
 
         if self.device.muted() {
@@ -783,7 +794,7 @@ impl ConfigBlock for Sound {
             on_click: block_config.on_click,
             show_volume_when_muted: block_config.show_volume_when_muted,
             bar: block_config.bar,
-            update_interval: block_config.interval,
+            mappings: block_config.mappings,
         };
 
         sound.device.monitor(id, tx_update_request)?;
@@ -796,9 +807,9 @@ impl ConfigBlock for Sound {
 const FILTER: &[char] = &['[', ']', '%'];
 
 impl Block for Sound {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         self.display()?;
-        Ok(Some(self.update_interval))
+        Ok(None)
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

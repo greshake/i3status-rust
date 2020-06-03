@@ -16,6 +16,7 @@ lazy_static! {
         "memory_swap" => " SWAP ",
         "cpu" => " CPU ",
         "bat" => " BAT ",
+        "bat_empty" => " EMP ",
         "bat_full" => " FULL ",
         "bat_charging" => " CHG ",
         "bat_discharging" => " DCG ",
@@ -58,7 +59,10 @@ lazy_static! {
         "keyboard" => " KBD",
         "mouse" => " MOUSE",
         "docker" => " DOCKER ",
-        "pomodoro" => " POMODORO "
+        "pomodoro" => " POMODORO ",
+        "github" => " GITHUB ",
+        "phone" => " PHONE ",
+        "notification" => " NOTIF "
     };
 
     // FontAwesome 4
@@ -74,6 +78,7 @@ lazy_static! {
         "memory_mem" => " \u{f2db} ",
         "memory_swap" => " \u{f0a0} ",
         "cpu" => " \u{f0e4} ",
+        "bat_empty" => " \u{f244} ",
         "bat_half" => " \u{f242} ",
         "bat_full" => " \u{f240} ",
         "bat_charging" => " \u{f1e6} ",
@@ -122,6 +127,9 @@ lazy_static! {
         "mouse" => " \u{f245}",
         "docker" => " \u{f21a} ",
         "pomodoro" => " \u{1f345} ",
+        "github" => " \u{f09b} ",
+        "phone" => " \u{f10b} ",
+        "notification" => " \u{f0a2} ",
         "unknown" => " \u{f128} "
     };
 
@@ -138,6 +146,7 @@ lazy_static! {
         "memory_mem" => " \u{f2db} ",
         "memory_swap" => " \u{f0a0} ",
         "cpu" => " \u{f3fd} ",
+        "bat_empty" => " \u{f244} ",
         "bat_half" => " \u{f242} ",
         "bat_full" => " \u{f240} ",
         "bat_charging" => " \u{f1e6} ",
@@ -184,6 +193,9 @@ lazy_static! {
         "mouse" => " \u{f245}",
         "docker" => " \u{f21a} ",
         "pomodoro" => " \u{1f345} ",
+        "github" => " \u{f09b} ",
+        "notification" => " \u{f0f3} ",
+        "phone" => " \u{f3cd} ",
         "unknown" => " \u{f128} "
     };
 
@@ -199,6 +211,7 @@ lazy_static! {
         "memory_mem" => " \u{e322} ",
         "memory_swap" => " \u{e8d4} ",
         "cpu" => " \u{e640} ",
+        "bat_empty" => " \u{e19c} ",
         "bat_half" => " \u{e1a5} ",
         "bat_full" => " \u{e1a4} ",
         "bat_charging" => " \u{e1a3} ",
@@ -226,7 +239,10 @@ lazy_static! {
         "keyboard" => " \u{e312}",
         "mouse" => " \u{e323}",
         "docker" => " \u{e532} ",
-        "pomodoro" => " \u{1f345} "
+        "pomodoro" => " \u{1f345} ",
+        "github" => " \u{e86f} ",
+        "phone" => " \u{e324} ",
+        "notification" => " \u{e7f7} "
     };
 }
 

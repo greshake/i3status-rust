@@ -3,10 +3,13 @@ pub mod battery;
 pub mod bluetooth;
 pub mod cpu;
 pub mod custom;
+pub mod custom_dbus;
 pub mod disk_space;
 pub mod docker;
 pub mod focused_window;
+pub mod github;
 pub mod ibus;
+pub mod kdeconnect;
 pub mod keyboard_layout;
 pub mod load;
 pub mod maildir;
@@ -36,10 +39,13 @@ use self::battery::*;
 use self::bluetooth::*;
 use self::cpu::*;
 use self::custom::*;
+use self::custom_dbus::*;
 use self::disk_space::*;
 use self::docker::*;
 use self::focused_window::*;
+use self::github::*;
 use self::ibus::*;
+use self::kdeconnect::*;
 use self::keyboard_layout::*;
 use self::load::*;
 use self::maildir::*;
@@ -76,6 +82,24 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Update {
+    Every(Duration),
+    Once,
+}
+
+impl Default for Update {
+    fn default() -> Self {
+        Update::Once
+    }
+}
+
+impl Into<Update> for Duration {
+    fn into(self) -> Update {
+        Update::Every(self)
+    }
+}
+
 pub trait Block {
     /// A unique id for the block.
     fn id(&self) -> &str;
@@ -84,7 +108,7 @@ pub trait Block {
     fn view(&self) -> Vec<&dyn I3BarWidget>;
 
     /// Forces an update of the internal state of the block.
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         Ok(None)
     }
 
@@ -130,10 +154,13 @@ pub fn create_block(
         "bluetooth" => block!(Bluetooth, block_config, config, update_request),
         "cpu" => block!(Cpu, block_config, config, update_request),
         "custom" => block!(Custom, block_config, config, update_request),
+        "custom_dbus" => block!(CustomDBus, block_config, config, update_request),
         "disk_space" => block!(DiskSpace, block_config, config, update_request),
         "docker" => block!(Docker, block_config, config, update_request),
         "focused_window" => block!(FocusedWindow, block_config, config, update_request),
+        "github" => block!(Github, block_config, config, update_request),
         "ibus" => block!(IBus, block_config, config, update_request),
+        "kdeconnect" => block!(KDEConnect, block_config, config, update_request),
         "keyboard_layout" => block!(KeyboardLayout, block_config, config, update_request),
         "load" => block!(Load, block_config, config, update_request),
         "maildir" => block!(Maildir, block_config, config, update_request),

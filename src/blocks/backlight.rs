@@ -18,9 +18,9 @@ use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection, Scrolling};
-use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
@@ -178,7 +178,6 @@ pub struct Backlight {
     device: BacklitDevice,
     step_width: u64,
     scrolling: Scrolling,
-    update_interval: Duration,
 }
 
 /// Configuration for the [`Backlight`](./struct.Backlight.html) block.
@@ -192,12 +191,6 @@ pub struct BacklightConfig {
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
     #[serde(default = "BacklightConfig::default_step_width")]
     pub step_width: u64,
-
-    #[serde(
-        default = "BacklightConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
-    pub interval: Duration,
 }
 
 impl BacklightConfig {
@@ -207,10 +200,6 @@ impl BacklightConfig {
 
     fn default_step_width() -> u64 {
         5
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(30)
     }
 }
 
@@ -237,7 +226,6 @@ impl ConfigBlock for Backlight {
             device,
             step_width: block_config.step_width,
             scrolling,
-            update_interval: block_config.interval,
         };
 
         // Spin up a thread to watch for changes to the brightness file for the
@@ -276,7 +264,7 @@ impl ConfigBlock for Backlight {
 }
 
 impl Block for Backlight {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let brightness = self.device.brightness()?;
         self.output.set_text(format!("{}%", brightness));
         match brightness {
@@ -286,7 +274,7 @@ impl Block for Backlight {
             60..=79 => self.output.set_icon("backlight_partial3"),
             _ => self.output.set_icon("backlight_full"),
         }
-        Ok(Some(self.update_interval))
+        Ok(None)
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

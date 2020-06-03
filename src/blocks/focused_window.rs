@@ -1,17 +1,15 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use swayipc::reply::Event;
-use swayipc::reply::{WindowChange, WorkspaceChange};
+use swayipc::reply::{Event, WindowChange, WorkspaceChange};
 use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
-use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
@@ -32,7 +30,6 @@ pub struct FocusedWindow {
     show_marks: MarksType,
     max_width: usize,
     id: String,
-    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -42,12 +39,6 @@ pub struct FocusedWindowConfig {
     #[serde(default = "FocusedWindowConfig::default_max_width")]
     pub max_width: usize,
 
-    #[serde(
-        default = "FocusedWindowConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
-    pub interval: Duration,
-
     /// Show marks in place of title (if exist)
     #[serde(default = "FocusedWindowConfig::default_show_marks")]
     pub show_marks: MarksType,
@@ -56,10 +47,6 @@ pub struct FocusedWindowConfig {
 impl FocusedWindowConfig {
     fn default_max_width() -> usize {
         21
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(30)
     }
 
     fn default_show_marks() -> MarksType {
@@ -200,13 +187,12 @@ impl ConfigBlock for FocusedWindow {
             show_marks: block_config.show_marks,
             title,
             marks,
-            update_interval: block_config.interval,
         })
     }
 }
 
 impl Block for FocusedWindow {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let mut marks_string = (*self
             .marks
             .lock()
@@ -231,7 +217,7 @@ impl Block for FocusedWindow {
         };
         self.text.set_text(out_str);
 
-        Ok(Some(self.update_interval))
+        Ok(None)
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

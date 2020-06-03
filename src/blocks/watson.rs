@@ -4,8 +4,10 @@ use std::path::PathBuf;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
+use crate::de::deserialize_duration;
 use crate::de::deserialize_local_timestamp;
 use crate::errors::*;
 use crate::input::I3BarEvent;
@@ -26,6 +28,7 @@ pub struct Watson {
     state_path: PathBuf,
     show_time: bool,
     prev_state: Option<WatsonState>,
+    update_interval: Duration,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -34,6 +37,15 @@ pub struct WatsonConfig {
     /// Path to state of watson
     #[serde(default = "WatsonConfig::default_state_path")]
     pub state_path: PathBuf,
+    /// Update interval in seconds
+    #[serde(
+        default = "WatsonConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
+    pub interval: Duration,
+    /// Show time spent
+    #[serde(default = "WatsonConfig::default_show_time")]
+    pub show_time: bool,
 }
 
 impl WatsonConfig {
@@ -41,6 +53,12 @@ impl WatsonConfig {
         let mut config_dir = xdg_config_home();
         config_dir.push("watson/state");
         config_dir
+    }
+    fn default_interval() -> Duration {
+        Duration::from_secs(60)
+    }
+    fn default_show_time() -> bool {
+        false
     }
 }
 
@@ -58,7 +76,8 @@ impl ConfigBlock for Watson {
             id: id.clone(),
             text: ButtonWidget::new(config, &id),
             state_path: block_config.state_path.clone(),
-            show_time: false,
+            show_time: block_config.show_time,
+            update_interval: block_config.interval,
             prev_state: None,
         };
 
@@ -114,7 +133,7 @@ impl ConfigBlock for Watson {
 }
 
 impl Block for Watson {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let state = {
             let file = BufReader::new(
                 File::open(&self.state_path).block_error("watson", "unable to open state file")?,
@@ -131,7 +150,7 @@ impl Block for Watson {
                 self.prev_state = Some(state);
                 Ok(if self.show_time {
                     // regular updates if time is enabled
-                    Some(Duration::from_secs(60))
+                    Some(self.update_interval.into())
                 } else {
                     None
                 })
@@ -150,7 +169,7 @@ impl Block for Watson {
                     self.prev_state = Some(state);
 
                     // Show stopped status for some seconds before returning to idle
-                    Ok(Some(Duration::from_secs(5)))
+                    Ok(Some(Duration::from_secs(5).into()))
                 } else {
                     // File is empty which means that there is currently no active time tracking,
                     // and the previous state wasn't time tracking neither so we reset the
@@ -162,7 +181,7 @@ impl Block for Watson {
                     self.prev_state = Some(state);
                     Ok(if self.show_time {
                         // regular updates if time is enabled
-                        Some(Duration::from_secs(60))
+                        Some(Duration::from_secs(60).into())
                     } else {
                         None
                     })

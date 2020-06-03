@@ -7,6 +7,7 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -105,6 +106,8 @@ impl ConfigBlock for Cpu {
     ) -> Result<Self> {
         let format = if block_config.frequency {
             "{utilization}% {frequency}GHz".into()
+        } else if block_config.per_core {
+            "{utilization}".to_owned()
         } else {
             block_config.format
         };
@@ -128,7 +131,7 @@ impl ConfigBlock for Cpu {
 }
 
 impl Block for Cpu {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         let f = File::open("/proc/stat")
             .block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
@@ -234,7 +237,7 @@ impl Block for Cpu {
         self.output
             .set_text(self.format.render_static_str(&values)?);
 
-        Ok(Some(self.update_interval))
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

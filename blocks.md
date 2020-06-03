@@ -5,9 +5,13 @@
 - [Bluetooth](#bluetooth)
 - [CPU Utilization](#cpu-utilization)
 - [Custom](#custom)
+- [Custom DBus](#custom-dbus)
 - [Disk Space](#disk-space)
+- [Docker](#docker)
 - [Focused Window](#focused-window)
+- [Github](#github)
 - [IBus](#ibus)
+- [KDEConnect](#kdeconnect)
 - [Keyboard Layout](#keyboard-layout)
 - [Load](#load)
 - [Maildir](#maildir)
@@ -25,6 +29,7 @@
 - [Temperature](#temperature)
 - [Time](#time)
 - [Toggle](#toggle)
+- [Uptime](#uptime)
 - [Watson](#watson)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
@@ -109,9 +114,12 @@ Key | Values | Required | Default
 `driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 `format` | A format string. See below for available placeholders. | No | `"{percentage}%"`
-`allow_unavailable_battery` | If the `sysfs` driver is selected and the battery device cannot be found, the error is ignored and an unavailable battery is displayed instead. | No | `false`
 `show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
 `upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
+`info` | Minimum battery level, where state is set to info. | No | `60`
+`good` | Minimum battery level, where state is set to good. | No | `60`
+`warning` | Minimum battery level, where state is set to warning. | No | `30`
+`critical` | Minimum battery level, where state is set to critical. | No | `15`
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
@@ -189,11 +197,15 @@ For further customisation, use the `json` option and have the shell command outp
 
 ### Examples
 
+Display temperature, update every 10 seconds:
+
 ```toml
 [[block]]
 block = "custom"
 command = ''' cat /sys/class/thermal/thermal_zone0/temp | awk '{printf("%.1f\n",$1/1000)}' '''
 ```
+
+Cycle between "ON" and "OFF", update every 1 second, run `<command>` when block is clicked:
 
 ```toml
 [[block]]
@@ -203,11 +215,22 @@ on_click = "<command>"
 interval = 1
 ```
 
+Use JSON output:
+
 ```toml
 [[block]]
 block = "custom"
 command = "echo '{\"icon\":\"weather_thunder\",\"state\":\"Critical\", \"text\": \"Danger!\"}'"
 json = true
+```
+
+Display kernel, update the block only once:
+
+```toml
+[[block]]
+block = "custom"
+command = "uname -r"
+interval = "once"
 ```
 
 ### Options
@@ -219,8 +242,30 @@ Key | Values | Required | Default
 `command` | Shell command to execute & display. | No | None
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
-`interval` | Update interval, in seconds. | No | `10`
+`interval` | Update interval, in seconds (or `"once"` to update only once). | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
+
+
+
+## Custom DBus
+
+Creates a block that can be updated asynchronously using DBus.
+
+For example, updating the block using the command line tool `qdbus`: `qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus headphones`
+
+### Examples
+
+```toml
+[[block]]
+block = "custom_dbus"
+name = "CurrentSoundDevice"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`name` | Name of the DBus object that i3status-rs will create. Must be unique. | Yes | None
 
 ## Disk Space
 
@@ -250,6 +295,38 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `20`
 `show_percentage` | Show percentage of used/available disk space depending on info_type. | No | `false`
 
+
+## Docker
+
+Creates a block which shows the local docker daemon status (containers running, paused, stopped, total and image count).
+
+### Examples
+
+```toml
+[[block]]
+block = "docker"
+interval = 2
+format = "{running}/{total}"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `5`
+`format` | A format string. See below for available placeholders. | No | `"{running}"`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{total}` | Total containers on the host.
+`{running}` | Containers running on the host.
+`{stopped}` | Containers stopped on the host.
+`{paused}` | Containers paused on the host.
+`{images}` | Total images on the host.
+
+
 ## Focused Window
 
 Creates a block which displays the title or the active marks of the currently focused window. Uses push updates from i3 IPC, so no need to worry about resource usage. The block only updates when the focused window changes title or the focus changes. Also works with sway, due to it having compatibility with i3's IPC.
@@ -269,6 +346,47 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
 `show_marks` | Display marks instead of the title, if there are some. Options are `"none"`, `"all"` or `"visible"`, the latter of which ignores marks that start with an underscore. | No | `"none"`
+
+## Github
+
+Creates a block which shows the unread notification count for a github account.
+
+### Examples
+
+```toml
+[[block]]
+block = "github"
+format = "{total}|{author}|{comment}|{mention}|{review_requested}"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `30`
+`format` | A format string. See below for available placeholders. | No | `"{total}"`
+`api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
+
+It requires a Github [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope. It must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
+
+### Available Format Keys
+
+ Key | Value
+-----|-------
+`{total}` | Total of all notifications
+`{assign}` | Total of notifications related to issues you're assigned on.
+`{author}` | Total of notifications related to threads you are the author of.
+`{comment}` | Total of notifications related to threads you commented on.
+`{invitation}` | Total of notifications related to invitations.
+`{manual}` | Total of notifications related to threads you manually subscribed on.
+`{mention}` | Total of notifications related to content you were specifically mentioned on.
+`{review_requested}` | Total of notifications related to PR you were requested to review.
+`{security_alert}` | Total of notifications related to security vulnerabilities found on your repositories.
+`{state_change}` | Total of notifications related to thread state change.
+`{subscribed}` | Total of notifications related to repositories you're watching.
+`{team_mention}` | Total of notification related to thread where your team was mentioned.
+
+For more information about reasons, please see the [API documentation](https://developer.github.com/v3/activity/notifications/#notification-reasons).
 
 ## IBus
 
@@ -290,6 +408,28 @@ block = "ibus"
 "mozc-jp" = "JP"
 "xkb:us::eng" = "EN"
 ```
+
+## KDEConnect
+
+Display info from the currently connected device in KDEConnect, updated asynchronously.
+
+Block colours are updated based on the battery level, unless all bat_* thresholds are set to 0, in which case the block colours will depend on the notification count instead.
+
+```toml
+[[block]]
+block = "kdeconnect"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`device_id` | Device ID as per the output of `kdeconnect --list-devices\`. | No | Chooses the first found device, if any.
+`format` | Format string. Available qualifiers are `"bat_icon"`, `"bat_charge"`, `"bat_state"`, `"notif_icon"`, `"notif_count"`, `"name"`, `"id"`. `"bat_icon"` will automatically change between the various battery icons depending on the current charge state. | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
+`bat_info` | Min battery level below which state is set to info. | No | `60`
+`bat_good` | Min battery level below which state is set to good. | No | `60`
+`bat_warning` | Min battery level below which state is set to warning. | No | `30`
+`bat_critical` | Min battery level below which state is set to critical. | No | `15`
 
 ## Keyboard Layout
 
@@ -571,6 +711,8 @@ Key | Values | Required | Default
 `ipv6` | Display connection IPv6 address. | No | `false`
 `speed_up` | Display upload speed. | No | `true`
 `speed_down` | Display download speed. | No | `true`
+`speed_digits` | Number of digits to use when displaying speeds. | No | `3`
+`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 `graph_up` | Display a bar graph for upload speed. | No | `false`
 `graph_down` | Display a bar graph for download speed. | No | `false`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
@@ -656,7 +798,7 @@ Key | Values | Required | Default
 `threshold_info` | Mail count that triggers `info` state | No | `99999`
 `name` | Label to show before the mail count | No | `""`
 `no_icon` | Disable the mail icon | No | `false`
-
+`interval` | Update interval, in seconds. | No | `10`
 
 ## Nvidia Gpu
 
@@ -722,7 +864,7 @@ pacman and AUR helper config:
 [[block]]
 block = "pacman"
 interval = 600
-format = "{pacman} + {aur} (AUR) = {both} updates available"
+format = "{pacman} + {aur} = {both} updates available"
 format_singular = "{both} update available"
 format_up_to_date = "system up to date"
 critical_updates_regex = "(linux |linux-lts|linux-zen)"
@@ -755,6 +897,9 @@ Key | Value
 
 Creates a block which runs a [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique).
 
+You can face problems showing the nagbar if i3 is configured to hide the status bar. See
+[#701](https://github.com/greshake/i3status-rust/pull/701) to fix this.
+
 ### Examples
 
 ```toml
@@ -764,7 +909,8 @@ length = 25
 break_length = 5
 message = "Take a break!"
 break_message = "Back to work!"
-use_nag = false
+use_nag = true
+nag_path = "i3-nagbar"
 ```
 
 ### Options
@@ -776,6 +922,7 @@ Key | Values | Required | Default
 `use_nag` | i3-nagbar enabled | No | `false`
 `message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
 `break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
+`nag_path` | i3-nagbar binary path | No | `i3-nagbar`
 
 
 ## Sound
@@ -800,15 +947,24 @@ block = "sound"
 step_width = 3
 ```
 
+```toml
+[[block]]
+block = "sound"
+format = "{output_name} {volume}"
+[block.mappings]
+"alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "🔈"
+"alsa_output.pci-0000_00_1b.0.analog-stereo" = "🎧"
+```
+
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | `"auto"`, `"pulseaudio"`, `"alsa"` | No | `"auto"` (Pulseaudio with ALSA fallback)
-`format` | Any string to use next to the icon | No | `{volume}%`
+`format` | Any string to use next to the icon. Available qualifiers: `volume`, `output_name` | No | `{volume}%`
 `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols` | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l` | No | `default`
-`natural_mapping` | Use the mapped volume for evaluating the percentage representation like `alsamixer`/`amixer -M`, to be more natural for human ear | No | `false`
+`natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear | No | `false`
 `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | `5`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
@@ -832,6 +988,8 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `bytes` | Whether to use bytes or bits in the display (true for bytes, false for bits). | No | `false`
 `interval` | Update interval, in seconds. | No | `1800`
+`speed_digits` | Number of digits to use when displaying speeds. | No | `3`
+`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 
 ## Taskwarrior
 
@@ -941,8 +1099,8 @@ Key | Values | Required | Default
 
 ## Toggle
 
-Creates a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`). If these command exit with a non-zero status, the block will not be toggled.
-You also need to specify a command to determine the (initial) state of the toggle (`command_state`). When the command outputs nothing, the toggle is disabled, otherwise enabled.
+Creates a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`). If these command exit with a non-zero status, the block will not be toggled and the block state will be changed to give a visual warning of the failure.
+You also need to specify a command to determine the initial state of the toggle (`command_state`). When the command outputs nothing, the toggle is disabled, otherwise enabled.
 By specifying the `interval` property you can let the `command_state` be executed continuously.
 
 ### Examples
@@ -972,6 +1130,24 @@ Key | Values | Required | Default
 `icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
 
+
+## Uptime
+Creates a block which displays system uptime. The block will always display the 2 biggest units, so minutes and seconds, or hours and minutes or days and hours or weeks and days.
+
+### Examples
+
+```toml
+[[block]]
+block = "uptime"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `60`
+
+
 ## Watson
 
 [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
@@ -989,14 +1165,17 @@ state_path = "/home/user/.config/watson/state"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`show_time` | Wether to show recorded time | No | `false`
+`show_time` | Whether to show recorded time | No | `false`
 `state_path` | Path to the Watson state file | No | `$XDG_CONFIG_HOME/watson/state`
+`interval` | Update interval, in seconds. | No | `60`
 
 ## Weather
 
 Creates a block which displays local weather and temperature information. In order to use this block, you will need access to a supported weather API service. At the time of writing, OpenWeatherMap is the only supported service.
 
 Configuring the Weather block requires configuring a weather service, which may require API keys and other parameters.
+
+If using the `autolocate` feature, set the block update interval such that you do not exceed ipapi.co's free daily limit of 1000 hits.
 
 ### Examples
 
@@ -1016,6 +1195,7 @@ Key | Values | Required | Default
 `format` | The text format of the weather display. | No | `"{weather} {temp}°"`
 `service` | The configuration of a weather service (see below). | Yes | None
 `interval` | Update interval, in seconds. | No | `600`
+`autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | No | false
 
 ### OpenWeatherMap Options
 
@@ -1047,19 +1227,6 @@ Key | Value
 `{wind}` | Wind speed.
 `{direction}` | Wind direction, e.g. "NE".
 
-## Uptime
-Creates a block which displays system uptime. The block will always display the 2 biggest units, so minutes and seconds, or hours and minutes or days and hours or weeks and days.
-
-### Examples
-
-```toml
-[[block]]
-block = "uptime"
-```
-
-### Options
-
-None
 
 ## Xrandr
 
@@ -1083,33 +1250,3 @@ Key | Values | Required | Default
 `resolution` | Shows the screens resolution | No | `false`
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | `5`
 `interval` | Update interval, in seconds. | No | `5`
-
-## Docker
-
-Creates a block which shows the local docker daemon status (containers running, paused, stopped, total and image count).
-
-### Examples
-
-```toml
-[[block]]
-block = "docker"
-interval = 2
-format = "{running}/{total}"
-```
-
-### Options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`interval` | Update interval, in seconds. | No | `5`
-`format` | A format string. See below for available placeholders. | No | `"{running}"`
-
-### Available Format Keys
-
-Key | Value
-----|-------
-`{total}` | Total containers on the host.
-`{running}` | Containers running on the host.
-`{stopped}` | Containers stopped on the host.
-`{paused}` | Containers paused on the host.
-`{images}` | Total images on the host.

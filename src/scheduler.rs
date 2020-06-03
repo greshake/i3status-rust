@@ -1,3 +1,4 @@
+use crate::blocks::Update;
 use std::cmp;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
@@ -111,10 +112,13 @@ impl UpdateScheduler {
                 .internal_error("scheduler", "could not get required block")?
                 .update()?
             {
-                self.schedule.push(Task {
-                    id: task.id,
-                    update_time: now + dur,
-                })
+                match dur {
+                    Update::Every(d) => self.schedule.push(Task {
+                        id: task.id,
+                        update_time: now + d,
+                    }),
+                    Update::Once => {} // do not schedule this task again
+                }
             }
         }
 

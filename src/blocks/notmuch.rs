@@ -2,10 +2,10 @@ use std::env;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
-use notmuch;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
+use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
@@ -98,8 +98,8 @@ impl NotmuchConfig {
     }
 }
 
-fn run_query(db_path: &String, query_string: &String) -> std::result::Result<u32, notmuch::Error> {
-    let db = notmuch::Database::open(db_path, notmuch::DatabaseMode::ReadOnly)?;
+fn run_query(db_path: &str, query_string: &str) -> std::result::Result<u32, notmuch::Error> {
+    let db = notmuch::Database::open(&db_path, notmuch::DatabaseMode::ReadOnly)?;
     let query = db.create_query(query_string)?;
     Ok(query.count_messages()?)
 }
@@ -112,7 +112,7 @@ impl ConfigBlock for Notmuch {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut widget = TextWidget::new(config.clone());
+        let mut widget = TextWidget::new(config);
         if !block_config.no_icon {
             widget.set_icon("mail");
         }
@@ -157,12 +157,12 @@ impl Notmuch {
 }
 
 impl Block for Notmuch {
-    fn update(&mut self) -> Result<Option<Duration>> {
+    fn update(&mut self) -> Result<Option<Update>> {
         match run_query(&self.db, &self.query) {
             Ok(count) => {
                 self.update_text(count);
                 self.update_state(count);
-                Ok(Some(self.update_interval))
+                Ok(Some(self.update_interval.into()))
             }
             Err(e) => Err(BlockError("notmuch".to_string(), e.to_string())),
         }
