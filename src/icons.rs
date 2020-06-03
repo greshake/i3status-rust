@@ -16,6 +16,7 @@ lazy_static! {
         "memory_swap" => " SWAP ",
         "cpu" => " CPU ",
         "bat" => " BAT ",
+        "bat_empty" => " EMP ",
         "bat_full" => " FULL ",
         "bat_charging" => " CHG ",
         "bat_discharging" => " DCG ",
@@ -59,7 +60,9 @@ lazy_static! {
         "docker" => " DOCKER ",
         "pomodoro" => " POMODORO ",
         "github" => " GITHUB ",
-        "disk_drive" => " DISK "
+        "disk_drive" => " DISK ",
+        "phone" => " PHONE ",
+        "notification" => " NOTIF "
     };
 
     // FontAwesome 4
@@ -75,6 +78,7 @@ lazy_static! {
         "memory_mem" => " \u{f2db} ",
         "memory_swap" => " \u{f0a0} ",
         "cpu" => " \u{f0e4} ",
+        "bat_empty" => " \u{f244} ",
         "bat_half" => " \u{f242} ",
         "bat_full" => " \u{f240} ",
         "bat_charging" => " \u{f1e6} ",
@@ -124,7 +128,10 @@ lazy_static! {
         "pomodoro" => " \u{1f345} ",
         "github" => " \u{f09b} ",
         "unknown" => " \u{f128} ",
-        "disk_drive" => " \u{f0a0} "
+        "disk_drive" => " \u{f0a0} ",
+        "phone" => " \u{f10b} ",
+        "notification" => " \u{f0a2} ",
+        "unknown" => " \u{f128} "
     };
 
     // FontAwesome 5
@@ -140,6 +147,7 @@ lazy_static! {
         "memory_mem" => " \u{f2db} ",
         "memory_swap" => " \u{f0a0} ",
         "cpu" => " \u{f3fd} ",
+        "bat_empty" => " \u{f244} ",
         "bat_half" => " \u{f242} ",
         "bat_full" => " \u{f240} ",
         "bat_charging" => " \u{f1e6} ",
@@ -188,7 +196,10 @@ lazy_static! {
         "pomodoro" => " \u{1f345} ",
         "github" => " \u{f09b} ",
         "unknown" => " \u{f128} ",
-        "disk_drive" => " \u{f8b5} "
+        "disk_drive" => " \u{f8b5} ",
+        "notification" => " \u{f0f3} ",
+        "phone" => " \u{f3cd} ",
+        "unknown" => " \u{f128} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
@@ -203,6 +214,7 @@ lazy_static! {
         "memory_mem" => " \u{e322} ",
         "memory_swap" => " \u{e8d4} ",
         "cpu" => " \u{e640} ",
+        "bat_empty" => " \u{e19c} ",
         "bat_half" => " \u{e1a5} ",
         "bat_full" => " \u{e1a4} ",
         "bat_charging" => " \u{e1a3} ",
@@ -231,7 +243,9 @@ lazy_static! {
         "docker" => " \u{e532} ",
         "pomodoro" => " \u{1f345} ",
         "github" => " \u{e86f} ",
-        "disk_drive" => " \u{e1db} "
+        "disk_drive" => " \u{e1db} ",
+        "phone" => " \u{e324} ",
+        "notification" => " \u{e7f7} "
     };
 }
 
