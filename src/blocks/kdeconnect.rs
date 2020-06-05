@@ -134,7 +134,7 @@ impl ConfigBlock for KDEConnect {
 
         let p2 = c.with_proxy(
             "org.kde.kdeconnect",
-            format!("/modules/kdeconnect/devices/{}", device_id.clone()),
+            format!("/modules/kdeconnect/devices/{}", device_id),
             Duration::from_millis(5000),
         );
 
