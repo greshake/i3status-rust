@@ -62,6 +62,7 @@ lazy_static! {
         "pomodoro" => " POMODORO ",
         "github" => " GITHUB ",
         "phone" => " PHONE ",
+        "phone_disconnected" => " PHONE ",
         "notification" => " NOTIF "
     };
 
@@ -128,6 +129,7 @@ lazy_static! {
         "pomodoro" => " \u{1f345} ",
         "github" => " \u{f09b} ",
         "phone" => " \u{f10b} ",
+        "phone_disconnected" => " \u{1f4f5} ",
         "notification" => " \u{f0a2} ",
         "unknown" => " \u{f128} "
     };
@@ -195,6 +197,7 @@ lazy_static! {
         "github" => " \u{f09b} ",
         "notification" => " \u{f0f3} ",
         "phone" => " \u{f3cd} ",
+        "phone_disconnected" => " \u{1f4f5} ",
         "unknown" => " \u{f128} "
     };
 
@@ -240,6 +243,7 @@ lazy_static! {
         "pomodoro" => " \u{1f345} ",
         "github" => " \u{e86f} ",
         "phone" => " \u{e324} ",
+        "phone_disconnected" => " \u{1f4f5} ",
         "notification" => " \u{e7f7} "
     };
 }

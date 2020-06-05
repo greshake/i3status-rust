@@ -426,6 +426,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `device_id` | Device ID as per the output of `kdeconnect --list-devices\`. | No | Chooses the first found device, if any.
 `format` | Format string. Available qualifiers are `"bat_icon"`, `"bat_charge"`, `"bat_state"`, `"notif_icon"`, `"notif_count"`, `"name"`, `"id"`. `"bat_icon"` will automatically change between the various battery icons depending on the current charge state. | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
+`format_disconnected` | Format string for when the phone is disconnected/unreachable. Same qualifiers as above, however they will be fixed at the last known value until the phone comes back online. | No | `"{name}"`
 `bat_info` | Min battery level below which state is set to info. | No | `60`
 `bat_good` | Min battery level below which state is set to good. | No | `60`
 `bat_warning` | Min battery level below which state is set to warning. | No | `30`
