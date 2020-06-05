@@ -184,10 +184,27 @@ impl NetworkDevice {
         }
 
         if iw_output.is_empty() {
-            iw_output = Command::new("nmcli")
-                .args(&["-g", "general.connection", "device", "show", &self.device])
+            iw_output = Command::new("sh")
+                .args(&[
+                    "-c",
+                    &format!("nmcli -g general.connection device show {}", &self.device),
+                ])
                 .output()
                 .block_error("net", "Failed to execute SSID query using nmcli.")?
+                .stdout;
+        }
+
+        if iw_output.is_empty() {
+            iw_output = Command::new("sh")
+                .args(&[
+                    "-c",
+                    &format!(
+                        "iwctl station {} show | sed -n 's/^\\s\\+Connected network\\s\\(.*\\)\\s*/\\1/p'",
+                        self.device
+                    ),
+                ])
+                .output()
+                .block_error("net", "Failed to execute SSID query using iwctl.")?
                 .stdout;
         }
 
