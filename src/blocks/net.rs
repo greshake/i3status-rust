@@ -18,10 +18,11 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{escape_pango_text, format_percent_bar, format_speed};
+use crate::util::{
+    escape_pango_text, format_percent_bar, format_speed, format_vec_to_bar_graph, FormatTemplate,
+};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-use crate::widgets::graph::GraphWidget;
 
 pub struct NetworkDevice {
     device: String,
@@ -356,18 +357,21 @@ impl NetworkDevice {
 }
 
 pub struct Net {
+    format: FormatTemplate,
+    output: ButtonWidget,
+    config: Config,
     network: ButtonWidget,
-    ssid: Option<ButtonWidget>,
+    ssid: Option<String>,
     max_ssid_width: usize,
-    signal_strength: Option<ButtonWidget>,
-    signal_strength_bar: bool,
-    ip_addr: Option<ButtonWidget>,
-    ipv6_addr: Option<ButtonWidget>,
-    bitrate: Option<ButtonWidget>,
-    output_tx: Option<ButtonWidget>,
-    graph_tx: Option<GraphWidget>,
-    output_rx: Option<ButtonWidget>,
-    graph_rx: Option<GraphWidget>,
+    signal_strength: Option<String>,
+    signal_strength_bar: Option<String>,
+    ip_addr: Option<String>,
+    ipv6_addr: Option<String>,
+    bitrate: Option<String>,
+    output_tx: Option<String>,
+    graph_tx: Option<String>,
+    output_rx: Option<String>,
+    graph_rx: Option<String>,
     id: String,
     update_interval: Duration,
     device: NetworkDevice,
@@ -416,6 +420,9 @@ pub struct NetConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
+
+    #[serde(default = "NetConfig::default_format")]
+    pub format: String,
 
     /// Which interface in /sys/class/net/ to read from.
     #[serde(default = "NetConfig::default_device")]
@@ -495,6 +502,10 @@ pub struct NetConfig {
 impl NetConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(1)
+    }
+
+    fn default_format() -> String {
+        "{speed_up} {speed_down}".to_owned()
     }
 
     fn default_device() -> String {
@@ -591,9 +602,40 @@ impl ConfigBlock for Net {
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
         let id = Uuid::new_v4().to_simple().to_string();
+
+        // create a way that to know that the user is using the old style.
+        let mut old_user_format = Vec::new();
+
+        let old_strings = [
+            "ssid",
+            "signal_strength",
+            "signal_strength_bar",
+            "bitrate",
+            "ip",
+            "ipv6",
+            "speed_up",
+            "speed_down",
+            "graph_up",
+            "graph_down",
+        ];
+        for string in old_strings.iter() {
+            if config.blocks[0].1.get(string.to_owned()).is_some() {
+                old_user_format.push(format!("{{{}}}", string));
+            };
+        }
+
+        let old_format = old_user_format.join(" ");
+
         Ok(Net {
             id: id.clone(),
             update_interval: block_config.interval,
+            format: FormatTemplate::from_string(if old_user_format.is_empty() {
+                &block_config.format
+            } else {
+                &old_format
+            })?,
+            output: ButtonWidget::new(config.clone(), "").with_text(""),
+            config: config.clone(),
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
@@ -606,57 +648,25 @@ impl ConfigBlock for Net {
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: if block_config.ssid && wireless {
-                Some(ButtonWidget::new(config.clone(), &id).with_text(" "))
+            ssid: if wireless {
+                Some(" ".to_string())
             } else {
                 None
             },
             max_ssid_width: block_config.max_ssid_width,
-            signal_strength: if block_config.signal_strength && wireless {
-                Some(ButtonWidget::new(config.clone(), &id))
-            } else {
-                None
-            },
-            signal_strength_bar: block_config.signal_strength_bar,
-            bitrate: if block_config.bitrate {
-                Some(ButtonWidget::new(config.clone(), &id))
-            } else {
-                None
-            },
-            ip_addr: if block_config.ip {
-                Some(ButtonWidget::new(config.clone(), &id))
-            } else {
-                None
-            },
-            ipv6_addr: if block_config.ipv6 {
-                Some(ButtonWidget::new(config.clone(), &id))
-            } else {
-                None
-            },
-            output_tx: if block_config.speed_up {
-                Some(ButtonWidget::new(config.clone(), &id).with_icon("net_up"))
-            } else {
-                None
-            },
-            output_rx: if block_config.speed_down {
-                Some(ButtonWidget::new(config.clone(), &id).with_icon("net_down"))
-            } else {
-                None
-            },
-            graph_tx: if block_config.graph_up {
-                Some(GraphWidget::new(config.clone()))
-            } else {
-                None
-            },
-            graph_rx: if block_config.graph_down {
-                Some(GraphWidget::new(config))
-            } else {
-                None
-            },
+            signal_strength: if wireless { Some(0.to_string()) } else { None },
+            signal_strength_bar: if wireless { Some("".to_string()) } else { None },
+            bitrate: Some("".to_string()),
+            ip_addr: Some("".to_string()),
+            ipv6_addr: Some("".to_string()),
+            output_tx: Some("".to_string()),
+            output_rx: Some("".to_string()),
+            graph_tx: Some("".to_string()),
+            graph_rx: Some("".to_string()),
             device,
             auto_device: block_config.auto_device,
-            rx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            tx_buff: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            rx_buff: vec![0; 10],
+            tx_buff: vec![0; 10],
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
             active: true,
@@ -699,53 +709,55 @@ impl Net {
     }
 
     fn update_bitrate(&mut self) -> Result<()> {
-        if let Some(ref mut bitrate_widget) = self.bitrate {
+        if let Some(ref mut bitrate_string) = self.bitrate {
             let bitrate = self.device.bitrate()?;
             if let Some(b) = bitrate {
-                bitrate_widget.set_text(b);
+                *bitrate_string = b;
             }
         }
         Ok(())
     }
 
     fn update_ssid(&mut self) -> Result<()> {
-        if let Some(ref mut ssid_widget) = self.ssid {
+        if let Some(ref mut ssid_string) = self.ssid {
             let ssid = self.device.ssid()?;
             if let Some(s) = ssid {
                 let mut truncated = s;
                 truncated.truncate(self.max_ssid_width);
                 // SSID names can contain chars that need escaping
-                ssid_widget.set_text(escape_pango_text(truncated));
+                *ssid_string = escape_pango_text(truncated);
             }
         }
         Ok(())
     }
 
     fn update_signal_strength(&mut self) -> Result<()> {
-        if let Some(ref mut signal_strength_widget) = self.signal_strength {
-            let value = self.device.relative_signal_strength()?;
+        let value = self.device.relative_signal_strength()?;
+        if let Some(ref mut signal_strength_string) = self.signal_strength {
             if let Some(v) = value {
-                signal_strength_widget.set_text(if self.signal_strength_bar {
-                    format_percent_bar(v as f32)
-                } else {
-                    format!("{}%", v)
-                });
-            }
+                *signal_strength_string = format!("{}%", v);
+            };
+        }
+
+        if let Some(ref mut signal_strength_bar_string) = self.signal_strength_bar {
+            if let Some(v) = value {
+                *signal_strength_bar_string = format_percent_bar(v as f32);
+            };
         }
         Ok(())
     }
 
     fn update_ip_addr(&mut self) -> Result<()> {
-        if let Some(ref mut ip_addr_widget) = self.ip_addr {
+        if let Some(ref mut ip_addr_string) = self.ip_addr {
             let ip_addr = self.device.ip_addr()?;
             if let Some(ip) = ip_addr {
-                ip_addr_widget.set_text(ip);
+                *ip_addr_string = ip;
             }
         }
-        if let Some(ref mut ipv6_addr_widget) = self.ipv6_addr {
+        if let Some(ref mut ipv6_addr_string) = self.ipv6_addr {
             let ipv6_addr = self.device.ipv6_addr()?;
             if let Some(ip) = ipv6_addr {
-                ipv6_addr_widget.set_text(ip);
+                *ipv6_addr_string = ip;
             }
         }
         Ok(())
@@ -761,19 +773,19 @@ impl Net {
             let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
             self.tx_bytes = current_tx;
 
-            if let Some(ref mut tx_widget) = self.output_tx {
-                tx_widget.set_text(format_speed(
+            if let Some(ref mut tx) = self.output_tx {
+                *tx = format_speed(
                     tx_bytes,
                     self.speed_digits,
                     &self.speed_min_unit.to_string(),
                     self.use_bits,
-                ));
+                );
             };
 
-            if let Some(ref mut graph_tx_widget) = self.graph_tx {
+            if let Some(ref mut graph_tx) = self.graph_tx {
                 self.tx_buff.remove(0);
                 self.tx_buff.push(tx_bytes);
-                graph_tx_widget.set_values(&self.tx_buff, None, None);
+                *graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
             }
         }
         if self.output_rx.is_some() || self.graph_rx.is_some() {
@@ -781,19 +793,19 @@ impl Net {
             let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
             self.rx_bytes = current_rx;
 
-            if let Some(ref mut rx_widget) = self.output_rx {
-                rx_widget.set_text(format_speed(
+            if let Some(ref mut rx) = self.output_rx {
+                *rx = format_speed(
                     rx_bytes,
                     self.speed_digits,
                     &self.speed_min_unit.to_string(),
                     self.use_bits,
-                ));
+                );
             };
 
-            if let Some(ref mut graph_rx_widget) = self.graph_rx {
+            if let Some(ref mut graph_rx) = self.graph_rx {
                 self.rx_buff.remove(0);
                 self.rx_buff.push(rx_bytes);
-                graph_rx_widget.set_values(&self.rx_buff, None, None);
+                *graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
             }
         }
         Ok(())
@@ -810,11 +822,11 @@ impl Block for Net {
         if !exists || !is_up {
             self.active = false;
             self.network.set_text(" ×".to_string());
-            if let Some(ref mut tx_widget) = self.output_tx {
-                tx_widget.set_text("×".to_string());
+            if let Some(ref mut tx) = self.output_tx {
+                *tx = "×".to_string();
             };
-            if let Some(ref mut rx_widget) = self.output_rx {
-                rx_widget.set_text("×".to_string());
+            if let Some(ref mut rx) = self.output_rx {
+                *rx = "×".to_string();
             };
 
             return Ok(Some(self.update_interval.into()));
@@ -837,41 +849,52 @@ impl Block for Net {
 
         self.update_tx_rx()?;
 
+        let empty_string = "".to_string();
+        let s_up = format!(
+            "{} {}",
+            self.config
+                .icons
+                .get("net_up")
+                .cloned()
+                .unwrap_or("".to_string()),
+            self.output_tx.as_ref().unwrap_or(&empty_string)
+        );
+        let s_dn = format!(
+            "{} {}",
+            self.config
+                .icons
+                .get("net_down")
+                .cloned()
+                .unwrap_or("".to_string()),
+            self.output_rx.as_ref().unwrap_or(&empty_string)
+        );
+
+        let values = map!(
+            "{ssid}" => self.ssid.as_ref().unwrap_or(&empty_string),
+            "{signal_strength}" => self.signal_strength.as_ref().unwrap_or(&empty_string),
+            "{signal_strength_bar}" => self.signal_strength_bar.as_ref().unwrap_or(&empty_string),
+            "{bitrate}" =>  self.bitrate.as_ref().unwrap_or(&empty_string),
+            "{ip}" =>  self.ip_addr.as_ref().unwrap_or(&empty_string),
+            "{ipv6}" =>  self.ipv6_addr.as_ref().unwrap_or(&empty_string),
+            "{speed_up}" =>  &s_up,
+            "{speed_down}" => &s_dn,
+            "{graph_up}" =>  self.graph_tx.as_ref().unwrap_or(&empty_string),
+            "{graph_down}" =>  self.graph_rx.as_ref().unwrap_or(&empty_string)
+        );
+
+        self.output
+            .set_text(if let Ok(s) = self.format.render_static_str(&values) {
+                s
+            } else {
+                "[invalid connection format string]".to_string()
+            });
+
         Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         if self.active {
-            let mut widgets: Vec<&dyn I3BarWidget> = Vec::with_capacity(8);
-            widgets.push(&self.network);
-            if let Some(ref ssid_widget) = self.ssid {
-                widgets.push(ssid_widget);
-            };
-            if let Some(ref signal_strength_widget) = self.signal_strength {
-                widgets.push(signal_strength_widget);
-            };
-            if let Some(ref bitrate_widget) = self.bitrate {
-                widgets.push(bitrate_widget);
-            }
-            if let Some(ref ip_addr_widget) = self.ip_addr {
-                widgets.push(ip_addr_widget);
-            };
-            if let Some(ref ipv6_addr_widget) = self.ipv6_addr {
-                widgets.push(ipv6_addr_widget);
-            };
-            if let Some(ref tx_widget) = self.output_tx {
-                widgets.push(tx_widget);
-            };
-            if let Some(ref graph_tx_widget) = self.graph_tx {
-                widgets.push(graph_tx_widget);
-            };
-            if let Some(ref rx_widget) = self.output_rx {
-                widgets.push(rx_widget);
-            };
-            if let Some(ref graph_rx_widget) = self.graph_rx {
-                widgets.push(graph_rx_widget);
-            }
-            widgets
+            vec![&self.network, &self.output]
         } else if !self.hide_inactive || !self.hide_missing {
             vec![&self.network]
         } else {
