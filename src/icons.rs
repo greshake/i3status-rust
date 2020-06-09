@@ -19,7 +19,6 @@ lazy_static! {
         "bat_quarter" => " BAT ",
         "bat_three_quarters" => " BAT ",
         "bluetooth" => " BT",
-        "bluetooth" => " BT",
         "cogs" => " LOAD ",
         "cpu" => " CPU ",
         "disk_drive" => " DISK ",
