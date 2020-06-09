@@ -275,7 +275,7 @@ impl Block for DiskSpace {
         "{used}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, used)),
         "{available}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, available)),
         "{free}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, free)),
-        "{icon}" => format!("{}", self.icon),
+        "{icon}" => self.icon.to_string(),
         "{result}" => format!("{:.2}", result)
         );
         self.disk_space
