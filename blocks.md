@@ -279,38 +279,37 @@ block = "disk_space"
 path = "/"
 alias = "/"
 info_type = "used"
-icon = true
 unit = "GiB"
-format = "{used}/{total} {unit} ({available}{unit} free)"
+format = "{icon}{used}/{total} {unit} ({available}{unit} free)"
 ```
 
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`path` | Path to collect information from | No | `"/"`
-`alias` | Alias that is displayed for path | No | `"/"`
-`icon` | Whether to prepend the block with the hard disk icon | No | `false`
-`info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation) | No | `"available"`
-`unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
-`format` | Format string for output (see below) | No | `"{alias} {available} {unit}"`
-`warning` | Available disk space warning level in GiB. | No | `20.0`
 `alert` | Available disk space critical level in GiB. | No | `10.0`
+`alias` | Alias that is displayed for path | No | `"/"`
+`format` | Format string for output (see below) | No | `"{alias} {available} {unit}"`
+`info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation) | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
+`path` | Path to collect information from | No | `"/"`
+`unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
+`warning` | Available disk space warning level in GiB. | No | `20.0`
 
 ### Available Format Keys
 
 Key | Value
 ----|-------
-`{bar}` | Display bar representing percentage.
-`{path}` | Path used for capacity check.
 `{alias}` | Alias for disk path.
-`{unit}` | Unit used for disk space (see above).
-`{total}` | Total disk space.
-`{used}` | Used disk space.
-`{available}` | Available disk space (free disk space minus reserved system
-space).
+`{available}` | Available disk space (free disk space minus reserved system space).
+`{bar}` | Display bar representing percentage.
 `{free}` | Free disk space.
+`{icon}` | Disk drive icon
+`{path}` | Path used for capacity check.
+`{percentage}` | Percentage of disk used or free (depends on info_type setting)
+`{total}` | Total disk space.
+`{unit}` | Unit used for disk space (see above).
+`{used}` | Used disk space.
 
 
 ## Docker
@@ -1018,7 +1017,7 @@ Clicking the left mouse button on the icon updates the number of pending tasks i
 
 Clicking the right mouse button on the icon toggles the view of the block between filtered (default) and non-filtered
 tasks. If there are no filters configured, the number of tasks stays the same and both modes are behaving
-equally.  
+equally.
 
 ### Examples
 

@@ -60,7 +60,10 @@ pub struct DiskSpace {
     info_type: InfoType,
     warning: f64,
     alert: f64,
+    show_percentage: bool,
+    show_bar: bool,
     format: FormatTemplate,
+    icon: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -79,10 +82,6 @@ pub struct DiskSpaceConfig {
     /// total is the same as used, use format to set format string for output
     #[serde(default = "DiskSpaceConfig::default_info_type")]
     pub info_type: InfoType,
-
-    /// Whether to use icon or not
-    #[serde(default = "DiskSpaceConfig::default_icon")]
-    pub icon: bool,
 
     /// Format string for output
     /// placeholders: {percentage}, {bar}, {path}, {alias}, {available}, {free}, {total}, {used},
@@ -108,6 +107,14 @@ pub struct DiskSpaceConfig {
     /// Diskspace alert in GiB (red)
     #[serde(default = "DiskSpaceConfig::default_alert")]
     pub alert: f64,
+
+    /// Show percentage - deprecated for format string, kept for previous configs
+    #[serde(default = "DiskSpaceConfig::default_show_percentage")]
+    pub show_percentage: bool,
+
+    /// Show percentage bar - deprecated for format string, kept for previous configs
+    #[serde(default = "DiskSpaceConfig::default_show_bar")]
+    pub show_bar: bool,
 }
 
 impl DiskSpaceConfig {
@@ -127,10 +134,6 @@ impl DiskSpaceConfig {
         String::from("{alias} {available} {unit}")
     }
 
-    fn default_icon() -> bool {
-        false
-    }
-
     fn default_unit() -> Unit {
         Unit::GB
     }
@@ -145,6 +148,16 @@ impl DiskSpaceConfig {
 
     fn default_alert() -> f64 {
         10.
+    }
+
+    // Deprecated with format string, kept for previous config support
+    fn default_show_percentage() -> bool {
+        false
+    }
+
+    // Deprecated with format string, kept for previous config support
+    fn default_show_bar() -> bool {
+        false
     }
 }
 
@@ -186,15 +199,16 @@ impl ConfigBlock for DiskSpace {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut widget = TextWidget::new(config);
-        if block_config.icon {
-            widget = widget.with_icon("disk_drive");
-        }
+        let icon = config
+            .icons
+            .get("disk_drive")
+            .cloned()
+            .expect("Could not find disk drive icon");
 
         Ok(DiskSpace {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
-            disk_space: widget,
+            disk_space: TextWidget::new(config),
             alias: block_config.alias,
             path: block_config.path,
             format: FormatTemplate::from_string(&block_config.format)?,
@@ -202,6 +216,9 @@ impl ConfigBlock for DiskSpace {
             unit: block_config.unit,
             warning: block_config.warning,
             alert: block_config.alert,
+            show_percentage: block_config.show_percentage,
+            show_bar: block_config.show_bar,
+            icon,
         })
     }
 }
@@ -229,11 +246,12 @@ impl Block for DiskSpace {
                 alert_type = AlertType::Below;
             }
             InfoType::Total => {
-                // Same as Used - use format string to set output format
+                // Deprecated: Same as Used - use format string to set output format
                 // Kept for back-compatibility
                 // Use format: "{used}/{total} {unit}" for previous format
                 result = used;
                 alert_type = AlertType::Above;
+                self.format = FormatTemplate::from_string("{used}/{total} {unit}")?;
             }
             InfoType::Used => {
                 result = used;
@@ -242,8 +260,10 @@ impl Block for DiskSpace {
         }
 
         let percentage = (result as f32) / (total as f32) * 100f32;
-        if self.unit == Unit::Percent {
-            result = percentage as u64;
+        if self.show_percentage {
+            self.format = FormatTemplate::from_string("{alias} {result} ({percentage}) {unit}")?;
+        } else if self.show_bar {
+            self.format = FormatTemplate::from_string("{alias} {result} {unit} {bar}")?;
         }
 
         let values = map!("{percentage}" => format!("{:.2}%", percentage),
@@ -254,10 +274,17 @@ impl Block for DiskSpace {
         "{total}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, total)),
         "{used}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, used)),
         "{available}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, available)),
-        "{free}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, free))
+        "{free}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, free)),
+        "{icon}" => format!("{}", self.icon),
+        "{result}" => format!("{:.2}", result)
         );
         self.disk_space
             .set_text(self.format.render_static_str(&values)?);
+
+        if self.unit == Unit::Percent {
+            // Note this does not override format, used to set type for alerts
+            result = percentage as u64;
+        }
 
         let state = self.compute_state(
             Unit::bytes_in_unit(self.unit, result),
