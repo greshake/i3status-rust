@@ -620,9 +620,8 @@ impl ConfigBlock for Net {
         let vpn = device.is_vpn();
         let id = Uuid::new_v4().to_simple().to_string();
 
-        // create a way that to know that the user is using the old style.
+        // Detecting deprecated options, If any deprecated options is used, format string option will not be used.
         let mut old_user_format = Vec::new();
-
         let old_strings = [
             "ssid",
             "signal_strength",

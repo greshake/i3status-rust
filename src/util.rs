@@ -343,7 +343,6 @@ where
         '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
         '\u{2588}',
     ];
-    // let bars = ["_", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
     let min: f64 = match min {
         Some(x) => x.to_f64().unwrap(),
         None => content.iter().min().unwrap().to_f64().unwrap(),
