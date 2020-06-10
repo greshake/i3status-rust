@@ -7,6 +7,13 @@ To use a theme or icon set other than the default, add them to your configuratio
 theme = "solarized-dark"
 icons = "awesome"
 ```
+NOTE: If you plan on overriding parts of the theme/icon set then you will need to change your config file like so:
+```toml
+[theme]
+name = "solarized-dark"
+[icons]
+name = "awesome"
+```
 
 You can also use your own custom theme:
 

@@ -1,3 +1,93 @@
+# i3status-rust 0.14.0
+
+## New Blocks and Features
+
+* New KDEConnect block (#717 by @ammgws)
+
+* New CustomDBus block (#687 by @ammgws)
+
+* New Network Manager block (#641 by @kennylevinsen). This block existed previously but was undocumented until it was overhauled completely by @kennylevinsen)
+
+* New Taskwarrior block (#600 by @flying7eleven)
+
+* New GitHub block (#425 by @jlevesy)
+
+* Keyboard Layout block now supports `sway` (#670 by @ammgws), and also has a new `format` config option (#593 by @thiagokokada)
+
+* IBus block now allows mapping of displayed engine to user configured value (#576 by @ammgws)
+
+* Weather block now supports `humidity` and `apparent` (Australian Apparent Temperature) format specifiers (#640 by @ryanswilson59, @ammgws). Location can now also be set by name rather than ID using the new `place` option (#635 by @ammgws). Alternatively, the location can be guessed from your current IP address (#690 by @ammgws)
+
+* Focused Window block new `show_marks` option to show marks instead of title (#532 by @ammgws)
+
+* Net and Speedtest blocks now take `speed_min_unit` and `speed_digits` parameters to format speeds (#704, #707 by @GladOSkar, @ammgws). 
+
+* Net block `ssid` config option now supports `iwctl` and `wpa_cli` (#625, #721 by @ammgws). Can now show bitrate for wired devices (#612 by @ammgws). New `ipv6` option (#647 by @ammgws)
+
+* Pacman block now supports a `critical_updates_regex` parameter to control block state (#613 by @PicoJr), and now supports AUR as well (#658 by @PicoJr)
+
+* Music block has a new `smart_trim` config option (#654 by @jgbyrne). Artist/title separator can now be customised with the `separator` option (#655 by @ammgws)
+
+* Sound block now supports a `format` parameter (#618 by @jedahan). Along with that a format qualifier `output_name` was added which will show the name of the sink whose volume is being reported (#712 by @ammgws). ALSA driver: new `device` and `natural_mapping` options (#622 by @ammgws)
+
+* CPU block now has `per_core` support for `{frequency}`, `{utilization}` (@grim7reaper)
+
+* Block `interval` config can now take `"once"` in order to run blocks only one time (#684 by @PicoJr)
+
+* Update font awesome icons to version 5 (#619 by @carloabelli)
+
+* Add support for progress bars to some blocks (#578 by @carloabelli)
+
+* Themes can now be read from standalone files (#611 by @atheriel & @PicoJr)
+
+* New command line option `--never-pause` which will ignore any attempts by i3 to pause the bar when hidden/full-screen (#701 by @ammgws)
+
+* If no config file path is supplied then we default to XDG_CONFIG_HOME/i3status-rust
+
+## Bug Fixes and Improvements
+
+* Net block fixed to support ppp vpn (#570 by @MiniGod). Device is now auto selected by default (#626 by @ammgws). Fixed error in `use_bits` calculation (#704 by @ammgws). Use /sys/class/net/<device>/carrier instead of operstate in is_up() (#605 by @happycoder97, @ammgws)
+
+* Music block artist parsing from metadata fixed (#561 by @Riey)
+
+* Fix panics for blocks without update intervals (#582 by @ammgws)
+
+* Nvidia block: make threshold configurable, swap idle/good (#615 by @ammgws). Also fixed utilisation to have a fixed width (#566 by @TheJP)
+
+* Backlight block now reads from actual_brightness as per kernel docs (#631 by @ammgws), with a special case for amdgpu backlights which don't follow the spec (#643 by @ammgws)
+
+* Battery block now has a fallback for determining power consumption (#653 by @ammgws), and the time remaining is now only displayed when useful (#591 by @debugloop)
+
+* Time block fixed to only register left mouse button clicks (#628 by @ammgws)
+
+* Toggle block fixed to only toggle if command exited successfully (#648 by @ammgws)
+
+* Fix missing icons for `bat_half` in the none theme (#719 by @varunkashyap) 
+
+* Fix panic in CPU block if >32 CPUs present (#639 @snicket2100)
+
+* Fix panic in Memory block when wrong placeholder given (#616 by @ammgws)
+
+* Fix missing `good_bg` and `good_fg` theme overrides (#630 by @carloabelli)
+
+* Unified handling of stdin and stdout to prevent broken pipe errors (#594 by @Celti)
+
+* Travis CI will now run clippy for all features and targets (#682 by @rotty)
+
+* Dependent crates have been updated to their latest versions (#729 by @ammgws, @ignatenkobrain)
+
+## Documentation
+
+* Document `info`, `good`, `warning`, `critical` parameters for the Battery block (@ammgws)
+
+* Document `interval` for Notmuch, Uptime blocks (@ammgws)
+
+* Fix error in Pomodoro block docs (#646 by @kAworu)
+
+* Add profiling.md (#649 by @PicoJr)
+
+* Adds a man page #556
+
 # i3status-rust 0.13.1
 
 * Dependent crates have been updated to their latest versions to make downstream

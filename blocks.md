@@ -11,6 +11,7 @@
 - [Focused Window](#focused-window)
 - [Github](#github)
 - [IBus](#ibus)
+- [KDEConnect](#kdeconnect)
 - [Keyboard Layout](#keyboard-layout)
 - [Load](#load)
 - [Maildir](#maildir)
@@ -115,6 +116,10 @@ Key | Values | Required | Default
 `format` | A format string. See below for available placeholders. | No | `"{percentage}%"`
 `show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
 `upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
+`info` | Minimum battery level, where state is set to info. | No | `60`
+`good` | Minimum battery level, where state is set to good. | No | `60`
+`warning` | Minimum battery level, where state is set to warning. | No | `30`
+`critical` | Minimum battery level, where state is set to critical. | No | `15`
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
@@ -404,6 +409,29 @@ block = "ibus"
 "xkb:us::eng" = "EN"
 ```
 
+## KDEConnect
+
+Display info from the currently connected device in KDEConnect, updated asynchronously.
+
+Block colours are updated based on the battery level, unless all bat_* thresholds are set to 0, in which case the block colours will depend on the notification count instead.
+
+```toml
+[[block]]
+block = "kdeconnect"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`device_id` | Device ID as per the output of `kdeconnect --list-devices\`. | No | Chooses the first found device, if any.
+`format` | Format string. Available qualifiers are `"bat_icon"`, `"bat_charge"`, `"bat_state"`, `"notif_icon"`, `"notif_count"`, `"name"`, `"id"`. `"bat_icon"` will automatically change between the various battery icons depending on the current charge state. | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
+`format_disconnected` | Format string for when the phone is disconnected/unreachable. Same qualifiers as above, however they will be fixed at the last known value until the phone comes back online. | No | `"{name}"`
+`bat_info` | Min battery level below which state is set to info. | No | `60`
+`bat_good` | Min battery level below which state is set to good. | No | `60`
+`bat_warning` | Min battery level below which state is set to warning. | No | `30`
+`bat_critical` | Min battery level below which state is set to critical. | No | `15`
+
 ## Keyboard Layout
 
 Creates a block to display the current keyboard layout.
@@ -655,7 +683,8 @@ Key | Values | Required | Default
 Creates a block which displays the upload and download throughput for a network interface. Units are by default in bytes per second (kB/s, MB/s, etc), 
 but the 'use_bits' flag can be set to `true` to convert the units to bps (little b).
 
-Note: `bitrate` for wired devices requires `ethtool` to be installed
+`bitrate` for wired devices requires `ethtool` to be installed.
+`ssid` requires one of `iw`, `wpa_cli`, `nm-cli` or `iwctl` to be installed.
 
 ### Examples
 
