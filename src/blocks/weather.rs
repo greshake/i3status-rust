@@ -20,6 +20,8 @@ use crate::widgets::button::ButtonWidget;
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
 const OPENWEATHERMAP_PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
+const OPENWEATHERMAP_LAT_ENV: &str = "OPENWEATHERMAP_LAT";
+const OPENWEATHERMAP_LON_ENV: &str = "OPENWEATHERMAP_LON";
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -31,6 +33,10 @@ pub enum WeatherService {
         city_id: Option<String>,
         #[serde(default = "WeatherService::getenv_openweathermap_place")]
         place: Option<String>,
+        #[serde(default = "WeatherService::getenv_openweathermap_lat")]
+        lat: Option<String>,
+        #[serde(default = "WeatherService::getenv_openweathermap_lon")]
+        lon: Option<String>,
         units: OpenWeatherMapUnits,
     },
 }
@@ -44,6 +50,12 @@ impl WeatherService {
     }
     fn getenv_openweathermap_place() -> Option<String> {
         env::var(OPENWEATHERMAP_PLACE_ENV).ok()
+    }
+    fn getenv_openweathermap_lat() -> Option<String> {
+        env::var(OPENWEATHERMAP_LAT_ENV).ok()
+    }
+    fn getenv_openweathermap_lon() -> Option<String> {
+        env::var(OPENWEATHERMAP_LON_ENV).ok()
     }
 }
 
@@ -64,8 +76,23 @@ pub struct Weather {
     autolocate: bool,
 }
 
-fn malformed_json_error() -> Error {
-    BlockError("weather".to_string(), "Malformed JSON.".to_string())
+fn malformed_json_error(info: String) -> Error {
+    BlockError(
+        "weather".to_string(),
+        format!("Malformed JSON for {}", info),
+    )
+}
+
+fn get_weather_icon(desc: String) -> String {
+    let icon = match desc.as_str() {
+        "Clear" => "weather_sun",
+        "Rain" | "Drizzle" => "weather_rain",
+        "Clouds" | "Fog" | "Mist" => "weather_clouds",
+        "Thunderstorm" => "weather_thunder",
+        "Snow" => "weather_snow",
+        _ => "weather_default",
+    };
+    icon.to_string()
 }
 
 impl Weather {
@@ -75,6 +102,8 @@ impl Weather {
                 api_key: Some(ref api_key),
                 ref city_id,
                 ref place,
+                ref lat,
+                ref lon,
                 ref units,
             } => {
                 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
@@ -109,12 +138,18 @@ impl Weather {
                     None
                 };
 
-                let location_query = if let Some(city) = geoip_city {
-                    format!("q={}", city)
+                let api_query = if let Some(city) = geoip_city {
+                    format!("weather?q={}", city)
                 } else if city_id.is_some() {
-                    format!("id={}", city_id.as_ref().unwrap())
+                    format!("weather?id={}", city_id.as_ref().unwrap())
                 } else if place.is_some() {
-                    format!("q={}", place.as_ref().unwrap())
+                    format!("weather?q={}", place.as_ref().unwrap())
+                } else if lat.is_some() && lon.is_some() {
+                    format!(
+                        "onecall?lat={}&lon={}&exclude=current,minutely,hourly",
+                        lat.as_ref().unwrap(),
+                        lon.as_ref().unwrap()
+                    )
                 } else {
                     return Err(BlockError(
                         "weather".to_string(),
@@ -131,9 +166,9 @@ impl Weather {
                         // with these options curl will print http response body to stdout, http status code to stderr
                         &format!(
                             r#"curl -m 3 --silent \
-                                "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}" \
+                                "https://api.openweathermap.org/data/2.5/{api_query}&appid={api_key}&units={units}" \
                                 --write-out "%{{stderr}} %{{http_code}}""#,
-                            location_query = location_query,
+                            api_query = api_query,
                             api_key = api_key,
                             units = match *units {
                                 OpenWeatherMapUnits::Metric => "metric",
@@ -178,37 +213,103 @@ impl Weather {
                         format!("API Error: {}", val.as_str().unwrap()),
                     ));
                 };
-                let raw_weather = json
-                    .pointer("/weather/0/main")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .ok_or_else(malformed_json_error)?;
 
-                let raw_temp = json
-                    .pointer("/main/temp")
-                    .and_then(|v| v.as_f64())
-                    .ok_or_else(malformed_json_error)?;
+                let raw_weather = if lat.is_some() && lon.is_some() {
+                    json.pointer("/daily/0/weather/0/main")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .ok_or_else(|| {
+                            malformed_json_error(String::from("/daily/0/weather/0/main"))
+                        })?
+                } else {
+                    json.pointer("/weather/0/main")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .ok_or_else(|| malformed_json_error(String::from("/weather/0/main")))?
+                };
 
-                let raw_humidity = json
-                    .pointer("/main/humidity")
-                    .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
-                    .ok_or_else(malformed_json_error)?;
+                let mut week_icons = Vec::new();
+                if lat.is_some() && lon.is_some() {
+                    for x in 1..8 {
+                        week_icons.push(get_weather_icon(
+                            json.pointer(&format!("/daily/{}/weather/0/main", x))
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                                .ok_or_else(|| {
+                                    malformed_json_error(format!("/daily/{}/weather/0/main", x))
+                                })?,
+                        ));
+                    }
+                } else {
+                    week_icons.extend(
+                        [
+                            String::from("x"),
+                            String::from("x"),
+                            String::from("x"),
+                            String::from("x"),
+                            String::from("x"),
+                            String::from("x"),
+                            String::from("x"),
+                        ]
+                        .iter()
+                        .cloned(),
+                    );
+                };
 
-                let raw_wind_speed: f64 = json
-                    .pointer("/wind/speed")
-                    .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
-                    .ok_or_else(malformed_json_error)?; // error when conversion to f64 fails
+                let raw_temp = if lat.is_some() && lon.is_some() {
+                    json.pointer("/daily/0/temp/day")
+                        .and_then(|v| v.as_f64())
+                        .ok_or_else(|| malformed_json_error(String::from("/daily/0/temp")))?
+                } else {
+                    json.pointer("/main/temp")
+                        .and_then(|v| v.as_f64())
+                        .ok_or_else(|| malformed_json_error(String::from("/main/temp")))?
+                };
 
-                let raw_wind_direction: Option<f64> = json
-                    .pointer("/wind/deg")
-                    .map_or(Some(None), |v| v.as_f64().map(Some)) // provide default value None
-                    .ok_or_else(malformed_json_error)?; // error when conversion to f64 fails
+                let raw_humidity = if lat.is_some() && lon.is_some() {
+                    json.pointer("/daily/0/humidity")
+                        .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
+                        .ok_or_else(|| malformed_json_error(String::from("/daily/0/humidity")))?
+                } else {
+                    json.pointer("/main/humidity")
+                        .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
+                        .ok_or_else(|| malformed_json_error(String::from("/main/humidity")))?
+                };
 
-                let raw_location = json
-                    .pointer("/name")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .ok_or_else(malformed_json_error)?;
+                let raw_wind_speed: f64 = if lat.is_some() && lon.is_some() {
+                    json.pointer("/daily/0/wind_speed")
+                        .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
+                        .ok_or_else(|| malformed_json_error(String::from("/wind/speed")))?
+                // error when conversion to f64 fails
+                } else {
+                    json.pointer("/wind/speed")
+                        .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
+                        .ok_or_else(|| malformed_json_error(String::from("/wind/speed")))?
+                    // error when conversion to f64 fails
+                };
+                let raw_wind_direction: Option<f64> = if lat.is_some() && lon.is_some() {
+                    json.pointer("/daily/0/wind_deg")
+                        .map_or(Some(None), |v| v.as_f64().map(Some)) // provide default value None
+                        .ok_or_else(|| malformed_json_error(String::from("/daily/0/wind_deg")))?
+                // error when conversion to f64 fails
+                } else {
+                    json.pointer("/wind/deg")
+                        .map_or(Some(None), |v| v.as_f64().map(Some)) // provide default value None
+                        .ok_or_else(|| malformed_json_error(String::from("/wind/deg")))?
+                    // error when conversion to f64 fails
+                };
+
+                let raw_location = if lat.is_some() && lon.is_some() {
+                    json.pointer("/timezone")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .ok_or_else(|| malformed_json_error(String::from("/timezone")))?
+                } else {
+                    json.pointer("/name")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .ok_or_else(|| malformed_json_error(String::from("/name")))?
+                };
 
                 // Compute the Australian Apparent Temperature (AT),
                 // using the metric formula found on Wikipedia.
@@ -260,14 +361,8 @@ impl Weather {
                     }
                 }
 
-                self.weather.set_icon(match raw_weather.as_str() {
-                    "Clear" => "weather_sun",
-                    "Rain" | "Drizzle" => "weather_rain",
-                    "Clouds" | "Fog" | "Mist" => "weather_clouds",
-                    "Thunderstorm" => "weather_thunder",
-                    "Snow" => "weather_snow",
-                    _ => "weather_default",
-                });
+                self.weather
+                    .set_icon(&get_weather_icon(raw_weather.clone()));
 
                 self.weather_keys = map_to_owned!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
@@ -275,7 +370,14 @@ impl Weather {
                                   "{apparent}" => format!("{:.0}",apparent_temp),
                                   "{wind}" => format!("{:.1}", raw_wind_speed),
                                   "{direction}" => convert_wind_direction(raw_wind_direction),
-                                  "{location}" => raw_location);
+                                  "{location}" => raw_location,
+                                  "{day1_icon}" => week_icons[0],
+                                  "{day2_icon}" => week_icons[1],
+                                  "{day3_icon}" => week_icons[2],
+                                  "{day4_icon}" => week_icons[3],
+                                  "{day5_icon}" => week_icons[4],
+                                  "{day6_icon}" => week_icons[5],
+                                  "{day7_icon}" => week_icons[6]);
                 Ok(())
             }
             WeatherService::OpenWeatherMap { ref api_key, .. } => {
