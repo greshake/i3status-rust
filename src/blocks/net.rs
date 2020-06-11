@@ -655,7 +655,7 @@ impl ConfigBlock for Net {
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
-            network: ButtonWidget::new(config.clone(), &id).with_icon(if wireless {
+            network: ButtonWidget::new(config, &id).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
                 "net_vpn"
@@ -872,7 +872,7 @@ impl Block for Net {
                 .icons
                 .get("net_up")
                 .cloned()
-                .unwrap_or("".to_string()),
+                .unwrap_or_else(|| "".to_string()),
             self.output_tx.as_ref().unwrap_or(&empty_string)
         );
         let s_dn = format!(
@@ -881,7 +881,7 @@ impl Block for Net {
                 .icons
                 .get("net_down")
                 .cloned()
-                .unwrap_or("".to_string()),
+                .unwrap_or_else(|| "".to_string()),
             self.output_rx.as_ref().unwrap_or(&empty_string)
         );
 
