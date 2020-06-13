@@ -278,22 +278,38 @@ Creates a block which displays disk space information.
 block = "disk_space"
 path = "/"
 alias = "/"
-info_type = "available"
-unit = "GB"
+info_type = "used"
+unit = "GiB"
+format = "{icon}{used}/{total} {unit} ({available}{unit} free)"
 ```
 
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`path` | Path to collect information from | No | `"/"`
+`alert` | Available disk space critical level in GiB. | No | `10.0`
 `alias` | Alias that is displayed for path | No | `"/"`
-`info_type` | Currently supported options are `"available"`, `"free"`, `"total"` and `"used"` | No | `"available"`
+`format` | Format string for output (see below) | No | `"{alias} {available} {unit}"`
+`info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation) | No | `"available"`
+`interval` | Update interval, in seconds. | No | `20`
+`path` | Path to collect information from | No | `"/"`
 `unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
 `warning` | Available disk space warning level in GiB. | No | `20.0`
-`alert` | Available disk space critical level in GiB. | No | `10.0`
-`interval` | Update interval, in seconds. | No | `20`
-`show_percentage` | Show percentage of used/available disk space depending on info_type. | No | `false`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{alias}` | Alias for disk path.
+`{available}` | Available disk space (free disk space minus reserved system space).
+`{bar}` | Display bar representing percentage.
+`{free}` | Free disk space.
+`{icon}` | Disk drive icon
+`{path}` | Path used for capacity check.
+`{percentage}` | Percentage of disk used or free (depends on info_type setting)
+`{total}` | Total disk space.
+`{unit}` | Unit used for disk space (see above).
+`{used}` | Used disk space.
 
 
 ## Docker

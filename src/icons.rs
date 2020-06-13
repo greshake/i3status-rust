@@ -21,6 +21,7 @@ lazy_static! {
         "bluetooth" => " BT",
         "cogs" => " LOAD ",
         "cpu" => " CPU ",
+        "disk_drive" => " DISK ",
         "docker" => " DOCKER ",
         "github" => " GITHUB ",
         "gpu" => " GPU ",
@@ -84,6 +85,7 @@ lazy_static! {
         "bluetooth" => " \u{f294}",
         "cogs" => " \u{f085} ",
         "cpu" => " \u{f0e4} ",
+        "disk_drive" => " \u{f0a0} ",
         "docker" => " \u{f21a} ",
         "github" => " \u{f09b} ",
         "gpu" => " \u{f26c} ",
@@ -117,14 +119,14 @@ lazy_static! {
         "toggle_off" => " \u{f204} ",
         "toggle_on" => " \u{f205} ",
         "unknown" => " \u{f128} ",
-        "update" => " \u{f062} ",// Same as time symbol.
+        "update" => " \u{f062} ", // Same as time symbol.
         "uptime" => " \u{f017} ",
         "volume_empty" => " \u{f026} ",
         "volume_full" => " \u{f028} ",
         "volume_half" => " \u{f027} ",
         "volume_muted" => " \u{f026} \u{f00d} ",
         "weather_clouds" => " \u{f0c2} ",
-        "weather_default" => " \u{f0c2} ",// Cloud symbol as default
+        "weather_default" => " \u{f0c2} ", // Cloud symbol as default
         "weather_rain" => " \u{f043} ",
         "weather_snow" => " \u{f2dc} ",
         "weather_sun" => " \u{f185} ",
@@ -150,6 +152,7 @@ lazy_static! {
         "bluetooth" => " \u{f294}",
         "cogs" => " \u{f085} ",
         "cpu" => " \u{f3fd} ",
+        "disk_drive" => " \u{f8b5} ",
         "docker" => " \u{f21a} ",
         "github" => " \u{f09b} ",
         "gpu" => " \u{f26c} ",
@@ -190,13 +193,12 @@ lazy_static! {
         "volume_half" => " \u{f027} ",
         "volume_muted" => " \u{f6a9} ",
         "weather_clouds" => " \u{f0c2} ",
-        "weather_default" => " \u{f0c2} ",// Cloud symbol as default
+        "weather_default" => " \u{f0c2} ", // Cloud symbol as default
         "weather_rain" => " \u{f043} ",
         "weather_snow" => " \u{f2dc} ",
         "weather_sun" => " \u{f185} ",
         "weather_thunder" => " \u{f0e7} ",
         "xrandr" => " \u{f26c} "
-
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
@@ -211,6 +213,7 @@ lazy_static! {
         "bluetooth" => " \u{e1a7}",
         "cogs" => " \u{e8b8} ",
         "cpu" => " \u{e640} ",
+        "disk_drive" => " \u{e1db} ",
         "docker" => " \u{e532} ",
         "github" => " \u{e86f} ",
         "gpu" => " \u{e333} ",
@@ -236,7 +239,7 @@ lazy_static! {
         "toggle_off" => " \u{e836} ",
         "toggle_on" => " \u{e837} ",
         "update" => " \u{e8d7} ",
-        "uptime" => " \u{e192} ",// Same as time symbol.
+        "uptime" => " \u{e192} ", // Same as time symbol.
         "volume_empty" => " \u{e04e} ",
         "volume_full" => " \u{e050} ",
         "volume_half" => " \u{e04d} ",
