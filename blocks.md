@@ -1017,7 +1017,7 @@ Clicking the left mouse button on the icon updates the number of pending tasks i
 
 Clicking the right mouse button on the icon toggles the view of the block between filtered (default) and non-filtered
 tasks. If there are no filters configured, the number of tasks stays the same and both modes are behaving
-equally.
+equally.  
 
 ### Examples
 
