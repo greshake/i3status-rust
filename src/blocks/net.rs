@@ -748,17 +748,19 @@ impl Net {
     }
 
     fn update_signal_strength(&mut self) -> Result<()> {
-        let value = self.device.relative_signal_strength()?;
-        if let Some(ref mut signal_strength_string) = self.signal_strength {
-            if let Some(v) = value {
-                *signal_strength_string = format!("{}%", v);
-            };
-        }
+        if self.signal_strength.is_some() || self.signal_strength_bar.is_some() {
+            let value = self.device.relative_signal_strength()?;
+            if let Some(ref mut signal_strength_string) = self.signal_strength {
+                if let Some(v) = value {
+                    *signal_strength_string = format!("{}%", v);
+                };
+            }
 
-        if let Some(ref mut signal_strength_bar_string) = self.signal_strength_bar {
-            if let Some(v) = value {
-                *signal_strength_bar_string = format_percent_bar(v as f32);
-            };
+            if let Some(ref mut signal_strength_bar_string) = self.signal_strength_bar {
+                if let Some(v) = value {
+                    *signal_strength_bar_string = format_percent_bar(v as f32);
+                };
+            }
         }
         Ok(())
     }
