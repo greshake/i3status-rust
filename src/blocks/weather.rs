@@ -1,3 +1,5 @@
+use chrono::NaiveDateTime;
+use chrono::{TimeZone, Utc};
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use std::collections::HashMap;
@@ -311,6 +313,21 @@ impl Weather {
                         .ok_or_else(|| malformed_json_error(String::from("/name")))?
                 };
 
+                let sunset = Utc.timestamp(
+                    if lat.is_some() && lon.is_some() {
+                        json.pointer("/daily/0/sunset")
+                            .and_then(|v| v.as_i64())
+                            .map(|s| s)
+                            .ok_or_else(|| malformed_json_error(String::from("/daily/0/sunset")))?
+                    } else {
+                        json.pointer("/sys/sunset")
+                            .and_then(|v| v.as_i64())
+                            .map(|s| s)
+                            .ok_or_else(|| malformed_json_error(String::from("/sys/sunset")))?
+                    },
+                    0,
+                );
+
                 // Compute the Australian Apparent Temperature (AT),
                 // using the metric formula found on Wikipedia.
                 // If using imperial units, we must first convert to metric.
@@ -371,6 +388,7 @@ impl Weather {
                                   "{wind}" => format!("{:.1}", raw_wind_speed),
                                   "{direction}" => convert_wind_direction(raw_wind_direction),
                                   "{location}" => raw_location,
+                                  "{sunset}" => sunset.to_string(),
                                   "{day1_icon}" => week_icons[0],
                                   "{day2_icon}" => week_icons[1],
                                   "{day3_icon}" => week_icons[2],
