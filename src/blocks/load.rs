@@ -1,9 +1,9 @@
 use serde_derive::Deserialize;
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::prelude::*;
-use std::io::BufReader;
 use std::time::Duration;
 
+use cpuinfo::count::logical_count;
 use crossbeam_channel::Sender;
 use uuid::Uuid;
 
@@ -19,7 +19,7 @@ use crate::widgets::text::TextWidget;
 
 pub struct Load {
     text: TextWidget,
-    logical_cores: u32,
+    logical_cores: u64,
     format: FormatTemplate,
     id: String,
     update_interval: Duration,
@@ -86,26 +86,9 @@ impl ConfigBlock for Load {
             .with_icon("cogs")
             .with_state(State::Info);
 
-        let f = File::open("/proc/cpuinfo")
-            .block_error("load", "Your system doesn't support /proc/cpuinfo")?;
-        let f = BufReader::new(f);
-
-        let mut logical_cores = 0;
-
-        for line in f.lines().scan((), |_, x| x.ok()) {
-            // TODO: Does this value always represent the correct number of logical cores?
-            if line.starts_with("siblings") {
-                let split: Vec<&str> = (&line).split(' ').collect();
-                logical_cores = split[1]
-                    .parse::<u32>()
-                    .block_error("load", "Invalid Cpu info format!")?;
-                break;
-            }
-        }
-
         Ok(Load {
             id: Uuid::new_v4().to_simple().to_string(),
-            logical_cores,
+            logical_cores: logical_count().unwrap_or(1),
             update_interval: block_config.interval,
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,

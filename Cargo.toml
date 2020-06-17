@@ -30,6 +30,7 @@ serde_json = "1.0"
 swayipc = "2.6.0"
 toml = "0.5"
 uuid = { version = "0.8", features = ["v4"] }
+cpuinfo = "0.1"
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.15.0", default-features = false }
 notmuch = { optional = true, version = "0.6.0" }

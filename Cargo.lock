@@ -136,6 +136,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpuinfo"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9db68970c27ea78b9345e2d0e8e0e4d60e8b9d36779a8f554e77f6d992c22c80"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "cpuprofiler"
 version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -303,6 +312,7 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "clap",
+ "cpuinfo",
  "cpuprofiler",
  "crossbeam-channel",
  "dbus",
