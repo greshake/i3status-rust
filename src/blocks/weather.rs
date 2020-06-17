@@ -216,19 +216,16 @@ impl Weather {
                     ));
                 };
 
-                let raw_weather = if lat.is_some() && lon.is_some() {
-                    json.pointer("/daily/0/weather/0/main")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .ok_or_else(|| {
-                            malformed_json_error(String::from("/daily/0/weather/0/main"))
-                        })?
+                let lookup = if lat.is_some() && lon.is_some() {
+                    String::from("/daily/0/weather/0/main")
                 } else {
-                    json.pointer("/weather/0/main")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .ok_or_else(|| malformed_json_error(String::from("/weather/0/main")))?
+                    String::from("/weather/0/main")
                 };
+                let raw_weather = json
+                    .pointer(&lookup)
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| malformed_json_error(lookup))?;
 
                 let mut week_icons = Vec::new();
                 if lat.is_some() && lon.is_some() {
@@ -258,73 +255,67 @@ impl Weather {
                     );
                 };
 
-                let raw_temp = if lat.is_some() && lon.is_some() {
-                    json.pointer("/daily/0/temp/day")
-                        .and_then(|v| v.as_f64())
-                        .ok_or_else(|| malformed_json_error(String::from("/daily/0/temp")))?
+                let lookup = if lat.is_some() && lon.is_some() {
+                    String::from("/daily/0/temp/day")
                 } else {
-                    json.pointer("/main/temp")
-                        .and_then(|v| v.as_f64())
-                        .ok_or_else(|| malformed_json_error(String::from("/main/temp")))?
+                    String::from("/main/temp")
                 };
+                let raw_temp = json
+                    .pointer(&lookup)
+                    .and_then(|v| v.as_f64())
+                    .ok_or_else(|| malformed_json_error(lookup))?;
 
-                let raw_humidity = if lat.is_some() && lon.is_some() {
-                    json.pointer("/daily/0/humidity")
-                        .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
-                        .ok_or_else(|| malformed_json_error(String::from("/daily/0/humidity")))?
+                let lookup = if lat.is_some() && lon.is_some() {
+                    String::from("/daily/0/humidity")
                 } else {
-                    json.pointer("/main/humidity")
-                        .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
-                        .ok_or_else(|| malformed_json_error(String::from("/main/humidity")))?
+                    String::from("/main/humidity")
                 };
+                let raw_humidity = json
+                    .pointer(&lookup)
+                    .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
+                    .ok_or_else(|| malformed_json_error(lookup))?;
 
-                let raw_wind_speed: f64 = if lat.is_some() && lon.is_some() {
-                    json.pointer("/daily/0/wind_speed")
-                        .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
-                        .ok_or_else(|| malformed_json_error(String::from("/wind/speed")))?
-                // error when conversion to f64 fails
+                let lookup = if lat.is_some() && lon.is_some() {
+                    String::from("/daily/0/wind_speed")
                 } else {
-                    json.pointer("/wind/speed")
-                        .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
-                        .ok_or_else(|| malformed_json_error(String::from("/wind/speed")))?
-                    // error when conversion to f64 fails
+                    String::from("/wind/speed")
                 };
-                let raw_wind_direction: Option<f64> = if lat.is_some() && lon.is_some() {
-                    json.pointer("/daily/0/wind_deg")
-                        .map_or(Some(None), |v| v.as_f64().map(Some)) // provide default value None
-                        .ok_or_else(|| malformed_json_error(String::from("/daily/0/wind_deg")))?
-                // error when conversion to f64 fails
-                } else {
-                    json.pointer("/wind/deg")
-                        .map_or(Some(None), |v| v.as_f64().map(Some)) // provide default value None
-                        .ok_or_else(|| malformed_json_error(String::from("/wind/deg")))?
-                    // error when conversion to f64 fails
-                };
+                let raw_wind_speed: f64 = json
+                    .pointer(&lookup)
+                    .map_or(Some(0.0), |v| v.as_f64()) // provide default value 0.0
+                    .ok_or_else(|| malformed_json_error(lookup))?; // error when conversion to f64 fails
 
-                let raw_location = if lat.is_some() && lon.is_some() {
-                    json.pointer("/timezone")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .ok_or_else(|| malformed_json_error(String::from("/timezone")))?
+                let lookup = if lat.is_some() && lon.is_some() {
+                    String::from("/daily/0/wind_deg")
                 } else {
-                    json.pointer("/name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .ok_or_else(|| malformed_json_error(String::from("/name")))?
+                    String::from("/wind_deg")
                 };
+                let raw_wind_direction: Option<f64> = json
+                    .pointer(&lookup)
+                    .map_or(Some(None), |v| v.as_f64().map(Some)) // provide default value None
+                    .ok_or_else(|| malformed_json_error(lookup))?; // error when conversion to f64 fails
 
+                let lookup = if lat.is_some() && lon.is_some() {
+                    String::from("/timezone")
+                } else {
+                    String::from("/name")
+                };
+                let raw_location = json
+                    .pointer(&lookup)
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| malformed_json_error(lookup))?;
+
+                let lookup = if lat.is_some() && lon.is_some() {
+                    String::from("/daily/0/sunset")
+                } else {
+                    String::from("/sys/sunset")
+                };
                 let sunset = Utc.timestamp(
-                    if lat.is_some() && lon.is_some() {
-                        json.pointer("/daily/0/sunset")
-                            .and_then(|v| v.as_i64())
-                            .map(|s| s)
-                            .ok_or_else(|| malformed_json_error(String::from("/daily/0/sunset")))?
-                    } else {
-                        json.pointer("/sys/sunset")
-                            .and_then(|v| v.as_i64())
-                            .map(|s| s)
-                            .ok_or_else(|| malformed_json_error(String::from("/sys/sunset")))?
-                    },
+                    json.pointer(&lookup)
+                        .and_then(|v| v.as_i64())
+                        .map(|s| s)
+                        .ok_or_else(|| malformed_json_error(lookup))?,
                     0,
                 );
 
