@@ -1,4 +1,3 @@
-use std::fmt;
 use std::fs::read_to_string;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -19,7 +18,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{
-    escape_pango_text, format_percent_bar, format_speed, format_vec_to_bar_graph, FormatTemplate,
+    escape_pango_text, format_percent_bar, format_vec_to_bar_graph, Bytes, FormatTemplate, Prefix,
 };
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
@@ -385,9 +384,9 @@ pub struct Net {
     ip_addr: Option<String>,
     ipv6_addr: Option<String>,
     bitrate: Option<String>,
-    output_tx: Option<String>,
+    output_tx: Option<u64>,
     graph_tx: Option<String>,
-    output_rx: Option<String>,
+    output_rx: Option<u64>,
     graph_rx: Option<String>,
     id: String,
     update_interval: Duration,
@@ -397,35 +396,13 @@ pub struct Net {
     rx_buff: Vec<u64>,
     tx_bytes: u64,
     rx_bytes: u64,
-    use_bits: bool,
-    speed_min_unit: Unit,
+    speed_min_unit: Prefix,
     speed_digits: usize,
     active: bool,
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
     on_click: Option<String>,
-}
-
-#[derive(Copy, Clone, Debug, Deserialize)]
-pub enum Unit {
-    B,
-    K,
-    M,
-    G,
-    T,
-}
-
-impl Default for Unit {
-    fn default() -> Self {
-        Unit::K
-    }
-}
-
-impl fmt::Display for Unit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -488,17 +465,13 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_speed_up")]
     pub speed_up: bool,
 
-    /// Whether to show speeds in bits or bytes per second.
-    #[serde(default = "NetConfig::default_use_bits")]
-    pub use_bits: bool,
-
     /// Number of digits to show for throughput indiciators.
     #[serde(default = "NetConfig::default_speed_digits")]
     pub speed_digits: usize,
 
     /// Minimum unit to display for throughput indicators.
     #[serde(default = "NetConfig::default_speed_min_unit")]
-    pub speed_min_unit: Unit,
+    pub speed_min_unit: Prefix,
 
     /// Whether to show the download throughput indicator of active networks.
     #[serde(default = "NetConfig::default_speed_down")]
@@ -588,12 +561,8 @@ impl NetConfig {
         false
     }
 
-    fn default_use_bits() -> bool {
-        false
-    }
-
-    fn default_speed_min_unit() -> Unit {
-        Unit::K
+    fn default_speed_min_unit() -> Prefix {
+        Prefix::K
     }
 
     fn default_speed_digits() -> usize {
@@ -652,7 +621,6 @@ impl ConfigBlock for Net {
             })?,
             output: ButtonWidget::new(config.clone(), "").with_text(""),
             config: config.clone(),
-            use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
             network: ButtonWidget::new(config, &id).with_icon(if wireless {
@@ -675,8 +643,8 @@ impl ConfigBlock for Net {
             bitrate: Some("".to_string()),
             ip_addr: Some("".to_string()),
             ipv6_addr: Some("".to_string()),
-            output_tx: Some("".to_string()),
-            output_rx: Some("".to_string()),
+            output_tx: Some(0),
+            output_rx: Some(0),
             graph_tx: Some("".to_string()),
             graph_rx: Some("".to_string()),
             device,
@@ -783,46 +751,28 @@ impl Net {
 
     fn update_tx_rx(&mut self) -> Result<()> {
         // TODO: consider using `as_nanos`
-        let update_interval = (self.update_interval.as_secs() as f64)
         // Update the throughput/graph widgets if they are enabled
+        let update_interval = (self.update_interval.as_secs() as f64)
             + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
-            let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
+            self.output_tx = Some(((current_tx - self.tx_bytes) as f64 / update_interval) as u64);
             self.tx_bytes = current_tx;
-
-            if let Some(ref mut tx) = self.output_tx {
-                *tx = format_speed(
-                    tx_bytes,
-                    self.speed_digits,
-                    &self.speed_min_unit.to_string(),
-                    self.use_bits,
-                );
-            };
 
             if let Some(ref mut graph_tx) = self.graph_tx {
                 self.tx_buff.remove(0);
-                self.tx_buff.push(tx_bytes);
+                self.tx_buff.push(self.output_tx.unwrap());
                 *graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
             }
         }
         if self.output_rx.is_some() || self.graph_rx.is_some() {
             let current_rx = self.device.rx_bytes()?;
-            let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
+            self.output_rx = Some(((current_rx - self.rx_bytes) as f64 / update_interval) as u64);
             self.rx_bytes = current_rx;
-
-            if let Some(ref mut rx) = self.output_rx {
-                *rx = format_speed(
-                    rx_bytes,
-                    self.speed_digits,
-                    &self.speed_min_unit.to_string(),
-                    self.use_bits,
-                );
-            };
 
             if let Some(ref mut graph_rx) = self.graph_rx {
                 self.rx_buff.remove(0);
-                self.rx_buff.push(rx_bytes);
+                self.rx_buff.push(self.output_rx.unwrap());
                 *graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
             }
         }
@@ -840,12 +790,13 @@ impl Block for Net {
         if !exists || !is_up {
             self.active = false;
             self.network.set_text(" ×".to_string());
-            if let Some(ref mut tx) = self.output_tx {
-                *tx = "×".to_string();
-            };
-            if let Some(ref mut rx) = self.output_rx {
-                *rx = "×".to_string();
-            };
+            // TODO
+            // if let Some(ref mut tx) = self.output_tx {
+            //     *tx = "×".to_string();
+            // };
+            // if let Some(ref mut rx) = self.output_rx {
+            //     *rx = "×".to_string();
+            // };
 
             return Ok(Some(self.update_interval.into()));
         }
@@ -868,40 +819,39 @@ impl Block for Net {
         self.update_tx_rx()?;
 
         let empty_string = "".to_string();
-        let s_up = format!(
-            "{} {}",
-            self.config
-                .icons
-                .get("net_up")
-                .cloned()
-                .unwrap_or_else(|| "".to_string()),
-            self.output_tx.as_ref().unwrap_or(&empty_string)
-        );
-        let s_dn = format!(
-            "{} {}",
-            self.config
-                .icons
-                .get("net_down")
-                .cloned()
-                .unwrap_or_else(|| "".to_string()),
-            self.output_rx.as_ref().unwrap_or(&empty_string)
-        );
+
+        // let s_up: f64 = self
+        //     .output_tx
+        //     .as_ref()
+        //     .unwrap_or(&empty_string)
+        //     .parse()
+        //     .expect("invalid up speed");
+        //
+        // let s_dn: f64 = self
+        //     .output_rx
+        //     .as_ref()
+        //     .unwrap_or(&empty_string)
+        //     .parse()
+        //     .expect("invalid down speed");
+
+        let s_up = Bytes(self.output_tx.unwrap_or(0));
+        let s_dn = Bytes(self.output_rx.unwrap_or(0));
 
         let values = map!(
-            "{ssid}" => self.ssid.as_ref().unwrap_or(&empty_string),
+            "{ssid}" => self.ssid.as_ref().unwrap_or(&empty_string) as &dyn crate::util::Format,
             "{signal_strength}" => self.signal_strength.as_ref().unwrap_or(&empty_string),
             "{signal_strength_bar}" => self.signal_strength_bar.as_ref().unwrap_or(&empty_string),
-            "{bitrate}" =>  self.bitrate.as_ref().unwrap_or(&empty_string),
-            "{ip}" =>  self.ip_addr.as_ref().unwrap_or(&empty_string),
-            "{ipv6}" =>  self.ipv6_addr.as_ref().unwrap_or(&empty_string),
-            "{speed_up}" =>  &s_up,
+            "{bitrate}" => self.bitrate.as_ref().unwrap_or(&empty_string),
+            "{ip}" => self.ip_addr.as_ref().unwrap_or(&empty_string),
+            "{ipv6}" => self.ipv6_addr.as_ref().unwrap_or(&empty_string),
+            "{speed_up}" => &s_up,
             "{speed_down}" => &s_dn,
-            "{graph_up}" =>  self.graph_tx.as_ref().unwrap_or(&empty_string),
-            "{graph_down}" =>  self.graph_rx.as_ref().unwrap_or(&empty_string)
+            "{graph_up}" => self.graph_tx.as_ref().unwrap_or(&empty_string),
+            "{graph_down}" => self.graph_rx.as_ref().unwrap_or(&empty_string)
         );
 
         self.output
-            .set_text(if let Ok(s) = self.format.render_static_str(&values) {
+            .set_text(if let Ok(s) = self.format.render(&values) {
                 s
             } else {
                 "[invalid connection format string]".to_string()

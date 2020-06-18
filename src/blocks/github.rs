@@ -126,7 +126,7 @@ impl Block for Github {
             "{team_mention}" => format!("{}", aggregations.get("team_mention").unwrap_or(&default))
         );
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_text(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

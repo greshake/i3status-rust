@@ -341,8 +341,8 @@ impl Memory {
         });
 
         Ok(match self.memtype {
-            Memtype::Memory => self.format.0.render_static_str(&values)?,
-            Memtype::Swap => self.format.1.render_static_str(&values)?,
+            Memtype::Memory => self.format.0.render(&values)?,
+            Memtype::Swap => self.format.1.render(&values)?,
         })
     }
 

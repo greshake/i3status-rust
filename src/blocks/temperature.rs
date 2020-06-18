@@ -188,7 +188,7 @@ impl Block for Temperature {
                               "{min}" => min,
                               "{max}" => max);
 
-            self.output = self.format.render_static_str(&values)?;
+            self.output = self.format.render(&values)?;
             if !self.collapsed {
                 self.text.set_text(self.output.clone());
             }

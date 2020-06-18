@@ -629,12 +629,11 @@ impl Block for Battery {
                 Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
                 Err(_) => "×".into(),
             };
-            let values = map!("{percentage}" => percentage,
-                              "{bar}" => bar,
-                              "{time}" => time,
-                              "{power}" => power);
-            self.output
-                .set_text(self.format.render_static_str(&values)?);
+            let values = map!("{percentage}" => &percentage,
+                              "{bar}" => &bar,
+                              "{time}" => &time,
+                              "{power}" => &power);
+            self.output.set_text(self.format.render(&values)?);
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.

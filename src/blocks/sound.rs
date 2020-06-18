@@ -712,7 +712,7 @@ impl Sound {
         let values = map!("{volume}" => format!("{:02}", volume),
                           "{output_name}" => mapped_output_name
         );
-        let text = self.format.render_static_str(&values)?;
+        let text = self.format.render(&values)?;
 
         if self.device.muted() {
             self.text.set_icon("volume_muted");

@@ -465,8 +465,7 @@ impl Block for KeyboardLayout {
         let layout = self.monitor.keyboard_layout()?;
         let values = map!("{layout}" => layout);
 
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
+        self.output.set_text(self.format.render(&values)?);
         Ok(self.update_interval.map(|d| d.into()))
     }
 

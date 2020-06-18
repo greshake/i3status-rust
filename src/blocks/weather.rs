@@ -354,7 +354,7 @@ impl Block for Weather {
             self.weather.set_text("×".to_string());
         } else {
             let fmt = FormatTemplate::from_string(&self.format)?;
-            self.weather.set_text(fmt.render(&self.weather_keys));
+            self.weather.set_text(fmt.render(&self.weather_keys)?);
         }
         Ok(Some(self.update_interval.into()))
     }

@@ -234,8 +234,7 @@ impl Block for Cpu {
                           "{utilization}" => format_utilization(&cpu_utilizations, cpu_i, self.per_core),
                           "{utilizationbar}" => format_percent_bar(avg_utilization as f32));
 
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
+        self.output.set_text(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

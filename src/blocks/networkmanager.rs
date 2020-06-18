@@ -672,7 +672,7 @@ impl Block for NetworkManager {
                                     let values = map!("{ssid}" => ssid,
                                                       "{strength}" => strength,
                                                       "{freq}" => freq);
-                                    if let Ok(s) = self.ap_format.render_static_str(&values) {
+                                    if let Ok(s) = self.ap_format.render(&values) {
                                         s
                                     } else {
                                         "[invalid device format string]".to_string()
@@ -699,7 +699,7 @@ impl Block for NetworkManager {
                                                   "{ap}" => ap,
                                                   "{ips}" => ips);
 
-                                if let Ok(s) = self.device_format.render_static_str(&values) {
+                                if let Ok(s) = self.device_format.render(&values) {
                                     devicevec.push(s);
                                 } else {
                                     devicevec.push("[invalid device format string]".to_string())
@@ -715,7 +715,7 @@ impl Block for NetworkManager {
                         let values = map!("{devices}" => devicevec.join(" "),
                                           "{id}" => id);
 
-                        if let Ok(s) = self.connection_format.render_static_str(&values) {
+                        if let Ok(s) = self.connection_format.render(&values) {
                             widget.set_text(s);
                         } else {
                             widget.set_text("[invalid connection format string]");

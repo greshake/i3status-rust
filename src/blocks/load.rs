@@ -148,7 +148,7 @@ impl Block for Load {
             _ => State::Idle,
         });
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_text(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

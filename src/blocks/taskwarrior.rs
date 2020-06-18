@@ -197,9 +197,9 @@ impl Block for Taskwarrior {
             let number_of_pending_tasks = get_number_of_pending_tasks(&filter_tags)?;
             let values = map!("{count}" => number_of_pending_tasks);
             self.output.set_text(match number_of_pending_tasks {
-                0 => self.format_everything_done.render_static_str(&values)?,
-                1 => self.format_singular.render_static_str(&values)?,
-                _ => self.format.render_static_str(&values)?,
+                0 => self.format_everything_done.render(&values)?,
+                1 => self.format_singular.render(&values)?,
+                _ => self.format.render(&values)?,
             });
             if number_of_pending_tasks >= self.critical_threshold {
                 self.output.set_state(State::Critical);

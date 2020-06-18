@@ -212,7 +212,7 @@ impl Xrandr {
             };
 
             if let Ok(fmt_template) = FormatTemplate::from_string(format_str) {
-                self.text.set_text(fmt_template.render_static_str(&values)?);
+                self.text.set_text(fmt_template.render(&values)?);
             }
         }
 

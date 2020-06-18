@@ -1,15 +1,19 @@
 use num_traits::{clamp, ToPrimitive};
+use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt;
 use std::fs::{File, OpenOptions};
+use std::hash::Hash;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
 
+use lazy_static::lazy_static;
 use regex::Regex;
 use serde::de::DeserializeOwned;
+use serde_derive::Deserialize;
 use serde_json::value::Value;
 
 use crate::blocks::Block;
@@ -30,66 +34,59 @@ pub fn escape_pango_text(text: String) -> String {
         .collect()
 }
 
-pub fn format_speed(
-    bytes_speed: u64,
-    total_digits: usize,
-    min_unit: &str,
-    use_bits: bool,
-) -> String {
-    let raw_value = if use_bits {
-        bytes_speed * 8
-    } else {
-        bytes_speed
-    };
+#[derive(Copy, Clone, Debug, Deserialize, Eq, PartialEq)]
+pub enum Prefix {
+    None = 0,
+    K = 1,
+    M = 2,
+    G = 3,
+    T = 4,
+}
 
-    let (min_unit_value, min_unit_level) = match min_unit {
-        "T" => (raw_value as f64 / 1_000_000_000_000.0, 4),
-        "G" => (raw_value as f64 / 1_000_000_000.0, 3),
-        "M" => (raw_value as f64 / 1_000_000.0, 2),
-        "K" => (raw_value as f64 / 1_000.0, 1),
-        _ => (raw_value as f64, 0),
-    };
-
-    let (magnitude_value, magnitude_level) = match raw_value {
-        x if x > 99_999_999_999 => (raw_value as f64 / 1_000_000_000_000.0, 4),
-        x if x > 99_999_999 => (raw_value as f64 / 1_000_000_000.0, 3),
-        x if x > 99_999 => (raw_value as f64 / 1_000_000.0, 2),
-        x if x > 99 => (raw_value as f64 / 1_000.0, 1),
-        _ => (raw_value as f64, 0),
-    };
-
-    let (value, level) = if magnitude_level < min_unit_level {
-        (min_unit_value, min_unit_level)
-    } else {
-        (magnitude_value, magnitude_level)
-    };
-
-    let unit = if use_bits {
-        match level {
-            4 => "Tb",
-            3 => "Gb",
-            2 => "Mb",
-            1 => "Kb",
-            _ => "b",
+impl Prefix {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::None => "",
+            Self::K => "K",
+            Self::M => "M",
+            Self::G => "G",
+            Self::T => "T",
         }
-    } else {
-        match level {
-            4 => "TB",
-            3 => "GB",
-            2 => "MB",
-            1 => "KB",
-            _ => "B",
+    }
+
+    pub fn from_char(val: char) -> Option<Self> {
+        match val {
+            '-' => Some(Self::None),
+            'K' => Some(Self::K),
+            'M' => Some(Self::M),
+            'G' => Some(Self::G),
+            'T' => Some(Self::T),
+            _ => None,
         }
-    };
+    }
 
-    let _decimal_precision = total_digits as i16 - if value >= 10.0 { 2 } else { 1 };
-    let decimal_precision = if _decimal_precision < 0 {
-        0
-    } else {
-        _decimal_precision
-    };
+    fn factor(self) -> f64 {
+        1024f64.powi(self as i32)
+    }
 
-    format!("{:.*}{}", decimal_precision as usize, value, unit)
+    fn next(self) -> Option<Self> {
+        let ordered = [Self::None, Self::K, Self::M, Self::G, Self::T];
+        ordered
+            .get(1 + ordered.iter().position(|x| *x == self).unwrap())
+            .cloned()
+    }
+}
+
+impl Default for Prefix {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+impl fmt::Display for Prefix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
 }
 
 pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
@@ -378,102 +375,215 @@ pub fn add_colors(a: &str, b: &str) -> ::std::result::Result<String, Box<dyn std
     )))
 }
 
-#[derive(Debug, Clone)]
-pub enum FormatTemplate {
-    Str(String, Option<Box<FormatTemplate>>),
-    Var(String, Option<Box<FormatTemplate>>),
+//
+// Formating
+//
+
+#[derive(Default, Clone, Debug)]
+pub struct FormatOptions {
+    unit: String,
+    precision: Option<usize>,
+}
+
+/// Generic trait for types that can be formated.
+pub trait Format {
+    fn format(&self, options: &FormatOptions) -> String;
+}
+
+impl<T: Format + ?Sized> Format for &T {
+    fn format(&self, options: &FormatOptions) -> String {
+        (*self).format(options)
+    }
+}
+
+impl Format for &str {
+    fn format(&self, options: &FormatOptions) -> String {
+        format!("{}{}", self, options.unit)
+    }
+}
+
+impl Format for String {
+    fn format(&self, options: &FormatOptions) -> String {
+        self.as_str().format(options)
+    }
+}
+
+macro_rules! impl_format_for_numeric {
+    ($t:ty) => {
+        impl Format for $t {
+            fn format(&self, options: &FormatOptions) -> String {
+                if let Some(precision) = options.precision {
+                    format!("{:.*}{}", precision, self, options.unit)
+                } else {
+                    format!("{}{}", self, options.unit)
+                }
+            }
+        }
+    };
+}
+
+impl_format_for_numeric!(f64);
+impl_format_for_numeric!(f32);
+impl_format_for_numeric!(usize);
+impl_format_for_numeric!(isize);
+impl_format_for_numeric!(u64);
+impl_format_for_numeric!(u32);
+impl_format_for_numeric!(u16);
+impl_format_for_numeric!(u8);
+impl_format_for_numeric!(i64);
+impl_format_for_numeric!(i32);
+impl_format_for_numeric!(i16);
+impl_format_for_numeric!(i8);
+
+pub struct Bytes(pub u64);
+
+impl Format for Bytes {
+    fn format(&self, options: &FormatOptions) -> String {
+        let Self(bytes) = self;
+        let mut val = *bytes as f64;
+
+        let (mut prefix, unit) = {
+            if let Some(first_char) = options.unit.chars().next() {
+                let next_index = options
+                    .unit
+                    .char_indices()
+                    .nth(1)
+                    .map(|(i, _)| i)
+                    .unwrap_or_else(|| options.unit.len());
+
+                match (Prefix::from_char(first_char), &options.unit[next_index..]) {
+                    (Some(prefix), tail) => (Some(prefix), tail),
+                    _ => (None, options.unit.as_str()),
+                }
+            } else {
+                (None, "")
+            }
+        };
+
+        if unit == "b" {
+            val *= 8.
+        }
+
+        if let Some(prefix) = prefix.as_mut() {
+            while val / prefix.factor() >= 1000. && prefix.next().is_some() {
+                *prefix = prefix.next().unwrap()
+            }
+        }
+
+        // Display
+
+        let (val, prefix) = {
+            if let Some(prefix) = prefix {
+                (val / prefix.factor(), prefix.as_str())
+            } else {
+                (val, "")
+            }
+        };
+
+        if let Some(precision) = options.precision {
+            format!("{:.*}{}{}", precision, val, prefix, unit)
+        } else {
+            format!("{}{}{}", val, prefix, unit)
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct FormatTemplate {
+    inner: Vec<FormatAtom>,
 }
 
 impl FormatTemplate {
-    pub fn from_string(s: &str) -> Result<FormatTemplate> {
-        let s_as_bytes = s.as_bytes();
-
-        //valid var tokens: {} containing any amount of alphanumericals
-        let re = Regex::new(r"\{[a-zA-Z0-9_-]+?\}").internal_error("util", "invalid regex")?;
-
-        let mut token_vec: Vec<FormatTemplate> = vec![];
-        let mut start: usize = 0;
-
-        for re_match in re.find_iter(&s) {
-            if re_match.start() != start {
-                let str_vec: Vec<u8> = (&s_as_bytes)[start..re_match.start()].to_vec();
-                token_vec.push(FormatTemplate::Str(
-                    String::from_utf8(str_vec)
-                        .internal_error("util", "failed to convert string from UTF8")?,
-                    None,
-                ));
-            }
-            token_vec.push(FormatTemplate::Var(re_match.as_str().to_string(), None));
-            start = re_match.end();
+    pub fn from_string(s: &str) -> Result<Self> {
+        lazy_static! {
+            static ref RE: Regex =
+                Regex::new(r"(?P<var>\{[^}]*\})|(?P<text>[^{]+)").expect("invalid format regex");
         }
-        let str_vec: Vec<u8> = (&s_as_bytes)[start..].to_vec();
-        token_vec.push(FormatTemplate::Str(
-            String::from_utf8(str_vec)
-                .internal_error("util", "failed to convert string from UTF8")?,
-            None,
-        ));
-        let mut template: FormatTemplate = match token_vec.pop() {
-            Some(token) => token,
-            _ => FormatTemplate::Str("".to_string(), None),
-        };
-        while let Some(token) = token_vec.pop() {
-            template = match token {
-                FormatTemplate::Str(s, _) => FormatTemplate::Str(s, Some(Box::new(template))),
-                FormatTemplate::Var(s, _) => FormatTemplate::Var(s, Some(Box::new(template))),
-            }
-        }
-        Ok(template)
+
+        let inner = RE
+            .captures_iter(&s)
+            .map(
+                |re_match| match (re_match.name("text"), re_match.name("var")) {
+                    (Some(text), None) => Ok(FormatAtom::Str(text.as_str().to_string())),
+                    (None, Some(formatter)) => FormatAtom::from_format_param(formatter.as_str()),
+                    _ => unreachable!("invalid regex: should produce exactly a variant"),
+                },
+            )
+            .collect::<Result<_>>()?;
+
+        Ok(Self { inner })
     }
 
-    // TODO: Make this function tail-recursive for compiler optimization, also only use the version below, static_str
-    pub fn render<T: Display>(&self, vars: &HashMap<String, T>) -> String {
-        use self::FormatTemplate::*;
-        let mut rendered = String::new();
-        match *self {
-            Str(ref s, ref next) => {
-                rendered.push_str(s);
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render(vars));
-                };
-            }
-            Var(ref key, ref next) => {
-                rendered.push_str(&format!(
-                    "{}",
-                    vars.get(key)
-                        .unwrap_or_else(|| panic!("Unknown placeholder in format string: {}", key))
-                ));
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render(vars));
-                };
-            }
-        };
-        rendered
+    pub fn render<K, T>(&self, vars: &HashMap<K, T>) -> Result<String>
+    where
+        K: Eq + Hash + Borrow<str>,
+        T: Format,
+    {
+        self.inner
+            .iter()
+            .map(|atom| {
+                Ok(match atom {
+                    FormatAtom::Str(text) => Cow::from(text),
+                    FormatAtom::Var { name, options } => Cow::from(
+                        vars.get(name)
+                            .internal_error("util", &format!("unknown variable: {}", name))?
+                            .format(options),
+                    ),
+                })
+            })
+            .try_fold(String::new(), |acc, atom: Result<_>| Ok(acc + &atom?))
     }
+}
 
-    pub fn render_static_str<T: Display>(&self, vars: &HashMap<&str, T>) -> Result<String> {
-        use self::FormatTemplate::*;
-        let mut rendered = String::new();
-        match *self {
-            Str(ref s, ref next) => {
-                rendered.push_str(s);
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render_static_str(vars)?);
-                };
-            }
-            Var(ref key, ref next) => {
-                rendered.push_str(&format!(
-                    "{}",
-                    vars.get(&**key).internal_error(
-                        "util",
-                        &format!("Unknown placeholder in format string: {}", key)
-                    )?
-                ));
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render_static_str(vars)?);
-                };
-            }
-        };
-        Ok(rendered)
+#[derive(Clone, Debug)]
+enum FormatAtom {
+    Str(String),
+    Var {
+        name: String,
+        options: FormatOptions,
+    },
+}
+
+impl FormatAtom {
+    fn from_format_param(param: &str) -> Result<Self> {
+        lazy_static! {
+            static ref RE: Regex = {
+                let match_name = r"(?P<name>[a-zA-Z0-9_-]+)";
+                let match_unit = r"(?P<unit>[^.}]+)";
+                let match_precision = r"(?P<precision>\d+)";
+
+                Regex::new(&format!(
+                    r"\{{{}(?::{}?(?:.{})?)?\}}",
+                    match_name, match_unit, match_precision
+                ))
+                .expect("invalid formater regex")
+            };
+        }
+
+        let groups = RE
+            .captures(param)
+            .internal_error("util", &format!("invalid format parameter: {}", param))?;
+
+        let name = groups.name("name").expect("name not found").as_str();
+
+        let unit = groups
+            .name("unit")
+            .map(|s| s.as_str().to_string())
+            .unwrap_or_default();
+
+        let precision = groups
+            .name("precision")
+            .map(|s| {
+                s.as_str()
+                    .parse()
+                    .internal_error("util", &format!("invalid precision: {}", s.as_str()))
+            })
+            .transpose()?;
+
+        Ok(Self::Var {
+            name: format!("{{{}}}", name), // TODO: it is pretty strange, right?
+            options: FormatOptions { unit, precision },
+        })
     }
 }
 

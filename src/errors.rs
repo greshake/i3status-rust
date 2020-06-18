@@ -11,6 +11,8 @@ pub trait ResultExtBlock<T, E> {
 }
 
 pub trait ResultExtInternal<T, E> {
+    // TODO: this incitates to make many unecessary allocations through "format!", it may be
+    //       relevant to change this API? (using map_err?)
     fn configuration_error(self, message: &str) -> Result<T>;
     fn internal_error(self, context: &str, message: &str) -> Result<T>;
 }

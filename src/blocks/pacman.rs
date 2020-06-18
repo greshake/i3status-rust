@@ -334,9 +334,9 @@ impl Block for Pacman {
             }
         };
         self.output.set_text(match cum_count {
-            0 => self.format_up_to_date.render_static_str(&formatting_map)?,
-            1 => self.format_singular.render_static_str(&formatting_map)?,
-            _ => self.format.render_static_str(&formatting_map)?,
+            0 => self.format_up_to_date.render(&formatting_map)?,
+            1 => self.format_singular.render(&formatting_map)?,
+            _ => self.format.render(&formatting_map)?,
         });
         self.output.set_state(match cum_count {
             0 => State::Idle,

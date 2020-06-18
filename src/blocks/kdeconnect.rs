@@ -499,11 +499,10 @@ impl Block for KDEConnect {
             self.output.set_state(State::Critical);
             self.output.set_icon("phone_disconnected");
             self.output
-                .set_text(self.format_disconnected.render_static_str(&values)?);
+                .set_text(self.format_disconnected.render(&values)?);
         } else {
             self.output.set_icon("phone");
-            self.output
-                .set_text(self.format.render_static_str(&values)?);
+            self.output.set_text(self.format.render(&values)?);
         }
 
         Ok(None)

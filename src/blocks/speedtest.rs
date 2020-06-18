@@ -1,4 +1,3 @@
-use std::fmt;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -15,7 +14,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::format_speed;
+use crate::util::{Bytes, FormatTemplate, Prefix};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -25,27 +24,6 @@ pub struct SpeedTest {
     id: String,
     config: SpeedTestConfig,
     send: Sender<()>,
-}
-
-#[derive(Copy, Clone, Debug, Deserialize)]
-pub enum Unit {
-    B,
-    K,
-    M,
-    G,
-    T,
-}
-
-impl Default for Unit {
-    fn default() -> Self {
-        Unit::K
-    }
-}
-
-impl fmt::Display for Unit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -68,7 +46,7 @@ pub struct SpeedTestConfig {
 
     /// Minimum unit to display for throughput indicators.
     #[serde(default = "SpeedTestConfig::default_speed_min_unit")]
-    pub speed_min_unit: Unit,
+    pub speed_min_unit: Prefix,
 }
 
 impl SpeedTestConfig {
@@ -80,8 +58,8 @@ impl SpeedTestConfig {
         false
     }
 
-    fn default_speed_min_unit() -> Unit {
-        Unit::M
+    fn default_speed_min_unit() -> Prefix {
+        Prefix::M
     }
 
     fn default_speed_digits() -> usize {
@@ -204,24 +182,19 @@ impl Block for SpeedTest {
                 } else {
                     (vals[1] * 125_000.0, vals[2] * 125_000.0)
                 };
-                self.text[1].set_text(format!(
-                    "{}/s",
-                    format_speed(
-                        down_bytes as u64,
-                        self.config.speed_digits,
-                        &self.config.speed_min_unit.to_string(),
-                        !self.config.bytes
-                    )
-                ));
-                self.text[2].set_text(format!(
-                    "{}/s",
-                    format_speed(
-                        up_bytes as u64,
-                        self.config.speed_digits,
-                        &self.config.speed_min_unit.to_string(),
-                        !self.config.bytes
-                    )
-                ));
+                // TODO: this is just here to replace deprecated format_speed, this should be
+                //       integrated as a format string at config level before merging.
+                let format_speed = FormatTemplate::from_string("{speed:MB.2}/s").unwrap();
+                self.text[1].set_text(
+                    format_speed
+                        .render(&map!("{speed}" => Bytes(down_bytes as u64)))
+                        .unwrap(),
+                );
+                self.text[2].set_text(
+                    format_speed
+                        .render(&map!("{speed}" => Bytes(up_bytes as u64)))
+                        .unwrap(),
+                );
 
                 // TODO: remove clippy workaround
                 #[allow(clippy::unknown_clippy_lints)]
