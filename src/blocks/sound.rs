@@ -2,9 +2,9 @@
 use {
     crate::pulse::callbacks::ListResult,
     crate::pulse::context::{
-        flags, introspect::ServerInfo, introspect::SinkInfo, subscribe::subscription_masks,
-        subscribe::Facility, subscribe::Operation as SubscribeOperation, Context,
-        State as PulseState,
+        flags, introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo,
+        subscribe::subscription_masks, subscribe::Facility,
+        subscribe::Operation as SubscribeOperation, Context, State as PulseState,
     },
     crate::pulse::mainloop::standard::IterateResult,
     crate::pulse::mainloop::standard::Mainloop,
@@ -21,6 +21,7 @@ use {
 
 use std::cmp::max;
 use std::collections::BTreeMap;
+use std::convert::{TryFrom, TryInto};
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -211,6 +212,7 @@ struct PulseAudioClient {
 #[cfg(feature = "pulseaudio")]
 struct PulseAudioSoundDevice {
     name: Option<String>,
+    device_kind: DeviceKind,
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
     muted: bool,
@@ -218,20 +220,50 @@ struct PulseAudioSoundDevice {
 
 #[cfg(feature = "pulseaudio")]
 #[derive(Debug)]
-struct PulseAudioSinkInfo {
+struct PulseAudioVolInfo {
     volume: ChannelVolumes,
     mute: bool,
-    sink_name: String,
+    name: String,
+}
+
+impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
+    type Error = ();
+
+    fn try_from(source_info: &SourceInfo) -> std::result::Result<Self, Self::Error> {
+        match source_info.name.as_ref() {
+            None => Err(()),
+            Some(name) => Ok(PulseAudioVolInfo {
+                volume: source_info.volume,
+                mute: source_info.mute,
+                name: name.to_string(),
+            }),
+        }
+    }
+}
+
+impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
+    type Error = ();
+
+    fn try_from(sink_info: &SinkInfo) -> std::result::Result<Self, Self::Error> {
+        match sink_info.name.as_ref() {
+            None => Err(()),
+            Some(name) => Ok(PulseAudioVolInfo {
+                volume: sink_info.volume,
+                mute: sink_info.mute,
+                name: name.to_string(),
+            }),
+        }
+    }
 }
 
 #[cfg(feature = "pulseaudio")]
 #[derive(Debug)]
 enum PulseAudioClientRequest {
     GetDefaultDevice,
-    GetSinkInfoByIndex(u32),
-    GetSinkInfoByName(String),
-    SetSinkVolumeByName(String, ChannelVolumes),
-    SetSinkMuteByName(String, bool),
+    GetInfoByIndex(DeviceKind, u32),
+    GetInfoByName(DeviceKind, String),
+    SetVolumeByName(DeviceKind, String, ChannelVolumes),
+    SetMuteByName(DeviceKind, String, bool),
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -239,8 +271,13 @@ lazy_static! {
     static ref PULSEAUDIO_CLIENT: Result<PulseAudioClient> = PulseAudioClient::new();
     static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<String, Sender<Task>>> =
         Mutex::new(HashMap::new());
+
+    // Default device names
+    static ref PULSEAUDIO_DEFAULT_SOURCE: Mutex<String> = Mutex::new("@DEFAULT_SOURCE@".into());
     static ref PULSEAUDIO_DEFAULT_SINK: Mutex<String> = Mutex::new("@DEFAULT_SINK@".into());
-    static ref PULSEAUDIO_SINKS: Mutex<HashMap<String, PulseAudioSinkInfo>> =
+
+    // State for each device
+    static ref PULSEAUDIO_DEVICES: Mutex<HashMap<(DeviceKind, String), PulseAudioVolInfo>> =
         Mutex::new(HashMap::new());
 }
 
@@ -346,30 +383,49 @@ impl PulseAudioClient {
                     match recv_req.recv() {
                         Err(_) => {}
                         Ok(req) => {
+                            use PulseAudioClientRequest::*;
                             let mut introspector = connection.context.borrow_mut().introspect();
 
                             match req {
-                                PulseAudioClientRequest::GetDefaultDevice => {
+                                GetDefaultDevice => {
                                     introspector
                                         .get_server_info(PulseAudioClient::server_info_callback);
                                 }
-                                PulseAudioClientRequest::GetSinkInfoByIndex(index) => {
+                                GetInfoByIndex(DeviceKind::Sink, index) => {
                                     introspector.get_sink_info_by_index(
                                         index,
                                         PulseAudioClient::sink_info_callback,
                                     );
                                 }
-                                PulseAudioClientRequest::GetSinkInfoByName(name) => {
+                                GetInfoByIndex(DeviceKind::Source, index) => {
+                                    introspector.get_source_info_by_index(
+                                        index,
+                                        PulseAudioClient::source_info_callback,
+                                    );
+                                }
+                                GetInfoByName(DeviceKind::Sink, name) => {
                                     introspector.get_sink_info_by_name(
                                         &name,
                                         PulseAudioClient::sink_info_callback,
                                     );
                                 }
-                                PulseAudioClientRequest::SetSinkVolumeByName(name, volumes) => {
+                                GetInfoByName(DeviceKind::Source, name) => {
+                                    introspector.get_source_info_by_name(
+                                        &name,
+                                        PulseAudioClient::source_info_callback,
+                                    );
+                                }
+                                SetVolumeByName(DeviceKind::Sink, name, volumes) => {
                                     introspector.set_sink_volume_by_name(&name, &volumes, None);
                                 }
-                                PulseAudioClientRequest::SetSinkMuteByName(name, mute) => {
+                                SetVolumeByName(DeviceKind::Source, name, volumes) => {
+                                    introspector.set_source_volume_by_name(&name, &volumes, None);
+                                }
+                                SetMuteByName(DeviceKind::Sink, name, mute) => {
                                     introspector.set_sink_mute_by_name(&name, mute, None);
+                                }
+                                SetMuteByName(DeviceKind::Source, name, mute) => {
+                                    introspector.set_source_mute_by_name(&name, mute, None);
                                 }
                             };
 
@@ -395,7 +451,9 @@ impl PulseAudioClient {
                     .borrow_mut()
                     .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
                 connection.context.borrow_mut().subscribe(
-                    subscription_masks::SERVER | subscription_masks::SINK,
+                    subscription_masks::SERVER
+                        | subscription_masks::SINK
+                        | subscription_masks::SOURCE,
                     |_| {},
                 );
 
@@ -421,30 +479,45 @@ impl PulseAudioClient {
     }
 
     fn server_info_callback(server_info: &ServerInfo) {
-        match server_info.default_sink_name.clone() {
-            None => {}
-            Some(default_sink) => {
-                *PULSEAUDIO_DEFAULT_SINK.lock().unwrap() = default_sink.into();
-                PulseAudioClient::send_update_event();
-            }
+        if let Some(default_sink) = server_info.default_sink_name.as_ref() {
+            *PULSEAUDIO_DEFAULT_SINK.lock().unwrap() = default_sink.to_string();
+        }
+
+        if let Some(default_source) = server_info.default_source_name.as_ref() {
+            *PULSEAUDIO_DEFAULT_SOURCE.lock().unwrap() = default_source.to_string();
+        }
+
+        PulseAudioClient::send_update_event();
+    }
+
+    fn get_info_callback<I: TryInto<PulseAudioVolInfo>>(
+        result: ListResult<I>,
+    ) -> Option<PulseAudioVolInfo> {
+        match result {
+            ListResult::End | ListResult::Error => None,
+            ListResult::Item(info) => info.try_into().ok(),
         }
     }
 
     fn sink_info_callback(result: ListResult<&SinkInfo>) {
-        match result {
-            ListResult::End | ListResult::Error => {}
-            ListResult::Item(sink_info) => match sink_info.name.clone() {
-                None => {}
-                Some(name) => {
-                    let info = PulseAudioSinkInfo {
-                        volume: sink_info.volume,
-                        mute: sink_info.mute,
-                        sink_name: name.to_string(),
-                    };
-                    PULSEAUDIO_SINKS.lock().unwrap().insert(name.into(), info);
-                    PulseAudioClient::send_update_event();
-                }
-            },
+        if let Some(vol_info) = Self::get_info_callback(result) {
+            PULSEAUDIO_DEVICES
+                .lock()
+                .unwrap()
+                .insert((DeviceKind::Sink, vol_info.name.to_string()), vol_info);
+
+            PulseAudioClient::send_update_event();
+        }
+    }
+
+    fn source_info_callback(result: ListResult<&SourceInfo>) {
+        if let Some(vol_info) = Self::get_info_callback(result) {
+            PULSEAUDIO_DEVICES
+                .lock()
+                .unwrap()
+                .insert((DeviceKind::Source, vol_info.name.to_string()), vol_info);
+
+            PulseAudioClient::send_update_event();
         }
     }
 
@@ -457,11 +530,21 @@ impl PulseAudioClient {
             None => {}
             Some(facility) => match facility {
                 Facility::Server => {
-                    let _ = PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice);
+                    PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice).ok();
                 }
                 Facility::Sink => {
-                    let _ =
-                        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByIndex(index));
+                    PulseAudioClient::send(PulseAudioClientRequest::GetInfoByIndex(
+                        DeviceKind::Sink,
+                        index,
+                    ))
+                    .ok();
+                }
+                Facility::Source => {
+                    PulseAudioClient::send(PulseAudioClientRequest::GetInfoByIndex(
+                        DeviceKind::Source,
+                        index,
+                    ))
+                    .ok();
                 }
                 _ => {}
             },
@@ -482,36 +565,34 @@ impl PulseAudioClient {
 
 #[cfg(feature = "pulseaudio")]
 impl PulseAudioSoundDevice {
-    fn new() -> Result<Self> {
+    fn new(device_kind: DeviceKind) -> Result<Self> {
         PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice)?;
 
         let device = PulseAudioSoundDevice {
             name: None,
+            device_kind,
             volume: None,
             volume_avg: 0,
             muted: false,
         };
 
-        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(device.name()))?;
+        PulseAudioClient::send(PulseAudioClientRequest::GetInfoByName(
+            device_kind,
+            device.name(),
+        ))?;
 
         Ok(device)
     }
 
-    fn with_name(name: String) -> Result<Self> {
-        PulseAudioClient::send(PulseAudioClientRequest::GetSinkInfoByName(name.clone()))?;
-
-        Ok(PulseAudioSoundDevice {
-            name: Some(name),
-            volume: None,
-            volume_avg: 0,
-            muted: false,
-        })
+    fn with_name(mut self, name: String) -> Self {
+        self.name = Some(name);
+        self
     }
 
     fn name(&self) -> String {
         self.name
             .clone()
-            .unwrap_or_else(|| PULSEAUDIO_DEFAULT_SINK.lock().unwrap().clone())
+            .unwrap_or_else(|| self.device_kind.default_name())
     }
 
     fn volume(&mut self, volume: ChannelVolumes) {
@@ -525,20 +606,21 @@ impl SoundDevice for PulseAudioSoundDevice {
     fn volume(&self) -> u32 {
         self.volume_avg
     }
+
     fn muted(&self) -> bool {
         self.muted
     }
+
     fn output_name(&self) -> String {
         self.name()
     }
 
     fn get_info(&mut self) -> Result<()> {
-        match PULSEAUDIO_SINKS.lock().unwrap().get(&self.name()) {
-            None => {}
-            Some(sink_info) => {
-                self.volume(sink_info.volume);
-                self.muted = sink_info.mute;
-            }
+        let devices = PULSEAUDIO_DEVICES.lock().unwrap();
+
+        if let Some(info) = devices.get(&(self.device_kind, self.name())) {
+            self.volume(info.volume);
+            self.muted = info.mute;
         }
 
         Ok(())
@@ -558,7 +640,8 @@ impl SoundDevice for PulseAudioSoundDevice {
 
         // update volumes
         self.volume(volume);
-        PulseAudioClient::send(PulseAudioClientRequest::SetSinkVolumeByName(
+        PulseAudioClient::send(PulseAudioClientRequest::SetVolumeByName(
+            self.device_kind,
             self.name(),
             volume,
         ))?;
@@ -568,7 +651,9 @@ impl SoundDevice for PulseAudioSoundDevice {
 
     fn toggle(&mut self) -> Result<()> {
         self.muted = !self.muted;
-        PulseAudioClient::send(PulseAudioClientRequest::SetSinkMuteByName(
+
+        PulseAudioClient::send(PulseAudioClientRequest::SetMuteByName(
+            self.device_kind,
             self.name(),
             self.muted,
         ))?;
@@ -590,6 +675,7 @@ pub struct Sound {
     text: ButtonWidget,
     id: String,
     device: Box<dyn SoundDevice>,
+    device_kind: DeviceKind,
     step_width: u32,
     format: FormatTemplate,
     config: Config,
@@ -599,11 +685,33 @@ pub struct Sound {
     mappings: Option<BTreeMap<String, String>>,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum DeviceKind {
+    Sink,
+    Source,
+}
+
+impl DeviceKind {
+    pub fn default_name(self) -> String {
+        match self {
+            Self::Sink => PULSEAUDIO_DEFAULT_SINK.lock().unwrap().to_string(),
+            Self::Source => PULSEAUDIO_DEFAULT_SOURCE.lock().unwrap().to_string(),
+        }
+    }
+}
+
+impl Default for DeviceKind {
+    fn default() -> Self {
+        Self::Sink
+    }
+}
+
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct SoundConfig {
     /// ALSA / PulseAudio sound device name
-    #[serde(default = "SoundDriver::default")]
+    #[serde(default)]
     pub driver: SoundDriver,
 
     /// PulseAudio device name, or
@@ -614,6 +722,10 @@ pub struct SoundConfig {
     /// ALSA device name, usually in the form "hw:#" where # is the number of the card desired (default is "default")
     #[serde(default = "SoundConfig::default_device")]
     pub device: Option<String>,
+
+    /// Type of device: sink or source (default is "source")
+    #[serde(default)]
+    pub device_kind: DeviceKind,
 
     /// Use the mapped volume for evaluating the percentage representation like alsamixer, to be more natural for human ear
     #[serde(default = "SoundConfig::default_natural_mapping")]
@@ -696,6 +808,22 @@ impl SoundConfig {
 }
 
 impl Sound {
+    fn icon(&self, volume: u32) -> String {
+        let prefix = match self.device_kind {
+            DeviceKind::Source => "microphone",
+            DeviceKind::Sink => "volume",
+        };
+
+        let suffix = match volume {
+            0 => "muted",
+            1..=20 => "empty",
+            21..=70 => "half",
+            _ => "full",
+        };
+
+        format!("{}_{}", prefix, suffix)
+    }
+
     fn display(&mut self) -> Result<()> {
         self.device.get_info()?;
 
@@ -715,7 +843,7 @@ impl Sound {
         let text = self.format.render_static_str(&values)?;
 
         if self.device.muted() {
-            self.text.set_icon("volume_muted");
+            self.text.set_icon(&self.icon(0));
             if self.show_volume_when_muted {
                 if self.bar {
                     self.text.set_text(format_percent_bar(volume as f32));
@@ -727,11 +855,7 @@ impl Sound {
             }
             self.text.set_state(State::Warning);
         } else {
-            self.text.set_icon(match volume {
-                0..=20 => "volume_empty",
-                21..=70 => "volume_half",
-                _ => "volume_full",
-            });
+            self.text.set_icon(&self.icon(volume));
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
@@ -764,10 +888,14 @@ impl ConfigBlock for Sound {
         // try to create a pulseaudio device if feature is enabled and `driver != "alsa"`
         let pulseaudio_device: Result<PulseAudioSoundDevice> = match block_config.driver {
             #[cfg(feature = "pulseaudio")]
-            SoundDriver::Auto | SoundDriver::PulseAudio => match block_config.name.clone() {
-                None => PulseAudioSoundDevice::new(),
-                Some(name) => PulseAudioSoundDevice::with_name(name),
-            },
+            SoundDriver::Auto | SoundDriver::PulseAudio => {
+                let sound_device = PulseAudioSoundDevice::new(block_config.device_kind);
+
+                match block_config.name.as_ref() {
+                    None => sound_device,
+                    Some(name) => sound_device.map(|device| device.with_name(name.to_string())),
+                }
+            }
             _ => Err(BlockError(
                 "sound".into(),
                 "PulseAudio feature or driver disabled".into(),
@@ -788,6 +916,7 @@ impl ConfigBlock for Sound {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
             device,
+            device_kind: block_config.device_kind,
             format: FormatTemplate::from_string(&block_config.format)?,
             step_width,
             config,
