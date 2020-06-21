@@ -11,6 +11,7 @@ use {
     crate::pulse::proplist::{properties, Proplist},
     crate::pulse::volume::{ChannelVolumes, VOLUME_MAX, VOLUME_NORM},
     crossbeam_channel::unbounded,
+    lazy_static::lazy_static,
     std::cell::RefCell,
     std::cmp::min,
     std::collections::HashMap,
@@ -28,7 +29,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use lazy_static::lazy_static;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 

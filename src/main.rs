@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate serde_json;
+#[cfg(feature = "pulseaudio")]
 use libpulse_binding as pulse;
 
 #[macro_use]
