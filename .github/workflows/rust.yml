@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-    - uses: actions/checkout@v2
     - name: Get required packages
-    - run: sudo apt-get install libdbus-1-dev
+      run: sudo apt-get install libdbus-1-dev
+    - uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
     - name: Run tests
