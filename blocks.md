@@ -851,6 +851,8 @@ Key | Values | Required | Default
 `show_temperature` | Display gpu temperature. | No | `true`
 `show_fan_speed` | Display fan speed. | No | `false`
 `show_clocks` | Display gpu clocks. | No | `false`
+`show_gpu_name` | Display gpu name. | No | `false`
+`clickable` | Respond to click. | No | `true`
 
 ## Pacman
 
