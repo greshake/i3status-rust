@@ -190,10 +190,10 @@ Key | Values | Required | Default
 
 Creates a block that display the output of custom shell commands.
 
-For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  
-`{"icon": "ICON", "state": "STATE", "text": "YOURTEXT"}`  
-`icon` is optional, it may be an icon name from `icons.rs` (default "")  
-`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
+For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
+`{"icon": "ICON", "state": "STATE", "text": "YOURTEXT"}`
+`icon` is optional, it may be an icon name from `icons.rs` (default "")
+`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)
 
 ### Examples
 
@@ -696,7 +696,7 @@ Key | Values | Required | Default
 
 ## Net
 
-Creates a block which displays the upload and download throughput for a network interface. Units are by default in bytes per second (kB/s, MB/s, etc), 
+Creates a block which displays the upload and download throughput for a network interface. Units are by default in bytes per second (kB/s, MB/s, etc),
 but the 'use_bits' flag can be set to `true` to convert the units to bps (little b).
 
 `bitrate` for wired devices requires `ethtool` to be installed.
@@ -908,7 +908,7 @@ Key | Value
 `{count}` | Number of pacman updates available (**deprecated**: use `{pacman}` instead)
 `{pacman}`| Number of updates available according to `pacman`
 `{aur}` | Number of updates available according to `<aur_command>`
-`{both}` | Cumulative number of updates available according to `pacman` and `<aur_commad>` 
+`{both}` | Cumulative number of updates available according to `pacman` and `<aur_commad>`
 
 
 ## Pomodoro
@@ -1018,7 +1018,7 @@ Clicking the left mouse button on the icon updates the number of pending tasks i
 
 Clicking the right mouse button on the icon toggles the view of the block between filtered (default) and non-filtered
 tasks. If there are no filters configured, the number of tasks stays the same and both modes are behaving
-equally.  
+equally.
 
 ### Examples
 
