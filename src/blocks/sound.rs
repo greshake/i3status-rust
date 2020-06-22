@@ -15,6 +15,7 @@ use {
     std::cell::RefCell,
     std::cmp::min,
     std::collections::HashMap,
+    std::convert::{TryFrom, TryInto},
     std::ops::Deref,
     std::rc::Rc,
     std::sync::Mutex,
@@ -22,7 +23,6 @@ use {
 
 use std::cmp::max;
 use std::collections::BTreeMap;
-use std::convert::{TryFrom, TryInto};
 use std::io::Read;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -226,6 +226,7 @@ struct PulseAudioVolInfo {
     name: String,
 }
 
+#[cfg(feature = "pulseaudio")]
 impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
     type Error = ();
 
@@ -241,6 +242,7 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
     }
 }
 
+#[cfg(feature = "pulseaudio")]
 impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
     type Error = ();
 
@@ -692,6 +694,7 @@ pub enum DeviceKind {
     Source,
 }
 
+#[cfg(feature = "pulseaudio")]
 impl DeviceKind {
     pub fn default_name(self) -> String {
         match self {
@@ -723,7 +726,7 @@ pub struct SoundConfig {
     #[serde(default = "SoundConfig::default_device")]
     pub device: Option<String>,
 
-    /// Type of device: sink or source (default is "source")
+    /// Type of device: sink or source (default is "sink")
     #[serde(default)]
     pub device_kind: DeviceKind,
 
