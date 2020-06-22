@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - name: Get required packages
-      run: sudo apt-get install libdbus-1-dev
+      run: sudo apt-get install libdbus-1-dev libpulse-dev
     - uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
