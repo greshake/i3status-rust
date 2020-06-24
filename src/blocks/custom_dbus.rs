@@ -1,9 +1,11 @@
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use dbus::blocking::LocalConnection;
+use dbus::strings::Signature;
 use dbus::tree::Factory;
 use serde_derive::Deserialize;
 use uuid::Uuid;
@@ -13,13 +15,20 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+
+#[derive(Clone)]
+struct CustomDBusStatus {
+    content: String,
+    icon: String,
+    state: State,
+}
 
 pub struct CustomDBus {
     id: String,
     text: TextWidget,
-    status: Arc<Mutex<String>>,
+    status: Arc<Mutex<CustomDBusStatus>>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -35,7 +44,11 @@ impl ConfigBlock for CustomDBus {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
 
-        let status_original = Arc::new(Mutex::new(String::from("??")));
+        let status_original = Arc::new(Mutex::new(CustomDBusStatus {
+            content: String::from("??"),
+            icon: String::from(""),
+            state: State::Idle,
+        }));
         let status = status_original.clone();
         thread::Builder::new()
             .name("custom_dbus".into())
@@ -59,9 +72,21 @@ impl ConfigBlock for CustomDBus {
                                         // the callback receives "MethodInfo" struct and can return either an error, or a list of
                                         // messages to send back.
 
-                                        let new_status: &str = m.msg.read1()?;
+                                        let args = m.msg.get3::<&str, &str, &str>();
                                         let mut status = status_original.lock().unwrap();
-                                        *status = new_status.to_string();
+
+                                        if let Some(new_content) = args.0 {
+                                            status.content = String::from(new_content);
+                                        }
+
+                                        if let Some(new_icon) = args.1 {
+                                            status.icon = String::from(new_icon);
+                                        }
+
+                                        if let Some(new_state) = args.2 {
+                                            status.state =
+                                                State::from_str(new_state).unwrap_or(status.state);
+                                        }
 
                                         // Tell block to update now.
                                         send.send(Task {
@@ -72,7 +97,12 @@ impl ConfigBlock for CustomDBus {
 
                                         Ok(vec![m.msg.method_return()])
                                     })
-                                    .inarg::<&str, _>("name"), // We also add the signal to the interface. This is mainly for introspection.
+                                    // We also add the signal to the interface. This is mainly for introspection.
+                                    .in_args(vec![
+                                        ("name", Signature::make::<&str>()),
+                                        ("icon", Signature::make::<&str>()),
+                                        ("state", Signature::make::<&str>()),
+                                    ]),
                                 ),
                             ),
                     )
@@ -108,7 +138,9 @@ impl Block for CustomDBus {
             .lock()
             .block_error("custom_dbus", "failed to acquire lock")?)
         .clone();
-        self.text.set_text(status);
+        self.text.set_text(status.content);
+        self.text.set_icon(&status.icon);
+        self.text.set_state(status.state);
         Ok(None)
     }
 

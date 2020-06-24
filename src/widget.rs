@@ -1,3 +1,7 @@
+use std::str::FromStr;
+
+use serde::de::value::{Error, StrDeserializer};
+use serde::de::{Deserialize, IntoDeserializer};
 use serde_derive::Deserialize;
 use serde_json::value::Value;
 
@@ -22,6 +26,15 @@ impl State {
             Warning => (&theme.warning_bg, &theme.warning_fg),
             Critical => (&theme.critical_bg, &theme.critical_fg),
         }
+    }
+}
+
+impl FromStr for State {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let deserializer: StrDeserializer<Error> = s.into_deserializer();
+        State::deserialize(deserializer).map_err(|_| ())
     }
 }
 
