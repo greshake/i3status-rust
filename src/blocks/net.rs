@@ -29,6 +29,7 @@ use crate::widgets::button::ButtonWidget;
 lazy_static! {
     static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
     static ref WHITESPACE_REGEX: Regex = Regex::new("\\s+").unwrap();
+    static ref ETHTOOL_SPEED_REGEX: Regex = Regex::new("Speed: (\\d+\\w\\w/s)").unwrap();
 }
 
 pub struct NetworkDevice {
@@ -358,30 +359,38 @@ impl NetworkDevice {
                 "Bitrate is only available for connected devices.".to_string(),
             ));
         }
-        let command = if self.wireless {
-            format!(
+        if self.wireless {
+            let mut bitrate_output = Command::new("sh")
+            .args(&["-c", &format!(
                 "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
                 self.device
-            )
-        } else {
-            format!(
-                "ethtool {} 2>/dev/null | awk '/Speed:/ {{print $2}}'",
-                self.device
-            )
-        };
-        let mut bitrate_output = Command::new("sh")
-            .args(&["-c", &command])
+            )])
             .output()
             .block_error("net", "Failed to execute bitrate query.")?
             .stdout;
 
-        if bitrate_output.is_empty() {
-            Ok(None)
+            if bitrate_output.is_empty() {
+                Ok(None)
+            } else {
+                bitrate_output.pop(); // Remove trailing newline.
+                String::from_utf8(bitrate_output)
+                    .block_error("net", "Non-UTF8 bitrate.")
+                    .map(Some)
+            }
         } else {
-            bitrate_output.pop(); // Remove trailing newline.
-            String::from_utf8(bitrate_output)
-                .block_error("net", "Non-UTF8 bitrate.")
-                .map(Some)
+            let output = Command::new("ethtool")
+                .arg(&self.device)
+                .output()
+                .block_error("net", "Failed to execute bitrate query with ethtool")?
+                .stdout;
+            if let Some(rate) = ETHTOOL_SPEED_REGEX.captures_iter(&output).next() {
+                let rate = rate.get(1).block_error("net", "Invalid ethtool output: no speed")?;
+                String::from_utf8(rate.as_bytes().to_vec())
+                    .block_error("net", "Non-UTF8 bitrate")
+                    .map(Some)
+            } else {
+                Ok(None)
+            }
         }
     }
 }
