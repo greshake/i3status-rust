@@ -3,6 +3,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
+use regex::RegexSet;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -116,13 +117,14 @@ macro_rules! unwrap_or_continue {
 impl Xrandr {
     fn get_active_monitors() -> Result<Option<Vec<String>>> {
         let active_monitors_cli = String::from_utf8(
-            Command::new("sh")
-                .args(&["-c", "xrandr --listactivemonitors | grep \\/"])
+            Command::new("xrandr")
+                .args(&["--listactivemonitors"])
                 .output()
                 .block_error("xrandr", "couldn't collect active xrandr monitors")?
                 .stdout,
         )
         .block_error("xrandr", "couldn't parse xrandr monitor list")?;
+
         let monitors: Vec<&str> = active_monitors_cli.split('\n').collect();
         let mut active_monitors: Vec<String> = Vec::new();
         for monitor in monitors {
@@ -143,28 +145,32 @@ impl Xrandr {
 
     fn get_monitor_metrics(monitor_names: &[String]) -> Result<Option<Vec<Monitor>>> {
         let mut monitor_metrics: Vec<Monitor> = Vec::new();
-        let grep_arg = format!(
-            "xrandr --verbose | grep -w '{} connected\\|Brightness'",
-            monitor_names.join(" connected\\|")
-        );
         let monitor_info_cli = String::from_utf8(
-            Command::new("sh")
-                .args(&["-c", grep_arg.as_str()])
+            Command::new("xrandr")
+                .args(&["--verbose"])
                 .output()
                 .block_error("xrandr", "couldn't collect xrandr monitor info")?
                 .stdout,
         )
         .block_error("xrandr", "couldn't parse xrandr monitor info")?;
 
-        let monitor_infos: Vec<&str> = monitor_info_cli.split('\n').collect();
-        for i in 0..monitor_infos.len() {
-            if i % 2 == 1 {
-                continue;
-            }
+        let regex_set = RegexSet::new(
+            monitor_names
+                .iter()
+                .map(|x| format!("{} connected", x))
+                .chain(std::iter::once("Brightness:".to_string())),
+        )
+        .block_error("xrandr", "invalid monitor name")?;
+
+        let monitor_infos: Vec<&str> = monitor_info_cli
+            .split('\n')
+            .filter(|l| regex_set.is_match(l))
+            .collect();
+        for chunk in monitor_infos.chunks_exact(2) {
             let mut brightness = 0;
             let mut display: &str = "";
-            let mi_line = unwrap_or_continue!(monitor_infos.get(i));
-            let b_line = unwrap_or_continue!(monitor_infos.get(i + 1));
+            let mi_line = unwrap_or_continue!(chunk.get(0));
+            let b_line = unwrap_or_continue!(chunk.get(1));
             let mi_line_args: Vec<&str> = mi_line.split_whitespace().collect();
             if let Some(name) = mi_line_args.get(0) {
                 display = name.trim();
