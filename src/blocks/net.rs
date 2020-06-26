@@ -7,6 +7,8 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
+use lazy_static::lazy_static;
+use regex::bytes::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -23,6 +25,10 @@ use crate::util::{
 };
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+
+lazy_static! {
+    static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
+}
 
 pub struct NetworkDevice {
     device: String,
@@ -76,17 +82,17 @@ impl NetworkDevice {
     /// and will change when the status of devices change.
     pub fn default_device() -> Option<String> {
         String::from_utf8(
-            Command::new("sh")
-                .args(&[
-                    "-c",
-                    "ip route show default|head -n1|sed -n 's/^default.*dev \\(\\w*\\).*/\\1/p'",
-                ])
+            Command::new("ip")
+                .args(&["route", "show", "default"])
                 .output()
                 .ok()
-                .map(|o| {
-                    let mut v = o.stdout;
-                    v.pop(); // remove newline
-                    v
+                .and_then(|o| {
+                    let mut captures = DEFAULT_DEV_REGEX.captures_iter(&o.stdout);
+                    if let Some(cap) = captures.next() {
+                        cap.get(1).map(|x| x.as_bytes().to_vec())
+                    } else {
+                        None
+                    }
                 })?,
         )
         .ok()
