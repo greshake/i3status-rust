@@ -28,6 +28,7 @@ use crate::widgets::button::ButtonWidget;
 
 lazy_static! {
     static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
+    static ref WHITESPACE_REGEX: Regex = Regex::new("\\s+").unwrap();
 }
 
 pub struct NetworkDevice {
@@ -288,13 +289,15 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-        let mut ip_output = Command::new("sh")
+        let ip_output = Command::new("ip")
             .args(&[
-                "-c",
-                &format!(
-                    "ip -oneline -family inet address show {} | sed -rn -e \"s/.*inet ([\\.0-9/]+).*/\\1/; G; s/\\n/ /;h\" -e \"$ P;\"",
-                    self.device
-                ),
+                "-oneline",
+                "-brief",
+                "-family",
+                "inet",
+                "address",
+                "show",
+                &self.device,
             ])
             .output()
             .block_error("net", "Failed to execute IP address query.")?
@@ -302,13 +305,14 @@ impl NetworkDevice {
 
         if ip_output.is_empty() {
             Ok(None)
-        } else {
-            ip_output.pop(); // Remove trailing newline.
-            let ip = String::from_utf8(ip_output)
+        } else if let Some(ip_bytes) = WHITESPACE_REGEX.splitn(&ip_output, 3).nth(2) {
+            let ip = String::from_utf8(ip_bytes.to_vec())
                 .block_error("net", "Non-UTF8 IP address.")?
                 .trim()
                 .to_string();
             Ok(Some(ip))
+        } else {
+            Ok(None)
         }
     }
 
@@ -318,13 +322,15 @@ impl NetworkDevice {
             return Ok(None);
         }
 
-        let mut ip_output = Command::new("sh")
+        let ip_output = Command::new("ip")
             .args(&[
-                "-c",
-                &format!(
-                    "ip -oneline -family inet6 address show {} | sed -e 's/^.*inet6 \\([^ ]\\+\\).*/\\1/'",
-                    self.device
-                ),
+                "-oneline",
+                "-brief",
+                "-family",
+                "inet6",
+                "address",
+                "show",
+                &self.device,
             ])
             .output()
             .block_error("net", "Failed to execute IPv6 address query.")?
@@ -332,13 +338,14 @@ impl NetworkDevice {
 
         if ip_output.is_empty() {
             Ok(None)
-        } else {
-            ip_output.pop(); // Remove trailing newline.
-            let ip = String::from_utf8(ip_output)
+        } else if let Some(ip_bytes) = WHITESPACE_REGEX.splitn(&ip_output, 3).nth(2) {
+            let ip = String::from_utf8(ip_bytes.to_vec())
                 .block_error("net", "Non-UTF8 IP address.")?
                 .trim()
                 .to_string();
             Ok(Some(ip))
+        } else {
+            Ok(None)
         }
     }
 
