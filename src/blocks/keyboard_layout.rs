@@ -20,8 +20,8 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -463,7 +463,7 @@ impl Block for KeyboardLayout {
 
     fn update(&mut self) -> Result<Option<Update>> {
         let layout = self.monitor.keyboard_layout()?;
-        let values = map!("{layout}" => layout);
+        let values = map!("layout" => layout);
 
         self.output.set_text(self.format.render(&values)?);
         Ok(self.update_interval.map(|d| d.into()))

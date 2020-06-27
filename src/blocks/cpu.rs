@@ -12,8 +12,9 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, FormatTemplate};
+use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -229,10 +230,10 @@ impl Block for Cpu {
                 );
             }
         }
-        let values = map!("{frequency}" => format_frequency(&cpu_freqs, n_cpu, self.per_core),
-                          "{barchart}" => barchart,
-                          "{utilization}" => format_utilization(&cpu_utilizations, cpu_i, self.per_core),
-                          "{utilizationbar}" => format_percent_bar(avg_utilization as f32));
+        let values = map!("frequency" => format_frequency(&cpu_freqs, n_cpu, self.per_core),
+                          "barchart" => barchart,
+                          "utilization" => format_utilization(&cpu_utilizations, cpu_i, self.per_core),
+                          "utilizationbar" => format_percent_bar(avg_utilization as f32));
 
         self.output.set_text(self.format.render(&values)?);
 

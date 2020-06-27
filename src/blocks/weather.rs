@@ -11,9 +11,9 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -269,13 +269,16 @@ impl Weather {
                     _ => "weather_default",
                 });
 
-                self.weather_keys = map_to_owned!("{weather}" => raw_weather,
-                                  "{temp}" => format!("{:.0}", raw_temp),
-                                  "{humidity}" => format!("{:.0}", raw_humidity),
-                                  "{apparent}" => format!("{:.0}",apparent_temp),
-                                  "{wind}" => format!("{:.1}", raw_wind_speed),
-                                  "{direction}" => convert_wind_direction(raw_wind_direction),
-                                  "{location}" => raw_location);
+                self.weather_keys = map_to_owned!(
+                    "weather" => raw_weather,
+                    "temp" => format!("{:.0}", raw_temp),
+                    "humidity" => format!("{:.0}", raw_humidity),
+                    "apparent" => format!("{:.0}",apparent_temp),
+                    "wind" => format!("{:.1}", raw_wind_speed),
+                    "direction" => convert_wind_direction(raw_wind_direction),
+                    "location" => raw_location
+                );
+
                 Ok(())
             }
             WeatherService::OpenWeatherMap { ref api_key, .. } => {

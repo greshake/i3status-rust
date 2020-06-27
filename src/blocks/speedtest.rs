@@ -12,14 +12,15 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::{Bytes, FormatTemplate};
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{Bytes, FormatTemplate, Prefix};
+use crate::util::Prefix;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct SpeedTest {
-    vals: Arc<Mutex<(bool, Vec<f32>)>>,
+    vals: Arc<Mutex<(bool, Vec<f64>)>>,
     text: Vec<ButtonWidget>,
     id: String,
     config: SpeedTestConfig,
@@ -81,8 +82,8 @@ fn get_values(bytes: bool) -> Result<String> {
     .block_error("speedtest", "could not parse speedtest-cli output")
 }
 
-fn parse_values(output: &str) -> Result<Vec<f32>> {
-    let mut vals: Vec<f32> = Vec::with_capacity(3);
+fn parse_values(output: &str) -> Result<Vec<f64>> {
+    let mut vals: Vec<f64> = Vec::with_capacity(3);
 
     for line in output.lines() {
         let mut word = line.split_whitespace();
@@ -90,7 +91,7 @@ fn parse_values(output: &str) -> Result<Vec<f32>> {
         vals.push(
             word.next()
                 .block_error("speedtest", "missing data")?
-                .parse::<f32>()
+                .parse::<f64>()
                 .block_error("speedtest", "Unable to parse data")?,
         );
     }
@@ -101,7 +102,7 @@ fn parse_values(output: &str) -> Result<Vec<f32>> {
 fn make_thread(
     recv: Receiver<()>,
     done: Sender<Task>,
-    values: Arc<Mutex<(bool, Vec<f32>)>>,
+    values: Arc<Mutex<(bool, Vec<f64>)>>,
     config: SpeedTestConfig,
     id: String,
 ) {
@@ -187,12 +188,12 @@ impl Block for SpeedTest {
                 let format_speed = FormatTemplate::from_string("{speed:MB.2}/s").unwrap();
                 self.text[1].set_text(
                     format_speed
-                        .render(&map!("{speed}" => Bytes(down_bytes as u64)))
+                        .render(&map!("speed" => Bytes(down_bytes)))
                         .unwrap(),
                 );
                 self.text[2].set_text(
                     format_speed
-                        .render(&map!("{speed}" => Bytes(up_bytes as u64)))
+                        .render(&map!("speed" => Bytes(up_bytes)))
                         .unwrap(),
                 );
 

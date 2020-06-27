@@ -16,9 +16,10 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{has_command, FormatTemplate};
+use crate::util::has_command;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -325,7 +326,12 @@ impl Block for Pacman {
                 let aur_available_updates = get_aur_available_updates(&aur_command)?;
                 let pacman_count = get_update_count(&pacman_available_updates);
                 let aur_count = get_update_count(&aur_available_updates);
-                let formatting_map = map!("{count}" => pacman_count, "{pacman}" => pacman_count, "{aur}" => aur_count, "{both}" => pacman_count + aur_count);
+                let formatting_map = map!(
+                    "count" => pacman_count,
+                    "pacman" => pacman_count,
+                    "aur" => aur_count,
+                    "both" => pacman_count + aur_count
+                );
                 let critical = self.critical_updates_regex.as_ref().map_or(false, |regex| {
                     has_critical_update(&aur_available_updates, regex)
                         || has_critical_update(&aur_available_updates, regex)

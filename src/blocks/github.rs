@@ -12,9 +12,9 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -110,20 +110,20 @@ impl Block for Github {
 
         let default: u64 = 0;
         let values = map!(
-            "{total}" => format!("{}", aggregations.get("total").unwrap_or(&default)),
+            "total" => format!("{}", aggregations.get("total").unwrap_or(&default)),
             // As specified by:
             // https://developer.github.com/v3/activity/notifications/#notification-reasons
-            "{assign}" => format!("{}", aggregations.get("assign").unwrap_or(&default)),
-            "{author}" => format!("{}", aggregations.get("author").unwrap_or(&default)),
-            "{comment}" => format!("{}", aggregations.get("comment").unwrap_or(&default)),
-            "{invitation}" => format!("{}", aggregations.get("invitation").unwrap_or(&default)),
-            "{manual}" => format!("{}", aggregations.get("manual").unwrap_or(&default)),
-            "{mention}" => format!("{}", aggregations.get("mention").unwrap_or(&default)),
-            "{review_requested}" => format!("{}", aggregations.get("review_requested").unwrap_or(&default)),
-            "{security_alert}" => format!("{}", aggregations.get("security_alert").unwrap_or(&default)),
-            "{state_change}" => format!("{}", aggregations.get("state_change").unwrap_or(&default)),
-            "{subscribed}" => format!("{}", aggregations.get("subscribed").unwrap_or(&default)),
-            "{team_mention}" => format!("{}", aggregations.get("team_mention").unwrap_or(&default))
+            "assign" => format!("{}", aggregations.get("assign").unwrap_or(&default)),
+            "author" => format!("{}", aggregations.get("author").unwrap_or(&default)),
+            "comment" => format!("{}", aggregations.get("comment").unwrap_or(&default)),
+            "invitation" => format!("{}", aggregations.get("invitation").unwrap_or(&default)),
+            "manual" => format!("{}", aggregations.get("manual").unwrap_or(&default)),
+            "mention" => format!("{}", aggregations.get("mention").unwrap_or(&default)),
+            "review_requested" => format!("{}", aggregations.get("review_requested").unwrap_or(&default)),
+            "security_alert" => format!("{}", aggregations.get("security_alert").unwrap_or(&default)),
+            "state_change" => format!("{}", aggregations.get("state_change").unwrap_or(&default)),
+            "subscribed" => format!("{}", aggregations.get("subscribed").unwrap_or(&default)),
+            "team_mention" => format!("{}", aggregations.get("team_mention").unwrap_or(&default))
         );
 
         self.text.set_text(self.format.render(&values)?);

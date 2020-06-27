@@ -10,9 +10,9 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -195,7 +195,7 @@ impl Block for Taskwarrior {
                 TaskwarriorBlockMode::AllPendingTasks => vec![],
             };
             let number_of_pending_tasks = get_number_of_pending_tasks(&filter_tags)?;
-            let values = map!("{count}" => number_of_pending_tasks);
+            let values = map!("count" => number_of_pending_tasks);
             self.output.set_text(match number_of_pending_tasks {
                 0 => self.format_everything_done.render(&values)?,
                 1 => self.format_singular.render(&values)?,

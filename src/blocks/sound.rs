@@ -35,10 +35,11 @@ use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection};
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{format_percent_bar, FormatTemplate};
+use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -709,8 +710,8 @@ impl Sound {
         } else {
             output_name
         };
-        let values = map!("{volume}" => format!("{:02}", volume),
-                          "{output_name}" => mapped_output_name
+        let values = map!("volume" => format!("{:02}", volume),
+                          "output_name" => mapped_output_name
         );
         let text = self.format.render(&values)?;
 

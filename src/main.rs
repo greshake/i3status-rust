@@ -9,6 +9,7 @@ mod util;
 pub mod blocks;
 mod config;
 mod errors;
+mod formatter;
 mod icons;
 mod input;
 mod scheduler;

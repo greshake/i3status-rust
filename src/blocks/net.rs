@@ -14,12 +14,11 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::{Bytes, Format, FormatTemplate};
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{
-    escape_pango_text, format_percent_bar, format_vec_to_bar_graph, Bytes, FormatTemplate, Prefix,
-};
+use crate::util::{escape_pango_text, format_percent_bar, format_vec_to_bar_graph, Prefix};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -834,20 +833,20 @@ impl Block for Net {
         //     .parse()
         //     .expect("invalid down speed");
 
-        let s_up = Bytes(self.output_tx.unwrap_or(0));
-        let s_dn = Bytes(self.output_rx.unwrap_or(0));
+        let s_up = Bytes(self.output_tx.unwrap_or(0) as f64);
+        let s_dn = Bytes(self.output_rx.unwrap_or(0) as f64);
 
         let values = map!(
-            "{ssid}" => self.ssid.as_ref().unwrap_or(&empty_string) as &dyn crate::util::Format,
-            "{signal_strength}" => self.signal_strength.as_ref().unwrap_or(&empty_string),
-            "{signal_strength_bar}" => self.signal_strength_bar.as_ref().unwrap_or(&empty_string),
-            "{bitrate}" => self.bitrate.as_ref().unwrap_or(&empty_string),
-            "{ip}" => self.ip_addr.as_ref().unwrap_or(&empty_string),
-            "{ipv6}" => self.ipv6_addr.as_ref().unwrap_or(&empty_string),
-            "{speed_up}" => &s_up,
-            "{speed_down}" => &s_dn,
-            "{graph_up}" => self.graph_tx.as_ref().unwrap_or(&empty_string),
-            "{graph_down}" => self.graph_rx.as_ref().unwrap_or(&empty_string)
+            "ssid" => self.ssid.as_ref().unwrap_or(&empty_string) as &dyn Format,
+            "signal_strength" => self.signal_strength.as_ref().unwrap_or(&empty_string),
+            "signal_strength_bar" => self.signal_strength_bar.as_ref().unwrap_or(&empty_string),
+            "bitrate" => self.bitrate.as_ref().unwrap_or(&empty_string),
+            "ip" => self.ip_addr.as_ref().unwrap_or(&empty_string),
+            "ipv6" => self.ipv6_addr.as_ref().unwrap_or(&empty_string),
+            "speed_up" => &s_up,
+            "speed_down" => &s_dn,
+            "graph_up" => self.graph_tx.as_ref().unwrap_or(&empty_string),
+            "graph_down" => self.graph_rx.as_ref().unwrap_or(&empty_string)
         );
 
         self.output

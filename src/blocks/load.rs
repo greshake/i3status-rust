@@ -12,8 +12,8 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -132,11 +132,11 @@ impl Block for Load {
 
         let split: Vec<&str> = (&loadavg).split(' ').collect();
 
-        let values = map!("{1m}" => split[0],
-                          "{5m}" => split[1],
-                          "{15m}" => split[2]);
+        let values = map!("1m" => split[0],
+                          "5m" => split[1],
+                          "15m" => split[2]);
 
-        let used_perc = values["{1m}"]
+        let used_perc = values["1m"]
             .parse::<f32>()
             .block_error("load", "failed to parse float percentage")?
             / self.logical_cores as f32;

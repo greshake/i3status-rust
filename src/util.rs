@@ -1,17 +1,12 @@
 use num_traits::{clamp, ToPrimitive};
-use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
-use std::fmt;
 use std::fs::{File, OpenOptions};
-use std::hash::Hash;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
 
-use lazy_static::lazy_static;
-use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde_derive::Deserialize;
 use serde_json::value::Value;
@@ -19,20 +14,6 @@ use serde_json::value::Value;
 use crate::blocks::Block;
 use crate::config::Config;
 use crate::errors::*;
-
-pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
-
-pub fn escape_pango_text(text: String) -> String {
-    text.chars()
-        .map(|x| match x {
-            '&' => "&amp;".to_string(),
-            '<' => "&lt;".to_string(),
-            '>' => "&gt;".to_string(),
-            '\'' => "&#39;".to_string(),
-            _ => x.to_string(),
-        })
-        .collect()
-}
 
 #[derive(Copy, Clone, Debug, Deserialize, Eq, PartialEq)]
 pub enum Prefix {
@@ -54,22 +35,22 @@ impl Prefix {
         }
     }
 
-    pub fn from_char(val: char) -> Option<Self> {
+    pub fn from_str(val: &str) -> Option<Self> {
         match val {
-            '-' => Some(Self::None),
-            'K' => Some(Self::K),
-            'M' => Some(Self::M),
-            'G' => Some(Self::G),
-            'T' => Some(Self::T),
+            "none" => Some(Self::None),
+            "K" => Some(Self::K),
+            "M" => Some(Self::M),
+            "G" => Some(Self::G),
+            "T" => Some(Self::T),
             _ => None,
         }
     }
 
-    fn factor(self) -> f64 {
+    pub fn factor(self) -> f64 {
         1024f64.powi(self as i32)
     }
 
-    fn next(self) -> Option<Self> {
+    pub fn next(self) -> Option<Self> {
         let ordered = [Self::None, Self::K, Self::M, Self::G, Self::T];
         ordered
             .get(1 + ordered.iter().position(|x| *x == self).unwrap())
@@ -83,10 +64,18 @@ impl Default for Prefix {
     }
 }
 
-impl fmt::Display for Prefix {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.as_str())
-    }
+pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
+
+pub fn escape_pango_text(text: String) -> String {
+    text.chars()
+        .map(|x| match x {
+            '&' => "&amp;".to_string(),
+            '<' => "&lt;".to_string(),
+            '>' => "&gt;".to_string(),
+            '\'' => "&#39;".to_string(),
+            _ => x.to_string(),
+        })
+        .collect()
 }
 
 pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
@@ -373,218 +362,6 @@ pub fn add_colors(a: &str, b: &str) -> ::std::result::Result<String, Box<dyn std
         b_a.saturating_add(b_b),
         a_a.saturating_add(a_b),
     )))
-}
-
-//
-// Formating
-//
-
-#[derive(Default, Clone, Debug)]
-pub struct FormatOptions {
-    unit: String,
-    precision: Option<usize>,
-}
-
-/// Generic trait for types that can be formated.
-pub trait Format {
-    fn format(&self, options: &FormatOptions) -> String;
-}
-
-impl<T: Format + ?Sized> Format for &T {
-    fn format(&self, options: &FormatOptions) -> String {
-        (*self).format(options)
-    }
-}
-
-impl Format for &str {
-    fn format(&self, options: &FormatOptions) -> String {
-        format!("{}{}", self, options.unit)
-    }
-}
-
-impl Format for String {
-    fn format(&self, options: &FormatOptions) -> String {
-        self.as_str().format(options)
-    }
-}
-
-macro_rules! impl_format_for_numeric {
-    ($t:ty) => {
-        impl Format for $t {
-            fn format(&self, options: &FormatOptions) -> String {
-                if let Some(precision) = options.precision {
-                    format!("{:.*}{}", precision, self, options.unit)
-                } else {
-                    format!("{}{}", self, options.unit)
-                }
-            }
-        }
-    };
-}
-
-impl_format_for_numeric!(f64);
-impl_format_for_numeric!(f32);
-impl_format_for_numeric!(usize);
-impl_format_for_numeric!(isize);
-impl_format_for_numeric!(u64);
-impl_format_for_numeric!(u32);
-impl_format_for_numeric!(u16);
-impl_format_for_numeric!(u8);
-impl_format_for_numeric!(i64);
-impl_format_for_numeric!(i32);
-impl_format_for_numeric!(i16);
-impl_format_for_numeric!(i8);
-
-pub struct Bytes(pub u64);
-
-impl Format for Bytes {
-    fn format(&self, options: &FormatOptions) -> String {
-        let Self(bytes) = self;
-        let mut val = *bytes as f64;
-
-        let (mut prefix, unit) = {
-            if let Some(first_char) = options.unit.chars().next() {
-                let next_index = options
-                    .unit
-                    .char_indices()
-                    .nth(1)
-                    .map(|(i, _)| i)
-                    .unwrap_or_else(|| options.unit.len());
-
-                match (Prefix::from_char(first_char), &options.unit[next_index..]) {
-                    (Some(prefix), tail) => (Some(prefix), tail),
-                    _ => (None, options.unit.as_str()),
-                }
-            } else {
-                (None, "")
-            }
-        };
-
-        if unit == "b" {
-            val *= 8.
-        }
-
-        if let Some(prefix) = prefix.as_mut() {
-            while val / prefix.factor() >= 1000. && prefix.next().is_some() {
-                *prefix = prefix.next().unwrap()
-            }
-        }
-
-        // Display
-
-        let (val, prefix) = {
-            if let Some(prefix) = prefix {
-                (val / prefix.factor(), prefix.as_str())
-            } else {
-                (val, "")
-            }
-        };
-
-        if let Some(precision) = options.precision {
-            format!("{:.*}{}{}", precision, val, prefix, unit)
-        } else {
-            format!("{}{}{}", val, prefix, unit)
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct FormatTemplate {
-    inner: Vec<FormatAtom>,
-}
-
-impl FormatTemplate {
-    pub fn from_string(s: &str) -> Result<Self> {
-        lazy_static! {
-            static ref RE: Regex =
-                Regex::new(r"(?P<var>\{[^}]*\})|(?P<text>[^{]+)").expect("invalid format regex");
-        }
-
-        let inner = RE
-            .captures_iter(&s)
-            .map(
-                |re_match| match (re_match.name("text"), re_match.name("var")) {
-                    (Some(text), None) => Ok(FormatAtom::Str(text.as_str().to_string())),
-                    (None, Some(formatter)) => FormatAtom::from_format_param(formatter.as_str()),
-                    _ => unreachable!("invalid regex: should produce exactly a variant"),
-                },
-            )
-            .collect::<Result<_>>()?;
-
-        Ok(Self { inner })
-    }
-
-    pub fn render<K, T>(&self, vars: &HashMap<K, T>) -> Result<String>
-    where
-        K: Eq + Hash + Borrow<str>,
-        T: Format,
-    {
-        self.inner
-            .iter()
-            .map(|atom| {
-                Ok(match atom {
-                    FormatAtom::Str(text) => Cow::from(text),
-                    FormatAtom::Var { name, options } => Cow::from(
-                        vars.get(name)
-                            .internal_error("util", &format!("unknown variable: {}", name))?
-                            .format(options),
-                    ),
-                })
-            })
-            .try_fold(String::new(), |acc, atom: Result<_>| Ok(acc + &atom?))
-    }
-}
-
-#[derive(Clone, Debug)]
-enum FormatAtom {
-    Str(String),
-    Var {
-        name: String,
-        options: FormatOptions,
-    },
-}
-
-impl FormatAtom {
-    fn from_format_param(param: &str) -> Result<Self> {
-        lazy_static! {
-            static ref RE: Regex = {
-                let match_name = r"(?P<name>[a-zA-Z0-9_-]+)";
-                let match_unit = r"(?P<unit>[^.}]+)";
-                let match_precision = r"(?P<precision>\d+)";
-
-                Regex::new(&format!(
-                    r"\{{{}(?::{}?(?:.{})?)?\}}",
-                    match_name, match_unit, match_precision
-                ))
-                .expect("invalid formater regex")
-            };
-        }
-
-        let groups = RE
-            .captures(param)
-            .internal_error("util", &format!("invalid format parameter: {}", param))?;
-
-        let name = groups.name("name").expect("name not found").as_str();
-
-        let unit = groups
-            .name("unit")
-            .map(|s| s.as_str().to_string())
-            .unwrap_or_default();
-
-        let precision = groups
-            .name("precision")
-            .map(|s| {
-                s.as_str()
-                    .parse()
-                    .internal_error("util", &format!("invalid precision: {}", s.as_str()))
-            })
-            .transpose()?;
-
-        Ok(Self::Var {
-            name: format!("{{{}}}", name), // TODO: it is pretty strange, right?
-            options: FormatOptions { unit, precision },
-        })
-    }
 }
 
 macro_rules! if_debug {

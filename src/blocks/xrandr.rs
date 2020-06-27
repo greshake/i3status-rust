@@ -11,9 +11,9 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::{Config, LogicalDirection};
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -194,9 +194,9 @@ impl Xrandr {
     fn display(&mut self) -> Result<()> {
         if let Some(m) = self.monitors.get(self.current_idx) {
             let brightness_str = m.brightness.to_string();
-            let values = map!("{display}" => m.name.clone(),
-                              "{brightness}" => brightness_str,
-                              "{resolution}" => m.resolution.clone());
+            let values = map!("display" => m.name.clone(),
+                              "brightness" => brightness_str,
+                              "resolution" => m.resolution.clone());
 
             self.text.set_icon("xrandr");
             let format_str = if self.resolution {

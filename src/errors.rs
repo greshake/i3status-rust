@@ -1,7 +1,8 @@
 pub use std::error::Error as StdError;
 use std::fmt;
 
-pub use self::Error::{BlockError, ConfigurationError, InternalError};
+pub use self::Error::{BlockError, ConfigurationError, InternalError, InvalidFormatter};
+use crate::formatter::VarFormatter;
 
 /// Result type returned from functions that can have our `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -64,53 +65,46 @@ pub enum Error {
     BlockError(String, String),
     ConfigurationError(String, (String, String)),
     InternalError(String, String, Option<(String, String)>),
+    InvalidFormatter {
+        formatter: VarFormatter,
+        var: String,
+    },
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            BlockError(ref block, ref message) => {
-                f.write_str(&format!("Error in block '{}': {}", block, message))
+        match self {
+            BlockError(block, message) => write!(f, "Error in block '{}': {}", block, message),
+            ConfigurationError(message, _) => write!(f, "Configuration error: {}", message),
+            InternalError(context, message, _) => {
+                write!(f, "Internal error in context '{}': {}", context, message)
             }
-            ConfigurationError(ref message, _) => {
-                f.write_str(&format!("Configuration error: {}", message))
+            InvalidFormatter { formatter, var } => {
+                write!(f, "Invalid formatter for '{}': {:?}", var, formatter)
             }
-            InternalError(ref context, ref message, _) => f.write_str(&format!(
-                "Internal error in context '{}': {}",
-                context, message
-            )),
         }
     }
 }
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            BlockError(ref block, ref message) => {
-                f.write_str(&format!("Error in block '{}': {}", block, message))
-            }
-            ConfigurationError(ref message, (ref cause, _)) => f.write_str(&format!(
-                "Configuration error: {}.\nCause: {}",
-                message, cause
-            )),
-            InternalError(ref context, ref message, Some((ref cause, _))) => f.write_str(&format!(
-                "Internal error in context '{}': {}.\nCause: {}",
-                context, message, cause
-            )),
-            InternalError(ref context, ref message, None) => f.write_str(&format!(
-                "Internal error in context '{}': {}",
-                context, message
-            )),
+        fmt::Display::fmt(self, f)?;
+
+        match self {
+            ConfigurationError(_, (cause, _)) => write!(f, "\nCause: {}", cause),
+            InternalError(_, _, Some((cause, _))) => write!(f, "\nCause: {}", cause),
+            _ => Ok(()),
         }
     }
 }
 
 impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
+    fn description(&self) -> &'static str {
+        match self {
             BlockError(_, _) => "Block error occurred in block '{}'",
             ConfigurationError(_, _) => "Configuration error occurred",
             InternalError(_, _, _) => "Internal error occurred",
+            InvalidFormatter { .. } => "Invalid formatter for variable",
         }
     }
 

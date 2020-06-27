@@ -19,8 +19,9 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
+use crate::util::{battery_level_to_icon, format_percent_bar, read_file};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -629,10 +630,10 @@ impl Block for Battery {
                 Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
                 Err(_) => "×".into(),
             };
-            let values = map!("{percentage}" => &percentage,
-                              "{bar}" => &bar,
-                              "{time}" => &time,
-                              "{power}" => &power);
+            let values = map!("percentage" => &percentage,
+                              "bar" => &bar,
+                              "time" => &time,
+                              "power" => &power);
             self.output.set_text(self.format.render(&values)?);
 
             // Check if the battery is in charging mode and change the state to Good.

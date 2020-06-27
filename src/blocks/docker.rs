@@ -10,9 +10,9 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -107,11 +107,11 @@ impl Block for Docker {
             .block_error("docker", "Failed to parse JSON response.")?;
 
         let values = map!(
-            "{total}" => format!("{}", status.total),
-            "{running}" => format!("{}", status.running),
-            "{paused}" => format!("{}", status.paused),
-            "{stopped}" => format!("{}", status.stopped),
-            "{images}" => format!("{}", status.images)
+            "total" => format!("{}", status.total),
+            "running" => format!("{}", status.running),
+            "paused" => format!("{}", status.paused),
+            "stopped" => format!("{}", status.stopped),
+            "images" => format!("{}", status.images)
         );
 
         self.text.set_text(self.format.render(&values)?);

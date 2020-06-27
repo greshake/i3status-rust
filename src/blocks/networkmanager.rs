@@ -19,9 +19,9 @@ use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -669,9 +669,9 @@ impl Block for NetworkManager {
                                         Err(_) => "0".to_string(),
                                     };
 
-                                    let values = map!("{ssid}" => ssid,
-                                                      "{strength}" => strength,
-                                                      "{freq}" => freq);
+                                    let values = map!("ssid" => ssid,
+                                                      "strength" => strength,
+                                                      "freq" => freq);
                                     if let Ok(s) = self.ap_format.render(&values) {
                                         s
                                     } else {
@@ -694,10 +694,10 @@ impl Block for NetworkManager {
                                     }
                                 }
 
-                                let values = map!("{icon}" => icon,
-                                                  "{typename}" => type_name,
-                                                  "{ap}" => ap,
-                                                  "{ips}" => ips);
+                                let values = map!("icon" => icon,
+                                                  "typename" => type_name,
+                                                  "ap" => ap,
+                                                  "ips" => ips);
 
                                 if let Ok(s) = self.device_format.render(&values) {
                                     devicevec.push(s);
@@ -712,8 +712,8 @@ impl Block for NetworkManager {
                             Err(v) => format!("{:?}", v),
                         };
 
-                        let values = map!("{devices}" => devicevec.join(" "),
-                                          "{id}" => id);
+                        let values = map!("devices" => devicevec.join(" "),
+                                          "id" => id);
 
                         if let Ok(s) = self.connection_format.render(&values) {
                             widget.set_text(s);

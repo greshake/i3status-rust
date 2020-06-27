@@ -12,9 +12,10 @@ use uuid::Uuid;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, FormatTemplate};
+use crate::util::battery_level_to_icon;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -457,15 +458,15 @@ impl Block for KDEConnect {
         });
 
         let values = map!(
-            "{bat_icon}" => bat_icon.unwrap().trim().to_string(),
-            "{bat_charge}" => charge.to_string(),
-            "{bat_state}" => charging.to_string(),
-            "{notif_icon}" => self.config.icons.get("notification").unwrap().trim().to_string(),
-            "{notif_count}" => notif_count.to_string(),
+            "bat_icon" => bat_icon.unwrap().trim().to_string(),
+            "bat_charge" => charge.to_string(),
+            "bat_state" => charging.to_string(),
+            "notif_icon" => self.config.icons.get("notification").unwrap().trim().to_string(),
+            "notif_count" => notif_count.to_string(),
             // TODO
             //"{notif_text}" => notif_text,
-            "{name}" => name,
-            "{id}" => self.device_id.to_string()
+            "name" => name,
+            "id" => self.device_id.to_string()
         );
 
         if (

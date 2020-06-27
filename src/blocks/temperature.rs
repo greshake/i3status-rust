@@ -10,9 +10,9 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatter::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -184,9 +184,9 @@ impl Block for Temperature {
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
                 .round() as i64;
 
-            let values = map!("{average}" => avg,
-                              "{min}" => min,
-                              "{max}" => max);
+            let values = map!("average" => avg,
+                              "min" => min,
+                              "max" => max);
 
             self.output = self.format.render(&values)?;
             if !self.collapsed {
