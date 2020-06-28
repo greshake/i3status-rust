@@ -536,6 +536,12 @@ impl ConfigBlock for NetworkManager {
 
         Ok(NetworkManager {
             id: id.clone(),
+            ap_format: FormatTemplate::from_string(&block_config.ap_format, &config.icons)?,
+            device_format: FormatTemplate::from_string(&block_config.device_format, &config.icons)?,
+            connection_format: FormatTemplate::from_string(
+                &block_config.connection_format,
+                &config.icons,
+            )?,
             config: config.clone(),
             indicator: ButtonWidget::new(config, &id),
             output: Vec::new(),
@@ -544,9 +550,6 @@ impl ConfigBlock for NetworkManager {
             on_click: block_config.on_click,
             primary_only: block_config.primary_only,
             max_ssid_width: block_config.max_ssid_width,
-            ap_format: FormatTemplate::from_string(&block_config.ap_format)?,
-            device_format: FormatTemplate::from_string(&block_config.device_format)?,
-            connection_format: FormatTemplate::from_string(&block_config.connection_format)?,
         })
     }
 }

@@ -115,6 +115,7 @@ impl ConfigBlock for Cpu {
 
         Ok(Cpu {
             id: Uuid::new_v4().to_simple().to_string(),
+            format: FormatTemplate::from_string(&format, &config.icons)?,
             update_interval: block_config.interval,
             output: TextWidget::new(config).with_icon("cpu"),
             prev_idles: [0; MAX_CPUS],
@@ -122,8 +123,6 @@ impl ConfigBlock for Cpu {
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            format: FormatTemplate::from_string(&format)
-                .block_error("cpu", "Invalid format specified for cpu")?,
             has_frequency: format.contains("{frequency}"),
             has_barchart: format.contains("{barchart}"),
             per_core: block_config.per_core,

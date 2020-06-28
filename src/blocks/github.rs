@@ -77,12 +77,11 @@ impl ConfigBlock for Github {
 
         Ok(Github {
             id: Uuid::new_v4().to_simple().to_string(),
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
             update_interval: block_config.interval,
             text: TextWidget::new(config).with_text("x").with_icon("github"),
             api_server: block_config.api_server,
             token,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("github", "Invalid format specified")?,
         })
     }
 }

@@ -82,10 +82,6 @@ impl ConfigBlock for Load {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(config)
-            .with_icon("cogs")
-            .with_state(State::Info);
-
         let f = File::open("/proc/cpuinfo")
             .block_error("load", "Your system doesn't support /proc/cpuinfo")?;
         let f = BufReader::new(f);
@@ -105,14 +101,15 @@ impl ConfigBlock for Load {
 
         Ok(Load {
             id: Uuid::new_v4().to_simple().to_string(),
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
             logical_cores,
             update_interval: block_config.interval,
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("load", "Invalid format specified for load")?,
-            text,
+            text: TextWidget::new(config)
+                .with_icon("cogs")
+                .with_state(State::Info),
         })
     }
 }

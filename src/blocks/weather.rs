@@ -57,7 +57,7 @@ pub enum OpenWeatherMapUnits {
 pub struct Weather {
     id: String,
     weather: ButtonWidget,
-    format: String,
+    format: FormatTemplate,
     weather_keys: HashMap<String, String>,
     service: WeatherService,
     update_interval: Duration,
@@ -338,8 +338,8 @@ impl ConfigBlock for Weather {
         let id = Uuid::new_v4().to_simple().to_string();
         Ok(Weather {
             id: id.clone(),
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
             weather: ButtonWidget::new(config, &id),
-            format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,
             update_interval: block_config.interval,
@@ -356,8 +356,8 @@ impl Block for Weather {
         if self.weather_keys.keys().len() == 0 {
             self.weather.set_text("×".to_string());
         } else {
-            let fmt = FormatTemplate::from_string(&self.format)?;
-            self.weather.set_text(fmt.render(&self.weather_keys)?);
+            self.weather
+                .set_text(self.format.render(&self.weather_keys)?);
         }
         Ok(Some(self.update_interval.into()))
     }

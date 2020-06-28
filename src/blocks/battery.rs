@@ -585,10 +585,10 @@ impl ConfigBlock for Battery {
 
         Ok(Battery {
             id,
+            format: FormatTemplate::from_string(&format, &config.icons)?,
             update_interval: block_config.interval,
             output: TextWidget::new(config),
             device,
-            format: FormatTemplate::from_string(&format)?,
             driver,
             good: block_config.good,
             info: block_config.info,

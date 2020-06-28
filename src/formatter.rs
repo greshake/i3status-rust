@@ -49,22 +49,50 @@ pub enum BytesUnit {
 // --
 
 impl FormatTemplate {
-    pub fn from_string(s: &str) -> Result<Self> {
+    pub fn from_string(s: &str, icons: &HashMap<String, String>) -> Result<Self> {
         lazy_static! {
-            static ref RE: Regex =
-                Regex::new(r"(?P<var>\{[^}]*\})|(?P<text>[^{]+)").expect("invalid format regex");
+            static ref RE: Regex = {
+                let match_var = r"\{(?P<var>[^}]*)\}";
+                let match_icon = r"<(?P<icon>[a-zA-Z0-9_]+)>";
+                let match_text = r"(?P<text>[^{<]+)";
+                Regex::new(&format!(r"{}|{}|{}", match_var, match_icon, match_text))
+                    .expect("invalid format regex")
+            };
         }
 
         let inner = RE
             .captures_iter(&s)
-            .map(
-                |re_match| match (re_match.name("text"), re_match.name("var")) {
-                    (Some(text), None) => Ok(FormatAtom::Str(text.as_str().to_string())),
-                    (None, Some(formatter)) => FormatAtom::from_format_param(formatter.as_str()),
-                    _ => unreachable!("invalid regex: should produce exactly a variant"),
-                },
-            )
+            .map(|re_match| {
+                Ok(
+                    match (
+                        re_match.name("text"),
+                        re_match.name("var"),
+                        re_match.name("icon"),
+                    ) {
+                        (Some(text), None, None) => FormatAtom::Str(text.as_str().to_string()),
+                        (None, Some(formatter), None) => {
+                            FormatAtom::from_format_param(formatter.as_str())?
+                        }
+                        (None, None, Some(icon)) => FormatAtom::Str(
+                            icons
+                                .get(icon.as_str())
+                                .ok_or_else(|| {
+                                    Error::InternalError(
+                                        "formatter".to_string(),
+                                        format!("unknown icon: '{}'", icon.as_str()),
+                                        None,
+                                    )
+                                })?
+                                .trim()
+                                .to_string(),
+                        ),
+                        _ => unreachable!("invalid regex: should produce exactly a variant"),
+                    },
+                )
+            })
             .collect::<Result<_>>()?;
+
+        dbg!(&inner);
 
         Ok(Self { inner })
     }
@@ -129,7 +157,7 @@ impl FormatAtom {
                 );
 
                 Regex::new(&format!(
-                    r"\{{{name}(:{formatter})?\}}",
+                    r"{name}(:{formatter})?",
                     name = name,
                     formatter = formatter
                 ))

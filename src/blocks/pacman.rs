@@ -142,18 +142,15 @@ impl ConfigBlock for Pacman {
         Ok(Pacman {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("pacman", "Invalid format specified for pacman::format")?,
-            format_singular: FormatTemplate::from_string(&block_config.format_singular)
-                .block_error(
-                    "pacman",
-                    "Invalid format specified for pacman::format_singular",
-                )?,
-            format_up_to_date: FormatTemplate::from_string(&block_config.format_up_to_date)
-                .block_error(
-                    "pacman",
-                    "Invalid format specified for pacman::format_up_to_date",
-                )?,
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
+            format_singular: FormatTemplate::from_string(
+                &block_config.format_singular,
+                &config.icons,
+            )?,
+            format_up_to_date: FormatTemplate::from_string(
+                &block_config.format_up_to_date,
+                &config.icons,
+            )?,
             output: ButtonWidget::new(config, "pacman").with_icon("update"),
             critical_updates_regex: match block_config.critical_updates_regex {
                 None => None, // no regex configured

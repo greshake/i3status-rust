@@ -613,11 +613,14 @@ impl ConfigBlock for Net {
         Ok(Net {
             id: id.clone(),
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(if old_user_format.is_empty() {
-                &block_config.format
-            } else {
-                &old_format
-            })?,
+            format: FormatTemplate::from_string(
+                if old_user_format.is_empty() {
+                    &block_config.format
+                } else {
+                    &old_format
+                },
+                &config.icons,
+            )?,
             output: ButtonWidget::new(config.clone(), "").with_text(""),
             config: config.clone(),
             speed_min_unit: block_config.speed_min_unit,

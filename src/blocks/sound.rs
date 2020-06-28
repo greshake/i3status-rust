@@ -789,7 +789,7 @@ impl ConfigBlock for Sound {
             text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
             id: id.clone(),
             device,
-            format: FormatTemplate::from_string(&block_config.format)?,
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
             step_width,
             config,
             on_click: block_config.on_click,

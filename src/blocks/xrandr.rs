@@ -211,7 +211,7 @@ impl Xrandr {
                 "{display}: {brightness}"
             };
 
-            if let Ok(fmt_template) = FormatTemplate::from_string(format_str) {
+            if let Ok(fmt_template) = FormatTemplate::from_string(format_str, &self.config.icons) {
                 self.text.set_text(fmt_template.render(&values)?);
             }
         }

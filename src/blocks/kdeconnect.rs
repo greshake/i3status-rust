@@ -403,8 +403,11 @@ impl ConfigBlock for KDEConnect {
             bat_info: block_config.bat_info,
             bat_warning: block_config.bat_warning,
             bat_critical: block_config.bat_critical,
-            format: FormatTemplate::from_string(&block_config.format)?,
-            format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
+            format_disconnected: FormatTemplate::from_string(
+                &block_config.format_disconnected,
+                &config.icons,
+            )?,
             output: ButtonWidget::new(config.clone(), "kdeconnect").with_icon("phone"),
             config,
         })

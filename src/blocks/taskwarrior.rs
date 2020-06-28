@@ -117,21 +117,14 @@ impl ConfigBlock for Taskwarrior {
             output: ButtonWidget::new(config.clone(), "taskwarrior")
                 .with_icon("tasks")
                 .with_text("-"),
-            format: FormatTemplate::from_string(&block_config.format).block_error(
-                "taskwarrior",
-                "Invalid format specified for taskwarrior::format",
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
+            format_singular: FormatTemplate::from_string(
+                &block_config.format_singular,
+                &config.icons,
             )?,
-            format_singular: FormatTemplate::from_string(&block_config.format_singular)
-                .block_error(
-                    "taskwarrior",
-                    "Invalid format specified for taskwarrior::format_singular",
-                )?,
             format_everything_done: FormatTemplate::from_string(
                 &block_config.format_everything_done,
-            )
-            .block_error(
-                "taskwarrior",
-                "Invalid format specified for taskwarrior::format_everything_done",
+                &config.icons,
             )?,
             tx_update_request,
             config,

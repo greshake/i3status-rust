@@ -362,6 +362,10 @@ impl ConfigBlock for Memory {
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let icons: bool = block_config.icons;
+        let format = (
+            FormatTemplate::from_string(&block_config.format_mem, &config.icons)?,
+            FormatTemplate::from_string(&block_config.format_swap, &config.icons)?,
+        );
         let widget = ButtonWidget::new(config, "memory").with_text("");
         Ok(Memory {
             id: Uuid::new_v4().to_simple().to_string(),
@@ -375,10 +379,7 @@ impl ConfigBlock for Memory {
                 (widget.clone(), widget)
             },
             clickable: block_config.clickable,
-            format: (
-                FormatTemplate::from_string(&block_config.format_mem)?,
-                FormatTemplate::from_string(&block_config.format_swap)?,
-            ),
+            format,
             update_interval: block_config.interval,
             tx_update_request: tx,
             warning: (block_config.warning_mem, block_config.warning_swap),

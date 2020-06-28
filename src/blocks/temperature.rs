@@ -113,6 +113,7 @@ impl ConfigBlock for Temperature {
     ) -> Result<Self> {
         let id = Uuid::new_v4().to_simple().to_string();
         Ok(Temperature {
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
             update_interval: block_config.interval,
             text: ButtonWidget::new(config, &id).with_icon("thermometer"),
             output: String::new(),
@@ -122,8 +123,6 @@ impl ConfigBlock for Temperature {
             maximum_idle: block_config.idle,
             maximum_info: block_config.info,
             maximum_warning: block_config.warning,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("temperature", "Invalid format specified for temperature")?,
             chip: block_config.chip,
         })
     }

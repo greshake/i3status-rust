@@ -185,26 +185,26 @@ impl Block for SpeedTest {
                 };
                 // TODO: this is just here to replace deprecated format_speed, this should be
                 //       integrated as a format string at config level before merging.
-                let format_speed = FormatTemplate::from_string("{speed:MB.2}/s").unwrap();
-                self.text[1].set_text(
-                    format_speed
-                        .render(&map!("speed" => Bytes(down_bytes)))
-                        .unwrap(),
-                );
-                self.text[2].set_text(
-                    format_speed
-                        .render(&map!("speed" => Bytes(up_bytes)))
-                        .unwrap(),
-                );
-
-                // TODO: remove clippy workaround
-                #[allow(clippy::unknown_clippy_lints)]
-                #[allow(clippy::match_on_vec_items)]
-                self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
-                            0.0 ; 25.0 => State::Good,
-                            25.0 ; 60.0 => State::Info,
-                            60.0 ; 100.0 => State::Warning
-                }));
+                // let format_speed = FormatTemplate::from_string("{speed:MB.2}/s", &self.icons)?;
+                // self.text[1].set_text(
+                //     format_speed
+                //         .render(&map!("speed" => Bytes(down_bytes)))
+                //         .unwrap(),
+                // );
+                // self.text[2].set_text(
+                //     format_speed
+                //         .render(&map!("speed" => Bytes(up_bytes)))
+                //         .unwrap(),
+                // );
+                //
+                // // TODO: remove clippy workaround
+                // #[allow(clippy::unknown_clippy_lints)]
+                // #[allow(clippy::match_on_vec_items)]
+                // self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
+                //             0.0 ; 25.0 => State::Good,
+                //             25.0 ; 60.0 => State::Info,
+                //             60.0 ; 100.0 => State::Warning
+                // }));
             }
 
             Ok(None)

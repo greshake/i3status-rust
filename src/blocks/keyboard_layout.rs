@@ -445,13 +445,10 @@ impl ConfigBlock for KeyboardLayout {
         };
         Ok(KeyboardLayout {
             id,
+            format: FormatTemplate::from_string(&block_config.format, &config.icons)?,
             output: TextWidget::new(config),
             monitor,
             update_interval,
-            format: FormatTemplate::from_string(&block_config.format).block_error(
-                "keyboard_layout",
-                "Invalid format specified for keyboard_layout",
-            )?,
         })
     }
 }
