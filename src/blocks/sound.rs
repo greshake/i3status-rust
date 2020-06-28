@@ -517,7 +517,7 @@ impl PulseAudioSoundDevice {
 
     fn volume(&mut self, volume: ChannelVolumes) {
         self.volume = Some(volume);
-        self.volume_avg = (volume.avg().0 as f32 / VOLUME_NORM.0 as f32 * 100.0).round() as u32;
+        self.volume_avg = (volume.avg().0 as f64 / VOLUME_NORM.0 as f64 * 100.0).round() as u32;
     }
 }
 
@@ -552,7 +552,7 @@ impl SoundDevice for PulseAudioSoundDevice {
         };
 
         // apply step to volumes
-        let step = (step as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as i32;
+        let step = (step as f64 * VOLUME_NORM.0 as f64 / 100.0).round() as i32;
         for vol in volume.get_mut().iter_mut() {
             vol.0 = min(max(0, vol.0 as i32 + step) as u32, VOLUME_MAX.0);
         }
@@ -719,7 +719,7 @@ impl Sound {
             self.text.set_icon("volume_muted");
             if self.show_volume_when_muted {
                 if self.bar {
-                    self.text.set_text(format_percent_bar(volume as f32));
+                    self.text.set_text(format_percent_bar(volume as f64));
                 } else {
                     self.text.set_text(text);
                 }
@@ -734,7 +734,7 @@ impl Sound {
                 _ => "volume_full",
             });
             self.text.set_text(if self.bar {
-                format_percent_bar(volume as f32)
+                format_percent_bar(volume as f64)
             } else {
                 text
             });

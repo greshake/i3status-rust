@@ -1,6 +1,5 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use std::fmt;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::str::FromStr;
@@ -12,10 +11,10 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::formatter::FormatTemplate;
+use crate::formatter::{Bytes, Format, FormatTemplate};
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::*;
+use crate::util::format_percent_bar;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -24,64 +23,6 @@ use crate::widgets::button::ButtonWidget;
 pub enum Memtype {
     Swap,
     Memory,
-}
-
-#[derive(Clone, Copy)]
-enum Unit {
-    MiB(u64),
-    GiB(f32),
-    KiB(u64),
-}
-
-impl fmt::Display for Unit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Unit::MiB(n) => n.fmt(f),
-            Unit::KiB(n) => n.fmt(f),
-            Unit::GiB(n) => n.fmt(f),
-        }
-    }
-}
-
-impl Unit {
-    fn n(&self) -> u64 {
-        match self.kib() {
-            Unit::KiB(n) => n,
-            _ => 0,
-        }
-    }
-
-    fn gib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::GiB((n as f32) / 1024f32.powi(2)),
-            Unit::MiB(n) => Unit::GiB((n as f32) / 1024f32),
-            Unit::GiB(n) => Unit::GiB(n),
-        }
-    }
-
-    fn mib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::MiB(n / 1024),
-            Unit::MiB(n) => Unit::MiB(n),
-            Unit::GiB(n) => Unit::MiB((n * 1024f32) as u64),
-        }
-    }
-
-    fn kib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::KiB(n),
-            Unit::MiB(n) => Unit::KiB(n * 1024),
-            Unit::GiB(n) => Unit::KiB((n * 1024f32.powi(2)) as u64),
-        }
-    }
-
-    fn percent(&self, reference: Unit) -> f32 {
-        if reference.n() < 1 {
-            100f32
-        } else {
-            (self.n() as f32) / (reference.n() as f32) * 100f32
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -258,89 +199,67 @@ impl MemoryConfig {
 
 impl Memory {
     fn format_insert_values(&mut self, mem_state: Memstate) -> Result<String> {
-        let mem_total = Unit::KiB(mem_state.mem_total());
-        let mem_free = Unit::KiB(mem_state.mem_free());
-        let swap_total = Unit::KiB(mem_state.swap_total());
-        let swap_free = Unit::KiB(mem_state.swap_free());
-        let swap_used = Unit::KiB(mem_state.swap_total() - mem_state.swap_free());
-        let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
-        let buffers = Unit::KiB(mem_state.buffers());
-        let cached = Unit::KiB(mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem());
-        let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
-        let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
+        let mem_total = mem_state.mem_total() as f64;
+        let mem_free = mem_state.mem_free() as f64;
+        let swap_total = mem_state.swap_total() as f64;
+        let swap_free = mem_state.swap_free() as f64;
+        let swap_used = (mem_state.swap_total() - mem_state.swap_free()) as f64;
+        let mem_total_used = mem_total - mem_free;
+        let buffers = mem_state.buffers() as f64;
+        let cached = (mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem()) as f64;
+        let mem_used = mem_total_used - (buffers + cached);
+        let mem_avail = mem_total - mem_used;
 
-        // TODO: these guys are bytes
-        let values = map!(
-            "MTg" => format!("{:.1}", mem_total.gib()),
-            "MTm" => format!("{}", mem_total.mib()),
-            "MFg" => format!("{:.1}", mem_free.gib()),
-            "MFm" => format!("{}", mem_free.mib()),
-            "MFp" => format!("{:.2}", mem_free.percent(mem_total)),
-            "MFpi" => format!("{:02}", mem_free.percent(mem_total) as i32),
-            "MFpb" => format_percent_bar(mem_free.percent(mem_total)),
-            "MUg" => format!("{:.1}", mem_total_used.gib()),
-            "MUm" => format!("{}", mem_total_used.mib()),
-            "MUp" => format!("{:.2}", mem_total_used.percent(mem_total)),
-            "MUpi" => format!("{:02}", mem_total_used.percent(mem_total) as i32),
-            "MUpb" => format_percent_bar(mem_total_used.percent(mem_total)),
-            "Mug" => format!("{:.1}", mem_used.gib()),
-            "Mum" => format!("{}", mem_used.mib()),
-            "Mup" => format!("{:.2}", mem_used.percent(mem_total)),
-            "Mupi" => format!("{:02}", mem_used.percent(mem_total) as i32),
-            "Mupb" => format_percent_bar(mem_used.percent(mem_total)),
-            "MAg" => format!("{:.1}", mem_avail.gib()),
-            "MAm" => format!("{}", mem_avail.mib()),
-            "MAp" => format!("{:.2}", mem_avail.percent(mem_total)),
-            "MApi" => format!("{:02}", mem_avail.percent(mem_total) as i32),
-            "MApb" => format_percent_bar(mem_avail.percent(mem_total)),
-            "STg" => format!("{:.1}", swap_total.gib()),
-            "STm" => format!("{}", swap_total.mib()),
-            "SFg" => format!("{:.1}", swap_free.gib()),
-            "SFm" => format!("{}", swap_free.mib()),
-            "SFp" => format!("{:.2}", swap_free.percent(swap_total)),
-            "SFpi" => format!("{:02}", swap_free.percent(swap_total) as i32),
-            "SFpb" => format_percent_bar(swap_free.percent(swap_total)),
-            "SUg" => format!("{:.1}", swap_used.gib()),
-            "SUm" => format!("{}", swap_used.mib()),
-            "SUp" => format!("{:.2}", swap_used.percent(swap_total)),
-            "SUpi" => format!("{:02}", swap_used.percent(swap_total) as i32),
-            "SUpb" => format_percent_bar(swap_used.percent(swap_total)),
-            "Bg" => format!("{:.1}", buffers.gib()),
-            "Bm" => format!("{}", buffers.mib()),
-            "Bp" => format!("{:.2}", buffers.percent(mem_total)),
-            "Bpi" => format!("{:02}", buffers.percent(mem_total) as i32),
-            "Bpb" => format_percent_bar(buffers.percent(mem_total)),
-            "Cg" => format!("{:.1}", cached.gib()),
-            "Cm" => format!("{}", cached.mib()),
-            "Cp" => format!("{:.2}", cached.percent(mem_total)),
-            "Cpi" => format!("{:02}", cached.percent(mem_total) as i32),
-            "Cpb" => format_percent_bar(cached.percent(mem_total)));
+        let mem_free_percent = 100. * mem_free / mem_total;
+        let mem_total_used_percent = 100. * mem_total_used / mem_total;
+        let mem_used_percent = 100. * mem_used / mem_total;
+        let mem_avail_percent = 100. * mem_avail / mem_total;
+        let swap_free_percent = 100. * swap_free / swap_total;
+        let swap_used_percent = 100. * swap_used / swap_total;
+        let buffers_percent = 100. * buffers / swap_total;
+        let cached_percent = 100. * cached / mem_total;
 
-        match self.memtype {
-            Memtype::Memory => self.output.0.set_state(match mem_used.percent(mem_total) {
-                x if f64::from(x) > self.critical.0 => State::Critical,
-                x if f64::from(x) > self.warning.0 => State::Warning,
-                _ => State::Idle,
-            }),
-            Memtype::Swap => self
-                .output
-                .1
-                .set_state(match swap_used.percent(swap_total) {
-                    x if f64::from(x) > self.critical.1 => State::Critical,
-                    x if f64::from(x) > self.warning.1 => State::Warning,
-                    _ => State::Idle,
-                }),
+        let values = format_params! {
+            "mem_total" => Bytes(1024. * mem_total),
+            "mem_free" => Bytes(1024. * mem_free),
+            "swap_total" => Bytes(1024. * swap_total),
+            "swap_free" => Bytes(1024. * swap_free),
+            "swap_used" => Bytes(1024. * swap_used),
+            "mem_total_used" => Bytes(1024. * mem_total_used),
+            "buffers" => Bytes(1024. * buffers),
+            "cached" => Bytes(1024. * cached),
+            "mem_used" => Bytes(1024. * mem_used),
+            "mem_avail" => Bytes(1024. * mem_avail),
+            "mem_free_percent" => mem_free_percent,
+            "mem_free_bar" => format_percent_bar(mem_free_percent),
+            "mem_total_used_percent" => mem_total_used_percent,
+            "mem_total_used_bar" => format_percent_bar(mem_total_used_percent),
+            "mem_used_percent" => mem_used_percent,
+            "mem_used_bar" => format_percent_bar(mem_used_percent),
+            "mem_avail_percent" => mem_avail_percent,
+            "mem_avail_bar" => format_percent_bar(mem_avail_percent),
+            "swap_free_percent" => swap_free_percent,
+            "swap_free_bar" => format_percent_bar(swap_free_percent),
+            "swap_used_percent" => swap_used_percent,
+            "swap_used_bar" => format_percent_bar(swap_used_percent),
+            "buffers_percent" => buffers_percent,
+            "buffers_bar" => format_percent_bar(buffers_percent),
+            "cached_percent" => cached_percent,
+            "cached_bar" => format_percent_bar(cached_percent)
         };
 
-        if_debug!({
-            let mut f = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("/tmp/i3log")
-                .block_error("memory", "can't open /tmp/i3log")?;
-            writeln!(f, "Inserted values: {:?}", values)
-                .block_error("memory", "failed to write to /tmp/i3log")?;
-        });
+        match self.memtype {
+            Memtype::Memory => self.output.0.set_state(match mem_used_percent {
+                x if x > self.critical.0 => State::Critical,
+                x if x > self.warning.0 => State::Warning,
+                _ => State::Idle,
+            }),
+            Memtype::Swap => self.output.1.set_state(match swap_used_percent {
+                x if x > self.critical.1 => State::Critical,
+                x if x > self.warning.1 => State::Warning,
+                _ => State::Idle,
+            }),
+        };
 
         Ok(match self.memtype {
             Memtype::Memory => self.format.0.render(&values)?,

@@ -615,7 +615,7 @@ impl Block for Battery {
                 Err(_) => "×".into(),
             };
             let bar = match capacity {
-                Ok(capacity) => format_percent_bar(capacity as f32),
+                Ok(capacity) => format_percent_bar(capacity as f64),
                 Err(_) => "×".into(),
             };
             let time = match self.device.time_remaining() {

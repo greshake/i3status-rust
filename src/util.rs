@@ -291,13 +291,13 @@ pub fn color_to_rgba(color: (u8, u8, u8, u8)) -> String {
     )
 }
 
-pub fn format_percent_bar(percent: f32) -> String {
+pub fn format_percent_bar(percent: f64) -> String {
     let percent = percent.min(100.0);
     let percent = percent.max(0.0);
 
     (0..10)
         .map(|index| {
-            let bucket_min = (index * 10) as f32;
+            let bucket_min = (index * 10) as f64;
             let fraction = percent - bucket_min;
             //println!("Fraction: {}", fraction);
             if fraction < 1.25 {

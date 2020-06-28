@@ -31,6 +31,9 @@ enum FormatAtom {
 #[derive(Clone, Debug)]
 pub enum VarFormatter {
     Regular,
+    Float {
+        digits: usize,
+    },
     Bytes {
         unit: BytesUnit,
         digits: usize,
@@ -142,7 +145,7 @@ impl FormatAtom {
         lazy_static! {
             static ref RE: Regex = {
                 let name = r"(?P<name>[a-zA-Z0-9_-]+)";
-                let formatter_id = r"(?P<formatter_id>B)";
+                let formatter_id = r"(?P<formatter_id>B|F)";
                 let formatter_param = r"[^\[\]=]+=[^\[\]=]+";
 
                 let formatter_params = format!(
@@ -184,6 +187,7 @@ impl FormatAtom {
             .name("formatter_id")
             .map(|s| match s.as_str() {
                 "B" => VarFormatter::bytes_with(params),
+                "F" => VarFormatter::float_with(params),
                 _ => unreachable!("invalid Regex for FormatAtom: unrecognised formatter id"),
             })
             .unwrap_or(Ok(VarFormatter::Regular))?;
@@ -193,6 +197,18 @@ impl FormatAtom {
 }
 
 impl VarFormatter {
+    fn float_with(params: HashMap<&str, &str>) -> Result<Self> {
+        let digits = params
+            .get("digits")
+            .map(|s| {
+                s.parse()
+                    .internal_error("formatter", &format!("invalid digits parameter: '{}'", s))
+            })
+            .unwrap_or(Ok(2))?;
+
+        Ok(Self::Float { digits })
+    }
+
     fn bytes_with(params: HashMap<&str, &str>) -> Result<Self> {
         let unit = match params.get("unit") {
             Some(&"B") | None => BytesUnit::Bytes,
@@ -245,6 +261,12 @@ impl<T: Format + ?Sized> Format for &T {
     }
 }
 
+impl<T: Format + ?Sized> Format for Box<T> {
+    fn format(&self, formatter: &VarFormatter) -> Option<String> {
+        self.as_ref().format(formatter)
+    }
+}
+
 impl Format for &str {
     fn format(&self, formatter: &VarFormatter) -> Option<String> {
         match formatter {
@@ -266,6 +288,9 @@ macro_rules! impl_format_for_numeric {
             fn format(&self, formatter: &VarFormatter) -> Option<String> {
                 match formatter {
                     VarFormatter::Regular => Some(format!("{}", self)),
+                    VarFormatter::Float { digits } => {
+                        Some(format_with_digits(*self as f64, *digits))
+                    }
                     _ => None,
                 }
             }
@@ -307,7 +332,7 @@ impl Format for Bytes {
         let Self(mut val) = self;
 
         match formatter {
-            VarFormatter::Regular => val.format(formatter),
+            VarFormatter::Regular | VarFormatter::Float { .. } => val.format(formatter),
             VarFormatter::Bytes {
                 unit,
                 digits,
@@ -334,6 +359,23 @@ impl Format for Bytes {
 /// --
 /// -- Formatting utilities
 /// --
+
+macro_rules! format_params {
+    { $($key:expr => $value:expr),+ } => {
+        {
+            use ::std::boxed::Box;
+            use ::std::collections::HashMap;
+
+            let mut m = HashMap::new();
+
+            $(
+                m.insert($key, Box::new($value) as Box<dyn Format>);
+            )+
+
+            m
+        }
+     };
+}
 
 fn format_with_digits(value: f64, digits: usize) -> String {
     let integer = {

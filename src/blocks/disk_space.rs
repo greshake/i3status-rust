@@ -236,7 +236,7 @@ impl Block for DiskSpace {
             }
         }
 
-        let percentage = (result as f32) / (total as f32) * 100f32;
+        let percentage = (result as f64) / (total as f64) * 100f64;
         if converted_str.is_empty() {
             converted_str = format!("{0:.2}", converted);
         }

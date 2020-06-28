@@ -6,10 +6,11 @@ use libpulse_binding as pulse;
 mod de;
 #[macro_use]
 mod util;
+#[macro_use]
+mod formatter;
 pub mod blocks;
 mod config;
 mod errors;
-mod formatter;
 mod icons;
 mod input;
 mod scheduler;

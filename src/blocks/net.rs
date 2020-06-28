@@ -18,7 +18,7 @@ use crate::formatter::{Bytes, Format, FormatTemplate};
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{escape_pango_text, format_percent_bar, format_vec_to_bar_graph, Prefix};
+use crate::util::{escape_pango_text, format_percent_bar, format_vec_to_bar_graph};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -374,7 +374,6 @@ impl NetworkDevice {
 pub struct Net {
     format: FormatTemplate,
     output: ButtonWidget,
-    config: Config,
     network: ButtonWidget,
     ssid: Option<String>,
     max_ssid_width: usize,
@@ -395,8 +394,6 @@ pub struct Net {
     rx_buff: Vec<u64>,
     tx_bytes: u64,
     rx_bytes: u64,
-    speed_min_unit: Prefix,
-    speed_digits: usize,
     active: bool,
     hide_inactive: bool,
     hide_missing: bool,
@@ -464,14 +461,6 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_speed_up")]
     pub speed_up: bool,
 
-    /// Number of digits to show for throughput indiciators.
-    #[serde(default = "NetConfig::default_speed_digits")]
-    pub speed_digits: usize,
-
-    /// Minimum unit to display for throughput indicators.
-    #[serde(default = "NetConfig::default_speed_min_unit")]
-    pub speed_min_unit: Prefix,
-
     /// Whether to show the download throughput indicator of active networks.
     #[serde(default = "NetConfig::default_speed_down")]
     pub speed_down: bool,
@@ -494,7 +483,7 @@ impl NetConfig {
     }
 
     fn default_format() -> String {
-        "{speed_up} {speed_down}".to_owned()
+        "<net_up> {speed_up:B[digits=3,min_prefix=K]]} <net_down> {speed_down:B[digits=3,min_prefix=K]}".to_owned()
     }
 
     fn default_device() -> String {
@@ -560,14 +549,6 @@ impl NetConfig {
         false
     }
 
-    fn default_speed_min_unit() -> Prefix {
-        Prefix::K
-    }
-
-    fn default_speed_digits() -> usize {
-        3
-    }
-
     fn default_on_click() -> Option<String> {
         None
     }
@@ -622,9 +603,6 @@ impl ConfigBlock for Net {
                 &config.icons,
             )?,
             output: ButtonWidget::new(config.clone(), "").with_text(""),
-            config: config.clone(),
-            speed_min_unit: block_config.speed_min_unit,
-            speed_digits: block_config.speed_digits,
             network: ButtonWidget::new(config, &id).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
@@ -728,7 +706,7 @@ impl Net {
 
             if let Some(ref mut signal_strength_bar_string) = self.signal_strength_bar {
                 if let Some(v) = value {
-                    *signal_strength_bar_string = format_percent_bar(v as f32);
+                    *signal_strength_bar_string = format_percent_bar(v as f64);
                 };
             }
         }

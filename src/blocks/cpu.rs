@@ -136,7 +136,7 @@ impl Block for Cpu {
             .block_error("cpu", "Your system doesn't support /proc/stat")?;
         let f = BufReader::new(f);
 
-        let mut cpu_freqs: [f32; MAX_CPUS] = [0.0; MAX_CPUS];
+        let mut cpu_freqs: [f64; MAX_CPUS] = [0.0; MAX_CPUS];
         let mut n_cpu = 0;
         if self.has_frequency {
             let freq_file =
@@ -150,8 +150,8 @@ impl Block for Cpu {
                         .last()
                         .expect("failed to get last word of line while getting cpu frequency");
                     let numb = last
-                        .parse::<f32>()
-                        .expect("failed to parse String to f32 while getting cpu frequency");
+                        .parse::<f64>()
+                        .expect("failed to parse String to f64 while getting cpu frequency");
                     cpu_freqs[n_cpu] = numb;
                     n_cpu += 1;
                     if n_cpu >= MAX_CPUS {
@@ -232,7 +232,7 @@ impl Block for Cpu {
         let values = map!("frequency" => format_frequency(&cpu_freqs, n_cpu, self.per_core),
                           "barchart" => barchart,
                           "utilization" => format_utilization(&cpu_utilizations, cpu_i, self.per_core),
-                          "utilizationbar" => format_percent_bar(avg_utilization as f32));
+                          "utilizationbar" => format_percent_bar(avg_utilization as f64));
 
         self.output.set_text(self.format.render(&values)?);
 
@@ -264,7 +264,7 @@ fn format_utilization(values: &[f64], count: usize, per_core: bool) -> String {
 }
 
 #[inline]
-fn format_frequency(cpu_freqs: &[f32], count: usize, per_core: bool) -> String {
+fn format_frequency(cpu_freqs: &[f64], count: usize, per_core: bool) -> String {
     if per_core {
         cpu_freqs
             .iter()
@@ -273,7 +273,7 @@ fn format_frequency(cpu_freqs: &[f32], count: usize, per_core: bool) -> String {
             .collect::<Vec<String>>()
             .join(" ")
     } else {
-        let avg = cpu_freqs.iter().take(count).sum::<f32>() / (count as f32) / 1000.0;
+        let avg = cpu_freqs.iter().take(count).sum::<f64>() / (count as f64) / 1000.0;
         format!("{:.1}", avg)
     }
 }

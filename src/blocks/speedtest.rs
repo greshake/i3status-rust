@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -177,34 +178,36 @@ impl Block for SpeedTest {
             *updated = false;
 
             if vals.len() == 3 {
-                self.text[0].set_text(format!("{}ms", vals[0]));
+                // TODO: this is just here to replace deprecated format_speed, this should be
+                //       integrated as a format string at config level.
+                let format_speed = FormatTemplate::from_string("{speed:MB.2}/s", &HashMap::new())?;
+
                 let (down_bytes, up_bytes) = if self.config.bytes {
                     (vals[1] * 1_000_000.0, vals[2] * 1_000_000.0)
                 } else {
                     (vals[1] * 125_000.0, vals[2] * 125_000.0)
                 };
-                // TODO: this is just here to replace deprecated format_speed, this should be
-                //       integrated as a format string at config level before merging.
-                // let format_speed = FormatTemplate::from_string("{speed:MB.2}/s", &self.icons)?;
-                // self.text[1].set_text(
-                //     format_speed
-                //         .render(&map!("speed" => Bytes(down_bytes)))
-                //         .unwrap(),
-                // );
-                // self.text[2].set_text(
-                //     format_speed
-                //         .render(&map!("speed" => Bytes(up_bytes)))
-                //         .unwrap(),
-                // );
-                //
-                // // TODO: remove clippy workaround
-                // #[allow(clippy::unknown_clippy_lints)]
-                // #[allow(clippy::match_on_vec_items)]
-                // self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
-                //             0.0 ; 25.0 => State::Good,
-                //             25.0 ; 60.0 => State::Info,
-                //             60.0 ; 100.0 => State::Warning
-                // }));
+
+                self.text[0].set_text(format!("{}ms", vals[0]));
+                self.text[1].set_text(
+                    format_speed
+                        .render(&map!("speed" => Bytes(down_bytes)))
+                        .unwrap(),
+                );
+                self.text[2].set_text(
+                    format_speed
+                        .render(&map!("speed" => Bytes(up_bytes)))
+                        .unwrap(),
+                );
+
+                // TODO: remove clippy workaround
+                #[allow(clippy::unknown_clippy_lints)]
+                #[allow(clippy::match_on_vec_items)]
+                self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
+                            0.0 ; 25.0 => State::Good,
+                            25.0 ; 60.0 => State::Info,
+                            60.0 ; 100.0 => State::Warning
+                }));
             }
 
             Ok(None)
