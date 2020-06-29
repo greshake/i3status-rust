@@ -35,6 +35,9 @@ lazy_static! {
     static ref IW_SSID_REGEX: Regex = Regex::new("SSID: ([[:alnum:]]+)").unwrap();
     static ref WPA_SSID_REGEX: Regex = Regex::new("ssid=([[:alnum:]]+)").unwrap();
     static ref IWCTL_SSID_REGEX: Regex = Regex::new("Connected network ([[:alnum:]]+)").unwrap();
+    static ref IW_BITRATE_REGEX: Regex =
+        Regex::new("tx bitrate: (\\d+(?:\\.?\\d+) [[:alpha:]]+/s)").unwrap();
+    static ref IW_SIGNAL_REGEX: Regex = Regex::new("signal: (-?\\d+) dBm").unwrap();
 }
 
 pub struct NetworkDevice {
@@ -182,29 +185,27 @@ impl NetworkDevice {
                 "Signal strength is only available for connected wireless devices.".to_string(),
             ));
         }
-        let mut iw_output = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!(
-                    "iw dev {} link | sed -n 's/^\\s\\+signal: \\(.*\\) dBm/\\1/p'",
-                    self.device
-                ),
-            ])
+
+        let iw_output = Command::new("iw")
+            .args(&["dev", &self.device, "link"])
             .output()
             .block_error("net", "Failed to execute signal strength query.")?
             .stdout;
-        if iw_output.is_empty() {
-            Ok(None)
-        } else {
-            iw_output.pop(); // Remove trailing newline.
-            String::from_utf8(iw_output)
-                .block_error("net", "Non-UTF8 signal strength.")
-                .and_then(|as_str| {
-                    as_str
-                        .parse::<i32>()
+
+        if let Some(raw) = IW_SIGNAL_REGEX
+            .captures_iter(&iw_output)
+            .next()
+            .and_then(|x| x.get(1))
+        {
+            String::from_utf8(raw.as_bytes().to_vec())
+                .block_error("net", "Non-UTF8 signal strength")
+                .and_then(|s| {
+                    s.parse::<i32>()
                         .block_error("net", "Non numerical signal strength.")
                 })
                 .map(Some)
+        } else {
+            Ok(None)
         }
     }
 
@@ -297,7 +298,7 @@ impl NetworkDevice {
         }
     }
 
-    /// Queries the bitrate of this device (using `iwlist`)
+    /// Queries the bitrate of this device
     pub fn bitrate(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
         if !up {
@@ -307,25 +308,22 @@ impl NetworkDevice {
             ));
         }
         if self.wireless {
-            let mut bitrate_output = Command::new("sh")
-                .args(&[
-                    "-c",
-                    &format!(
-                        "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
-                        self.device
-                    ),
-                ])
+            let bitrate_output = Command::new("iw")
+                .args(&["dev", &self.device, "link"])
                 .output()
-                .block_error("net", "Failed to execute bitrate query.")?
+                .block_error("net", "Failed to execute bitrate query with iw.")?
                 .stdout;
 
-            if bitrate_output.is_empty() {
-                Ok(None)
-            } else {
-                bitrate_output.pop(); // Remove trailing newline.
-                String::from_utf8(bitrate_output)
-                    .block_error("net", "Non-UTF8 bitrate.")
+            if let Some(rate) = IW_BITRATE_REGEX
+                .captures_iter(&bitrate_output)
+                .next()
+                .and_then(|x| x.get(1))
+            {
+                String::from_utf8(rate.as_bytes().to_vec())
+                    .block_error("net", "Non-UTF8 bitrate")
                     .map(Some)
+            } else {
+                Ok(None)
             }
         } else {
             let output = Command::new("ethtool")
