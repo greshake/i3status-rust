@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
 
 jobs:
   build:
@@ -16,9 +17,20 @@ jobs:
 
     steps:
     - name: Get required packages
-      run: sudo apt-get install libdbus-1-dev libpulse-dev
+      run: sudo apt-get install libdbus-1-dev libpulse-dev libgoogle-perftools-dev libnotmuch-dev pandoc
     - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
+    - name: Check formatting
+      run: cargo fmt -- --check
+    - name: Clippy lints
+      run: cargo clippy --all-features --all-targets
+    - name: Build all features (debug)
+      run: cargo build --all-features --all-targets --verbose
+    - name: Run tests for debug release
       run: cargo test --verbose
+    - name: Build all features (release)
+      run: cargo build --all-features --all-targets --verbose --release
+    - name: Run tests
+      run: cargo test --all-features --all-targets --verbose
+    - name: Check manpage
+      run: man/generate.sh man/test.1 && diff man/test.1 man/i3status-rs.1 || true
+      
