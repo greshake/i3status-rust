@@ -22,7 +22,7 @@ jobs:
     - name: Check formatting
       run: cargo fmt -- --check
     - name: Clippy lints
-      run: cargo clippy --all-features --all-targets -- -Dwarnings
+      run: cargo clippy --all-features --all-targets
     - name: Build all features (debug)
       run: cargo build --all-features --all-targets --verbose
     - name: Run tests for debug release
