@@ -201,25 +201,30 @@ fn get_ibus_address() -> Result<String> {
     }
 
     // Only check $DISPLAY if we need to.
-
     let socket_path = if socket_files.len() == 1 {
         socket_dir.join(&socket_files[0])
     } else {
-        // On sway, $DISPLAY is only set by programs requiring xwayland, such as ibus (GTK2).
-        // ibus-daemon can be autostarted by sway (via an entry in config file), however since
-        // the bar is executed first, $DISPLAY will not yet be set at the time this code runs.
-        // Hence on sway you will need to reload the bar once after login to get the block to work.
-        let display_var = env::var("DISPLAY")
-            .block_error("ibus", "$DISPLAY not set. Try restarting bar if on sway")?;
-        let re = Regex::new(r"^:([0-9]{1})$").unwrap(); // Valid regex is safe to unwrap.
-        let cap = re
-            .captures(&display_var)
-            .block_error("ibus", "Failed to extract display number from $DISPLAY")?;
-        let display_number = &cap[1].to_string();
+        let w_display_var = env::var("WAYLAND_DISPLAY");
+        let x_display_var = env::var("DISPLAY");
+
+        let display_suffix = if let Ok(x) = w_display_var {
+            x
+        } else if let Ok(x) = x_display_var {
+            let re = Regex::new(r"^:([0-9]{1})$").unwrap(); // Valid regex is safe to unwrap.
+            let cap = re
+                .captures(&x)
+                .block_error("ibus", "Failed to extract display number from $DISPLAY")?;
+            cap[1].to_string()
+        } else {
+            return Err(BlockError(
+                "ibus".to_string(),
+                "Could not read DISPLAY or WAYLAND_DISPLAY.".to_string(),
+            ));
+        };
 
         let candidate = socket_files
             .iter()
-            .filter(|fname| fname.ends_with(display_number))
+            .filter(|fname| fname.ends_with(&display_suffix))
             .take(1)
             .next()
             .block_error(
