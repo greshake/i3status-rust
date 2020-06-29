@@ -134,7 +134,10 @@ impl ConfigBlock for KDEConnect {
             // method call opts: only_reachable=false, only_paired=true
             let (devices,): (Vec<String>,) = p1
                 .method_call("org.kde.kdeconnect.daemon", "devices", (false, true))
-                .unwrap();
+                .block_error(
+                    "kdeconnect",
+                    &"Couldn't connect to KDE Connect daemon".to_string(),
+                )?;
             if devices.is_empty() {
                 return Err(BlockError(
                     "kdeconnect".to_owned(),
