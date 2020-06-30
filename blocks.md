@@ -251,7 +251,7 @@ Key | Values | Required | Default
 
 Creates a block that can be updated asynchronously using DBus.
 
-For example, updating the block using the command line tool `qdbus`: `qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus headphones`
+For example, updating the block using the command line tool `qdbus`: `qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus Headphones music Good`. The first argument is the text content of the block, the second (optional) argument is the icon to use (as found in `icons.rs`; default ""), and the third (optional) argument is the state (one of Idle, Info, Good, Warning, or Critical; default Idle).
 
 ### Examples
 
@@ -278,22 +278,38 @@ Creates a block which displays disk space information.
 block = "disk_space"
 path = "/"
 alias = "/"
-info_type = "available"
-unit = "GB"
+info_type = "used"
+unit = "GiB"
+format = "{icon}{used}/{total} {unit} ({available}{unit} free)"
 ```
 
 ### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`path` | Path to collect information from | No | `"/"`
+`alert` | Available disk space critical level in GiB. | No | `10.0`
 `alias` | Alias that is displayed for path | No | `"/"`
-`info_type` | Currently supported options are `"available"`, `"free"`, `"total"` and `"used"` | No | `"available"`
+`format` | Format string for output (see below) | No | `"{alias} {available} {unit}"`
+`info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation) | No | `"available"`
+`interval` | Update interval, in seconds. | No | `20`
+`path` | Path to collect information from | No | `"/"`
 `unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
 `warning` | Available disk space warning level in GiB. | No | `20.0`
-`alert` | Available disk space critical level in GiB. | No | `10.0`
-`interval` | Update interval, in seconds. | No | `20`
-`show_percentage` | Show percentage of used/available disk space depending on info_type. | No | `false`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{alias}` | Alias for disk path.
+`{available}` | Available disk space (free disk space minus reserved system space).
+`{bar}` | Display bar representing percentage.
+`{free}` | Free disk space.
+`{icon}` | Disk drive icon
+`{path}` | Path used for capacity check.
+`{percentage}` | Percentage of disk used or free (depends on info_type setting)
+`{total}` | Total disk space.
+`{unit}` | Unit used for disk space (see above).
+`{used}` | Used disk space.
 
 
 ## Docker
@@ -732,7 +748,6 @@ Placeholder | Description
 `graph_up` | Display a bar graph for upload speed. 
 `graph_down` | Display a bar graph for download speed. 
 
-
 ## NetworkManager
 
 Creates a block which displays network connection information from NetworkManager.
@@ -976,6 +991,7 @@ Key | Values | Required | Default
 `format` | Any string to use next to the icon. Available qualifiers: `volume`, `output_name` | No | `{volume}%`
 `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols` | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l` | No | `default`
+`device_kind` | PulseAudio device kind (`source` / `sink`) | No | `sink`
 `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear | No | `false`
 `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | `5`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
