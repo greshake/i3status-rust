@@ -649,7 +649,7 @@ impl ConfigBlock for Net {
                 &block_config.format
             } else {
                 &old_format
-            })?,
+            }).block_error("net", "Invalid format specified")?,
             output: ButtonWidget::new(config.clone(), "").with_text(""),
             config: config.clone(),
             use_bits: block_config.use_bits,
@@ -900,12 +900,7 @@ impl Block for Net {
             "{graph_down}" =>  self.graph_rx.as_ref().unwrap_or(&empty_string)
         );
 
-        self.output
-            .set_text(if let Ok(s) = self.format.render_static_str(&values) {
-                s
-            } else {
-                "[invalid connection format string]".to_string()
-            });
+        self.output.set_text(self.format.render_static_str(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }
