@@ -339,6 +339,7 @@ pub fn format_vec_to_bar_graph<T>(content: &[T], min: Option<T>, max: Option<T>)
 where
     T: Ord + ToPrimitive,
 {
+    // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     let bars = [
         '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
         '\u{2588}',
