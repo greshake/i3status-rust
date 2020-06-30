@@ -718,35 +718,34 @@ use_bits = false
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | Network interface to monitor (name from /sys/class/net) | Yes | `lo` (loopback interface)
-`format` | A format string. See below for available placeholders. | No | "{speed_up} {speed_down}"
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. | No | `1`
 `hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
 `hide_inactive` | Whether to hide networks that are missing. | No | `false`
-`ssid` | Deprecated, use format option. Display network SSID (wireless only). | No | `false`
-`signal_strength` | Deprecated, use format option. Display WiFi signal strength (wireless only). | No | `false`
-`bitrate` | Deprecated, use format option. Display connection bitrate. | No | `false`
-`ip` | Deprecated, use format option. Display connection IP address. | No | `false`
-`ipv6` | Deprecated, use format option. Display connection IPv6 address. | No | `false`
-`speed_up` | Deprecated, use format option. Display upload speed. | No | `true`
-`speed_down` | Deprecated, use format option. Display download speed. | No | `true`
-`graph_up` | Deprecated, use format option. Display a bar graph for upload speed. | No | `false`
-`graph_down` | Deprecated, use format option. Display a bar graph for download speed. | No | `false`
+`ssid` | Deprecated in favor of `format`. Display network SSID (wireless only). | No | `false`
+`signal_strength` | Deprecated in favor of `format`. Display WiFi signal strength (wireless only). | No | `false`
+`bitrate` | Deprecated in favor of `format`. Display connection bitrate. | No | `false`
+`ip` | Deprecated in favor of `format`. Display connection IP address. | No | `false`
+`ipv6` | Deprecated in favor of `format`. Display connection IPv6 address. | No | `false`
+`speed_up` | Deprecated in favor of `format`. Display upload speed. | No | `true`
+`speed_down` | Deprecated in favor of `format`. Display download speed. | No | `true`
+`graph_up` | Deprecated in favor of `format`. Display a bar graph for upload speed. | No | `false`
+`graph_down` | Deprecated in favor of `format`. Display a bar graph for download speed. | No | `false`
 
 ### Format String
-Placeholder | Description 
+Placeholder | Description
 ------------|------------
-`ssid` | Display network SSID (wireless only). 
-`signal_strength` | Display WiFi signal strength (wireless only). 
-`bitrate` | Display connection bitrate. 
-`ip` | Display connection IP address. 
-`ipv6` | Display connection IPv6 address. 
-`speed_up` | Display upload speed. 
-`speed_down` | Display download speed. 
-`graph_up` | Display a bar graph for upload speed. 
-`graph_down` | Display a bar graph for download speed. 
+`ssid` | Display network SSID (wireless only).
+`signal_strength` | Display WiFi signal strength (wireless only).
+`bitrate` | Display connection bitrate.
+`ip` | Display connection IP address.
+`ipv6` | Display connection IPv6 address.
+`speed_up` | Display upload speed.
+`speed_down` | Display download speed.
+`graph_up` | Display a bar graph for upload speed.
+`graph_down` | Display a bar graph for download speed.
 
 ## NetworkManager
 
