@@ -1,3 +1,4 @@
+use num_traits::{clamp, ToPrimitive};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs::{File, OpenOptions};
@@ -332,6 +333,37 @@ pub fn format_percent_bar(percent: f32) -> String {
             }
         })
         .collect()
+}
+
+pub fn format_vec_to_bar_graph<T>(content: &[T], min: Option<T>, max: Option<T>) -> String
+where
+    T: Ord + ToPrimitive,
+{
+    // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
+    let bars = [
+        '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
+        '\u{2588}',
+    ];
+    let min: f64 = match min {
+        Some(x) => x.to_f64().unwrap(),
+        None => content.iter().min().unwrap().to_f64().unwrap(),
+    };
+    let max: f64 = match max {
+        Some(x) => x.to_f64().unwrap(),
+        None => content.iter().max().unwrap().to_f64().unwrap(),
+    };
+    let extant = max - min;
+    if extant.is_normal() {
+        let length = bars.len() as f64 - 1.0;
+        content
+            .iter()
+            .map(|x| {
+                bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
+            })
+            .collect::<_>()
+    } else {
+        (0..content.len() - 1).map(|_| bars[0]).collect::<_>()
+    }
 }
 
 // TODO: Allow for other non-additive tints
