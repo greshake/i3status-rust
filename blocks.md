@@ -425,6 +425,12 @@ block = "ibus"
 "xkb:us::eng" = "EN"
 ```
 
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`format` | Format string. Available qualifiers are `"engine"` | No | `"{engine}"`
+
 ## KDEConnect
 
 Display info from the currently connected device in KDEConnect, updated asynchronously.

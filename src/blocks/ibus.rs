@@ -22,7 +22,7 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util;
+use crate::util::{xdg_config_home, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -31,6 +31,7 @@ pub struct IBus {
     text: TextWidget,
     engine: Arc<Mutex<String>>,
     mappings: Option<BTreeMap<String, String>>,
+    format: FormatTemplate,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -38,11 +39,18 @@ pub struct IBus {
 pub struct IBusConfig {
     #[serde(default = "IBusConfig::default_mappings")]
     pub mappings: Option<BTreeMap<String, String>>,
+
+    #[serde(default = "IBusConfig::default_format")]
+    pub format: String,
 }
 
 impl IBusConfig {
     fn default_mappings() -> Option<BTreeMap<String, String>> {
         None
+    }
+
+    fn default_format() -> String {
+        "{engine}".into()
     }
 }
 
@@ -109,6 +117,7 @@ impl ConfigBlock for IBus {
             text: TextWidget::new(config).with_text("IBus"),
             engine,
             mappings: block_config.mappings,
+            format: FormatTemplate::from_string(&block_config.format)?,
         })
     }
 }
@@ -134,7 +143,11 @@ impl Block for IBus {
             engine
         };
 
-        self.text.set_text(display_engine);
+        let values = map!(
+            "{engine}" => display_engine
+        );
+
+        self.text.set_text(self.format.render_static_str(&values)?);
         Ok(None)
     }
 
@@ -185,7 +198,7 @@ fn get_ibus_address() -> Result<String> {
         return Ok(address);
     }
 
-    let socket_dir = util::xdg_config_home().join("ibus/bus");
+    let socket_dir = xdg_config_home().join("ibus/bus");
     let socket_files: Vec<String> = read_dir(socket_dir.clone())
         .block_error("ibus", &format!("Could not open '{:?}'.", socket_dir))?
         .filter(|entry| entry.is_ok())
