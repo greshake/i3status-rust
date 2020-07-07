@@ -150,8 +150,6 @@ impl Block for CustomDBus {
     }
 
     // This function is called on every block for every click.
-    // TODO: Filter events by using the event.name property,
-    // and use to switch between input engines?
     fn click(&mut self, _: &I3BarEvent) -> Result<()> {
         Ok(())
     }
