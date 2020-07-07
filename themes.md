@@ -42,7 +42,7 @@ Example theme file can be found in `example/theme/solarized-dark.toml`.
 * `space-villain`
 
 # Available icon sets:
-* `none` (default)
+* `none` (default. Uses text labels instead of icons)
 * `awesome` (Font Awesome 4.x)
 * `awesome5` (Font Awesome 5.x)
 * `material`
