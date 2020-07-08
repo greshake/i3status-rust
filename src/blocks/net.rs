@@ -620,8 +620,7 @@ impl ConfigBlock for Net {
         let vpn = device.is_vpn();
         let id = Uuid::new_v4().to_simple().to_string();
 
-        // Detecting deprecated options, If any deprecated options is used, format string option will not be used.
-        let mut old_user_format = Vec::new();
+        // List of decprecated options
         let old_strings = [
             "ssid",
             "signal_strength",
@@ -634,23 +633,28 @@ impl ConfigBlock for Net {
             "graph_up",
             "graph_down",
         ];
-        for string in old_strings.iter() {
-            if config.blocks[0].1.get(string.to_owned()).is_some() {
-                old_user_format.push(format!("{{{}}}", string));
-            };
-        }
 
-        let old_format = old_user_format.join(" ");
+        // if "format" option is present it will be preferred
+        let format = if config.blocks[0].1.get("format").is_some() {
+            block_config.format
+        } else {
+            // Only choose those deprecated options which are true
+            let mut old_format = Vec::new();
+            for string in old_strings.iter() {
+                if let Some(choice) = config.blocks[0].1.get(string.to_owned()) {
+                    if choice.is_bool() && choice.as_bool() == Some(true) {
+                        old_format.push(format!("{{{}}}", string));
+                    }
+                }
+            }
+            old_format.join(" ")
+        };
 
         Ok(Net {
             id: id.clone(),
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(if old_user_format.is_empty() {
-                &block_config.format
-            } else {
-                &old_format
-            })
-            .block_error("net", "Invalid format specified")?,
+            format: FormatTemplate::from_string(&format)
+                .block_error("net", "Invalid format specified")?,
             output: ButtonWidget::new(config.clone(), "").with_text(""),
             config: config.clone(),
             use_bits: block_config.use_bits,
