@@ -159,7 +159,7 @@ impl ConfigBlock for NvidiaGpu {
         let id = Uuid::new_v4().to_simple().to_string();
         let id_memory = Uuid::new_v4().to_simple().to_string();
         let id_fans = Uuid::new_v4().to_simple().to_string();
-        let mut output = Command::new("nvidia-smi")
+        let handle = Command::new("nvidia-smi")
             .args(&[
                 "-i",
                 &block_config.gpu_id.to_string(),
@@ -167,8 +167,13 @@ impl ConfigBlock for NvidiaGpu {
                 "--format=csv,noheader,nounits",
             ])
             .output()
-            .block_error("gpu", "Failed to execute nvidia-smi.")?
-            .stdout;
+            .block_error("gpu", "Failed to execute nvidia-smi.")?;
+
+        if !handle.status.success() {
+            None.block_error("gpu", "Nvidia-smi produced a non-zero exit status.")?;
+        }
+
+        let mut output = handle.stdout;
         output.pop(); // Remove trailing newline.
         let result_str = String::from_utf8(output).unwrap();
         let result: Vec<&str> = result_str.split(", ").collect();
