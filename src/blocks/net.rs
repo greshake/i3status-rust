@@ -620,34 +620,21 @@ impl ConfigBlock for Net {
         let vpn = device.is_vpn();
         let id = Uuid::new_v4().to_simple().to_string();
 
-        // List of decprecated options
-        let old_strings = [
-            "ssid",
-            "signal_strength",
-            "signal_strength_bar",
-            "bitrate",
-            "ip",
-            "ipv6",
-            "speed_up",
-            "speed_down",
-            "graph_up",
-            "graph_down",
-        ];
+        let (_, net_config) = config
+            .blocks
+            .iter()
+            .find(|(block_name, _)| block_name == "net")
+            .internal_error("net", "unexpected")?;
 
-        // if "format" option is present it will be preferred
-        let format = if config.blocks[0].1.get("format").is_some() {
+        let format = if net_config.get("format").is_some() {
+            // if "format" option is present it will be preferred
             block_config.format
-        } else {
+        } else if let Some(format) = old_format(&net_config) {
             // Only choose those deprecated options which are true
-            let mut old_format = Vec::new();
-            for string in old_strings.iter() {
-                if let Some(choice) = config.blocks[0].1.get(string.to_owned()) {
-                    if choice.is_bool() && choice.as_bool() == Some(true) {
-                        old_format.push(format!("{{{}}}", string));
-                    }
-                }
-            }
-            old_format.join(" ")
+            format
+        } else {
+            // Default format
+            block_config.format
         };
 
         Ok(Net {
@@ -696,6 +683,35 @@ impl ConfigBlock for Net {
             last_update: Instant::now() - Duration::from_secs(30),
             on_click: block_config.on_click,
         })
+    }
+}
+
+fn old_format(net_config: &toml::Value) -> Option<String> {
+    // List of decprecated options
+    let old_strings = [
+        "ssid",
+        "signal_strength",
+        "signal_strength_bar",
+        "bitrate",
+        "ip",
+        "ipv6",
+        "speed_up",
+        "speed_down",
+        "graph_up",
+        "graph_down",
+    ];
+
+    let mut old_format = Vec::new();
+    for string in old_strings.iter() {
+        if net_config.get(string) == Some(&toml::Value::Boolean(true)) {
+            old_format.push(format!("{{{}}}", string));
+        }
+    }
+
+    if old_format.is_empty() {
+        None
+    } else {
+        Some(old_format.join(" "))
     }
 }
 
