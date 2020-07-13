@@ -649,9 +649,22 @@ impl ConfigBlock for Net {
             max_ssid_width: block_config.max_ssid_width,
             signal_strength: if wireless { Some(0.to_string()) } else { None },
             signal_strength_bar: if wireless { Some("".to_string()) } else { None },
-            bitrate: Some("".to_string()),
-            ip_addr: Some("".to_string()),
-            ipv6_addr: Some("".to_string()),
+            // TODO: a better way to deal with this?
+            bitrate: if format.contains("{bitrate}") {
+                Some("".to_string())
+            } else {
+                None
+            },
+            ip_addr: if format.contains("{ip}") {
+                Some("".to_string())
+            } else {
+                None
+            },
+            ipv6_addr: if format.contains("{ipv6}") {
+                Some("".to_string())
+            } else {
+                None
+            },
             output_tx: Some("".to_string()),
             output_rx: Some("".to_string()),
             graph_tx: Some("".to_string()),
