@@ -724,6 +724,7 @@ use_bits = false
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | Network interface to monitor (name from /sys/class/net) | Yes | `lo` (loopback interface)
+`format` | Format string. See below for available qualifiers. | No | "{speed_up} {speed_down}" 
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
