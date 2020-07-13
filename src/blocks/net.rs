@@ -7,6 +7,8 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
+use lazy_static::lazy_static;
+use regex::bytes::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -23,6 +25,20 @@ use crate::util::{
 };
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use std::ffi::OsStr;
+use std::io::ErrorKind;
+
+lazy_static! {
+    static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
+    static ref WHITESPACE_REGEX: Regex = Regex::new("\\s+").unwrap();
+    static ref ETHTOOL_SPEED_REGEX: Regex = Regex::new("Speed: (\\d+\\w\\w/s)").unwrap();
+    static ref IW_SSID_REGEX: Regex = Regex::new("SSID: ([[:alnum:]]+)").unwrap();
+    static ref WPA_SSID_REGEX: Regex = Regex::new("ssid=([[:alnum:]]+)").unwrap();
+    static ref IWCTL_SSID_REGEX: Regex = Regex::new("Connected network ([[:alnum:]]+)").unwrap();
+    static ref IW_BITRATE_REGEX: Regex =
+        Regex::new("tx bitrate: (\\d+(?:\\.?\\d+) [[:alpha:]]+/s)").unwrap();
+    static ref IW_SIGNAL_REGEX: Regex = Regex::new("signal: (-?\\d+) dBm").unwrap();
+}
 
 pub struct NetworkDevice {
     device: String,
@@ -76,17 +92,17 @@ impl NetworkDevice {
     /// and will change when the status of devices change.
     pub fn default_device() -> Option<String> {
         String::from_utf8(
-            Command::new("sh")
-                .args(&[
-                    "-c",
-                    "ip route show default|head -n1|sed -n 's/^default.*dev \\(\\w*\\).*/\\1/p'",
-                ])
+            Command::new("ip")
+                .args(&["route", "show", "default"])
                 .output()
                 .ok()
-                .map(|o| {
-                    let mut v = o.stdout;
-                    v.pop(); // remove newline
-                    v
+                .and_then(|o| {
+                    let mut captures = DEFAULT_DEV_REGEX.captures_iter(&o.stdout);
+                    if let Some(cap) = captures.next() {
+                        cap.get(1).map(|x| x.as_bytes().to_vec())
+                    } else {
+                        None
+                    }
                 })?,
         )
         .ok()
@@ -148,8 +164,7 @@ impl NetworkDevice {
         self.tun || self.wg || self.ppp
     }
 
-    /// Queries the wireless SSID of this device (using `iw`), if it is
-    /// connected to one.
+    /// Queries the wireless SSID of this device, if it is connected to one.
     pub fn ssid(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
         if !self.wireless || !up {
@@ -158,65 +173,8 @@ impl NetworkDevice {
                 "SSIDs are only available for connected wireless devices.".to_string(),
             ));
         }
-        let mut iw_output = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!(
-                    "iw dev {} link | sed -n 's/^\\s\\+SSID: \\(.*\\)/\\1/p'",
-                    self.device
-                ),
-            ])
-            .output()
-            .block_error("net", "Failed to execute SSID query using iw.")?
-            .stdout;
 
-        if iw_output.is_empty() {
-            iw_output = Command::new("sh")
-                .args(&[
-                    "-c",
-                    &format!(
-                        "wpa_cli status -i{} | sed -n 's/^ssid=\\(.*\\)/\\1/p'",
-                        self.device
-                    ),
-                ])
-                .output()
-                .block_error("net", "Failed to execute SSID query using wpa_cli.")?
-                .stdout;
-        }
-
-        if iw_output.is_empty() {
-            iw_output = Command::new("sh")
-                .args(&[
-                    "-c",
-                    &format!("nmcli -g general.connection device show {}", &self.device),
-                ])
-                .output()
-                .block_error("net", "Failed to execute SSID query using nmcli.")?
-                .stdout;
-        }
-
-        if iw_output.is_empty() {
-            iw_output = Command::new("sh")
-                .args(&[
-                    "-c",
-                    &format!(
-                        "iwctl station {} show | sed -n 's/^\\s\\+Connected network\\s\\(.*\\)\\s*/\\1/p'",
-                        self.device
-                    ),
-                ])
-                .output()
-                .block_error("net", "Failed to execute SSID query using iwctl.")?
-                .stdout;
-        }
-
-        if iw_output.is_empty() {
-            Ok(None)
-        } else {
-            iw_output.pop(); // Remove trailing newline.
-            String::from_utf8(iw_output)
-                .block_error("net", "Non-UTF8 SSID.")
-                .map(Some)
-        }
+        get_ssid(self)
     }
 
     fn absolute_signal_strength(&self) -> Result<Option<i32>> {
@@ -227,29 +185,27 @@ impl NetworkDevice {
                 "Signal strength is only available for connected wireless devices.".to_string(),
             ));
         }
-        let mut iw_output = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!(
-                    "iw dev {} link | sed -n 's/^\\s\\+signal: \\(.*\\) dBm/\\1/p'",
-                    self.device
-                ),
-            ])
+
+        let iw_output = Command::new("iw")
+            .args(&["dev", &self.device, "link"])
             .output()
             .block_error("net", "Failed to execute signal strength query.")?
             .stdout;
-        if iw_output.is_empty() {
-            Ok(None)
-        } else {
-            iw_output.pop(); // Remove trailing newline.
-            String::from_utf8(iw_output)
-                .block_error("net", "Non-UTF8 signal strength.")
-                .and_then(|as_str| {
-                    as_str
-                        .parse::<i32>()
+
+        if let Some(raw) = IW_SIGNAL_REGEX
+            .captures_iter(&iw_output)
+            .next()
+            .and_then(|x| x.get(1))
+        {
+            String::from_utf8(raw.as_bytes().to_vec())
+                .block_error("net", "Non-UTF8 signal strength")
+                .and_then(|s| {
+                    s.parse::<i32>()
                         .block_error("net", "Non numerical signal strength.")
                 })
                 .map(Some)
+        } else {
+            Ok(None)
         }
     }
 
@@ -282,13 +238,15 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-        let mut ip_output = Command::new("sh")
+        let ip_output = Command::new("ip")
             .args(&[
-                "-c",
-                &format!(
-                    "ip -oneline -family inet address show {} | sed -rn -e \"s/.*inet ([\\.0-9/]+).*/\\1/; G; s/\\n/ /;h\" -e \"$ P;\"",
-                    self.device
-                ),
+                "-oneline",
+                "-brief",
+                "-family",
+                "inet",
+                "address",
+                "show",
+                &self.device,
             ])
             .output()
             .block_error("net", "Failed to execute IP address query.")?
@@ -296,13 +254,14 @@ impl NetworkDevice {
 
         if ip_output.is_empty() {
             Ok(None)
-        } else {
-            ip_output.pop(); // Remove trailing newline.
-            let ip = String::from_utf8(ip_output)
+        } else if let Some(ip_bytes) = WHITESPACE_REGEX.splitn(&ip_output, 3).nth(2) {
+            let ip = String::from_utf8(ip_bytes.to_vec())
                 .block_error("net", "Non-UTF8 IP address.")?
                 .trim()
                 .to_string();
             Ok(Some(ip))
+        } else {
+            Ok(None)
         }
     }
 
@@ -312,13 +271,15 @@ impl NetworkDevice {
             return Ok(None);
         }
 
-        let mut ip_output = Command::new("sh")
+        let ip_output = Command::new("ip")
             .args(&[
-                "-c",
-                &format!(
-                    "ip -oneline -family inet6 address show {} | sed -e 's/^.*inet6 \\([^ ]\\+\\).*/\\1/'",
-                    self.device
-                ),
+                "-oneline",
+                "-brief",
+                "-family",
+                "inet6",
+                "address",
+                "show",
+                &self.device,
             ])
             .output()
             .block_error("net", "Failed to execute IPv6 address query.")?
@@ -326,17 +287,18 @@ impl NetworkDevice {
 
         if ip_output.is_empty() {
             Ok(None)
-        } else {
-            ip_output.pop(); // Remove trailing newline.
-            let ip = String::from_utf8(ip_output)
+        } else if let Some(ip_bytes) = WHITESPACE_REGEX.splitn(&ip_output, 3).nth(2) {
+            let ip = String::from_utf8(ip_bytes.to_vec())
                 .block_error("net", "Non-UTF8 IP address.")?
                 .trim()
                 .to_string();
             Ok(Some(ip))
+        } else {
+            Ok(None)
         }
     }
 
-    /// Queries the bitrate of this device (using `iwlist`)
+    /// Queries the bitrate of this device
     pub fn bitrate(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
         if !up {
@@ -345,30 +307,40 @@ impl NetworkDevice {
                 "Bitrate is only available for connected devices.".to_string(),
             ));
         }
-        let command = if self.wireless {
-            format!(
-                "iw dev {} link | awk '/tx bitrate/ {{print $3\" \"$4}}'",
-                self.device
-            )
-        } else {
-            format!(
-                "ethtool {} 2>/dev/null | awk '/Speed:/ {{print $2}}'",
-                self.device
-            )
-        };
-        let mut bitrate_output = Command::new("sh")
-            .args(&["-c", &command])
-            .output()
-            .block_error("net", "Failed to execute bitrate query.")?
-            .stdout;
+        if self.wireless {
+            let bitrate_output = Command::new("iw")
+                .args(&["dev", &self.device, "link"])
+                .output()
+                .block_error("net", "Failed to execute bitrate query with iw.")?
+                .stdout;
 
-        if bitrate_output.is_empty() {
-            Ok(None)
+            if let Some(rate) = IW_BITRATE_REGEX
+                .captures_iter(&bitrate_output)
+                .next()
+                .and_then(|x| x.get(1))
+            {
+                String::from_utf8(rate.as_bytes().to_vec())
+                    .block_error("net", "Non-UTF8 bitrate")
+                    .map(Some)
+            } else {
+                Ok(None)
+            }
         } else {
-            bitrate_output.pop(); // Remove trailing newline.
-            String::from_utf8(bitrate_output)
-                .block_error("net", "Non-UTF8 bitrate.")
-                .map(Some)
+            let output = Command::new("ethtool")
+                .arg(&self.device)
+                .output()
+                .block_error("net", "Failed to execute bitrate query with ethtool")?
+                .stdout;
+            if let Some(rate) = ETHTOOL_SPEED_REGEX.captures_iter(&output).next() {
+                let rate = rate
+                    .get(1)
+                    .block_error("net", "Invalid ethtool output: no speed")?;
+                String::from_utf8(rate.as_bytes().to_vec())
+                    .block_error("net", "Non-UTF8 bitrate")
+                    .map(Some)
+            } else {
+                Ok(None)
+            }
         }
     }
 }
@@ -938,5 +910,155 @@ impl Block for Net {
 
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+fn get_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
+    if let Some(res) = get_iw_ssid(dev)? {
+        return Ok(Some(res));
+    }
+
+    if let Some(res) = get_wpa_ssid(dev)? {
+        return Ok(Some(res));
+    }
+
+    if let Some(res) = get_nmcli_ssid(dev)? {
+        return Ok(Some(res));
+    }
+
+    if let Some(res) = get_iwctl_ssid(dev)? {
+        return Ok(Some(res));
+    }
+
+    Ok(None)
+}
+
+#[inline]
+/// Attempt to get the SSID the given device is connected to from iw.
+/// Returns Err if:
+///     - `iw` is not a valid command
+///     - failed to spawn an `iw` command
+///     - `iw` failed to produce a valid UTF-8 SSID
+/// Returns Ok(None) if `iw` failed to produce a SSID.
+fn get_iw_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
+    let raw = exec_ssid_cmd("iw", &["dev", &dev.device, "link"])?;
+
+    if raw.is_none() {
+        return Ok(None);
+    }
+
+    let raw = raw.unwrap();
+    let result = raw
+        .stdout
+        .split(|c| *c == b'\n')
+        .filter_map(|x| IW_SSID_REGEX.find(x))
+        .next();
+
+    maybe_ssid_convert(result.map(|x| x.as_bytes()))
+}
+
+#[inline]
+/// Attempt to get the SSID the given device is connected to from wpa_cli.
+/// Returns Err if:
+///     - `wpa_cli` is not a valid command
+///     - failed to spawn a `wpa_cli` command
+///     - `wpa_cli` failed to produce a valid UTF-8 SSID
+/// Returns Ok(None) if `wpa_cli` failed to produce a SSID.
+fn get_wpa_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
+    let raw = exec_ssid_cmd("wpa_cli", &["status", "-i", &dev.device])?;
+
+    if raw.is_none() {
+        return Ok(None);
+    }
+
+    let raw = raw.unwrap();
+    let result = raw
+        .stdout
+        .split(|c| *c == b'\n')
+        .filter_map(|x| WPA_SSID_REGEX.find(x))
+        .next();
+
+    maybe_ssid_convert(result.map(|x| x.as_bytes()))
+}
+
+#[inline]
+/// Attempt to get the SSID the given device is connected to from nmcli.
+/// Returns Err if:
+///     - `nmcli` is not a valid command
+///     - failed to spawn a `nmcli` command
+///     - `nmcli` failed to produce a valid UTF-8 SSID
+/// Returns Ok(None) if `nmcli` failed to produce a SSID.
+fn get_nmcli_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
+    let raw = exec_ssid_cmd(
+        "nmcli",
+        &["-g", "general.connection", "device", "show", &dev.device],
+    )?;
+
+    if raw.is_none() {
+        return Ok(None);
+    }
+
+    let raw = raw.unwrap();
+    let result = raw.stdout.split(|c| *c == b'\n').next();
+
+    maybe_ssid_convert(result)
+}
+
+#[inline]
+/// Attempt to get the SSID the given device is connected to from iwctl.
+/// Returns Err if
+///     - `iwctl` is not a valid command
+///     - failed to spawn a `iwctl` command
+///     - `iwctl` failed to produce a valid UTF-8 SSID
+/// Returns Ok(None) if `iwctl` failed to produce a SSID.
+fn get_iwctl_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
+    let raw = exec_ssid_cmd("iwctl", &["station", "station", &dev.device, "show"])?;
+
+    if raw.is_none() {
+        return Ok(None);
+    }
+
+    let raw = raw.unwrap();
+    let result = raw
+        .stdout
+        .split(|c| *c == b'\n')
+        .filter_map(|x| IWCTL_SSID_REGEX.find(x))
+        .next();
+
+    maybe_ssid_convert(result.map(|x| x.as_bytes()))
+}
+
+#[inline]
+fn exec_ssid_cmd<S, I, L>(cmd: S, args: I) -> Result<Option<std::process::Output>>
+where
+    S: AsRef<std::ffi::OsStr>,
+    I: IntoIterator<Item = L>,
+    L: AsRef<OsStr>,
+{
+    let raw = Command::new(&cmd).args(args).output();
+
+    if let Err(ref err) = raw {
+        if err.kind() == ErrorKind::NotFound {
+            return Ok(None);
+        }
+    }
+
+    raw.map(Some).block_error(
+        "net",
+        &format!(
+            "Failed to execute SSID query using {}",
+            cmd.as_ref().to_string_lossy()
+        ),
+    )
+}
+
+#[inline]
+fn maybe_ssid_convert(raw: Option<&[u8]>) -> Result<Option<String>> {
+    if let Some(raw_ssid) = raw {
+        String::from_utf8(raw_ssid.to_vec())
+            .block_error("net", "Non-UTF8 SSID")
+            .map(Some)
+    } else {
+        Ok(None)
     }
 }
