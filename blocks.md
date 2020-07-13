@@ -705,8 +705,10 @@ Key | Values | Required | Default
 Creates a block which displays the upload and download throughput for a network interface. Units are by default in bytes per second (kB/s, MB/s, etc), 
 but the 'use_bits' flag can be set to `true` to convert the units to bps (little b).
 
-`bitrate` requires either `ethtool` for wired devices or `iw` for wireless devices.
-`ssid` requires one of `iw`, `wpa_cli`, `nm-cli` or `iwctl`.
+`bitrate` requires either `ethtool` for wired devices or `iw` for wireless devices.  
+`ip` and `ipv6` require `ip`.  
+`ssid` requires one of `iw`, `wpa_cli`, `nm-cli` or `iwctl`.  
+`signal_strength` requires `iw`.
 
 ### Examples
 
