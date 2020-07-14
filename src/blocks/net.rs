@@ -592,34 +592,21 @@ impl ConfigBlock for Net {
         let vpn = device.is_vpn();
         let id = Uuid::new_v4().to_simple().to_string();
 
-        // List of decprecated options
-        let old_strings = [
-            "ssid",
-            "signal_strength",
-            "signal_strength_bar",
-            "bitrate",
-            "ip",
-            "ipv6",
-            "speed_up",
-            "speed_down",
-            "graph_up",
-            "graph_down",
-        ];
+        let (_, net_config) = config
+            .blocks
+            .iter()
+            .find(|(block_name, _)| block_name == "net")
+            .internal_error("net", "unexpected")?;
 
-        // if "format" option is present it will be preferred
-        let format = if config.blocks[0].1.get("format").is_some() {
+        let format = if net_config.get("format").is_some() {
+            // if "format" option is present it will be preferred
             block_config.format
-        } else {
+        } else if let Some(format) = old_format(&net_config) {
             // Only choose those deprecated options which are true
-            let mut old_format = Vec::new();
-            for string in old_strings.iter() {
-                if let Some(choice) = config.blocks[0].1.get(string.to_owned()) {
-                    if choice.is_bool() && choice.as_bool() == Some(true) {
-                        old_format.push(format!("{{{}}}", string));
-                    }
-                }
-            }
-            old_format.join(" ")
+            format
+        } else {
+            // Default format
+            block_config.format
         };
 
         Ok(Net {
@@ -682,6 +669,41 @@ impl ConfigBlock for Net {
             on_click: block_config.on_click,
         })
     }
+}
+
+fn old_format(net_config: &toml::Value) -> Option<String> {
+    // List of decprecated options
+    let mut old_options = vec![
+        ("ssid", false),
+        ("signal_strength", false),
+        ("signal_strength_bar", false),
+        ("bitrate", false),
+        ("ip", false),
+        ("ipv6", false),
+        ("speed_up", true),
+        ("speed_down", true),
+        ("graph_up", false),
+        ("graph_down", false),
+    ];
+
+    let mut use_old_format = false;
+    for (key, value) in old_options.iter_mut() {
+        if let Some(toml::Value::Boolean(enabled)) = net_config.get(&*key) {
+            use_old_format = true;
+            *value = *enabled;
+        }
+    }
+    if !use_old_format {
+        return None;
+    }
+
+    let result = old_options
+        .into_iter()
+        .filter(|x| x.1)
+        .map(|x| format!("{{{}}}", x.0))
+        .collect::<Vec<_>>()
+        .join(" ");
+    Some(result)
 }
 
 fn read_file(path: &Path) -> Result<String> {
@@ -774,7 +796,7 @@ impl Net {
     fn update_tx_rx(&mut self) -> Result<()> {
         // TODO: consider using `as_nanos`
         let update_interval = (self.update_interval.as_secs() as f64)
-        // Update the throughput/graph widgets if they are enabled
+            // Update the throughput/graph widgets if they are enabled
             + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
