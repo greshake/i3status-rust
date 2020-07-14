@@ -779,8 +779,9 @@ Key | Values | Required | Default
 ----|--------|----------|---------
 `primary_only` | Whether to show only the primary active connection or all active connections | No | `false`
 `max_ssid_width` | Truncation length for SSID | No | `21`
-`device_format` | Device string formatter. See below for available placeholders. | No | `"{icon}{ssid}"`
-`connection_format` | Connection string formatter. See below for available placeholders. | No | `"{devices} {ips}"`
+`ap_format` | Acces point string formatter. See below for available placeholders. | No | `"{ssid}"`
+`device_format` | Device string formatter. See below for available placeholders. | No | `"{icon}{ap} {ips}"`
+`connection_format` | Connection string formatter. See below for available placeholders. | No | `"{devices}"`
 `on_click` | On-click handler | No | `""`
 
 ### AP format string
@@ -789,7 +790,7 @@ Placeholder | Description
 ------------|-------------
 `{ssid}` | The SSID for this AP.
 `{strength}` | The signal strength in percent for this AP.
-`{frequency}` | The frequency of this AP in MHz.
+`{freq}` | The frequency of this AP in MHz.
 
 ### Device format string
 
