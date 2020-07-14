@@ -641,14 +641,22 @@ impl ConfigBlock for Net {
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: if wireless {
+            ssid: if wireless && format.contains("{ssid}") {
                 Some(" ".to_string())
             } else {
                 None
             },
             max_ssid_width: block_config.max_ssid_width,
-            signal_strength: if wireless { Some(0.to_string()) } else { None },
-            signal_strength_bar: if wireless { Some("".to_string()) } else { None },
+            signal_strength: if wireless && format.contains("{signal_strength}") {
+                Some(0.to_string())
+            } else {
+                None
+            },
+            signal_strength_bar: if wireless && format.contains("{signal_strength_bar}") {
+                Some("".to_string())
+            } else {
+                None
+            },
             // TODO: a better way to deal with this?
             bitrate: if format.contains("{bitrate}") {
                 Some("".to_string())
