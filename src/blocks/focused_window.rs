@@ -73,7 +73,7 @@ impl ConfigBlock for FocusedWindow {
                     .lock()
                     .expect("lock has been poisoned in `window` block");
 
-                let changed = *title == new_title;
+                let changed = *title != new_title;
                 *title = new_title;
                 changed
             }
@@ -118,7 +118,7 @@ impl ConfigBlock for FocusedWindow {
                     .lock()
                     .expect("lock has been poisoned in `window` block");
 
-                let changed = *marks == new_marks_str;
+                let changed = *marks != new_marks_str;
                 *marks = new_marks_str;
                 changed
             }
