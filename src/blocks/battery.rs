@@ -441,6 +441,7 @@ pub struct Battery {
     update_interval: Duration,
     device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
+    full_format: FormatTemplate,
     driver: BatteryDriver,
     good: u64,
     info: u64,
@@ -486,6 +487,11 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_format")]
     pub format: String,
 
+    /// Format string for displaying battery information when battery is full.
+    /// placeholders: {percentage}, {bar}, {time} and {power}
+    #[serde(default = "BatteryConfig::default_full_format")]
+    pub full_format: String,
+
     /// (DEPRECATED) Use UPower to monitor battery status and events.
     #[serde(default = "BatteryConfig::default_upower")]
     pub upower: bool,
@@ -521,6 +527,10 @@ impl BatteryConfig {
 
     fn default_format() -> String {
         "{percentage}%".into()
+    }
+
+    fn default_full_format() -> String {
+        "".into()
     }
 
     fn default_upower() -> bool {
@@ -588,6 +598,7 @@ impl ConfigBlock for Battery {
             output: TextWidget::new(config),
             device,
             format: FormatTemplate::from_string(&format)?,
+            full_format: FormatTemplate::from_string(&block_config.full_format)?,
             driver,
             good: block_config.good,
             info: block_config.info,
@@ -602,37 +613,38 @@ impl Block for Battery {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
         let status = self.device.status()?;
+        let capacity = self.device.capacity();
+        let percentage = match capacity {
+            Ok(capacity) => format!("{}", capacity),
+            Err(_) => "×".into(),
+        };
+        let bar = match capacity {
+            Ok(capacity) => format_percent_bar(capacity as f32),
+            Err(_) => "×".into(),
+        };
+        let time = match self.device.time_remaining() {
+            Ok(time) => match time {
+                0 => "".into(),
+                _ => format!("{}:{:02}", time / 60, time % 60),
+            },
+            Err(_) => "×".into(),
+        };
+        // convert µW to W for display
+        let power = match self.device.power_consumption() {
+            Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
+            Err(_) => "×".into(),
+        };
+        let values = map!("{percentage}" => percentage,
+                            "{bar}" => bar,
+                            "{time}" => time,
+                            "{power}" => power);
 
         if status == "Full" || status == "Not charging" {
             self.output.set_icon("bat_full");
-            self.output.set_text("".to_string());
+            self.output
+                .set_text(self.full_format.render_static_str(&values)?);
             self.output.set_state(State::Good);
         } else {
-            let capacity = self.device.capacity();
-            let percentage = match capacity {
-                Ok(capacity) => format!("{}", capacity),
-                Err(_) => "×".into(),
-            };
-            let bar = match capacity {
-                Ok(capacity) => format_percent_bar(capacity as f32),
-                Err(_) => "×".into(),
-            };
-            let time = match self.device.time_remaining() {
-                Ok(time) => match time {
-                    0 => "".into(),
-                    _ => format!("{}:{:02}", time / 60, time % 60),
-                },
-                Err(_) => "×".into(),
-            };
-            // convert µW to W for display
-            let power = match self.device.power_consumption() {
-                Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
-                Err(_) => "×".into(),
-            };
-            let values = map!("{percentage}" => percentage,
-                              "{bar}" => bar,
-                              "{time}" => time,
-                              "{power}" => power);
             self.output
                 .set_text(self.format.render_static_str(&values)?);
 
