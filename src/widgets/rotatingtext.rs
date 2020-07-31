@@ -10,6 +10,7 @@ use crate::widget::{I3BarWidget, State};
 pub struct RotatingTextWidget {
     rotation_pos: usize,
     max_width: usize,
+    dynamic_width: bool,
     rotation_interval: Duration,
     rotation_speed: Duration,
     next_rotation: Option<Instant>,
@@ -28,11 +29,13 @@ impl RotatingTextWidget {
         interval: Duration,
         speed: Duration,
         max_width: usize,
+        dynamic_width: bool,
         config: Config,
     ) -> RotatingTextWidget {
         RotatingTextWidget {
             rotation_pos: 0,
             max_width,
+            dynamic_width,
             rotation_interval: interval,
             rotation_speed: speed,
             next_rotation: None,
@@ -146,7 +149,7 @@ impl RotatingTextWidget {
                 } else {
                     let text_width = self.get_rotated_content().chars().count();
                     let icon_width = icon.chars().count();
-                    if text_width < self.max_width {
+                    if self.dynamic_width && text_width < self.max_width {
                         "0".repeat(text_width + icon_width)
                     } else {
                         "0".repeat(self.max_width + icon_width + 1)
