@@ -250,7 +250,10 @@ impl Block for Music {
                 } else {
                     self.player_avail = true;
 
-                    if !self.smart_trim {
+                    let textlen = title.chars().count()
+                        + self.separator.chars().count()
+                        + artist.chars().count();
+                    if textlen < self.max_width || !self.smart_trim {
                         self.current_song
                             .set_text(format!("{}{}{}", title, self.separator, artist));
                     } else if title.is_empty() {
@@ -278,7 +281,6 @@ impl Block for Music {
                     } else {
                         // Below code is by https://github.com/jgbyrne
                         let text = format!("{}{}{}", title, self.separator, artist);
-                        let textlen = title.chars().count() + artist.chars().count() + 3;
                         if textlen > self.max_width {
                             // overshoot: # of chars we need to trim
                             // substance: # of chars available for trimming
