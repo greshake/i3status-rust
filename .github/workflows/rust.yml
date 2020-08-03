@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - name: Get required packages
-      run: sudo apt-get install libdbus-1-dev libpulse-dev libgoogle-perftools-dev libnotmuch-dev pandoc
+      run: sudo apt-get update && sudo apt-get install libdbus-1-dev libpulse-dev libgoogle-perftools-dev libnotmuch-dev pandoc
     - uses: actions/checkout@v2
     - name: Check formatting
       run: cargo fmt -- --check
