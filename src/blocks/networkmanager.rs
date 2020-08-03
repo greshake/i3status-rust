@@ -2,6 +2,7 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::net::Ipv4Addr;
 use std::process::Command;
+use std::result;
 use std::thread;
 use std::time::Instant;
 
@@ -12,6 +13,7 @@ use dbus::{
     ffidisp::{BusType, Connection, ConnectionItem},
     Message, Path,
 };
+use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -317,6 +319,22 @@ impl<'a> NmDevice<'a> {
         Ok(DeviceType::from(device_type.0))
     }
 
+    fn interface_name(&self, c: &Connection) -> Result<String> {
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.Device",
+            "Interface",
+        )
+        .block_error("networkmanager", "Failed to retrieve device interface name")?;
+
+        let interface_name: Variant<String> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read interface name")?;
+
+        Ok(interface_name.0)
+    }
+
     fn ip4config(&self, c: &Connection) -> Result<NmIp4Config> {
         let m = ConnectionManager::get(
             c,
@@ -440,6 +458,8 @@ pub struct NetworkManager {
     ap_format: FormatTemplate,
     device_format: FormatTemplate,
     connection_format: FormatTemplate,
+    interface_name_exclude_regexps: Vec<Regex>,
+    interface_name_include_regexps: Vec<Regex>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -467,6 +487,14 @@ pub struct NetworkManagerConfig {
     /// Connection formatter.
     #[serde(default = "NetworkManagerConfig::default_connection_format")]
     pub connection_format: String,
+
+    /// Interface name regex patterns to include.
+    #[serde(default = "NetworkManagerConfig::default_interface_name_include_patterns")]
+    pub interface_name_exclude: Vec<String>,
+
+    /// Interface name regex patterns to ignore.
+    #[serde(default = "NetworkManagerConfig::default_interface_name_exclude_patterns")]
+    pub interface_name_include: Vec<String>,
 }
 
 impl NetworkManagerConfig {
@@ -492,6 +520,14 @@ impl NetworkManagerConfig {
 
     fn default_connection_format() -> String {
         "{devices}".to_string()
+    }
+
+    fn default_interface_name_include_patterns() -> Vec<String> {
+        vec![]
+    }
+
+    fn default_interface_name_exclude_patterns() -> Vec<String> {
+        vec![]
     }
 }
 
@@ -534,6 +570,10 @@ impl ConfigBlock for NetworkManager {
             })
             .unwrap();
 
+        fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
+            patterns.iter().map(|p| Regex::new(&p)).collect()
+        }
+
         Ok(NetworkManager {
             id: id.clone(),
             config: config.clone(),
@@ -547,6 +587,10 @@ impl ConfigBlock for NetworkManager {
             ap_format: FormatTemplate::from_string(&block_config.ap_format)?,
             device_format: FormatTemplate::from_string(&block_config.device_format)?,
             connection_format: FormatTemplate::from_string(&block_config.connection_format)?,
+            interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
+                .block_error("networkmanager", "failed to parse exclude patterns")?,
+            interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
+                .block_error("networkmanager", "failed to parse include patterns")?,
         })
     }
 }
@@ -609,7 +653,7 @@ impl Block for NetworkManager {
 
                 connections
                     .into_iter()
-                    .map(|conn| {
+                    .filter_map(|conn| {
                         let mut widget = ButtonWidget::new(self.config.clone(), &self.id);
 
                         // Set the state for this connection
@@ -622,7 +666,32 @@ impl Block for NetworkManager {
                         // Get all devices for this connection
                         let mut devicevec: Vec<String> = Vec::new();
                         if let Ok(devices) = conn.devices(&self.dbus_conn) {
-                            for device in devices {
+                            'devices: for device in devices {
+                                let name = match device.interface_name(&self.dbus_conn) {
+                                    Ok(v) => v,
+                                    Err(_) => "".to_string(),
+                                };
+
+                                // If an interface matches an exclude pattern, ignore it
+                                if self
+                                    .interface_name_exclude_regexps
+                                    .iter()
+                                    .any(|regex| regex.is_match(&name))
+                                {
+                                    continue 'devices;
+                                }
+
+                                // If we have at-least one include pattern, make sure
+                                // the interface name matches at least one of them
+                                if !self.interface_name_include_regexps.is_empty()
+                                    && !self
+                                        .interface_name_include_regexps
+                                        .iter()
+                                        .any(|regex| regex.is_match(&name))
+                                {
+                                    continue 'devices;
+                                }
+
                                 let (icon, type_name) = if let Ok(dev_type) =
                                     device.device_type(&self.dbus_conn)
                                 {
@@ -697,6 +766,7 @@ impl Block for NetworkManager {
                                 let values = map!("{icon}" => icon,
                                                   "{typename}" => type_name,
                                                   "{ap}" => ap,
+                                                  "{name}" => name.to_string(), 
                                                   "{ips}" => ips);
 
                                 if let Ok(s) = self.device_format.render_static_str(&values) {
@@ -720,7 +790,12 @@ impl Block for NetworkManager {
                         } else {
                             widget.set_text("[invalid connection format string]");
                         }
-                        widget
+
+                        if !devicevec.is_empty() {
+                            Some(widget)
+                        } else {
+                            None
+                        }
                     })
                     .collect()
             }
