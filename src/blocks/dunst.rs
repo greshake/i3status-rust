@@ -19,11 +19,9 @@ pub struct Dunst {
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct DunstConfig {
-}
+pub struct DunstConfig {}
 
-impl DunstConfig {
-}
+impl DunstConfig {}
 
 impl ConfigBlock for Dunst {
     type Config = DunstConfig;
@@ -41,8 +39,7 @@ impl ConfigBlock for Dunst {
 
         Ok(Dunst {
             id: i.clone(),
-            icon: ButtonWidget::new(config, i.as_str())
-                .with_icon("bell"),
+            icon: ButtonWidget::new(config, i.as_str()).with_icon("bell"),
             paused: false,
         })
     }
@@ -61,8 +58,8 @@ impl Block for Dunst {
                         spawn_child_async("sh", &["-c", "killall -s SIGUSR2 dunst"])
                             .block_error("dunst", "could not spawn child")?;
                     }
-                    let icon = if self.paused { "bell-slash"} else {"bell"};
-                    self.icon.set_icon(icon);            
+                    let icon = if self.paused { "bell-slash" } else { "bell" };
+                    self.icon.set_icon(icon);
                 }
             }
         }
