@@ -6,6 +6,7 @@ pub mod custom;
 pub mod custom_dbus;
 pub mod disk_space;
 pub mod docker;
+pub mod dunst;
 pub mod focused_window;
 pub mod github;
 pub mod ibus;
@@ -42,6 +43,7 @@ use self::custom::*;
 use self::custom_dbus::*;
 use self::disk_space::*;
 use self::docker::*;
+use self::dunst::*;
 use self::focused_window::*;
 use self::github::*;
 use self::ibus::*;
@@ -157,6 +159,7 @@ pub fn create_block(
         "custom_dbus" => block!(CustomDBus, block_config, config, update_request),
         "disk_space" => block!(DiskSpace, block_config, config, update_request),
         "docker" => block!(Docker, block_config, config, update_request),
+        "dunst" => block!(Dunst, block_config, config, update_request),
         "focused_window" => block!(FocusedWindow, block_config, config, update_request),
         "github" => block!(Github, block_config, config, update_request),
         "ibus" => block!(IBus, block_config, config, update_request),

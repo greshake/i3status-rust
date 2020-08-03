@@ -8,6 +8,7 @@
 - [Custom DBus](#custom-dbus)
 - [Disk Space](#disk-space)
 - [Docker](#docker)
+- [Dunst](#dunst)
 - [Focused Window](#focused-window)
 - [Github](#github)
 - [IBus](#ibus)
@@ -342,6 +343,21 @@ Key | Value
 `{paused}` | Containers paused on the host.
 `{images}` | Total images on the host.
 
+
+## Dunst
+
+Creates a block which can turn toggle Dunst notifications.
+
+### Examples
+
+```toml
+[[block]]
+block = "dunst"
+```
+
+### Options
+
+No options available
 
 ## Focused Window
 
