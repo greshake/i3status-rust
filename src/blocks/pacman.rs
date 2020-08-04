@@ -157,14 +157,14 @@ impl ConfigBlock for Pacman {
             critical_updates_regex: match block_config.critical_updates_regex {
                 None => None, // no regex configured
                 Some(regex_str) => {
-                    let regex = Regex::new(regex_str.as_ref()).or_else(|_| {
-                        Err(ConfigurationError(
+                    let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
+                        ConfigurationError(
                             "pacman".to_string(),
                             (
                                 "invalid critical updates regex".to_string(),
                                 "invalid regex".to_string(),
                             ),
-                        ))
+                        )
                     })?;
                     Some(regex)
                 }
