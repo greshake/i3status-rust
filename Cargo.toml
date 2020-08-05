@@ -27,7 +27,7 @@ num-traits = "0.2"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-swayipc = "2.6.0"
+swayipc = "2.7"
 toml = "0.5"
 uuid = { version = "0.8", features = ["v4"] }
 # Optional features/blocks
