@@ -49,7 +49,7 @@ trait SoundDevice {
     fn output_name(&self) -> String;
 
     fn get_info(&mut self) -> Result<()>;
-    fn set_volume(&mut self, step: i32) -> Result<()>;
+    fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
     fn toggle(&mut self) -> Result<()>;
     fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()>;
 }
@@ -123,14 +123,18 @@ impl SoundDevice for AlsaSoundDevice {
         Ok(())
     }
 
-    fn set_volume(&mut self, step: i32) -> Result<()> {
-        let volume = max(0, self.volume as i32 + step) as u32;
-
+    fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()> {
+        let new_vol = max(0, self.volume as i32 + step) as u32;
+        let capped_volume = if let Some(vol_cap) = max_vol {
+            min(new_vol, vol_cap)
+        } else {
+            new_vol
+        };
         let mut args = Vec::new();
         if self.natural_mapping {
             args.push("-M")
         };
-        let vol_str = &format!("{}%", volume);
+        let vol_str = &format!("{}%", capped_volume);
         args.extend(&["-D", &self.device, "set", &self.name, &vol_str]);
 
         Command::new("amixer")
@@ -138,7 +142,7 @@ impl SoundDevice for AlsaSoundDevice {
             .output()
             .block_error("sound", "failed to set volume")?;
 
-        self.volume = volume;
+        self.volume = capped_volume;
 
         Ok(())
     }
@@ -628,7 +632,7 @@ impl SoundDevice for PulseAudioSoundDevice {
         Ok(())
     }
 
-    fn set_volume(&mut self, step: i32) -> Result<()> {
+    fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()> {
         let mut volume = match self.volume {
             Some(volume) => volume,
             None => return Err(BlockError("sound".into(), "volume unknown".into())),
@@ -637,7 +641,16 @@ impl SoundDevice for PulseAudioSoundDevice {
         // apply step to volumes
         let step = (step as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as i32;
         for vol in volume.get_mut().iter_mut() {
-            vol.0 = min(max(0, vol.0 as i32 + step) as u32, VOLUME_MAX.0);
+            let uncapped_vol = max(0, vol.0 as i32 + step) as u32;
+            let capped_vol = if let Some(vol_cap) = max_vol {
+                min(
+                    uncapped_vol,
+                    (vol_cap as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as u32,
+                )
+            } else {
+                uncapped_vol
+            };
+            vol.0 = min(capped_vol, VOLUME_MAX.0);
         }
 
         // update volumes
@@ -685,6 +698,7 @@ pub struct Sound {
     show_volume_when_muted: bool,
     bar: bool,
     mappings: Option<BTreeMap<String, String>>,
+    max_vol: Option<u32>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
@@ -755,6 +769,9 @@ pub struct SoundConfig {
 
     #[serde(default = "SoundConfig::default_mappings")]
     pub mappings: Option<BTreeMap<String, String>>,
+
+    #[serde(default = "SoundConfig::default_max_vol")]
+    pub max_vol: Option<u32>,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -806,6 +823,10 @@ impl SoundConfig {
     }
 
     fn default_mappings() -> Option<BTreeMap<String, String>> {
+        None
+    }
+
+    fn default_max_vol() -> Option<u32> {
         None
     }
 }
@@ -927,6 +948,7 @@ impl ConfigBlock for Sound {
             show_volume_when_muted: block_config.show_volume_when_muted,
             bar: block_config.bar,
             mappings: block_config.mappings,
+            max_vol: block_config.max_vol,
         };
 
         sound.device.monitor(id, tx_update_request)?;
@@ -962,8 +984,12 @@ impl Block for Sound {
                     _ => {
                         use LogicalDirection::*;
                         match self.config.scrolling.to_logical_direction(e.button) {
-                            Some(Up) => self.device.set_volume(self.step_width as i32)?,
-                            Some(Down) => self.device.set_volume(-(self.step_width as i32))?,
+                            Some(Up) => self
+                                .device
+                                .set_volume(self.step_width as i32, self.max_vol)?,
+                            Some(Down) => self
+                                .device
+                                .set_volume(-(self.step_width as i32), self.max_vol)?,
                             None => (),
                         }
                     }
