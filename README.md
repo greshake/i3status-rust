@@ -83,6 +83,9 @@ fontawesome-webfont.ttf: "FontAwesome" "Regular"
 
 Finally, reload i3: `i3 reload`.
 
+## Colors
+The only colors you can set specifically are for "states"- idle, info, good, warning, and critical. Thus do not expect to be able to change color of individual segment. (If you're tempted by the included screenshot at the top, notice the cpu load is critical and volume is high)
+
 ## Contributing
 
 We welcome new contributors! Take a gander at [CONTRIBUTING.md](CONTRIBUTING.md).
