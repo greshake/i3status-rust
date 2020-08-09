@@ -8,6 +8,7 @@ pub mod disk_space;
 pub mod docker;
 pub mod focused_window;
 pub mod github;
+pub mod hueshift;
 pub mod ibus;
 pub mod kdeconnect;
 pub mod keyboard_layout;
@@ -44,6 +45,7 @@ use self::disk_space::*;
 use self::docker::*;
 use self::focused_window::*;
 use self::github::*;
+use self::hueshift::*;
 use self::ibus::*;
 use self::kdeconnect::*;
 use self::keyboard_layout::*;
@@ -184,6 +186,7 @@ pub fn create_block(
         "watson" => block!(Watson, block_config, config, update_request),
         "weather" => block!(Weather, block_config, config, update_request),
         "xrandr" => block!(Xrandr, block_config, config, update_request),
+        "hueshift" => block!(Hueshift, block_config, config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
     }
 }
