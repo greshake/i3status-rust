@@ -1,5 +1,5 @@
-use std::time::Duration;
 use std::process::Command;
+use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -9,7 +9,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{Config, LogicalDirection};
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent};
+use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
@@ -69,7 +69,7 @@ impl HueshiftConfig {
         6500 as u16
     }
     /// Max/Min hue temperature (min 1000K, max 10_000K)
-    // TODO: Try to detect if we're using redshift or not 
+    // TODO: Try to detect if we're using redshift or not
     // to set default max_temp either to 10_000K to 25_000K
     fn default_min_temp() -> u16 {
         1000 as u16
@@ -83,14 +83,12 @@ impl HueshiftConfig {
     }
 
     fn default_hue_shifter() -> Option<String> {
-        let (redshift,sct) = what_is_supported();
+        let (redshift, sct) = what_is_supported();
         if redshift && sct {
             Some("redshift".to_string())
-        }
-        else if sct {
+        } else if sct {
             Some("sct".to_string())
-        }
-        else {
+        } else {
             None
         }
     }
@@ -141,15 +139,13 @@ impl Block for Hueshift {
                     use LogicalDirection::*;
                     match self.config.scrolling.to_logical_direction(mb) {
                         Some(Up) => {
-                            let current_temp: u16 =
-                                self.current_temp + self.step;
+                            let current_temp: u16 = self.current_temp + self.step;
                             if current_temp < self.max_temp {
                                 update_hue(current_temp);
                             }
                         }
                         Some(Down) => {
-                            let current_temp: u16 =
-                                self.current_temp - self.step;
+                            let current_temp: u16 = self.current_temp - self.step;
                             if current_temp > self.min_temp {
                                 update_hue(current_temp);
                             }
