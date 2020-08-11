@@ -328,7 +328,7 @@ impl Block for Pacman {
                 let formatting_map = map!("{count}" => pacman_count, "{pacman}" => pacman_count, "{aur}" => aur_count, "{both}" => pacman_count + aur_count);
                 let critical = self.critical_updates_regex.as_ref().map_or(false, |regex| {
                     has_critical_update(&aur_available_updates, regex)
-                        || has_critical_update(&aur_available_updates, regex)
+                        || has_critical_update(&pacman_available_updates, regex)
                 });
                 (formatting_map, critical, pacman_count + aur_count)
             }
