@@ -383,7 +383,7 @@ Key | Values | Required | Default
 `format` | A format string. See below for available placeholders. | No | `"{total}"`
 `api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
 
-It requires a Github [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope. It must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
+It requires a Github [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope. It must be passed using the `I3RS_GITHUB_TOKEN` environment variable. The `env` variable has to be stored in your `$HOME/.xprofile` file for `i3` to be able to read.
 
 ### Available Format Keys
 
@@ -1255,8 +1255,7 @@ Key | Values | Required | Default
 Either one of `city_id` or `place` is required. If both are supplied, `city_id` takes precedence.
 
 The options `api_key`, `city_id`, `place` can be omitted from configuration,
-in which case they must be provided in the environment variables
-`OPENWEATHERMAP_API_KEY`, `OPENWEATHERMAP_CITY_ID`, `OPENWEATHERMAP_PLACE`.
+in which case they must be provided in the environment variables `OPENWEATHERMAP_API_KEY`, `OPENWEATHERMAP_CITY_ID`, `OPENWEATHERMAP_PLACE` in your `$HOME/.xprofile` file for `i3` to be able to read. 
 
 ### Available Format Keys
 
