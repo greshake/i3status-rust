@@ -607,38 +607,48 @@ Key | Values | Required | Default
   Key    | Value
 ---------|-------
 `{MTg}`  | Memory total (GiB).
+`{MTgi}` | Memory total (GiB) as integer.
 `{MTm}`  | Memory total (MiB).
 `{MAg}`  | Available memory, including cached memory and buffers (GiB).
+`{MAgi}` | Available memory, including cached memory and buffers (GiB) as integer.
 `{MAm}`  | Available memory, including cached memory and buffers (MiB).
 `{MAp}`  | Available memory, including cached memory and buffers (%).
 `{MApi}` | Available memory, including cached memory and buffers (%) as integer.
 `{MFg}`  | Memory free (GiB).
+`{MFgi}` | Memory free (GiB) as integer.
 `{MFm}`  | Memory free (MiB).
 `{MFp}`  | Memory free (%).
 `{MFpi}` | Memory free (%) as integer.
 `{Mug}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB).
+`{Mugi}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB) as integer.
 `{Mum}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB).
 `{Mup}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (%).
 `{Mupi}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (%) as integer.
 `{MUg}`  | Total memory used (GiB).
+`{MUgi}` | Total memory used (GiB) as integer.
 `{MUm}`  | Total memory used (MiB).
 `{MUp}`  | Total memory used (%).
 `{MUpi}` | Total memory used (%) as integer.
 `{Cg}`   | Cached memory, similar to htop's yellow bar (GiB).
+`{Cgi}`  | Cached memory, similar to htop's yellow bar (GiB) as integer.
 `{Cm}`   | Cached memory, similar to htop's yellow bar (MiB).
 `{Cp}`   | Cached memory, similar to htop's yellow bar (%).
 `{Cpi}`  | Cached memory, similar to htop's yellow bar (%) as integer.
 `{Bg}`   | Buffers, similar to htop's blue bar (GiB).
+`{Bgi}`  | Buffers, similar to htop's blue bar (GiB) as integer.
 `{Bm}`   | Buffers, similar to htop's blue bar (MiB).
 `{Bp}`   | Buffers, similar to htop's blue bar (%).
 `{Bpi}`  | Buffers, similar to htop's blue bar (%) as integer.
 `{STg}`  | Swap total (GiB).
+`{STgi}` | Swap total (GiB) as integer.
 `{STm}`  | Swap total (MiB).
 `{SFg}`  | Swap free (GiB).
+`{SFgi}` | Swap free (GiB) as integer.
 `{SFm}`  | Swap free (MiB).
 `{SFp}`  | Swap free (%).
 `{SFpi}` | Swap free (%) as integer.
 `{SUg}`  | Swap used (GiB).
+`{SUgi}` | Swap used (GiB) as integer.
 `{SUm}`  | Swap used (MiB).
 `{SUp}`  | Swap used (%).
 `{SUpi}` | Swap used (%) as integer.
