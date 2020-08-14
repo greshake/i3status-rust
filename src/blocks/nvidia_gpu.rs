@@ -278,7 +278,7 @@ impl Block for NvidiaGpu {
             count += 1;
         }
         if let Some(ref mut temperature_widget) = self.show_temperature {
-            let temp = result[count].parse::<u64>().unwrap();
+            let temp = result[count].parse::<u64>().unwrap_or(0);
             temperature_widget.set_state(match temp {
                 t if t <= self.maximum_idle => State::Idle,
                 t if t <= self.maximum_good => State::Good,
@@ -290,7 +290,7 @@ impl Block for NvidiaGpu {
             count += 1;
         }
         if let Some(ref mut fan_widget) = self.show_fan {
-            self.fan_speed = result[count].parse::<u64>().unwrap();
+            self.fan_speed = result[count].parse::<u64>().unwrap_or(0);
             fan_widget.set_text(format!("{:02}%", self.fan_speed));
             count += 1;
         }
