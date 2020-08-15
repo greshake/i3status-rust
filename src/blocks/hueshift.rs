@@ -11,9 +11,9 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::util::has_command;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-use crate::util::has_command;
 
 pub struct Hueshift {
     text: ButtonWidget,
@@ -88,11 +88,10 @@ impl HueshiftConfig {
         // Prefer redshift over sct
         match _redshift {
             Ok(_redshift) => Some(String::from("redshift")),
-            Err(_redshift) => 
-            match _sct {
+            Err(_redshift) => match _sct {
                 Ok(_sct) => Some(String::from("sct")),
-                Err(_sct) => None
-            }
+                Err(_sct) => None,
+            },
         }
     }
 }
@@ -106,7 +105,7 @@ impl ConfigBlock for Hueshift {
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let current_temp = block_config.current_temp;
-        let mut step = block_config.step; 
+        let mut step = block_config.step;
         let id = Uuid::new_v4().to_simple().to_string();
         // limit too big steps at 2000K to avoid too brutal changes
         if step > 10_000 {
@@ -173,13 +172,20 @@ impl Block for Hueshift {
 /// Currently, detects whether sct and redshift are installed.
 #[inline]
 fn what_is_supported() -> (Result<bool>, Result<bool>) {
-    (has_command("hueshift", "redshift"), has_command("hueshift", "sct"))
+    (
+        has_command("hueshift", "redshift"),
+        has_command("hueshift", "sct"),
+    )
 }
 #[inline]
 fn update_hue(new_temp: u16) {
     // TODO: Add code to use hue_shifter (if it is sct or redshift)
     Command::new("sh")
-        .args(&["-c", format!("redshift -O {}", new_temp).as_str(), ">/dev/null 2>&1"])
+        .args(&[
+            "-c",
+            format!("redshift -O {}", new_temp).as_str(),
+            ">/dev/null 2>&1",
+        ])
         .spawn()
         .expect("Failed to set new color temperature using redshift.");
 }
