@@ -12,10 +12,11 @@ use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
-use crate::widgets::text::TextWidget;
+use crate::widgets::button::ButtonWidget;
+use crate::util::has_command;
 
 pub struct Hueshift {
-    text: TextWidget,
+    text: ButtonWidget,
     id: String,
     update_interval: Duration,
     step: u16,
@@ -83,13 +84,15 @@ impl HueshiftConfig {
     }
 
     fn default_hue_shifter() -> Option<String> {
-        let (redshift, sct) = what_is_supported();
-        if redshift && sct {
-            Some("redshift".to_string())
-        } else if sct {
-            Some("sct".to_string())
-        } else {
-            None
+        let (_redshift, _sct) = what_is_supported();
+        // Prefer redshift over sct
+        match _redshift {
+            Ok(_redshift) => Some(String::from("redshift")),
+            Err(_redshift) => 
+            match _sct {
+                Ok(_sct) => Some(String::from("sct")),
+                Err(_sct) => None
+            }
         }
     }
 }
@@ -103,15 +106,16 @@ impl ConfigBlock for Hueshift {
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let current_temp = block_config.current_temp;
-        let mut step = block_config.step;
+        let mut step = block_config.step; 
+        let id = Uuid::new_v4().to_simple().to_string();
         // limit too big steps at 2000K to avoid too brutal changes
         if step > 10_000 {
             step = 2000;
         }
         Ok(Hueshift {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: id.clone(),
             update_interval: block_config.interval,
-            text: TextWidget::new(config.clone()).with_text(&current_temp.to_string()),
+            text: ButtonWidget::new(config.clone(), &id).with_text(&current_temp.to_string()),
             tx_update_request,
             step: step,
             max_temp: block_config.max_temp,
@@ -125,6 +129,7 @@ impl ConfigBlock for Hueshift {
 
 impl Block for Hueshift {
     fn update(&mut self) -> Result<Option<Update>> {
+        self.text.set_text(&self.current_temp.to_string());
         Ok(Some(self.update_interval.into()))
     }
 
@@ -139,15 +144,17 @@ impl Block for Hueshift {
                     use LogicalDirection::*;
                     match self.config.scrolling.to_logical_direction(mb) {
                         Some(Up) => {
-                            let current_temp: u16 = self.current_temp + self.step;
-                            if current_temp < self.max_temp {
-                                update_hue(current_temp);
+                            let new_temp: u16 = self.current_temp + self.step;
+                            if new_temp < self.max_temp {
+                                update_hue(new_temp);
+                                self.current_temp = new_temp;
                             }
                         }
                         Some(Down) => {
-                            let current_temp: u16 = self.current_temp - self.step;
-                            if current_temp > self.min_temp {
-                                update_hue(current_temp);
+                            let new_temp: u16 = self.current_temp - self.step;
+                            if new_temp > self.min_temp {
+                                update_hue(new_temp);
+                                self.current_temp = new_temp;
                             }
                         }
                         None => {}
@@ -165,22 +172,14 @@ impl Block for Hueshift {
 
 /// Currently, detects whether sct and redshift are installed.
 #[inline]
-fn what_is_supported() -> (bool, bool) {
-    // Is this really a good idea ? Or is there a better way in Rust ?
-    let status_sct = Command::new("sh")
-        .args(&["-c", "which sct"])
-        .status()
-        .expect("Failed to detect sct.");
-    let status_redshift = Command::new("sh")
-        .args(&["-c", "which redshift"])
-        .status()
-        .expect("Failed to detect Redshift.");
-    (status_redshift.success(), status_sct.success())
+fn what_is_supported() -> (Result<bool>, Result<bool>) {
+    (has_command("hueshift", "redshift"), has_command("hueshift", "sct"))
 }
 #[inline]
 fn update_hue(new_temp: u16) {
+    // TODO: Add code to use hue_shifter (if it is sct or redshift)
     Command::new("sh")
-        .args(&["-c", format!("redshift -O {}", new_temp).as_str()])
+        .args(&["-c", format!("redshift -O {}", new_temp).as_str(), ">/dev/null 2>&1"])
         .spawn()
         .expect("Failed to set new color temperature using redshift.");
 }
