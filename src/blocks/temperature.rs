@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
 
@@ -22,12 +23,13 @@ pub struct Temperature {
     collapsed: bool,
     id: String,
     update_interval: Duration,
-    maximum_good: i64,
-    maximum_idle: i64,
-    maximum_info: i64,
-    maximum_warning: i64,
+    maximum_good: f64,
+    maximum_idle: f64,
+    maximum_info: f64,
+    maximum_warning: f64,
     format: FormatTemplate,
     chip: Option<String>,
+    inputs: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -46,19 +48,19 @@ pub struct TemperatureConfig {
 
     /// Maximum temperature, below which state is set to good
     #[serde(default = "TemperatureConfig::default_good")]
-    pub good: i64,
+    pub good: f64,
 
     /// Maximum temperature, below which state is set to idle
     #[serde(default = "TemperatureConfig::default_idle")]
-    pub idle: i64,
+    pub idle: f64,
 
     /// Maximum temperature, below which state is set to info
     #[serde(default = "TemperatureConfig::default_info")]
-    pub info: i64,
+    pub info: f64,
 
     /// Maximum temperature, below which state is set to warning
     #[serde(default = "TemperatureConfig::default_warning")]
-    pub warning: i64,
+    pub warning: f64,
 
     /// Format override
     #[serde(default = "TemperatureConfig::default_format")]
@@ -67,6 +69,10 @@ pub struct TemperatureConfig {
     /// Chip override
     #[serde(default = "TemperatureConfig::default_chip")]
     pub chip: Option<String>,
+
+    /// Inputs whitelist
+    #[serde(default = "TemperatureConfig::default_inputs")]
+    pub inputs: Option<Vec<String>>,
 }
 
 impl TemperatureConfig {
@@ -82,23 +88,27 @@ impl TemperatureConfig {
         true
     }
 
-    fn default_good() -> i64 {
-        20
+    fn default_good() -> f64 {
+        20f64
     }
 
-    fn default_idle() -> i64 {
-        45
+    fn default_idle() -> f64 {
+        45f64
     }
 
-    fn default_info() -> i64 {
-        60
+    fn default_info() -> f64 {
+        60f64
     }
 
-    fn default_warning() -> i64 {
-        80
+    fn default_warning() -> f64 {
+        80f64
     }
 
     fn default_chip() -> Option<String> {
+        None
+    }
+
+    fn default_inputs() -> Option<Vec<String>> {
         None
     }
 }
@@ -125,13 +135,17 @@ impl ConfigBlock for Temperature {
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("temperature", "Invalid format specified for temperature")?,
             chip: block_config.chip,
+            inputs: block_config.inputs,
         })
     }
 }
 
+type SensorsOutput = HashMap<String, HashMap<String, serde_json::Value>>;
+type InputReadings = HashMap<String, f64>;
+
 impl Block for Temperature {
     fn update(&mut self) -> Result<Option<Update>> {
-        let mut args = vec!["-u"];
+        let mut args = vec!["-j"];
         if let Some(ref chip) = &self.chip {
             args.push(chip);
         }
@@ -141,48 +155,45 @@ impl Block for Temperature {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.to_string());
 
-        let mut temperatures: Vec<i64> = Vec::new();
+        let parsed: SensorsOutput = serde_json::from_str(&output)
+            .block_error("temperature", "sensors output is invalid")?;
 
-        for line in output.lines() {
-            if line.starts_with("  temp") {
-                let rest = &line[6..]
-                    .split('_')
-                    .flat_map(|x| x.split(' '))
-                    .flat_map(|x| x.split('.'))
-                    .collect::<Vec<_>>();
+        let mut temperatures: Vec<f64> = Vec::new();
+        for (_chip, inputs) in parsed {
+            for (input_name, input_values) in inputs {
+                if let Some(ref whitelist) = self.inputs {
+                    if !whitelist.contains(&input_name) {
+                        continue;
+                    }
+                }
 
-                if rest[1].starts_with("input") {
-                    match rest[2].parse::<i64>() {
-                        Ok(t) if t == 0 => Ok(()),
-                        Ok(t) if t > -101 && t < 151 => {
-                            temperatures.push(t);
-                            Ok(())
-                        }
-                        Ok(t) => {
-                            // This error is recoverable and therefore should not stop the program
-                            eprintln!("Temperature ({}) outside of range ([-100, 150])", t);
-                            Ok(())
-                        }
-                        Err(_) => Err(BlockError(
-                            "temperature".to_owned(),
-                            "failed to parse temperature as an integer".to_owned(),
-                        )),
-                    }?
+                let values_parsed: InputReadings = match serde_json::from_value(input_values) {
+                    Ok(values) => values,
+                    Err(_) => continue, // probably the "Adapter" key, just ignore.
+                };
+
+                for (value_name, value) in values_parsed {
+                    if !value_name.starts_with("temp") || !value_name.ends_with("input") {
+                        continue;
+                    }
+
+                    if value > -101f64 && value < 151f64 {
+                        temperatures.push(value);
+                    } else {
+                        // This error is recoverable and therefore should not stop the program
+                        eprintln!("Temperature ({}) outside of range ([-100, 150])", value);
+                    }
                 }
             }
         }
 
         if !temperatures.is_empty() {
-            let max: i64 = *temperatures
+            let max: f64 = temperatures
                 .iter()
-                .max()
-                .block_error("temperature", "failed to get max temperature")?;
-            let min: i64 = *temperatures
-                .iter()
-                .min()
-                .block_error("temperature", "failed to get min temperature")?;
-            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
-                .round() as i64;
+                .cloned()
+                .fold(f64::NEG_INFINITY, f64::max);
+            let min: f64 = temperatures.iter().cloned().fold(f64::INFINITY, f64::min);
+            let avg: f64 = temperatures.iter().sum::<f64>() / temperatures.len() as f64;
 
             let values = map!("{average}" => avg,
                               "{min}" => min,
