@@ -9,7 +9,8 @@ use crate::widget::{I3BarWidget, State};
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {
     rotation_pos: usize,
-    width: usize,
+    max_width: usize,
+    dynamic_width: bool,
     rotation_interval: Duration,
     rotation_speed: Duration,
     next_rotation: Option<Instant>,
@@ -27,12 +28,14 @@ impl RotatingTextWidget {
     pub fn new(
         interval: Duration,
         speed: Duration,
-        width: usize,
+        max_width: usize,
+        dynamic_width: bool,
         config: Config,
     ) -> RotatingTextWidget {
         RotatingTextWidget {
             rotation_pos: 0,
-            width,
+            max_width,
+            dynamic_width,
             rotation_interval: interval,
             rotation_speed: speed,
             next_rotation: None,
@@ -67,7 +70,7 @@ impl RotatingTextWidget {
     pub fn with_text(mut self, content: &str) -> Self {
         self.content = String::from(content);
         self.rotation_pos = 0;
-        if self.content.chars().count() > self.width {
+        if self.content.chars().count() > self.max_width {
             self.next_rotation = Some(Instant::now() + self.rotation_interval);
         } else {
             self.next_rotation = None;
@@ -90,7 +93,7 @@ impl RotatingTextWidget {
         if self.content != content {
             self.content = content;
             self.rotation_pos = 0;
-            if self.content.chars().count() > self.width {
+            if self.content.chars().count() > self.max_width {
                 self.next_rotation = Some(Instant::now() + self.rotation_interval);
             } else {
                 self.next_rotation = None;
@@ -104,21 +107,21 @@ impl RotatingTextWidget {
     }
 
     fn get_rotated_content(&self) -> String {
-        if self.content.chars().count() > self.width {
+        if self.content.chars().count() > self.max_width {
             let missing =
-                (self.rotation_pos + self.width).saturating_sub(self.content.chars().count());
+                (self.rotation_pos + self.max_width).saturating_sub(self.content.chars().count());
             if missing == 0 {
                 self.content
                     .chars()
                     .skip(self.rotation_pos)
-                    .take(self.width)
+                    .take(self.max_width)
                     .collect()
             } else {
                 let mut avail: String = self
                     .content
                     .chars()
                     .skip(self.rotation_pos)
-                    .take(self.width)
+                    .take(self.max_width)
                     .collect();
                 avail.push_str("|");
                 avail.push_str(&self.content.chars().take(missing - 1).collect::<String>());
@@ -132,13 +135,26 @@ impl RotatingTextWidget {
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
+        let icon = self.icon.clone().unwrap_or_else(|| String::from(" "));
+
         self.rendered = json!({
             "full_text": format!("{}{} ",
-                                self.icon.clone().unwrap_or_else(|| String::from(" ")),
+                                icon,
                                 self.get_rotated_content()),
             "separator": false,
             "separator_block_width": 0,
-            "min_width": if self.content == "" {"".to_string()} else {"0".repeat(self.width+self.icon.clone().unwrap_or_else(|| String::from(" ")).chars().count()+1)},
+            "min_width":
+                if self.content == "" {
+                    "".to_string()
+                } else {
+                    let text_width = self.get_rotated_content().chars().count();
+                    let icon_width = icon.chars().count();
+                    if self.dynamic_width && text_width < self.max_width {
+                        "0".repeat(text_width + icon_width)
+                    } else {
+                        "0".repeat(self.max_width + icon_width + 1)
+                    }
+                },
             "align": "left",
             "background": key_bg,
             "color": key_fg

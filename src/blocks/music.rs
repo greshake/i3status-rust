@@ -54,6 +54,11 @@ pub struct MusicConfig {
     #[serde(default = "MusicConfig::default_max_width")]
     pub max_width: usize,
 
+    /// Bool to specify whether the block will change width depending on the text content
+    /// or remain static always (= max_width)
+    #[serde(default = "MusicConfig::default_dynamic_width")]
+    pub dynamic_width: bool,
+
     /// Bool to specify if a marquee style rotation should be used<br/> if the title + artist is longer than max-width
     #[serde(default = "MusicConfig::default_marquee")]
     pub marquee: bool,
@@ -91,6 +96,10 @@ pub struct MusicConfig {
 impl MusicConfig {
     fn default_max_width() -> usize {
         21
+    }
+
+    fn default_dynamic_width() -> bool {
+        false
     }
 
     fn default_marquee() -> bool {
@@ -187,6 +196,7 @@ impl ConfigBlock for Music {
                 Duration::new(block_config.marquee_interval.as_secs(), 0),
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
+                block_config.dynamic_width,
                 config.clone(),
             )
             .with_icon("music")
@@ -250,7 +260,10 @@ impl Block for Music {
                 } else {
                     self.player_avail = true;
 
-                    if !self.smart_trim {
+                    let textlen = title.chars().count()
+                        + self.separator.chars().count()
+                        + artist.chars().count();
+                    if textlen < self.max_width || !self.smart_trim {
                         self.current_song
                             .set_text(format!("{}{}{}", title, self.separator, artist));
                     } else if title.is_empty() {
@@ -278,7 +291,6 @@ impl Block for Music {
                     } else {
                         // Below code is by https://github.com/jgbyrne
                         let text = format!("{}{}{}", title, self.separator, artist);
-                        let textlen = title.chars().count() + artist.chars().count() + 3;
                         if textlen > self.max_width {
                             // overshoot: # of chars we need to trim
                             // substance: # of chars available for trimming
