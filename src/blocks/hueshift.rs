@@ -145,14 +145,14 @@ impl Block for Hueshift {
                     match self.config.scrolling.to_logical_direction(mb) {
                         Some(Up) => {
                             let new_temp: u16 = self.current_temp + self.step;
-                            if new_temp < self.max_temp {
+                            if new_temp <= self.max_temp {
                                 update_hue(&self.hue_shifter, new_temp);
                                 self.current_temp = new_temp;
                             }
                         }
                         Some(Down) => {
                             let new_temp: u16 = self.current_temp - self.step;
-                            if new_temp > self.min_temp {
+                            if new_temp >= self.min_temp {
                                 update_hue(&self.hue_shifter, new_temp);
                                 self.current_temp = new_temp;
                             }
