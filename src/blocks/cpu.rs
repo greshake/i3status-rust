@@ -12,16 +12,18 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::util::{format_percent_bar, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
-use crate::widgets::text::TextWidget;
+use crate::widgets::button::ButtonWidget;
 
 /// Maximum number of CPUs we support.
 const MAX_CPUS: usize = 32;
 
 pub struct Cpu {
-    output: TextWidget,
+    output: ButtonWidget,
     prev_idles: [u64; MAX_CPUS],
     prev_non_idles: [u64; MAX_CPUS],
     id: String,
@@ -29,6 +31,7 @@ pub struct Cpu {
     minimum_info: u64,
     minimum_warning: u64,
     minimum_critical: u64,
+    on_click: Option<String>,
     format: FormatTemplate,
     has_barchart: bool,
     has_frequency: bool,
@@ -56,6 +59,9 @@ pub struct CpuConfig {
     /// Minimum usage, where state is set to critical
     #[serde(default = "CpuConfig::default_critical")]
     pub critical: u64,
+
+    #[serde(default = "CpuConfig::default_on_click")]
+    pub on_click: Option<String>,
 
     /// Display frequency
     #[serde(default = "CpuConfig::default_frequency")]
@@ -94,6 +100,10 @@ impl CpuConfig {
     fn default_frequency() -> bool {
         false
     }
+
+    fn default_on_click() -> Option<String> {
+        None
+    }
 }
 
 impl ConfigBlock for Cpu {
@@ -112,10 +122,12 @@ impl ConfigBlock for Cpu {
             block_config.format
         };
 
+        let id = Uuid::new_v4().to_simple().to_string();
+
         Ok(Cpu {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: id.clone(),
             update_interval: block_config.interval,
-            output: TextWidget::new(config).with_icon("cpu"),
+            output: ButtonWidget::new(config, &id).with_icon("cpu"),
             prev_idles: [0; MAX_CPUS],
             prev_non_idles: [0; MAX_CPUS],
             minimum_info: block_config.info,
@@ -126,6 +138,7 @@ impl ConfigBlock for Cpu {
             has_frequency: format.contains("{frequency}"),
             has_barchart: format.contains("{barchart}"),
             per_core: block_config.per_core,
+            on_click: block_config.on_click,
         })
     }
 }
@@ -242,6 +255,18 @@ impl Block for Cpu {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
+    }
+
+    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
+        if e.matches_name(self.id()) {
+            if let MouseButton::Left = e.button {
+                if let Some(ref cmd) = self.on_click {
+                    spawn_child_async("sh", &["-c", cmd])
+                        .block_error("cpu", "could not spawn child")?;
+                }
+            }
+        }
+        Ok(())
     }
 
     fn id(&self) -> &str {
