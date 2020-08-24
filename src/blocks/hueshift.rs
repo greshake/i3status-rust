@@ -116,7 +116,7 @@ impl ConfigBlock for Hueshift {
         }
         if block_config.max_temp > 10_000 {
             max_temp = 10_000;
-        } 
+        }
         if block_config.min_temp < 1000 && block_config.min_temp > block_config.max_temp {
             min_temp = 1000;
         }
