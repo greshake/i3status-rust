@@ -108,9 +108,17 @@ impl ConfigBlock for Hueshift {
         let current_temp = block_config.current_temp;
         let mut step = block_config.step;
         let id = Uuid::new_v4().to_simple().to_string();
+        let mut max_temp = block_config.max_temp;
+        let mut min_temp = block_config.min_temp;
         // limit too big steps at 500K to avoid too brutal changes
         if step > 1000 {
             step = 500;
+        }
+        if block_config.max_temp > 10_000 {
+            max_temp = 10_000;
+        } 
+        if block_config.min_temp < 1000 && block_config.min_temp > block_config.max_temp {
+            min_temp = 1000;
         }
         Ok(Hueshift {
             id: id.clone(),
@@ -118,9 +126,9 @@ impl ConfigBlock for Hueshift {
             text: ButtonWidget::new(config.clone(), &id).with_text(&current_temp.to_string()),
             tx_update_request,
             step: step,
-            max_temp: block_config.max_temp,
-            min_temp: block_config.min_temp,
-            current_temp: block_config.current_temp,
+            max_temp: max_temp,
+            min_temp: min_temp,
+            current_temp: current_temp,
             hue_shifter: block_config.hue_shifter,
             config,
         })
