@@ -10,6 +10,7 @@
 - [Docker](#docker)
 - [Focused Window](#focused-window)
 - [Github](#github)
+- [Hueshift](#hueshift)
 - [IBus](#ibus)
 - [KDEConnect](#kdeconnect)
 - [Keyboard Layout](#keyboard-layout)
@@ -403,6 +404,30 @@ It requires a Github [personal access token](https://github.com/settings/tokens/
 `{team_mention}` | Total of notification related to thread where your team was mentioned.
 
 For more information about reasons, please see the [API documentation](https://developer.github.com/v3/activity/notifications/#notification-reasons).
+
+## Hueshift
+
+Creates a block which display the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.
+
+### Examples
+
+```toml
+[[block]]
+block = "hueshift"
+hue_shifter = "redshift"
+step = 50
+```
+
+### Options
+
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`step`        | The step color temperature is in/decreased in kelvin                   | No | `100`
+`hue_shifter` | Change color temperature. Available qualifiers are `redshift` or `sct` | No | `"redshift"`
+`max_temp`    | max color temperature                                                  | No | `10000`
+`min_temp`    | min color temperature                                                  | No | `1000`
+
 
 ## IBus
 

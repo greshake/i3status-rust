@@ -47,15 +47,16 @@ pub struct HueshiftConfig {
     #[serde(default = "HueshiftConfig::default_min_temp")]
     pub min_temp: u16,
 
-    /// Currently defined temperature default to 6500K
+    // TODO: Detect currently defined temperature
+    /// Currently defined temperature default to 6500K.
     #[serde(default = "HueshiftConfig::default_current_temp")]
     pub current_temp: u16,
-    /// To be set by user as an option
 
+    /// Can be set by user as an option.
     #[serde(default = "HueshiftConfig::default_hue_shifter")]
     pub hue_shifter: Option<String>,
 
-    /// Default to 100K
+    /// Default to 100K, cannot go over 500K.
     #[serde(default = "HueshiftConfig::default_step")]
     pub step: u16,
 }
@@ -107,9 +108,9 @@ impl ConfigBlock for Hueshift {
         let current_temp = block_config.current_temp;
         let mut step = block_config.step;
         let id = Uuid::new_v4().to_simple().to_string();
-        // limit too big steps at 2000K to avoid too brutal changes
-        if step > 10_000 {
-            step = 2000;
+        // limit too big steps at 500K to avoid too brutal changes
+        if step > 1000 {
+            step = 500;
         }
         Ok(Hueshift {
             id: id.clone(),
@@ -145,14 +146,14 @@ impl Block for Hueshift {
                         Some(Up) => {
                             let new_temp: u16 = self.current_temp + self.step;
                             if new_temp < self.max_temp {
-                                update_hue(new_temp);
+                                update_hue(&self.hue_shifter, new_temp);
                                 self.current_temp = new_temp;
                             }
                         }
                         Some(Down) => {
                             let new_temp: u16 = self.current_temp - self.step;
                             if new_temp > self.min_temp {
-                                update_hue(new_temp);
+                                update_hue(&self.hue_shifter, new_temp);
                                 self.current_temp = new_temp;
                             }
                         }
@@ -178,14 +179,24 @@ fn what_is_supported() -> (Result<bool>, Result<bool>) {
     )
 }
 #[inline]
-fn update_hue(new_temp: u16) {
-    // TODO: Add code to use hue_shifter (if it is sct or redshift)
-    Command::new("sh")
-        .args(&[
-            "-c",
-            format!("redshift -O {}", new_temp).as_str(),
-            ">/dev/null 2>&1",
-        ])
-        .spawn()
-        .expect("Failed to set new color temperature using redshift.");
+fn update_hue(hue_shifter: &Option<String>, new_temp: u16) {
+    let (_redshift, _sct) = ("redshift", "sct");
+    match hue_shifter {
+        Some(_redshift) => {
+            Command::new("sh")
+                .args(&[
+                    "-c",
+                    format!("redshift -O {} >/dev/null 2>&1", new_temp).as_str(),
+                ])
+                .spawn()
+                .expect("Failed to set new color temperature using redshift.");
+        }
+        Some(_sct) => {
+            Command::new("sh")
+                .args(&["-c", format!("sct {} >/dev/null 2>&1", new_temp).as_str()])
+                .spawn()
+                .expect("Failed to set new color temperature using sct.");
+        }
+        None => {}
+    }
 }
