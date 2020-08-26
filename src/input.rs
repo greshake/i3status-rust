@@ -76,7 +76,8 @@ where
         where
             E: de::Error,
         {
-            eprintln!("{}", value);
+            // TODO: put this behind `--debug` flag
+            //eprintln!("{}", value);
             Ok(match value {
                 1 => MouseButton::Left,
                 2 => MouseButton::Middle,
