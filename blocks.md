@@ -1117,6 +1117,7 @@ Key | Values | Required | Default
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80`
 `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
 `inputs` | Narrows the results to individual inputs reported by each chip. | No | None
+`format` | Format string. | No | `"{average}° avg, {max}° max"`
 
 ### Available Format Keys
 
