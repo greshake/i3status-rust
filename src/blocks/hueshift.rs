@@ -188,16 +188,17 @@ fn what_is_supported() -> (Result<bool>, Result<bool>) {
 }
 #[inline]
 fn update_hue(hue_shifter: &Option<String>, new_temp: u16) {
+    eprintln!("New temp : {}", new_temp);
     let (_redshift, _sct) = ("redshift", "sct");
     match hue_shifter {
         Some(_redshift) => {
             Command::new("sh")
                 .args(&[
                     "-c",
-                    format!("redshift -O {} >/dev/null 2>&1", new_temp).as_str(),
+                    format!("redshift -O {} -P >/dev/null 2>&1", new_temp).as_str(),
                 ])
                 .spawn()
-                .expect("Failed to set new color temperature using redshift.");
+                .expect("Failed to set new color temperature using sct.");
         }
         Some(_sct) => {
             Command::new("sh")
