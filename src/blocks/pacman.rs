@@ -29,6 +29,7 @@ pub struct Pacman {
     format: FormatTemplate,
     format_singular: FormatTemplate,
     format_up_to_date: FormatTemplate,
+    warning_updates_regex: Option<Regex>,
     critical_updates_regex: Option<Regex>,
     watched: Watched,
 }
@@ -64,6 +65,12 @@ pub struct PacmanConfig {
     #[serde(default = "PacmanConfig::default_format")]
     pub format_up_to_date: String,
 
+    /// Indicate a `warning` state for the block if any pending update match the
+    /// following regex. Default behaviour is that no package updates are deemed
+    /// warning
+    #[serde(default = "PacmanConfig::default_warning_updates_regex")]
+    pub warning_updates_regex: Option<String>,
+
     /// Indicate a `critical` state for the block if any pending update match the following regex.
     /// Default behaviour is that no package updates are deemed critical
     #[serde(default = "PacmanConfig::default_critical_updates_regex")]
@@ -81,6 +88,10 @@ impl PacmanConfig {
 
     fn default_format() -> String {
         "{pacman}".to_owned()
+    }
+
+    fn default_warning_updates_regex() -> Option<String> {
+        None
     }
 
     fn default_critical_updates_regex() -> Option<String> {
@@ -154,6 +165,21 @@ impl ConfigBlock for Pacman {
                     "Invalid format specified for pacman::format_up_to_date",
                 )?,
             output: ButtonWidget::new(config, "pacman").with_icon("update"),
+            warning_updates_regex: match block_config.warning_updates_regex {
+                None => None, // no regex configured
+                Some(regex_str) => {
+                    let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
+                        ConfigurationError(
+                            "pacman".to_string(),
+                            (
+                                "invalid warning updates regex".to_string(),
+                                "invalid regex".to_string(),
+                            ),
+                        )
+                    })?;
+                    Some(regex)
+                }
+            },
             critical_updates_regex: match block_config.critical_updates_regex {
                 None => None, // no regex configured
                 Some(regex_str) => {
@@ -285,6 +311,10 @@ fn get_update_count(updates: &str) -> usize {
         .count()
 }
 
+fn has_warning_update(updates: &str, regex: &Regex) -> bool {
+    updates.lines().filter(|line| regex.is_match(line)).count() > 0
+}
+
 fn has_critical_update(updates: &str, regex: &Regex) -> bool {
     updates.lines().filter(|line| regex.is_match(line)).count() > 0
 }
@@ -299,25 +329,35 @@ impl Block for Pacman {
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
-        let (formatting_map, critical, cum_count) = match &self.watched {
+        let (formatting_map, warning, critical, cum_count) = match &self.watched {
             Watched::Pacman => {
                 check_fakeroot_command_exists()?;
                 let pacman_available_updates = get_pacman_available_updates()?;
                 let pacman_count = get_update_count(&pacman_available_updates);
                 let formatting_map = map!("{count}" => pacman_count, "{pacman}" => pacman_count);
+
+                let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
+                    has_warning_update(&pacman_available_updates, regex)
+                });
                 let critical = self.critical_updates_regex.as_ref().map_or(false, |regex| {
                     has_critical_update(&pacman_available_updates, regex)
                 });
-                (formatting_map, critical, pacman_count)
+
+                (formatting_map, warning, critical, pacman_count)
             }
             Watched::AUR(aur_command) => {
                 let aur_available_updates = get_aur_available_updates(&aur_command)?;
                 let aur_count = get_update_count(&aur_available_updates);
                 let formatting_map = map!("{aur}" => aur_count);
+
+                let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
+                    has_warning_update(&aur_available_updates, regex)
+                });
                 let critical = self.critical_updates_regex.as_ref().map_or(false, |regex| {
                     has_critical_update(&aur_available_updates, regex)
                 });
-                (formatting_map, critical, aur_count)
+
+                (formatting_map, warning, critical, aur_count)
             }
             Watched::Both(aur_command) => {
                 check_fakeroot_command_exists()?;
@@ -326,11 +366,17 @@ impl Block for Pacman {
                 let pacman_count = get_update_count(&pacman_available_updates);
                 let aur_count = get_update_count(&aur_available_updates);
                 let formatting_map = map!("{count}" => pacman_count, "{pacman}" => pacman_count, "{aur}" => aur_count, "{both}" => pacman_count + aur_count);
+
+                let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
+                    has_warning_update(&aur_available_updates, regex)
+                        || has_warning_update(&pacman_available_updates, regex)
+                });
                 let critical = self.critical_updates_regex.as_ref().map_or(false, |regex| {
                     has_critical_update(&aur_available_updates, regex)
                         || has_critical_update(&pacman_available_updates, regex)
                 });
-                (formatting_map, critical, pacman_count + aur_count)
+
+                (formatting_map, warning, critical, pacman_count + aur_count)
             }
         };
         self.output.set_text(match cum_count {
@@ -343,6 +389,8 @@ impl Block for Pacman {
             _ => {
                 if critical {
                     State::Critical
+                } else if warning {
+                    State::Warning
                 } else {
                     State::Info
                 }

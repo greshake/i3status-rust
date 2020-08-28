@@ -937,6 +937,23 @@ format_up_to_date = "system up to date"
 critical_updates_regex = "(linux |linux-lts|linux-zen)"
 ```
 
+pacman only config using warnings with ZFS modules:
+
+```toml
+[[block]]
+block = "pacman"
+interval = 600
+format = "{pacman} updates available"
+format_singular = "{pacman} update available"
+format_up_to_date = "system up to date"
+# If a linux update is availble, but no ZFS package, it won't be possible to
+# actually perform a system upgrade, so we show a warning.
+warning_updates_regex = "(linux |linux-lts|linux-zen)"
+# If ZFS is available, we know that we can and should do an upgrade, so we show 
+# the status as critical.
+critical_updates_regex = "(zfs |zfs-lts)"
+```
+
 pacman and AUR helper config:
 
 ```toml
@@ -959,6 +976,7 @@ Key | Values | Required | Default
 `format` | Format override | No | `"{pacman}"`
 `format_singular` | Format override if exactly one update is available | No | `"{pacman}"`
 `format_up_to_date` | Format override if no updates are available | No | `"{pacman}"`
+`warning_updates_regex` | Display block as warning if updates matching regex are available | No | `None`
 `critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
 `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `pikaur -Qua` | if `{both}` or `{aur}` are used | `None`
 
