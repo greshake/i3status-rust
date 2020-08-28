@@ -32,7 +32,7 @@ lazy_static! {
     static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
     static ref WHITESPACE_REGEX: Regex = Regex::new("\\s+").unwrap();
     static ref ETHTOOL_SPEED_REGEX: Regex = Regex::new("Speed: (\\d+\\w\\w/s)").unwrap();
-    static ref IW_SSID_REGEX: Regex = Regex::new("SSID: ([[:alnum:]]+)").unwrap();
+    static ref IW_SSID_REGEX: Regex = Regex::new("SSID: (.*)").unwrap();
     static ref WPA_SSID_REGEX: Regex = Regex::new("ssid=([[:alnum:]]+)").unwrap();
     static ref IWCTL_SSID_REGEX: Regex = Regex::new("Connected network ([[:alnum:]]+)").unwrap();
     static ref IW_BITRATE_REGEX: Regex =
@@ -991,13 +991,18 @@ fn get_iw_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
     }
 
     let raw = raw.unwrap();
-    let result = raw
-        .stdout
-        .split(|c| *c == b'\n')
-        .filter_map(|x| IW_SSID_REGEX.find(x))
-        .next();
+    let bytes = raw.stdout.split(|c| *c == b'\n').next().unwrap();
+    let cap = IW_SSID_REGEX.captures(bytes);
+    if cap.is_none() {
+        return Ok(None);
+    }
+    let match_obj = cap.unwrap().get(1);
+    if match_obj.is_none() {
+        return Ok(None);
+    }
 
-    maybe_ssid_convert(result.map(|x| x.as_bytes()))
+    let caps = match_obj.unwrap().as_bytes();
+    maybe_ssid_convert(Some(caps))
 }
 
 #[inline]
