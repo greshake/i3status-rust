@@ -14,10 +14,10 @@ use crate::de::deserialize_update;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-use crate::signals::convert_to_valid_signal;
 
 pub struct Custom {
     id: String,

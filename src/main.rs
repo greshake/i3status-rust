@@ -13,11 +13,11 @@ mod errors;
 mod icons;
 mod input;
 mod scheduler;
+mod signals;
 mod subprocess;
 mod themes;
 mod widget;
 mod widgets;
-mod signals;
 
 #[cfg(feature = "profiling")]
 use cpuprofiler::PROFILER;
@@ -34,8 +34,8 @@ use crate::blocks::Block;
 use crate::config::{load_config, Config};
 use crate::errors::*;
 use crate::input::{process_events, I3BarEvent};
-use crate::signals::process_signals;
 use crate::scheduler::{Task, UpdateScheduler};
+use crate::signals::process_signals;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
