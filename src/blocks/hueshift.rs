@@ -105,20 +105,25 @@ impl ConfigBlock for Hueshift {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let current_temp = block_config.current_temp;
+        let mut current_temp = block_config.current_temp;
         let mut step = block_config.step;
         let id = Uuid::new_v4().to_simple().to_string();
         let mut max_temp = block_config.max_temp;
         let mut min_temp = block_config.min_temp;
         // limit too big steps at 500K to avoid too brutal changes
-        if step > 1000 {
+        if step > 500 {
             step = 500;
         }
         if block_config.max_temp > 10_000 {
             max_temp = 10_000;
         }
-        if block_config.min_temp < 1000 && block_config.min_temp > block_config.max_temp {
+        if block_config.min_temp < 1000 || block_config.min_temp > block_config.max_temp {
             min_temp = 1000;
+        }
+        // Modify current temp to be between max and min temp.
+        if current_temp > max_temp || current_temp < min_temp {
+            current_temp = (max_temp + min_temp) / 2;
+            update_hue(&block_config.hue_shifter, current_temp);
         }
         Ok(Hueshift {
             id: id.clone(),
@@ -150,16 +155,17 @@ impl Block for Hueshift {
             match event.button {
                 mb => {
                     use LogicalDirection::*;
+                    let new_temp: u16;
                     match self.config.scrolling.to_logical_direction(mb) {
                         Some(Up) => {
-                            let new_temp: u16 = self.current_temp + self.step;
+                            new_temp = self.current_temp + self.step;
                             if new_temp <= self.max_temp {
                                 update_hue(&self.hue_shifter, new_temp);
                                 self.current_temp = new_temp;
                             }
                         }
                         Some(Down) => {
-                            let new_temp: u16 = self.current_temp - self.step;
+                            new_temp = self.current_temp - self.step;
                             if new_temp >= self.min_temp {
                                 update_hue(&self.hue_shifter, new_temp);
                                 self.current_temp = new_temp;
