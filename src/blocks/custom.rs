@@ -17,13 +17,7 @@ use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-/// These are the SIGRTMIN and SIGRTMAX values used to determine the allowed range of signal values
-//FIXME currently these are hardcoded and tested on my system, I am not sure how to bring these in
-//dynamically from the host OS, as such they may vary with OS
-
-const SIGMIN: i32 = 34;
-const SIGMAX: i32 = 64;
+use crate::signals::convert_to_valid_signal;
 
 pub struct Custom {
     id: String,
@@ -106,14 +100,7 @@ impl ConfigBlock for Custom {
 
         if let Some(signal) = block_config.signal {
             // If the signal is not in the valid range we return an error
-            if signal < 0 || signal > SIGMAX - SIGMIN {
-                return Err(Error::BlockError(
-                        custom.id,
-                        format!("The provided signal was out of bounds. An allowed signal needs to be between {} and {}", 0, SIGMAX - SIGMIN)
-                        ));
-            } else {
-                custom.signal = Some(signal + SIGMIN)
-            }
+            custom.signal = Some(convert_to_valid_signal(signal)?);
         };
 
         Ok(custom)
@@ -186,10 +173,6 @@ impl Block for Custom {
             }
         }
         Ok(())
-    }
-
-    fn get_signal(&self) -> Option<i32> {
-        self.signal
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
