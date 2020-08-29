@@ -204,7 +204,7 @@ fn update_hue(hue_shifter: &Option<String>, new_temp: u16) {
                     format!("redshift -O {} -P >/dev/null 2>&1", new_temp).as_str(),
                 ])
                 .spawn()
-                .expect("Failed to set new color temperature using sct.");
+                .expect("Failed to set new color temperature using redshift.");
         }
         Some(_sct) => {
             Command::new("sh")
