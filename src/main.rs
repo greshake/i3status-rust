@@ -32,7 +32,7 @@ use crate::blocks::create_block;
 use crate::blocks::Block;
 use crate::config::{load_config, Config};
 use crate::errors::*;
-use crate::input::{process_events, I3BarEvent};
+use crate::input::{process_events, process_signals, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
@@ -211,6 +211,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let mut scheduler = UpdateScheduler::new(&blocks);
 
+    let signals = get_signals(&blocks);
+
     let mut block_map: HashMap<String, &mut dyn Block> = HashMap::new();
 
     for block in &mut blocks {
@@ -221,6 +223,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =
         crossbeam_channel::unbounded();
     process_events(tx_clicks);
+
+    // We wait for signals in a separate thread
+    let (tx_signals, rx_signals): (Sender<i32>, Receiver<i32>) = crossbeam_channel::unbounded();
+    //FIXME add the signals here
+    process_signals(tx_signals, signals);
 
     // Time to next update channel.
     // Fires immediately for first updates
@@ -253,6 +260,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 // redraw the blocks, state changed
                 util::print_blocks(&order, &block_map, &config)?;
             },
+            // Receive signals events
+            recv(rx_signals) -> res => if let Ok(sig) = res {
+                for block in block_map.values_mut() {
+                    block.signal(sig)?;
+                }
+                util::print_blocks(&order, &block_map, &config)?;
+            }
         }
 
         // Set the time-to-next-update timer
@@ -263,6 +277,18 @@ fn run(matches: &ArgMatches) -> Result<()> {
             break Ok(());
         }
     }
+}
+
+fn get_signals(blocks: &[Box<dyn Block>]) -> Vec<i32> {
+    let mut v = vec![];
+    for block in blocks {
+        if let Some(sig) = block.get_signal() {
+            if !v.contains(&sig) {
+                v.push(sig);
+            }
+        }
+    }
+    v
 }
 
 #[cfg(feature = "profiling")]

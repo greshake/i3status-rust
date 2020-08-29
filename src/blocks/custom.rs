@@ -18,6 +18,13 @@ use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
+/// These are the SIGRTMIN and SIGRTMAX values used to determine the allowed range of signal values
+//FIXME currently these are hardcoded and tested on my system, I am not sure how to bring these in
+//dynamically from the host OS, as such they may vary with OS
+
+const SIGMIN: i32 = 34;
+const SIGMAX: i32 = 64;
+
 pub struct Custom {
     id: String,
     update_interval: Update,
@@ -25,6 +32,7 @@ pub struct Custom {
     command: Option<String>,
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
+    signal: Option<i32>,
     tx_update_request: Sender<Task>,
     pub json: bool,
 }
@@ -47,6 +55,9 @@ pub struct CustomConfig {
 
     /// Commands to execute and change when the button is clicked
     pub cycle: Option<Vec<String>>,
+
+    /// Signal to update upon reception
+    pub signal: Option<i32>,
 
     /// Parse command output if it contains valid bar JSON
     #[serde(default = "CustomConfig::default_json")]
@@ -74,6 +85,7 @@ impl ConfigBlock for Custom {
             command: None,
             on_click: None,
             cycle: None,
+            signal: None,
             tx_update_request: tx,
             json: block_config.json,
         };
@@ -90,6 +102,18 @@ impl ConfigBlock for Custom {
 
         if let Some(command) = block_config.command {
             custom.command = Some(command)
+        };
+
+        if let Some(signal) = block_config.signal {
+            // If the signal is not in the valid range we return an error
+            if signal < 0 || signal > SIGMAX - SIGMIN {
+                return Err(Error::BlockError(
+                        custom.id,
+                        format!("The provided signal was out of bounds. An allowed signal needs to be between {} and {}", 0, SIGMAX - SIGMIN)
+                        ));
+            } else {
+                custom.signal = Some(signal + SIGMIN)
+            }
         };
 
         Ok(custom)
@@ -150,6 +174,22 @@ impl Block for Custom {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
+    }
+
+    fn signal(&mut self, signal: i32) -> Result<()> {
+        if let Some(sig) = self.signal {
+            if sig == signal {
+                self.tx_update_request.send(Task {
+                    id: self.id.clone(),
+                    update_time: Instant::now(),
+                })?;
+            }
+        }
+        Ok(())
+    }
+
+    fn get_signal(&self) -> Option<i32> {
+        self.signal
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {

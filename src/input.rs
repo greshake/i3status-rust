@@ -40,6 +40,19 @@ impl I3BarEvent {
     }
 }
 
+/// Starts a thread that listens for provided signals and sends these on the provided channel
+pub fn process_signals(sender: Sender<i32>, signals: Vec<i32>) {
+    thread::Builder::new()
+        .name("signals".into())
+        .spawn(move || loop {
+            let signals = signal_hook::iterator::Signals::new(&signals).unwrap();
+            for sig in signals.forever() {
+                sender.send(sig).unwrap();
+            }
+        })
+        .unwrap();
+}
+
 pub fn process_events(sender: Sender<I3BarEvent>) {
     thread::Builder::new()
         .name("input".into())
