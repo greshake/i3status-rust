@@ -9,7 +9,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{Config, LogicalDirection};
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::has_command;
 use crate::widget::I3BarWidget;
@@ -153,6 +153,10 @@ impl Block for Hueshift {
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if event.name.is_some() {
             match event.button {
+                MouseButton::Left => {
+                    self.current_temp = (self.min_temp + self.max_temp) / 2;
+                    update_hue(&self.hue_shifter, self.current_temp);
+                }
                 mb => {
                     use LogicalDirection::*;
                     let new_temp: u16;
