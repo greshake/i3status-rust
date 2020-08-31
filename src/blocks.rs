@@ -118,11 +118,6 @@ pub trait Block {
         Ok(())
     }
 
-    /// Returns the signal that this block is listening to, if any
-    fn get_signal(&self) -> Option<i32> {
-        None
-    }
-
     /// Sends click events to the block. This function is called on every block
     /// for every click; filter events by using the `event.name` property.
     fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
