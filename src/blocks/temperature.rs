@@ -23,10 +23,10 @@ pub struct Temperature {
     collapsed: bool,
     id: String,
     update_interval: Duration,
-    maximum_good: f64,
-    maximum_idle: f64,
-    maximum_info: f64,
-    maximum_warning: f64,
+    maximum_good: i64,
+    maximum_idle: i64,
+    maximum_info: i64,
+    maximum_warning: i64,
     format: FormatTemplate,
     chip: Option<String>,
     inputs: Option<Vec<String>>,
@@ -48,19 +48,19 @@ pub struct TemperatureConfig {
 
     /// Maximum temperature, below which state is set to good
     #[serde(default = "TemperatureConfig::default_good")]
-    pub good: f64,
+    pub good: i64,
 
     /// Maximum temperature, below which state is set to idle
     #[serde(default = "TemperatureConfig::default_idle")]
-    pub idle: f64,
+    pub idle: i64,
 
     /// Maximum temperature, below which state is set to info
     #[serde(default = "TemperatureConfig::default_info")]
-    pub info: f64,
+    pub info: i64,
 
     /// Maximum temperature, below which state is set to warning
     #[serde(default = "TemperatureConfig::default_warning")]
-    pub warning: f64,
+    pub warning: i64,
 
     /// Format override
     #[serde(default = "TemperatureConfig::default_format")]
@@ -88,20 +88,20 @@ impl TemperatureConfig {
         true
     }
 
-    fn default_good() -> f64 {
-        20f64
+    fn default_good() -> i64 {
+        20
     }
 
-    fn default_idle() -> f64 {
-        45f64
+    fn default_idle() -> i64 {
+        45
     }
 
-    fn default_info() -> f64 {
-        60f64
+    fn default_info() -> i64 {
+        60
     }
 
-    fn default_warning() -> f64 {
-        80f64
+    fn default_warning() -> i64 {
+        80
     }
 
     fn default_chip() -> Option<String> {
@@ -158,7 +158,7 @@ impl Block for Temperature {
         let parsed: SensorsOutput = serde_json::from_str(&output)
             .block_error("temperature", "sensors output is invalid")?;
 
-        let mut temperatures: Vec<f64> = Vec::new();
+        let mut temperatures: Vec<i64> = Vec::new();
         for (_chip, inputs) in parsed {
             for (input_name, input_values) in inputs {
                 if let Some(ref whitelist) = self.inputs {
@@ -178,7 +178,7 @@ impl Block for Temperature {
                     }
 
                     if value > -101f64 && value < 151f64 {
-                        temperatures.push(value);
+                        temperatures.push(value as i64);
                     } else {
                         // This error is recoverable and therefore should not stop the program
                         eprintln!("Temperature ({}) outside of range ([-100, 150])", value);
@@ -188,12 +188,16 @@ impl Block for Temperature {
         }
 
         if !temperatures.is_empty() {
-            let max: f64 = temperatures
+            let max: i64 = *temperatures
                 .iter()
-                .cloned()
-                .fold(f64::NEG_INFINITY, f64::max);
-            let min: f64 = temperatures.iter().cloned().fold(f64::INFINITY, f64::min);
-            let avg: f64 = temperatures.iter().sum::<f64>() / temperatures.len() as f64;
+                .max()
+                .block_error("temperature", "failed to get max temperature")?;
+            let min: i64 = *temperatures
+                .iter()
+                .min()
+                .block_error("temperature", "failed to get min temperature")?;
+            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
+                .round() as i64;
 
             let values = map!("{average}" => avg,
                               "{min}" => min,
