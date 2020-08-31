@@ -157,6 +157,11 @@ impl Block for Hueshift {
                     self.current_temp = (self.min_temp + self.max_temp) / 2;
                     update_hue(&self.hue_shifter, self.current_temp);
                 }
+                MouseButton::Right => {
+                    reset_hue(&self.hue_shifter);
+                    // This may lead to some weird behavior if max_temp is under 6500.
+                    self.current_temp = 6500;
+                }
                 mb => {
                     use LogicalDirection::*;
                     let new_temp: u16;
@@ -213,6 +218,25 @@ fn update_hue(hue_shifter: &Option<String>, new_temp: u16) {
         Some(_sct) => {
             Command::new("sh")
                 .args(&["-c", format!("sct {} >/dev/null 2>&1", new_temp).as_str()])
+                .spawn()
+                .expect("Failed to set new color temperature using sct.");
+        }
+        None => {}
+    }
+}
+#[inline]
+fn reset_hue(hue_shifter: &Option<String>) {
+    let (_redshift, _sct) = ("redshift", "sct");
+    match hue_shifter {
+        Some(_redshift) => {
+            Command::new("sh")
+                .args(&["-c", "redshift -x >/dev/null 2>&1"])
+                .spawn()
+                .expect("Failed to set new color temperature using redshift.");
+        }
+        Some(_sct) => {
+            Command::new("sh")
+                .args(&["-c", "sct >/dev/null 2>&1"])
                 .spawn()
                 .expect("Failed to set new color temperature using sct.");
         }

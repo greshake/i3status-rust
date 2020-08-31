@@ -408,6 +408,8 @@ For more information about reasons, please see the [API documentation](https://d
 ## Hueshift
 
 Creates a block which display the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.
+A left click on the block sets the color temperature to the mean value from the `max_temp` and `min_temp`.
+A right click completely resets the color temperature to its default value.
 
 ### Examples
 
@@ -428,6 +430,8 @@ Key | Values | Required | Default
 `max_temp`    | max color temperature                                                  | No | `10000`
 `min_temp`    | min color temperature                                                  | No | `1000`
 
+A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
+The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
 
 ## IBus
 
