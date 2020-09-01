@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use swayipc::reply::{Event, WindowChange, WorkspaceChange};
+use swayipc::reply::{Event, Node, WindowChange, WorkspaceChange};
 use swayipc::{Connection, EventType};
 use uuid::Uuid;
 
@@ -61,11 +61,68 @@ impl ConfigBlock for FocusedWindow {
         let id = Uuid::new_v4().to_simple().to_string();
         let id_clone = id.clone();
 
-        let title_original = Arc::new(Mutex::new(String::from("")));
-        let title = title_original.clone();
-        let marks_original = Arc::new(Mutex::new(String::from("")));
-        let marks = marks_original.clone();
+        let title = Arc::new(Mutex::new(String::from("")));
+        let marks = Arc::new(Mutex::new(String::from("")));
         let marks_type = block_config.show_marks;
+
+        let update_window = {
+            let title = title.clone();
+
+            move |new_title| {
+                let mut title = title
+                    .lock()
+                    .expect("lock has been poisoned in `window` block");
+
+                let changed = *title != new_title;
+                *title = new_title;
+                changed
+            }
+        };
+
+        let close_window = {
+            let title = title.clone();
+
+            move |closed_title: String| {
+                let mut title = title
+                    .lock()
+                    .expect("lock has been poisoned in `window` block");
+
+                if *title == closed_title {
+                    *title = "".to_string();
+                    true
+                } else {
+                    false
+                }
+            }
+        };
+
+        let update_marks = {
+            let marks = marks.clone();
+
+            move |new_marks: Vec<String>| {
+                let mut new_marks_str = String::from("");
+
+                for mark in new_marks {
+                    match marks_type {
+                        MarksType::All => {
+                            new_marks_str.push_str(&format!("[{}]", mark));
+                        }
+                        MarksType::Visible if !mark.starts_with('_') => {
+                            new_marks_str.push_str(&format!("[{}]", mark));
+                        }
+                        _ => {}
+                    }
+                }
+
+                let mut marks = marks
+                    .lock()
+                    .expect("lock has been poisoned in `window` block");
+
+                let changed = *marks != new_marks_str;
+                *marks = new_marks_str;
+                changed
+            }
+        };
 
         let _test_conn =
             Connection::new().block_error("focused_window", "failed to acquire connect to IPC")?;
@@ -73,112 +130,53 @@ impl ConfigBlock for FocusedWindow {
         thread::Builder::new()
             .name("focused_window".into())
             .spawn(move || {
-                for event in Connection::new()
-                    .unwrap()
+                let conn = Connection::new().expect("failed to open connection with swayipc");
+
+                let events = conn
                     .subscribe(&[EventType::Window, EventType::Workspace])
-                    .unwrap()
-                {
-                    match event.unwrap() {
-                        Event::Window(e) => {
-                            match e.change {
-                                WindowChange::Focus => {
-                                    if let Some(name) = e.container.name {
-                                        let mut title = title_original.lock().unwrap();
-                                        *title = name;
-                                    }
+                    .expect("could not subscribe to window events");
 
-                                    let mut marks_str = String::from("");
-                                    for mark in e.container.marks {
-                                        match marks_type {
-                                            MarksType::All => {
-                                                marks_str.push_str(&format!("[{}]", mark));
-                                            }
-                                            MarksType::Visible => {
-                                                if !mark.starts_with('_') {
-                                                    marks_str.push_str(&format!("[{}]", mark));
-                                                }
-                                            }
-                                            _ => (),
-                                        }
-                                    }
-                                    let mut marks = marks_original.lock().unwrap();
-                                    *marks = marks_str;
-
-                                    tx.send(Task {
-                                        id: id_clone.clone(),
-                                        update_time: Instant::now(),
-                                    })
-                                    .unwrap();
-                                }
-                                WindowChange::Title => {
-                                    if e.container.focused {
-                                        if let Some(name) = e.container.name {
-                                            let mut title = title_original.lock().unwrap();
-                                            *title = name;
-                                            tx.send(Task {
-                                                id: id_clone.clone(),
-                                                update_time: Instant::now(),
-                                            })
-                                            .unwrap();
-                                        }
-                                    }
-                                }
-                                WindowChange::Mark => {
-                                    let mut marks_str = String::from("");
-                                    for mark in e.container.marks {
-                                        match marks_type {
-                                            MarksType::All => {
-                                                marks_str.push_str(&format!("[{}]", mark));
-                                            }
-                                            MarksType::Visible => {
-                                                if !mark.starts_with('_') {
-                                                    marks_str.push_str(&format!("[{}]", mark));
-                                                }
-                                            }
-                                            _ => (),
-                                        }
-                                    }
-                                    let mut marks = marks_original.lock().unwrap();
-                                    *marks = marks_str;
-
-                                    tx.send(Task {
-                                        id: id_clone.clone(),
-                                        update_time: Instant::now(),
-                                    })
-                                    .unwrap();
-                                }
-                                WindowChange::Close => {
-                                    if let Some(name) = e.container.name {
-                                        let mut title = title_original.lock().unwrap();
-                                        if name == *title {
-                                            *title = String::from("");
-                                            tx.send(Task {
-                                                id: id_clone.clone(),
-                                                update_time: Instant::now(),
-                                            })
-                                            .unwrap();
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            };
-                        }
-                        Event::Workspace(e) => {
-                            if let WorkspaceChange::Init = e.change {
-                                let mut title = title_original.lock().unwrap();
-                                *title = String::from("");
-                                tx.send(Task {
-                                    id: id_clone.clone(),
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
+                for event in events {
+                    let updated = match event.expect("could not read event in `window` block") {
+                        Event::Window(e) => match (e.change, e.container) {
+                            (WindowChange::Mark, Node { marks, .. }) => update_marks(marks),
+                            (WindowChange::Focus, Node { name, marks, .. }) => {
+                                let updated_for_window = name.map(&update_window).unwrap_or(false);
+                                let updated_for_marks = update_marks(marks);
+                                updated_for_window || updated_for_marks
                             }
+                            (
+                                WindowChange::Title,
+                                Node {
+                                    focused: true,
+                                    name: Some(name),
+                                    ..
+                                },
+                            ) => update_window(name),
+                            (
+                                WindowChange::Close,
+                                Node {
+                                    name: Some(name), ..
+                                },
+                            ) => close_window(name),
+                            _ => false,
+                        },
+                        Event::Workspace(e) if e.change == WorkspaceChange::Init => {
+                            update_window("".to_string())
                         }
-                        _ => unreachable!(),
+                        _ => false,
+                    };
+
+                    if updated {
+                        tx.send(Task {
+                            id: id_clone.clone(),
+                            update_time: Instant::now(),
+                        })
+                        .expect("could not communicate with channel in `window` block");
                     }
                 }
             })
-            .unwrap();
+            .expect("failed to start watching thread for `window` block");
 
         Ok(FocusedWindow {
             id,
@@ -221,8 +219,12 @@ impl Block for FocusedWindow {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        let title = &*self.title.lock().unwrap();
-        if String::is_empty(title) {
+        let title = &*self
+            .title
+            .lock()
+            .expect("lock has been poisoned in `window` block");
+
+        if title.is_empty() {
             vec![]
         } else {
             vec![&self.text]
