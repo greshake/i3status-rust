@@ -134,15 +134,10 @@ impl ConfigBlock for FocusedWindow {
 
                 let events = conn
                     .subscribe(&[EventType::Window, EventType::Workspace])
-                    .expect("could not subscribe to window events")
-                    .filter_map(|event| {
-                        event
-                            .map_err(|err| eprintln!("[warn] error in `window` block: {}", err))
-                            .ok()
-                    });
+                    .expect("could not subscribe to window events");
 
                 for event in events {
-                    let updated = match event {
+                    let updated = match event.expect("could not read event in `window` block") {
                         Event::Window(e) => match (e.change, e.container) {
                             (WindowChange::Mark, Node { marks, .. }) => update_marks(marks),
                             (WindowChange::Focus, Node { name, marks, .. }) => {
