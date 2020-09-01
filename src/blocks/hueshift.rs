@@ -24,6 +24,7 @@ pub struct Hueshift {
     max_temp: u16,
     min_temp: u16,
     hue_shifter: Option<String>,
+    click_temp: u16,
 
     //useful, but optional
     #[allow(dead_code)]
@@ -59,6 +60,8 @@ pub struct HueshiftConfig {
     /// Default to 100K, cannot go over 500K.
     #[serde(default = "HueshiftConfig::default_step")]
     pub step: u16,
+    #[serde(default = "HueshiftConfig::default_click_temp")]
+    pub click_temp: u16,
 }
 
 impl HueshiftConfig {
@@ -95,6 +98,9 @@ impl HueshiftConfig {
             },
         }
     }
+    fn default_click_temp() -> u16 {
+        6500 as u16
+    }
 }
 
 impl ConfigBlock for Hueshift {
@@ -105,7 +111,7 @@ impl ConfigBlock for Hueshift {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut current_temp = block_config.current_temp;
+        let current_temp = block_config.current_temp;
         let mut step = block_config.step;
         let id = Uuid::new_v4().to_simple().to_string();
         let mut max_temp = block_config.max_temp;
@@ -120,11 +126,6 @@ impl ConfigBlock for Hueshift {
         if block_config.min_temp < 1000 || block_config.min_temp > block_config.max_temp {
             min_temp = 1000;
         }
-        // Modify current temp to be between max and min temp.
-        if current_temp > max_temp || current_temp < min_temp {
-            current_temp = (max_temp + min_temp) / 2;
-            update_hue(&block_config.hue_shifter, current_temp);
-        }
         Ok(Hueshift {
             id: id.clone(),
             update_interval: block_config.interval,
@@ -135,6 +136,7 @@ impl ConfigBlock for Hueshift {
             min_temp,
             current_temp,
             hue_shifter: block_config.hue_shifter,
+            click_temp: block_config.click_temp,
             config,
         })
     }
@@ -151,36 +153,42 @@ impl Block for Hueshift {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.is_some() {
-            match event.button {
-                MouseButton::Left => {
-                    self.current_temp = (self.min_temp + self.max_temp) / 2;
-                    update_hue(&self.hue_shifter, self.current_temp);
-                }
-                MouseButton::Right => {
-                    reset_hue(&self.hue_shifter);
-                    // This may lead to some weird behavior if max_temp is under 6500.
-                    self.current_temp = 6500;
-                }
-                mb => {
-                    use LogicalDirection::*;
-                    let new_temp: u16;
-                    match self.config.scrolling.to_logical_direction(mb) {
-                        Some(Up) => {
-                            new_temp = self.current_temp + self.step;
-                            if new_temp <= self.max_temp {
-                                update_hue(&self.hue_shifter, new_temp);
-                                self.current_temp = new_temp;
-                            }
+        if let Some(ref name) = event.name {
+            if name.as_str() == self.id {
+                match event.button {
+                    MouseButton::Left => {
+                        self.current_temp = self.click_temp;
+                        update_hue(&self.hue_shifter, self.current_temp);
+                    }
+                    MouseButton::Right => {
+                        if self.max_temp > 6500 {
+                            self.current_temp = 6500;
+                            reset_hue(&self.hue_shifter);
+                        } else {
+                            self.current_temp = self.max_temp;
+                            update_hue(&self.hue_shifter, self.current_temp);
                         }
-                        Some(Down) => {
-                            new_temp = self.current_temp - self.step;
-                            if new_temp >= self.min_temp {
-                                update_hue(&self.hue_shifter, new_temp);
-                                self.current_temp = new_temp;
+                    }
+                    mb => {
+                        use LogicalDirection::*;
+                        let new_temp: u16;
+                        match self.config.scrolling.to_logical_direction(mb) {
+                            Some(Up) => {
+                                new_temp = self.current_temp + self.step;
+                                if new_temp <= self.max_temp {
+                                    update_hue(&self.hue_shifter, new_temp);
+                                    self.current_temp = new_temp;
+                                }
                             }
+                            Some(Down) => {
+                                new_temp = self.current_temp - self.step;
+                                if new_temp >= self.min_temp {
+                                    update_hue(&self.hue_shifter, new_temp);
+                                    self.current_temp = new_temp;
+                                }
+                            }
+                            None => {}
                         }
-                        None => {}
                     }
                 }
             }

@@ -408,8 +408,8 @@ For more information about reasons, please see the [API documentation](https://d
 ## Hueshift
 
 Creates a block which display the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.
-A left click on the block sets the color temperature to the mean value from the `max_temp` and `min_temp`.
-A right click completely resets the color temperature to its default value.
+A left click on the block sets the color temperature to `click_temp` that is by default to `6500K`.
+A right click completely resets the color temperature to its default value (`6500K`).
 
 ### Examples
 
@@ -418,6 +418,7 @@ A right click completely resets the color temperature to its default value.
 block = "hueshift"
 hue_shifter = "redshift"
 step = 50
+click_temp = 3500
 ```
 
 ### Options
@@ -429,6 +430,7 @@ Key | Values | Required | Default
 `hue_shifter` | Change color temperature. Available qualifiers are `redshift` or `sct` | No | `"redshift"`
 `max_temp`    | max color temperature                                                  | No | `10000`
 `min_temp`    | min color temperature                                                  | No | `1000`
+`click_temp`  | left click color temperature                                           | No | `6500`
 
 A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
 The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
