@@ -422,7 +422,7 @@ impl Block for Music {
                     if event.matches_name(self.id()) {
                         if let Some(ref cmd) = self.on_click {
                             spawn_child_async("sh", &["-c", cmd])
-                                .block_error("cpu", "could not spawn child")?;
+                                .block_error("music", "could not spawn child")?;
                         }
                     }
                 }
