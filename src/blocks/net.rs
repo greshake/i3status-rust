@@ -238,11 +238,8 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-        let output = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!("ip -json -family inet address show {}", self.device),
-            ])
+        let output = Command::new("ip")
+            .args(&["-json", "-family", "inet", "address", "show", &self.device])
             .output()
             .block_error("net", "Failed to execute IP address query.")
             .and_then(|raw_output| {
@@ -285,11 +282,8 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-        let output = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!("ip -json -family inet6 address show {}", self.device),
-            ])
+        let output = Command::new("ip")
+            .args(&["-json", "-family", "inet6", "address", "show", &self.device])
             .output()
             .block_error("net", "Failed to execute IP address query.")
             .and_then(|raw_output| {
