@@ -238,30 +238,42 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-        let ip_output = Command::new("ip")
-            .args(&[
-                "-oneline",
-                "-brief",
-                "-family",
-                "inet",
-                "address",
-                "show",
-                &self.device,
-            ])
+        let output = Command::new("ip")
+            .args(&["-json", "-family", "inet", "address", "show", &self.device])
             .output()
-            .block_error("net", "Failed to execute IP address query.")?
-            .stdout;
+            .block_error("net", "Failed to execute IP address query.")
+            .and_then(|raw_output| {
+                String::from_utf8(raw_output.stdout)
+                    .block_error("net", "Response contained non-UTF8 characters.")
+            })?;
 
-        if ip_output.is_empty() {
-            Ok(None)
-        } else if let Some(ip_bytes) = WHITESPACE_REGEX.splitn(&ip_output, 3).nth(2) {
-            let ip = String::from_utf8(ip_bytes.to_vec())
-                .block_error("net", "Non-UTF8 IP address.")?
-                .trim()
-                .to_string();
-            Ok(Some(ip))
-        } else {
-            Ok(None)
+        let json: serde_json::value::Value =
+            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response.")?;
+
+        /*
+          workaround for bug in iproute2-ss190107 (not present in or after iproute2-ss200330)
+          with empty array object in json output which is otherwise correct
+          [{}, {"somevaliddata..."}]
+
+        see https://github.com/greshake/i3status-rust/pull/513#commitcomment-39226333
+          */
+        let address_1 = json.pointer("/0/addr_info/0/local");
+        match address_1 {
+            Some(_a) => {
+                let address = address_1
+                    .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
+                Ok(Some(address))
+            }
+            None => {
+                let address = json
+                    .pointer("/1/addr_info/0/local")
+                    .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
+                Ok(Some(address))
+            }
         }
     }
 
@@ -270,31 +282,42 @@ impl NetworkDevice {
         if !self.is_up()? {
             return Ok(None);
         }
-
-        let ip_output = Command::new("ip")
-            .args(&[
-                "-oneline",
-                "-brief",
-                "-family",
-                "inet6",
-                "address",
-                "show",
-                &self.device,
-            ])
+        let output = Command::new("ip")
+            .args(&["-json", "-family", "inet6", "address", "show", &self.device])
             .output()
-            .block_error("net", "Failed to execute IPv6 address query.")?
-            .stdout;
+            .block_error("net", "Failed to execute IP address query.")
+            .and_then(|raw_output| {
+                String::from_utf8(raw_output.stdout)
+                    .block_error("net", "Response contained non-UTF8 characters.")
+            })?;
 
-        if ip_output.is_empty() {
-            Ok(None)
-        } else if let Some(ip_bytes) = WHITESPACE_REGEX.splitn(&ip_output, 3).nth(2) {
-            let ip = String::from_utf8(ip_bytes.to_vec())
-                .block_error("net", "Non-UTF8 IP address.")?
-                .trim()
-                .to_string();
-            Ok(Some(ip))
-        } else {
-            Ok(None)
+        let json: serde_json::value::Value =
+            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response.")?;
+
+        /*
+          workaround for bug in iproute2-ss190107 (not present in or after iproute2-ss200330)
+          with empty array object in json output which is otherwise correct
+          [{}, {"somevaliddata..."}]
+
+        see https://github.com/greshake/i3status-rust/pull/513#commitcomment-39226333
+          */
+        let address_1 = json.pointer("/0/addr_info/0/local");
+        match address_1 {
+            Some(_a) => {
+                let address = address_1
+                    .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
+                Ok(Some(address))
+            }
+            None => {
+                let address = json
+                    .pointer("/1/addr_info/0/local")
+                    .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
+                Ok(Some(address))
+            }
         }
     }
 
