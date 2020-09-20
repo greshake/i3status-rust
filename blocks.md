@@ -289,14 +289,15 @@ format = "{icon}{used}/{total} {unit} ({available}{unit} free)"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`alert` | Available disk space critical level in GiB. | No | `10.0`
+`alert` | Available disk space critical level as a percentage or Unit. | No | `10.0`
 `alias` | Alias that is displayed for path | No | `"/"`
 `format` | Format string for output (see below) | No | `"{alias} {available} {unit}"`
 `info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation) | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
 `path` | Path to collect information from | No | `"/"`
 `unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
-`warning` | Available disk space warning level in GiB. | No | `20.0`
+`warning` | Available disk space warning level as a percentage or Unit. | No | `20.0`
+`alert_absolute` | Use Unit values for warning and alert instead of percentages | No | `false`
 
 ### Available Format Keys
 
