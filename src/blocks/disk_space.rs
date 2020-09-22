@@ -62,6 +62,7 @@ pub struct DiskSpace {
     alert: f64,
     show_percentage: bool,
     show_bar: bool,
+    alert_absolute: bool,
     format: FormatTemplate,
     icon: String,
 }
@@ -115,6 +116,10 @@ pub struct DiskSpaceConfig {
     /// Show percentage bar - deprecated for format string, kept for previous configs
     #[serde(default = "DiskSpaceConfig::default_show_bar")]
     pub show_bar: bool,
+
+    /// use absolute (unit) values for disk space alerts
+    #[serde(default = "DiskSpaceConfig::default_alert_absolute")]
+    pub alert_absolute: bool,
 }
 
 impl DiskSpaceConfig {
@@ -157,6 +162,10 @@ impl DiskSpaceConfig {
 
     // Deprecated with format string, kept for previous config support
     fn default_show_bar() -> bool {
+        false
+    }
+
+    fn default_alert_absolute() -> bool {
         false
     }
 }
@@ -218,6 +227,7 @@ impl ConfigBlock for DiskSpace {
             alert: block_config.alert,
             show_percentage: block_config.show_percentage,
             show_bar: block_config.show_bar,
+            alert_absolute: block_config.alert_absolute,
             icon,
         })
     }
@@ -281,17 +291,14 @@ impl Block for DiskSpace {
         self.disk_space
             .set_text(self.format.render_static_str(&values)?);
 
-        if self.unit == Unit::Percent {
-            // Note this does not override format, used to set type for alerts
-            result = percentage as u64;
-        }
+        // Send percentage to alert check if we don't want absolute alerts
+        let alert_val = if !self.alert_absolute {
+            percentage as f64
+        } else {
+            Unit::bytes_in_unit(self.unit, result)
+        };
 
-        let state = self.compute_state(
-            Unit::bytes_in_unit(self.unit, result),
-            self.warning,
-            self.alert,
-            alert_type,
-        );
+        let state = self.compute_state(alert_val, self.warning, self.alert, alert_type);
         self.disk_space.set_state(state);
 
         Ok(Some(self.update_interval.into()))
