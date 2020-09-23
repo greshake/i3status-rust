@@ -247,34 +247,14 @@ impl NetworkDevice {
                     .block_error("net", "Response contained non-UTF8 characters.")
             })?;
 
-        let json: serde_json::value::Value =
-            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response.")?;
-
-        /*
-          workaround for bug in iproute2-ss190107 (not present in or after iproute2-ss200330)
-          with empty array object in json output which is otherwise correct
-          [{}, {"somevaliddata..."}]
-
-        see https://github.com/greshake/i3status-rust/pull/513#commitcomment-39226333
-          */
-        let address_1 = json.pointer("/0/addr_info/0/local");
-        match address_1 {
-            Some(_a) => {
-                let address = address_1
-                    .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
-                    .map(|s| s.to_string())
-                    .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
-                Ok(Some(address))
-            }
-            None => {
-                let address = json
-                    .pointer("/1/addr_info/0/local")
-                    .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
-                    .map(|s| s.to_string())
-                    .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
-                Ok(Some(address))
-            }
-        }
+        let ip_devs: Vec<IpDev> =
+            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response")?;
+        let ip = ip_devs
+            .iter()
+            .flat_map(|dev| &dev.addr_info)
+            .filter_map(|addr| addr.local.clone())
+            .next();
+        ip.block_error("net", "Malformed JSON.").map(Some)
     }
 
     /// Queries the inet IPv6 of this device (using `ip`).
@@ -291,34 +271,14 @@ impl NetworkDevice {
                     .block_error("net", "Response contained non-UTF8 characters.")
             })?;
 
-        let json: serde_json::value::Value =
-            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response.")?;
-
-        /*
-          workaround for bug in iproute2-ss190107 (not present in or after iproute2-ss200330)
-          with empty array object in json output which is otherwise correct
-          [{}, {"somevaliddata..."}]
-
-        see https://github.com/greshake/i3status-rust/pull/513#commitcomment-39226333
-          */
-        let address_1 = json.pointer("/0/addr_info/0/local");
-        match address_1 {
-            Some(_a) => {
-                let address = address_1
-                    .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
-                    .map(|s| s.to_string())
-                    .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
-                Ok(Some(address))
-            }
-            None => {
-                let address = json
-                    .pointer("/1/addr_info/0/local")
-                    .and_then(|v| v.as_str().map(|v| v)) // default None if device not found
-                    .map(|s| s.to_string())
-                    .ok_or_else(|| BlockError("net".to_string(), "Malformed JSON.".to_string()))?;
-                Ok(Some(address))
-            }
-        }
+        let ip_devs: Vec<IpDev> =
+            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response")?;
+        let ip = ip_devs
+            .iter()
+            .flat_map(|dev| &dev.addr_info)
+            .filter_map(|addr| addr.local.clone())
+            .next();
+        ip.block_error("net", "Malformed JSON.").map(Some)
     }
 
     /// Queries the bitrate of this device
@@ -977,6 +937,16 @@ impl Block for Net {
     fn id(&self) -> &str {
         &self.id
     }
+}
+
+#[derive(Deserialize)]
+struct IpDev {
+    addr_info: Vec<IpAddrInfo>,
+}
+
+#[derive(Deserialize)]
+struct IpAddrInfo {
+    local: Option<String>,
 }
 
 fn get_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
