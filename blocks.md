@@ -680,6 +680,7 @@ Key | Values | Required | Default
 ## Music
 
 Creates a block to display the current song title and artist in a fixed-width marquee. Also provides buttons for play/pause, previous and next.
+When there is no song playing the block collapses to show just the icon and any configured buttons.
 
 Supports all music players that implement the [MediaPlayer2 Interface](https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html). This includes:
 
@@ -732,8 +733,8 @@ Key | Values | Required | Default
 `smart_trim` | When marquee rotation is disabled and the title + artist is longer than max-width, trim from both the artist and the title in proportion to their lengths, to try and show the most information possible. | No | `false`
 `separator` | String to insert between artist and title | No | `" - "`
 `buttons` | Array of control buttons to be displayed. Options are prev (previous title), play (play/pause) and next (next title) | No | `[]`
-`on_collapsed_click` | Shell command to run when the music block is clicked while collapsed. | No | None
-`on_click` | Command to execute when the block is clicked while not collapsed. | No | None
+`on_collapsed_click` | Command to run when the block is clicked while collapsed. | No | None
+`on_click` | Command to run when the block is clicked while not collapsed. | No | None
 
 ## Net
 
