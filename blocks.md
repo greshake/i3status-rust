@@ -733,6 +733,7 @@ Key | Values | Required | Default
 `separator` | String to insert between artist and title | No | `" - "`
 `buttons` | Array of control buttons to be displayed. Options are prev (previous title), play (play/pause) and next (next title) | No | `[]`
 `on_collapsed_click` | Shell command to run when the music block is clicked while collapsed. | No | None
+`on_click` | Command to execute when the block is clicked while not collapsed. | No | None
 
 ## Net
 
