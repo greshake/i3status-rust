@@ -26,7 +26,11 @@ use crate::widgets::text::TextWidget;
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {
-    /// Query the device status, one of `"Full"`, `"Charging"`, `"Discharging"`,
+    /// Query whether the device is available. Batteries can be hot-swappable
+    /// and configurations may be used for multiple devices (desktop AND laptop).
+    fn is_available(&self) -> bool;
+
+    /// Query the device status. One of `"Full"`, `"Charging"`, `"Discharging"`,
     /// or `"Unknown"`. Thinkpad batteries also report "`Not charging`", which
     /// for our purposes should be treated as equivalent to full.
     fn status(&self) -> Result<String>;
@@ -45,17 +49,26 @@ pub trait BatteryDevice {
 /// Represents a physical power supply device, as known to sysfs.
 pub struct PowerSupplyDevice {
     device_path: PathBuf,
+    device_found: bool,
     charge_full: Option<u64>,
     energy_full: Option<u64>,
 }
 
 impl PowerSupplyDevice {
     /// Use the power supply device `device`, as found in the
-    /// `/sys/class/power_supply` directory. Raises an error if a directory for
-    /// that device is not found.
-    pub fn from_device(device: &str) -> Result<Self> {
+    /// `/sys/class/power_supply` directory. Raises an error if the directory for
+    /// that device cannot be found and `allow_missing_battery` is `false`.
+    pub fn from_device(device: &str, allow_missing_battery: bool) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device);
         if !device_path.exists() {
+            if allow_missing_battery {
+                return Ok(PowerSupplyDevice {
+                    device_path,
+                    device_found: false,
+                    charge_full: None,
+                    energy_full: None,
+                });
+            }
             return Err(BlockError(
                 "battery".to_string(),
                 format!(
@@ -89,6 +102,7 @@ impl PowerSupplyDevice {
 
         Ok(PowerSupplyDevice {
             device_path,
+            device_found: true,
             charge_full,
             energy_full,
         })
@@ -96,6 +110,10 @@ impl PowerSupplyDevice {
 }
 
 impl BatteryDevice for PowerSupplyDevice {
+    fn is_available(&self) -> bool {
+        self.device_found
+    }
+
     fn status(&self) -> Result<String> {
         read_file("battery", &self.device_path.join("status"))
     }
@@ -373,6 +391,10 @@ impl UpowerDevice {
 }
 
 impl BatteryDevice for UpowerDevice {
+    fn is_available(&self) -> bool {
+        true // TODO: has to be implemented for UPower
+    }
+
     fn status(&self) -> Result<String> {
         let status: u32 = self
             .con
@@ -514,6 +536,10 @@ pub struct BatteryConfig {
     /// The threshold below which the remaining capacity is shown as critical
     #[serde(default = "BatteryConfig::default_critical")]
     pub critical: u64,
+
+    /// If the battery device cannot be found, do not fail and show the block anyway (sysfs only).
+    #[serde(default = "BatteryConfig::default_allow_missing_battery")]
+    pub allow_missing_battery: bool,
 }
 
 impl BatteryConfig {
@@ -552,6 +578,10 @@ impl BatteryConfig {
     fn default_good() -> u64 {
         60
     }
+
+    fn default_allow_missing_battery() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Battery {
@@ -589,7 +619,10 @@ impl ConfigBlock for Battery {
                 out.monitor(id.clone(), update_request);
                 Box::new(out)
             }
-            BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(&block_config.device)?),
+            BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(
+                &block_config.device,
+                block_config.allow_missing_battery,
+            )?),
         };
 
         Ok(Battery {
@@ -611,6 +644,26 @@ impl ConfigBlock for Battery {
 impl Block for Battery {
     fn update(&mut self) -> Result<Option<Update>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
+
+        // Exit early, if the battery device is missing.
+        if !self.device.is_available() {
+            let values = map!(
+                "{percentage}" => "X%",
+                "{bar}" => "",
+                "{time}" => "xx:xx",
+                "{power}" => "X"
+            );
+
+            self.output.set_icon("bat_not_available");
+            self.output
+                .set_text(self.full_format.render_static_str(&values)?);
+            self.output.set_state(State::Idle);
+
+            return match self.driver {
+                BatteryDriver::Sysfs => Ok(Some(Update::Every(self.update_interval))),
+                BatteryDriver::Upower => Ok(None),
+            };
+        }
 
         let status = self.device.status()?;
         let capacity = self.device.capacity();
