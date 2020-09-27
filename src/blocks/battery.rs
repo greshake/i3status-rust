@@ -464,6 +464,7 @@ pub struct Battery {
     device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
     full_format: FormatTemplate,
+    hide_missing_battery: bool,
     driver: BatteryDriver,
     good: u64,
     info: u64,
@@ -540,6 +541,10 @@ pub struct BatteryConfig {
     /// If the battery device cannot be found, do not fail and show the block anyway (sysfs only).
     #[serde(default = "BatteryConfig::default_allow_missing_battery")]
     pub allow_missing_battery: bool,
+
+    /// If the battery device cannot be found, completely hide this block.
+    #[serde(default = "BatteryConfig::default_hide_missing_battery")]
+    pub hide_missing_battery: bool,
 }
 
 impl BatteryConfig {
@@ -580,6 +585,10 @@ impl BatteryConfig {
     }
 
     fn default_allow_missing_battery() -> bool {
+        false
+    }
+
+    fn default_hide_missing_battery() -> bool {
         false
     }
 }
@@ -632,6 +641,7 @@ impl ConfigBlock for Battery {
             device,
             format: FormatTemplate::from_string(&format)?,
             full_format: FormatTemplate::from_string(&block_config.full_format)?,
+            hide_missing_battery: block_config.hide_missing_battery,
             driver,
             good: block_config.good,
             info: block_config.info,
@@ -647,11 +657,13 @@ impl Block for Battery {
 
         // Exit early, if the battery device is missing.
         if !self.device.is_available() {
+            // Respect the original format string, even if the battery
+            // cannot be found right now.
             let values = map!(
                 "{percentage}" => "X%",
                 "{bar}" => "",
                 "{time}" => "xx:xx",
-                "{power}" => "X"
+                "{power}" => "N/A"
             );
 
             self.output.set_icon("bat_not_available");
@@ -741,6 +753,11 @@ impl Block for Battery {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
+        // Don't display the block at all, if it's configured to be hidden on missing batteries
+        if !self.device.is_available() && self.hide_missing_battery {
+            return Vec::new();
+        }
+
         vec![&self.output]
     }
 
