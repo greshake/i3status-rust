@@ -116,6 +116,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 `format` | A format string. See below for available placeholders. | No | `"{percentage}%"`
 `allow_missing_battery` | Don't display errors when the battery cannot be found. Only works with the `sysfs` driver. | No | `false`
+`hide_missing_battery` | Completely hide this block, if the battery cannot be found. Only works in combination with `allow_missing_battery`. | No | `false`
 `show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
 `upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
 `info` | Minimum battery level, where state is set to info. | No | `60`
