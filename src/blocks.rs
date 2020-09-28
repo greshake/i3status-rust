@@ -15,6 +15,7 @@ pub mod keyboard_layout;
 pub mod load;
 pub mod maildir;
 pub mod memory;
+pub mod mpd;
 pub mod music;
 pub mod net;
 pub mod networkmanager;
@@ -52,6 +53,7 @@ use self::keyboard_layout::*;
 use self::load::*;
 use self::maildir::*;
 use self::memory::*;
+use self::mpd::*;
 use self::music::*;
 use self::net::*;
 use self::networkmanager::*;
@@ -167,6 +169,7 @@ pub fn create_block(
         "load" => block!(Load, block_config, config, update_request),
         "maildir" => block!(Maildir, block_config, config, update_request),
         "memory" => block!(Memory, block_config, config, update_request),
+        "mpd" => block!(Mpd, block_config, config, update_request),
         "music" => block!(Music, block_config, config, update_request),
         "net" => block!(Net, block_config, config, update_request),
         "networkmanager" => block!(NetworkManager, block_config, config, update_request),
