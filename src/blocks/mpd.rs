@@ -17,6 +17,7 @@ use crate::widgets::text::TextWidget;
 use crate::util::FormatTemplate;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
+use mpd::status::State::{Pause,Play};
 
 pub struct Mpd {
     text: TextWidget,
@@ -54,7 +55,7 @@ impl MpdConfig {
         Duration::from_secs(1)
     }
     fn default_format() -> String {
-        String::from("{artist} - {title} [{elapsed}/{length}]{repeat}{random}{single}{consume}")
+        String::from("{artist} - {title} [{playback_info}]{repeat}{random}{single}{consume}")
     }
 
     fn default_ip() -> String {
@@ -124,6 +125,11 @@ impl Block for Mpd {
             }
             _ => { String::new() }
         };
+        let playback_status: String = match status.state {
+            Play =>  format!("{}/{}", elapsed, length),
+            Pause => String::from("paused"),
+            _ =>  String::new()
+        };
 
         let format_values: HashMap<&str, &str, RandomState> = map!("{repeat}" => repeat,
                                                     "{random}" => random,
@@ -132,7 +138,8 @@ impl Block for Mpd {
                                                     "{artist}" => &artist,
                                                     "{title}" => &title,
                                                     "{elapsed}" => &elapsed,
-                                                    "{length}" => &length);
+                                                    "{length}" => &length,
+                                                    "{playback_info}" => &playback_status);
 
         self.text.set_text(self.format.render_static_str(&format_values)?);
         Ok(Some(self.update_interval.into()))
