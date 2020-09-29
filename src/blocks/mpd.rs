@@ -15,11 +15,11 @@ use crate::input::MouseButton::*;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
+use crate::widgets::button::ButtonWidget;
 use mpd::status::State::{Pause, Play};
 use std::cmp;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
-use crate::widgets::button::ButtonWidget;
 
 pub struct Mpd {
     text: ButtonWidget,
@@ -183,7 +183,8 @@ impl Block for Mpd {
                 }
             }
         }
-        self.update().block_error("Mpd", "Failed to update on interact")?;
+        self.update()
+            .block_error("Mpd", "Failed to update on interact")?;
         Ok(())
     }
 
