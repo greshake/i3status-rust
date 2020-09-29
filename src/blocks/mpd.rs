@@ -15,14 +15,14 @@ use crate::input::MouseButton::*;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
-use crate::widgets::text::TextWidget;
 use mpd::status::State::{Pause, Play};
 use std::cmp;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
+use crate::widgets::button::ButtonWidget;
 
 pub struct Mpd {
-    text: TextWidget,
+    text: ButtonWidget,
     id: String,
     update_interval: Duration,
     mpd_conn: Client<TcpStream>,
@@ -72,12 +72,13 @@ impl ConfigBlock for Mpd {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let id = Uuid::new_v4().to_simple().to_string();
         Ok(Mpd {
-            id: Uuid::new_v4().to_simple().to_string(),
-            update_interval: block_config.interval,
-            text: TextWidget::new(config.clone())
+            text: ButtonWidget::new(config.clone(), &id)
                 .with_text("Mpd")
                 .with_icon("music"),
+            id,
+            update_interval: block_config.interval,
             mpd_conn: Client::connect(&block_config.ip).unwrap(),
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("Mpd", "Invalid format for mpd format")?,
@@ -148,36 +149,41 @@ impl Block for Mpd {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        match event.button {
-            Left => {
-                self.mpd_conn
-                    .prev()
-                    .block_error("Mpd", "Failed to go to previous track")?;
+        if let Some(ref name) = event.name {
+            if name.as_str() == self.id {
+                match event.button {
+                    Left => {
+                        self.mpd_conn
+                            .prev()
+                            .block_error("Mpd", "Failed to go to previous track")?;
+                    }
+                    Middle => {
+                        self.mpd_conn
+                            .toggle_pause()
+                            .block_error("Mpd", "Failed to toggle pause")?;
+                    }
+                    Right => {
+                        self.mpd_conn
+                            .next()
+                            .block_error("Mpd", "Failed to go to next track")?;
+                    }
+                    WheelUp => {
+                        let vol = self.mpd_conn.status().unwrap().volume;
+                        self.mpd_conn
+                            .volume(cmp::min(100, vol + 5))
+                            .block_error("Mpd", "Failed to adjust mpd volume")?;
+                    }
+                    WheelDown => {
+                        let vol = self.mpd_conn.status().unwrap().volume;
+                        self.mpd_conn
+                            .volume(cmp::max(0, vol - 5))
+                            .block_error("Mpd", "Failed to adjust mpd volume")?;
+                    }
+                    _ => {}
+                }
             }
-            Middle => {
-                self.mpd_conn
-                    .toggle_pause()
-                    .block_error("Mpd", "Failed to toggle pause")?;
-            }
-            Right => {
-                self.mpd_conn
-                    .next()
-                    .block_error("Mpd", "Failed to go to next track")?;
-            }
-            WheelUp => {
-                let vol = self.mpd_conn.status().unwrap().volume;
-                self.mpd_conn
-                    .volume(cmp::min(100, vol + 5))
-                    .block_error("Mpd", "Failed to adjust mpd volume")?;
-            }
-            WheelDown => {
-                let vol = self.mpd_conn.status().unwrap().volume;
-                self.mpd_conn
-                    .volume(cmp::max(0, vol - 5))
-                    .block_error("Mpd", "Failed to adjust mpd volume")?;
-            }
-            _ => {}
         }
+        self.update().block_error("Mpd", "Failed to update on interact")?;
         Ok(())
     }
 
