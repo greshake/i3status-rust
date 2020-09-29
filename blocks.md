@@ -17,6 +17,7 @@
 - [Load](#load)
 - [Maildir](#maildir)
 - [Memory](#memory)
+- [Mpd](#mpd)
 - [Music](#music)
 - [Net](#net)
 - [NetworkManager](#networkmanager)
@@ -676,6 +677,55 @@ Key | Values | Required | Default
 `{SUp}`  | Swap used (%).
 `{SUpi}` | Swap used (%) as integer.
 
+## Mpd
+
+Creates a block to display detailed mpd player information including song title, artist, playback flags, and more. Also allows playback controls with left, middle, and right click.
+
+Left click returns to previous track, middle click toggles play/pause, right click advances to next track, and the mouse wheel controls volume in 5% steps.
+
+### Examples
+
+Display current song title and artist, as well as volume.
+
+```toml
+[[block]]
+block = "mpd"
+format = "{artist} - {title} ({volume}%)"
+interval = 1
+```
+
+Display the playback state of the current song, as well as the volume.
+
+```toml
+[[block]]
+block = "mpd"
+format = "{playback_info} {volume}%"
+interval = 1
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `1`
+`ip` | IP address of mpd server to connect to. | No | `"127.0.0.1:6600"`
+`format` | Format string. Accepts options defined below. | No | `"{artist} - {title} [{playback_info}]{repeat}{random}{single}{consume}"`
+
+
+### Format options
+
+Placeholder | Value
+------------|-------
+`{title}` | The song title. If the id3 tag is available, it will use that, otherwise it defaults to the filename.
+`{artist}` | The song artist. If the id3 tag is available, it will use that, otherwise it defaults to `unknown artist`.
+`{elapsed}` | Time elapsed in the current song, in the format `MM:SS`. When no song is playing, this is blank.
+`{length}` | The length of the current song, in the format `MM:SS`. When no song is playing, this is blank.
+`{playback_info}` | When a song is playing, this is the same as `{elapsed}/{length}`. When paused, this displays `paused`
+`{volume}` | Displays the volume as a number from 0-100.
+`{repeat}` | If repeat is on, this displays `R`. Otherwise, it is blank.
+`{random}` | If random is on, this displays `Z`. Otherwise, it is blank.
+`{single}` | If random is on, this displays `S`. Otherwise, it is blank.
+`{consume}` | If repeat is on, this displays `C`. Otherwise, it is blank.
 
 ## Music
 
