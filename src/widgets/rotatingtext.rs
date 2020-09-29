@@ -17,6 +17,7 @@ pub struct RotatingTextWidget {
     content: String,
     icon: Option<String>,
     state: State,
+    id: String,
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
@@ -31,6 +32,7 @@ impl RotatingTextWidget {
         max_width: usize,
         dynamic_width: bool,
         config: Config,
+        id: &str,
     ) -> RotatingTextWidget {
         RotatingTextWidget {
             rotation_pos: 0,
@@ -42,6 +44,7 @@ impl RotatingTextWidget {
             content: String::new(),
             icon: None,
             state: State::Idle,
+            id: String::from(id),
             rendered: json!({
                 "full_text": "",
                 "separator": false,
@@ -157,6 +160,7 @@ impl RotatingTextWidget {
                 },
             "align": "left",
             "background": key_bg,
+            "name": self.id.clone(),
             "color": key_fg
         });
 

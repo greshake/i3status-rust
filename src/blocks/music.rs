@@ -33,6 +33,7 @@ pub struct Music {
     next: Option<ButtonWidget>,
     on_collapsed_click_widget: ButtonWidget,
     on_collapsed_click: Option<String>,
+    on_click: Option<String>,
     dbus_conn: Connection,
     player_avail: bool,
     marquee: bool,
@@ -91,6 +92,9 @@ pub struct MusicConfig {
 
     #[serde(default = "MusicConfig::default_on_collapsed_click")]
     pub on_collapsed_click: Option<String>,
+
+    #[serde(default = "MusicConfig::default_on_click")]
+    pub on_click: Option<String>,
 }
 
 impl MusicConfig {
@@ -129,6 +133,10 @@ impl MusicConfig {
     fn default_on_collapsed_click() -> Option<String> {
         None
     }
+
+    fn default_on_click() -> Option<String> {
+        None
+    }
 }
 
 impl ConfigBlock for Music {
@@ -137,6 +145,7 @@ impl ConfigBlock for Music {
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
+        let id_copy2 = id.clone();
 
         thread::Builder::new().name("music".into()).spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
@@ -198,12 +207,14 @@ impl ConfigBlock for Music {
                 block_config.max_width,
                 block_config.dynamic_width,
                 config.clone(),
+                &id_copy2,
             )
             .with_icon("music")
             .with_state(State::Info),
             prev,
             play,
             next,
+            on_click: block_config.on_click,
             on_collapsed_click_widget: ButtonWidget::new(config, "on_collapsed_click")
                 .with_icon("music")
                 .with_state(State::Info),
@@ -407,6 +418,13 @@ impl Block for Music {
                     let command = self.on_collapsed_click.as_ref().unwrap();
                     spawn_child_async("sh", &["-c", command])
                         .block_error("music", "could not spawn child")?;
+                } else {
+                    if event.matches_name(self.id()) {
+                        if let Some(ref cmd) = self.on_click {
+                            spawn_child_async("sh", &["-c", cmd])
+                                .block_error("music", "could not spawn child")?;
+                        }
+                    }
                 }
                 Ok(())
             }
