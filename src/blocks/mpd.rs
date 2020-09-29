@@ -2,24 +2,24 @@ use std::net::TcpStream;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
+use mpd::Client;
 use serde_derive::Deserialize;
 use uuid::Uuid;
-use mpd::Client;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
+use crate::input::MouseButton::*;
 use crate::scheduler::Task;
+use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
-use crate::util::FormatTemplate;
-use crate::input::MouseButton::*;
+use mpd::status::State::{Pause, Play};
+use std::cmp;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
-use mpd::status::State::{Pause,Play};
-use std::cmp;
 
 pub struct Mpd {
     text: TextWidget,
@@ -40,8 +40,8 @@ pub struct Mpd {
 pub struct MpdConfig {
     /// Update interval in seconds
     #[serde(
-    default = "MpdConfig::default_interval",
-    deserialize_with = "deserialize_duration"
+        default = "MpdConfig::default_interval",
+        deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
 
@@ -75,13 +75,12 @@ impl ConfigBlock for Mpd {
         Ok(Mpd {
             id: Uuid::new_v4().to_simple().to_string(),
             update_interval: block_config.interval,
-            text: TextWidget::new(config.clone()).with_text("Mpd"),
+            text: TextWidget::new(config.clone())
+                .with_text("Mpd")
+                .with_icon("music"),
             mpd_conn: Client::connect(&block_config.ip).unwrap(),
             format: FormatTemplate::from_string(&block_config.format)
-                .block_error(
-                    "mpd",
-                    "Invalid format for mpd format",
-                )?,
+                .block_error("Mpd", "Invalid format for mpd format")?,
             tx_update_request,
             config,
         })
@@ -91,46 +90,40 @@ impl ConfigBlock for Mpd {
 impl Block for Mpd {
     fn update(&mut self) -> Result<Option<Update>> {
         let status = self.mpd_conn.status().unwrap();
-        let repeat = if status.repeat {"R"} else {""}; //R
-        let random = if status.random {"Z"} else {""}; //Z
-        let consume = if status.consume {"C"} else {""}; //C
-        let single = if status.single {"S"} else {""};
+        let repeat = if status.repeat { "R" } else { "" }; //R
+        let random = if status.random { "Z" } else { "" }; //Z
+        let consume = if status.consume { "C" } else { "" }; //C
+        let single = if status.single { "S" } else { "" };
 
         let title: String = match self.mpd_conn.currentsong().unwrap() {
-            Some(song) => {
-                match song.title {
-                    Some(title) => title,
-                    None => song.file
-                }
-            }
-            _ => { String::new() }
+            Some(song) => match song.title {
+                Some(title) => title,
+                None => song.file,
+            },
+            _ => String::new(),
         };
         let artist: String = match self.mpd_conn.currentsong().unwrap() {
-            Some(song) => {
-                match song.tags.get("Artist") {
-                    Some(artist) => format!("{}", artist),
-                    None => String::from("unknown artist")
-                }
-            }
-            _ => { String::new() }
+            Some(song) => match song.tags.get("Artist") {
+                Some(artist) => format!("{}", artist),
+                None => String::from("unknown artist"),
+            },
+            _ => String::new(),
         };
         let elapsed: String = match status.elapsed {
-            Some(te) => format!("{}:{:02}", te.num_seconds()/60, te.num_seconds()%60),
-            _ => { String::new() }
+            Some(te) => format!("{}:{:02}", te.num_seconds() / 60, te.num_seconds() % 60),
+            _ => String::new(),
         };
         let length: String = match self.mpd_conn.currentsong().unwrap() {
-            Some(song) => {
-                match song.duration {
-                    Some(sl) => format!("{}:{:02}", sl.num_seconds()/60, sl.num_seconds()%60),
-                    _ => { String::new() }
-                }
-            }
-            _ => { String::new() }
+            Some(song) => match song.duration {
+                Some(sl) => format!("{}:{:02}", sl.num_seconds() / 60, sl.num_seconds() % 60),
+                _ => String::new(),
+            },
+            _ => String::new(),
         };
         let playback_status: String = match status.state {
-            Play =>  format!("{}/{}", elapsed, length),
+            Play => format!("{}/{}", elapsed, length),
             Pause => String::from("paused"),
-            _ =>  String::new()
+            _ => String::from("stopped"),
         };
 
         let volume: String = status.volume.to_string();
@@ -145,8 +138,8 @@ impl Block for Mpd {
                                                     "{length}" => &length,
                                                     "{playback_info}" => &playback_status,
                                                     "{volume}" => &volume);
-
-        self.text.set_text(self.format.render_static_str(&format_values)?);
+        self.text
+            .set_text(self.format.render_static_str(&format_values)?);
         Ok(Some(self.update_interval.into()))
     }
 
@@ -156,20 +149,31 @@ impl Block for Mpd {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         match event.button {
-            Left => { self.mpd_conn.prev()
-                .block_error("mpd", "Failed to go to previous track")?; }
-            Middle => { self.mpd_conn.toggle_pause()
-                .block_error("mpd","Failed to toggle pause")?; }
-            Right => { self.mpd_conn.next()
-                .block_error("Mpd", "Failed to go to next track")?; }
+            Left => {
+                self.mpd_conn
+                    .prev()
+                    .block_error("Mpd", "Failed to go to previous track")?;
+            }
+            Middle => {
+                self.mpd_conn
+                    .toggle_pause()
+                    .block_error("Mpd", "Failed to toggle pause")?;
+            }
+            Right => {
+                self.mpd_conn
+                    .next()
+                    .block_error("Mpd", "Failed to go to next track")?;
+            }
             WheelUp => {
                 let vol = self.mpd_conn.status().unwrap().volume;
-                self.mpd_conn.volume(cmp::min(100,vol+5))
+                self.mpd_conn
+                    .volume(cmp::min(100, vol + 5))
                     .block_error("Mpd", "Failed to adjust mpd volume")?;
             }
             WheelDown => {
                 let vol = self.mpd_conn.status().unwrap().volume;
-                self.mpd_conn.volume(cmp::max(0,vol-5))
+                self.mpd_conn
+                    .volume(cmp::max(0, vol - 5))
                     .block_error("Mpd", "Failed to adjust mpd volume")?;
             }
             _ => {}
@@ -181,4 +185,3 @@ impl Block for Mpd {
         &self.id
     }
 }
-
