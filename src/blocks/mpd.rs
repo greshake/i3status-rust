@@ -15,9 +15,11 @@ use crate::scheduler::Task;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 use crate::util::FormatTemplate;
+use crate::input::MouseButton::*;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use mpd::status::State::{Pause,Play};
+use std::cmp;
 
 pub struct Mpd {
     text: TextWidget,
@@ -150,6 +152,25 @@ impl Block for Mpd {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        match event.button {
+            Left => { self.mpd_conn.prev()
+                .block_error("mpd", "Failed to go to previous track")?; }
+            Middle => { self.mpd_conn.toggle_pause()
+                .block_error("mpd","Failed to toggle pause")?; }
+            Right => { self.mpd_conn.next()
+                .block_error("Mpd", "Failed to go to next track")?; }
+            WheelUp => {
+                let vol = self.mpd_conn.status().unwrap().volume;
+                self.mpd_conn.volume(cmp::min(100,vol+5))
+                    .block_error("Mpd", "Failed to adjust mpd volume")?;
+            }
+            WheelDown => {
+                let vol = self.mpd_conn.status().unwrap().volume;
+                self.mpd_conn.volume(cmp::max(0,vol-5))
+                    .block_error("Mpd", "Failed to adjust mpd volume")?;
+            }
+            _ => {}
+        }
         Ok(())
     }
 
