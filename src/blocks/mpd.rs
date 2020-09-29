@@ -133,6 +133,8 @@ impl Block for Mpd {
             _ =>  String::new()
         };
 
+        let volume: String = status.volume.to_string();
+
         let format_values: HashMap<&str, &str, RandomState> = map!("{repeat}" => repeat,
                                                     "{random}" => random,
                                                     "{single}" => single,
@@ -141,7 +143,8 @@ impl Block for Mpd {
                                                     "{title}" => &title,
                                                     "{elapsed}" => &elapsed,
                                                     "{length}" => &length,
-                                                    "{playback_info}" => &playback_status);
+                                                    "{playback_info}" => &playback_status,
+                                                    "{volume}" => &volume);
 
         self.text.set_text(self.format.render_static_str(&format_values)?);
         Ok(Some(self.update_interval.into()))
