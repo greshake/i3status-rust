@@ -126,7 +126,7 @@ impl RotatingTextWidget {
                     .skip(self.rotation_pos)
                     .take(self.max_width)
                     .collect();
-                avail.push_str("|");
+                avail.push('|');
                 avail.push_str(&self.content.chars().take(missing - 1).collect::<String>());
                 avail
             }

@@ -53,7 +53,7 @@ impl ConfigBlock for CustomDBus {
         thread::Builder::new()
             .name("custom_dbus".into())
             .spawn(move || {
-                let mut c = LocalConnection::new_session()
+                let c = LocalConnection::new_session()
                     .expect("Failed to establish DBus connection in thread");
                 c.request_name("i3.status.rs", false, true, false)
                     .expect("Failed to request bus name");
