@@ -57,7 +57,7 @@ pub trait BatteryDevice {
 /// Represents a physical power supply device, as known to sysfs.
 pub struct PowerSupplyDevice {
     device_path: PathBuf,
-    allow_missing_battery: bool,
+    allow_missing: bool,
     charge_full: Option<u64>,
     energy_full: Option<u64>,
 }
@@ -65,13 +65,13 @@ pub struct PowerSupplyDevice {
 impl PowerSupplyDevice {
     /// Use the power supply device `device`, as found in the
     /// `/sys/class/power_supply` directory. Raises an error if the directory for
-    /// that device cannot be found and `allow_missing_battery` is `false`.
-    pub fn from_device(device: &str, allow_missing_battery: bool) -> Result<Self> {
+    /// that device cannot be found and `allow_missing` is `false`.
+    pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device);
 
         let mut device = PowerSupplyDevice {
             device_path,
-            allow_missing_battery,
+            allow_missing,
             charge_full: None,
             energy_full: None,
         };
@@ -88,7 +88,7 @@ impl BatteryDevice for PowerSupplyDevice {
     fn refresh_device_info(&mut self) -> Result<()> {
         if !self.is_available() {
             // The user indicated that it's ok for this battery to be missing/go away
-            if self.allow_missing_battery {
+            if self.allow_missing {
                 self.charge_full = None;
                 self.energy_full = None;
                 return Ok(());
@@ -481,8 +481,9 @@ pub struct Battery {
     device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
     full_format: FormatTemplate,
-    allow_missing_battery: bool,
-    hide_missing_battery: bool,
+    missing_format: FormatTemplate,
+    allow_missing: bool,
+    hide_missing: bool,
     driver: BatteryDriver,
     good: u64,
     info: u64,
@@ -533,6 +534,11 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_full_format")]
     pub full_format: String,
 
+    /// Format string that's displayed if a battery is missing.
+    /// placeholders: {percentage}, {bar}, {time} and {power}
+    #[serde(default = "BatteryConfig::default_missing_format")]
+    pub missing_format: String,
+
     /// (DEPRECATED) Use UPower to monitor battery status and events.
     #[serde(default = "BatteryConfig::default_upower")]
     pub upower: bool,
@@ -557,12 +563,12 @@ pub struct BatteryConfig {
     pub critical: u64,
 
     /// If the battery device cannot be found, do not fail and show the block anyway (sysfs only).
-    #[serde(default = "BatteryConfig::default_allow_missing_battery")]
-    pub allow_missing_battery: bool,
+    #[serde(default = "BatteryConfig::default_allow_missing")]
+    pub allow_missing: bool,
 
     /// If the battery device cannot be found, completely hide this block.
-    #[serde(default = "BatteryConfig::default_hide_missing_battery")]
-    pub hide_missing_battery: bool,
+    #[serde(default = "BatteryConfig::default_hide_missing")]
+    pub hide_missing: bool,
 }
 
 impl BatteryConfig {
@@ -580,6 +586,10 @@ impl BatteryConfig {
 
     fn default_full_format() -> String {
         "".into()
+    }
+
+    fn default_missing_format() -> String {
+        "{percentage}%".into()
     }
 
     fn default_upower() -> bool {
@@ -602,11 +612,11 @@ impl BatteryConfig {
         60
     }
 
-    fn default_allow_missing_battery() -> bool {
+    fn default_allow_missing() -> bool {
         false
     }
 
-    fn default_hide_missing_battery() -> bool {
+    fn default_hide_missing() -> bool {
         false
     }
 }
@@ -648,7 +658,7 @@ impl ConfigBlock for Battery {
             }
             BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(
                 &block_config.device,
-                block_config.allow_missing_battery,
+                block_config.allow_missing,
             )?),
         };
 
@@ -659,8 +669,9 @@ impl ConfigBlock for Battery {
             device,
             format: FormatTemplate::from_string(&format)?,
             full_format: FormatTemplate::from_string(&block_config.full_format)?,
-            allow_missing_battery: block_config.allow_missing_battery,
-            hide_missing_battery: block_config.hide_missing_battery,
+            missing_format: FormatTemplate::from_string(&block_config.missing_format)?,
+            allow_missing: block_config.allow_missing,
+            hide_missing: block_config.hide_missing,
             driver,
             good: block_config.good,
             info: block_config.info,
@@ -676,19 +687,20 @@ impl Block for Battery {
 
         // Exit early, if the battery device went missing, but the user
         // allows this device to go missing.
-        if !self.device.is_available() && self.allow_missing_battery {
+        if !self.device.is_available() && self.allow_missing {
             // Respect the original format string, even if the battery
             // cannot be found right now.
+            let empty_percent_bar = format_percent_bar(0.0);
             let values = map!(
                 "{percentage}" => "X",
-                "{bar}" => "",
+                "{bar}" => &empty_percent_bar,
                 "{time}" => "xx:xx",
                 "{power}" => "N/A"
             );
 
             self.output.set_icon("bat_not_available");
             self.output
-                .set_text(self.format.render_static_str(&values)?);
+                .set_text(self.missing_format.render_static_str(&values)?);
             self.output.set_state(State::Warning);
 
             return match self.driver {
@@ -778,7 +790,7 @@ impl Block for Battery {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         // Don't display the block at all, if it's configured to be hidden on missing batteries
-        if !self.device.is_available() && self.hide_missing_battery {
+        if !self.device.is_available() && self.hide_missing {
             return Vec::new();
         }
 
