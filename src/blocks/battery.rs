@@ -69,7 +69,7 @@ impl PowerSupplyDevice {
     pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device);
 
-        let mut device = PowerSupplyDevice {
+        let device = PowerSupplyDevice {
             device_path,
             allow_missing,
             charge_full: None,
