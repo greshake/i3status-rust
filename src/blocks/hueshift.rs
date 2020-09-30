@@ -23,7 +23,7 @@ pub struct Hueshift {
     current_temp: u16,
     max_temp: u16,
     min_temp: u16,
-    hue_shifter: Option<String>,
+    hue_shifter: Option<HueShifter>,
     click_temp: u16,
 
     //useful, but optional
@@ -33,7 +33,14 @@ pub struct Hueshift {
     tx_update_request: Sender<Task>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum HueShifter {
+    Redshift,
+    Sct,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct HueshiftConfig {
     /// Update interval in seconds
@@ -55,7 +62,7 @@ pub struct HueshiftConfig {
 
     /// Can be set by user as an option.
     #[serde(default = "HueshiftConfig::default_hue_shifter")]
-    pub hue_shifter: Option<String>,
+    pub hue_shifter: Option<HueShifter>,
 
     /// Default to 100K, cannot go over 500K.
     #[serde(default = "HueshiftConfig::default_step")]
@@ -87,17 +94,18 @@ impl HueshiftConfig {
         100 as u16
     }
 
-    fn default_hue_shifter() -> Option<String> {
-        let (_redshift, _sct) = what_is_supported();
-        // Prefer redshift over sct
-        match _redshift {
-            Ok(_redshift) => Some(String::from("redshift")),
-            Err(_redshift) => match _sct {
-                Ok(_sct) => Some(String::from("sct")),
-                Err(_sct) => None,
-            },
+    /// Prefer any installed shifter, redshift is preferred though.
+    fn default_hue_shifter() -> Option<HueShifter> {
+        let (redshift, sct) = what_is_supported();
+        if redshift {
+            return Some(HueShifter::Redshift);
+        } else if sct {
+            return Some(HueShifter::Sct);
         }
+
+        None
     }
+
     fn default_click_temp() -> u16 {
         6500 as u16
     }
@@ -203,18 +211,24 @@ impl Block for Hueshift {
 
 /// Currently, detects whether sct and redshift are installed.
 #[inline]
-fn what_is_supported() -> (Result<bool>, Result<bool>) {
-    (
-        has_command("hueshift", "redshift"),
-        has_command("hueshift", "sct"),
-    )
+fn what_is_supported() -> (bool, bool) {
+    let has_redshift = match has_command("hueshift", "redshift") {
+        Ok(has_redshift) => has_redshift,
+        Err(_) => false,
+    };
+
+    let has_sct = match has_command("hueshift", "sct") {
+        Ok(has_sct) => has_sct,
+        Err(_) => false,
+    };
+
+    (has_redshift, has_sct)
 }
+
 #[inline]
-fn update_hue(hue_shifter: &Option<String>, new_temp: u16) {
-    eprintln!("New temp : {}", new_temp);
-    let (_redshift, _sct) = ("redshift", "sct");
+fn update_hue(hue_shifter: &Option<HueShifter>, new_temp: u16) {
     match hue_shifter {
-        Some(_redshift) => {
+        Some(HueShifter::Redshift) => {
             Command::new("sh")
                 .args(&[
                     "-c",
@@ -223,7 +237,7 @@ fn update_hue(hue_shifter: &Option<String>, new_temp: u16) {
                 .spawn()
                 .expect("Failed to set new color temperature using redshift.");
         }
-        Some(_sct) => {
+        Some(HueShifter::Sct) => {
             Command::new("sh")
                 .args(&["-c", format!("sct {} >/dev/null 2>&1", new_temp).as_str()])
                 .spawn()
@@ -232,17 +246,17 @@ fn update_hue(hue_shifter: &Option<String>, new_temp: u16) {
         None => {}
     }
 }
+
 #[inline]
-fn reset_hue(hue_shifter: &Option<String>) {
-    let (_redshift, _sct) = ("redshift", "sct");
+fn reset_hue(hue_shifter: &Option<HueShifter>) {
     match hue_shifter {
-        Some(_redshift) => {
+        Some(HueShifter::Redshift) => {
             Command::new("sh")
                 .args(&["-c", "redshift -x >/dev/null 2>&1"])
                 .spawn()
                 .expect("Failed to set new color temperature using redshift.");
         }
-        Some(_sct) => {
+        Some(HueShifter::Sct) => {
             Command::new("sh")
                 .args(&["-c", "sct >/dev/null 2>&1"])
                 .spawn()
