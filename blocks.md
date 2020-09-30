@@ -995,7 +995,7 @@ Key | Value
 `{count}` | Number of pacman updates available (**deprecated**: use `{pacman}` instead)
 `{pacman}`| Number of updates available according to `pacman`
 `{aur}` | Number of updates available according to `<aur_command>`
-`{both}` | Cumulative number of updates available according to `pacman` and `<aur_commad>` 
+`{both}` | Cumulative number of updates available according to `pacman` and `<aur_command>` 
 
 
 ## Pomodoro
