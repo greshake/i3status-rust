@@ -115,6 +115,10 @@ Key | Values | Required | Default
 `driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 `format` | A format string. See below for available placeholders. | No | `"{percentage}%"`
+`full_format` | The format string that's used when the battery reaches full state. | No | `"{percentage}%"`
+`missing_format` | The format string that's used when a battery is missing. | No | `"{percentage}%"`
+`allow_missing` | Don't display errors when the battery cannot be found. Only works with the `sysfs` driver. | No | `false`
+`hide_missing` | Completely hide this block, if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
 `show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
 `upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
 `info` | Minimum battery level, where state is set to info. | No | `60`
@@ -129,6 +133,7 @@ The `show` option is deprecated, and will be removed in future versions. In the 
 Placeholder | Description
 ------------|-------------
 `{percentage}` | Battery level, in percent.
+`{bar}` | The current battery level in a bar chart.
 `{time}` | Time remaining until (dis)charge is complete.
 `{power}` | Power consumption (in watts) by the battery or from the power supply when charging.
 
