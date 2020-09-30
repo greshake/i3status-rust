@@ -211,7 +211,7 @@ impl ConfigBlock for KDEConnect {
         thread::Builder::new()
             .name("kdeconnect".into())
             .spawn(move || {
-                let mut c = Connection::new_session()
+                let c = Connection::new_session()
                     .expect("Failed to establish D-Bus connection in thread");
 
                 let p = c.with_proxy(

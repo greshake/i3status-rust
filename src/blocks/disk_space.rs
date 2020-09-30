@@ -238,7 +238,7 @@ impl Block for DiskSpace {
         let statvfs = statvfs(Path::new(self.path.as_str()))
             .block_error("disk_space", "failed to retrieve statvfs")?;
 
-        let mut result;
+        let result;
         let total = (statvfs.blocks() as u64) * (statvfs.fragment_size() as u64);
         let used = ((statvfs.blocks() as u64) - (statvfs.blocks_free() as u64))
             * (statvfs.fragment_size() as u64);

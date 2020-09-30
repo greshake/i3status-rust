@@ -418,12 +418,10 @@ impl Block for Music {
                     let command = self.on_collapsed_click.as_ref().unwrap();
                     spawn_child_async("sh", &["-c", command])
                         .block_error("music", "could not spawn child")?;
-                } else {
-                    if event.matches_name(self.id()) {
-                        if let Some(ref cmd) = self.on_click {
-                            spawn_child_async("sh", &["-c", cmd])
-                                .block_error("music", "could not spawn child")?;
-                        }
+                } else if event.matches_name(self.id()) {
+                    if let Some(ref cmd) = self.on_click {
+                        spawn_child_async("sh", &["-c", cmd])
+                            .block_error("music", "could not spawn child")?;
                     }
                 }
                 Ok(())
