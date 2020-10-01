@@ -30,18 +30,29 @@ where `<file>` can be either a filename or a full path and will be checked in th
 
 Example theme file can be found in `example/theme/solarized-dark.toml`.
 
-# Available themes:
-* `plain` (default)
-* `solarized-dark`
-* `solarized-light`
-* `slick`
-* `modern`
-* `bad-wolf`
-* `gruvbox-light`
-* `gruvbox-dark`
-* `space-villain`
+# Available themes
 
-# Available icon sets:
+* `plain` (default)
+![plain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/plain.png)
+* `solarized-dark`
+![solarized-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized_dark.png)
+* `solarized-light`
+![solarized-light](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized_light.png)
+* `slick`
+![slick](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/slick.png)
+* `modern`
+![modern](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/modern.png)
+* `bad-wolf`
+![bad-wolf](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/bad_wolf.png)
+* `gruvbox-light`
+![gruvbox-light](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox_light.png)
+* `gruvbox-dark`
+![gruvbox-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox_dark.png)
+* `space-villain`
+![space-villain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/space_villain.png)
+
+# Available icon sets
+
 * `none` (default. Uses text labels instead of icons)
 * `awesome` (Font Awesome 4.x)
 * `awesome5` (Font Awesome 5.x)
@@ -50,7 +61,9 @@ Example theme file can be found in `example/theme/solarized-dark.toml`.
 > **Note**: In order to use the material icon set, you need a patched material icons font which can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf). Make sure to pass it in your i3 configuration bar block.
 
 ## Overriding themes and icon sets
+
 Create a block in the configuration called `theme` or `icons` like so:
+
 ```toml
 [theme]
 name = "solarized-dark"
@@ -70,6 +83,7 @@ bat_discharging = " |v| "
 Example configurations can be found as `example_theme.toml` and `example_icon.toml`.
 
 # Available theme overrides
+
 * `alternating_tint_bg`
 * `alternating_tint_fg`
 * `critical_bg`
@@ -87,6 +101,7 @@ Example configurations can be found as `example_theme.toml` and `example_icon.to
 * `warning_fg`
 
 # Available icon overrides
+
 * `backlight_empty`
 * `backlight_full`
 * `backlight_partial1`
