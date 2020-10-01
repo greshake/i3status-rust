@@ -93,7 +93,19 @@ $ fc-match FontAwesome
 fontawesome-webfont.ttf: "FontAwesome" "Regular"
 ```
 
-(Note that the name of the Font Awesome font may have changed in version 5. See [#130](https://github.com/greshake/i3status-rust/issues/130) for some discussion.)
+Note that the name of the Font Awesome font may have changed in version 5.  
+You can use `fc-list` to see the names of your available Awesome Fonts.
+
+```shell
+$ fc-list | grep -i awesome
+/usr/share/fonts/TTF/fa-solid-900.ttf: Font Awesome 5 Free,Font Awesome 5 Free Solid:style=Solid
+/usr/share/fonts/TTF/fa-regular-400.ttf: Font Awesome 5 Free,Font Awesome 5 Free Regular:style=Regular
+```
+
+In this example, you have to use `Font Awesome 5 Free` instead of the `FontAwesome 12` in the example configuration above.
+You can verify the name again using `fc-match`
+
+See [#130](https://github.com/greshake/i3status-rust/issues/130) for further discussion.
 
 Finally, reload i3: `i3 reload`.
 
