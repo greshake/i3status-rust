@@ -261,9 +261,26 @@ fn run(matches: &ArgMatches) -> Result<()> {
             },
             // Receive signal events
             recv(rx_signals) -> res => if let Ok(sig) = res {
-                for block in block_map.values_mut() {
-                    block.signal(sig)?;
-                }
+                match sig {
+                    signal_hook::SIGUSR1 => {
+                        //USR1 signal that updates every block in the bar
+                        for block in block_map.values_mut() {
+                            block.update()?;
+                        }
+                    },
+                    signal_hook::SIGUSR2 => {
+                        //USR2 signal that should reload the config
+                        //TODO not implemented
+                        //unimplemented!("SIGUSR2 is meant to be used to reload the config toml, but this feature is yet not implemented");
+                    },
+                    _ => {
+                        //Real time signal that updates only the blocks listening
+                        //for that signal
+                        for block in block_map.values_mut() {
+                            block.signal(sig)?;
+                        }
+                    },
+                };
                 util::print_blocks(&order, &block_map, &config)?;
             }
         }

@@ -14,9 +14,10 @@ pub fn process_signals(sender: Sender<i32>) {
                 sigmax = __libc_current_sigrtmax();
             }
             loop {
-                let signals =
-                    signal_hook::iterator::Signals::new(&(sigmin..sigmax).collect::<Vec<_>>())
-                        .unwrap();
+                let mut signals = (sigmin..sigmax).collect::<Vec<_>>();
+                signals.push(signal_hook::SIGUSR1);
+                signals.push(signal_hook::SIGUSR2);
+                let signals = signal_hook::iterator::Signals::new(&signals).unwrap();
                 for sig in signals.forever() {
                     sender.send(sig).unwrap();
                 }
