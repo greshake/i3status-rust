@@ -16,13 +16,15 @@ use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
-use crate::config::Config;
+use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
+use crate::subprocess::spawn_child_async;
 use crate::scheduler::Task;
 use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
-use crate::widgets::text::TextWidget;
+use crate::widgets::button::ButtonWidget;
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {
@@ -475,9 +477,14 @@ impl BatteryDevice for UpowerDevice {
 
 /// A block for displaying information about an internal power supply.
 pub struct Battery {
-    output: TextWidget,
+    output: ButtonWidget,
     id: String,
     update_interval: Duration,
+    on_click: Option<String>,
+    on_right_click: Option<String>,
+    on_scroll_up: Option<String>,
+    on_scroll_down: Option<String>,
+    scrolling: Scrolling,
     device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
     full_format: FormatTemplate,
@@ -514,6 +521,27 @@ pub struct BatteryConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
+
+    //A command to be executed when left-clicking on the block
+    #[serde(default = "BatteryConfig::default_on_click")]
+    pub on_click: Option<String>,
+
+    //A command to be executed when right-clicking on the block
+    #[serde(default = "BatteryConfig::default_on_right_click")]
+    pub on_right_click: Option<String>,
+
+
+    //A command to be executed when scrolling up on the block
+    //If natural scrolling is enabled, this will trigger when
+    //scrolling down on the mouse wheel
+    #[serde(default = "BatteryConfig::default_on_scroll_up")]
+    pub on_scroll_up: Option<String>,
+
+    //A command to be executed when scrolling down on the block
+    //If natural scrolling is enabled, this will trigger when
+    //scrolling up on the mouse wheel
+    #[serde(default = "BatteryConfig::default_on_scroll_down")]
+    pub on_scroll_down: Option<String>,
 
     /// The internal power supply device in `/sys/class/power_supply/` to read
     /// from.
@@ -578,6 +606,22 @@ impl BatteryConfig {
 
     fn default_device() -> String {
         "BAT0".to_string()
+    }
+
+    fn default_on_click() -> Option<String> {
+        None
+    }
+
+    fn default_on_right_click() -> Option<String> {
+        None
+    }
+
+    fn default_on_scroll_up() -> Option<String> {
+        None
+    }
+
+    fn default_on_scroll_down() -> Option<String> {
+        None
     }
 
     fn default_format() -> String {
@@ -662,11 +706,19 @@ impl ConfigBlock for Battery {
             )?),
         };
 
+        
+        let scrolling = config.scrolling;
+
         Ok(Battery {
-            id,
+            id: id.clone(),
             update_interval: block_config.interval,
-            output: TextWidget::new(config),
+            output: ButtonWidget::new(config, &id),
             device,
+            on_click: block_config.on_click,
+            on_right_click: block_config.on_right_click,
+            on_scroll_up: block_config.on_scroll_up,
+            on_scroll_down: block_config.on_scroll_down,
+            scrolling: scrolling,
             format: FormatTemplate::from_string(&format)?,
             full_format: FormatTemplate::from_string(&block_config.full_format)?,
             missing_format: FormatTemplate::from_string(&block_config.missing_format)?,
@@ -795,6 +847,47 @@ impl Block for Battery {
         }
 
         vec![&self.output]
+    }
+
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if event.matches_name(self.id()) {
+            match event.button {
+                
+                MouseButton::Left => {
+                    if let Some(ref cmd) = self.on_click {
+                        spawn_child_async("sh", &["-c", cmd])
+                        .block_error("battery", "could not spawn child")?;
+                    }
+                }
+
+                MouseButton::Right => {
+                    if let Some(ref cmd) = self.on_right_click {
+                        spawn_child_async("sh", &["-c", cmd])
+                        .block_error("battery", "could not spawn child")?;
+                    }
+                }
+
+
+                _ => {
+                    match self.scrolling.to_logical_direction(event.button) {
+                        Some(LogicalDirection::Up) => {
+                            if let Some(ref cmd) = self.on_scroll_up {
+                                spawn_child_async("sh", &["-c", cmd])
+                                .block_error("battery", "could not spawn child")?;
+                            }
+                        }
+                        Some(LogicalDirection::Down) => {
+                            if let Some(ref cmd) = self.on_scroll_down {
+                                spawn_child_async("sh", &["-c", cmd])
+                                .block_error("battery", "could not spawn child")?;
+                            }
+                        }
+                        None => {}
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     fn id(&self) -> &str {

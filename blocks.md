@@ -125,6 +125,10 @@ Key | Values | Required | Default
 `good` | Minimum battery level, where state is set to good. | No | `60`
 `warning` | Minimum battery level, where state is set to warning. | No | `30`
 `critical` | Minimum battery level, where state is set to critical. | No | `15`
+`on_click` | Command to execute when left-clicking on the button. | No | None
+`on_right_click` | Command to execute when right-clicking on the button. | No | None
+`on_scroll_up` | Command to execute when scrolling up on the button. Note that the scrolling direction depends on the top level `scrolling` option. | No | None
+`on_scroll_down` | Command to execute when scrolling down on the button. Note that the scrolling direction depends on the top level `scrolling` option. | No | None
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
