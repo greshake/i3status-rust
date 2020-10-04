@@ -114,6 +114,12 @@ pub trait Block {
         Ok(None)
     }
 
+    ///Sends a signal event with the provided signal, this function is called on every block
+    ///for every signal event
+    fn signal(&mut self, _signal: i32) -> Result<()> {
+        Ok(())
+    }
+
     /// Sends click events to the block. This function is called on every block
     /// for every click; filter events by using the `event.name` property.
     fn click(&mut self, _event: &I3BarEvent) -> Result<()> {

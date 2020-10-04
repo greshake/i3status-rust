@@ -13,6 +13,7 @@ mod errors;
 mod icons;
 mod input;
 mod scheduler;
+mod signals;
 mod subprocess;
 mod themes;
 mod widget;
@@ -34,6 +35,7 @@ use crate::config::{load_config, Config};
 use crate::errors::*;
 use crate::input::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
+use crate::signals::process_signals;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -222,6 +224,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
         crossbeam_channel::unbounded();
     process_events(tx_clicks);
 
+    // We wait for signals in a separate thread
+    let (tx_signals, rx_signals): (Sender<i32>, Receiver<i32>) = crossbeam_channel::unbounded();
+    process_signals(tx_signals);
+
     // Time to next update channel.
     // Fires immediately for first updates
     let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
@@ -253,6 +259,30 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 // redraw the blocks, state changed
                 util::print_blocks(&order, &block_map, &config)?;
             },
+            // Receive signal events
+            recv(rx_signals) -> res => if let Ok(sig) = res {
+                match sig {
+                    signal_hook::SIGUSR1 => {
+                        //USR1 signal that updates every block in the bar
+                        for block in block_map.values_mut() {
+                            block.update()?;
+                        }
+                    },
+                    signal_hook::SIGUSR2 => {
+                        //USR2 signal that should reload the config
+                        //TODO not implemented
+                        //unimplemented!("SIGUSR2 is meant to be used to reload the config toml, but this feature is yet not implemented");
+                    },
+                    _ => {
+                        //Real time signal that updates only the blocks listening
+                        //for that signal
+                        for block in block_map.values_mut() {
+                            block.signal(sig)?;
+                        }
+                    },
+                };
+                util::print_blocks(&order, &block_map, &config)?;
+            }
         }
 
         // Set the time-to-next-update timer

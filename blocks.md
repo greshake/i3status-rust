@@ -240,6 +240,16 @@ command = "uname -r"
 interval = "once"
 ```
 
+Display the screen brightness on an intel machine and update this only when `pkill -SIGRTMIN+4 i3status-rs` is called:
+
+```toml
+[[block]]
+block = "custom"
+command = ''' cat /sys/class/backlight/intel_backlight/brightness | awk '{print $1}' '''
+signal = 4
+interval = "once"
+```
+
 ### Options
 
 Note that `command` and `cycle` are mutually exclusive.
@@ -251,6 +261,7 @@ Key | Values | Required | Default
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds (or `"once"` to update only once). | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
+`signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | No | None
 
 
 

@@ -14,6 +14,7 @@ use crate::de::deserialize_update;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
@@ -25,6 +26,7 @@ pub struct Custom {
     command: Option<String>,
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
+    signal: Option<i32>,
     tx_update_request: Sender<Task>,
     pub json: bool,
 }
@@ -47,6 +49,9 @@ pub struct CustomConfig {
 
     /// Commands to execute and change when the button is clicked
     pub cycle: Option<Vec<String>>,
+
+    /// Signal to update upon reception
+    pub signal: Option<i32>,
 
     /// Parse command output if it contains valid bar JSON
     #[serde(default = "CustomConfig::default_json")]
@@ -74,6 +79,7 @@ impl ConfigBlock for Custom {
             command: None,
             on_click: None,
             cycle: None,
+            signal: None,
             tx_update_request: tx,
             json: block_config.json,
         };
@@ -90,6 +96,11 @@ impl ConfigBlock for Custom {
 
         if let Some(command) = block_config.command {
             custom.command = Some(command)
+        };
+
+        if let Some(signal) = block_config.signal {
+            // If the signal is not in the valid range we return an error
+            custom.signal = Some(convert_to_valid_signal(signal)?);
         };
 
         Ok(custom)
@@ -150,6 +161,18 @@ impl Block for Custom {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
+    }
+
+    fn signal(&mut self, signal: i32) -> Result<()> {
+        if let Some(sig) = self.signal {
+            if sig == signal {
+                self.tx_update_request.send(Task {
+                    id: self.id.clone(),
+                    update_time: Instant::now(),
+                })?;
+            }
+        }
+        Ok(())
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
