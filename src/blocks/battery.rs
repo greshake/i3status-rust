@@ -20,8 +20,8 @@ use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
-use crate::subprocess::spawn_child_async;
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
@@ -530,7 +530,6 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_on_right_click")]
     pub on_right_click: Option<String>,
 
-
     //A command to be executed when scrolling up on the block
     //If natural scrolling is enabled, this will trigger when
     //scrolling down on the mouse wheel
@@ -706,7 +705,6 @@ impl ConfigBlock for Battery {
             )?),
         };
 
-        
         let scrolling = config.scrolling;
 
         Ok(Battery {
@@ -852,39 +850,35 @@ impl Block for Battery {
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if event.matches_name(self.id()) {
             match event.button {
-                
                 MouseButton::Left => {
                     if let Some(ref cmd) = self.on_click {
                         spawn_child_async("sh", &["-c", cmd])
-                        .block_error("battery", "could not spawn child")?;
+                            .block_error("battery", "could not spawn child")?;
                     }
                 }
 
                 MouseButton::Right => {
                     if let Some(ref cmd) = self.on_right_click {
                         spawn_child_async("sh", &["-c", cmd])
-                        .block_error("battery", "could not spawn child")?;
+                            .block_error("battery", "could not spawn child")?;
                     }
                 }
 
-
-                _ => {
-                    match self.scrolling.to_logical_direction(event.button) {
-                        Some(LogicalDirection::Up) => {
-                            if let Some(ref cmd) = self.on_scroll_up {
-                                spawn_child_async("sh", &["-c", cmd])
+                _ => match self.scrolling.to_logical_direction(event.button) {
+                    Some(LogicalDirection::Up) => {
+                        if let Some(ref cmd) = self.on_scroll_up {
+                            spawn_child_async("sh", &["-c", cmd])
                                 .block_error("battery", "could not spawn child")?;
-                            }
                         }
-                        Some(LogicalDirection::Down) => {
-                            if let Some(ref cmd) = self.on_scroll_down {
-                                spawn_child_async("sh", &["-c", cmd])
-                                .block_error("battery", "could not spawn child")?;
-                            }
-                        }
-                        None => {}
                     }
-                }
+                    Some(LogicalDirection::Down) => {
+                        if let Some(ref cmd) = self.on_scroll_down {
+                            spawn_child_async("sh", &["-c", cmd])
+                                .block_error("battery", "could not spawn child")?;
+                        }
+                    }
+                    None => {}
+                },
             }
         }
         Ok(())
