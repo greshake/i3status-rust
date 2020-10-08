@@ -26,6 +26,8 @@ pub struct Load {
     minimum_info: f32,
     minimum_warning: f32,
     minimum_critical: f32,
+    minimum_visible: [f32; 3],
+    visible: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -50,6 +52,10 @@ pub struct LoadConfig {
     /// Minimum load, where state is set to critical
     #[serde(default = "LoadConfig::default_critical")]
     pub critical: f32,
+
+    /// Minimum values for 1m, 5m and 15m respectively for the Load block to display
+    #[serde(default = "LoadConfig::default_min_visible")]
+    pub minimum_visible: [f32; 3],
 }
 
 impl LoadConfig {
@@ -71,6 +77,10 @@ impl LoadConfig {
 
     fn default_critical() -> f32 {
         0.9
+    }
+
+    fn default_min_visible() -> [f32; 3] {
+        [0.0, 0.0, 0.0]
     }
 }
 
@@ -110,6 +120,8 @@ impl ConfigBlock for Load {
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
+            minimum_visible: block_config.minimum_visible,
+            visible: true,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("load", "Invalid format specified for load")?,
             text,
@@ -136,10 +148,23 @@ impl Block for Load {
                           "{5m}" => split[1],
                           "{15m}" => split[2]);
 
-        let used_perc = values["{1m}"]
-            .parse::<f32>()
-            .block_error("load", "failed to parse float percentage")?
-            / self.logical_cores as f32;
+        /* Parse all the loadavg values. The block is
+         * visible if they are all greater than their min
+         * in self.minimum_visible */
+        let mut parsed = [0.0; 3];
+        for (e, v) in parsed.iter_mut().zip(split.iter()) {
+            *e = v
+                .parse::<f32>()
+                .block_error("load", "failed to parse load value as float")?;
+        }
+
+        self.visible = self
+            .minimum_visible
+            .iter()
+            .zip(parsed.iter())
+            .all(|(min, v)| v > min);
+
+        let used_perc = parsed[0] / self.logical_cores as f32;
 
         self.text.set_state(match used_perc {
             x if x > self.minimum_critical => State::Critical,
@@ -154,6 +179,10 @@ impl Block for Load {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
+        if !self.visible {
+            return Vec::new();
+        }
+
         vec![&self.text]
     }
 
