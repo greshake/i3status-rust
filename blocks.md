@@ -574,6 +574,15 @@ format = "{1m} {5m}"
 interval = 1
 ```
 
+Display the 15-minute load average, but only if it is above 1.5:
+
+```toml
+[[block]]
+block = "load"
+format = "{15m}"
+minimum_visible = [0.0, 0.0, 1.5]
+```
+
 ### Options
 
 Key | Values | Required | Default
@@ -583,6 +592,7 @@ Key | Values | Required | Default
 `critical` | Minimum load, where state is set to critical. | No | `0.9`
 `format` | Format string. You can use the placeholders 1m 5m and 15m, e.g. `"1min avg: {1m}"`. | No | `"{1m}"`
 `interval` | Update interval, in seconds. | No | `3`
+`minimum_visible` | A list of the minimum loads for each load interval (1m, 5m, and 15m respectively) in order for the load block to be displayed. | No | `[0.0, 0.0, 0.0]`
 
 ## Maildir
 
