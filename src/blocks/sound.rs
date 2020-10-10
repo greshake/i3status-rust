@@ -13,7 +13,6 @@ use {
     crossbeam_channel::unbounded,
     lazy_static::lazy_static,
     std::cell::RefCell,
-    std::cmp::min,
     std::collections::HashMap,
     std::convert::{TryFrom, TryInto},
     std::ops::Deref,
@@ -21,7 +20,7 @@ use {
     std::sync::Mutex,
 };
 
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::collections::BTreeMap;
 use std::io::Read;
 use std::process::{Command, Stdio};
