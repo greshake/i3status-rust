@@ -69,7 +69,7 @@ pub struct NvidiaGpuConfig {
 
     /// Label to show instead of the default GPU name from `nvidia-smi`
     #[serde(default = "NvidiaGpuConfig::default_label")]
-    pub label: String,
+    pub label: Option<String>,
 
     /// GPU id in system
     #[serde(default = "NvidiaGpuConfig::default_gpu_id")]
@@ -117,8 +117,8 @@ impl NvidiaGpuConfig {
         Duration::from_secs(3)
     }
 
-    fn default_label() -> String {
-        "".to_string()
+    fn default_label() -> Option<String> {
+        None
     }
 
     fn default_gpu_id() -> u64 {
@@ -183,8 +183,16 @@ impl ConfigBlock for NvidiaGpu {
             gpu_id: block_config.gpu_id,
 
             name_widget: ButtonWidget::new(config.clone(), &id).with_icon("gpu"),
-            name_widget_mode: NameWidgetMode::ShowDefaultName,
-            label: block_config.label,
+            name_widget_mode: if block_config.label.is_some() {
+                NameWidgetMode::ShowLabel
+            } else {
+                NameWidgetMode::ShowDefaultName
+            },
+            label: if block_config.label.is_some() {
+                block_config.label.unwrap()
+            } else {
+                "".to_string()
+            },
 
             show_memory: if block_config.show_memory {
                 Some(ButtonWidget::new(config.clone(), &id_memory))
