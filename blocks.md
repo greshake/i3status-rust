@@ -900,13 +900,15 @@ Key | Values | Required | Default
 
 ## Nvidia Gpu
 
-Proprietary nvidia driver required.
+Creates a block which can display the name, utilization, temperature, memory usage, fan speed and clock speed of your NVidia GPU.
 
-Creates a block which displays the Nvidia GPU utilization, temperature, used and total memory, fan speed, gpu clocks. You can set gpu label, that displayed by default.
+By default the name provided by `nvidia-smi` will be shown. If `label` is set then clicking the left mouse button on the "name" part of the block will alternate it between showing the default name or `label`.
 
-Clicking the left button on the icon changes the output of the label to the output of the gpu name. Same with memory: used/total.
+By default `show_temperature` shows the used memory. Clicking the left mouse on the "temperature" part of the block will alternate it between showing used or total available memory.
 
-Clicking the left button on the fans turns on the mode of changing the speed of the fans using the wheel. Press again to turn off the mode. For this opportunity you need nvidia-settings!
+When using `show_fan_speed`, clicking the left mouse button on the "fan speed" part of the block will cause it to enter into a fan speed setting mode. In this mode you can scroll the mouse wheel over the block to change the fan speeds, and left click to exit the mode.
+
+Requires `nvidia-smi` for displaying info and `nvidia_settings` for setting fan speed.
 
 ### Examples
 
