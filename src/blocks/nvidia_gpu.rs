@@ -17,29 +17,44 @@ use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct NvidiaGpu {
-    gpu_widget: ButtonWidget,
-    gpu_enabled: bool,
     id: String,
     id_fans: String,
     id_memory: String,
     update_interval: Duration,
 
+    gpu_enabled: bool,
     gpu_id: u64,
-    gpu_name_displayed: bool,
+
+    name_widget: ButtonWidget,
+    name_widget_mode: NameWidgetMode,
     label: String,
-    show_utilization: Option<TextWidget>,
+
     show_memory: Option<ButtonWidget>,
-    memory_total_displayed: bool,
+    memory_widget_mode: MemoryWidgetMode,
+
+    show_utilization: Option<TextWidget>,
     show_temperature: Option<TextWidget>,
+
     show_fan: Option<ButtonWidget>,
     fan_speed: u64,
     fan_speed_controlled: bool,
-    show_clocks: Option<TextWidget>,
     scrolling: Scrolling,
+
+    show_clocks: Option<TextWidget>,
     maximum_idle: u64,
     maximum_good: u64,
     maximum_info: u64,
     maximum_warning: u64,
+}
+
+enum MemoryWidgetMode {
+    ShowUsedMemory,
+    ShowTotalMemory,
+}
+
+enum NameWidgetMode {
+    ShowDefaultName,
+    ShowLabel,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -52,7 +67,7 @@ pub struct NvidiaGpuConfig {
     )]
     pub interval: Duration,
 
-    /// Label
+    /// Label to show instead of the default GPU name from `nvidia-smi`
     #[serde(default = "NvidiaGpuConfig::default_label")]
     pub label: String,
 
@@ -60,7 +75,7 @@ pub struct NvidiaGpuConfig {
     #[serde(default = "NvidiaGpuConfig::default_gpu_id")]
     pub gpu_id: u64,
 
-    /// GPU utilization. In percents.
+    /// GPU utilization. In percent.
     #[serde(default = "NvidiaGpuConfig::default_show_utilization")]
     pub show_utilization: bool,
 
@@ -164,28 +179,32 @@ impl ConfigBlock for NvidiaGpu {
             id_fans: id_fans.clone(),
             id_memory: id_memory.clone(),
             update_interval: block_config.interval,
-            gpu_widget: ButtonWidget::new(config.clone(), &id).with_icon("gpu"),
             gpu_enabled: false,
-
-            gpu_name_displayed: false,
             gpu_id: block_config.gpu_id,
+
+            name_widget: ButtonWidget::new(config.clone(), &id).with_icon("gpu"),
+            name_widget_mode: NameWidgetMode::ShowDefaultName,
             label: block_config.label,
-            show_utilization: if block_config.show_utilization {
-                Some(TextWidget::new(config.clone()))
-            } else {
-                None
-            },
+
             show_memory: if block_config.show_memory {
                 Some(ButtonWidget::new(config.clone(), &id_memory))
             } else {
                 None
             },
-            memory_total_displayed: false,
+            memory_widget_mode: MemoryWidgetMode::ShowUsedMemory,
+
+            show_utilization: if block_config.show_utilization {
+                Some(TextWidget::new(config.clone()))
+            } else {
+                None
+            },
+
             show_temperature: if block_config.show_temperature {
                 Some(TextWidget::new(config.clone()))
             } else {
                 None
             },
+
             show_fan: if block_config.show_fan_speed {
                 Some(ButtonWidget::new(config.clone(), &id_fans))
             } else {
@@ -193,13 +212,14 @@ impl ConfigBlock for NvidiaGpu {
             },
             fan_speed: 0,
             fan_speed_controlled: false,
+            scrolling: config.scrolling,
+
             show_clocks: if block_config.show_clocks {
                 Some(TextWidget::new(config.clone()))
             } else {
                 None
             },
 
-            scrolling: config.scrolling,
             maximum_idle: block_config.idle,
             maximum_good: block_config.good,
             maximum_info: block_config.info,
@@ -264,16 +284,26 @@ impl Block for NvidiaGpu {
             let gpu_name = result[0].to_string();
             let memory_total = result[1].to_string();
 
+            match self.name_widget_mode {
+                NameWidgetMode::ShowDefaultName => self.name_widget.set_text(gpu_name.to_string()),
+                NameWidgetMode::ShowLabel => {
+                    self.name_widget.set_text(self.label.to_string());
+                }
+            }
+
             let mut count: usize = 2;
             if let Some(ref mut utilization_widget) = self.show_utilization {
                 utilization_widget.set_text(format!("{:02}%", result[count]));
                 count += 1;
             }
             if let Some(ref mut memory_widget) = self.show_memory {
-                if self.memory_total_displayed {
-                    memory_widget.set_text(format!("{}MB", memory_total));
-                } else {
-                    memory_widget.set_text(format!("{}MB", result[count]));
+                match self.memory_widget_mode {
+                    MemoryWidgetMode::ShowUsedMemory => {
+                        memory_widget.set_text(format!("{}MB", result[count]));
+                    }
+                    MemoryWidgetMode::ShowTotalMemory => {
+                        memory_widget.set_text(format!("{}MB", memory_total));
+                    }
                 }
                 count += 1;
             }
@@ -297,14 +327,8 @@ impl Block for NvidiaGpu {
             if let Some(ref mut clocks_widget) = self.show_clocks {
                 clocks_widget.set_text(format!("{}MHz", result[count]));
             }
-
-            if self.gpu_name_displayed {
-                self.gpu_widget.set_text(gpu_name.to_string());
-            } else {
-                self.gpu_widget.set_text(self.label.to_string());
-            }
         } else {
-            self.gpu_widget.set_text("DISABLED".to_string());
+            self.name_widget.set_text("DISABLED".to_string());
         }
 
         Ok(Some(self.update_interval.into()))
@@ -312,7 +336,7 @@ impl Block for NvidiaGpu {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         let mut widgets: Vec<&dyn I3BarWidget> = Vec::new();
-        widgets.push(&self.gpu_widget);
+        widgets.push(&self.name_widget);
 
         if self.gpu_enabled {
             if let Some(ref utilization_widget) = self.show_utilization {
@@ -339,19 +363,37 @@ impl Block for NvidiaGpu {
             let event_name = name.as_str();
 
             if event_name == self.id {
-                self.gpu_name_displayed = match e.button {
-                    MouseButton::Left => !self.gpu_name_displayed,
-                    _ => self.gpu_name_displayed,
-                };
-                self.update()?;
+                match e.button {
+                    MouseButton::Left => {
+                        match self.name_widget_mode {
+                            NameWidgetMode::ShowDefaultName => {
+                                self.name_widget_mode = NameWidgetMode::ShowLabel
+                            }
+                            NameWidgetMode::ShowLabel => {
+                                self.name_widget_mode = NameWidgetMode::ShowDefaultName
+                            }
+                        }
+                        self.update()?;
+                    }
+                    _ => {}
+                }
             }
 
             if event_name == self.id_memory {
-                self.memory_total_displayed = match e.button {
-                    MouseButton::Left => !self.memory_total_displayed,
-                    _ => self.memory_total_displayed,
-                };
-                self.update()?;
+                match e.button {
+                    MouseButton::Left => {
+                        match self.memory_widget_mode {
+                            MemoryWidgetMode::ShowUsedMemory => {
+                                self.memory_widget_mode = MemoryWidgetMode::ShowTotalMemory
+                            }
+                            MemoryWidgetMode::ShowTotalMemory => {
+                                self.memory_widget_mode = MemoryWidgetMode::ShowUsedMemory
+                            }
+                        }
+                        self.update()?;
+                    }
+                    _ => {}
+                }
             }
 
             if event_name == self.id_fans {
