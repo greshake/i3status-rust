@@ -349,7 +349,7 @@ impl Block for NvidiaGpu {
             if event_name == self.id_memory {
                 self.memory_total_displayed = match e.button {
                     MouseButton::Left => !self.memory_total_displayed,
-                    _ => self.gpu_name_displayed,
+                    _ => self.memory_total_displayed,
                 };
                 self.update()?;
             }
