@@ -60,7 +60,11 @@ impl ConfigBlock for Notify {
             "/org/freedesktop/Notifications",
             5000,
         );
-        let initial_state: bool = p.get("org.dunstproject.cmd0", "paused").unwrap();
+        let initial_state: bool = p.get("org.dunstproject.cmd0", "paused").block_error(
+            "notify",
+            &"Failed to get dunst state. Is it running?".to_string(),
+        )?;
+
         let icon = if initial_state { "bell-slash" } else { "bell" };
 
         // TODO: revisit this lint
