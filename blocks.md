@@ -162,6 +162,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `mac` | MAC address of the Bluetooth device. | Yes | None
 `label` | Text label to display next to the icon. | No | None
+`hide_disconnected` | Hides the block when the device is disconnected | No | false
 
 
 ## CPU Utilization
