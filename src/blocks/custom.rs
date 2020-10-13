@@ -29,6 +29,8 @@ pub struct Custom {
     signal: Option<i32>,
     tx_update_request: Sender<Task>,
     pub json: bool,
+    hide_when_empty: bool,
+    is_empty: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -56,6 +58,9 @@ pub struct CustomConfig {
     /// Parse command output if it contains valid bar JSON
     #[serde(default = "CustomConfig::default_json")]
     pub json: bool,
+
+    #[serde(default = "CustomConfig::hide_when_empty")]
+    pub hide_when_empty: bool,
 }
 
 impl CustomConfig {
@@ -64,6 +69,10 @@ impl CustomConfig {
     }
 
     fn default_json() -> bool {
+        false
+    }
+
+    fn hide_when_empty() -> bool {
         false
     }
 }
@@ -82,6 +91,8 @@ impl ConfigBlock for Custom {
             signal: None,
             tx_update_request: tx,
             json: block_config.json,
+            hide_when_empty: block_config.hide_when_empty,
+            is_empty: true,
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
@@ -151,8 +162,10 @@ impl Block for Custom {
             };
             self.output.set_icon(&output.icon);
             self.output.set_state(output.state);
+            self.is_empty = output.text.is_empty();
             self.output.set_text(output.text);
         } else {
+            self.is_empty = raw_output.is_empty();
             self.output.set_text(raw_output);
         }
 
@@ -160,7 +173,11 @@ impl Block for Custom {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
+        if self.is_empty && self.hide_when_empty {
+            vec![]
+        } else {
+            vec![&self.output]
+        }
     }
 
     fn signal(&mut self, signal: i32) -> Result<()> {
