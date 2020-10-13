@@ -1,7 +1,8 @@
+use std::ffi::OsStr;
 use std::fmt;
-use std::fs::read_to_string;
-use std::fs::OpenOptions;
+use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -25,8 +26,6 @@ use crate::util::{
 };
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
-use std::ffi::OsStr;
-use std::io::ErrorKind;
 
 lazy_static! {
     static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
