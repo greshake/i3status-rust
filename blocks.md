@@ -257,12 +257,13 @@ Note that `command` and `cycle` are mutually exclusive.
 Key | Values | Required | Default
 ----|--------|----------|--------
 `command` | Shell command to execute & display. | No | None
-`on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
+`on_click` | Command to execute when the button is clicked. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds (or `"once"` to update only once). | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
 `signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | No | None
 `hide_when_empty` | Hides the block when the command output (or json text field) is empty | No | false
+`shell` | Specify the shell to use when running commands. | No | `$SHELL` if set, otherwise fallback to `sh`
 
 
 ## Custom DBus
