@@ -31,6 +31,7 @@ pub struct Custom {
     pub json: bool,
     hide_when_empty: bool,
     is_empty: bool,
+    shell: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -61,6 +62,8 @@ pub struct CustomConfig {
 
     #[serde(default = "CustomConfig::hide_when_empty")]
     pub hide_when_empty: bool,
+
+    pub shell: Option<String>,
 }
 
 impl CustomConfig {
@@ -93,6 +96,11 @@ impl ConfigBlock for Custom {
             json: block_config.json,
             hide_when_empty: block_config.hide_when_empty,
             is_empty: true,
+            shell: if let Some(s) = block_config.shell {
+                s
+            } else {
+                env::var("SHELL").unwrap_or_else(|_| "sh".to_owned())
+            },
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
@@ -144,7 +152,7 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let raw_output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+        let raw_output = Command::new(&self.shell)
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
@@ -204,7 +212,7 @@ impl Block for Custom {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            spawn_child_async("sh", &["-c", on_click]).ok();
+            spawn_child_async(&self.shell, &["-c", on_click]).ok();
             update = true;
         }
 
