@@ -162,6 +162,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `mac` | MAC address of the Bluetooth device. | Yes | None
 `label` | Text label to display next to the icon. | No | None
+`hide_disconnected` | Hides the block when the device is disconnected | No | false
 
 
 ## CPU Utilization
@@ -784,8 +785,8 @@ Key | Values | Required | Default
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. Note: the update interval for SSID and IP address is fixed at 30 seconds, and bitrate fixed at 10 seconds. | No | `1`
-`hide_missing` | Whether to hide networks that are down/inactive completely. | No | `false`
-`hide_inactive` | Whether to hide networks that are missing. | No | `false`
+`hide_missing` | Whether to hide networks that are missing. | No | `false`
+`hide_inactive` | Whether to hide networks that are down/inactive completely. | No | `false`
 
 ### Format String
 Placeholder | Description
@@ -1354,7 +1355,7 @@ Key | Value
 
 ## Xrandr
 
-Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness.
+Creates a block which shows screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.
 
 NOTE: Some users report issues (e.g. [here](https://github.com/greshake/i3status-rust/issues/274) and [here](https://github.com/greshake/i3status-rust/issues/668) when using this block. The cause is currently unknown, however setting a higher update interval may help.
 
