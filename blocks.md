@@ -257,8 +257,8 @@ Note that `command` and `cycle` are mutually exclusive.
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`command` | Shell command to execute & display. | No | None
-`on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
+`command` | Shell command to execute & display. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
+`on_click` | Command to execute when the button is clicked. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds (or `"once"` to update only once). | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
