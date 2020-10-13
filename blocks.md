@@ -263,7 +263,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds (or `"once"` to update only once). | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
 `signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | No | None
-
+`hide_when_empty` | Hides the block when the command output (or json text field) is empty | No | false
 
 
 ## Custom DBus
