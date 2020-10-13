@@ -158,6 +158,7 @@ pub struct Bluetooth {
     id: String,
     output: ButtonWidget,
     device: BluetoothDevice,
+    hide_disconnected: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -165,6 +166,14 @@ pub struct Bluetooth {
 pub struct BluetoothConfig {
     pub mac: String,
     pub label: Option<String>,
+    #[serde(default = "BluetoothConfig::default_hide_disconnected")]
+    pub hide_disconnected: bool,
+}
+
+impl BluetoothConfig {
+    fn default_hide_disconnected() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Bluetooth {
@@ -185,6 +194,7 @@ impl ConfigBlock for Bluetooth {
                 _ => "bluetooth",
             }),
             device,
+            hide_disconnected: block_config.hide_disconnected,
         })
     }
 }
@@ -228,6 +238,10 @@ impl Block for Bluetooth {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
+        if !self.device.connected() && self.hide_disconnected {
+            vec![]
+        } else {
+            vec![&self.output]
+        }
     }
 }
