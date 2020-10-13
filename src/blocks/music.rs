@@ -18,7 +18,7 @@ use crate::blocks::{Block, ConfigBlock};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widget::{I3BarWidget, State};
@@ -401,34 +401,33 @@ impl Block for Music {
                 "prev" => "Previous",
                 _ => "",
             };
-            if action != "" {
-                let m = Message::new_method_call(
-                    self.player.as_ref().unwrap(),
-                    "/org/mpris/MediaPlayer2",
-                    "org.mpris.MediaPlayer2.Player",
-                    action,
-                )
-                .block_error("music", "failed to create D-Bus method call")?;
-                self.dbus_conn
-                    .send(m)
-                    .block_error("music", "failed to call method via D-Bus")
-                    .map(|_| ())
-            } else {
-                if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
-                    let command = self.on_collapsed_click.as_ref().unwrap();
-                    spawn_child_async("sh", &["-c", command])
-                        .block_error("music", "could not spawn child")?;
-                } else if event.matches_name(self.id()) {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
+            if let MouseButton::Left = event.button {
+                if action != "" {
+                    let m = Message::new_method_call(
+                        self.player.as_ref().unwrap(),
+                        "/org/mpris/MediaPlayer2",
+                        "org.mpris.MediaPlayer2.Player",
+                        action,
+                    )
+                    .block_error("music", "failed to create D-Bus method call")?;
+                    self.dbus_conn
+                        .send(m)
+                        .block_error("music", "failed to call method via D-Bus")?;
+                } else {
+                    if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
+                        let command = self.on_collapsed_click.as_ref().unwrap();
+                        spawn_child_async("sh", &["-c", command])
                             .block_error("music", "could not spawn child")?;
+                    } else if event.matches_name(self.id()) {
+                        if let Some(ref cmd) = self.on_click {
+                            spawn_child_async("sh", &["-c", cmd])
+                                .block_error("music", "could not spawn child")?;
+                        }
                     }
                 }
-                Ok(())
             }
-        } else {
-            Ok(())
         }
+        Ok(())
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
