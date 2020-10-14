@@ -1,6 +1,10 @@
+use std::convert::TryInto;
 use std::time::Duration;
 
-use chrono::offset::{Local, Utc};
+use chrono::{
+    offset::{Local, Utc},
+    Locale,
+};
 use chrono_tz::Tz;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -8,7 +12,7 @@ use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
-use crate::de::{deserialize_duration, deserialize_timezone};
+use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
@@ -23,6 +27,7 @@ pub struct Time {
     format: String,
     on_click: Option<String>,
     timezone: Option<Tz>,
+    locale: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -42,11 +47,11 @@ pub struct TimeConfig {
     #[serde(default = "TimeConfig::default_on_click")]
     pub on_click: Option<String>,
 
-    #[serde(
-        default = "TimeConfig::default_timezone",
-        deserialize_with = "deserialize_timezone"
-    )]
+    #[serde(default = "TimeConfig::default_timezone")]
     pub timezone: Option<Tz>,
+
+    #[serde(default = "TimeConfig::default_locale")]
+    pub locale: Option<String>,
 }
 
 impl TimeConfig {
@@ -63,6 +68,10 @@ impl TimeConfig {
     }
 
     fn default_timezone() -> Option<Tz> {
+        None
+    }
+
+    fn default_locale() -> Option<String> {
         None
     }
 }
@@ -85,15 +94,30 @@ impl ConfigBlock for Time {
             update_interval: block_config.interval,
             on_click: block_config.on_click,
             timezone: block_config.timezone,
+            locale: block_config.locale,
         })
     }
 }
 
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Update>> {
-        let time = match self.timezone {
-            Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
-            None => Local::now().format(&self.format),
+        let time = match &self.locale {
+            Some(l) => {
+                let locale: Locale = l
+                    .as_str()
+                    .try_into()
+                    .block_error("time", "invalid locale")?;
+                match self.timezone {
+                    Some(tz) => Utc::now()
+                        .with_timezone(&tz)
+                        .format_localized(&self.format, locale),
+                    None => Local::now().format_localized(&self.format, locale),
+                }
+            }
+            None => match self.timezone {
+                Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
+                None => Local::now().format(&self.format),
+            },
         };
         self.time.set_text(format!("{}", time));
         Ok(Some(self.update_interval.into()))
