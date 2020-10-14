@@ -16,8 +16,6 @@ pulseaudio = ["libpulse-binding"]
 profiling = ["cpuprofiler", "progress"]
 
 [dependencies]
-chrono = "0.4"
-chrono-tz = "0.5"
 crossbeam-channel = "0.4"
 dbus = "0.8"
 lazy_static = "1.0"
@@ -37,6 +35,14 @@ notmuch = { optional = true, version = "0.6.0" }
 # Used only in debug build for profiling blocks
 cpuprofiler = { version = "0.0.4", optional = true }
 progress = { version = "0.2", optional = true }
+
+[dependencies.chrono]
+version = "0.4"
+features = ["unstable-locales"]
+
+[dependencies.chrono-tz]
+version = "0.5"
+features = ["serde"]
 
 [dependencies.clap]
 version = "2.31"

@@ -1211,6 +1211,7 @@ block = "time"
 format = "%a %d/%m %R"
 timezone = "US/Pacific"
 interval = 60
+locale = "fr_BE"
 ```
 
 ### Options
@@ -1221,6 +1222,8 @@ Key | Values | Required | Default
 `on_click` | Shell command to run when the time block is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `5`
 `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | No | Local timezone
+`locale` | Locale to apply when formatting the time | No | System locale
+
 
 ## Toggle
 
