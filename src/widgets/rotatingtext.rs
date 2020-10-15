@@ -4,7 +4,7 @@ use serde_json::value::Value;
 
 use crate::config::Config;
 use crate::errors::*;
-use crate::widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, Spacing, State};
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {
@@ -17,6 +17,7 @@ pub struct RotatingTextWidget {
     content: String,
     icon: Option<String>,
     state: State,
+    spacing: Spacing,
     id: String,
     rendered: Value,
     cached_output: Option<String>,
@@ -44,6 +45,7 @@ impl RotatingTextWidget {
             content: String::new(),
             icon: None,
             state: State::Idle,
+            spacing: Spacing::Normal,
             id: String::from(id),
             rendered: json!({
                 "full_text": "",
@@ -66,6 +68,12 @@ impl RotatingTextWidget {
 
     pub fn with_state(mut self, state: State) -> Self {
         self.state = state;
+        self.update();
+        self
+    }
+
+    pub fn with_spacing(mut self, spacing: Spacing) -> Self {
+        self.spacing = spacing;
         self.update();
         self
     }
@@ -138,12 +146,19 @@ impl RotatingTextWidget {
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
-        let icon = self.icon.clone().unwrap_or_else(|| String::from(" "));
+        let icon = self.icon.clone().unwrap_or_else(|| match self.spacing {
+            Spacing::Normal => String::from(" "),
+            _ => String::from(""),
+        });
 
         self.rendered = json!({
-            "full_text": format!("{}{} ",
+            "full_text": format!("{}{}{}",
                                 icon,
-                                self.get_rotated_content()),
+                                self.get_rotated_content(),
+                                match self.spacing {
+                                    Spacing::Hidden => String::from(""),
+                                    _ => String::from(" ")
+                                }),
             "separator": false,
             "separator_block_width": 0,
             "min_width":
