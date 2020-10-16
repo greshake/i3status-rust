@@ -841,7 +841,7 @@ impl Block for Net {
         let is_up = self.device.is_up()?;
         if !exists || !is_up {
             self.active = false;
-            self.network.set_text(" ×".to_string());
+            self.network.set_text("×".to_string());
             if let Some(ref mut tx) = self.output_tx {
                 *tx = "×".to_string();
             };
