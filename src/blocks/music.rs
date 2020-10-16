@@ -15,7 +15,7 @@ use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
-use crate::config::Config;
+use crate::config::{Config, LogicalDirection};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
@@ -42,6 +42,8 @@ pub struct Music {
     smart_trim: bool,
     max_width: usize,
     separator: String,
+    seek_step: i64,
+    config: Config,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -95,6 +97,10 @@ pub struct MusicConfig {
 
     #[serde(default = "MusicConfig::default_on_click")]
     pub on_click: Option<String>,
+
+    // Number of microseconds to seek forward/backward when scrolling on the bar.
+    #[serde(default = "MusicConfig::default_seek_step")]
+    pub seek_step: i64,
 }
 
 impl MusicConfig {
@@ -136,6 +142,10 @@ impl MusicConfig {
 
     fn default_on_click() -> Option<String> {
         None
+    }
+
+    fn default_seek_step() -> i64 {
+        1000
     }
 }
 
@@ -215,7 +225,7 @@ impl ConfigBlock for Music {
             play,
             next,
             on_click: block_config.on_click,
-            on_collapsed_click_widget: ButtonWidget::new(config, "on_collapsed_click")
+            on_collapsed_click_widget: ButtonWidget::new(config.clone(), "on_collapsed_click")
                 .with_icon("music")
                 .with_state(State::Info),
             on_collapsed_click: block_config.on_collapsed_click,
@@ -235,6 +245,8 @@ impl ConfigBlock for Music {
             smart_trim: block_config.smart_trim,
             max_width: block_config.max_width,
             separator: block_config.separator,
+            seek_step: block_config.seek_step,
+            config,
         })
     }
 }
@@ -401,28 +413,55 @@ impl Block for Music {
                 "prev" => "Previous",
                 _ => "",
             };
-            if let MouseButton::Left = event.button {
-                if action != "" {
+
+            match event.button {
+                MouseButton::Left => {
+                    if action != "" {
+                        let m = Message::new_method_call(
+                            self.player.as_ref().unwrap(),
+                            "/org/mpris/MediaPlayer2",
+                            "org.mpris.MediaPlayer2.Player",
+                            action,
+                        )
+                        .block_error("music", "failed to create D-Bus method call")?;
+                        self.dbus_conn
+                            .send(m)
+                            .block_error("music", "failed to call method via D-Bus")?;
+                    } else {
+                        if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
+                            let command = self.on_collapsed_click.as_ref().unwrap();
+                            spawn_child_async("sh", &["-c", command])
+                                .block_error("music", "could not spawn child")?;
+                        } else if event.matches_name(self.id()) {
+                            if let Some(ref cmd) = self.on_click {
+                                spawn_child_async("sh", &["-c", cmd])
+                                    .block_error("music", "could not spawn child")?;
+                            }
+                        }
+                    }
+                }
+                _ => {
                     let m = Message::new_method_call(
                         self.player.as_ref().unwrap(),
                         "/org/mpris/MediaPlayer2",
                         "org.mpris.MediaPlayer2.Player",
-                        action,
+                        "Seek",
                     )
                     .block_error("music", "failed to create D-Bus method call")?;
-                    self.dbus_conn
-                        .send(m)
-                        .block_error("music", "failed to call method via D-Bus")?;
-                } else {
-                    if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
-                        let command = self.on_collapsed_click.as_ref().unwrap();
-                        spawn_child_async("sh", &["-c", command])
-                            .block_error("music", "could not spawn child")?;
-                    } else if event.matches_name(self.id()) {
-                        if let Some(ref cmd) = self.on_click {
-                            spawn_child_async("sh", &["-c", cmd])
-                                .block_error("music", "could not spawn child")?;
+
+                    use LogicalDirection::*;
+                    match self.config.scrolling.to_logical_direction(event.button) {
+                        Some(Up) => {
+                            self.dbus_conn
+                                .send(m.append1(self.seek_step * 1000))
+                                .block_error("music", "failed to call method via D-Bus")?;
                         }
+                        Some(Down) => {
+                            self.dbus_conn
+                                .send(m.append1(self.seek_step * -1000))
+                                .block_error("music", "failed to call method via D-Bus")?;
+                        }
+                        None => {}
                     }
                 }
             }
