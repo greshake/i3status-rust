@@ -753,6 +753,7 @@ Key | Values | Required | Default
 `buttons` | Array of control buttons to be displayed. Options are prev (previous title), play (play/pause) and next (next title) | No | `[]`
 `on_collapsed_click` | Command to run when the block is clicked while collapsed. | No | None
 `on_click` | Command to run when the block is clicked while not collapsed. | No | None
+`seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`
 
 ## Net
 
