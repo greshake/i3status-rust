@@ -49,7 +49,7 @@ impl GraphWidget {
     where
         T: Ord + ToPrimitive,
     {
-        let bars = ["_", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
+        let bars = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
         let min: f64 = match min {
             Some(x) => x.to_f64().unwrap(),
             None => content.iter().min().unwrap().to_f64().unwrap(),
