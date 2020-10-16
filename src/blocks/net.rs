@@ -166,7 +166,13 @@ impl NetworkDevice {
     /// Queries the wireless SSID of this device, if it is connected to one.
     pub fn ssid(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
-        if !self.wireless || !up {
+        if !up {
+            return Ok(None);
+        }
+
+        // TODO: probably best to move this to where the block is
+        // first instantiated
+        if !self.wireless {
             return Err(BlockError(
                 "net".to_string(),
                 "SSIDs are only available for connected wireless devices.".to_string(),
@@ -178,7 +184,13 @@ impl NetworkDevice {
 
     fn absolute_signal_strength(&self) -> Result<Option<i32>> {
         let up = self.is_up()?;
-        if !self.wireless || !up {
+        if !up {
+            return Ok(None);
+        }
+
+        // TODO: probably best to move this to where the block is
+        // first instantiated
+        if !self.wireless {
             return Err(BlockError(
                 "net".to_string(),
                 "Signal strength is only available for connected wireless devices.".to_string(),
@@ -283,11 +295,9 @@ impl NetworkDevice {
     /// Queries the bitrate of this device
     pub fn bitrate(&self) -> Result<Option<String>> {
         let up = self.is_up()?;
+        // Doesn't really make sense to crash the bar here
         if !up {
-            return Err(BlockError(
-                "net".to_string(),
-                "Bitrate is only available for connected devices.".to_string(),
-            ));
+            return Ok(None);
         }
         if self.wireless {
             let bitrate_output = Command::new("iw")
