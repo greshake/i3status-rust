@@ -290,7 +290,7 @@ impl ConfigBlock for KDEConnect {
                     },
                 );
 
-                let _notification_added_handler = p.match_signal(
+                let _notification_removed_handler = p.match_signal(
                     move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationRemoved,
                           _: &Connection,
                           _: &Message| {
