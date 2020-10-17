@@ -1,4 +1,5 @@
 use std::boxed::Box;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -35,9 +36,9 @@ pub struct Music {
     on_collapsed_click: Option<String>,
     on_click: Option<String>,
     dbus_conn: Connection,
-    player_avail: bool,
     marquee: bool,
-    player: Option<String>,
+    player: Arc<Mutex<Option<String>>>,
+    player_avail: Arc<Mutex<bool>>,
     auto_discover: bool,
     smart_trim: bool,
     max_width: usize,
@@ -156,6 +157,8 @@ impl ConfigBlock for Music {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
         let id_copy2 = id.clone();
+        let id_copy3 = id.clone();
+        let send2 = send.clone();
 
         thread::Builder::new().name("music".into()).spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
@@ -169,6 +172,47 @@ impl ConfigBlock for Music {
                             update_time: Instant::now(),
                         })
                         .unwrap();
+                    }
+                }
+            }
+        }).unwrap();
+
+        let player_busname = Arc::new(Mutex::new(if block_config.player.is_none() {
+            block_config.player.clone()
+        } else {
+            Some(format!(
+                "org.mpris.MediaPlayer2.{}",
+                block_config.player.clone().unwrap()
+            ))
+        }));
+        let player_avail = Arc::new(Mutex::new(false));
+        let player_busname_copy = player_busname.clone();
+        let player_avail_copy = player_avail.clone();
+        // Some players do not seem to update their Metadata on close which leads to the block showing old info.
+        // To fix this we will the bus to see when players have disappeared so that we can schedule a block update.
+        thread::Builder::new().name("music".into()).spawn(move || {
+            let c = Connection::get_private(BusType::Session).unwrap();
+            c.add_match("interface='org.freedesktop.DBus',member='NameOwnerChanged',path='/org/freedesktop/DBus'")
+                .unwrap();
+            // Skip the NameAcquired event.
+            c.incoming(10_000).next();
+            loop {
+                for ci in c.iter(100_000) {
+                    if let ConnectionItem::Signal(x) = ci {
+                         let (name, old_owner, new_owner): (&str, &str, &str) = x.read3().unwrap();
+                         let player_busname = &*player_busname_copy.lock().unwrap();
+                         if let Some(n) = player_busname {
+                             // If the current player has no new owner on the bus, it means it has gone.
+                             if (n == name) && !old_owner.is_empty() && new_owner.is_empty() {
+                                 let mut player_avail = player_avail_copy.lock().unwrap();
+                             	                            *player_avail = false;
+                                 send2.send(Task {
+                                     id: id_copy.clone(),
+                                     update_time: Instant::now(),
+                                 })
+                                  .unwrap();
+                             	}
+                             }
                     }
                 }
             }
@@ -210,14 +254,14 @@ impl ConfigBlock for Music {
         }
 
         Ok(Music {
-            id: id_copy,
+            id: id_copy2,
             current_song: RotatingTextWidget::new(
                 Duration::new(block_config.marquee_interval.as_secs(), 0),
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
                 block_config.dynamic_width,
                 config.clone(),
-                &id_copy2,
+                &id_copy3,
             )
             .with_icon("music")
             .with_state(State::Info),
@@ -231,16 +275,9 @@ impl ConfigBlock for Music {
             on_collapsed_click: block_config.on_collapsed_click,
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,
-            player_avail: false,
+            player_avail: player_avail,
             auto_discover: block_config.player.is_none(),
-            player: if block_config.player.is_none() {
-                block_config.player
-            } else {
-                Some(format!(
-                    "org.mpris.MediaPlayer2.{}",
-                    block_config.player.unwrap()
-                ))
-            },
+            player: player_busname,
             marquee: block_config.marquee,
             smart_trim: block_config.smart_trim,
             max_width: block_config.max_width,
@@ -257,20 +294,28 @@ impl Block for Music {
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
+        let mut player = self
+            .player
+            .lock()
+            .block_error("music", "failed to acquire lock for `player`")?;
+
+        let mut player_avail = self
+            .player_avail
+            .lock()
+            .block_error("music", "failed to acquire lock for `player_avail`")?;
+
         let (rotated, next) = if self.marquee {
             self.current_song.next()?
         } else {
             (false, None)
         };
-        if !rotated && self.player.is_none() {
-            self.player = get_first_available_player(&self.dbus_conn)
+        if !rotated && player.is_none() {
+            *player = get_first_available_player(&self.dbus_conn)
         }
-        if !(rotated || self.player.is_none()) {
-            let c = self.dbus_conn.with_path(
-                self.player.clone().unwrap(),
-                "/org/mpris/MediaPlayer2",
-                1000,
-            );
+        if !(rotated || player.is_none()) {
+            let c =
+                self.dbus_conn
+                    .with_path(player.clone().unwrap(), "/org/mpris/MediaPlayer2", 1000);
             let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
             if let Ok(metadata) = data {
@@ -278,10 +323,10 @@ impl Block for Music {
                     extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
                 if title.is_empty() && artist.is_empty() {
-                    self.player_avail = false;
+                    *player_avail = false;
                     self.current_song.set_text(String::new());
                 } else {
-                    self.player_avail = true;
+                    *player_avail = true;
 
                     let textlen = title.chars().count()
                         + self.separator.chars().count()
@@ -377,9 +422,9 @@ impl Block for Music {
                 }
             } else {
                 self.current_song.set_text(String::from(""));
-                self.player_avail = false;
+                *player_avail = false;
                 if self.auto_discover {
-                    self.player = None;
+                    *player = None;
                 }
             }
 
@@ -407,6 +452,11 @@ impl Block for Music {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
+            let player = &*self
+                .player
+                .lock()
+                .block_error("music", "failed to acquire lock for `player`")?;
+
             let action = match name as &str {
                 "play" => "PlayPause",
                 "next" => "Next",
@@ -418,7 +468,7 @@ impl Block for Music {
                 MouseButton::Left => {
                     if action != "" {
                         let m = Message::new_method_call(
-                            self.player.as_ref().unwrap(),
+                            player.as_ref().unwrap(),
                             "/org/mpris/MediaPlayer2",
                             "org.mpris.MediaPlayer2.Player",
                             action,
@@ -442,7 +492,7 @@ impl Block for Music {
                 }
                 _ => {
                     let m = Message::new_method_call(
-                        self.player.as_ref().unwrap(),
+                        player.as_ref().unwrap(),
                         "/org/mpris/MediaPlayer2",
                         "org.mpris.MediaPlayer2.Player",
                         "Seek",
@@ -470,7 +520,9 @@ impl Block for Music {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if self.player_avail {
+        let player_avail = *self.player_avail.lock().unwrap();
+
+        if player_avail {
             let mut elements: Vec<&dyn I3BarWidget> = Vec::new();
             elements.push(&self.current_song);
             if let Some(ref prev) = self.prev {
