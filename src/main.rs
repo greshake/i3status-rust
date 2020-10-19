@@ -267,6 +267,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         for block in block_map.values_mut() {
                             block.update()?;
                         }
+                        util::print_blocks(&order, &block_map, &config)?;
                     },
                     signal_hook::SIGUSR2 => {
                         //USR2 signal that should reload the config
@@ -281,7 +282,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         }
                     },
                 };
-                util::print_blocks(&order, &block_map, &config)?;
             }
         }
 
