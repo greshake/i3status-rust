@@ -265,7 +265,8 @@ impl NetworkDevice {
             .flat_map(|dev| &dev.addr_info)
             .filter_map(|addr| addr.local.clone())
             .next();
-        ip.block_error("net", "Malformed JSON.").map(Some)
+        ip.block_error("net", &format!("Malformed JSON: {}", output))
+            .map(Some)
     }
 
     /// Queries the inet IPv6 of this device (using `ip`).
@@ -289,7 +290,8 @@ impl NetworkDevice {
             .flat_map(|dev| &dev.addr_info)
             .filter_map(|addr| addr.local.clone())
             .next();
-        ip.block_error("net", "Malformed JSON.").map(Some)
+        ip.block_error("net", &format!("Malformed JSON: {}", output))
+            .map(Some)
     }
 
     /// Queries the bitrate of this device
