@@ -1,8 +1,8 @@
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use std::fmt;
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
@@ -330,16 +330,6 @@ impl Memory {
                 }),
         };
 
-        if_debug!({
-            let mut f = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("/tmp/i3log")
-                .block_error("memory", "can't open /tmp/i3log")?;
-            writeln!(f, "Inserted values: {:?}", values)
-                .block_error("memory", "failed to write to /tmp/i3log")?;
-        });
-
         Ok(match self.memtype {
             Memtype::Memory => self.format.0.render_static_str(&values)?,
             Memtype::Swap => self.format.1.render_static_str(&values)?,
@@ -398,16 +388,6 @@ impl Block for Memory {
         let mut mem_state = Memstate::new();
 
         for line in f.lines() {
-            if_debug!({
-                let mut f = OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open("/tmp/i3log")
-                    .block_error("memory", "can't open /tmp/i3log")?;
-                writeln!(f, "Updated: {:?}", mem_state)
-                    .block_error("memory", "failed to write to /tmp/i3log")?;
-            });
-
             // stop reading if all values are already present
             if mem_state.done() {
                 break;
@@ -494,29 +474,10 @@ impl Block for Memory {
             Memtype::Swap => self.output.1.set_text(output_text),
         }
 
-        if_debug!({
-            let mut f = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("/tmp/i3log")
-                .block_error("memory", "failed to open /tmp/i3log")?;
-            writeln!(f, "Updated: {:?}", self)
-                .block_error("memory", "failed to write to /tmp/i3log")?;
-        });
         Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if_debug!({
-            let mut f = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("/tmp/i3log")
-                .block_error("memory", "failed to open /tmp/i3log")?;
-            writeln!(f, "Click received: {:?}", event)
-                .block_error("memory", "failed to write to /tmp/i3log")?;
-        });
-
         if let Some(ref s) = event.name {
             if self.clickable && event.button == MouseButton::Left && *s == "memory" {
                 self.switch();
