@@ -8,6 +8,16 @@ use serde_json::value::Value;
 use crate::themes::Theme;
 
 #[derive(Debug, Copy, Clone, Deserialize)]
+pub enum Spacing {
+    /// Add a leading and trailing space around the widget contents
+    Normal,
+    /// Hide the leading space when the widget is inline
+    Inline,
+    /// Hide both leading and trailing spaces when widget is hidden
+    Hidden,
+}
+
+#[derive(Debug, Copy, Clone, Deserialize)]
 pub enum State {
     Idle,
     Info,

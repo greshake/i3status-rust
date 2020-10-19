@@ -12,7 +12,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
 
@@ -182,7 +182,9 @@ impl ConfigBlock for NvidiaGpu {
             gpu_enabled: false,
             gpu_id: block_config.gpu_id,
 
-            name_widget: ButtonWidget::new(config.clone(), &id).with_icon("gpu"),
+            name_widget: ButtonWidget::new(config.clone(), &id)
+                .with_icon("gpu")
+                .with_spacing(Spacing::Inline),
             name_widget_mode: if block_config.label.is_some() {
                 NameWidgetMode::ShowLabel
             } else {
@@ -195,26 +197,26 @@ impl ConfigBlock for NvidiaGpu {
             },
 
             show_memory: if block_config.show_memory {
-                Some(ButtonWidget::new(config.clone(), &id_memory))
+                Some(ButtonWidget::new(config.clone(), &id_memory).with_spacing(Spacing::Inline))
             } else {
                 None
             },
             memory_widget_mode: MemoryWidgetMode::ShowUsedMemory,
 
             show_utilization: if block_config.show_utilization {
-                Some(TextWidget::new(config.clone()))
+                Some(TextWidget::new(config.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_temperature: if block_config.show_temperature {
-                Some(TextWidget::new(config.clone()))
+                Some(TextWidget::new(config.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_fan: if block_config.show_fan_speed {
-                Some(ButtonWidget::new(config.clone(), &id_fans))
+                Some(ButtonWidget::new(config.clone(), &id_fans).with_spacing(Spacing::Inline))
             } else {
                 None
             },
@@ -223,7 +225,7 @@ impl ConfigBlock for NvidiaGpu {
             scrolling: config.scrolling,
 
             show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(config.clone()))
+                Some(TextWidget::new(config.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
@@ -293,8 +295,16 @@ impl Block for NvidiaGpu {
             let memory_total = result[1].to_string();
 
             match self.name_widget_mode {
-                NameWidgetMode::ShowDefaultName => self.name_widget.set_text(gpu_name.to_string()),
+                NameWidgetMode::ShowDefaultName => {
+                    self.name_widget.set_text(gpu_name.to_string());
+                    self.name_widget.set_spacing(Spacing::Inline);
+                }
                 NameWidgetMode::ShowLabel => {
+                    if self.label.is_empty() {
+                        self.name_widget.set_spacing(Spacing::Hidden);
+                    } else {
+                        self.name_widget.set_spacing(Spacing::Inline);
+                    }
                     self.name_widget.set_text(self.label.to_string());
                 }
             }

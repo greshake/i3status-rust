@@ -24,7 +24,7 @@ use crate::subprocess::spawn_child_async;
 use crate::util::{
     escape_pango_text, format_percent_bar, format_speed, format_vec_to_bar_graph, FormatTemplate,
 };
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, Spacing};
 use crate::widgets::button::ButtonWidget;
 
 lazy_static! {
@@ -606,7 +606,9 @@ impl ConfigBlock for Net {
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&format)
                 .block_error("net", "Invalid format specified")?,
-            output: ButtonWidget::new(config.clone(), "").with_text(""),
+            output: ButtonWidget::new(config.clone(), "")
+                .with_text("")
+                .with_spacing(Spacing::Inline),
             config: config.clone(),
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,

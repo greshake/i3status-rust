@@ -14,7 +14,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Temperature {
@@ -124,7 +124,13 @@ impl ConfigBlock for Temperature {
         let id = Uuid::new_v4().to_simple().to_string();
         Ok(Temperature {
             update_interval: block_config.interval,
-            text: ButtonWidget::new(config, &id).with_icon("thermometer"),
+            text: ButtonWidget::new(config, &id)
+                .with_icon("thermometer")
+                .with_spacing(if block_config.collapsed {
+                    Spacing::Hidden
+                } else {
+                    Spacing::Normal
+                }),
             output: String::new(),
             collapsed: block_config.collapsed,
             id,
@@ -232,8 +238,10 @@ impl Block for Temperature {
                 self.collapsed = !self.collapsed;
                 if self.collapsed {
                     self.text.set_text(String::new());
+                    self.text.set_spacing(Spacing::Hidden);
                 } else {
                     self.text.set_text(self.output.clone());
+                    self.text.set_spacing(Spacing::Normal);
                 }
             }
         }
