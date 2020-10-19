@@ -108,6 +108,11 @@ impl ConfigBlock for Custom {
             custom.on_click = Some(on_click)
         };
 
+        if let Some(signal) = block_config.signal {
+            // If the signal is not in the valid range we return an error
+            custom.signal = Some(convert_to_valid_signal(signal)?);
+        };
+
         if let Some(cycle) = block_config.cycle {
             custom.cycle = Some(cycle.into_iter().cycle().peekable());
             return Ok(custom);
@@ -115,11 +120,6 @@ impl ConfigBlock for Custom {
 
         if let Some(command) = block_config.command {
             custom.command = Some(command)
-        };
-
-        if let Some(signal) = block_config.signal {
-            // If the signal is not in the valid range we return an error
-            custom.signal = Some(convert_to_valid_signal(signal)?);
         };
 
         Ok(custom)
