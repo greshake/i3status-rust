@@ -1,4 +1,5 @@
 use std::boxed::Box;
+use std::result;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -10,6 +11,7 @@ use dbus::{
     ffidisp::{BusType, Connection, ConnectionItem},
     Message,
 };
+use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -44,6 +46,7 @@ pub struct Music {
     separator: String,
     seek_step: i64,
     config: Config,
+    interface_name_exclude_regexps: Vec<Regex>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -101,6 +104,10 @@ pub struct MusicConfig {
     // Number of microseconds to seek forward/backward when scrolling on the bar.
     #[serde(default = "MusicConfig::default_seek_step")]
     pub seek_step: i64,
+
+    /// MPRIS interface name regex patterns to ignore.
+    #[serde(default = "MusicConfig::default_interface_name_exclude_patterns")]
+    pub interface_name_exclude: Vec<String>,
 }
 
 impl MusicConfig {
@@ -146,6 +153,10 @@ impl MusicConfig {
 
     fn default_seek_step() -> i64 {
         1000
+    }
+
+    fn default_interface_name_exclude_patterns() -> Vec<String> {
+        vec![]
     }
 }
 
@@ -209,6 +220,10 @@ impl ConfigBlock for Music {
             };
         }
 
+        fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
+            patterns.iter().map(|p| Regex::new(&p)).collect()
+        }
+
         Ok(Music {
             id: id_copy,
             current_song: RotatingTextWidget::new(
@@ -247,6 +262,8 @@ impl ConfigBlock for Music {
             separator: block_config.separator,
             seek_step: block_config.seek_step,
             config,
+            interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
+                .block_error("music", "failed to parse exclude patterns")?,
         })
     }
 }
@@ -263,7 +280,8 @@ impl Block for Music {
             (false, None)
         };
         if !rotated && self.player.is_none() {
-            self.player = get_first_available_player(&self.dbus_conn)
+            self.player =
+                get_first_available_player(&self.dbus_conn, &self.interface_name_exclude_regexps)
         }
         if !(rotated || self.player.is_none()) {
             let c = self.dbus_conn.with_path(
@@ -536,7 +554,10 @@ fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, Str
     Ok((title, artist))
 }
 
-fn get_first_available_player(connection: &Connection) -> Option<String> {
+fn get_first_available_player(
+    connection: &Connection,
+    interface_name_exclude_regexps: &Vec<Regex>,
+) -> Option<String> {
     let m = Message::new_method_call(
         "org.freedesktop.DBus",
         "/",
@@ -546,8 +567,26 @@ fn get_first_available_player(connection: &Connection) -> Option<String> {
     .unwrap();
     let r = connection.send_with_reply_and_block(m, 2000).unwrap();
     // ListNames returns one argument, which is an array of strings.
-    let mut arr: Array<&str, _> = r.get1().unwrap();
-    if let Some(name) = arr.find(|entry| entry.starts_with("org.mpris.MediaPlayer2")) {
+    let arr: Array<&str, _> = r.get1().unwrap();
+    let mut names = Vec::new();
+    for name in arr {
+        // If an interface matches an exclude pattern, ignore it
+        if interface_name_exclude_regexps
+            .iter()
+            .any(|regex| regex.is_match(&name))
+        {
+            continue;
+        }
+
+        if name.starts_with("org.mpris.MediaPlayer2") {
+            names.push(String::from(name));
+        }
+    }
+
+    if let Some(name) = names
+        .iter()
+        .find(|entry| entry.starts_with("org.mpris.MediaPlayer2"))
+    {
         Some(String::from(name))
     } else {
         None
