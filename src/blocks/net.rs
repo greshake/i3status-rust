@@ -886,8 +886,7 @@ impl Block for Net {
                 .icons
                 .get("net_up")
                 .cloned()
-                .unwrap_or_else(|| "".to_string())
-                .trim_start(),
+                .unwrap_or_else(|| "".to_string()),
             self.output_tx.as_ref().unwrap_or(&empty_string)
         );
         let s_dn = format!(
@@ -896,8 +895,7 @@ impl Block for Net {
                 .icons
                 .get("net_down")
                 .cloned()
-                .unwrap_or_else(|| "".to_string())
-                .trim_start(),
+                .unwrap_or_else(|| "".to_string()),
             self.output_rx.as_ref().unwrap_or(&empty_string)
         );
 
