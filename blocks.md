@@ -1186,10 +1186,11 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `5`
 `collapsed` | Whether the block will be collapsed by default. | No | `true`
-`good` | Maximum temperature to set state to good. | No | `20`
-`idle` | Maximum temperature to set state to idle. | No | `45`
-`info` | Maximum temperature to set state to info. | No | `60`
-`warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80`
+`scale` | Either `celsius` or `fahrenheit` | No | `celsius`
+`good` | Maximum temperature to set state to good. | No | `20` °C (`68` °F)
+`idle` | Maximum temperature to set state to idle. | No | `45` °C (`113` °F)
+`info` | Maximum temperature to set state to info. | No | `60` °C (`140` °F)
+`warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
 `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
 `inputs` | Narrows the results to individual inputs reported by each chip. | No | None
 `format` | Format string. | No | `"{average}° avg, {max}° max"`
