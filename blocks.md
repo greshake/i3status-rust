@@ -756,6 +756,8 @@ Key | Values | Required | Default
 `on_collapsed_click` | Command to run when the block is clicked while collapsed. | No | None
 `on_click` | Command to run when the block is clicked while not collapsed. | No | None
 `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`
+`hide_when_empty` | Hides the block when there is no player available. | No | `false`
+
 
 ## Net
 
