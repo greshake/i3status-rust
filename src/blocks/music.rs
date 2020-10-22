@@ -47,6 +47,7 @@ pub struct Music {
     seek_step: i64,
     config: Config,
     interface_name_exclude_regexps: Vec<Regex>,
+    hide_when_empty: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -108,6 +109,9 @@ pub struct MusicConfig {
     /// MPRIS interface name regex patterns to ignore.
     #[serde(default = "MusicConfig::default_interface_name_exclude_patterns")]
     pub interface_name_exclude: Vec<String>,
+
+    #[serde(default = "MusicConfig::default_hide_when_empty")]
+    pub hide_when_empty: bool,
 }
 
 impl MusicConfig {
@@ -157,6 +161,10 @@ impl MusicConfig {
 
     fn default_interface_name_exclude_patterns() -> Vec<String> {
         vec![]
+    }
+
+    fn default_hide_when_empty() -> bool {
+        false
     }
 }
 
@@ -264,6 +272,7 @@ impl ConfigBlock for Music {
             config,
             interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
                 .block_error("music", "failed to parse exclude patterns")?,
+            hide_when_empty: block_config.hide_when_empty,
         })
     }
 }
@@ -488,7 +497,9 @@ impl Block for Music {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if self.player_avail {
+        if !self.player_avail && self.hide_when_empty {
+            vec![]
+        } else if self.player_avail {
             let mut elements: Vec<&dyn I3BarWidget> = Vec::new();
             elements.push(&self.current_song);
             if let Some(ref prev) = self.prev {
