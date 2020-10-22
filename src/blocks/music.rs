@@ -468,27 +468,29 @@ impl Block for Music {
                     }
                 }
                 _ => {
-                    let m = Message::new_method_call(
-                        self.player.as_ref().unwrap(),
-                        "/org/mpris/MediaPlayer2",
-                        "org.mpris.MediaPlayer2.Player",
-                        "Seek",
-                    )
-                    .block_error("music", "failed to create D-Bus method call")?;
+                    if name.as_str() == self.id {
+                        let m = Message::new_method_call(
+                            self.player.as_ref().unwrap(),
+                            "/org/mpris/MediaPlayer2",
+                            "org.mpris.MediaPlayer2.Player",
+                            "Seek",
+                        )
+                        .block_error("music", "failed to create D-Bus method call")?;
 
-                    use LogicalDirection::*;
-                    match self.config.scrolling.to_logical_direction(event.button) {
-                        Some(Up) => {
-                            self.dbus_conn
-                                .send(m.append1(self.seek_step * 1000))
-                                .block_error("music", "failed to call method via D-Bus")?;
+                        use LogicalDirection::*;
+                        match self.config.scrolling.to_logical_direction(event.button) {
+                            Some(Up) => {
+                                self.dbus_conn
+                                    .send(m.append1(self.seek_step * 1000))
+                                    .block_error("music", "failed to call method via D-Bus")?;
+                            }
+                            Some(Down) => {
+                                self.dbus_conn
+                                    .send(m.append1(self.seek_step * -1000))
+                                    .block_error("music", "failed to call method via D-Bus")?;
+                            }
+                            None => {}
                         }
-                        Some(Down) => {
-                            self.dbus_conn
-                                .send(m.append1(self.seek_step * -1000))
-                                .block_error("music", "failed to call method via D-Bus")?;
-                        }
-                        None => {}
                     }
                 }
             }
