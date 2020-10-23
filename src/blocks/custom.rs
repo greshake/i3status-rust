@@ -113,6 +113,13 @@ impl ConfigBlock for Custom {
             custom.signal = Some(convert_to_valid_signal(signal)?);
         };
 
+        if block_config.cycle.is_some() && block_config.command.is_some() {
+            return Err(BlockError(
+                "custom".to_string(),
+                "`command` and `cycle` are mutually exclusive".to_string(),
+            ));
+        }
+
         if let Some(cycle) = block_config.cycle {
             custom.cycle = Some(cycle.into_iter().cycle().peekable());
             return Ok(custom);
