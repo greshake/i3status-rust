@@ -868,7 +868,6 @@ impl Block for Net {
             return Ok(Some(self.update_interval.into()));
         }
 
-        self.active = true;
         self.network.set_text("".to_string());
 
         // Update SSID and IP address every 30s and the bitrate every 10s
