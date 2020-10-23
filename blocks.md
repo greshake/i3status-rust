@@ -790,8 +790,8 @@ Key | Values | Required | Default
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. Note: the update interval for SSID and IP address is fixed at 30 seconds, and bitrate fixed at 10 seconds. | No | `1`
-`hide_missing` | Whether to hide networks that are missing. | No | `false`
-`hide_inactive` | Whether to hide networks that are down/inactive completely. | No | `false`
+`hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
+`hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
 
 ### Format String
 Placeholder | Description

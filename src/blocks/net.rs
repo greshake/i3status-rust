@@ -367,6 +367,7 @@ pub struct Net {
     speed_min_unit: Unit,
     speed_digits: usize,
     active: bool,
+    exists: bool,
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
@@ -667,6 +668,7 @@ impl ConfigBlock for Net {
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
             active: true,
+            exists: true,
             hide_inactive: block_config.hide_inactive,
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
@@ -851,10 +853,10 @@ impl Block for Net {
         self.update_device();
 
         // skip updating if device is not up.
-        let exists = self.device.exists()?;
-        let is_up = self.device.is_up()?;
-        if !exists || !is_up {
-            self.active = false;
+        self.exists = self.device.exists()?;
+        self.active = self.exists && self.device.is_up()?;
+        if !self.active {
+
             self.network.set_text("×".to_string());
             if let Some(ref mut tx) = self.output_tx {
                 *tx = "×".to_string();
@@ -866,7 +868,6 @@ impl Block for Net {
             return Ok(Some(self.update_interval.into()));
         }
 
-        self.active = true;
         self.network.set_text("".to_string());
 
         // Update SSID and IP address every 30s and the bitrate every 10s
@@ -925,10 +926,10 @@ impl Block for Net {
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         if self.active {
             vec![&self.network, &self.output]
-        } else if !self.hide_inactive || !self.hide_missing {
-            vec![&self.network]
-        } else {
+        } else if self.hide_inactive || !self.exists && self.hide_missing {
             vec![]
+        } else {
+            vec![&self.network]
         }
     }
 
