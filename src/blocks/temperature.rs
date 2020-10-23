@@ -17,12 +17,26 @@ use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum TemperatureScale {
+    Celsius,
+    Fahrenheit,
+}
+
+impl Default for TemperatureScale {
+    fn default() -> Self {
+        Self::Celsius
+    }
+}
+
 pub struct Temperature {
     text: ButtonWidget,
     output: String,
     collapsed: bool,
     id: String,
     update_interval: Duration,
+    scale: TemperatureScale,
     maximum_good: i64,
     maximum_idle: i64,
     maximum_info: i64,
@@ -46,21 +60,25 @@ pub struct TemperatureConfig {
     #[serde(default = "TemperatureConfig::default_collapsed")]
     pub collapsed: bool,
 
+    /// The temperature scale to use for display and thresholds
+    #[serde(default)]
+    pub scale: TemperatureScale,
+
     /// Maximum temperature, below which state is set to good
-    #[serde(default = "TemperatureConfig::default_good")]
-    pub good: i64,
+    #[serde(default)]
+    pub good: Option<i64>,
 
     /// Maximum temperature, below which state is set to idle
-    #[serde(default = "TemperatureConfig::default_idle")]
-    pub idle: i64,
+    #[serde(default)]
+    pub idle: Option<i64>,
 
     /// Maximum temperature, below which state is set to info
-    #[serde(default = "TemperatureConfig::default_info")]
-    pub info: i64,
+    #[serde(default)]
+    pub info: Option<i64>,
 
     /// Maximum temperature, below which state is set to warning
-    #[serde(default = "TemperatureConfig::default_warning")]
-    pub warning: i64,
+    #[serde(default)]
+    pub warning: Option<i64>,
 
     /// Format override
     #[serde(default = "TemperatureConfig::default_format")]
@@ -86,22 +104,6 @@ impl TemperatureConfig {
 
     fn default_collapsed() -> bool {
         true
-    }
-
-    fn default_good() -> i64 {
-        20
-    }
-
-    fn default_idle() -> i64 {
-        45
-    }
-
-    fn default_info() -> i64 {
-        60
-    }
-
-    fn default_warning() -> i64 {
-        80
     }
 
     fn default_chip() -> Option<String> {
@@ -134,10 +136,31 @@ impl ConfigBlock for Temperature {
             output: String::new(),
             collapsed: block_config.collapsed,
             id,
-            maximum_good: block_config.good,
-            maximum_idle: block_config.idle,
-            maximum_info: block_config.info,
-            maximum_warning: block_config.warning,
+            scale: block_config.scale,
+            maximum_good: block_config
+                .good
+                .unwrap_or_else(|| match block_config.scale {
+                    TemperatureScale::Celsius => 20,
+                    TemperatureScale::Fahrenheit => 68,
+                }),
+            maximum_idle: block_config
+                .idle
+                .unwrap_or_else(|| match block_config.scale {
+                    TemperatureScale::Celsius => 45,
+                    TemperatureScale::Fahrenheit => 113,
+                }),
+            maximum_info: block_config
+                .info
+                .unwrap_or_else(|| match block_config.scale {
+                    TemperatureScale::Celsius => 60,
+                    TemperatureScale::Fahrenheit => 140,
+                }),
+            maximum_warning: block_config
+                .warning
+                .unwrap_or_else(|| match block_config.scale {
+                    TemperatureScale::Celsius => 80,
+                    TemperatureScale::Fahrenheit => 176,
+                }),
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("temperature", "Invalid format specified for temperature")?,
             chip: block_config.chip,
@@ -152,6 +175,9 @@ type InputReadings = HashMap<String, f64>;
 impl Block for Temperature {
     fn update(&mut self) -> Result<Option<Update>> {
         let mut args = vec!["-j"];
+        if let TemperatureScale::Fahrenheit = self.scale {
+            args.push("-f");
+        }
         if let Some(ref chip) = &self.chip {
             args.push(chip);
         }
