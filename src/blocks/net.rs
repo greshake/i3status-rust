@@ -853,11 +853,9 @@ impl Block for Net {
         self.update_device();
 
         // skip updating if device is not up.
-        let exists = self.device.exists()?;
-        let is_up = self.device.is_up()?;
-        if !exists || !is_up {
-            self.active = false;
-            self.exists = exists;
+        self.exists = self.device.exists()?;
+        self.active = self.exists && self.device.is_up()?;
+        if !self.active {
 
             self.network.set_text("×".to_string());
             if let Some(ref mut tx) = self.output_tx {
