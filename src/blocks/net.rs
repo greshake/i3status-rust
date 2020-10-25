@@ -260,11 +260,17 @@ impl NetworkDevice {
 
         let ip_devs: Vec<IpDev> =
             serde_json::from_str(&output).block_error("net", "Failed to parse JSON response")?;
+
+        if ip_devs.len() == 0 {
+            return Ok(Some("".to_string()));
+        }
+
         let ip = ip_devs
             .iter()
             .flat_map(|dev| &dev.addr_info)
             .filter_map(|addr| addr.local.clone())
             .next();
+
         ip.block_error("net", &format!("Malformed JSON: {}", output))
             .map(Some)
     }
@@ -285,6 +291,11 @@ impl NetworkDevice {
 
         let ip_devs: Vec<IpDev> =
             serde_json::from_str(&output).block_error("net", "Failed to parse JSON response")?;
+
+        if ip_devs.len() == 0 {
+            return Ok(Some("".to_string()));
+        }
+
         let ip = ip_devs
             .iter()
             .flat_map(|dev| &dev.addr_info)
@@ -874,7 +885,23 @@ impl Block for Net {
         if now.duration_since(self.last_update).as_secs() % 10 == 0 {
             self.update_bitrate()?;
         }
-        if now.duration_since(self.last_update).as_secs() > 30 {
+
+        let waiting_for_ip = match self.ip_addr.as_deref() {
+            None => false,
+            Some("") => true,
+            Some(_) => false,
+        };
+
+        let waiting_for_ipv6 = match self.ipv6_addr.as_deref() {
+            None => false,
+            Some("") => true,
+            Some(_) => false,
+        };
+
+        if (now.duration_since(self.last_update).as_secs() > 30)
+            || waiting_for_ip
+            || waiting_for_ipv6
+        {
             self.update_ssid()?;
             self.update_signal_strength()?;
             self.update_ip_addr()?;
