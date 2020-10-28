@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::env;
 use std::fs::{read_dir, File};
 use std::io::prelude::*;
+use std::process::Command;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -300,6 +301,17 @@ fn get_ibus_address() -> Result<String> {
         return Ok(address);
     }
 
+    // This is the surefire way to get the current IBus address
+    if let Ok(address) = Command::new("ibus")
+        .args(&["address"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+    {
+        return Ok(address);
+    }
+
+    // If the above fails for some reason, then fallback to guessing the correct socket file
+    // TODO: possibly remove all this since if `ibus address` fails then something is wrong
     let socket_dir = xdg_config_home().join("ibus/bus");
     let socket_files: Vec<String> = read_dir(socket_dir.clone())
         .block_error("ibus", &format!("Could not open '{:?}'.", socket_dir))?
