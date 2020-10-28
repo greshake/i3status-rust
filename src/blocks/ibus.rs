@@ -78,8 +78,14 @@ impl ConfigBlock for IBus {
         )
         .unwrap();
         let r = c.send_with_reply_and_block(m, 2000).unwrap();
-        let mut arr: Array<&str, _> = r.get1().unwrap();
-        let running = if let Some(_) = arr.find(|entry| entry.starts_with("org.freedesktop.IBus")) {
+        let arr: Array<&str, _> = r.get1().unwrap();
+        // On my system after starting `ibus-daemon` I get `org.freedesktop.IBus`,
+        // `org.freedesktop.IBus.Panel.Extension.Gtk3` and `org.freedesktop.portal.IBus`.
+        // The last one comes up a while after the other two, and until then any calls to
+        // `GlobalEngine` result in a "No global engine" response.
+        // Hence the check below to see if there are 3 or more names on the bus with "IBus" in them.
+        // TODO: Possibly we only need to check for `org.freedesktop.portal.IBus`? Not sure atm.
+        let running = if arr.filter(|entry| entry.contains("IBus")).count() > 2 {
             true
         } else {
             false
@@ -99,7 +105,7 @@ impl ConfigBlock for IBus {
                 for ci in c.iter(100_000) {
                     if let ConnectionItem::Signal(x) = ci {
                     	let (name, old_owner, new_owner): (&str, &str, &str) = x.read3().unwrap();
-						if (name == "org.freedesktop.IBus") && !old_owner.is_empty() && new_owner.is_empty() {
+						if name.contains("IBus") && !old_owner.is_empty() && new_owner.is_empty() {
 							let (lock, cvar) = &*available_copy;
 							let mut available = lock.lock().unwrap();
 							*available = false;
@@ -111,7 +117,7 @@ impl ConfigBlock for IBus {
 								id: id_copy2.clone(),
 								update_time: Instant::now(),
 							}).unwrap();
-						} else if (name == "org.freedesktop.IBus") && old_owner.is_empty() && !new_owner.is_empty() {
+						} else if name.contains("IBus") && old_owner.is_empty() && !new_owner.is_empty() {
 							let (lock, cvar) = &*available_copy;
 							let mut available = lock.lock().unwrap();
 							*available = true;
