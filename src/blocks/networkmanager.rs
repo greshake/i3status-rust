@@ -1,7 +1,5 @@
-use std::ffi::OsStr;
 use std::fmt;
 use std::net::Ipv4Addr;
-use std::process::Command;
 use std::result;
 use std::thread;
 use std::time::Instant;
@@ -26,6 +24,7 @@ use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::subprocess::spawn_child_async;
 
 enum NetworkState {
     Unknown,
@@ -817,11 +816,8 @@ impl Block for NetworkManager {
             if name.as_str() == self.id {
                 if let MouseButton::Left = e.button {
                     if let Some(ref cmd) = self.on_click {
-                        let command_broken: Vec<&str> = cmd.split_whitespace().collect();
-                        let mut itr = command_broken.iter();
-                        let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                            .args(itr)
-                            .spawn();
+                        spawn_child_async("sh", &["-c", cmd])
+                            .block_error("networkmanager", "could not spawn child")?;
                     }
                 }
             }

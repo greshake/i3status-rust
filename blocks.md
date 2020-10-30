@@ -848,7 +848,7 @@ Key | Values | Required | Default
 `ap_format` | Acces point string formatter. See below for available placeholders. | No | `"{ssid}"`
 `device_format` | Device string formatter. See below for available placeholders. | No | `"{icon}{ap} {ips}"`
 `connection_format` | Connection string formatter. See below for available placeholders. | No | `"{devices}"`
-`on_click` | On-click handler | No | `""`
+`on_click` | On-click handler. Commands are executed in a shell. | No | `""`
 `interface_name_exclude` | A list of regex patterns for device interface names to ignore | No | ""
 `interface_name_include` | A list of regex patterns for device interface names to include (only interfaces that match at least one are shown) | No | ""
 
