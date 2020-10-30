@@ -140,15 +140,6 @@ pub fn read_file(blockname: &str, path: &Path) -> Result<String> {
     Ok(content)
 }
 
-#[allow(dead_code)]
-pub fn get_file(name: &str) -> Result<String> {
-    let mut file_contents = String::new();
-    let mut file = File::open(name).internal_error("util", &format!("Unable to open {}", name))?;
-    file.read_to_string(&mut file_contents)
-        .internal_error("util", &format!("Unable to read {}", name))?;
-    Ok(file_contents)
-}
-
 pub fn has_command(block_name: &str, command: &str) -> Result<bool> {
     let exit_status = Command::new("sh")
         .args(&[
