@@ -453,17 +453,22 @@ impl Block for KDEConnect {
             .block_error("kdeconnect", "failed to acquire lock for `name`")?)
         .clone();
 
-        let bat_icon = self.config.icons.get(if charging {
-            "bat_charging"
-        } else {
-            battery_level_to_icon(Ok(charge))
-        });
+        let bat_icon = self
+            .config
+            .icons
+            .get(if charging {
+                "bat_charging"
+            } else {
+                battery_level_to_icon(Ok(charge))
+            })
+            .cloned()
+            .unwrap_or_else(|| "".to_string());
 
         let values = map!(
-            "{bat_icon}" => bat_icon.unwrap().trim().to_string(),
+            "{bat_icon}" => bat_icon.trim().to_string(),
             "{bat_charge}" => charge.to_string(),
             "{bat_state}" => charging.to_string(),
-            "{notif_icon}" => self.config.icons.get("notification").unwrap().trim().to_string(),
+            "{notif_icon}" => self.config.icons.get("notification").cloned().unwrap_or_else(|| "".to_string()).trim().to_string(),
             "{notif_count}" => notif_count.to_string(),
             // TODO
             //"{notif_text}" => notif_text,
