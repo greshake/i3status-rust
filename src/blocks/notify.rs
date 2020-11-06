@@ -89,7 +89,7 @@ impl ConfigBlock for Notify {
                             let value = signal.changed_properties.get("paused").unwrap();
                             let status = &value.0.as_i64().unwrap();
                             let mut paused = state_copy.lock().unwrap();
-                            *paused = status.clone();
+                            *paused = *status;
 
                             // Tell block to update now.
                             send.send(Task {
@@ -104,7 +104,7 @@ impl ConfigBlock for Notify {
             .unwrap();
 
         Ok(Notify {
-            id: id.clone(),
+            id,
             paused: state,
             format: FormatTemplate::from_string(&block_config.format)?,
             output: ButtonWidget::new(config, "notify").with_icon(icon),
@@ -155,11 +155,10 @@ impl Block for Notify {
                 5000,
             );
 
-            let paused = (*self
+            let paused = *self
                 .paused
                 .lock()
-                .block_error("notify", "failed to acquire lock")?)
-            .clone();
+                .block_error("notify", "failed to acquire lock")?;
 
             if paused == 1 {
                 p.set("org.dunstproject.cmd0", "paused", false)

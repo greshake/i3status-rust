@@ -261,7 +261,7 @@ impl NetworkDevice {
         let ip_devs: Vec<IpDev> =
             serde_json::from_str(&output).block_error("net", "Failed to parse JSON response")?;
 
-        if ip_devs.len() == 0 {
+        if ip_devs.is_empty() {
             return Ok(Some("".to_string()));
         }
 
@@ -292,7 +292,7 @@ impl NetworkDevice {
         let ip_devs: Vec<IpDev> =
             serde_json::from_str(&output).block_error("net", "Failed to parse JSON response")?;
 
-        if ip_devs.len() == 0 {
+        if ip_devs.is_empty() {
             return Ok(Some("".to_string()));
         }
 

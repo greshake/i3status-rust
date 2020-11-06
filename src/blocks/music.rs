@@ -318,7 +318,7 @@ impl ConfigBlock for Music {
             // Get current media info, if any
             let p = c.with_path(name, "/org/mpris/MediaPlayer2", 500);
             let data = p.get("org.mpris.MediaPlayer2.Player", "Metadata");
-            let (t, a) = match data {
+            let (title, artist) = match data {
                 Err(_) => (String::new(), String::new()),
                 Ok(data) => extract_from_metadata(&data).unwrap_or((String::new(), String::new())),
             };
@@ -338,8 +338,8 @@ impl ConfigBlock for Music {
                 Player {
                     interface_name: name.to_string(),
                     playback_status: status,
-                    artist: Some(a),
-                    title: Some(t),
+                    artist: Some(artist),
+                    title: Some(title),
                 },
             );
         }
@@ -613,16 +613,14 @@ impl Block for Music {
                         self.dbus_conn
                             .send(m)
                             .block_error("music", "failed to call method via D-Bus")?;
-                    } else {
-                        if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
-                            let command = self.on_collapsed_click.as_ref().unwrap();
-                            spawn_child_async("sh", &["-c", command])
+                    } else if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
+                        let command = self.on_collapsed_click.as_ref().unwrap();
+                        spawn_child_async("sh", &["-c", command])
+                            .block_error("music", "could not spawn child")?;
+                    } else if event.matches_name(self.id()) {
+                        if let Some(ref cmd) = self.on_click {
+                            spawn_child_async("sh", &["-c", cmd])
                                 .block_error("music", "could not spawn child")?;
-                        } else if event.matches_name(self.id()) {
-                            if let Some(ref cmd) = self.on_click {
-                                spawn_child_async("sh", &["-c", cmd])
-                                    .block_error("music", "could not spawn child")?;
-                            }
                         }
                     }
                 }
