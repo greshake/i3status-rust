@@ -50,6 +50,7 @@ lazy_static! {
         "phone_disconnected" => " PHONE ",
         "ping" => " PING ",
         "pomodoro" => " POMODORO ",
+        "resolution" => " RES ",
         "tasks" => " TSK ",
         "thermometer" => " TEMP ",
         "time" => " ",
@@ -123,6 +124,7 @@ lazy_static! {
         "phone_disconnected" => " \u{1f4f5} ",
         "ping" => " \u{21ba} ",
         "pomodoro" => " \u{1f345} ",
+        "resolution" => " \u{f096} ", // fa-square-o
         "tasks" => " \u{f0ae} ",
         "thermometer" => " \u{f2c8} ",
         "time" => " \u{f017} ",
@@ -196,6 +198,7 @@ lazy_static! {
         "phone_disconnected" => " \u{1f4f5} ",
         "ping" => " \u{f362} ",
         "pomodoro" => " \u{1f345} ",
+        "resolution" => " \u{f096} ", // fa-square-o
         "tasks" => " \u{f0ae} ",
         "thermometer" => " \u{f2c8} ",
         "time" => " \u{f017} ",
@@ -255,6 +258,7 @@ lazy_static! {
         "phone" => " \u{e324} ",
         "phone_disconnected" => " \u{1f4f5} ",
         "pomodoro" => " \u{1f345} ",
+        "resolution" => " \u{f152} ", // crop-square-rounded
         "tasks" => " \u{e8f9} ",
         "thermometer" => " \u{f2c8} ", // TODO
         "time" => " \u{e192} ",

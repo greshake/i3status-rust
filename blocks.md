@@ -1387,7 +1387,7 @@ interval = 2
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`icons` | Show icons for brightness and resolution (needs awesome fonts support) | No | `true`
+`icons` | Show icons for brightness and resolution | No | `true`
 `resolution` | Shows the screens resolution | No | `false`
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | `5`
 `interval` | Update interval, in seconds. | No | `5`
