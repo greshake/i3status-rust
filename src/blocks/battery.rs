@@ -726,7 +726,7 @@ impl Block for Battery {
         let time = match self.device.time_remaining() {
             Ok(time) => match time {
                 0 => "".into(),
-                _ => format!("{}:{:02}", time / 60, time % 60),
+                _ => format!("{}:{:02}", std::cmp::min(time / 60, 99), time % 60),
             },
             Err(_) => "×".into(),
         };
