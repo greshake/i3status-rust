@@ -1,22 +1,23 @@
 use std::boxed::Box;
+use std::collections::BTreeMap;
 use std::result;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus::arg::{Array, RefArg};
-use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use dbus::{
-    arg,
+    arg::{Array, RefArg},
+    ffidisp::stdintf::org_freedesktop_dbus::{Properties, PropertiesPropertiesChanged},
     ffidisp::{BusType, Connection, ConnectionItem},
+    message::SignalArgs,
     Message,
 };
 use regex::Regex;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{Config, LogicalDirection};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -27,9 +28,31 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
 
+#[derive(Debug, Clone)]
+struct Player {
+    interface_name: String,
+    playback_status: PlaybackStatus,
+    artist: Option<String>,
+    title: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+enum PlaybackStatus {
+    Playing,
+    Paused,
+    Stopped,
+    Unknown,
+}
+
+impl Default for PlaybackStatus {
+    fn default() -> Self {
+        PlaybackStatus::Unknown
+    }
+}
+
 pub struct Music {
     id: String,
-    current_song: RotatingTextWidget,
+    current_song_widget: RotatingTextWidget,
     prev: Option<ButtonWidget>,
     play: Option<ButtonWidget>,
     next: Option<ButtonWidget>,
@@ -37,36 +60,105 @@ pub struct Music {
     on_collapsed_click: Option<String>,
     on_click: Option<String>,
     dbus_conn: Connection,
-    player_avail: bool,
     marquee: bool,
-    player: Option<String>,
-    auto_discover: bool,
+    marquee_interval: Duration,
     smart_trim: bool,
     max_width: usize,
     separator: String,
     seek_step: i64,
     config: Config,
-    interface_name_exclude_regexps: Vec<Regex>,
+    players: Arc<Mutex<BTreeMap<String, Player>>>,
     hide_when_empty: bool,
+}
+
+impl Music {
+    fn smart_trim(&self, artist: String, title: String) -> String {
+        // Below code is by https://github.com/jgbyrne
+        let mut artist: String = artist;
+        let mut title: String = title;
+        let textlen =
+            title.chars().count() + self.separator.chars().count() + artist.chars().count();
+
+        if title.is_empty() {
+            artist.truncate(self.max_width);
+        } else if artist.is_empty() {
+            title.truncate(self.max_width);
+        } else {
+            // overshoot: # of chars we need to trim
+            // substance: # of chars available for trimming
+            let overshoot = (textlen - self.max_width) as f32;
+            let substance = (textlen - 3) as f32;
+
+            // Calculate number of chars to trim from title
+            let tlen = title.chars().count();
+            let tblm = tlen as f32 / substance;
+            let mut tnum = (overshoot * tblm).ceil() as usize;
+
+            // Calculate number of chars to trim from artist
+            let alen = artist.chars().count();
+            let ablm = alen as f32 / substance;
+            let mut anum = (overshoot * ablm).ceil() as usize;
+
+            // Prefer to only trim one of the title and artist
+            if anum < tnum && anum <= 3 && (tnum + anum < tlen) {
+                anum = 0;
+                tnum += anum;
+            }
+
+            if tnum < anum && tnum <= 3 && (anum + tnum < alen) {
+                tnum = 0;
+                anum += tnum;
+            }
+
+            // Calculate how many chars to keep from title and artist
+            let mut ttrc = tlen - tnum;
+            if ttrc < 1 || ttrc > 5000 {
+                ttrc = 1
+            }
+
+            let mut atrc = alen - anum;
+            if atrc < 1 || atrc > 5000 {
+                atrc = 1
+            }
+
+            // Truncate artist and title to appropriate lengths
+            let tidx = title
+                .char_indices()
+                .nth(ttrc)
+                .unwrap_or((title.len(), 'a'))
+                .0;
+            title.truncate(tidx);
+
+            let aidx = artist
+                .char_indices()
+                .nth(atrc)
+                .unwrap_or((artist.len(), 'a'))
+                .0;
+            artist.truncate(aidx);
+        }
+        format!("{}{}{}", title, self.separator, artist)
+    }
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct MusicConfig {
-    /// Name of the music player.Must be the same name the player<br/> is registered with the MediaPlayer2 Interface.
-    /// Set an empty string for auto-discovery of currently active player.
+    /// Name of the music player. Must be the same name the player is
+    /// registered with the MediaPlayer2 Interface. If not specified then
+    /// auto-discovery of currently active player.
     pub player: Option<String>,
 
-    /// Max width of the block in characters, not including the buttons
+    /// Max width of the block in characters, not including the buttons.
     #[serde(default = "MusicConfig::default_max_width")]
     pub max_width: usize,
 
-    /// Bool to specify whether the block will change width depending on the text content
-    /// or remain static always (= max_width)
+    /// Bool to specify whether the block will change width depending on the
+    /// text content or remain static always (= max_width)
     #[serde(default = "MusicConfig::default_dynamic_width")]
     pub dynamic_width: bool,
 
-    /// Bool to specify if a marquee style rotation should be used<br/> if the title + artist is longer than max-width
+    /// Bool to specify if a marquee style rotation should be used if the
+    /// title + artist is longer than max-width
     #[serde(default = "MusicConfig::default_marquee")]
     pub marquee: bool,
 
@@ -84,7 +176,10 @@ pub struct MusicConfig {
     )]
     pub marquee_speed: Duration,
 
-    /// Bool to specify whether smart trimming should be used when marquee rotation is disabled<br/> and the title + artist is longer than max-width. It will trim from both the artist and the title in proportion to their lengths, to try and show the most information possible.
+    /// Bool to specify whether smart trimming should be used when marquee
+    /// rotation is disabled and the title + artist is longer than
+    /// max-width. It will trim from both the artist and the title in proportion
+    /// to their lengths, to try and show the most information possible.
     #[serde(default = "MusicConfig::default_smart_trim")]
     pub smart_trim: bool,
 
@@ -92,7 +187,8 @@ pub struct MusicConfig {
     #[serde(default = "MusicConfig::default_separator")]
     pub separator: String,
 
-    /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
+    /// Array of control buttons to be displayed. Options are prev (previous title),
+    /// play (play/pause) and next (next title).
     #[serde(default = "MusicConfig::default_buttons")]
     pub buttons: Vec<String>,
 
@@ -175,19 +271,172 @@ impl ConfigBlock for Music {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
         let id_copy2 = id.clone();
+        let id_copy3 = id.clone();
+        let send2 = send.clone();
 
+        let c = Connection::get_private(BusType::Session)
+            .block_error("music", "failed to establish D-Bus connection")?;
+
+        let interface_name_exclude_regexps =
+            compile_regexps(block_config.clone().interface_name_exclude)
+                .block_error("music", "failed to parse exclude patterns")?;
+
+        let mut initial_players = BTreeMap::new();
+        let m = Message::new_method_call(
+            "org.freedesktop.DBus",
+            "/",
+            "org.freedesktop.DBus",
+            "ListNames",
+        )
+        .unwrap();
+        let r = c.send_with_reply_and_block(m, 500).unwrap();
+        // ListNames returns one argument, which is an array of strings.
+        let arr: Array<&str, _> = r.get1().unwrap();
+        for name in arr {
+            // TODO: prefilter arr before entering loop
+            // If an interface matches an exclude pattern, ignore it
+            if ignored_player(
+                &name,
+                &interface_name_exclude_regexps,
+                block_config.clone().player,
+            ) {
+                continue;
+            }
+
+            // Get bus connection name
+            // TODO: possibly could get this info from the sender field of the Metadata call below?
+            let m = Message::new_method_call(
+                "org.freedesktop.DBus",
+                "/",
+                "org.freedesktop.DBus",
+                "GetNameOwner",
+            )
+            .unwrap();
+            let r = c.send_with_reply_and_block(m.append1(name), 500).unwrap();
+            let bn: &str = r.read1().ok().unwrap();
+
+            // Get current media info, if any
+            let p = c.with_path(name, "/org/mpris/MediaPlayer2", 500);
+            let data = p.get("org.mpris.MediaPlayer2.Player", "Metadata");
+            let (t, a) = match data {
+                Err(_) => (String::new(), String::new()),
+                Ok(data) => extract_from_metadata(&data).unwrap_or((String::new(), String::new())),
+            };
+
+            // Get current playback status
+            let data = p.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
+            let status = match data {
+                Err(_) => PlaybackStatus::Unknown,
+                Ok(data) => {
+                    let data: Box<dyn RefArg> = data;
+                    extract_playback_status(&data)
+                }
+            };
+
+            initial_players.insert(
+                bn.to_string(),
+                Player {
+                    interface_name: name.to_string(),
+                    playback_status: status,
+                    artist: Some(a),
+                    title: Some(t),
+                },
+            );
+        }
+
+        let players_original = Arc::new(Mutex::new(initial_players));
+        let players_copy = players_original.clone();
+        let players_copy2 = players_original.clone();
+        let players_copy3 = players_original;
         thread::Builder::new().name("music".into()).spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
-            c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'")
+            c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'").unwrap();
+            loop {
+                for msg in c.incoming(100_000) {
+                    // We are listening to events from all players on org.mpris.MediaPlayer2,
+                    // but we only want to update for our currently selected player (either
+                    // set by the user in the config file, or autodiscovered by us).
+                    if msg.sender().is_some() {
+                        if let Some(signal) = PropertiesPropertiesChanged::from_message(&msg) {
+                            let mut players = players_copy2.lock().expect("failed to acquire lock for `players`");
+                            let players_copy = players.clone();
+                            let player = players_copy.get(&msg.sender().unwrap().to_string());
+                            if player.is_none() {
+                                // Ignoring update since players array was empty.
+                                // This shouldn't actually occur as long as the other thread updates in time.
+                                continue;
+                            }
+                            let mut new = player.unwrap().clone();
+                            let mut updated = false;
+                            let raw_metadata = signal.changed_properties.get("Metadata");
+                            if let Some(data) = raw_metadata {
+                                let (title, artist) =
+                                    extract_from_metadata(&data.0).unwrap_or((String::new(), String::new()));
+                                if new.artist != Some(artist.clone()) {
+                                       new.artist = Some(artist);
+                                       updated = true;
+                                }
+                                if new.title != Some(title.clone()) {
+                                    new.title = Some(title);
+                                       updated = true;
+                                }
+                            };
+                            let raw_metadata = signal.changed_properties.get("PlaybackStatus");
+                            if let Some(data) = raw_metadata {
+                                let new_status = extract_playback_status(&data.0);
+                                if new.playback_status != new_status {
+                                    new.playback_status = new_status;
+                                    updated = true;
+                                }
+                            };
+                            if updated {
+                                players.insert(msg.sender().unwrap().to_string(), new);
+                                send.send(Task {
+                                    id: id.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+                            }
+                        }
+                    }
+                }
+            }
+        }).unwrap();
+
+        // Some players do not seem to update their Metadata on close which leads to the block showing old info.
+        // To fix this we will the bus to see when players have disappeared so that we can schedule a block update.
+        let preferred_player = block_config.clone().player;
+        thread::Builder::new().name("music".into()).spawn(move || {
+            let c = Connection::get_private(BusType::Session).unwrap();
+            c.add_match("interface='org.freedesktop.DBus',member='NameOwnerChanged',path='/org/freedesktop/DBus',arg0namespace='org.mpris.MediaPlayer2'")
                 .unwrap();
+            // Skip the NameAcquired event.
+            c.incoming(10_000).next();
             loop {
                 for ci in c.iter(100_000) {
-                    if let ConnectionItem::Signal(_) = ci {
-                        send.send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
+                    if let ConnectionItem::Signal(x) = ci {
+                         let (name, old_owner, new_owner): (&str, &str, &str) = x.read3().unwrap();
+                         let mut players = players_copy3.lock().expect("failed to acquire lock for `players`");
+                         if !old_owner.is_empty() && new_owner.is_empty() {
+                             players.remove(old_owner);
+                             send2.send(Task {
+                                 id: id_copy3.clone(),
+                                 update_time: Instant::now(),
+                             })
+                             .unwrap();
+                         } else if old_owner.is_empty() && !new_owner.is_empty() && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) {
+                             players.insert(new_owner.to_string(), Player {
+                                 interface_name: name.to_string(),
+                                 playback_status: PlaybackStatus::Unknown,
+                                 artist: None,
+                                 title: None,
+                             });
+                             send2.send(Task {
+                                 id: id_copy3.clone(),
+                                 update_time: Instant::now(),
+                             })
+                             .unwrap();
+                        }
                     }
                 }
             }
@@ -234,7 +483,7 @@ impl ConfigBlock for Music {
 
         Ok(Music {
             id: id_copy,
-            current_song: RotatingTextWidget::new(
+            current_song_widget: RotatingTextWidget::new(
                 Duration::new(block_config.marquee_interval.as_secs(), 0),
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
@@ -254,24 +503,14 @@ impl ConfigBlock for Music {
             on_collapsed_click: block_config.on_collapsed_click,
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,
-            player_avail: false,
-            auto_discover: block_config.player.is_none(),
-            player: if block_config.player.is_none() {
-                block_config.player
-            } else {
-                Some(format!(
-                    "org.mpris.MediaPlayer2.{}",
-                    block_config.player.unwrap()
-                ))
-            },
             marquee: block_config.marquee,
+            marquee_interval: block_config.marquee_interval,
             smart_trim: block_config.smart_trim,
             max_width: block_config.max_width,
             separator: block_config.separator,
             seek_step: block_config.seek_step,
             config,
-            interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
-                .block_error("music", "failed to parse exclude patterns")?,
+            players: players_copy,
             hide_when_empty: block_config.hide_when_empty,
         })
     }
@@ -283,153 +522,66 @@ impl Block for Music {
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
-        let (rotated, next) = if self.marquee {
-            self.current_song.next()?
+        let (rotation_in_progress, time_to_next_rotation) = if self.marquee {
+            self.current_song_widget.next()?
         } else {
             (false, None)
         };
-        if !rotated && self.player.is_none() {
-            self.player =
-                get_first_available_player(&self.dbus_conn, &self.interface_name_exclude_regexps)
-        }
-        if !(rotated || self.player.is_none()) {
-            let c = self.dbus_conn.with_path(
-                self.player.clone().unwrap(),
-                "/org/mpris/MediaPlayer2",
-                1000,
-            );
-            let data = c.get("org.mpris.MediaPlayer2.Player", "Metadata");
 
-            if let Ok(metadata) = data {
-                let (mut title, mut artist) =
-                    extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
+        let players = self
+            .players
+            .lock()
+            .block_error("music", "failed to acquire lock for `players`")?;
+        // get first player
+        let (_busname, metadata) = match players.iter().next() {
+            Some((k, v)) => (k, v),
+            None => {
+                self.current_song_widget.set_text(String::from(""));
+                return Ok(None);
+            }
+        };
 
-                if title.is_empty() && artist.is_empty() {
-                    self.player_avail = false;
-                    self.current_song.set_text(String::new());
-                } else {
-                    self.player_avail = true;
+        let artist = metadata.clone().artist.unwrap_or_else(|| String::from(""));
+        let title = metadata.clone().title.unwrap_or_else(|| String::from(""));
 
-                    let textlen = title.chars().count()
-                        + self.separator.chars().count()
-                        + artist.chars().count();
-                    if textlen < self.max_width || !self.smart_trim {
-                        self.current_song
-                            .set_text(format!("{}{}{}", title, self.separator, artist));
-                    } else if title.is_empty() {
-                        // Only display artist, truncated appropriately
-                        self.current_song.set_text({
-                            match artist.char_indices().nth(self.max_width) {
-                                None => artist.to_string(),
-                                Some((i, _)) => {
-                                    artist.truncate(i);
-                                    artist.to_string()
-                                }
-                            }
-                        });
-                    } else if artist.is_empty() {
-                        // Only display title, truncated appropriately
-                        self.current_song.set_text({
-                            match title.char_indices().nth(self.max_width) {
-                                None => title.to_string(),
-                                Some((i, _)) => {
-                                    title.truncate(i);
-                                    title.to_string()
-                                }
-                            }
-                        });
-                    } else {
-                        // Below code is by https://github.com/jgbyrne
-                        let text = format!("{}{}{}", title, self.separator, artist);
-                        if textlen > self.max_width {
-                            // overshoot: # of chars we need to trim
-                            // substance: # of chars available for trimming
-                            let overshoot = (textlen - self.max_width) as f32;
-                            let substance = (textlen - 3) as f32;
-
-                            // Calculate number of chars to trim from title
-                            let tlen = title.chars().count();
-                            let tblm = tlen as f32 / substance;
-                            let mut tnum = (overshoot * tblm).ceil() as usize;
-
-                            // Calculate number of chars to trim from artist
-                            let alen = artist.chars().count();
-                            let ablm = alen as f32 / substance;
-                            let mut anum = (overshoot * ablm).ceil() as usize;
-
-                            // Prefer to only trim one of the title and artist
-                            if anum < tnum && anum <= 3 && (tnum + anum < tlen) {
-                                anum = 0;
-                                tnum += anum;
-                            }
-
-                            if tnum < anum && tnum <= 3 && (anum + tnum < alen) {
-                                tnum = 0;
-                                anum += tnum;
-                            }
-
-                            // Calculate how many chars to keep from title and artist
-                            let mut ttrc = tlen - tnum;
-                            if ttrc < 1 || ttrc > 5000 {
-                                ttrc = 1
-                            }
-
-                            let mut atrc = alen - anum;
-                            if atrc < 1 || atrc > 5000 {
-                                atrc = 1
-                            }
-
-                            // Truncate artist and title to appropriate lengths
-                            let tidx = title
-                                .char_indices()
-                                .nth(ttrc)
-                                .unwrap_or((title.len(), 'a'))
-                                .0;
-                            title.truncate(tidx);
-
-                            let aidx = artist
-                                .char_indices()
-                                .nth(atrc)
-                                .unwrap_or((artist.len(), 'a'))
-                                .0;
-                            artist.truncate(aidx);
-
-                            // Produce final formatted string
-                            self.current_song
-                                .set_text(format!("{}{}{}", title, self.separator, artist));
-                        } else {
-                            self.current_song.set_text(text);
-                        }
-                    }
-                }
+        if !(rotation_in_progress) {
+            if title.is_empty() && artist.is_empty() {
+                self.current_song_widget.set_text(String::new());
+            } else if (title.chars().count()
+                + self.separator.chars().count()
+                + artist.chars().count())
+                < self.max_width
+                || !self.smart_trim
+            {
+                self.current_song_widget
+                    .set_text(format!("{}{}{}", title, self.separator, artist));
             } else {
-                self.current_song.set_text(String::from(""));
-                self.player_avail = false;
-                if self.auto_discover {
-                    self.player = None;
-                }
-            }
-
-            if let Some(ref mut play) = self.play {
-                let data = c.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
-                match data {
-                    Err(_) => play.set_icon("music_play"),
-                    Ok(data) => {
-                        let data: Box<dyn RefArg> = data;
-                        let state = data;
-                        if state.as_str().map(|s| s != "Playing").unwrap_or(false) {
-                            play.set_icon("music_play")
-                        } else {
-                            play.set_icon("music_pause")
-                        }
-                    }
-                }
+                self.current_song_widget
+                    .set_text(self.smart_trim(artist, title));
             }
         }
-        Ok(match (next, self.marquee) {
-            (Some(_), _) => next.map(|d| d.into()),
-            (None, _) => Some(Duration::new(2, 0).into()),
-        })
+
+        if let Some(ref mut play) = self.play {
+            play.set_icon(match metadata.playback_status {
+                PlaybackStatus::Playing => "music_pause",
+                PlaybackStatus::Paused => "music_play",
+                PlaybackStatus::Stopped => "music_play",
+                PlaybackStatus::Unknown => "music_play",
+            })
+        }
+
+        // If `marquee` is enabled then we need to schedule an update for the text rotation.
+        // (time_to_next_rotation is always None if marquee is disabled)
+        if let Some(t) = time_to_next_rotation {
+            Ok(Some(Update::Every(t)))
+        // We just finished a rotation so we wait before starting again
+        } else if self.marquee {
+            Ok(Some(self.marquee_interval.into()))
+        // Otherwise we do not need to schedule anything as the block will auto-update itself after
+        // seeing a PropertiesChanged signal for the MPRIS interface it is monitoring.
+        } else {
+            Ok(None)
+        }
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
@@ -441,11 +593,18 @@ impl Block for Music {
                 _ => "",
             };
 
+            let players = self
+                .players
+                .lock()
+                .block_error("music", "failed to acquire lock for `players`")?;
+            // get first player
+            let (_busname, metadata) = players.iter().next().unwrap();
+
             match event.button {
                 MouseButton::Left => {
                     if action != "" {
                         let m = Message::new_method_call(
-                            self.player.as_ref().unwrap(),
+                            metadata.interface_name.clone(),
                             "/org/mpris/MediaPlayer2",
                             "org.mpris.MediaPlayer2.Player",
                             action,
@@ -467,10 +626,11 @@ impl Block for Music {
                         }
                     }
                 }
+                // TODO: on right mouse click we can cycle through the current players
                 _ => {
                     if name.as_str() == self.id {
                         let m = Message::new_method_call(
-                            self.player.as_ref().unwrap(),
+                            metadata.interface_name.clone(),
                             "/org/mpris/MediaPlayer2",
                             "org.mpris.MediaPlayer2.Player",
                             "Seek",
@@ -499,11 +659,15 @@ impl Block for Music {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if !self.player_avail && self.hide_when_empty {
+        let players = self
+            .players
+            .lock()
+            .expect("failed to acquire lock for `players`");
+        if players.len() == 0 && self.hide_when_empty {
             vec![]
-        } else if self.player_avail {
+        } else if players.len() > 0 && !self.current_song_widget.is_empty() {
             let mut elements: Vec<&dyn I3BarWidget> = Vec::new();
-            elements.push(&self.current_song);
+            elements.push(&self.current_song_widget);
             if let Some(ref prev) = self.prev {
                 elements.push(prev);
             }
@@ -514,15 +678,28 @@ impl Block for Music {
                 elements.push(next);
             }
             elements
-        } else if self.current_song.is_empty() {
+        } else if self.current_song_widget.is_empty() {
             vec![&self.on_collapsed_click_widget]
         } else {
-            vec![&self.current_song]
+            vec![&self.current_song_widget]
         }
     }
 }
 
-fn extract_artist_from_value(value: &dyn arg::RefArg) -> Result<&str> {
+fn extract_playback_status(value: &dyn RefArg) -> PlaybackStatus {
+    if let Some(status) = value.as_str() {
+        match status {
+            "Playing" => PlaybackStatus::Playing,
+            "Paused" => PlaybackStatus::Paused,
+            "Stopped" => PlaybackStatus::Stopped,
+            _ => PlaybackStatus::Unknown,
+        }
+    } else {
+        PlaybackStatus::Unknown
+    }
+}
+
+fn extract_artist_from_value(value: &dyn RefArg) -> Result<&str> {
     if let Some(artist) = value.as_str() {
         Ok(artist)
     } else {
@@ -537,7 +714,7 @@ fn extract_artist_from_value(value: &dyn arg::RefArg) -> Result<&str> {
 }
 
 #[allow(clippy::borrowed_box)] // TODO: remove clippy workaround
-fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, String)> {
+fn extract_from_metadata(metadata: &Box<dyn RefArg>) -> Result<(String, String)> {
     let mut title = String::new();
     let mut artist = String::new();
 
@@ -567,41 +744,28 @@ fn extract_from_metadata(metadata: &Box<dyn arg::RefArg>) -> Result<(String, Str
     Ok((title, artist))
 }
 
-fn get_first_available_player(
-    connection: &Connection,
-    interface_name_exclude_regexps: &Vec<Regex>,
-) -> Option<String> {
-    let m = Message::new_method_call(
-        "org.freedesktop.DBus",
-        "/",
-        "org.freedesktop.DBus",
-        "ListNames",
-    )
-    .unwrap();
-    let r = connection.send_with_reply_and_block(m, 2000).unwrap();
-    // ListNames returns one argument, which is an array of strings.
-    let arr: Array<&str, _> = r.get1().unwrap();
-    let mut names = Vec::new();
-    for name in arr {
-        // If an interface matches an exclude pattern, ignore it
-        if interface_name_exclude_regexps
-            .iter()
-            .any(|regex| regex.is_match(&name))
-        {
-            continue;
-        }
-
-        if name.starts_with("org.mpris.MediaPlayer2") {
-            names.push(String::from(name));
+fn ignored_player(
+    name: &str,
+    interface_name_exclude_regexps: &[Regex],
+    preferred_player: Option<String>,
+) -> bool {
+    // If the player is specified in the config then we will ignore all others.
+    if let Some(p) = preferred_player {
+        if !name.starts_with(&format!("org.mpris.MediaPlayer2.{}", p)) {
+            return true;
         }
     }
 
-    if let Some(name) = names
+    if !name.starts_with("org.mpris.MediaPlayer2") {
+        return true;
+    }
+
+    if interface_name_exclude_regexps
         .iter()
-        .find(|entry| entry.starts_with("org.mpris.MediaPlayer2"))
+        .any(|regex| regex.is_match(&name))
     {
-        Some(String::from(name))
-    } else {
-        None
+        return true;
     }
+
+    false
 }
