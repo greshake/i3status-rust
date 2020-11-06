@@ -212,7 +212,7 @@ impl ConfigBlock for DiskSpace {
             .icons
             .get("disk_drive")
             .cloned()
-            .expect("Could not find disk drive icon");
+            .unwrap_or_else(|| "".to_string());
 
         Ok(DiskSpace {
             id: Uuid::new_v4().to_simple().to_string(),
