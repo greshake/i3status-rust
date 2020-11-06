@@ -225,7 +225,7 @@ impl ConfigBlock for NvidiaGpu {
             scrolling: config.scrolling,
 
             show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(config.clone()).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(config).with_spacing(Spacing::Inline))
             } else {
                 None
             },
@@ -296,7 +296,7 @@ impl Block for NvidiaGpu {
 
             match self.name_widget_mode {
                 NameWidgetMode::ShowDefaultName => {
-                    self.name_widget.set_text(gpu_name.to_string());
+                    self.name_widget.set_text(gpu_name);
                     self.name_widget.set_spacing(Spacing::Inline);
                 }
                 NameWidgetMode::ShowLabel => {
@@ -381,36 +381,30 @@ impl Block for NvidiaGpu {
             let event_name = name.as_str();
 
             if event_name == self.id {
-                match e.button {
-                    MouseButton::Left => {
-                        match self.name_widget_mode {
-                            NameWidgetMode::ShowDefaultName => {
-                                self.name_widget_mode = NameWidgetMode::ShowLabel
-                            }
-                            NameWidgetMode::ShowLabel => {
-                                self.name_widget_mode = NameWidgetMode::ShowDefaultName
-                            }
+                if let MouseButton::Left = e.button {
+                    match self.name_widget_mode {
+                        NameWidgetMode::ShowDefaultName => {
+                            self.name_widget_mode = NameWidgetMode::ShowLabel
                         }
-                        self.update()?;
+                        NameWidgetMode::ShowLabel => {
+                            self.name_widget_mode = NameWidgetMode::ShowDefaultName
+                        }
                     }
-                    _ => {}
+                    self.update()?;
                 }
             }
 
             if event_name == self.id_memory {
-                match e.button {
-                    MouseButton::Left => {
-                        match self.memory_widget_mode {
-                            MemoryWidgetMode::ShowUsedMemory => {
-                                self.memory_widget_mode = MemoryWidgetMode::ShowTotalMemory
-                            }
-                            MemoryWidgetMode::ShowTotalMemory => {
-                                self.memory_widget_mode = MemoryWidgetMode::ShowUsedMemory
-                            }
+                if let MouseButton::Left = e.button {
+                    match self.memory_widget_mode {
+                        MemoryWidgetMode::ShowUsedMemory => {
+                            self.memory_widget_mode = MemoryWidgetMode::ShowTotalMemory
                         }
-                        self.update()?;
+                        MemoryWidgetMode::ShowTotalMemory => {
+                            self.memory_widget_mode = MemoryWidgetMode::ShowUsedMemory
+                        }
                     }
-                    _ => {}
+                    self.update()?;
                 }
             }
 

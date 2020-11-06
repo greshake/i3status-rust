@@ -60,6 +60,7 @@ impl IBusConfig {
 impl ConfigBlock for IBus {
     type Config = IBusConfig;
 
+    #[allow(clippy::many_single_char_names)]
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
         let id: String = Uuid::new_v4().to_simple().to_string();
         let id_copy = id.clone();
@@ -86,11 +87,7 @@ impl ConfigBlock for IBus {
         // `GlobalEngine` result in a "No global engine" response.
         // Hence the check below to see if there are 3 or more names on the bus with "IBus" in them.
         // TODO: Possibly we only need to check for `org.freedesktop.portal.IBus`? Not sure atm.
-        let running = if arr.filter(|entry| entry.contains("IBus")).count() > 2 {
-            true
-        } else {
-            false
-        };
+        let running = arr.filter(|entry| entry.contains("IBus")).count() > 2;
         // TODO: revisit this lint
         #[allow(clippy::mutex_atomic)]
         let available = Arc::new((Mutex::new(running), Condvar::new()));
@@ -175,7 +172,7 @@ impl ConfigBlock for IBus {
         };
         let engine_copy2 = engine_original.clone();
         let mut engine = engine_copy2.lock().unwrap();
-        *engine = current_engine.to_string();
+        *engine = current_engine;
 
         let engine_copy3 = engine_original.clone();
         thread::Builder::new()
