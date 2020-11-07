@@ -597,12 +597,11 @@ impl Block for Music {
                 .players
                 .lock()
                 .block_error("music", "failed to acquire lock for `players`")?;
-            // get first player
-            let (_busname, metadata) = players.iter().next().unwrap();
 
             match event.button {
                 MouseButton::Left => {
-                    if action != "" {
+                    if action != "" && players.len() > 0 {
+                        let (_busname, metadata) = players.iter().next().unwrap();
                         let m = Message::new_method_call(
                             metadata.interface_name.clone(),
                             "/org/mpris/MediaPlayer2",
@@ -626,7 +625,8 @@ impl Block for Music {
                 }
                 // TODO: on right mouse click we can cycle through the current players
                 _ => {
-                    if name.as_str() == self.id {
+                    if name.as_str() == self.id && players.len() > 0 {
+                        let (_busname, metadata) = players.iter().next().unwrap();
                         let m = Message::new_method_call(
                             metadata.interface_name.clone(),
                             "/org/mpris/MediaPlayer2",
