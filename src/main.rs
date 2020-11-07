@@ -26,7 +26,7 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::time::Duration;
 
-use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
+use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
 
 use crate::blocks::create_block;
@@ -40,8 +40,14 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
 fn main() {
+    let ver = format!(
+        "{} (commit {} {})",
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_COMMIT_HASH"),
+        env!("GIT_COMMIT_DATE")
+    );
     let mut builder = App::new("i3status-rs")
-        .version(crate_version!())
+        .version(&*ver)
         .author(crate_authors!())
         .about(crate_description!())
         .arg(
