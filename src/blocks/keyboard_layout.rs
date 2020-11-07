@@ -312,7 +312,7 @@ impl Sway {
             .get_inputs()
             .unwrap()
             .into_iter()
-            .find(|input| input.identifier == sway_kb_identifier)
+            .find(|input| input.identifier == sway_kb_identifier && input.input_type == "keyboard")
             .and_then(|input| input.xkb_active_layout_name)
             .ok_or_else(|| "".to_string())
             .block_error("sway", "Failed to get xkb_active_layout_name.")?;
