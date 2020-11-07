@@ -13,6 +13,7 @@
 - [Hueshift](#hueshift)
 - [IBus](#ibus)
 - [KDEConnect](#kdeconnect)
+- [Khal](#khal)
 - [Keyboard Layout](#keyboard-layout)
 - [Load](#load)
 - [Maildir](#maildir)
@@ -565,6 +566,27 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
 `format` | Format string, e.g. " {layout}" | No | `"{layout}"`
 `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs` | No | ""
+
+## Khal
+
+Creates a block which displays the total amount of current events provided by [_Khal_](https://github.com/pimutils/khal), a standards based CLI and terminal calendar program.
+
+### Examples
+
+A block showing the amount of events of the current day
+
+```toml
+[[block]]
+block = "khal"
+interval=180
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval in seconds | No | 60
+`icons` | Show icon | No | true
 
 ## Load
 
