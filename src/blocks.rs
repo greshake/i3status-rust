@@ -12,6 +12,7 @@ pub mod hueshift;
 pub mod ibus;
 pub mod kdeconnect;
 pub mod keyboard_layout;
+pub mod khal;
 pub mod load;
 pub mod maildir;
 pub mod memory;
@@ -50,6 +51,7 @@ use self::hueshift::*;
 use self::ibus::*;
 use self::kdeconnect::*;
 use self::keyboard_layout::*;
+use self::khal::*;
 use self::load::*;
 use self::maildir::*;
 use self::memory::*;
@@ -172,6 +174,7 @@ pub fn create_block(
         "ibus" => block!(IBus, block_config, config, update_request),
         "kdeconnect" => block!(KDEConnect, block_config, config, update_request),
         "keyboard_layout" => block!(KeyboardLayout, block_config, config, update_request),
+        "khal" => block!(Khal, block_config, config, update_request),
         "load" => block!(Load, block_config, config, update_request),
         "maildir" => block!(Maildir, block_config, config, update_request),
         "memory" => block!(Memory, block_config, config, update_request),
