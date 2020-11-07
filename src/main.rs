@@ -40,12 +40,16 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
 fn main() {
-    let ver = format!(
-        "{} (commit {} {})",
-        env!("CARGO_PKG_VERSION"),
-        env!("GIT_COMMIT_HASH"),
-        env!("GIT_COMMIT_DATE")
-    );
+    let ver = if env!("GIT_COMMIT_HASH").is_empty() || env!("GIT_COMMIT_DATE").is_empty() {
+        env!("CARGO_PKG_VERSION").to_string()
+    } else {
+        format!(
+            "{} (commit {} {})",
+            env!("CARGO_PKG_VERSION"),
+            env!("GIT_COMMIT_HASH"),
+            env!("GIT_COMMIT_DATE")
+        )
+    };
     let mut builder = App::new("i3status-rs")
         .version(&*ver)
         .author(crate_authors!())
