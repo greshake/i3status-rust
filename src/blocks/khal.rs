@@ -1,5 +1,5 @@
 use std::process::Command;
-use std::time::{Duration};
+use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -81,14 +81,14 @@ impl ConfigBlock for Khal {
 
 impl Block for Khal {
     fn update(&mut self) -> Result<Option<Update>> {
-
         let mut events: Vec<String> = Vec::new();
 
         let khal_cmd = Command::new("khal")
             .arg("list")
             .arg("-df")
             .arg("{name}")
-            .arg("-f").arg("{start-time}")
+            .arg("-f")
+            .arg("{start-time}")
             .arg("--notstarted")
             .arg("today")
             .arg("today")
@@ -112,23 +112,22 @@ impl Block for Khal {
         let mut state = State::Idle;
         let now = Local::now().time();
 
-        let mut event_remaining: i64 = 24 * 60; 
+        let mut event_remaining: i64 = 24 * 60;
         let event_count = events.len();
         for e in events.iter() {
             let e_start = match NaiveTime::parse_from_str(e, "%H:%M") {
-                Ok(s) => { s }
-                Err(_f) => { NaiveTime::from_hms(0,0,0) }
+                Ok(s) => s,
+                Err(_f) => NaiveTime::from_hms(0, 0, 0),
             };
             let diff = e_start - now;
-            if  ( diff.num_minutes() < event_remaining ) &&
-                ( diff.num_minutes() >= 0 ) {
+            if (diff.num_minutes() < event_remaining) && (diff.num_minutes() >= 0) {
                 event_remaining = diff.num_minutes()
             }
 
             if event_remaining >= 0 {
                 if event_remaining <= self.threshold_warning {
                     state = State::Warning;
-                } 
+                }
                 if event_remaining <= self.threshold_critical {
                     state = State::Critical;
                 }
