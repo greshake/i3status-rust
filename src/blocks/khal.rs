@@ -1,5 +1,5 @@
 use std::process::Command;
-use std::time::Duration;
+use std::time::{Duration};
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -13,14 +13,14 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use chrono::{Local, NaiveTime};
 
 pub struct Khal {
     text: TextWidget,
     id: String,
     update_interval: Duration,
-    //calendars: Vec<String>,
-    threshold_warning: usize,
-    threshold_critical: usize,
+    threshold_warning: i64,
+    threshold_critical: i64,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -34,9 +34,9 @@ pub struct KhalConfig {
     pub interval: Duration,
     // pub calendars: Vec<String>,
     #[serde(default = "KhalConfig::default_threshold_warning")]
-    pub threshold_warning: usize,
+    pub threshold_warning: i64,
     #[serde(default = "KhalConfig::default_threshold_critical")]
-    pub threshold_critical: usize,
+    pub threshold_critical: i64,
     #[serde(default = "KhalConfig::default_icon")]
     pub icon: bool,
 }
@@ -45,11 +45,11 @@ impl KhalConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(60)
     }
-    fn default_threshold_warning() -> usize {
-        1 as usize
+    fn default_threshold_warning() -> i64 {
+        60 as i64
     }
-    fn default_threshold_critical() -> usize {
-        5 as usize
+    fn default_threshold_critical() -> i64 {
+        15 as i64
     }
     fn default_icon() -> bool {
         true
@@ -73,7 +73,6 @@ impl ConfigBlock for Khal {
             } else {
                 widget
             },
-            // calendars: block_config.calendars,
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,
         })
@@ -82,12 +81,14 @@ impl ConfigBlock for Khal {
 
 impl Block for Khal {
     fn update(&mut self) -> Result<Option<Update>> {
-        let mut events = 0;
+
+        let mut events: Vec<String> = Vec::new();
 
         let khal_cmd = Command::new("khal")
             .arg("list")
             .arg("-df")
             .arg("{name}")
+            .arg("-f").arg("{start-time}")
             .arg("--notstarted")
             .arg("today")
             .arg("today")
@@ -102,17 +103,40 @@ impl Block for Khal {
         };
 
         if dayline.trim() == "Today" {
-            events = lines.count()
+            for e in lines {
+                events.push(e.to_string())
+            }
         }
 
+        // get duration up to next event and set state
         let mut state = State::Idle;
-        if events >= self.threshold_critical {
-            state = State::Critical;
-        } else if events >= self.threshold_warning {
-            state = State::Warning;
+        let now = Local::now().time();
+
+        let mut event_remaining: i64 = 24 * 60; 
+        let event_count = events.len();
+        for e in events.iter() {
+            let e_start = match NaiveTime::parse_from_str(e, "%H:%M") {
+                Ok(s) => { s }
+                Err(_f) => { NaiveTime::from_hms(0,0,0) }
+            };
+            let diff = e_start - now;
+            if  ( diff.num_minutes() < event_remaining ) &&
+                ( diff.num_minutes() >= 0 ) {
+                event_remaining = diff.num_minutes()
+            }
+
+            if event_remaining >= 0 {
+                if event_remaining <= self.threshold_warning {
+                    state = State::Warning;
+                } 
+                if event_remaining <= self.threshold_critical {
+                    state = State::Critical;
+                }
+            }
         }
+
         self.text.set_state(state);
-        self.text.set_text(format!("{}", events));
+        self.text.set_text(format!("{}", event_count));
         Ok(Some(self.update_interval.into()))
     }
 
