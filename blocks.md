@@ -569,7 +569,7 @@ Key | Values | Required | Default
 
 ## Khal
 
-Creates a block which displays the total amount of current events provided by [_Khal_](https://github.com/pimutils/khal), a standards based CLI and terminal calendar program.
+Creates a block which displays the total amount of current events provided by [_Khal_](https://github.com/pimutils/khal), a standards based CLI and terminal calendar program. State is set based on remaining time to the next upcoming event.
 
 ### Examples
 
@@ -578,7 +578,9 @@ A block showing the amount of events of the current day
 ```toml
 [[block]]
 block = "khal"
-interval=180
+interval = 180
+threshold_critical = 15
+threshold_warning = 60
 ```
 
 ### Options
@@ -586,6 +588,8 @@ interval=180
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval in seconds | No | 60
+`threshold_warning` | Number of minutes to next event where state is set to warning | No | 60
+`threshold_critical` | Number of minutes to next event where state is set to critical | No | 15
 `icons` | Show icon | No | true
 
 ## Load
