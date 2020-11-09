@@ -11,7 +11,6 @@ use crossbeam_channel::Sender;
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -22,7 +21,8 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{
-    escape_pango_text, format_percent_bar, format_speed, format_vec_to_bar_graph, FormatTemplate,
+    escape_pango_text, format_percent_bar, format_speed, format_vec_to_bar_graph, pseudo_uuid,
+    FormatTemplate,
 };
 use crate::widget::{I3BarWidget, Spacing};
 use crate::widgets::button::ButtonWidget;
@@ -596,7 +596,7 @@ impl ConfigBlock for Net {
         let init_tx_bytes = device.tx_bytes().unwrap_or(0);
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid().to_string();
 
         let (_, net_config) = config
             .blocks

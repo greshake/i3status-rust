@@ -12,7 +12,7 @@ use crate::de::deserialize_local_timestamp;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::xdg_config_home;
+use crate::util::{pseudo_uuid, xdg_config_home};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use chrono::offset::Local;
@@ -20,7 +20,6 @@ use chrono::DateTime;
 use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 pub struct Watson {
     id: String,
@@ -70,7 +69,7 @@ impl ConfigBlock for Watson {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid().to_string();
 
         let watson = Watson {
             id: id.clone(),

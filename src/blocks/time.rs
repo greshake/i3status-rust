@@ -8,7 +8,6 @@ use chrono::{
 use chrono_tz::Tz;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
@@ -17,6 +16,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
+use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -84,7 +84,7 @@ impl ConfigBlock for Time {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let i = Uuid::new_v4().to_simple().to_string();
+        let i = pseudo_uuid().to_string();
         Ok(Time {
             id: i.clone(),
             format: block_config.format,

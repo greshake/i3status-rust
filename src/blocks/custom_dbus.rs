@@ -8,13 +8,13 @@ use dbus::blocking::LocalConnection;
 use dbus::strings::Signature;
 use dbus::tree::Factory;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -41,7 +41,7 @@ impl ConfigBlock for CustomDBus {
     type Config = CustomDBusConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid().to_string();
         let id_copy = id.clone();
 
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {

@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::util::pseudo_uuid;
 use crossbeam_channel::Sender;
 use dbus::{
     arg::{Array, RefArg},
@@ -15,7 +16,6 @@ use dbus::{
 };
 use regex::Regex;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{Config, LogicalDirection};
@@ -268,7 +268,7 @@ impl ConfigBlock for Music {
     type Config = MusicConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid().to_string();
         let id_copy = id.clone();
         let id_copy2 = id.clone();
         let id_copy3 = id.clone();

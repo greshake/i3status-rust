@@ -3,7 +3,6 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use maildir::Maildir as ExtMaildir;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -12,6 +11,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -94,7 +94,7 @@ impl ConfigBlock for Maildir {
     ) -> Result<Self> {
         let widget = TextWidget::new(config).with_text("");
         Ok(Maildir {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid().to_string(),
             update_interval: block_config.interval,
             text: if block_config.icon {
                 widget.with_icon("mail")

@@ -7,14 +7,13 @@ use dbus::arg;
 use dbus::blocking::{stdintf::org_freedesktop_dbus::Properties, Connection};
 use dbus::Message;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, FormatTemplate};
+use crate::util::{battery_level_to_icon, pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -103,7 +102,7 @@ impl ConfigBlock for KDEConnect {
     type Config = KDEConnectConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid().to_string();
 
         let id1 = id.clone();
         let id2 = id.clone();

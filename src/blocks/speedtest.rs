@@ -6,7 +6,6 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -15,7 +14,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::format_speed;
+use crate::util::{format_speed, pseudo_uuid};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -161,7 +160,7 @@ impl ConfigBlock for SpeedTest {
         // Create all the things we are going to send and take for ourselves.
         let (send, recv): (Sender<()>, Receiver<()>) = unbounded();
         let vals = Arc::new(Mutex::new((false, vec![])));
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid().to_string();
 
         // Make the update thread
         make_thread(recv, done, vals.clone(), block_config.clone(), id.clone());
