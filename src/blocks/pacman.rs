@@ -9,7 +9,6 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use regex::Regex;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -18,7 +17,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{has_command, FormatTemplate};
+use crate::util::{has_command, pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -150,7 +149,7 @@ impl ConfigBlock for Pacman {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Pacman {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid().to_string(),
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("pacman", "Invalid format specified for pacman::format")?,

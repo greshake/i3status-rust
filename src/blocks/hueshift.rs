@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{Config, LogicalDirection};
@@ -11,7 +10,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::has_command;
+use crate::util::{has_command, pseudo_uuid};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -121,7 +120,7 @@ impl ConfigBlock for Hueshift {
     ) -> Result<Self> {
         let current_temp = block_config.current_temp;
         let mut step = block_config.step;
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid().to_string();
         let mut max_temp = block_config.max_temp;
         let mut min_temp = block_config.min_temp;
         // limit too big steps at 500K to avoid too brutal changes

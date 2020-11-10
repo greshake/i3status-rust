@@ -5,7 +5,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
-use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -352,7 +351,7 @@ impl ConfigBlock for Memory {
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, "memory").with_text("");
         Ok(Memory {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid().to_string(),
             memtype: block_config.display_type,
             output: if icons {
                 (

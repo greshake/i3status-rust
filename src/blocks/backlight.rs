@@ -16,7 +16,6 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -24,6 +23,7 @@ use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -245,7 +245,7 @@ impl ConfigBlock for Backlight {
             None => BacklitDevice::default(block_config.root_scaling),
         }?;
 
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid().to_string();
         let brightness_file = device.brightness_file();
 
         let scrolling = config.scrolling;

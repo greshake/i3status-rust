@@ -17,7 +17,6 @@ use dbus::{
 };
 use regex::Regex;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -25,7 +24,7 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{xdg_config_home, FormatTemplate};
+use crate::util::{pseudo_uuid, xdg_config_home, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -62,7 +61,7 @@ impl ConfigBlock for IBus {
 
     #[allow(clippy::many_single_char_names)]
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid().to_string();
         let id_copy = id.clone();
         let id_copy2 = id.clone();
         let send2 = send.clone();

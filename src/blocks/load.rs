@@ -4,14 +4,13 @@ use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
+use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -93,7 +92,7 @@ impl ConfigBlock for Load {
             .count() as u32;
 
         Ok(Load {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid().to_string(),
             logical_cores,
             update_interval: block_config.interval,
             minimum_info: block_config.info,

@@ -7,14 +7,13 @@ use dbus::ffidisp::stdintf::org_freedesktop_dbus::{Properties, PropertiesPropert
 use dbus::ffidisp::{BusType, Connection};
 use dbus::message::SignalArgs;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
+use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -47,7 +46,7 @@ impl ConfigBlock for Notify {
     type Config = NotifyConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid().to_string();
         let id1 = id.clone();
 
         let c = Connection::get_private(BusType::Session).block_error(

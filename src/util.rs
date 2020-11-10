@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
 
+use getrandom;
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde_json::value::Value;
@@ -17,6 +18,13 @@ use crate::config::Config;
 use crate::errors::*;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
+
+pub fn pseudo_uuid() -> String {
+    let mut bytes = [0u8; 16];
+    getrandom::getrandom(&mut bytes).unwrap();
+    let uuid: String = bytes.iter().map(|&x| format!("{:02x?}", x)).collect();
+    uuid
+}
 
 pub fn escape_pango_text(text: String) -> String {
     text.chars()

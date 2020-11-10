@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::Update;
 use crate::blocks::{Block, ConfigBlock};
@@ -11,7 +10,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::read_file;
+use crate::util::{pseudo_uuid, read_file};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -53,7 +52,7 @@ impl ConfigBlock for Uptime {
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Uptime {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid().to_string(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone()).with_icon("uptime"),
             tx_update_request,
