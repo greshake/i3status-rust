@@ -22,7 +22,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
 enum NetworkState {
@@ -652,7 +652,9 @@ impl Block for NetworkManager {
                 connections
                     .into_iter()
                     .filter_map(|conn| {
-                        let mut widget = ButtonWidget::new(self.config.clone(), &self.id);
+                        // inline spacing for no leading space, because the icon is set in the string
+                        let mut widget = ButtonWidget::new(self.config.clone(), &self.id)
+                            .with_spacing(Spacing::Inline);
 
                         // Set the state for this connection
                         widget.set_state(if let Ok(conn_state) = conn.state(&self.dbus_conn) {
