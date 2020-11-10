@@ -82,6 +82,8 @@ impl ConfigBlock for Khal {
 impl Block for Khal {
     fn update(&mut self) -> Result<Option<Update>> {
         let mut events: Vec<String> = Vec::new();
+        let now = Local::now().time();
+        let from = now.format("%H:%M").to_string();
 
         let khal_cmd = Command::new("khal")
             .arg("list")
@@ -90,8 +92,7 @@ impl Block for Khal {
             .arg("-f")
             .arg("{start-time}")
             .arg("--notstarted")
-            .arg("today")
-            .arg("today")
+            .arg(&from)
             .output()
             .expect("failed to execute process");
 
@@ -110,7 +111,6 @@ impl Block for Khal {
 
         // get duration up to next event and set state
         let mut state = State::Idle;
-        let now = Local::now().time();
 
         let mut event_remaining: i64 = 24 * 60;
         let event_count = events.len();
