@@ -38,7 +38,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
 trait SoundDevice {
@@ -872,8 +872,10 @@ impl Sound {
                 } else {
                     self.text.set_text(text);
                 }
+                self.text.set_spacing(Spacing::Normal);
             } else {
                 self.text.set_text("");
+                self.text.set_spacing(Spacing::Hidden);
             }
             self.text.set_state(State::Warning);
         } else {
@@ -883,6 +885,7 @@ impl Sound {
             } else {
                 text
             });
+            self.text.set_spacing(Spacing::Normal);
             self.text.set_state(State::Idle);
         }
 
