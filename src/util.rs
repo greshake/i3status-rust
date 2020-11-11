@@ -11,7 +11,6 @@ use std::process::Command;
 use getrandom;
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use serde_json::value::Value;
 
 use crate::blocks::Block;
 use crate::config::Config;
@@ -197,32 +196,30 @@ macro_rules! map_to_owned (
      };
 );
 
-struct PrintState {
-    pub last_bg: Option<String>,
-    pub has_predecessor: bool,
-}
-
-impl PrintState {
-    fn set_last_bg(&mut self, bg: String) {
-        self.last_bg = Some(bg);
-    }
-    fn set_predecessor(&mut self, pre: bool) {
-        self.has_predecessor = pre;
-    }
-}
-
 pub fn print_blocks(
     order: &[String],
     block_map: &HashMap<String, &mut dyn Block>,
     config: &Config,
 ) -> Result<()> {
-    let mut state = PrintState {
-        has_predecessor: false,
-        last_bg: None,
-    };
+    let mut last_bg: Option<String> = None;
 
-    let mut alternator = false;
-    print!("[");
+    let mut rendered_blocks = vec![];
+
+    /* To always start with the same alternating tint on the right side of the
+     * bar it is easiest to calculate the number of visible blocks here and
+     * flip the starting tint if an even number of blocks is visible. This way,
+     * the last block should always be untinted.
+     */
+    let visible_count = order
+        .iter()
+        .filter(|block_id| {
+            let block = block_map.get(block_id.as_str()).unwrap();
+            block.view().len() > 0
+        })
+        .count();
+
+    let mut alternator = visible_count % 2 == 0;
+
     for block_id in order {
         let block = &(*(block_map
             .get(block_id)
@@ -231,34 +228,49 @@ pub fn print_blocks(
         if widgets.is_empty() {
             continue;
         }
-        let first = widgets[0];
 
-        let color = if alternator {
-            let mut first_json: serde_json::Value = first.get_rendered().to_owned();
-            *first_json.get_mut("background").unwrap() = json!(add_colors(
-                &first_json["background"].to_string()[1..],
-                &config.theme.alternating_tint_bg
-            )
-            .unwrap());
-            first_json["background"]
-                .as_str()
-                .internal_error("util", "couldn't get background color")?
-                .to_owned()
-        } else {
-            first.get_rendered()["background"]
-                .as_str()
-                .internal_error("util", "couldn't get background color")?
-                .to_owned()
-        };
+        // Get the final JSON from all the widgets for this block
+        let rendered_widgets = widgets
+            .iter()
+            .map(|widget| {
+                if alternator {
+                    // Apply tint for all widgets of every second block
+                    let mut w_json: serde_json::Value = widget.get_rendered().to_owned();
+                    *w_json.get_mut("background").unwrap() = json!(add_colors(
+                        &w_json["background"].to_string()[1..],
+                        &config.theme.alternating_tint_bg
+                    )
+                    .unwrap());
+                    w_json
+                } else {
+                    widget.get_rendered().to_owned()
+                }
+            })
+            .collect::<Vec<serde_json::Value>>();
+
+        alternator = !alternator;
+
+        // Serialize and concatenate widgets
+        let block_str = rendered_widgets
+            .iter()
+            .map(|w| w.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+
+        // The first widget's BG is used to get the FG color for the current separator
+        let first_bg = rendered_widgets.first().unwrap()["background"]
+            .as_str()
+            .internal_error("util", "couldn't get background color")?;
 
         let sep_fg = if config.theme.separator_fg == "auto" {
-            &color
+            first_bg.to_string()
         } else {
-            &config.theme.separator_fg
+            config.theme.separator_fg.clone()
         };
 
+        // The separator's BG is the last block's last widget's BG
         let sep_bg = if config.theme.separator_bg == "auto" {
-            state.last_bg.clone()
+            last_bg
         } else {
             Some(config.theme.separator_bg.clone())
         };
@@ -267,60 +279,23 @@ pub fn print_blocks(
             "full_text": config.theme.separator,
             "separator": false,
             "separator_block_width": 0,
-            "background": match sep_bg {
-                Some(bg) => Value::String(bg),
-                None => Value::Null
-            },
+            "background": sep_bg,
             "color": sep_fg,
             "markup": "pango"
         });
-        print!(
-            "{}{},",
-            if state.has_predecessor { "," } else { "" },
-            separator.to_string()
+
+        rendered_blocks.push(format!("{},{}", separator.to_string(), block_str));
+
+        // The last widget's BG is used to get the BG color for the next separator
+        last_bg = Some(
+            rendered_widgets.last().unwrap()["background"]
+                .as_str()
+                .internal_error("util", "couldn't get background color")?
+                .to_string(),
         );
-
-        if alternator {
-            let mut first_json: serde_json::Value = first.get_rendered().to_owned();
-            *first_json.get_mut("background").unwrap() = json!(add_colors(
-                &first_json["background"].to_string()[1..],
-                &config.theme.alternating_tint_bg
-            )
-            .unwrap());
-            print!("{}", first_json.to_string());
-        } else {
-            print!("{}", first.to_string());
-        }
-        state.set_last_bg(color.to_owned());
-        state.set_predecessor(true);
-
-        for widget in widgets.iter().skip(1) {
-            let w = if alternator {
-                let mut w_json: serde_json::Value = widget.get_rendered().to_owned();
-                *w_json.get_mut("background").unwrap() = json!(add_colors(
-                    &w_json["background"].to_string()[1..],
-                    &config.theme.alternating_tint_bg
-                )
-                .unwrap());
-                w_json
-            } else {
-                widget.get_rendered().to_owned()
-            };
-            print!(
-                "{}{}",
-                if state.has_predecessor { "," } else { "" },
-                w.to_string()
-            );
-            state.set_last_bg(String::from(
-                w["background"]
-                    .as_str()
-                    .internal_error("util", "couldn't get background color")?,
-            ));
-            state.set_predecessor(true);
-        }
-        alternator = !alternator;
     }
-    println!("],");
+
+    println!("[{}],", rendered_blocks.join(","));
 
     Ok(())
 }
