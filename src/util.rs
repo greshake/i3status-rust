@@ -221,6 +221,7 @@ pub fn print_blocks(
         last_bg: None,
     };
 
+    let mut alternator = false;
     print!("[");
     for block_id in order {
         let block = &(*(block_map
@@ -231,12 +232,27 @@ pub fn print_blocks(
             continue;
         }
         let first = widgets[0];
-        let color = first.get_rendered()["background"]
-            .as_str()
-            .internal_error("util", "couldn't get background color")?;
+
+        let color = if alternator {
+            let mut first_json: serde_json::Value = first.get_rendered().to_owned();
+            *first_json.get_mut("background").unwrap() = json!(add_colors(
+                &first_json["background"].to_string()[1..],
+                &config.theme.alternating_tint_bg
+            )
+            .unwrap());
+            first_json["background"]
+                .as_str()
+                .internal_error("util", "couldn't get background color")?
+                .to_owned()
+        } else {
+            first.get_rendered()["background"]
+                .as_str()
+                .internal_error("util", "couldn't get background color")?
+                .to_owned()
+        };
 
         let sep_fg = if config.theme.separator_fg == "auto" {
-            color
+            &color
         } else {
             &config.theme.separator_fg
         };
@@ -263,23 +279,46 @@ pub fn print_blocks(
             if state.has_predecessor { "," } else { "" },
             separator.to_string()
         );
-        print!("{}", first.to_string());
+
+        if alternator {
+            let mut first_json: serde_json::Value = first.get_rendered().to_owned();
+            *first_json.get_mut("background").unwrap() = json!(add_colors(
+                &first_json["background"].to_string()[1..],
+                &config.theme.alternating_tint_bg
+            )
+            .unwrap());
+            print!("{}", first_json.to_string());
+        } else {
+            print!("{}", first.to_string());
+        }
         state.set_last_bg(color.to_owned());
         state.set_predecessor(true);
 
         for widget in widgets.iter().skip(1) {
+            let w = if alternator {
+                let mut w_json: serde_json::Value = widget.get_rendered().to_owned();
+                *w_json.get_mut("background").unwrap() = json!(add_colors(
+                    &w_json["background"].to_string()[1..],
+                    &config.theme.alternating_tint_bg
+                )
+                .unwrap());
+                w_json
+            } else {
+                widget.get_rendered().to_owned()
+            };
             print!(
                 "{}{}",
                 if state.has_predecessor { "," } else { "" },
-                widget.to_string()
+                w.to_string()
             );
             state.set_last_bg(String::from(
-                widget.get_rendered()["background"]
+                w["background"]
                     .as_str()
                     .internal_error("util", "couldn't get background color")?,
             ));
             state.set_predecessor(true);
         }
+        alternator = !alternator;
     }
     println!("],");
 

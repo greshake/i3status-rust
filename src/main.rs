@@ -159,59 +159,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Ok(());
     }
 
-    let mut config_alternating_tint = config.clone();
-    {
-        let tint_bg = &config.theme.alternating_tint_bg;
-        config_alternating_tint.theme.idle_bg =
-            util::add_colors(&config_alternating_tint.theme.idle_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.info_bg =
-            util::add_colors(&config_alternating_tint.theme.info_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.good_bg =
-            util::add_colors(&config_alternating_tint.theme.good_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.warning_bg =
-            util::add_colors(&config_alternating_tint.theme.warning_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.critical_bg =
-            util::add_colors(&config_alternating_tint.theme.critical_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-
-        let tint_fg = &config.theme.alternating_tint_fg;
-        config_alternating_tint.theme.idle_fg =
-            util::add_colors(&config_alternating_tint.theme.idle_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.info_fg =
-            util::add_colors(&config_alternating_tint.theme.info_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.good_fg =
-            util::add_colors(&config_alternating_tint.theme.good_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.warning_fg =
-            util::add_colors(&config_alternating_tint.theme.warning_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.critical_fg =
-            util::add_colors(&config_alternating_tint.theme.critical_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-    }
-
-    let mut blocks: Vec<Box<dyn Block>> = Vec::new();
-
-    let mut alternator = false;
     // Initialize the blocks
+    let mut blocks: Vec<Box<dyn Block>> = Vec::new();
     for &(ref block_name, ref block_config) in &config.blocks {
         blocks.push(create_block(
             block_name,
             block_config.clone(),
-            if alternator {
-                config_alternating_tint.clone()
-            } else {
-                config.clone()
-            },
+            config.clone(),
             tx_update_requests.clone(),
         )?);
-        alternator = !alternator;
     }
 
     // We save the order of the blocks here,
