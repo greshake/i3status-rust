@@ -1,5 +1,4 @@
 use std::boxed::Box;
-use std::collections::BTreeMap;
 use std::result;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -30,6 +29,7 @@ use crate::widgets::rotatingtext::RotatingTextWidget;
 
 #[derive(Debug, Clone)]
 struct Player {
+    bus_name: String,
     interface_name: String,
     playback_status: PlaybackStatus,
     artist: Option<String>,
@@ -67,8 +67,9 @@ pub struct Music {
     separator: String,
     seek_step: i64,
     config: Config,
-    players: Arc<Mutex<BTreeMap<String, Player>>>,
+    players: Arc<Mutex<Vec<Player>>>,
     hide_when_empty: bool,
+    send: Sender<Task>,
 }
 
 impl Music {
@@ -273,6 +274,7 @@ impl ConfigBlock for Music {
         let id_copy2 = id.clone();
         let id_copy3 = id.clone();
         let send2 = send.clone();
+        let send3 = send.clone();
 
         let c = Connection::get_private(BusType::Session)
             .block_error("music", "failed to establish D-Bus connection")?;
@@ -281,7 +283,7 @@ impl ConfigBlock for Music {
             compile_regexps(block_config.clone().interface_name_exclude)
                 .block_error("music", "failed to parse exclude patterns")?;
 
-        let mut initial_players = BTreeMap::new();
+        let mut initial_players: Vec<Player> = Vec::new();
         let m = Message::new_method_call(
             "org.freedesktop.DBus",
             "/",
@@ -315,33 +317,35 @@ impl ConfigBlock for Music {
             let r = c.send_with_reply_and_block(m.append1(name), 500).unwrap();
             let bn: &str = r.read1().ok().unwrap();
 
-            // Get current media info, if any
-            let p = c.with_path(name, "/org/mpris/MediaPlayer2", 500);
-            let data = p.get("org.mpris.MediaPlayer2.Player", "Metadata");
-            let (title, artist) = match data {
-                Err(_) => (String::new(), String::new()),
-                Ok(data) => extract_from_metadata(&data).unwrap_or((String::new(), String::new())),
-            };
+            if !initial_players.iter().any(|p| p.bus_name == bn) {
+                // Get current media info, if any
+                let p = c.with_path(name, "/org/mpris/MediaPlayer2", 500);
+                let data = p.get("org.mpris.MediaPlayer2.Player", "Metadata");
+                let (title, artist) = match data {
+                    Err(_) => (String::new(), String::new()),
+                    Ok(data) => {
+                        extract_from_metadata(&data).unwrap_or((String::new(), String::new()))
+                    }
+                };
 
-            // Get current playback status
-            let data = p.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
-            let status = match data {
-                Err(_) => PlaybackStatus::Unknown,
-                Ok(data) => {
-                    let data: Box<dyn RefArg> = data;
-                    extract_playback_status(&data)
-                }
-            };
+                // Get current playback status
+                let data = p.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
+                let status = match data {
+                    Err(_) => PlaybackStatus::Unknown,
+                    Ok(data) => {
+                        let data: Box<dyn RefArg> = data;
+                        extract_playback_status(&data)
+                    }
+                };
 
-            initial_players.insert(
-                bn.to_string(),
-                Player {
+                initial_players.push(Player {
+                    bus_name: bn.to_string(),
                     interface_name: name.to_string(),
                     playback_status: status,
                     artist: Some(artist),
                     title: Some(title),
-                },
-            );
+                });
+            }
         }
 
         let players_original = Arc::new(Mutex::new(initial_players));
@@ -359,38 +363,36 @@ impl ConfigBlock for Music {
                     if msg.sender().is_some() {
                         if let Some(signal) = PropertiesPropertiesChanged::from_message(&msg) {
                             let mut players = players_copy2.lock().expect("failed to acquire lock for `players`");
-                            let players_copy = players.clone();
-                            let player = players_copy.get(&msg.sender().unwrap().to_string());
+                            let player = players.iter_mut().find(|p| &p.bus_name == &msg.sender().unwrap().to_string());
                             if player.is_none() {
-                                // Ignoring update since players array was empty.
-                                // This shouldn't actually occur as long as the other thread updates in time.
+                                // Ignoring update since could not find player in the array.
+                                // This shouldn't actually occur as long as the other thread updates the array in time.
                                 continue;
                             }
-                            let mut new = player.unwrap().clone();
+                            let p = player.unwrap();
                             let mut updated = false;
                             let raw_metadata = signal.changed_properties.get("Metadata");
                             if let Some(data) = raw_metadata {
                                 let (title, artist) =
                                     extract_from_metadata(&data.0).unwrap_or((String::new(), String::new()));
-                                if new.artist != Some(artist.clone()) {
-                                       new.artist = Some(artist);
-                                       updated = true;
+                                if p.artist != Some(artist.clone()) {
+                                    p.artist = Some(artist);
+                                    updated = true;
                                 }
-                                if new.title != Some(title.clone()) {
-                                    new.title = Some(title);
-                                       updated = true;
+                                if p.title != Some(title.clone()) {
+                                    p.title = Some(title);
+                                    updated = true;
                                 }
                             };
                             let raw_metadata = signal.changed_properties.get("PlaybackStatus");
                             if let Some(data) = raw_metadata {
                                 let new_status = extract_playback_status(&data.0);
-                                if new.playback_status != new_status {
-                                    new.playback_status = new_status;
+                                if p.playback_status != new_status {
+                                    p.playback_status = new_status;
                                     updated = true;
                                 }
                             };
                             if updated {
-                                players.insert(msg.sender().unwrap().to_string(), new);
                                 send.send(Task {
                                     id: id.clone(),
                                     update_time: Instant::now(),
@@ -418,14 +420,18 @@ impl ConfigBlock for Music {
                          let (name, old_owner, new_owner): (&str, &str, &str) = x.read3().unwrap();
                          let mut players = players_copy3.lock().expect("failed to acquire lock for `players`");
                          if !old_owner.is_empty() && new_owner.is_empty() {
-                             players.remove(old_owner);
-                             send2.send(Task {
-                                 id: id_copy3.clone(),
-                                 update_time: Instant::now(),
-                             })
-                             .unwrap();
+                             if let Some(pos) = players.iter().position(|p| p.bus_name == old_owner) {
+                                 players.remove(pos);
+                                 send2.send(Task {
+                                     id: id_copy3.clone(),
+                                     update_time: Instant::now(),
+                                 })
+                                 .unwrap();
+                             }
                          } else if old_owner.is_empty() && !new_owner.is_empty() && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) {
-                             players.insert(new_owner.to_string(), Player {
+                             if !players.iter().any(|p| p.bus_name == new_owner) {
+                             players.push(Player {
+                                 bus_name: new_owner.to_string(),
                                  interface_name: name.to_string(),
                                  playback_status: PlaybackStatus::Unknown,
                                  artist: None,
@@ -436,6 +442,7 @@ impl ConfigBlock for Music {
                                  update_time: Instant::now(),
                              })
                              .unwrap();
+                             }
                         }
                     }
                 }
@@ -512,6 +519,7 @@ impl ConfigBlock for Music {
             config,
             players: players_copy,
             hide_when_empty: block_config.hide_when_empty,
+            send: send3,
         })
     }
 }
@@ -532,9 +540,8 @@ impl Block for Music {
             .players
             .lock()
             .block_error("music", "failed to acquire lock for `players`")?;
-        // get first player
-        let (_busname, metadata) = match players.iter().next() {
-            Some((k, v)) => (k, v),
+        let metadata = match players.first() {
+            Some(m) => m,
             None => {
                 self.current_song_widget.set_text(String::from(""));
                 return Ok(None);
@@ -593,7 +600,7 @@ impl Block for Music {
                 _ => "",
             };
 
-            let players = self
+            let mut players = self
                 .players
                 .lock()
                 .block_error("music", "failed to acquire lock for `players`")?;
@@ -601,7 +608,7 @@ impl Block for Music {
             match event.button {
                 MouseButton::Left => {
                     if action != "" && players.len() > 0 {
-                        let (_busname, metadata) = players.iter().next().unwrap();
+                        let metadata = players.first().unwrap();
                         let m = Message::new_method_call(
                             metadata.interface_name.clone(),
                             "/org/mpris/MediaPlayer2",
@@ -623,10 +630,19 @@ impl Block for Music {
                         }
                     }
                 }
+                MouseButton::Right => {
+                    if name.as_str() == self.id && players.len() > 0 {
+                        players.rotate_left(1);
+                        self.send.send(Task {
+                            id: self.id.clone(),
+                            update_time: Instant::now(),
+                        })?;
+                    }
+                }
                 // TODO: on right mouse click we can cycle through the current players
                 _ => {
                     if name.as_str() == self.id && players.len() > 0 {
-                        let (_busname, metadata) = players.iter().next().unwrap();
+                        let metadata = players.first().unwrap();
                         let m = Message::new_method_call(
                             metadata.interface_name.clone(),
                             "/org/mpris/MediaPlayer2",
