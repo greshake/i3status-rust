@@ -23,7 +23,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::widget::{I3BarWidget, State};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
 
@@ -458,21 +458,24 @@ impl ConfigBlock for Music {
                     play = Some(
                         ButtonWidget::new(config.clone(), "play")
                             .with_icon("music_play")
-                            .with_state(State::Info),
+                            .with_state(State::Info)
+                            .with_spacing(Spacing::Inline),
                     )
                 }
                 "next" => {
                     next = Some(
                         ButtonWidget::new(config.clone(), "next")
                             .with_icon("music_next")
-                            .with_state(State::Info),
+                            .with_state(State::Info)
+                            .with_spacing(Spacing::Inline),
                     )
                 }
                 "prev" => {
                     prev = Some(
                         ButtonWidget::new(config.clone(), "prev")
                             .with_icon("music_prev")
-                            .with_state(State::Info),
+                            .with_state(State::Info)
+                            .with_spacing(Spacing::Inline),
                     )
                 }
                 x => {
@@ -506,7 +509,8 @@ impl ConfigBlock for Music {
             on_click: block_config.on_click,
             on_collapsed_click_widget: ButtonWidget::new(config.clone(), "on_collapsed_click")
                 .with_icon("music")
-                .with_state(State::Info),
+                .with_state(State::Info)
+                .with_spacing(Spacing::Hidden),
             on_collapsed_click: block_config.on_collapsed_click,
             dbus_conn: Connection::get_private(BusType::Session)
                 .block_error("music", "failed to establish D-Bus connection")?,
