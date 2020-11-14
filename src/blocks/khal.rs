@@ -97,8 +97,7 @@ impl Block for Khal {
 
         let khal_output = khal_cmd.block_error("khal", "failed to run command")?;
         let khal_stdout =
-            String::from_utf8(khal_output.stdout)
-            .block_error("khal", "can't read output")?;
+            String::from_utf8(khal_output.stdout).block_error("khal", "can't read output")?;
 
         let mut lines = khal_stdout.lines();
         let dayline = lines.nth(0).block_error("khal", "output seems empty");
