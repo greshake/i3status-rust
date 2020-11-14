@@ -93,17 +93,17 @@ impl Block for Khal {
             .arg("{start-time}")
             .arg("--notstarted")
             .arg(&from)
-            .output()
-            .expect("failed to execute process");
+            .output();
 
-        let khal_output = String::from_utf8(khal_cmd.stdout).unwrap();
-        let mut lines = khal_output.lines();
-        let dayline = match lines.nth(0) {
-            Some(dl) => dl,
-            None => "None",
-        };
+        let khal_output = khal_cmd.block_error("khal", "failed to run command")?;
+        let khal_stdout =
+            String::from_utf8(khal_output.stdout)
+            .block_error("khal", "can't read output")?;
 
-        if dayline.trim() == "Today" {
+        let mut lines = khal_stdout.lines();
+        let dayline = lines.nth(0).block_error("khal", "output seems empty");
+
+        if dayline.unwrap().trim() == "Today" {
             for e in lines {
                 events.push(e.to_string())
             }
