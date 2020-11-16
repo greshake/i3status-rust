@@ -639,7 +639,6 @@ impl Block for Music {
                         })?;
                     }
                 }
-                // TODO: on right mouse click we can cycle through the current players
                 _ => {
                     if name.as_str() == self.id && players.len() > 0 {
                         let metadata = players.first().unwrap();
