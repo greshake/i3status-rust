@@ -829,7 +829,7 @@ impl Net {
             if let Some(ref mut graph_tx) = self.graph_tx {
                 self.tx_buff.remove(0);
                 self.tx_buff.push(tx_bytes);
-                *graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
+                *graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None, true);
             }
         }
         if self.output_rx.is_some() || self.graph_rx.is_some() {
@@ -849,7 +849,7 @@ impl Net {
             if let Some(ref mut graph_rx) = self.graph_rx {
                 self.rx_buff.remove(0);
                 self.rx_buff.push(rx_bytes);
-                *graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
+                *graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None, true);
             }
         }
         Ok(())

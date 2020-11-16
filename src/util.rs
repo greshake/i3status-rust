@@ -348,15 +348,29 @@ pub fn format_percent_bar(percent: f32) -> String {
         .collect()
 }
 
-pub fn format_vec_to_bar_graph<T>(content: &[T], min: Option<T>, max: Option<T>) -> String
+pub fn format_vec_to_bar_graph<T>(
+    content: &[T],
+    min: Option<T>,
+    max: Option<T>,
+    dots: bool,
+) -> String
 where
     T: Ord + ToPrimitive,
 {
-    // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
-    let bars = [
-        '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
-        '\u{2588}',
-    ];
+    let bars = if dots {
+        vec![
+            '\u{2880}', '\u{28a0}', '\u{28b0}', '\u{28b8}', '\u{2840}', '\u{28c0}', '\u{28e0}',
+            '\u{28f0}', '\u{28f8}', '\u{2844}', '\u{28c4}', '\u{28e4}', '\u{28f4}', '\u{28fc}',
+            '\u{2846}', '\u{28c6}', '\u{28e6}', '\u{28f6}', '\u{28fe}', '\u{2847}', '\u{28c7}',
+            '\u{28e7}', '\u{28f7}', '\u{28ff}',
+        ]
+    } else {
+        // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
+        vec![
+            '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
+            '\u{2588}',
+        ]
+    };
     let min: f64 = match min {
         Some(x) => x.to_f64().unwrap(),
         None => content.iter().min().unwrap().to_f64().unwrap(),
