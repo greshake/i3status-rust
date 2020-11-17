@@ -50,6 +50,8 @@ Example theme file can be found in `example/theme/solarized-dark.toml`.
 ![gruvbox-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox_dark.png)
 * `space-villain`
 ![space-villain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/space_villain.png)
+* `native` (like plain with no background and native separators)
+![native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)
 
 # Available icon sets
 

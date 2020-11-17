@@ -230,25 +230,40 @@ pub fn print_blocks(
         }
 
         // Get the final JSON from all the widgets for this block
-        let rendered_widgets = widgets
+        let mut rendered_widgets = widgets
             .iter()
             .map(|widget| {
-                if alternator {
+                let mut w_json: serde_json::Value = widget.get_rendered().to_owned();
+                if config.theme.native {
+                    // Remove backgrounds for native theme
+                    *w_json.get_mut("background").unwrap() = json!(null);
+                } else if alternator {
                     // Apply tint for all widgets of every second block
-                    let mut w_json: serde_json::Value = widget.get_rendered().to_owned();
                     *w_json.get_mut("background").unwrap() = json!(add_colors(
                         &w_json["background"].to_string()[1..],
                         &config.theme.alternating_tint_bg
                     )
                     .unwrap());
-                    w_json
-                } else {
-                    widget.get_rendered().to_owned()
                 }
+                w_json
             })
             .collect::<Vec<serde_json::Value>>();
 
         alternator = !alternator;
+
+        if config.theme.native {
+            // Re-add native separator on last widget for native theme
+            *rendered_widgets
+                .last_mut()
+                .unwrap()
+                .get_mut("separator")
+                .unwrap() = json!(null);
+            *rendered_widgets
+                .last_mut()
+                .unwrap()
+                .get_mut("separator_block_width")
+                .unwrap() = json!(null);
+        }
 
         // Serialize and concatenate widgets
         let block_str = rendered_widgets
@@ -256,6 +271,12 @@ pub fn print_blocks(
             .map(|w| w.to_string())
             .collect::<Vec<String>>()
             .join(",");
+
+        if config.theme.native {
+            // Skip separator block for native theme
+            rendered_blocks.push(format!("{}", block_str));
+            continue;
+        }
 
         // The first widget's BG is used to get the FG color for the current separator
         let first_bg = rendered_widgets.first().unwrap()["background"]

@@ -8,6 +8,7 @@ use crate::util;
 
 lazy_static! {
     pub static ref SLICK: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#424242".to_owned(),
         idle_fg: "#ffffff".to_owned(),
         info_bg: "#2196f3".to_owned(),
@@ -26,6 +27,7 @@ lazy_static! {
     };
 
     pub static ref SOLARIZED_DARK: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#002b36".to_owned(),      // base03
         idle_fg: "#93a1a1".to_owned(),      // base1
         info_bg: "#268bd2".to_owned(),      // blue
@@ -44,6 +46,7 @@ lazy_static! {
     };
 
     pub static ref SOLARIZED_LIGHT: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#fdf6e3".to_owned(),      // base3
         idle_fg: "#586e75".to_owned(),      // base01
         info_bg: "#268bd2".to_owned(),      // blue
@@ -62,6 +65,7 @@ lazy_static! {
     };
 
     pub static ref MODERN: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#222D32".to_owned(),
         idle_fg: "#CFD8DC".to_owned(),
         info_bg: "#449CDB".to_owned(),
@@ -80,6 +84,7 @@ lazy_static! {
     };
 
     pub static ref PLAIN: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#000000".to_owned(),
         idle_fg: "#93a1a1".to_owned(),
         info_bg: "#000000".to_owned(),
@@ -98,6 +103,7 @@ lazy_static! {
     };
 
     pub static ref BAD_WOLF: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#444444".to_owned(),
         idle_fg: "#f5f5f5".to_owned(),
         info_bg: "#626262".to_owned(),
@@ -116,6 +122,7 @@ lazy_static! {
     };
 
     pub static ref GRUVBOX_LIGHT: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#fbf1c7".to_owned(),
         idle_fg: "#3c3836".to_owned(),
         info_bg: "#458588".to_owned(),
@@ -134,6 +141,7 @@ lazy_static! {
     };
 
     pub static ref GRUVBOX_DARK: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#282828".to_owned(),
         idle_fg: "#ebdbb2".to_owned(),
         info_bg: "#458588".to_owned(),
@@ -152,6 +160,7 @@ lazy_static! {
     };
 
     pub static ref SPACE_VILLAIN: Theme = Theme {
+        native: false.to_owned(),
         idle_bg: "#06060f".to_owned(), //Rich black
         idle_fg: "#c1c1c1".to_owned(), //Silver
         info_bg: "#00223f".to_owned(), //Maastricht Blue
@@ -168,11 +177,32 @@ lazy_static! {
         alternating_tint_bg: "#00000000".to_owned(),
         alternating_tint_fg: "#00000000".to_owned(),
     };
+
+    pub static ref NATIVE: Theme = Theme {
+        native: true.to_owned(),
+        idle_bg: "#000000".to_owned(),
+        idle_fg: "#93a1a1".to_owned(),
+        info_bg: "#000000".to_owned(),
+        info_fg: "#93a1a1".to_owned(),
+        good_bg: "#000000".to_owned(),
+        good_fg: "#859900".to_owned(),
+        warning_bg: "#000000".to_owned(),
+        warning_fg: "#b58900".to_owned(),
+        critical_bg: "#000000".to_owned(),
+        critical_fg: "#dc322f".to_owned(),
+        separator: "|".to_owned(),
+        separator_bg: "#000000".to_owned(),
+        separator_fg: "#a9a9a9".to_owned(),
+        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_fg: "#000000".to_owned(),
+    };
+
 }
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Theme {
+    pub native: bool,
     pub idle_bg: String,
     pub idle_fg: String,
     pub info_bg: String,
@@ -208,6 +238,7 @@ impl Theme {
             "gruvbox-light" => Some(GRUVBOX_LIGHT.clone()),
             "gruvbox-dark" => Some(GRUVBOX_DARK.clone()),
             "space-villain" => Some(SPACE_VILLAIN.clone()),
+            "native" => Some(NATIVE.clone()),
             _ => None,
         }
     }
