@@ -455,24 +455,27 @@ impl ConfigBlock for Music {
         for button in block_config.buttons {
             match &*button {
                 "play" => {
+                    let button_id = format!("{}_PLAY", id_copy);
                     play = Some(
-                        ButtonWidget::new(config.clone(), "play")
+                        ButtonWidget::new(config.clone(), &button_id)
                             .with_icon("music_play")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
                     )
                 }
                 "next" => {
+                    let button_id = format!("{}_NEXT", id_copy);
                     next = Some(
-                        ButtonWidget::new(config.clone(), "next")
+                        ButtonWidget::new(config.clone(), &button_id)
                             .with_icon("music_next")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
                     )
                 }
                 "prev" => {
+                    let button_id = format!("{}_PREV", id_copy);
                     prev = Some(
-                        ButtonWidget::new(config.clone(), "prev")
+                        ButtonWidget::new(config.clone(), &button_id)
                             .with_icon("music_prev")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
@@ -491,6 +494,7 @@ impl ConfigBlock for Music {
             patterns.iter().map(|p| Regex::new(&p)).collect()
         }
 
+        let id_collapsed = format!("{}_COLLAPSED", id_copy);
         Ok(Music {
             id: id_copy,
             current_song_widget: RotatingTextWidget::new(
@@ -507,7 +511,7 @@ impl ConfigBlock for Music {
             play,
             next,
             on_click: block_config.on_click,
-            on_collapsed_click_widget: ButtonWidget::new(config.clone(), "on_collapsed_click")
+            on_collapsed_click_widget: ButtonWidget::new(config.clone(), &id_collapsed)
                 .with_icon("music")
                 .with_state(State::Info)
                 .with_spacing(Spacing::Hidden),
@@ -597,10 +601,14 @@ impl Block for Music {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
+            let play_id = format!("{}_PLAY", self.id);
+            let prev_id = format!("{}_PREV", self.id);
+            let next_id = format!("{}_NEXT", self.id);
+            let collapsed_id = format!("{}_COLLAPSED", self.id);
             let action = match name as &str {
-                "play" => "PlayPause",
-                "next" => "Next",
-                "prev" => "Previous",
+                id if id == play_id => "PlayPause",
+                id if id == next_id => "Next",
+                id if id == prev_id => "Previous",
                 _ => "",
             };
 
@@ -623,7 +631,7 @@ impl Block for Music {
                         self.dbus_conn
                             .send(m)
                             .block_error("music", "failed to call method via D-Bus")?;
-                    } else if name == "on_collapsed_click" && self.on_collapsed_click.is_some() {
+                    } else if name == &collapsed_id && self.on_collapsed_click.is_some() {
                         let command = self.on_collapsed_click.as_ref().unwrap();
                         spawn_child_async("sh", &["-c", command])
                             .block_error("music", "could not spawn child")?;
