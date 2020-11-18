@@ -187,6 +187,24 @@ lazy_static! {
         alternating_tint_bg: None.to_owned(),
     };
 
+    pub static ref NATIVE: Theme = Theme {
+        native_separators: true.to_owned(),
+        idle_bg: None.to_owned(),
+        idle_fg: None.to_owned(),
+        info_bg: None.to_owned(),
+        info_fg: None.to_owned(),
+        good_bg: None.to_owned(),
+        good_fg: None.to_owned(),
+        warning_bg: None.to_owned(),
+        warning_fg: None.to_owned(),
+        critical_bg: None.to_owned(),
+        critical_fg: None.to_owned(),
+        separator: "".to_owned(),
+        separator_bg: None.to_owned(),
+        separator_fg: None.to_owned(),
+        alternating_tint_bg: None.to_owned(),
+    };
+
 }
 
 #[derive(Deserialize, Debug, Clone)]

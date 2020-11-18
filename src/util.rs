@@ -318,18 +318,22 @@ pub fn print_blocks(
     Ok(())
 }
 
-pub fn color_from_rgb(
+pub fn color_from_rgba(
     color: &str,
-) -> ::std::result::Result<(u8, u8, u8), Box<dyn std::error::Error>> {
+) -> ::std::result::Result<(u8, u8, u8, u8), Box<dyn std::error::Error>> {
     Ok((
         u8::from_str_radix(&color.get(1..3).ok_or("invalid rgba color")?, 16)?,
         u8::from_str_radix(&color.get(3..5).ok_or("invalid rgba color")?, 16)?,
         u8::from_str_radix(&color.get(5..7).ok_or("invalid rgba color")?, 16)?,
+        u8::from_str_radix(&color.get(7..9).unwrap_or("FF"), 16)?,
     ))
 }
 
-pub fn color_to_rgb(color: (u8, u8, u8)) -> String {
-    format!("#{:02x}{:02x}{:02x}", color.0, color.1, color.2)
+pub fn color_to_rgba(color: (u8, u8, u8, u8)) -> String {
+    format!(
+        "#{:02X}{:02X}{:02X}{:02X}",
+        color.0, color.1, color.2, color.3
+    )
 }
 
 // TODO: Allow for other non-additive tints
@@ -342,13 +346,14 @@ pub fn add_colors(
     } else if b.is_none() {
         Ok(Some(a.unwrap().to_string()))
     } else {
-        let (r_a, g_a, b_a) = color_from_rgb(a.unwrap())?;
-        let (r_b, g_b, b_b) = color_from_rgb(b.unwrap().as_str())?;
+        let (r_a, g_a, b_a, a_a) = color_from_rgba(a.unwrap())?;
+        let (r_b, g_b, b_b, a_b) = color_from_rgba(b.unwrap().as_str())?;
 
-        Ok(Some(color_to_rgb((
+        Ok(Some(color_to_rgba((
             r_a.saturating_add(r_b),
             g_a.saturating_add(g_b),
             b_a.saturating_add(b_b),
+            a_a.saturating_add(a_b),
         ))))
     }
 }
