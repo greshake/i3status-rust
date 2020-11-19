@@ -306,15 +306,29 @@ pub struct Sway {
 
 impl Sway {
     pub fn new(sway_kb_identifier: String) -> Result<Self> {
-        let layout = swayipc::Connection::new()
-            .unwrap()
-            .get_inputs()
-            .unwrap()
-            .into_iter()
-            .find(|input| input.identifier == sway_kb_identifier && input.input_type == "keyboard")
-            .and_then(|input| input.xkb_active_layout_name)
-            .ok_or_else(|| "".to_string())
-            .block_error("sway", "Failed to get xkb_active_layout_name.")?;
+        let layout = if sway_kb_identifier.is_empty() {
+            swayipc::Connection::new()
+                .unwrap()
+                .get_inputs()
+                .unwrap()
+                .into_iter()
+                .find(|input| input.input_type == "keyboard")
+                .and_then(|input| input.xkb_active_layout_name)
+                .ok_or_else(|| "".to_string())
+                .block_error("sway", "Failed to get xkb_active_layout_name.")?
+        } else {
+            swayipc::Connection::new()
+                .unwrap()
+                .get_inputs()
+                .unwrap()
+                .into_iter()
+                .find(|input| {
+                    input.identifier == sway_kb_identifier && input.input_type == "keyboard"
+                })
+                .and_then(|input| input.xkb_active_layout_name)
+                .ok_or_else(|| "".to_string())
+                .block_error("sway", "Failed to get xkb_active_layout_name.")?
+        };
 
         Ok(Sway {
             sway_kb_layout: Arc::new(Mutex::new(layout)),
