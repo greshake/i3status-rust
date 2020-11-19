@@ -43,6 +43,9 @@ pub trait KeyboardLayoutMonitor {
     /// Retrieve the current keyboard layout.
     fn keyboard_layout(&self) -> Result<String>;
 
+    /// Retrieve the current keyboard variant.
+    fn keyboard_variant(&self) -> Result<String>;
+
     /// Specify that the monitor does not send update requests and must be
     /// polled manually.
     fn must_poll(&self) -> bool;
@@ -97,6 +100,11 @@ impl KeyboardLayoutMonitor for SetXkbMap {
         setxkbmap_layouts()
     }
 
+    // Not implemented (TODO?)
+    fn keyboard_variant(&self) -> Result<String> {
+        Ok("N/A".to_string())
+    }
+
     fn must_poll(&self) -> bool {
         true
     }
@@ -126,12 +134,23 @@ impl KeyboardLayoutMonitor for LocaleBus {
         Ok(layout)
     }
 
+    fn keyboard_variant(&self) -> Result<String> {
+        let layout: String = self
+            .con
+            .with_path("org.freedesktop.locale1", "/org/freedesktop/locale1", 1000)
+            .get("org.freedesktop.locale1", "X11Variant")
+            .block_error("locale", "Failed to get X11Variant property.")?;
+
+        Ok(layout)
+    }
+
     fn must_poll(&self) -> bool {
         false
     }
 
     /// Monitor Locale property changes in a separate thread and send updates
     /// via the `update_request` channel.
+    // TODO: pull the new value from the PropertiesChanged message instead of making another method call
     fn monitor(&self, id: String, update_request: Sender<Task>) {
         thread::Builder::new()
             .name("keyboard_layout".into())
@@ -237,6 +256,11 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
         }
     }
 
+    fn keyboard_variant(&self) -> Result<String> {
+        // Not implemented (TODO?)
+        Ok("N/A".to_string())
+    }
+
     fn must_poll(&self) -> bool {
         false
     }
@@ -340,6 +364,11 @@ impl KeyboardLayoutMonitor for Sway {
     fn keyboard_layout(&self) -> Result<String> {
         let layout = self.sway_kb_layout.lock().unwrap();
         Ok(layout.to_string())
+    }
+
+    fn keyboard_variant(&self) -> Result<String> {
+        // Not implemented (TODO? Doesn't look like sway IPC exposes this anyway)
+        Ok("N/A".to_string())
     }
 
     fn must_poll(&self) -> bool {
@@ -476,7 +505,11 @@ impl Block for KeyboardLayout {
 
     fn update(&mut self) -> Result<Option<Update>> {
         let layout = self.monitor.keyboard_layout()?;
-        let values = map!("{layout}" => layout);
+        let variant = self.monitor.keyboard_variant()?;
+        let values = map!(
+            "{layout}" => layout,
+            "{variant}" => variant
+        );
 
         self.output
             .set_text(self.format.render_static_str(&values)?);
