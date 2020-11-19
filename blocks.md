@@ -564,7 +564,7 @@ Key | Values | Required | Default
 `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | No | `"setxkbmap"`
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
 `format` | Format string, e.g. " {layout}" | No | `"{layout}"`
-`sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs` | No | ""
+`sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs` | No | Defaults to first input found
 
 ## Load
 
