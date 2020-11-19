@@ -519,7 +519,8 @@ Four drivers are available:
 - `localebus` which can read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path
 - `kbdd` which uses [kbdd](https://github.com/qnikst/kbdd) to monitor per-window layout changes via DBus
 - `sway` which can read asynchronous updates from the sway IPC
- Which of these methods is appropriate will depend on your system setup.
+
+Which of these methods is appropriate will depend on your system setup.
 
 ### Examples
 
