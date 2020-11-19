@@ -566,6 +566,13 @@ Key | Values | Required | Default
 `format` | Format string, e.g. " {layout}" | No | `"{layout}"`
 `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs` | No | Defaults to first input found
 
+### Format string specification
+
+  Key    | Value
+---------|-------
+`{layout}` | Keyboard layout name
+`{variant}` | Keyboard variant (only `localebus` is supported so far)
+
 ## Load
 
 Creates a block which displays the system load average.
