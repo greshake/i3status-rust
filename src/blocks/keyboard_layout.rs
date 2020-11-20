@@ -461,7 +461,7 @@ impl ConfigBlock for KeyboardLayout {
     type Config = KeyboardLayoutConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid().to_string();
+        let id: String = pseudo_uuid();
         let monitor: Box<dyn KeyboardLayoutMonitor> = match block_config.driver {
             KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap::new()?),
             KeyboardLayoutDriver::LocaleBus => {

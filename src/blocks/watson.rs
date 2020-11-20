@@ -69,7 +69,7 @@ impl ConfigBlock for Watson {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
 
         let watson = Watson {
             id: id.clone(),

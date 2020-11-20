@@ -170,9 +170,9 @@ impl ConfigBlock for NvidiaGpu {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid().to_string();
-        let id_memory = pseudo_uuid().to_string();
-        let id_fans = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
+        let id_memory = pseudo_uuid();
+        let id_fans = pseudo_uuid();
 
         Ok(NvidiaGpu {
             id: id.clone(),

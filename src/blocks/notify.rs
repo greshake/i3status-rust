@@ -46,7 +46,7 @@ impl ConfigBlock for Notify {
     type Config = NotifyConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid().to_string();
+        let id: String = pseudo_uuid();
         let id1 = id.clone();
 
         let c = Connection::get_private(BusType::Session).block_error(

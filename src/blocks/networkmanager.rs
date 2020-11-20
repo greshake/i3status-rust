@@ -533,7 +533,7 @@ impl ConfigBlock for NetworkManager {
     type Config = NetworkManagerConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid().to_string();
+        let id: String = pseudo_uuid();
         let id_copy = id.clone();
         let dbus_conn = Connection::get_private(BusType::System)
             .block_error("networkmanager", "failed to establish D-Bus connection")?;

@@ -107,7 +107,7 @@ impl ConfigBlock for Taskwarrior {
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Taskwarrior {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             warning_threshold: block_config.warning_threshold,
             critical_threshold: block_config.critical_threshold,

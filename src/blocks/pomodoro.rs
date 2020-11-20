@@ -135,7 +135,7 @@ impl ConfigBlock for Pomodoro {
     type Config = PomodoroConfig;
 
     fn new(block_config: Self::Config, config: Config, _send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid().to_string();
+        let id: String = pseudo_uuid();
 
         Ok(Pomodoro {
             id: id.clone(),

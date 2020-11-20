@@ -84,7 +84,7 @@ impl ConfigBlock for Time {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let i = pseudo_uuid().to_string();
+        let i = pseudo_uuid();
         Ok(Time {
             id: i.clone(),
             format: block_config.format,

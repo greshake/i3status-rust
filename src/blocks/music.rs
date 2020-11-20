@@ -269,7 +269,7 @@ impl ConfigBlock for Music {
     type Config = MusicConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid().to_string();
+        let id: String = pseudo_uuid();
         let id_copy = id.clone();
         let id_copy2 = id.clone();
         let id_copy3 = id.clone();
@@ -363,7 +363,7 @@ impl ConfigBlock for Music {
                     if msg.sender().is_some() {
                         if let Some(signal) = PropertiesPropertiesChanged::from_message(&msg) {
                             let mut players = players_copy2.lock().expect("failed to acquire lock for `players`");
-                            let player = players.iter_mut().find(|p| &p.bus_name == &msg.sender().unwrap().to_string());
+                            let player = players.iter_mut().find(|p| p.bus_name == msg.sender().unwrap().to_string());
                             if player.is_none() {
                                 // Ignoring update since could not find player in the array.
                                 // This shouldn't actually occur as long as the other thread updates the array in time.
@@ -428,22 +428,20 @@ impl ConfigBlock for Music {
                                  })
                                  .unwrap();
                              }
-                         } else if old_owner.is_empty() && !new_owner.is_empty() && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) {
-                             if !players.iter().any(|p| p.bus_name == new_owner) {
-                             players.push(Player {
-                                 bus_name: new_owner.to_string(),
-                                 interface_name: name.to_string(),
-                                 playback_status: PlaybackStatus::Unknown,
-                                 artist: None,
-                                 title: None,
-                             });
-                             send2.send(Task {
-                                 id: id_copy3.clone(),
-                                 update_time: Instant::now(),
-                             })
-                             .unwrap();
-                             }
-                        }
+                         } else if old_owner.is_empty() && !new_owner.is_empty() && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) && !players.iter().any(|p| p.bus_name == new_owner) {
+                         players.push(Player {
+                             bus_name: new_owner.to_string(),
+                             interface_name: name.to_string(),
+                             playback_status: PlaybackStatus::Unknown,
+                             artist: None,
+                             title: None,
+                         });
+                         send2.send(Task {
+                             id: id_copy3.clone(),
+                             update_time: Instant::now(),
+                         })
+                         .unwrap();
+                         }
                     }
                 }
             }

@@ -650,7 +650,7 @@ impl ConfigBlock for Battery {
             _ => BatteryDriver::Sysfs,
         };
 
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
         let device: Box<dyn BatteryDevice> = match driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;

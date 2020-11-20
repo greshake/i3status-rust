@@ -149,7 +149,7 @@ impl ConfigBlock for Pacman {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Pacman {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("pacman", "Invalid format specified for pacman::format")?,

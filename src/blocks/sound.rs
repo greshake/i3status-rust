@@ -901,7 +901,7 @@ impl ConfigBlock for Sound {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
         let mut step_width = block_config.step_width;
         if step_width > 50 {
             step_width = 50;

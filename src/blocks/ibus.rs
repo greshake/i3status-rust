@@ -61,7 +61,7 @@ impl ConfigBlock for IBus {
 
     #[allow(clippy::many_single_char_names)]
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid().to_string();
+        let id: String = pseudo_uuid();
         let id_copy = id.clone();
         let id_copy2 = id.clone();
         let send2 = send.clone();

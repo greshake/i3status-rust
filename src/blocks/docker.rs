@@ -69,7 +69,7 @@ impl ConfigBlock for Docker {
 
     fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
         Ok(Docker {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             text: TextWidget::new(config).with_text("N/A").with_icon("docker"),
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("docker", "Invalid format specified")?,

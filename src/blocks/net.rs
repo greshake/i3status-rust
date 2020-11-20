@@ -270,7 +270,7 @@ impl NetworkDevice {
             .flat_map(|dev| &dev.addr_info)
             .filter_map(|addr| addr.local.clone())
             .next();
-        return Ok(ip);
+        Ok(ip)
     }
 
     /// Queries the inet IPv6 of this device (using `ip`).
@@ -299,7 +299,7 @@ impl NetworkDevice {
             .flat_map(|dev| &dev.addr_info)
             .filter_map(|addr| addr.local.clone())
             .next();
-        return Ok(ip);
+        Ok(ip)
     }
 
     /// Queries the bitrate of this device
@@ -593,7 +593,7 @@ impl ConfigBlock for Net {
         let init_tx_bytes = device.tx_bytes().unwrap_or(0);
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
 
         let (_, net_config) = config
             .blocks

@@ -51,7 +51,7 @@ impl ConfigBlock for Template {
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Template {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             text: TextWidget::new(config.clone()).with_text("Template"),
             tx_update_request,

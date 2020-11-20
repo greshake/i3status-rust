@@ -75,7 +75,7 @@ impl ConfigBlock for Github {
         };
 
         Ok(Github {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             text: TextWidget::new(config).with_text("x").with_icon("github"),
             api_server: block_config.api_server,

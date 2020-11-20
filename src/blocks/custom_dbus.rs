@@ -41,7 +41,7 @@ impl ConfigBlock for CustomDBus {
     type Config = CustomDBusConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid().to_string();
+        let id: String = pseudo_uuid();
         let id_copy = id.clone();
 
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {

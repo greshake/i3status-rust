@@ -122,7 +122,7 @@ impl ConfigBlock for Temperature {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
         Ok(Temperature {
             update_interval: block_config.interval,
             text: ButtonWidget::new(config, &id)

@@ -351,7 +351,7 @@ impl ConfigBlock for Memory {
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, "memory").with_text("");
         Ok(Memory {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             memtype: block_config.display_type,
             output: if icons {
                 (

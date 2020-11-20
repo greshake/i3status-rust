@@ -92,7 +92,7 @@ impl ConfigBlock for Load {
             .count() as u32;
 
         Ok(Load {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             logical_cores,
             update_interval: block_config.interval,
             minimum_info: block_config.info,

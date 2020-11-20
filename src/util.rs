@@ -8,7 +8,6 @@ use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
 
-use getrandom;
 use regex::Regex;
 use serde::de::DeserializeOwned;
 
@@ -214,7 +213,7 @@ pub fn print_blocks(
         .iter()
         .filter(|block_id| {
             let block = block_map.get(block_id.as_str()).unwrap();
-            block.view().len() > 0
+            !block.view().is_empty()
         })
         .count();
 
