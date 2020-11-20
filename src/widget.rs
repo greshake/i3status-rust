@@ -27,7 +27,7 @@ pub enum State {
 }
 
 impl State {
-    pub fn theme_keys(self, theme: &Theme) -> (&String, &String) {
+    pub fn theme_keys(self, theme: &Theme) -> (&Option<String>, &Option<String>) {
         use self::State::*;
         match self {
             Idle => (&theme.idle_bg, &theme.idle_fg),
