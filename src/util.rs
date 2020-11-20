@@ -237,7 +237,7 @@ pub fn print_blocks(
                     // Apply tint for all widgets of every second block
                     *w_json.get_mut("background").unwrap() = json!(add_colors(
                         w_json["background"].as_str(),
-                        config.theme.alternating_tint_bg.as_ref()
+                        config.theme.alternating_tint_bg.as_deref()
                     )
                     .unwrap());
                 }
@@ -338,14 +338,14 @@ pub fn color_to_rgba(color: (u8, u8, u8, u8)) -> String {
 // TODO: Allow for other non-additive tints
 pub fn add_colors(
     a: Option<&str>,
-    b: Option<&String>,
+    b: Option<&str>,
 ) -> ::std::result::Result<Option<String>, Box<dyn std::error::Error>> {
     match (a, b) {
         (None, _) => Ok(None),
         (Some(a), None) => Ok(Some(a.to_string())),
         (Some(a), Some(b)) => {
             let (r_a, g_a, b_a, a_a) = color_from_rgba(a)?;
-            let (r_b, g_b, b_b, a_b) = color_from_rgba(b.as_str())?;
+            let (r_b, g_b, b_b, a_b) = color_from_rgba(b)?;
 
             Ok(Some(color_to_rgba((
                 r_a.saturating_add(r_b),
