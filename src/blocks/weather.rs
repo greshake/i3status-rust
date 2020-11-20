@@ -331,7 +331,7 @@ impl ConfigBlock for Weather {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
         Ok(Weather {
             id: id.clone(),
             weather: ButtonWidget::new(config, &id),

@@ -73,7 +73,7 @@ impl ConfigBlock for Toggle {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
         Ok(Toggle {
             text: ButtonWidget::new(config, &id).with_content(block_config.text),
             command_on: block_config.command_on,

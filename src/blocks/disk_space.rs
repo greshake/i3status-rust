@@ -214,7 +214,7 @@ impl ConfigBlock for DiskSpace {
             .unwrap_or_else(|| "".to_string());
 
         Ok(DiskSpace {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             disk_space: TextWidget::new(config),
             alias: block_config.alias,

@@ -121,7 +121,7 @@ impl ConfigBlock for Cpu {
             block_config.format
         };
 
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
 
         Ok(Cpu {
             id: id.clone(),

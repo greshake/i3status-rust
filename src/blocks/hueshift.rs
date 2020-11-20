@@ -120,7 +120,7 @@ impl ConfigBlock for Hueshift {
     ) -> Result<Self> {
         let current_temp = block_config.current_temp;
         let mut step = block_config.step;
-        let id = pseudo_uuid().to_string();
+        let id = pseudo_uuid();
         let mut max_temp = block_config.max_temp;
         let mut min_temp = block_config.min_temp;
         // limit too big steps at 500K to avoid too brutal changes

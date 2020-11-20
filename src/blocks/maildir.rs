@@ -94,7 +94,7 @@ impl ConfigBlock for Maildir {
     ) -> Result<Self> {
         let widget = TextWidget::new(config).with_text("");
         Ok(Maildir {
-            id: pseudo_uuid().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             text: if block_config.icon {
                 widget.with_icon("mail")
