@@ -9,178 +9,178 @@ use crate::util;
 lazy_static! {
     pub static ref SLICK: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#424242")).to_owned(),
-        idle_fg: Some(String::from("#ffffff")).to_owned(),
-        info_bg: Some(String::from("#2196f3")).to_owned(),
-        info_fg: Some(String::from("#ffffff")).to_owned(),
-        good_bg: Some(String::from("#8bc34a")).to_owned(),
-        good_fg: Some(String::from("#000000")).to_owned(),
-        warning_bg: Some(String::from("#ffc107")).to_owned(),
-        warning_fg: Some(String::from("#000000")).to_owned(),
-        critical_bg: Some(String::from("#f44336")).to_owned(),
-        critical_fg: Some(String::from("#ffffff")).to_owned(),
+        idle_bg: Some(String::from("#424242")),
+        idle_fg: Some(String::from("#ffffff")),
+        info_bg: Some(String::from("#2196f3")),
+        info_fg: Some(String::from("#ffffff")),
+        good_bg: Some(String::from("#8bc34a")),
+        good_fg: Some(String::from("#000000")),
+        warning_bg: Some(String::from("#ffc107")),
+        warning_fg: Some(String::from("#000000")),
+        critical_bg: Some(String::from("#f44336")),
+        critical_fg: Some(String::from("#ffffff")),
         separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")).to_owned(),
-        separator_fg: Some(String::from("auto")).to_owned(),
-        alternating_tint_bg: Some(String::from("#111111")).to_owned(),
+        separator_bg: Some(String::from("auto")),
+        separator_fg: Some(String::from("auto")),
+        alternating_tint_bg: Some(String::from("#111111")),
     };
 
     pub static ref SOLARIZED_DARK: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#002b36")).to_owned(),      // base03
-        idle_fg: Some(String::from("#93a1a1")).to_owned(),      // base1
-        info_bg: Some(String::from("#268bd2")).to_owned(),      // blue
-        info_fg: Some(String::from("#002b36")).to_owned(),      // base03
-        good_bg: Some(String::from("#859900")).to_owned(),      // green
-        good_fg: Some(String::from("#002b36")).to_owned(),      // base03
-        warning_bg: Some(String::from("#b58900")).to_owned(),   // yellow
-        warning_fg: Some(String::from("#002b36")).to_owned(),   // base03
-        critical_bg: Some(String::from("#dc322f")).to_owned(),  // red
-        critical_fg: Some(String::from("#002b36")).to_owned(),  // base03
+        idle_bg: Some(String::from("#002b36")),      // base03
+        idle_fg: Some(String::from("#93a1a1")),      // base1
+        info_bg: Some(String::from("#268bd2")),      // blue
+        info_fg: Some(String::from("#002b36")),      // base03
+        good_bg: Some(String::from("#859900")),      // green
+        good_fg: Some(String::from("#002b36")),      // base03
+        warning_bg: Some(String::from("#b58900")),   // yellow
+        warning_fg: Some(String::from("#002b36")),   // base03
+        critical_bg: Some(String::from("#dc322f")),  // red
+        critical_fg: Some(String::from("#002b36")),  // base03
         separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")).to_owned(),
-        separator_fg: Some(String::from("auto")).to_owned(),
+        separator_bg: Some(String::from("auto")),
+        separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
     };
 
     pub static ref SOLARIZED_LIGHT: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#fdf6e3")).to_owned(),      // base3
-        idle_fg: Some(String::from("#586e75")).to_owned(),      // base01
-        info_bg: Some(String::from("#268bd2")).to_owned(),      // blue
-        info_fg: Some(String::from("#fdf6e3")).to_owned(),      // base3
-        good_bg: Some(String::from("#859900")).to_owned(),      // green
-        good_fg: Some(String::from("#fdf6e3")).to_owned(),      // base3
-        warning_bg: Some(String::from("#b58900")).to_owned(),   // yellow
-        warning_fg: Some(String::from("#fdf6e3")).to_owned(),   // base3
-        critical_bg: Some(String::from("#dc322f")).to_owned(),  // red
-        critical_fg: Some(String::from("#fdf6e3")).to_owned(),  // base3
+        idle_bg: Some(String::from("#fdf6e3")),      // base3
+        idle_fg: Some(String::from("#586e75")),      // base01
+        info_bg: Some(String::from("#268bd2")),      // blue
+        info_fg: Some(String::from("#fdf6e3")),      // base3
+        good_bg: Some(String::from("#859900")),      // green
+        good_fg: Some(String::from("#fdf6e3")),      // base3
+        warning_bg: Some(String::from("#b58900")),   // yellow
+        warning_fg: Some(String::from("#fdf6e3")),   // base3
+        critical_bg: Some(String::from("#dc322f")),  // red
+        critical_fg: Some(String::from("#fdf6e3")),  // base3
         separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")).to_owned(),
-        separator_fg: Some(String::from("auto")).to_owned(),
+        separator_bg: Some(String::from("auto")),
+        separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
     };
 
     pub static ref MODERN: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#222D32")).to_owned(),
-        idle_fg: Some(String::from("#CFD8DC")).to_owned(),
-        info_bg: Some(String::from("#449CDB")).to_owned(),
-        info_fg: Some(String::from("#1D1F21")).to_owned(),
-        good_bg: Some(String::from("#99b938")).to_owned(),
-        good_fg: Some(String::from("#1D1F21")).to_owned(),
-        warning_bg: Some(String::from("#FE7E29")).to_owned(),
-        warning_fg: Some(String::from("#1D1F21")).to_owned(),
-        critical_bg: Some(String::from("#ff5252")).to_owned(),
-        critical_fg: Some(String::from("#1D1F21")).to_owned(),
+        idle_bg: Some(String::from("#222D32")),
+        idle_fg: Some(String::from("#CFD8DC")),
+        info_bg: Some(String::from("#449CDB")),
+        info_fg: Some(String::from("#1D1F21")),
+        good_bg: Some(String::from("#99b938")),
+        good_fg: Some(String::from("#1D1F21")),
+        warning_bg: Some(String::from("#FE7E29")),
+        warning_fg: Some(String::from("#1D1F21")),
+        critical_bg: Some(String::from("#ff5252")),
+        critical_fg: Some(String::from("#1D1F21")),
         separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")).to_owned(),
-        separator_fg: Some(String::from("auto")).to_owned(),
+        separator_bg: Some(String::from("auto")),
+        separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
     };
 
     pub static ref PLAIN: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#000000")).to_owned(),
-        idle_fg: Some(String::from("#93a1a1")).to_owned(),
-        info_bg: Some(String::from("#000000")).to_owned(),
-        info_fg: Some(String::from("#93a1a1")).to_owned(),
-        good_bg: Some(String::from("#000000")).to_owned(),
-        good_fg: Some(String::from("#859900")).to_owned(),
-        warning_bg: Some(String::from("#000000")).to_owned(),
-        warning_fg: Some(String::from("#b58900")).to_owned(),
-        critical_bg: Some(String::from("#000000")).to_owned(),
-        critical_fg: Some(String::from("#dc322f")).to_owned(),
+        idle_bg: Some(String::from("#000000")),
+        idle_fg: Some(String::from("#93a1a1")),
+        info_bg: Some(String::from("#000000")),
+        info_fg: Some(String::from("#93a1a1")),
+        good_bg: Some(String::from("#000000")),
+        good_fg: Some(String::from("#859900")),
+        warning_bg: Some(String::from("#000000")),
+        warning_fg: Some(String::from("#b58900")),
+        critical_bg: Some(String::from("#000000")),
+        critical_fg: Some(String::from("#dc322f")),
         separator: "|".to_owned(),
-        separator_bg: Some(String::from("#000000")).to_owned(),
-        separator_fg: Some(String::from("#a9a9a9")).to_owned(),
+        separator_bg: Some(String::from("#000000")),
+        separator_fg: Some(String::from("#a9a9a9")),
         alternating_tint_bg: None.to_owned(),
     };
 
     pub static ref BAD_WOLF: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#444444")).to_owned(),
-        idle_fg: Some(String::from("#f5f5f5")).to_owned(),
-        info_bg: Some(String::from("#626262")).to_owned(),
-        info_fg: Some(String::from("#ffd680")).to_owned(),
-        good_bg: Some(String::from("#afff00")).to_owned(),
-        good_fg: Some(String::from("#000000")).to_owned(),
-        warning_bg: Some(String::from("#ffaf00")).to_owned(),
-        warning_fg: Some(String::from("#000000")).to_owned(),
-        critical_bg: Some(String::from("#d70000")).to_owned(),
-        critical_fg: Some(String::from("#000000")).to_owned(),
+        idle_bg: Some(String::from("#444444")),
+        idle_fg: Some(String::from("#f5f5f5")),
+        info_bg: Some(String::from("#626262")),
+        info_fg: Some(String::from("#ffd680")),
+        good_bg: Some(String::from("#afff00")),
+        good_fg: Some(String::from("#000000")),
+        warning_bg: Some(String::from("#ffaf00")),
+        warning_fg: Some(String::from("#000000")),
+        critical_bg: Some(String::from("#d70000")),
+        critical_fg: Some(String::from("#000000")),
         separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")).to_owned(),
-        separator_fg: Some(String::from("auto")).to_owned(),
+        separator_bg: Some(String::from("auto")),
+        separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
     };
 
     pub static ref GRUVBOX_LIGHT: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#fbf1c7")).to_owned(),
-        idle_fg: Some(String::from("#3c3836")).to_owned(),
-        info_bg: Some(String::from("#458588")).to_owned(),
-        info_fg: Some(String::from("#fbf1c7")).to_owned(),
-        good_bg: Some(String::from("#98971a")).to_owned(),
-        good_fg: Some(String::from("#fbf1c7")).to_owned(),
-        warning_bg: Some(String::from("#d79921")).to_owned(),
-        warning_fg: Some(String::from("#fbf1c7")).to_owned(),
-        critical_bg: Some(String::from("#cc241d")).to_owned(),
-        critical_fg: Some(String::from("#fbf1c7")).to_owned(),
+        idle_bg: Some(String::from("#fbf1c7")),
+        idle_fg: Some(String::from("#3c3836")),
+        info_bg: Some(String::from("#458588")),
+        info_fg: Some(String::from("#fbf1c7")),
+        good_bg: Some(String::from("#98971a")),
+        good_fg: Some(String::from("#fbf1c7")),
+        warning_bg: Some(String::from("#d79921")),
+        warning_fg: Some(String::from("#fbf1c7")),
+        critical_bg: Some(String::from("#cc241d")),
+        critical_fg: Some(String::from("#fbf1c7")),
         separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")).to_owned(),
-        separator_fg: Some(String::from("auto")).to_owned(),
+        separator_bg: Some(String::from("auto")),
+        separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
     };
 
     pub static ref GRUVBOX_DARK: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#282828")).to_owned(),
-        idle_fg: Some(String::from("#ebdbb2")).to_owned(),
-        info_bg: Some(String::from("#458588")).to_owned(),
-        info_fg: Some(String::from("#ebdbb2")).to_owned(),
-        good_bg: Some(String::from("#98971a")).to_owned(),
-        good_fg: Some(String::from("#ebdbb2")).to_owned(),
-        warning_bg: Some(String::from("#d79921")).to_owned(),
-        warning_fg: Some(String::from("#ebdbb2")).to_owned(),
-        critical_bg: Some(String::from("#cc241d")).to_owned(),
-        critical_fg: Some(String::from("#ebdbb2")).to_owned(),
+        idle_bg: Some(String::from("#282828")),
+        idle_fg: Some(String::from("#ebdbb2")),
+        info_bg: Some(String::from("#458588")),
+        info_fg: Some(String::from("#ebdbb2")),
+        good_bg: Some(String::from("#98971a")),
+        good_fg: Some(String::from("#ebdbb2")),
+        warning_bg: Some(String::from("#d79921")),
+        warning_fg: Some(String::from("#ebdbb2")),
+        critical_bg: Some(String::from("#cc241d")),
+        critical_fg: Some(String::from("#ebdbb2")),
         separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")).to_owned(),
-        separator_fg: Some(String::from("auto")).to_owned(),
+        separator_bg: Some(String::from("auto")),
+        separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
     };
 
     pub static ref SPACE_VILLAIN: Theme = Theme {
         native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#06060f")).to_owned(), //Rich black
-        idle_fg: Some(String::from("#c1c1c1")).to_owned(), //Silver
-        info_bg: Some(String::from("#00223f")).to_owned(), //Maastricht Blue
-        info_fg: Some(String::from("#c1c1c1")).to_owned(), //Silver
-        good_bg: Some(String::from("#394049")).to_owned(), //Arsenic
-        good_fg: Some(String::from("#c1c1c1")).to_owned(), //Silver
-        warning_bg: Some(String::from("#2d1637")).to_owned(), //Dark Purple
-        warning_fg: Some(String::from("#c1c1c1")).to_owned(), //Silver
-        critical_bg: Some(String::from("#c1c1c1")).to_owned(), //Silver
-        critical_fg: Some(String::from("#2c1637")).to_owned(), //Dark Purple
+        idle_bg: Some(String::from("#06060f")), //Rich black
+        idle_fg: Some(String::from("#c1c1c1")), //Silver
+        info_bg: Some(String::from("#00223f")), //Maastricht Blue
+        info_fg: Some(String::from("#c1c1c1")), //Silver
+        good_bg: Some(String::from("#394049")), //Arsenic
+        good_fg: Some(String::from("#c1c1c1")), //Silver
+        warning_bg: Some(String::from("#2d1637")), //Dark Purple
+        warning_fg: Some(String::from("#c1c1c1")), //Silver
+        critical_bg: Some(String::from("#c1c1c1")), //Silver
+        critical_fg: Some(String::from("#2c1637")), //Dark Purple
         separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")).to_owned(),
-        separator_fg: Some(String::from("auto")).to_owned(),
+        separator_bg: Some(String::from("auto")),
+        separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
     };
 
     pub static ref SEMI_NATIVE: Theme = Theme {
         native_separators: true.to_owned(),
         idle_bg: None.to_owned(),
-        idle_fg: Some(String::from("#93a1a1")).to_owned(),
+        idle_fg: Some(String::from("#93a1a1")),
         info_bg: None.to_owned(),
-        info_fg: Some(String::from("#93a1a1")).to_owned(),
+        info_fg: Some(String::from("#93a1a1")),
         good_bg: None.to_owned(),
-        good_fg: Some(String::from("#859900")).to_owned(),
+        good_fg: Some(String::from("#859900")),
         warning_bg: None.to_owned(),
-        warning_fg: Some(String::from("#b58900")).to_owned(),
+        warning_fg: Some(String::from("#b58900")),
         critical_bg: None.to_owned(),
-        critical_fg: Some(String::from("#dc322f")).to_owned(),
+        critical_fg: Some(String::from("#dc322f")),
         separator: "".to_owned(),
         separator_bg: None.to_owned(),
         separator_fg: None.to_owned(),

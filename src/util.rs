@@ -8,7 +8,6 @@ use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
 
-use getrandom;
 use regex::Regex;
 use serde::de::DeserializeOwned;
 
@@ -214,7 +213,7 @@ pub fn print_blocks(
         .iter()
         .filter(|block_id| {
             let block = block_map.get(block_id.as_str()).unwrap();
-            block.view().len() > 0
+            !block.view().is_empty()
         })
         .count();
 
@@ -271,7 +270,7 @@ pub fn print_blocks(
 
         if config.theme.native_separators {
             // Skip separator block for native theme
-            rendered_blocks.push(format!("{}", block_str));
+            rendered_blocks.push(block_str.to_string());
             continue;
         }
 
@@ -341,20 +340,20 @@ pub fn add_colors(
     a: Option<&str>,
     b: Option<&String>,
 ) -> ::std::result::Result<Option<String>, Box<dyn std::error::Error>> {
-    if a.is_none() {
-        Ok(None)
-    } else if b.is_none() {
-        Ok(Some(a.unwrap().to_string()))
-    } else {
-        let (r_a, g_a, b_a, a_a) = color_from_rgba(a.unwrap())?;
-        let (r_b, g_b, b_b, a_b) = color_from_rgba(b.unwrap().as_str())?;
+    match (a, b) {
+        (None, _) => Ok(None),
+        (Some(a), None) => Ok(Some(a.to_string())),
+        (Some(a), Some(b)) => {
+            let (r_a, g_a, b_a, a_a) = color_from_rgba(a)?;
+            let (r_b, g_b, b_b, a_b) = color_from_rgba(b.as_str())?;
 
-        Ok(Some(color_to_rgba((
-            r_a.saturating_add(r_b),
-            g_a.saturating_add(g_b),
-            b_a.saturating_add(b_b),
-            a_a.saturating_add(a_b),
-        ))))
+            Ok(Some(color_to_rgba((
+                r_a.saturating_add(r_b),
+                g_a.saturating_add(g_b),
+                b_a.saturating_add(b_b),
+                a_a.saturating_add(a_b),
+            ))))
+        }
     }
 }
 
