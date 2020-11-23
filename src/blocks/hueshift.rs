@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 
@@ -68,6 +69,9 @@ pub struct HueshiftConfig {
     pub step: u16,
     #[serde(default = "HueshiftConfig::default_click_temp")]
     pub click_temp: u16,
+
+    #[serde(default = "HueshiftConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl HueshiftConfig {
@@ -107,6 +111,10 @@ impl HueshiftConfig {
 
     fn default_click_temp() -> u16 {
         6500 as u16
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

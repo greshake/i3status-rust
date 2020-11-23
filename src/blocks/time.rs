@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::time::Duration;
 
@@ -52,6 +53,9 @@ pub struct TimeConfig {
 
     #[serde(default = "TimeConfig::default_locale")]
     pub locale: Option<String>,
+
+    #[serde(default = "TimeConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl TimeConfig {
@@ -72,6 +76,10 @@ impl TimeConfig {
     }
 
     fn default_locale() -> Option<String> {
+        None
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
 }

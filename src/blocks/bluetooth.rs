@@ -1,4 +1,5 @@
 use serde_derive::Deserialize;
+use std::collections::BTreeMap;
 use std::thread;
 use std::time::Instant;
 
@@ -167,11 +168,17 @@ pub struct BluetoothConfig {
     pub label: Option<String>,
     #[serde(default = "BluetoothConfig::default_hide_disconnected")]
     pub hide_disconnected: bool,
+    #[serde(default = "BluetoothConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl BluetoothConfig {
     fn default_hide_disconnected() -> bool {
         false
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

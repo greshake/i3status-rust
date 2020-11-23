@@ -149,7 +149,34 @@ macro_rules! block {
         let block_config: <$block_type as ConfigBlock>::Config =
             <$block_type as ConfigBlock>::Config::deserialize($block_config)
                 .configuration_error("Failed to deserialize block config.")?;
-        Ok(Box::new($block_type::new(block_config, $config, $update_request)?) as Box<dyn Block>)
+        let mut main_config = $config;
+        if let Some(ref overrides) = block_config.color_overrides {
+            for entry in overrides {
+                match entry.0.as_str() {
+                    "idle_fg" => main_config.theme.idle_fg = Some(entry.1.to_string()),
+                    "idle_bg" => main_config.theme.idle_bg = Some(entry.1.to_string()),
+                    "info_fg" => main_config.theme.info_fg = Some(entry.1.to_string()),
+                    "info_bg" => main_config.theme.info_bg = Some(entry.1.to_string()),
+                    "good_fg" => main_config.theme.good_fg = Some(entry.1.to_string()),
+                    "good_bg" => main_config.theme.good_bg = Some(entry.1.to_string()),
+                    "warning_fg" => main_config.theme.warning_fg = Some(entry.1.to_string()),
+                    "warning_bg" => main_config.theme.warning_bg = Some(entry.1.to_string()),
+                    "critical_fg" => main_config.theme.critical_fg = Some(entry.1.to_string()),
+                    "critical_bg" => main_config.theme.critical_bg = Some(entry.1.to_string()),
+                    // TODO the below as well?
+                    // "separator"
+                    // "separator_bg"
+                    // "separator_fg"
+                    // "alternating_tint_bg"
+                    _ => (),
+                }
+            }
+        }
+        Ok(Box::new($block_type::new(
+            block_config,
+            main_config,
+            $update_request,
+        )?) as Box<dyn Block>)
     }};
 }
 

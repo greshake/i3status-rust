@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 
@@ -66,6 +67,9 @@ pub struct TaskwarriorConfig {
     /// Format override if all tasks are completed
     #[serde(default = "TaskwarriorConfig::default_format")]
     pub format_everything_done: String,
+
+    #[serde(default = "TaskwarriorConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 enum TaskwarriorBlockMode {
@@ -94,6 +98,10 @@ impl TaskwarriorConfig {
 
     fn default_format() -> String {
         "{count}".to_owned()
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

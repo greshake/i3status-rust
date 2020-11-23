@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::process::Command;
 use std::time::Duration;
 
@@ -44,6 +44,9 @@ pub struct GithubConfig {
     /// Format override
     #[serde(default = "GithubConfig::default_format")]
     pub format: String,
+
+    #[serde(default = "GithubConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl GithubConfig {
@@ -57,6 +60,10 @@ impl GithubConfig {
 
     fn default_format() -> String {
         "{total}".to_owned()
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

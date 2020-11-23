@@ -1,7 +1,7 @@
+use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::io::Write;
-
 use std::process::Command;
 use std::time::Duration;
 
@@ -63,6 +63,9 @@ pub struct AptConfig {
     /// Default behaviour is that no package updates are deemed critical
     #[serde(default = "AptConfig::default_critical_updates_regex")]
     pub critical_updates_regex: Option<String>,
+
+    #[serde(default = "AptConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl AptConfig {
@@ -79,6 +82,10 @@ impl AptConfig {
     }
 
     fn default_critical_updates_regex() -> Option<String> {
+        None
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
 }

@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
@@ -44,6 +45,9 @@ pub struct WatsonConfig {
     /// Show time spent
     #[serde(default = "WatsonConfig::default_show_time")]
     pub show_time: bool,
+
+    #[serde(default = "WatsonConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl WatsonConfig {
@@ -57,6 +61,9 @@ impl WatsonConfig {
     }
     fn default_show_time() -> bool {
         false
+    }
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

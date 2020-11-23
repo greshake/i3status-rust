@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 
@@ -52,14 +53,22 @@ pub struct DockerConfig {
     /// Format override
     #[serde(default = "DockerConfig::default_format")]
     pub format: String,
+
+    #[serde(default = "DockerConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl DockerConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(5)
     }
+
     fn default_format() -> String {
         "{running}%".to_owned()
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -66,6 +67,9 @@ pub struct KDEConnectConfig {
     /// Format string for displaying phone information when it is disconnected.
     #[serde(default = "KDEConnectConfig::default_format_disconnected")]
     pub format_disconnected: String,
+
+    #[serde(default = "KDEConnectConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl KDEConnectConfig {
@@ -95,6 +99,10 @@ impl KDEConnectConfig {
 
     fn default_format_disconnected() -> String {
         "{name}".into()
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

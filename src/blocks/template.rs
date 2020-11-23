@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -34,11 +35,18 @@ pub struct TemplateConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
+
+    #[serde(default = "TemplateConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl TemplateConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(5)
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

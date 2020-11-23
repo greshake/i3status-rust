@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -42,6 +43,9 @@ pub struct FocusedWindowConfig {
     /// Show marks in place of title (if exist)
     #[serde(default = "FocusedWindowConfig::default_show_marks")]
     pub show_marks: MarksType,
+
+    #[serde(default = "FocusedWindowConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl FocusedWindowConfig {
@@ -51,6 +55,10 @@ impl FocusedWindowConfig {
 
     fn default_show_marks() -> MarksType {
         MarksType::None
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -72,6 +73,9 @@ pub struct CpuConfig {
     /// Compute the metrics (utilization and frequency) per core.
     #[serde(default)]
     pub per_core: bool,
+
+    #[serde(default = "CpuConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl CpuConfig {
@@ -100,6 +104,10 @@ impl CpuConfig {
     }
 
     fn default_on_click() -> Option<String> {
+        None
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
 }

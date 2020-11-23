@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
 use std::time::Duration;
@@ -47,6 +48,9 @@ pub struct LoadConfig {
     /// Minimum load, where state is set to critical
     #[serde(default = "LoadConfig::default_critical")]
     pub critical: f32,
+
+    #[serde(default = "LoadConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl LoadConfig {
@@ -68,6 +72,10 @@ impl LoadConfig {
 
     fn default_critical() -> f32 {
         0.9
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
