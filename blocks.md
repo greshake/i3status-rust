@@ -756,7 +756,7 @@ on_collapsed_click = "spotify"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`player` | Name of the music player MPRIS interface. Run `busctl --user list | grep "org.mpris.MediaPlayer2." \| cut -d' ' -f1` and the name is the part after "org.mpris.MediaPlayer2". If unset, you can cycle through different players by right clicking on the widget.  | No | None
+`player` | Name of the music player MPRIS interface. Run `busctl --user list \| grep "org.mpris.MediaPlayer2." \| cut -d' ' -f1` and the name is the part after "org.mpris.MediaPlayer2". If unset, you can cycle through different players by right clicking on the widget.  | No | None
 `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore | No | ""
 `max_width` | Max width of the block in characters, not including the buttons | No | `21`
 `dynamic_width` | Bool to specify whether the block will change width depending on the text content or remain static always (= `max_width`) | No | `false`
