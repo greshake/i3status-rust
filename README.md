@@ -34,6 +34,8 @@ Stable releases are packaged on some distributions:
 
 * On NixOS: `nix-env -iA nixos.i3status-rust`
 
+* With [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.html#opt-programs.i3status-rust.enable) 
+
 Otherwise, you can install from source:
 
 ```shell
