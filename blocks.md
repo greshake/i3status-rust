@@ -21,6 +21,7 @@
 - [Music](#music)
 - [Net](#net)
 - [NetworkManager](#networkmanager)
+- [Notify](#notify)
 - [Notmuch](#notmuch)
 - [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
@@ -922,6 +923,28 @@ Placeholder | Description
 Placeholder | Description
 ------------|-------------
 `{devices}` | The list of devices, each formatted with the device format string.
+
+
+## Notify
+
+Displays the current state of your notification daemon.
+
+Note: For `dunst` this block uses DBus to get instantaneous updates. For now this requires building `dunst` from source (`dunst-git` from the AUR if you are on Arch Linux) until the next release of `dunst` comes out containing this feature: https://github.com/dunst-project/dunst/pull/766.
+
+TODO: support `mako`
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`driver` | Notification daemon to monitor | No | `"dunst"`
+`format` | Format override | No | `"{state}"`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{state}` | Current state of the notification daemon in icon form
 
 
 ## Notmuch
