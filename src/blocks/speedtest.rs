@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
@@ -67,6 +68,9 @@ pub struct SpeedTestConfig {
     /// Minimum unit to display for throughput indicators.
     #[serde(default = "SpeedTestConfig::default_speed_min_unit")]
     pub speed_min_unit: Unit,
+
+    #[serde(default = "SpeedTestConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl SpeedTestConfig {
@@ -84,6 +88,10 @@ impl SpeedTestConfig {
 
     fn default_speed_digits() -> usize {
         3
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -180,7 +188,7 @@ impl ConfigBlock for SpeedTest {
             ],
             id,
             send,
-            config: block_config,
+            config: block_config.clone(),
         })
     }
 }

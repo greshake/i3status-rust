@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -66,6 +67,8 @@ pub struct MaildirConfig {
     pub display_type: MailType,
     #[serde(default = "MaildirConfig::default_icon")]
     pub icon: bool,
+    #[serde(default = "MaildirConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl MaildirConfig {
@@ -80,6 +83,9 @@ impl MaildirConfig {
     }
     fn default_icon() -> bool {
         true
+    }
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

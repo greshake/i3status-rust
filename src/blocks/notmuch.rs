@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::env;
 use std::time::Duration;
 
@@ -52,6 +53,9 @@ pub struct NotmuchConfig {
     pub name: Option<String>,
     #[serde(default = "NotmuchConfig::default_no_icon")]
     pub no_icon: bool,
+
+    #[serde(default = "NotmuchConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NotmuchConfig {
@@ -92,8 +96,13 @@ impl NotmuchConfig {
     fn default_name() -> Option<String> {
         None
     }
+
     fn default_no_icon() -> bool {
         false
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -125,7 +134,6 @@ impl ConfigBlock for Notmuch {
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,
             name: block_config.name,
-
             text: widget,
         })
     }

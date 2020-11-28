@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -33,12 +34,19 @@ pub struct NotifyConfig {
     /// Format string for displaying phone information.
     #[serde(default = "NotifyConfig::default_format")]
     pub format: String,
+
+    #[serde(default = "NotifyConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NotifyConfig {
     fn default_format() -> String {
         // display just the bell icon
         "".into()
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

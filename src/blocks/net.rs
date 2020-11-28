@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fmt;
 use std::fs::{read_to_string, OpenOptions};
@@ -488,6 +489,9 @@ pub struct NetConfig {
 
     #[serde(default = "NetConfig::default_on_click")]
     pub on_click: Option<String>,
+
+    #[serde(default = "NetConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NetConfig {
@@ -575,6 +579,10 @@ impl NetConfig {
     }
 
     fn default_on_click() -> Option<String> {
+        None
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
 }

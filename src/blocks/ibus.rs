@@ -43,6 +43,9 @@ pub struct IBusConfig {
 
     #[serde(default = "IBusConfig::default_format")]
     pub format: String,
+
+    #[serde(default = "IBusConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl IBusConfig {
@@ -52,6 +55,10 @@ impl IBusConfig {
 
     fn default_format() -> String {
         "{engine}".into()
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

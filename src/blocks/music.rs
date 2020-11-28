@@ -1,4 +1,5 @@
 use std::boxed::Box;
+use std::collections::BTreeMap;
 use std::result;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -209,6 +210,9 @@ pub struct MusicConfig {
 
     #[serde(default = "MusicConfig::default_hide_when_empty")]
     pub hide_when_empty: bool,
+
+    #[serde(default = "MusicConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl MusicConfig {
@@ -262,6 +266,10 @@ impl MusicConfig {
 
     fn default_hide_when_empty() -> bool {
         false
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

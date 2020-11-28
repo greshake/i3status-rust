@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -436,6 +437,9 @@ pub struct KeyboardLayoutConfig {
     interval: Duration,
 
     sway_kb_identifier: String,
+
+    #[serde(default = "KeyboardLayoutConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl KeyboardLayoutConfig {
@@ -445,6 +449,10 @@ impl KeyboardLayoutConfig {
 
     fn default_interval() -> Duration {
         Duration::from_secs(60)
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

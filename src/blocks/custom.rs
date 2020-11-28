@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
@@ -64,6 +65,9 @@ pub struct CustomConfig {
     pub hide_when_empty: bool,
 
     pub shell: Option<String>,
+
+    #[serde(default = "CustomConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl CustomConfig {
@@ -77,6 +81,10 @@ impl CustomConfig {
 
     fn hide_when_empty() -> bool {
         false
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 

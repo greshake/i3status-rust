@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -35,6 +36,15 @@ pub struct CustomDBus {
 #[serde(deny_unknown_fields)]
 pub struct CustomDBusConfig {
     pub name: String,
+
+    #[serde(default = "CustomDBusConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
+}
+
+impl CustomDBusConfig {
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for CustomDBus {
@@ -50,6 +60,7 @@ impl ConfigBlock for CustomDBus {
             state: State::Idle,
         }));
         let status = status_original.clone();
+        let name = block_config.name.clone();
         thread::Builder::new()
             .name("custom_dbus".into())
             .spawn(move || {
@@ -63,7 +74,7 @@ impl ConfigBlock for CustomDBus {
                 let tree = f
                     .tree(())
                     .add(
-                        f.object_path(format!("/{}", block_config.name), ())
+                        f.object_path(format!("/{}", name), ())
                             .introspectable()
                             .add(
                                 f.interface("i3.status.rs", ()).add_m(

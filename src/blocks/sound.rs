@@ -769,6 +769,9 @@ pub struct SoundConfig {
 
     #[serde(default = "SoundConfig::default_max_vol")]
     pub max_vol: Option<u32>,
+
+    #[serde(default = "SoundConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -824,6 +827,10 @@ impl SoundConfig {
     }
 
     fn default_max_vol() -> Option<u32> {
+        None
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
 }

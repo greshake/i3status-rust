@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -77,6 +78,9 @@ pub struct PacmanConfig {
     /// Optional AUR command, listing available updates
     #[serde()]
     pub aur_command: Option<String>,
+
+    #[serde(default = "PacmanConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl PacmanConfig {
@@ -93,6 +97,10 @@ impl PacmanConfig {
     }
 
     fn default_critical_updates_regex() -> Option<String> {
+        None
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
 
