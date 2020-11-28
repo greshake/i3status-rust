@@ -61,7 +61,7 @@ lazy_static! {
         "volume_empty" => " VOL ",
         "volume_full" => " VOL ",
         "volume_half" => " VOL ",
-        "volume_muted" => " MIC MUTED ",
+        "volume_muted" => " VOL MUTED ",
         "microphone_empty" => " MIC ",
         "microphone_full" => " MIC ",
         "microphone_half" => " MIC ",
