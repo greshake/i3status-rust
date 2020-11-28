@@ -188,7 +188,7 @@ impl ConfigBlock for SpeedTest {
             ],
             id,
             send,
-            config: block_config.clone(),
+            config: block_config,
         })
     }
 }

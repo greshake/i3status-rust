@@ -60,7 +60,7 @@ impl ConfigBlock for CustomDBus {
             state: State::Idle,
         }));
         let status = status_original.clone();
-        let name = block_config.name.clone();
+        let name = block_config.name;
         thread::Builder::new()
             .name("custom_dbus".into())
             .spawn(move || {
