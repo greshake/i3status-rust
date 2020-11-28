@@ -288,7 +288,7 @@ impl ConfigBlock for Music {
     type Config = MusicConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid().to_string();
+        let id: String = pseudo_uuid();
         let id_copy = id.clone();
         let id_copy2 = id.clone();
         let id_copy3 = id.clone();
@@ -447,22 +447,20 @@ impl ConfigBlock for Music {
                                  })
                                  .unwrap();
                              }
-                         } else if old_owner.is_empty() && !new_owner.is_empty() && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) {
-                             if !players.iter().any(|p| p.bus_name == new_owner) {
-                             players.push(Player {
-                                 bus_name: new_owner.to_string(),
-                                 interface_name: name.to_string(),
-                                 playback_status: PlaybackStatus::Unknown,
-                                 artist: None,
-                                 title: None,
-                             });
-                             send2.send(Task {
-                                 id: id_copy3.clone(),
-                                 update_time: Instant::now(),
-                             })
-                             .unwrap();
-                             }
-                        }
+                         } else if old_owner.is_empty() && !new_owner.is_empty() && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) && !players.iter().any(|p| p.bus_name == new_owner) {
+                         players.push(Player {
+                             bus_name: new_owner.to_string(),
+                             interface_name: name.to_string(),
+                             playback_status: PlaybackStatus::Unknown,
+                             artist: None,
+                             title: None,
+                         });
+                         send2.send(Task {
+                             id: id_copy3.clone(),
+                             update_time: Instant::now(),
+                         })
+                         .unwrap();
+                         }
                     }
                 }
             }
@@ -586,7 +584,7 @@ impl Block for Music {
                 < self.max_width
                 || !self.smart_trim
             {
-                format!("{}{}{}", title.clone(), self.separator, artist.clone())
+                format!("{}{}{}", title, self.separator, artist)
             } else {
                 self.smart_trim(artist.clone(), title.clone())
             };
@@ -594,7 +592,7 @@ impl Block for Music {
         let values = map!(
             "{artist}" => artist.clone(),
             "{title}" => title.clone(),
-            "{combo}" => combo.clone(),
+            "{combo}" => combo,
             //TODO
             //"{vol}" => volume,
             "{player}" => player_name,
