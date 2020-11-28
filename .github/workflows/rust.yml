@@ -18,14 +18,10 @@ jobs:
     - name: Get required packages
       run: sudo apt-get update && sudo apt-get install libdbus-1-dev libpulse-dev libgoogle-perftools-dev libnotmuch-dev pandoc
     - uses: actions/checkout@v2
-    - name: Build all features (debug)
-      run: cargo build --all-features --all-targets --verbose
     - name: Check formatting
       run: cargo fmt -- --check
     - name: Clippy lints
       run: cargo clippy --all-features --all-targets
-    - name: Run tests for debug release
-      run: cargo test --verbose
     - name: Build all features (release)
       run: cargo build --all-features --all-targets --verbose --release
     - name: Run tests
