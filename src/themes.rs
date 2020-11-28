@@ -23,6 +23,7 @@ lazy_static! {
         separator_bg: Some(String::from("auto")),
         separator_fg: Some(String::from("auto")),
         alternating_tint_bg: Some(String::from("#111111")),
+        alternating_tint_fg: Some(String::from("#111111")),
     };
 
     pub static ref SOLARIZED_DARK: Theme = Theme {
@@ -41,6 +42,7 @@ lazy_static! {
         separator_bg: Some(String::from("auto")),
         separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref SOLARIZED_LIGHT: Theme = Theme {
@@ -59,6 +61,7 @@ lazy_static! {
         separator_bg: Some(String::from("auto")),
         separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref MODERN: Theme = Theme {
@@ -77,6 +80,7 @@ lazy_static! {
         separator_bg: Some(String::from("auto")),
         separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref PLAIN: Theme = Theme {
@@ -95,6 +99,7 @@ lazy_static! {
         separator_bg: Some(String::from("#000000")),
         separator_fg: Some(String::from("#a9a9a9")),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref BAD_WOLF: Theme = Theme {
@@ -113,6 +118,7 @@ lazy_static! {
         separator_bg: Some(String::from("auto")),
         separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref GRUVBOX_LIGHT: Theme = Theme {
@@ -131,6 +137,7 @@ lazy_static! {
         separator_bg: Some(String::from("auto")),
         separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref GRUVBOX_DARK: Theme = Theme {
@@ -149,6 +156,7 @@ lazy_static! {
         separator_bg: Some(String::from("auto")),
         separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref SPACE_VILLAIN: Theme = Theme {
@@ -167,6 +175,7 @@ lazy_static! {
         separator_bg: Some(String::from("auto")),
         separator_fg: Some(String::from("auto")),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref SEMI_NATIVE: Theme = Theme {
@@ -185,6 +194,7 @@ lazy_static! {
         separator_bg: None.to_owned(),
         separator_fg: None.to_owned(),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
     pub static ref NATIVE: Theme = Theme {
@@ -203,6 +213,7 @@ lazy_static! {
         separator_bg: None.to_owned(),
         separator_fg: None.to_owned(),
         alternating_tint_bg: None.to_owned(),
+        alternating_tint_fg: None.to_owned(),
     };
 
 }
@@ -225,6 +236,7 @@ pub struct Theme {
     pub separator_bg: Option<String>,
     pub separator_fg: Option<String>,
     pub alternating_tint_bg: Option<String>,
+    pub alternating_tint_fg: Option<String>,
 }
 
 impl Default for Theme {
@@ -287,6 +299,7 @@ pub struct ThemeOverrides {
     separator_bg: Option<String>,
     separator_fg: Option<String>,
     alternating_tint_bg: Option<String>,
+    alternating_tint_fg: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -321,6 +334,7 @@ impl ThemeConfig {
             theme.separator_bg = overrides.separator_bg.or(theme.separator_bg);
             theme.separator_fg = overrides.separator_fg.or(theme.separator_fg);
             theme.alternating_tint_bg = overrides.alternating_tint_bg.or(theme.alternating_tint_bg);
+            theme.alternating_tint_fg = overrides.alternating_tint_fg.or(theme.alternating_tint_fg);
         }
         Some(theme)
     }
