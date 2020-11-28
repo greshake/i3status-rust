@@ -1,5 +1,6 @@
 # List of Available Blocks
 
+- [Apt](#apt)
 - [Backlight](#backlight)
 - [Battery](#battery)
 - [Bluetooth](#bluetooth)
@@ -34,6 +35,44 @@
 - [Watson](#watson)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
+
+## Apt
+
+Creates a block which displays the pending updates available for your Debian/Ubuntu based system.
+
+Behind the scenes this uses `apt`, and in order to run it without root priveleges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
+
+### Examples
+
+Update the list of pending updates every thirty minutes (1800 seconds):
+
+```toml
+[[block]]
+block = "apt"
+interval = 1800
+format = "{count} updates available"
+format_singular = "{count} update available"
+format_up_to_date = "system up to date"
+critical_updates_regex = "(linux |linux-lts|linux-zen)"
+```
+
+### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `600` (10min)
+`format` | Format override | No | `"{count}"`
+`format_singular` | Format override if exactly one update is available | No | `"{count}"`
+`format_up_to_date` | Format override if no updates are available | No | `"{count}"`
+`warning_updates_regex` | Display block as warning if updates matching regex are available | No | `None`
+`critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
+
+### Available Format Keys
+
+Key | Value
+----|-------
+`{count}` | Number of updates available
+
 
 ## Backlight
 
