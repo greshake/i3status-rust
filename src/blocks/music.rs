@@ -382,7 +382,7 @@ impl ConfigBlock for Music {
                     if msg.sender().is_some() {
                         if let Some(signal) = PropertiesPropertiesChanged::from_message(&msg) {
                             let mut players = players_copy2.lock().expect("failed to acquire lock for `players`");
-                            let player = players.iter_mut().find(|p| &p.bus_name == &msg.sender().unwrap().to_string());
+                            let player = players.iter_mut().find(|p| p.bus_name == msg.sender().unwrap().to_string());
                             if player.is_none() {
                                 // Ignoring update since could not find player in the array.
                                 // This shouldn't actually occur as long as the other thread updates the array in time.
