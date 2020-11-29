@@ -240,6 +240,11 @@ pub fn print_blocks(
                         config.theme.alternating_tint_bg.as_deref()
                     )
                     .unwrap());
+                    *w_json.get_mut("color").unwrap() = json!(add_colors(
+                        w_json["color"].as_str(),
+                        config.theme.alternating_tint_fg.as_deref()
+                    )
+                    .unwrap());
                 }
                 w_json
             })
