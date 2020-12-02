@@ -38,7 +38,6 @@
 - [Xrandr](#xrandr)
 
 ## Apt 
-[↥ back to top](#list-of-available-blocks)
 
 Creates a block which displays the pending updates available for your Debian/Ubuntu based system.
 
@@ -75,6 +74,7 @@ Key | Value
 ----|-------
 `{count}` | Number of updates available
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Backlight
 
