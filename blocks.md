@@ -109,9 +109,7 @@ Key | Values | Required | Default
 `step_width` | The brightness increment to use when scrolling, in percent. | No | `5`
 `root_scaling` | Scaling exponent reciprocal (ie. root). | No | `1.0`
 
-Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for `root_scaling` between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear).
-
-More information: <https://en.wikipedia.org/wiki/Lightness>
+Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for `root_scaling` between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear). More information: <https://en.wikipedia.org/wiki/Lightness>
 
 ### Setting Brightness with the Mouse Wheel
 
@@ -516,7 +514,6 @@ click_temp = 3500
 
 ### Options
 
-
 Key | Values | Required | Default
 ----|--------|----------|--------
 `step`        | The step color temperature is in/decreased in kelvin                   | No | `100`
@@ -831,7 +828,6 @@ Start Spotify if the block is clicked whilst it's collapsed:
 block = "music"
 on_collapsed_click = "spotify"
 ```
-
 
 ### Options
 
@@ -1185,7 +1181,6 @@ Requires a PulseAudio installation or `alsa-utils` for ALSA.
 
 PulseAudio support is a feature and can be turned on (`--features "pulseaudio"`) / off (`--no-default-features`) during build with `cargo`.
 If PulseAudio support is enabled the `"auto"` driver will first try to connect to PulseAudio and then fallback to ALSA on error.
-
 
 Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `"pulseaudio"` (or `"auto"`) driver to see volume changes that exceed 100%.
 
