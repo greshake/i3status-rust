@@ -1,4 +1,4 @@
-# List of Available Blocks(#top)
+# List of Available Blocks
 
 - [Apt](#apt)
 - [Backlight](#backlight)
@@ -37,7 +37,7 @@
 - [Weather](#weather)
 - [Xrandr](#xrandr)
 
-## Apt [↥ back to top](#top)
+## Apt [↥ back to top](#list-of-available-blocks)
 
 Creates a block which displays the pending updates available for your Debian/Ubuntu based system.
 
