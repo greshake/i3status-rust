@@ -524,11 +524,11 @@ click_temp = 3500
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`step`        | The step color temperature is in/decreased in kelvin                   | No | `100`
-`hue_shifter` | Change color temperature. Available qualifiers are `redshift` or `sct` | No | `"redshift"`
-`max_temp`    | max color temperature                                                  | No | `10000`
-`min_temp`    | min color temperature                                                  | No | `1000`
-`click_temp`  | left click color temperature                                           | No | `6500`
+`step`        | The step color temperature is in/decreased in Kelvin                   | No | `100`
+`hue_shifter` | Program used to control screen color, either `redshift` or `sct` | No | `"redshift"`
+`max_temp`    | Max color temperature                                                  | No | `10000`
+`min_temp`    | Min color temperature                                                  | No | `1000`
+`click_temp`  | Left click color temperature                                           | No | `6500`
 
 A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
 The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
