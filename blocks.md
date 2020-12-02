@@ -1472,10 +1472,10 @@ For blocks where the `format` string or `command` output can be configured by th
 
 Char | Escaped
 -----|--------
-  <  | &lt;
-  >  | &gt;
-  &  | &amp;
-  '  | &#39;
+  `<`  | `&lt;`
+  `>`  | `&gt;`
+  `&`  | `&amp;`
+  `'`  | `&#39;`
 
 e.g.
 ```toml
