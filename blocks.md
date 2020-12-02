@@ -463,7 +463,7 @@ Key | Values | Required | Default
 
 ## GitHub
 
-Creates a block which shows the unread notification count for a GitHub account.
+Creates a block which shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope is requried, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
 
 ### Examples
 
@@ -480,8 +480,6 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `30`
 `format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{total}"`
 `api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
-
-It requires a Github [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope. It must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
 
 ### Available Format Keys
 
