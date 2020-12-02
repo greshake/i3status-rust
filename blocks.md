@@ -10,7 +10,7 @@
 - [Disk Space](#disk-space)
 - [Docker](#docker)
 - [Focused Window](#focused-window)
-- [Github](#github)
+- [GitHub](#github)
 - [Hueshift](#hueshift)
 - [IBus](#ibus)
 - [KDEConnect](#kdeconnect)
