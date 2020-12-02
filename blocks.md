@@ -164,7 +164,7 @@ Key | Values | Required | Default
 `full_format` | Same as `format` but for when the battery is full. | No | `"{percentage}%"`
 `missing_format` | The format string that's used when a battery is missing. | No | `"{percentage}%"`
 `allow_missing` | Don't display errors when the battery cannot be found. Only works with the `sysfs` driver. | No | `false`
-`hide_missing` | Completely hide this block, if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
+`hide_missing` | Completely hide this block if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
 `info` | Minimum battery level, where state is set to info. | No | `60`
 `good` | Minimum battery level, where state is set to good. | No | `60`
 `warning` | Minimum battery level, where state is set to warning. | No | `30`
