@@ -242,7 +242,7 @@ Key | Values | Required | Default
 `warning` | Minimum usage, where state is set to warning. | No | `60`
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
-`format` | A format string. Possible placeholders: `{barchart}` (barchart of each CPU's core utilization), `{utilization}` (average CPU utilization in percent) and `{frequency}` (CPU frequency). Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{utilization}%"`
+`format` | A format string. See below for possible placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{utilization}%"`
 `per_core` | Display CPU frequencies and utilization per core. | No | `false`
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 
@@ -251,6 +251,14 @@ Key | Values | Required | Default
 Key | Values | Required | Default
 ----|--------|----------|--------
 `frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
+
+### Format string
+
+Placeholder | Description
+------------|-------------
+`{barchart}` | Bar chart of each CPU's core utilization
+`{utilization}` | Average CPU utilization in percent
+`{frequency}` | CPU frequency in Hz
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -552,7 +560,13 @@ block = "ibus"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | Format string. Available qualifiers are `"engine"`. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{engine}"`
+`format` | Format string. See below for available qualifiers. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{engine}"`
+
+### Format string
+
+Placeholder | Description
+------------|-------------
+`{engine}` | Engine name as provided by IBus
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -572,12 +586,22 @@ block = "kdeconnect"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device_id` | Device ID as per the output of `kdeconnect --list-devices\`. | No | Chooses the first found device, if any.
-`format` | Format string. Available qualifiers are `"bat_icon"`, `"bat_charge"`, `"bat_state"`, `"notif_icon"`, `"notif_count"`, `"name"`, `"id"`. `"bat_icon"` will automatically change between the various battery icons depending on the current charge state. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
+`format` | Format string. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
 `format_disconnected` | Format string for when the phone is disconnected/unreachable. Same qualifiers as above, however they will be fixed at the last known value until the phone comes back online. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{name}"`
 `bat_info` | Min battery level below which state is set to info. | No | `60`
 `bat_good` | Min battery level below which state is set to good. | No | `60`
 `bat_warning` | Min battery level below which state is set to warning. | No | `30`
 `bat_critical` | Min battery level below which state is set to critical. | No | `15`
+
+Placeholder | Description
+------------|-------------
+`{bat_icon}` | Battery icon which will automatically change between the various battery icons depending on the current charge state
+`{bat_charge}` | Battery charge level in percent
+`{bat_state}` | Battery charging state, "true" or "false"
+`{notif_icon}` | Will display an icon when you have a notification, otherwise an empty string
+`{notif_count}` | Number of unread notifications on your phone
+`{name}` | Name of your device as reported by KDEConnect
+`{id}` | KDEConnect device ID
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -671,6 +695,12 @@ Key | Values | Required | Default
 `critical` | Minimum load, where state is set to critical. | No | `0.9`
 `format` | Format string. You can use the placeholders 1m 5m and 15m, e.g. `"1min avg: {1m}"`. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{1m}"`
 `interval` | Update interval, in seconds. | No | `3`
+
+Placeholder | Description
+------------|-------------
+`{1m}` | 1 minute load average
+`{5m}` | 5minute load average
+`{15m}` | 15minute load average
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1208,7 +1238,7 @@ format = "{output_name} {volume}"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | `"auto"`, `"pulseaudio"`, `"alsa"` | No | `"auto"` (Pulseaudio with ALSA fallback)
-`format` | Any string to use next to the icon. Available qualifiers: `volume`, `output_name`. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `{volume}%`
+`format` | Any string to use next to the icon. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `{volume}%`
 `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols` | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l` | No | `default`
 `device_kind` | PulseAudio device kind (`source` / `sink`) | No | `sink`
@@ -1217,6 +1247,13 @@ Key | Values | Required | Default
 `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | No | `None`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
+
+### Format string specification
+
+  Key    | Value
+---------|-------
+`{volume}` | Current volume in percent
+`{output_name}` | PulseAudio or ALSA device name
 
 ###### [↥ back to top](#list-of-available-blocks)
 
