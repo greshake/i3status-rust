@@ -164,12 +164,17 @@ Key | Values | Required | Default
 `missing_format` | The format string that's used when a battery is missing. | No | `"{percentage}%"`
 `allow_missing` | Don't display errors when the battery cannot be found. Only works with the `sysfs` driver. | No | `false`
 `hide_missing` | Completely hide this block, if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
-`show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
-`upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
 `info` | Minimum battery level, where state is set to info. | No | `60`
 `good` | Minimum battery level, where state is set to good. | No | `60`
 `warning` | Minimum battery level, where state is set to warning. | No | `30`
 `critical` | Minimum battery level, where state is set to critical. | No | `15`
+
+### Deprecated Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
+`upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
@@ -234,10 +239,14 @@ Key | Values | Required | Default
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
 `format` | A format string. Possible placeholders: `{barchart}` (barchart of each CPU's core utilization), `{utilization}` (average CPU utilization in percent) and `{frequency}` (CPU frequency). Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{utilization}%"`
-`frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
 `per_core` | Display CPU frequencies and utilization per core. | No | `false`
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 
+### Deprecated Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
 
 ## Custom
 
