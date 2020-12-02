@@ -461,9 +461,9 @@ Key | Values | Required | Default
 
 ###### [↥ back to top](#list-of-available-blocks)
 
-## Github
+## GitHub
 
-Creates a block which shows the unread notification count for a github account.
+Creates a block which shows the unread notification count for a GitHub account.
 
 ### Examples
 
