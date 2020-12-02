@@ -84,7 +84,7 @@ When there is no `device` specified, this block will display information from th
 
 It is possible to set the brightness using this block as well -- [see below](#setting-brightness-with-the-mouse-wheel) for details.
 
-### Examples
+#### Examples
 
 Show brightness for a specific device:
 
@@ -101,7 +101,7 @@ Show brightness for the default device:
 block = "backlight"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -111,7 +111,7 @@ Key | Values | Required | Default
 
 Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for `root_scaling` between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear). More information: <https://en.wikipedia.org/wiki/Lightness>
 
-### Setting Brightness with the Mouse Wheel
+#### Setting Brightness with the Mouse Wheel
 
 The block allows for setting brightness with the mouse wheel. However, depending on how you installed i3status-rust, it may not have the appropriate permissions to modify these files, and will fail silently. To remedy this you can write a `udev` rule for your system (if you are comfortable doing so).
 
@@ -133,7 +133,7 @@ The battery block collapses when the battery is fully charged -- or, in the case
 
 The battery block supports reading charging and status information from either `sysfs` or the [UPower](https://upower.freedesktop.org/) D-Bus interface. These "drivers" have largely identical features, but UPower does include support for `device = "DisplayDevice"`, which treats all physical power sources as a single logical battery. This is particularly useful if your system has multiple batteries.
 
-### Examples
+#### Examples
 
 Update the battery state every ten seconds, and show the time remaining until (dis)charging is complete:
 
@@ -153,7 +153,7 @@ driver = "upower"
 format = "{percentage}% {time}"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -170,7 +170,7 @@ Key | Values | Required | Default
 `warning` | Minimum battery level, where state is set to warning. | No | `30`
 `critical` | Minimum battery level, where state is set to critical. | No | `15`
 
-### Deprecated Options
+#### Deprecated Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -179,7 +179,7 @@ Key | Values | Required | Default
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
-### Available Format Keys
+#### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -198,7 +198,7 @@ When the device can be identified as an audio headset, a keyboard, joystick, or 
 
 Right-clicking the block will attempt to connect (or disconnect) the device.
 
-### Examples
+#### Examples
 
 A block for a Bluetooth device with the given MAC address:
 
@@ -209,7 +209,7 @@ mac = "A0:8A:F5:B8:01:FD"
 label = " Rowkin"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -223,7 +223,7 @@ Key | Values | Required | Default
 
 Creates a block which displays the overall CPU utilization, calculated from `/proc/stat`.
 
-### Examples
+#### Examples
 
 Update CPU usage every second:
 
@@ -234,7 +234,7 @@ interval = 1
 format = "{barchart} {utilization}% {frequency}GHz"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -246,13 +246,13 @@ Key | Values | Required | Default
 `per_core` | Display CPU frequencies and utilization per core. | No | `false`
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 
-### Deprecated Options
+#### Deprecated Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 `frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz`. | No | `false`
 
-### Available Format Keys
+#### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -271,7 +271,7 @@ For further customisation, use the `json` option and have the shell command outp
 `icon` is optional, it may be an icon name from `icons.rs` (default "")  
 `state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
 
-### Examples
+#### Examples
 
 Display temperature, update every 10 seconds:
 
@@ -319,7 +319,7 @@ signal = 4
 interval = "once"
 ```
 
-### Options
+#### Options
 
 Note that `command` and `cycle` are mutually exclusive.
 
@@ -344,7 +344,7 @@ For example, updating the block using the command line tool `qdbus`: `qdbus i3.s
 
 Note that the text you set may need to be escaped, refer to [Escaping Text](#escaping-text).
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -352,7 +352,7 @@ block = "custom_dbus"
 name = "CurrentSoundDevice"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -364,7 +364,7 @@ Key | Values | Required | Default
 
 Creates a block which displays disk space information.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -376,7 +376,7 @@ unit = "GiB"
 format = "{icon}{used}/{total} {unit} ({available}{unit} free)"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -390,7 +390,7 @@ Key | Values | Required | Default
 `warning` | Available disk space warning level as a percentage or Unit. | No | `20.0`
 `alert_absolute` | Use Unit values for warning and alert instead of percentages. | No | `false`
 
-### Available Format Keys
+#### Available Format Keys
 
 Key | Value
 ----|-------
@@ -411,7 +411,7 @@ Key | Value
 
 Creates a block which shows the local docker daemon status (containers running, paused, stopped, total and image count).
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -420,14 +420,14 @@ interval = 2
 format = "{running}/{total}"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `5`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{running}"`
 
-### Available Format Keys
+#### Available Format Keys
 
 Key | Value
 ----|-------
@@ -443,7 +443,7 @@ Key | Value
 
 Creates a block which displays the title or the active marks of the currently focused window. Uses push updates from i3 IPC, so no need to worry about resource usage. The block only updates when the focused window changes title or the focus changes. Also works with sway, due to it having compatibility with i3's IPC.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -452,7 +452,7 @@ max_width = 50
 show_marks = "visible"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -465,7 +465,7 @@ Key | Values | Required | Default
 
 Creates a block which shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope is requried, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -473,7 +473,7 @@ block = "github"
 format = "{total}|{author}|{comment}|{mention}|{review_requested}"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -481,7 +481,7 @@ Key | Values | Required | Default
 `format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{total}"`
 `api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
 
-### Available Format Keys
+#### Available Format Keys
 
  Key | Value
 -----|-------
@@ -508,7 +508,7 @@ Creates a block which display the current color temperature in Kelvin. When scro
 A left click on the block sets the color temperature to `click_temp` that is by default to `6500K`.
 A right click completely resets the color temperature to its default value (`6500K`).
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -518,7 +518,7 @@ step = 50
 click_temp = 3500
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -537,7 +537,7 @@ The `step` has a hard limit as well, defined to `500K` to avoid too brutal chang
 
 Creates a block which displays the current global engine set in [IBus](https://wiki.archlinux.org/index.php/IBus). Updates are instant as D-Bus signalling is used.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -554,13 +554,13 @@ block = "ibus"
 "xkb:us::eng" = "EN"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{engine}"`
 
-### Available Format Keys
+#### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -579,7 +579,7 @@ Block colours are updated based on the battery level, unless all bat_* threshold
 block = "kdeconnect"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -591,7 +591,7 @@ Key | Values | Required | Default
 `bat_warning` | Min battery level below which state is set to warning. | No | `30`
 `bat_critical` | Min battery level below which state is set to critical. | No | `15`
 
-### Available Format Keys
+#### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -617,7 +617,7 @@ Four drivers are available:
 
 Which of these methods is appropriate will depend on your system setup.
 
-### Examples
+#### Examples
 
 Check `setxkbmap` every 15 seconds:
 
@@ -653,7 +653,7 @@ driver = "sway"
 sway_kb_identifier = "1133:49706:Gaming_Keyboard_G110"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -662,7 +662,7 @@ Key | Values | Required | Default
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{layout}"`
 `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | No | Defaults to first input found
 
-### Available Format Keys
+#### Available Format Keys
 
   Key    | Value
 ---------|-------
@@ -675,7 +675,7 @@ Key | Values | Required | Default
 
 Creates a block which displays the system load average.
 
-### Examples
+#### Examples
 
 Display the 1-minute and 5-minute load averages, updated once per second:
 
@@ -686,7 +686,7 @@ format = "1min avg: {1m}"
 interval = 1
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -696,7 +696,7 @@ Key | Values | Required | Default
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{1m}"`
 `interval` | Update interval in seconds. | No | `3`
 
-### Available Format Keys
+#### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -710,7 +710,7 @@ Placeholder | Description
 
 Creates a block which shows unread mails. Only supports maildir format.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -722,7 +722,7 @@ threshold_critical = 10
 display_type = "new"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -743,7 +743,7 @@ By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({Mp}%)" (Swap 
 
 This module keeps track of both Swap and Memory. By default, a click switches between them.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -760,7 +760,7 @@ critical_mem = 95
 critical_swap = 95
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -775,7 +775,7 @@ Key | Values | Required | Default
 `critical_swap` | Percentage of swap usage, where state is set to critical. | No | `95.0`
 `interval` | The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only. | No | `5`
 
-### Available Format Keys
+#### Available Format Keys
 
   Key    | Value
 ---------|-------
@@ -833,7 +833,7 @@ and many others.
 
 The block discovers all active players.  Right click on the widget to switch to the next active player.  You can pin the widget to a given player via the "player" setting.
 
-### Examples
+#### Examples
 
 Show the currently playing song on Spotify only, with play & next buttons:
 
@@ -861,7 +861,7 @@ block = "music"
 on_collapsed_click = "spotify"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -892,7 +892,7 @@ but the 'use_bits' flag can be set to `true` to convert the units to bps (little
 `ssid` requires one of `iw`, `wpa_cli`, `nm-cli` or `iwctl`.  
 `signal_strength` requires `iw`.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -903,7 +903,7 @@ interval = 5
 use_bits = false
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -916,7 +916,7 @@ Key | Values | Required | Default
 `hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
 `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
 
-### Available Format Keys
+#### Available Format Keys
 
 Placeholder | Description
 ------------|------------
@@ -930,7 +930,7 @@ Placeholder | Description
 `graph_up` | Display a bar graph for upload speed
 `graph_down` | Display a bar graph for download speed
 
-### Deprecated Options
+#### Deprecated Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -950,7 +950,7 @@ Key | Values | Required | Default
 
 Creates a block which displays network connection information from NetworkManager.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -960,7 +960,7 @@ interface_name_exclude = ["br\\-[0-9a-f]{12}", "docker\\d+"]
 interface_name_include = []
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|---------
@@ -973,7 +973,7 @@ Key | Values | Required | Default
 `interface_name_exclude` | A list of regex patterns for device interface names to ignore. | No | ""
 `interface_name_include` | A list of regex patterns for device interface names to include (only interfaces that match at least one are shown). | No | ""
 
-### AP format string
+#### AP format string
 
 Placeholder | Description
 ------------|-------------
@@ -981,7 +981,7 @@ Placeholder | Description
 `{strength}` | The signal strength in percent for this AP
 `{freq}` | The frequency of this AP in MHz
 
-### Device format string
+#### Device format string
 
 Placeholder | Description
 ------------|-------------
@@ -991,7 +991,7 @@ Placeholder | Description
 `{ap}` | The connected AP if available, formatted with the AP format string
 `{ips}` | The list of IPs for this device
 
-### Connection format string
+#### Connection format string
 
 Placeholder | Description
 ------------|-------------
@@ -1007,14 +1007,14 @@ Note: For `dunst` this block uses DBus to get instantaneous updates. For now thi
 
 TODO: support `mako`
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | Notification daemon to monitor. | No | `"dunst"`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{state}"`
 
-### Available Format Keys
+#### Available Format Keys
 
 Key | Value
 ----|-------
@@ -1030,7 +1030,7 @@ The simplest configuration will return the total count of messages in the notmuc
 
 NOTE: This block can only be used if you build with `cargo build --features=notmuch`
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1041,7 +1041,7 @@ threshold_critical = 10
 name = "A"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1069,7 +1069,7 @@ When using `show_fan_speed`, clicking the left mouse button on the "fan speed" p
 
 Requires `nvidia-smi` for displaying info and `nvidia_settings` for setting fan speed.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1080,7 +1080,7 @@ show_clocks = true
 interval = 1
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1101,7 +1101,7 @@ Creates a block which displays the pending updates available on pacman or an AUR
 
 Requires fakeroot to be installed (only required for pacman).
 
-### Examples
+#### Examples
 
 Update the list of pending updates every ten minutes (600 seconds):
 
@@ -1150,7 +1150,7 @@ critical_updates_regex = "(linux |linux-lts|linux-zen)"
 aur_command = "pikaur -Qua"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1180,7 +1180,7 @@ Creates a block which runs a [pomodoro timer](https://en.wikipedia.org/wiki/Pomo
 You can face problems showing the nagbar if i3 is configured to hide the status bar. See
 [#701](https://github.com/greshake/i3status-rust/pull/701) to fix this.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1193,7 +1193,7 @@ use_nag = true
 nag_path = "i3-nagbar"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1217,7 +1217,7 @@ If PulseAudio support is enabled the `"auto"` driver will first try to connect t
 
 Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `"pulseaudio"` (or `"auto"`) driver to see volume changes that exceed 100%.
 
-### Examples
+#### Examples
 
 Change the default scrolling step width to 3 percent:
 
@@ -1236,7 +1236,7 @@ format = "{output_name} {volume}"
 "alsa_output.pci-0000_00_1b.0.analog-stereo" = "🎧"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1251,7 +1251,7 @@ Key | Values | Required | Default
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
 
-### Available Format Keys
+#### Available Format Keys
 
   Key    | Value
 ---------|-------
@@ -1264,7 +1264,7 @@ Key | Values | Required | Default
 
 Creates a block which uses [`speedtest-cli`](https://github.com/sivel/speedtest-cli) to measure your ping, download, and upload speeds.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1273,7 +1273,7 @@ bytes = true
 interval = 1800
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1294,7 +1294,7 @@ Clicking the right mouse button on the icon toggles the view of the block betwee
 tasks. If there are no filters configured, the number of tasks stays the same and both modes are behaving
 equally.  
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1308,7 +1308,7 @@ critical_threshold = 20
 filter_tags = ["work", "important"]
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1320,7 +1320,7 @@ Key | Values | Required | Default
 `format_singular` | Same as `format` but for when exactly one task is pending. | No | `"{count}"`
 `format_everything_done` | Same as `format` but for when all tasks are completed. | No | `"{count}"`
 
-### Available Format Keys
+#### Available Format Keys
 
 Key | Value
 ----|-------
@@ -1338,7 +1338,7 @@ The average, minimum, and maximum temperatures are computed using all sensors di
 
 Note that the colour of the block is always determined by the maximum temperature across all sensors, not the average. You may need to keep this in mind if you have a misbehaving sensor.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1350,7 +1350,7 @@ chip = "*-isa-*"
 inputs = ["CPUTIN", "SYSTIN"]
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1365,7 +1365,7 @@ Key | Values | Required | Default
 `inputs` | Narrows the results to individual inputs reported by each chip. | No | None
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average}° avg, {max}° max"`
 
-### Available Format Keys
+#### Available Format Keys
 
 Key | Value
 ----|-------
@@ -1379,7 +1379,7 @@ Key | Value
 
 Creates a block which display the current time.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1390,7 +1390,7 @@ interval = 60
 locale = "fr_BE"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1408,7 +1408,7 @@ Creates a toggle block. You can add commands to be executed to disable the toggl
 You also need to specify a command to determine the initial state of the toggle (`command_state`). When the command outputs nothing, the toggle is disabled, otherwise enabled.
 By specifying the `interval` property you can let the `command_state` be executed continuously.
 
-### Examples
+#### Examples
 
 This is what I use to toggle my external monitor configuration:
 
@@ -1423,7 +1423,7 @@ command_off = "~/.screenlayout/builtin.sh"
 interval = 5
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1440,14 +1440,14 @@ Key | Values | Required | Default
 ## Uptime
 Creates a block which displays system uptime. The block will always display the 2 biggest units, so minutes and seconds, or hours and minutes or days and hours or weeks and days.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
 block = "uptime"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1459,7 +1459,7 @@ Key | Values | Required | Default
 
 [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1468,7 +1468,7 @@ show_time = true
 state_path = "/home/user/.config/watson/state"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1484,7 +1484,7 @@ Configuring the Weather block requires configuring a weather service, which may 
 
 If using the `autolocate` feature, set the block update interval such that you do not exceed ipapi.co's free daily limit of 1000 hits.
 
-### Examples
+#### Examples
 
 Show detailed weather in San Francisco through the OpenWeatherMap service:
 
@@ -1495,7 +1495,7 @@ format = "{weather} ({location}) {temp}°, {wind} m/s {direction}"
 service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units = "metric" }
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -1504,7 +1504,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `600`
 `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | No | false
 
-### OpenWeatherMap Options
+#### OpenWeatherMap Options
 
 To use the service you will need a (free) API key.
 
@@ -1522,7 +1522,7 @@ The options `api_key`, `city_id`, `place` can be omitted from configuration,
 in which case they must be provided in the environment variables
 `OPENWEATHERMAP_API_KEY`, `OPENWEATHERMAP_CITY_ID`, `OPENWEATHERMAP_PLACE`.
 
-### Available Format Keys
+#### Available Format Keys
 
 Key | Value
 ----|-------
@@ -1542,7 +1542,7 @@ Creates a block which shows screen information (name, brightness, resolution). W
 
 NOTE: Some users report issues (e.g. [here](https://github.com/greshake/i3status-rust/issues/274) and [here](https://github.com/greshake/i3status-rust/issues/668) when using this block. The cause is currently unknown, however setting a higher update interval may help.
 
-### Examples
+#### Examples
 
 ```toml
 [[block]]
@@ -1552,7 +1552,7 @@ resolution = true
 interval = 2
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
