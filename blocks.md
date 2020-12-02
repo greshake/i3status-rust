@@ -125,6 +125,8 @@ ACTION=="add", SUBSYSTEM=="backlight", GROUP="video", MODE="0664"
 
 This will allow the video group to modify all backlight devices. You will also need to restart for this rule to take effect.
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## Battery
 
 Creates a block which displays the current battery state (Full, Charging or Discharging), percentage charged and estimate time until (dis)charged.
@@ -188,6 +190,8 @@ Placeholder | Description
 `{time}` | Time remaining until (dis)charge is complete.
 `{power}` | Power consumption (in watts) by the battery or from the power supply when charging.
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## Bluetooth
 
 Creates a block which displays the connectivity of a given Bluetooth device, or the battery level if this is supported. Relies on the Bluez D-Bus API, and is therefore asynchronous.
@@ -215,6 +219,7 @@ Key | Values | Required | Default
 `label` | Text label to display next to the icon. | No | None
 `hide_disconnected` | Hides the block when the device is disconnected | No | false
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## CPU Utilization
 
@@ -248,6 +253,8 @@ Key | Values | Required | Default
 Key | Values | Required | Default
 ----|--------|----------|--------
 `frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Custom
 
@@ -321,6 +328,7 @@ Key | Values | Required | Default
 `hide_when_empty` | Hides the block when the command output (or json text field) is empty | No | false
 `shell` | Specify the shell to use when running commands. | No | `$SHELL` if set, otherwise fallback to `sh`
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Custom DBus
 
@@ -343,6 +351,8 @@ name = "CurrentSoundDevice"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `name` | Name of the DBus object that i3status-rs will create. Must be unique. | Yes | None
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Disk Space
 
@@ -389,6 +399,7 @@ Key | Value
 `{unit}` | Unit used for disk space (see above).
 `{used}` | Used disk space.
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Docker
 
@@ -420,6 +431,7 @@ Key | Value
 `{paused}` | Containers paused on the host.
 `{images}` | Total images on the host.
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Focused Window
 
@@ -440,6 +452,8 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
 `show_marks` | Display marks instead of the title, if there are some. Options are `"none"`, `"all"` or `"visible"`, the latter of which ignores marks that start with an underscore. | No | `"none"`
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Github
 
@@ -482,6 +496,8 @@ It requires a Github [personal access token](https://github.com/settings/tokens/
 
 For more information about reasons, please see the [API documentation](https://developer.github.com/v3/activity/notifications/#notification-reasons).
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## Hueshift
 
 Creates a block which display the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.
@@ -512,6 +528,8 @@ Key | Values | Required | Default
 A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
 The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## IBus
 
 Creates a block which displays the current global engine set in [IBus](https://wiki.archlinux.org/index.php/IBus). Updates are instant as D-Bus signalling is used.
@@ -539,6 +557,8 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `format` | Format string. Available qualifiers are `"engine"`. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{engine}"`
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## KDEConnect
 
 Display info from the currently connected device in KDEConnect, updated asynchronously.
@@ -561,6 +581,8 @@ Key | Values | Required | Default
 `bat_good` | Min battery level below which state is set to good. | No | `60`
 `bat_warning` | Min battery level below which state is set to warning. | No | `30`
 `bat_critical` | Min battery level below which state is set to critical. | No | `15`
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Keyboard Layout
 
@@ -626,6 +648,8 @@ Key | Values | Required | Default
 `{layout}` | Keyboard layout name
 `{variant}` | Keyboard variant (only `localebus` is supported so far)
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## Load
 
 Creates a block which displays the system load average.
@@ -650,6 +674,8 @@ Key | Values | Required | Default
 `critical` | Minimum load, where state is set to critical. | No | `0.9`
 `format` | Format string. You can use the placeholders 1m 5m and 15m, e.g. `"1min avg: {1m}"`. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{1m}"`
 `interval` | Update interval, in seconds. | No | `3`
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Maildir
 
@@ -677,6 +703,8 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `5`
 `display_type` | Which part of the maildir to count. One of "new", "cur", or "all" | No | `"new"`
 `icon` | Whether or not to prepend the output with the mail icon | No | `true`
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Memory
 
@@ -759,6 +787,7 @@ Key | Values | Required | Default
 `{SUp}`  | Swap used (%).
 `{SUpi}` | Swap used (%) as integer.
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Music
 
@@ -823,6 +852,7 @@ Key | Values | Required | Default
 `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`
 `hide_when_empty` | Hides the block when there is no player available. | No | `false`
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Net
 
@@ -885,6 +915,8 @@ Key | Values | Required | Default
 `graph_up` | Deprecated in favor of `format`. Display a bar graph for upload speed. | No | `false`
 `graph_down` | Deprecated in favor of `format`. Display a bar graph for download speed. | No | `false`
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## NetworkManager
 
 Creates a block which displays network connection information from NetworkManager.
@@ -936,6 +968,7 @@ Placeholder | Description
 ------------|-------------
 `{devices}` | The list of devices, each formatted with the device format string.
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Notify
 
@@ -958,6 +991,7 @@ Key | Value
 ----|-------
 `{state}` | Current state of the notification daemon in icon form
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Notmuch
 
@@ -991,6 +1025,8 @@ Key | Values | Required | Default
 `name` | Label to show before the mail count | No | `""`
 `no_icon` | Disable the mail icon | No | `false`
 `interval` | Update interval, in seconds. | No | `10`
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Nvidia Gpu
 
@@ -1027,6 +1063,8 @@ Key | Values | Required | Default
 `show_temperature` | Display gpu temperature. | No | `true`
 `show_fan_speed` | Display fan speed. | No | `false`
 `show_clocks` | Display gpu clocks. | No | `false`
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Pacman
 
@@ -1104,6 +1142,7 @@ Key | Value
 `{aur}` | Number of updates available according to `<aur_command>`
 `{both}` | Cumulative number of updates available according to `pacman` and `<aur_command>` 
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Pomodoro
 
@@ -1136,6 +1175,7 @@ Key | Values | Required | Default
 `break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
 `nag_path` | i3-nagbar binary path | No | `i3-nagbar`
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Sound
 
@@ -1183,6 +1223,8 @@ Key | Values | Required | Default
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## Speed Test
 
 Creates a block which uses [`speedtest-cli`](https://github.com/sivel/speedtest-cli) to measure your ping, download, and upload speeds.
@@ -1204,6 +1246,8 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `1800`
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Taskwarrior
 
@@ -1246,6 +1290,8 @@ Key | Values | Required | Default
 Key | Value
 ----|-------
 `{count}` | The number of pending tasks.
+
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Temperature
 
@@ -1292,6 +1338,8 @@ Key | Value
 `{average}` | Average temperature among all sensors.
 `{max}` | Maximum temperature among all sensors.
 
+###### [↥ back to top](#list-of-available-blocks)
+
 ## Time
 
 Creates a block which display the current time.
@@ -1317,6 +1365,7 @@ Key | Values | Required | Default
 `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | No | Local timezone
 `locale` | Locale to apply when formatting the time | No | System locale
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Toggle
 
@@ -1351,6 +1400,7 @@ Key | Values | Required | Default
 `icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Uptime
 Creates a block which displays system uptime. The block will always display the 2 biggest units, so minutes and seconds, or hours and minutes or days and hours or weeks and days.
@@ -1368,6 +1418,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `60`
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Watson
 
@@ -1448,6 +1499,7 @@ Key | Value
 `{wind}` | Wind speed.
 `{direction}` | Wind direction, e.g. "NE".
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Xrandr
 
@@ -1474,6 +1526,7 @@ Key | Values | Required | Default
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | `5`
 `interval` | Update interval, in seconds. | No | `5`
 
+###### [↥ back to top](#list-of-available-blocks)
 
 ## Escaping text
 For blocks where the `format` string or `command` output can be configured by the user, you may need to escape any Pango characters otherwise the block may fail to render (i3) and/or throw errors to stderr (sway).
@@ -1496,3 +1549,5 @@ block = "custom"
 # escaped ampersand
 command = "echo '<b>1 &amp;</b>'"
 ```
+
+###### [↥ back to top](#list-of-available-blocks)
