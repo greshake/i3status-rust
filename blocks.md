@@ -61,7 +61,7 @@ critical_updates_regex = "(linux |linux-lts|linux-zen)"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`interval` | Update interval, in seconds. | No | `600` (10min)
+`interval` | Update interval in seconds. | No | `600`
 `format` | Format override. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
 `format_singular` | Format override if exactly one update is available. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
 `format_up_to_date` | Format override if no updates are available. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
@@ -1151,7 +1151,7 @@ aur_command = "pikaur -Qua"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`interval` | Update interval, in seconds. | No | `600` (10min)
+`interval` | Update interval, in seconds. | No | `600`
 `format` | Format override. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{pacman}"`
 `format_singular` | Format override if exactly one update is available. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{pacman}"`
 `format_up_to_date` | Format override if no updates are available. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{pacman}"`
