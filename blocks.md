@@ -62,9 +62,9 @@ critical_updates_regex = "(linux |linux-lts|linux-zen)"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval in seconds. | No | `600`
-`format` | Format override. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
-`format_singular` | Format override if exactly one update is available. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
-`format_up_to_date` | Format override if no updates are available. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
+`format_singular` | Same as `format`, but for when exactly one update is available. | No | `"{count}"`
+`format_up_to_date` | Same as `format`, but for when no updates are available. | No | `"{count}"`
 `warning_updates_regex` | Display block as warning if updates matching regex are available | No | `None`
 `critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
 
@@ -160,7 +160,7 @@ Key | Values | Required | Default
 `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | `"BAT0"`
 `driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
-`format` | A format string. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{percentage}%"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{percentage}%"`
 `full_format` | The format string that's used when the battery reaches full state. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{percentage}%"`
 `missing_format` | The format string that's used when a battery is missing. | No | `"{percentage}%"`
 `allow_missing` | Don't display errors when the battery cannot be found. Only works with the `sysfs` driver. | No | `false`
@@ -179,7 +179,7 @@ Key | Values | Required | Default
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
 
-### Format string
+### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -242,7 +242,7 @@ Key | Values | Required | Default
 `warning` | Minimum usage, where state is set to warning. | No | `60`
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
-`format` | A format string. See below for possible placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{utilization}%"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{utilization}%"`
 `per_core` | Display CPU frequencies and utilization per core. | No | `false`
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 
@@ -252,7 +252,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
 
-### Format string
+### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -382,7 +382,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `alert` | Available disk space critical level as a percentage or Unit. | No | `10.0`
 `alias` | Alias that is displayed for path | No | `"/"`
-`format` | Format string for output (see below). Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{alias} {available} {unit}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{alias} {available} {unit}"`
 `info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation) | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
 `path` | Path to collect information from | No | `"/"`
@@ -425,7 +425,7 @@ format = "{running}/{total}"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `5`
-`format` | A format string. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{running}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{running}"`
 
 ### Available Format Keys
 
@@ -478,7 +478,7 @@ format = "{total}|{author}|{comment}|{mention}|{review_requested}"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `30`
-`format` | A format string. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text)| No | `"{total}"`
+`format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{total}"`
 `api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
 
 It requires a Github [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope. It must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
@@ -560,9 +560,9 @@ block = "ibus"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | Format string. See below for available qualifiers. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{engine}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{engine}"`
 
-### Format string
+### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -586,12 +586,14 @@ block = "kdeconnect"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device_id` | Device ID as per the output of `kdeconnect --list-devices\`. | No | Chooses the first found device, if any.
-`format` | Format string. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
-`format_disconnected` | Format string for when the phone is disconnected/unreachable. Same qualifiers as above, however they will be fixed at the last known value until the phone comes back online. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{name}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
+`format_disconnected` | Same as `format` but for when the phone is disconnected/unreachable. Same placeholders can be used as above, however they will be fixed at the last known value until the phone comes back online. | No | `"{name}"`
 `bat_info` | Min battery level below which state is set to info. | No | `60`
 `bat_good` | Min battery level below which state is set to good. | No | `60`
 `bat_warning` | Min battery level below which state is set to warning. | No | `30`
 `bat_critical` | Min battery level below which state is set to critical. | No | `15`
+
+### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -659,10 +661,10 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | No | `"setxkbmap"`
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
-`format` | Format string, e.g. " {layout}". Text may need to be escaped, refer to [Escaping Text](#escaping-text)| No | `"{layout}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{layout}"`
 `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs` | No | Defaults to first input found
 
-### Format string specification
+### Available Format Keys
 
   Key    | Value
 ---------|-------
@@ -682,7 +684,7 @@ Display the 1-minute and 5-minute load averages, updated once per second:
 ```toml
 [[block]]
 block = "load"
-format = "{1m} {5m}"
+format = "1min avg: {1m}"
 interval = 1
 ```
 
@@ -693,8 +695,10 @@ Key | Values | Required | Default
 `info` | Minimum load, where state is set to info. | No | `0.3`
 `warning` | Minimum load, where state is set to warning. | No | `0.6`
 `critical` | Minimum load, where state is set to critical. | No | `0.9`
-`format` | Format string. You can use the placeholders 1m 5m and 15m, e.g. `"1min avg: {1m}"`. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{1m}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{1m}"`
 `interval` | Update interval, in seconds. | No | `3`
+
+### Available Format Keys
 
 Placeholder | Description
 ------------|-------------
@@ -762,8 +766,8 @@ critical_swap = 95
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format_mem` | Format string for Memory view. All format values are described below. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{MFm}MB/{MTm}MB({Mp}%)"`
-`format_swap` | Format string for Swap view. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{SFm}MB/{STm}MB({Sp}%)"`
+`format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{MFm}MB/{MTm}MB({Mp}%)"`
+`format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{SFm}MB/{STm}MB({Sp}%)"`
 `display_type` | Default view displayed on startup. Options are memory, swap | No | `"memory"`
 `icons` | Whether the format string should be prepended with Icons. | No | `true`
 `clickable` | Whether the view should switch between memory and swap on click. | No | `true`
@@ -773,7 +777,7 @@ Key | Values | Required | Default
 `critical_swap` | Percentage of swap usage, where state is set to critical. | No | `95.0`
 `interval` | The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only. | No | `5`
 
-### Format string specification
+### Available Format Keys
 
   Key    | Value
 ---------|-------
@@ -906,7 +910,7 @@ use_bits = false
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | Network interface to monitor (name from /sys/class/net) | Yes | `lo` (loopback interface)
-`format` | Format string. See below for available qualifiers. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | "{speed_up} {speed_down}" 
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | "{speed_up} {speed_down}" 
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
@@ -914,7 +918,8 @@ Key | Values | Required | Default
 `hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
 `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
 
-### Format String
+### Available Format Keys
+
 Placeholder | Description
 ------------|------------
 `ssid` | Display network SSID (wireless only).
@@ -1009,7 +1014,7 @@ TODO: support `mako`
 Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | Notification daemon to monitor | No | `"dunst"`
-`format` | Format override. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{state}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{state}"`
 
 ### Available Format Keys
 
@@ -1152,9 +1157,9 @@ aur_command = "pikaur -Qua"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `600`
-`format` | Format override. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{pacman}"`
-`format_singular` | Format override if exactly one update is available. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{pacman}"`
-`format_up_to_date` | Format override if no updates are available. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{pacman}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{pacman}"`
+`format_singular` | Same as `format` but for when exactly one update is available. | No | `"{pacman}"`
+`format_up_to_date` | Same as `format` but for when no updates are available. | No | `"{pacman}"`
 `warning_updates_regex` | Display block as warning if updates matching regex are available | No | `None`
 `critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
 `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `pikaur -Qua` | if `{both}` or `{aur}` are used | `None`
@@ -1238,7 +1243,7 @@ format = "{output_name} {volume}"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | `"auto"`, `"pulseaudio"`, `"alsa"` | No | `"auto"` (Pulseaudio with ALSA fallback)
-`format` | Any string to use next to the icon. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `{volume}%`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `{volume}%`
 `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols` | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l` | No | `default`
 `device_kind` | PulseAudio device kind (`source` / `sink`) | No | `sink`
@@ -1248,7 +1253,7 @@ Key | Values | Required | Default
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
 
-### Format string specification
+### Available Format Keys
 
   Key    | Value
 ---------|-------
@@ -1313,9 +1318,9 @@ Key | Values | Required | Default
 `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
 `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
 `filter_tags` | A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
-`format` | Format override. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
-`format_singular` | Format override if exactly one task is pending. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
-`format_everything_done` | Format override if all tasks are completed. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
+`format_singular` | Same as `format` but for when exactly one task is pending. | No | `"{count}"`
+`format_everything_done` | Same as `format` but for when all tasks are completed. | No | `"{count}"`
 
 ### Available Format Keys
 
@@ -1360,7 +1365,7 @@ Key | Values | Required | Default
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
 `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
 `inputs` | Narrows the results to individual inputs reported by each chip. | No | None
-`format` | Format string. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{average}° avg, {max}° max"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{average}° avg, {max}° max"`
 
 ### Available Format Keys
 
@@ -1391,7 +1396,7 @@ locale = "fr_BE"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | Format string. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"%a %d/%m %R"`
+`format` | A string to customise the output of this block. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"%a %d/%m %R"`
 `on_click` | Shell command to run when the time block is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `5`
 `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | No | Local timezone
@@ -1496,7 +1501,7 @@ service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | The text format of the weather display. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{weather} {temp}°"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{weather} {temp}°"`
 `service` | The configuration of a weather service (see below). | Yes | None
 `interval` | Update interval, in seconds. | No | `600`
 `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | No | false
