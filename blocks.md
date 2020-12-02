@@ -62,11 +62,11 @@ critical_updates_regex = "(linux |linux-lts|linux-zen)"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval in seconds. | No | `600`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{count}"`
 `format_singular` | Same as `format`, but for when exactly one update is available. | No | `"{count}"`
 `format_up_to_date` | Same as `format`, but for when no updates are available. | No | `"{count}"`
-`warning_updates_regex` | Display block as warning if updates matching regex are available | No | `None`
-`critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
+`warning_updates_regex` | Display block as warning if updates matching regex are available. | No | `None`
+`critical_updates_regex` | Display block as critical if updates matching regex are available. | No | `None`
 
 ### Available Format Keys
 
@@ -160,8 +160,8 @@ Key | Values | Required | Default
 `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | `"BAT0"`
 `driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{percentage}%"`
-`full_format` | The format string that's used when the battery reaches full state. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{percentage}%"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}%"`
+`full_format` | Same as `format` but for when the battery is full. | No | `"{percentage}%"`
 `missing_format` | The format string that's used when a battery is missing. | No | `"{percentage}%"`
 `allow_missing` | Don't display errors when the battery cannot be found. Only works with the `sysfs` driver. | No | `false`
 `hide_missing` | Completely hide this block, if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
@@ -174,7 +174,7 @@ Key | Values | Required | Default
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"` | No | `"percentage"`
+`show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"`. | No | `"percentage"`
 `upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
 
 The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
@@ -183,10 +183,10 @@ The `show` option is deprecated, and will be removed in future versions. In the 
 
 Placeholder | Description
 ------------|-------------
-`{percentage}` | Battery level, in percent.
-`{bar}` | The current battery level in a bar chart.
-`{time}` | Time remaining until (dis)charge is complete.
-`{power}` | Power consumption (in watts) by the battery or from the power supply when charging.
+`{percentage}` | Battery level, in percent
+`{bar}` | The current battery level in a bar chart
+`{time}` | Time remaining until (dis)charge is complete
+`{power}` | Power consumption (in watts) by the battery or from the power supply when charging
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -215,7 +215,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `mac` | MAC address of the Bluetooth device. | Yes | None
 `label` | Text label to display next to the icon. | No | None
-`hide_disconnected` | Hides the block when the device is disconnected | No | false
+`hide_disconnected` | Hides the block when the device is disconnected. | No | `false`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -242,7 +242,7 @@ Key | Values | Required | Default
 `warning` | Minimum usage, where state is set to warning. | No | `60`
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{utilization}%"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{utilization}%"`
 `per_core` | Display CPU frequencies and utilization per core. | No | `false`
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 
@@ -250,7 +250,7 @@ Key | Values | Required | Default
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz` | No | `false`
+`frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz`. | No | `false`
 
 ### Available Format Keys
 
@@ -325,13 +325,13 @@ Note that `command` and `cycle` are mutually exclusive.
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`command` | Shell command to execute & display. Shell command output may need to be escaped, refer to [Escaping Text](#escaping-text) | No | None
+`command` | Shell command to execute & display. Shell command output may need to be escaped, refer to [Escaping Text](#escaping-text). | No | None
 `on_click` | Command to execute when the button is clicked. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds (or `"once"` to update only once). | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
-`signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | No | None
-`hide_when_empty` | Hides the block when the command output (or json text field) is empty | No | false
+`signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX`. | No | None
+`hide_when_empty` | Hides the block when the command output (or json text field) is empty. | No | false
 `shell` | Specify the shell to use when running commands. | No | `$SHELL` if set, otherwise fallback to `sh`
 
 ###### [↥ back to top](#list-of-available-blocks)
@@ -381,29 +381,29 @@ format = "{icon}{used}/{total} {unit} ({available}{unit} free)"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `alert` | Available disk space critical level as a percentage or Unit. | No | `10.0`
-`alias` | Alias that is displayed for path | No | `"/"`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{alias} {available} {unit}"`
-`info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation) | No | `"available"`
+`alias` | Alias that is displayed for path. | No | `"/"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{alias} {available} {unit}"`
+`info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation). | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
-`path` | Path to collect information from | No | `"/"`
-`unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"` | No | `"GB"`
+`path` | Path to collect information from. | No | `"/"`
+`unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"`. | No | `"GB"`
 `warning` | Available disk space warning level as a percentage or Unit. | No | `20.0`
-`alert_absolute` | Use Unit values for warning and alert instead of percentages | No | `false`
+`alert_absolute` | Use Unit values for warning and alert instead of percentages. | No | `false`
 
 ### Available Format Keys
 
 Key | Value
 ----|-------
-`{alias}` | Alias for disk path.
-`{available}` | Available disk space (free disk space minus reserved system space).
-`{bar}` | Display bar representing percentage.
-`{free}` | Free disk space.
+`{alias}` | Alias for disk path
+`{available}` | Available disk space (free disk space minus reserved system space)
+`{bar}` | Display bar representing percentage
+`{free}` | Free disk space
 `{icon}` | Disk drive icon
-`{path}` | Path used for capacity check.
+`{path}` | Path used for capacity check
 `{percentage}` | Percentage of disk used or free (depends on info_type setting)
-`{total}` | Total disk space.
-`{unit}` | Unit used for disk space (see above).
-`{used}` | Used disk space.
+`{total}` | Total disk space
+`{unit}` | Unit used for disk space (see above)
+`{used}` | Used disk space
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -425,17 +425,17 @@ format = "{running}/{total}"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `5`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{running}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{running}"`
 
 ### Available Format Keys
 
 Key | Value
 ----|-------
-`{total}` | Total containers on the host.
-`{running}` | Containers running on the host.
-`{stopped}` | Containers stopped on the host.
-`{paused}` | Containers paused on the host.
-`{images}` | Total images on the host.
+`{total}` | Total containers on the host
+`{running}` | Containers running on the host
+`{stopped}` | Containers stopped on the host
+`{paused}` | Containers paused on the host
+`{images}` | Total images on the host
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -478,27 +478,27 @@ format = "{total}|{author}|{comment}|{mention}|{review_requested}"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `30`
-`format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{total}"`
+`format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{total}"`
 `api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
 
 ### Available Format Keys
 
  Key | Value
 -----|-------
-`{total}` | Total of all notifications
-`{assign}` | Total of notifications related to issues you're assigned on.
-`{author}` | Total of notifications related to threads you are the author of.
-`{comment}` | Total of notifications related to threads you commented on.
-`{invitation}` | Total of notifications related to invitations.
-`{manual}` | Total of notifications related to threads you manually subscribed on.
-`{mention}` | Total of notifications related to content you were specifically mentioned on.
-`{review_requested}` | Total of notifications related to PR you were requested to review.
-`{security_alert}` | Total of notifications related to security vulnerabilities found on your repositories.
-`{state_change}` | Total of notifications related to thread state change.
-`{subscribed}` | Total of notifications related to repositories you're watching.
-`{team_mention}` | Total of notification related to thread where your team was mentioned.
+`{total}` | Total number of notifications
+`{assign}` | Total number of notifications related to issues you're assigned on
+`{author}` | Total number of notifications related to threads you are the author of
+`{comment}` | Total number of notifications related to threads you commented on
+`{invitation}` | Total number of notifications related to invitations
+`{manual}` | Total number of notifications related to threads you manually subscribed on
+`{mention}` | Total number of notifications related to content you were specifically mentioned on
+`{review_requested}` | Total number of notifications related to PR you were requested to review
+`{security_alert}` | Total number of notifications related to security vulnerabilities found on your repositories
+`{state_change}` | Total number of notifications related to thread state change
+`{subscribed}` | Total number of notifications related to repositories you're watching
+`{team_mention}` | Total number of notification related to thread where your team was mentioned
 
-For more information about reasons, please see the [API documentation](https://developer.github.com/v3/activity/notifications/#notification-reasons).
+For more information about notifications, refer to the [GitHub API documentation](https://developer.github.com/v3/activity/notifications/#notification-reasons).
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -522,11 +522,11 @@ click_temp = 3500
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`step`        | The step color temperature is in/decreased in Kelvin                   | No | `100`
-`hue_shifter` | Program used to control screen color, either `redshift` or `sct` | No | `"redshift"`
-`max_temp`    | Max color temperature                                                  | No | `10000`
-`min_temp`    | Min color temperature                                                  | No | `1000`
-`click_temp`  | Left click color temperature                                           | No | `6500`
+`step`        | The step color temperature is in/decreased in Kelvin. | No | `100`
+`hue_shifter` | Program used to control screen color, either `"redshift"` or `"sct"`. | No | `"redshift"`
+`max_temp`    | Max color temperature in Kelvin. | No | `10000`
+`min_temp`    | Min color temperature in Kelvin. | No | `1000`
+`click_temp`  | Left click color temperature in Kelvin. | No | `6500`
 
 A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
 The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
@@ -558,7 +558,7 @@ block = "ibus"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{engine}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{engine}"`
 
 ### Available Format Keys
 
@@ -584,7 +584,7 @@ block = "kdeconnect"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | No | Chooses the first found device, if any.
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
 `format_disconnected` | Same as `format` but for when the phone is disconnected/unreachable. Same placeholders can be used as above, however they will be fixed at the last known value until the phone comes back online. | No | `"{name}"`
 `bat_info` | Min battery level below which state is set to info. | No | `60`
 `bat_good` | Min battery level below which state is set to good. | No | `60`
@@ -659,8 +659,8 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | No | `"setxkbmap"`
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{layout}"`
-`sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs` | No | Defaults to first input found
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{layout}"`
+`sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | No | Defaults to first input found
 
 ### Available Format Keys
 
@@ -693,8 +693,8 @@ Key | Values | Required | Default
 `info` | Minimum load, where state is set to info. | No | `0.3`
 `warning` | Minimum load, where state is set to warning. | No | `0.6`
 `critical` | Minimum load, where state is set to critical. | No | `0.9`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{1m}"`
-`interval` | Update interval, in seconds. | No | `3`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{1m}"`
+`interval` | Update interval in seconds. | No | `3`
 
 ### Available Format Keys
 
@@ -726,12 +726,12 @@ display_type = "new"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`inboxes` | List of maildir inboxes to look for mails in | Yes | None
-`threshold_warning` | Number of unread mails where state is set to warning | No | `1`
-`threshold_critical` | Number of unread mails where state is set to critical | No | `10`
+`inboxes` | List of maildir inboxes to look for mails in. | Yes | None
+`threshold_warning` | Number of unread mails where state is set to warning. | No | `1`
+`threshold_critical` | Number of unread mails where state is set to critical. | No | `10`
 `interval` | Update interval, in seconds. | No | `5`
-`display_type` | Which part of the maildir to count. One of "new", "cur", or "all" | No | `"new"`
-`icon` | Whether or not to prepend the output with the mail icon | No | `true`
+`display_type` | Which part of the maildir to count: `"new"`, `"cur"`, or `"all"`. | No | `"new"`
+`icon` | Whether or not to prepend the output with the mail icon. | No | `true`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -764,10 +764,10 @@ critical_swap = 95
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{MFm}MB/{MTm}MB({Mp}%)"`
-`format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{SFm}MB/{STm}MB({Sp}%)"`
-`display_type` | Default view displayed on startup. Options are memory, swap | No | `"memory"`
-`icons` | Whether the format string should be prepended with Icons. | No | `true`
+`format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{MFm}MB/{MTm}MB({Mp}%)"`
+`format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{SFm}MB/{STm}MB({Sp}%)"`
+`display_type` | Default view displayed on startup: "`memory`" or "`swap`". | No | `"memory"`
+`icons` | Whether the format string should be prepended with icons. | No | `true`
 `clickable` | Whether the view should switch between memory and swap on click. | No | `true`
 `warning_mem` | Percentage of memory usage, where state is set to warning. | No | `80.0`
 `warning_swap` | Percentage of swap usage, where state is set to warning. | No | `80.0`
@@ -779,42 +779,42 @@ Key | Values | Required | Default
 
   Key    | Value
 ---------|-------
-`{MTg}`  | Memory total (GiB).
-`{MTm}`  | Memory total (MiB).
-`{MAg}`  | Available memory, including cached memory and buffers (GiB).
-`{MAm}`  | Available memory, including cached memory and buffers (MiB).
-`{MAp}`  | Available memory, including cached memory and buffers (%).
-`{MApi}` | Available memory, including cached memory and buffers (%) as integer.
-`{MFg}`  | Memory free (GiB).
-`{MFm}`  | Memory free (MiB).
-`{MFp}`  | Memory free (%).
-`{MFpi}` | Memory free (%) as integer.
-`{Mug}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB).
-`{Mum}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB).
-`{Mup}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (%).
-`{Mupi}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (%) as integer.
-`{MUg}`  | Total memory used (GiB).
-`{MUm}`  | Total memory used (MiB).
-`{MUp}`  | Total memory used (%).
-`{MUpi}` | Total memory used (%) as integer.
-`{Cg}`   | Cached memory, similar to htop's yellow bar (GiB).
-`{Cm}`   | Cached memory, similar to htop's yellow bar (MiB).
-`{Cp}`   | Cached memory, similar to htop's yellow bar (%).
-`{Cpi}`  | Cached memory, similar to htop's yellow bar (%) as integer.
-`{Bg}`   | Buffers, similar to htop's blue bar (GiB).
-`{Bm}`   | Buffers, similar to htop's blue bar (MiB).
-`{Bp}`   | Buffers, similar to htop's blue bar (%).
-`{Bpi}`  | Buffers, similar to htop's blue bar (%) as integer.
-`{STg}`  | Swap total (GiB).
-`{STm}`  | Swap total (MiB).
-`{SFg}`  | Swap free (GiB).
-`{SFm}`  | Swap free (MiB).
-`{SFp}`  | Swap free (%).
-`{SFpi}` | Swap free (%) as integer.
-`{SUg}`  | Swap used (GiB).
-`{SUm}`  | Swap used (MiB).
-`{SUp}`  | Swap used (%).
-`{SUpi}` | Swap used (%) as integer.
+`{MTg}`  | Memory total (GiB)
+`{MTm}`  | Memory total (MiB)
+`{MAg}`  | Available memory, including cached memory and buffers (GiB)
+`{MAm}`  | Available memory, including cached memory and buffers (MiB)
+`{MAp}`  | Available memory, including cached memory and buffers (%)
+`{MApi}` | Available memory, including cached memory and buffers (%) as integer
+`{MFg}`  | Memory free (GiB)
+`{MFm}`  | Memory free (MiB)
+`{MFp}`  | Memory free (%)
+`{MFpi}` | Memory free (%) as integer
+`{Mug}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB)
+`{Mum}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB)
+`{Mup}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (%)
+`{Mupi}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (%) as integer
+`{MUg}`  | Total memory used (GiB)
+`{MUm}`  | Total memory used (MiB)
+`{MUp}`  | Total memory used (%)
+`{MUpi}` | Total memory used (%) as integer
+`{Cg}`   | Cached memory, similar to htop's yellow bar (GiB)
+`{Cm}`   | Cached memory, similar to htop's yellow bar (MiB)
+`{Cp}`   | Cached memory, similar to htop's yellow bar (%)
+`{Cpi}`  | Cached memory, similar to htop's yellow bar (%) as integer
+`{Bg}`   | Buffers, similar to htop's blue bar (GiB)
+`{Bm}`   | Buffers, similar to htop's blue bar (MiB)
+`{Bp}`   | Buffers, similar to htop's blue bar (%)
+`{Bpi}`  | Buffers, similar to htop's blue bar (%) as integer
+`{STg}`  | Swap total (GiB)
+`{STm}`  | Swap total (MiB)
+`{SFg}`  | Swap free (GiB)
+`{SFm}`  | Swap free (MiB)
+`{SFp}`  | Swap free (%)
+`{SFpi}` | Swap free (%) as integer
+`{SUg}`  | Swap used (GiB)
+`{SUm}`  | Swap used (MiB)
+`{SUp}`  | Swap used (%)
+`{SUpi}` | Swap used (%) as integer
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -865,16 +865,16 @@ on_collapsed_click = "spotify"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`player` | Name of the music player MPRIS interface. Run `busctl --user list \| grep "org.mpris.MediaPlayer2." \| cut -d' ' -f1` and the name is the part after "org.mpris.MediaPlayer2". If unset, you can cycle through different players by right clicking on the widget.  | No | None
-`interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore | No | ""
-`max_width` | Max width of the block in characters, not including the buttons | No | `21`
-`dynamic_width` | Bool to specify whether the block will change width depending on the text content or remain static always (= `max_width`) | No | `false`
-`marquee` | Bool to specify if a marquee style rotation should be used if the title + artist is longer than max-width | No | `true`
+`player` | Name of the music player MPRIS interface. Run `busctl --user list \| grep "org.mpris.MediaPlayer2." \| cut -d' ' -f1` and the name is the part after "org.mpris.MediaPlayer2". If unset, you can cycle through different players by right clicking on the widget. | No | None
+`interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | No | ""
+`max_width` | Max width of the block in characters, not including the buttons. | No | `21`
+`dynamic_width` | Bool to specify whether the block will change width depending on the text content or remain static always (= `max_width`). | No | `false`
+`marquee` | Bool to specify if a marquee style rotation should be used if the title + artist is longer than max-width. | No | `true`
 `marquee_interval` | Marquee interval in seconds. This is the delay between each rotation. | No | `10`
 `marquee_speed` | Marquee speed in seconds. This is the scrolling time used per character. | No | `0.5`
 `smart_trim` | If title + artist is longer than max-width, trim from both the artist and the title in proportion to their lengths to try and show the most information possible. | No | `false`
-`separator` | String to insert between artist and title | No | `" - "`
-`buttons` | Array of control buttons to be displayed. Options are prev (previous title), play (play/pause) and next (next title) | No | `[]`
+`separator` | String to insert between artist and title. | No | `" - "`
+`buttons` | Array of control buttons to be displayed. Options are prev (previous title), play (play/pause) and next (next title). | No | `[]`
 `on_collapsed_click` | Command to run when the block is clicked while collapsed. | No | None
 `on_click` | Command to run when the block is clicked while not collapsed. | No | None
 `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`
@@ -907,10 +907,10 @@ use_bits = false
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | Network interface to monitor (name from /sys/class/net) | Yes | `lo` (loopback interface)
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | "{speed_up} {speed_down}" 
+`device` | Network interface to monitor (name from /sys/class/net). | Yes | `lo` (loopback interface)
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | "{speed_up} {speed_down}" 
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
-`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
+`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`. | No | `"K"`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. Note: the update interval for SSID and IP address is fixed at 30 seconds, and bitrate fixed at 10 seconds. | No | `1`
 `hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
@@ -920,15 +920,15 @@ Key | Values | Required | Default
 
 Placeholder | Description
 ------------|------------
-`ssid` | Display network SSID (wireless only).
-`signal_strength` | Display WiFi signal strength (wireless only).
-`bitrate` | Display connection bitrate.
-`ip` | Display connection IP address.
-`ipv6` | Display connection IPv6 address.
-`speed_up` | Display upload speed.
-`speed_down` | Display download speed.
-`graph_up` | Display a bar graph for upload speed.
-`graph_down` | Display a bar graph for download speed.
+`ssid` | Display network SSID (wireless only)
+`signal_strength` | Display WiFi signal strength (wireless only)
+`bitrate` | Display connection bitrate
+`ip` | Display connection IP address
+`ipv6` | Display connection IPv6 address
+`speed_up` | Display upload speed
+`speed_down` | Display download speed
+`graph_up` | Display a bar graph for upload speed
+`graph_down` | Display a bar graph for download speed
 
 ### Deprecated Options
 
@@ -964,38 +964,38 @@ interface_name_include = []
 
 Key | Values | Required | Default
 ----|--------|----------|---------
-`primary_only` | Whether to show only the primary active connection or all active connections | No | `false`
-`max_ssid_width` | Truncation length for SSID | No | `21`
-`ap_format` | Acces point string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{ssid}"`
-`device_format` | Device string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{icon}{ap} {ips}"`
-`connection_format` | Connection string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{devices}"`
+`primary_only` | Whether to show only the primary active connection or all active connections. | No | `false`
+`max_ssid_width` | Truncation length for SSID. | No | `21`
+`ap_format` | Acces point string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{ssid}"`
+`device_format` | Device string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{icon}{ap} {ips}"`
+`connection_format` | Connection string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{devices}"`
 `on_click` | On-click handler. Commands are executed in a shell. | No | `""`
-`interface_name_exclude` | A list of regex patterns for device interface names to ignore | No | ""
-`interface_name_include` | A list of regex patterns for device interface names to include (only interfaces that match at least one are shown) | No | ""
+`interface_name_exclude` | A list of regex patterns for device interface names to ignore. | No | ""
+`interface_name_include` | A list of regex patterns for device interface names to include (only interfaces that match at least one are shown). | No | ""
 
 ### AP format string
 
 Placeholder | Description
 ------------|-------------
-`{ssid}` | The SSID for this AP.
-`{strength}` | The signal strength in percent for this AP.
-`{freq}` | The frequency of this AP in MHz.
+`{ssid}` | The SSID for this AP
+`{strength}` | The signal strength in percent for this AP
+`{freq}` | The frequency of this AP in MHz
 
 ### Device format string
 
 Placeholder | Description
 ------------|-------------
-`{icon}` | The icon matching the device type.
-`{typename}` | The name of the device type.
-`{name}` | The name of the device interface.
-`{ap}` | The connected AP if available, formatted with the AP format string.
-`{ips}` | The list of IPs for this device.
+`{icon}` | The icon matching the device type
+`{typename}` | The name of the device type
+`{name}` | The name of the device interface
+`{ap}` | The connected AP if available, formatted with the AP format string
+`{ips}` | The list of IPs for this device
 
 ### Connection format string
 
 Placeholder | Description
 ------------|-------------
-`{devices}` | The list of devices, each formatted with the device format string.
+`{devices}` | The list of devices, each formatted with the device format string
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1011,8 +1011,8 @@ TODO: support `mako`
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`driver` | Notification daemon to monitor | No | `"dunst"`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{state}"`
+`driver` | Notification daemon to monitor. | No | `"dunst"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{state}"`
 
 ### Available Format Keys
 
@@ -1045,15 +1045,15 @@ name = "A"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`maildir` | Path to the directory containing the notmuch database | No | `$HOME/.mail`
-`query` | Query to run on the database | No | `""`
-`threshold_critical` | Mail count that triggers `critical` state | No | `99999`
-`threshold_warning` | Mail count that triggers `warning` state | No | `99999`
-`threshold_good` | Mail count that triggers `good` state | No | `99999`
-`threshold_info` | Mail count that triggers `info` state | No | `99999`
-`name` | Label to show before the mail count | No | `""`
-`no_icon` | Disable the mail icon | No | `false`
-`interval` | Update interval, in seconds. | No | `10`
+`maildir` | Path to the directory containing the notmuch database. | No | `$HOME/.mail`
+`query` | Query to run on the database. | No | `""`
+`threshold_critical` | Mail count that triggers `critical` state. | No | `99999`
+`threshold_warning` | Mail count that triggers `warning` state. | No | `99999`
+`threshold_good` | Mail count that triggers `good` state. | No | `99999`
+`threshold_info` | Mail count that triggers `info` state. | No | `99999`
+`name` | Label to show before the mail count. | No | `""`
+`no_icon` | Disable the mail icon. | No | `false`
+`interval` | Update interval in seconds. | No | `10`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1084,12 +1084,12 @@ interval = 1
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`gpu_id` | GPU id in system | No | `0`
-`label` | Display custom gpu label | No | `""`
-`interval` | Update interval, in seconds. | No | `1`
-`show_utilization` | Display gpu utilization. In percents. | No | `true`
+`gpu_id` | GPU id in system. | No | `0`
+`label` | Display custom GPU label. | No | `""`
+`interval` | Update interval in seconds. | No | `1`
+`show_utilization` | Display GPU utilization percentage. | No | `true`
 `show_memory` | Display memory information. | No | `true`
-`show_temperature` | Display gpu temperature. | No | `true`
+`show_temperature` | Display GPU temperature. | No | `true`
 `show_fan_speed` | Display fan speed. | No | `false`
 `show_clocks` | Display gpu clocks. | No | `false`
 
@@ -1155,12 +1155,12 @@ aur_command = "pikaur -Qua"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `600`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{pacman}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{pacman}"`
 `format_singular` | Same as `format` but for when exactly one update is available. | No | `"{pacman}"`
 `format_up_to_date` | Same as `format` but for when no updates are available. | No | `"{pacman}"`
-`warning_updates_regex` | Display block as warning if updates matching regex are available | No | `None`
-`critical_updates_regex` | Display block as critical if updates matching regex are available | No | `None`
-`aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `pikaur -Qua` | if `{both}` or `{aur}` are used | `None`
+`warning_updates_regex` | Display block as warning if updates matching regex are available. | No | `None`
+`critical_updates_regex` | Display block as critical if updates matching regex are available. | No | `None`
+`aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `pikaur -Qua` | if `{both}` or `{aur}` are used. | `None`
 
 ### Available Format Keys
 
@@ -1199,10 +1199,10 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `length` | Timer duration in minutes. | No | `25`
 `break_length` | Break duration in minutes. | No | `5`
-`use_nag` | i3-nagbar enabled | No | `false`
+`use_nag` | i3-nagbar enabled. | No | `false`
 `message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
 `break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
-`nag_path` | i3-nagbar binary path | No | `i3-nagbar`
+`nag_path` | i3-nagbar binary path. | No | `i3-nagbar`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1240,12 +1240,12 @@ format = "{output_name} {volume}"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`driver` | `"auto"`, `"pulseaudio"`, `"alsa"` | No | `"auto"` (Pulseaudio with ALSA fallback)
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `{volume}%`
-`name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols` | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
-`device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l` | No | `default`
-`device_kind` | PulseAudio device kind (`source` / `sink`) | No | `sink`
-`natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear | No | `false`
+`driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | No | `"auto"` (Pulseaudio with ALSA fallback)
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `{volume}%`
+`name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
+`device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | No | `default`
+`device_kind` | PulseAudio device kind: `source` or `sink`. | No | `sink`
+`natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | No | `false`
 `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | `5`
 `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | No | `None`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
@@ -1278,9 +1278,9 @@ interval = 1800
 Key | Values | Required | Default
 ----|--------|----------|--------
 `bytes` | Whether to use bytes or bits in the display (true for bytes, false for bits). | No | `false`
-`interval` | Update interval, in seconds. | No | `1800`
+`interval` | Update interval in seconds. | No | `1800`
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
-`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`.| No | `"K"`
+`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`. | No | `"K"`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1316,7 +1316,7 @@ Key | Values | Required | Default
 `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
 `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
 `filter_tags` | A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{count}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{count}"`
 `format_singular` | Same as `format` but for when exactly one task is pending. | No | `"{count}"`
 `format_everything_done` | Same as `format` but for when all tasks are completed. | No | `"{count}"`
 
@@ -1324,7 +1324,7 @@ Key | Values | Required | Default
 
 Key | Value
 ----|-------
-`{count}` | The number of pending tasks.
+`{count}` | The number of pending tasks
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1354,24 +1354,24 @@ inputs = ["CPUTIN", "SYSTIN"]
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`interval` | Update interval, in seconds. | No | `5`
+`interval` | Update interval in seconds. | No | `5`
 `collapsed` | Whether the block will be collapsed by default. | No | `true`
-`scale` | Either `celsius` or `fahrenheit` | No | `celsius`
+`scale` | Either `celsius` or `fahrenheit`. | No | `celsius`
 `good` | Maximum temperature to set state to good. | No | `20` °C (`68` °F)
 `idle` | Maximum temperature to set state to idle. | No | `45` °C (`113` °F)
 `info` | Maximum temperature to set state to info. | No | `60` °C (`140` °F)
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
 `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
 `inputs` | Narrows the results to individual inputs reported by each chip. | No | None
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{average}° avg, {max}° max"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average}° avg, {max}° max"`
 
 ### Available Format Keys
 
 Key | Value
 ----|-------
-`{min}` | Minimum temperature among all sensors.
-`{average}` | Average temperature among all sensors.
-`{max}` | Maximum temperature among all sensors.
+`{min}` | Minimum temperature among all sensors
+`{average}` | Average temperature among all sensors
+`{max}` | Maximum temperature among all sensors
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1394,11 +1394,11 @@ locale = "fr_BE"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | A string to customise the output of this block. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"%a %d/%m %R"`
+`format` | A string to customise the output of this block. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"%a %d/%m %R"`
 `on_click` | Shell command to run when the time block is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `5`
-`timezone` | A timezone specifier (e.g. "Europe/Lisbon") | No | Local timezone
-`locale` | Locale to apply when formatting the time | No | System locale
+`timezone` | A timezone specifier (e.g. "Europe/Lisbon"). | No | Local timezone
+`locale` | Locale to apply when formatting the time. | No | System locale
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1429,8 +1429,8 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `text` | Label to include next to the toggle icon. | No | `""`
 `command_on` | Shell Command to enable the toggle. | Yes | None
-`command_off` | Shell Command to disable the toggle | Yes | None
-`command_state` | Shell Command to determine toggle state. Empty output => off. Any output => on.| Yes | None
+`command_off` | Shell Command to disable the toggle. | Yes | None
+`command_state` | Shell Command to determine toggle state. Empty output => off. Any output => on. | Yes | None
 `icon_on` | Icon override for the toggle button while on. | No | `"toggle_on"`
 `icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
@@ -1451,7 +1451,7 @@ block = "uptime"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`interval` | Update interval, in seconds. | No | `60`
+`interval` | Update interval in seconds. | No | `60`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1472,8 +1472,8 @@ state_path = "/home/user/.config/watson/state"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`show_time` | Whether to show recorded time | No | `false`
-`state_path` | Path to the Watson state file | No | `$XDG_CONFIG_HOME/watson/state`
+`show_time` | Whether to show recorded time. | No | `false`
+`state_path` | Path to the Watson state file. | No | `$XDG_CONFIG_HOME/watson/state`
 `interval` | Update interval, in seconds. | No | `60`
 
 ## Weather
@@ -1499,7 +1499,7 @@ service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{weather} {temp}°"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{weather} {temp}°"`
 `service` | The configuration of a weather service (see below). | Yes | None
 `interval` | Update interval, in seconds. | No | `600`
 `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | No | false
@@ -1510,11 +1510,11 @@ To use the service you will need a (free) API key.
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`name` | `openweathermap` | Yes | None
+`name` | `openweathermap`. | Yes | None
 `api_key` | Your OpenWeatherMap API key. | Yes | None
 `city_id` | OpenWeatherMap's ID for the city. | Yes* | None
 `place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
-`units` | One of `metric` or `imperial`. | Yes | None
+`units` | Either `metric` or `imperial`. | Yes | `metric`
 
 Either one of `city_id` or `place` is required. If both are supplied, `city_id` takes precedence.
 
@@ -1526,13 +1526,13 @@ in which case they must be provided in the environment variables
 
 Key | Value
 ----|-------
-`{location}` | Location name (exact format depends on the service).
-`{temp}` | Temperature.
-`{apparent}` | Australian Apparent Temperature.
-`{humidity}` | Humidity.
-`{weather}` | Textual description of the weather, e.g. "Raining".
-`{wind}` | Wind speed.
-`{direction}` | Wind direction, e.g. "NE".
+`{location}` | Location name (exact format depends on the service)
+`{temp}` | Temperature
+`{apparent}` | Australian Apparent Temperature
+`{humidity}` | Humidity
+`{weather}` | Textual description of the weather, e.g. "Raining"
+`{wind}` | Wind speed
+`{direction}` | Wind direction, e.g. "NE"
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1556,10 +1556,10 @@ interval = 2
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`icons` | Show icons for brightness and resolution | No | `true`
-`resolution` | Shows the screens resolution | No | `false`
-`step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50) | No | `5`
-`interval` | Update interval, in seconds. | No | `5`
+`icons` | Show icons for brightness and resolution. | No | `true`
+`resolution` | Shows the screens resolution. | No | `false`
+`step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | No | `5`
+`interval` | Update interval in seconds. | No | `5`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
