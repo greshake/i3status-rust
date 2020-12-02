@@ -879,7 +879,7 @@ Key | Values | Required | Default
 `on_click` | Command to run when the block is clicked while not collapsed. | No | None
 `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`
 `hide_when_empty` | Hides the block when there is no player available. | No | `false`
-format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{combo}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{combo}"`
 
 #### Available Format Keys
 
@@ -887,7 +887,7 @@ format` | A string to customise the output of this block. See below for availabl
 ---------|-------
 `{artist}`  | Current artist (may be an empty string)
 `{title}`  | Current title (may be an empty string)
-`{combo}`  | Resolves to "{artist}[sep]{title}" or "{artist}" or "{title}" depending on the information available. [sep] is set by `separator` option. The `smart_trim` option affects the output.
+`{combo}`  | Resolves to "`{artist}[sep]{title}"`, `"{artist}"`, or `"{title}"` depending on what information is available. `[sep]` is set by `separator` option. The `smart_trim` option affects the output.
 `{player}`  | Name of the current player (taken from the last part of its MPRIS bus name)
 `{avail}`  | Total number of players available to switch between
 
