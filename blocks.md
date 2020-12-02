@@ -43,7 +43,7 @@ Creates a block which displays the pending updates available for your Debian/Ubu
 
 Behind the scenes this uses `apt`, and in order to run it without root priveleges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
 
-### Examples
+#### Examples
 
 Update the list of pending updates every thirty minutes (1800 seconds):
 
@@ -57,7 +57,7 @@ format_up_to_date = "system up to date"
 critical_updates_regex = "(linux |linux-lts|linux-zen)"
 ```
 
-### Options
+#### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
@@ -68,7 +68,7 @@ Key | Values | Required | Default
 `warning_updates_regex` | Display block as warning if updates matching regex are available. | No | `None`
 `critical_updates_regex` | Display block as critical if updates matching regex are available. | No | `None`
 
-### Available Format Keys
+#### Available Format Keys
 
 Key | Value
 ----|-------
