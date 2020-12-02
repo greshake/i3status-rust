@@ -585,7 +585,7 @@ block = "kdeconnect"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device_id` | Device ID as per the output of `kdeconnect --list-devices\`. | No | Chooses the first found device, if any.
+`device_id` | Device ID as per the output of `kdeconnect --list-devices`. | No | Chooses the first found device, if any.
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text) | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
 `format_disconnected` | Same as `format` but for when the phone is disconnected/unreachable. Same placeholders can be used as above, however they will be fixed at the last known value until the phone comes back online. | No | `"{name}"`
 `bat_info` | Min battery level below which state is set to info. | No | `60`
