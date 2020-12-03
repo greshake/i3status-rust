@@ -5,9 +5,7 @@ i3status-rs \- Generates a status line for
 bars
 .SH SYNOPSIS
 .B i3status-rs
-.RB [ -h ]
-.RB [ -V ]
-.RB [ --exit-on-error ]
+.RB [ OPTIONS ]
 .RI [ CONFIGFILE ]
 .SH DESCRIPTION
 A feature-rich and resource-friendly replacement for
@@ -27,6 +25,9 @@ Print help message and exit.
 .TP
 .B \-V, \--version
 Print version information and exit.
+.TP
+.B \--never-pause
+Ignore any attempts by i3 to pause the bar when hidden/fullscreen
 .TP
 .B \--exit-on-error
 Exit rather than printing errors to the bar and continuing. Useful for debugging
