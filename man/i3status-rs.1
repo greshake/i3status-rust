@@ -1,13 +1,11 @@
-.TH I3STATUS-RS 1 2020-02-08
+.TH I3STATUS-RS 1 2020-12-03
 .SH NAME
 i3status-rs \- Generates a status line for
 .BR i3bar (1)-compatible
 bars
 .SH SYNOPSIS
 .B i3status-rs
-.RB [ -h ]
-.RB [ -V ]
-.RB [ --exit-on-error ]
+.RB [ OPTIONS ]
 .RI [ CONFIGFILE ]
 .SH DESCRIPTION
 A feature-rich and resource-friendly replacement for
@@ -27,6 +25,9 @@ Print help message and exit.
 .TP
 .B \-V, \--version
 Print version information and exit.
+.TP
+.B \--never-pause
+Ignore any attempts by i3 to pause the bar when hidden/fullscreen
 .TP
 .B \--exit-on-error
 Exit rather than printing errors to the bar and continuing. Useful for debugging
@@ -2647,6 +2648,59 @@ T}@T{
 No
 T}@T{
 \f[C]false\f[R]
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+A string to customise the output of this block.
+See below for available placeholders.
+Text may need to be escaped, refer to Escaping Text.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{combo}\[dq]\f[R]
+T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+lw(39.4n) lw(30.6n).
+T{
+Key
+T}@T{
+Value
+T}
+_
+T{
+\f[C]{artist}\f[R]
+T}@T{
+Current artist (may be an empty string)
+T}
+T{
+\f[C]{title}\f[R]
+T}@T{
+Current title (may be an empty string)
+T}
+T{
+\f[C]{combo}\f[R]
+T}@T{
+Resolves to \[dq]\f[C]{artist}[sep]{title}\[dq]\f[R],
+\f[C]\[dq]{artist}\[dq]\f[R], or \f[C]\[dq]{title}\[dq]\f[R] depending
+on what information is available.
+\f[C][sep]\f[R] is set by \f[C]separator\f[R] option.
+The \f[C]smart_trim\f[R] option affects the output.
+T}
+T{
+\f[C]{player}\f[R]
+T}@T{
+Name of the current player (taken from the last part of its MPRIS bus
+name)
+T}
+T{
+\f[C]{avail}\f[R]
+T}@T{
+Total number of players available to switch between
 T}
 .TE
 .SS \[u21A5] back to top
