@@ -252,7 +252,7 @@ pub fn print_blocks(
 
         alternator = !alternator;
 
-        if config.theme.native_separators {
+        if config.theme.native_separators == Some(true) {
             // Re-add native separator on last widget for native theme
             *rendered_widgets
                 .last_mut()
@@ -273,7 +273,7 @@ pub fn print_blocks(
             .collect::<Vec<String>>()
             .join(",");
 
-        if config.theme.native_separators {
+        if config.theme.native_separators == Some(true) {
             // Skip separator block for native theme
             rendered_blocks.push(block_str.to_string());
             continue;

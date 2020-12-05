@@ -8,7 +8,7 @@ use crate::util;
 
 lazy_static! {
     pub static ref SLICK: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#424242")),
         idle_fg: Some(String::from("#ffffff")),
         info_bg: Some(String::from("#2196f3")),
@@ -27,7 +27,7 @@ lazy_static! {
     };
 
     pub static ref SOLARIZED_DARK: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#002b36")),      // base03
         idle_fg: Some(String::from("#93a1a1")),      // base1
         info_bg: Some(String::from("#268bd2")),      // blue
@@ -46,7 +46,7 @@ lazy_static! {
     };
 
     pub static ref SOLARIZED_LIGHT: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#fdf6e3")),      // base3
         idle_fg: Some(String::from("#586e75")),      // base01
         info_bg: Some(String::from("#268bd2")),      // blue
@@ -65,7 +65,7 @@ lazy_static! {
     };
 
     pub static ref MODERN: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#222D32")),
         idle_fg: Some(String::from("#CFD8DC")),
         info_bg: Some(String::from("#449CDB")),
@@ -84,7 +84,7 @@ lazy_static! {
     };
 
     pub static ref PLAIN: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#000000")),
         idle_fg: Some(String::from("#93a1a1")),
         info_bg: Some(String::from("#000000")),
@@ -103,7 +103,7 @@ lazy_static! {
     };
 
     pub static ref BAD_WOLF: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#444444")),
         idle_fg: Some(String::from("#f5f5f5")),
         info_bg: Some(String::from("#626262")),
@@ -122,7 +122,7 @@ lazy_static! {
     };
 
     pub static ref GRUVBOX_LIGHT: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#fbf1c7")),
         idle_fg: Some(String::from("#3c3836")),
         info_bg: Some(String::from("#458588")),
@@ -141,7 +141,7 @@ lazy_static! {
     };
 
     pub static ref GRUVBOX_DARK: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#282828")),
         idle_fg: Some(String::from("#ebdbb2")),
         info_bg: Some(String::from("#458588")),
@@ -160,7 +160,7 @@ lazy_static! {
     };
 
     pub static ref SPACE_VILLAIN: Theme = Theme {
-        native_separators: false.to_owned(),
+        native_separators: Some(false),
         idle_bg: Some(String::from("#06060f")), //Rich black
         idle_fg: Some(String::from("#c1c1c1")), //Silver
         info_bg: Some(String::from("#00223f")), //Maastricht Blue
@@ -179,7 +179,7 @@ lazy_static! {
     };
 
     pub static ref SEMI_NATIVE: Theme = Theme {
-        native_separators: true.to_owned(),
+        native_separators: Some(true),
         idle_bg: None.to_owned(),
         idle_fg: Some(String::from("#93a1a1")),
         info_bg: None.to_owned(),
@@ -198,7 +198,7 @@ lazy_static! {
     };
 
     pub static ref NATIVE: Theme = Theme {
-        native_separators: true.to_owned(),
+        native_separators: Some(true),
         idle_bg: None.to_owned(),
         idle_fg: None.to_owned(),
         info_bg: None.to_owned(),
@@ -221,7 +221,7 @@ lazy_static! {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Theme {
-    pub native_separators: bool,
+    pub native_separators: Option<bool>,
     pub idle_bg: Option<String>,
     pub idle_fg: Option<String>,
     pub info_bg: Option<String>,

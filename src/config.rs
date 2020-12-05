@@ -138,7 +138,7 @@ where
     D: Deserializer<'de>,
 {
     map_type!(Icons, String;
-              s => Ok(Icons(icons::get_icons(s).ok_or("cannot find specified icons")?)));
+              s => Ok(Icons(icons::get_icons(s).ok_or(format!("cannot find icon set called '{}'", s))?)));
 
     deserializer.deserialize_any(MapType::<Icons, String>(PhantomData, PhantomData))
 }
