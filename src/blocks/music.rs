@@ -679,7 +679,7 @@ impl Block for Music {
                     }
                 }
                 MouseButton::Right => {
-                    if name.as_str() == self.id && players.len() > 0 {
+                    if (name.as_str() == self.id || name == &collapsed_id) && players.len() > 0 {
                         players.rotate_left(1);
                         self.send.send(Task {
                             id: self.id.clone(),
