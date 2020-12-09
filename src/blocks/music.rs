@@ -402,10 +402,6 @@ impl ConfigBlock for Music {
                                     p.title = Some(title);
                                     updated = true;
                                 }
-                            } else {
-                                p.artist = None;
-                                p.title = None;
-                                updated = true;
                             };
                             let raw_metadata = signal.changed_properties.get("PlaybackStatus");
                             if let Some(data) = raw_metadata {
@@ -679,7 +675,7 @@ impl Block for Music {
                     }
                 }
                 MouseButton::Right => {
-                    if name.as_str() == self.id && players.len() > 0 {
+                    if (name.as_str() == self.id || name == &collapsed_id) && players.len() > 0 {
                         players.rotate_left(1);
                         self.send.send(Task {
                             id: self.id.clone(),
@@ -724,7 +720,7 @@ impl Block for Music {
             .players
             .lock()
             .expect("failed to acquire lock for `players`");
-        if self.current_song_widget.is_empty() && self.hide_when_empty {
+        if players.len() == 1 && self.current_song_widget.is_empty() && self.hide_when_empty {
             vec![]
         } else if players.len() > 0 && !self.current_song_widget.is_empty() {
             let mut elements: Vec<&dyn I3BarWidget> = Vec::new();

@@ -831,7 +831,7 @@ Supports all music players that implement the [MediaPlayer2 Interface](https://s
 
 and many others.
 
-The block discovers all active players.  Right click on the widget to switch to the next active player.  You can pin the widget to a given player via the "player" setting.
+By default the block tracks all players available on the MPRIS bus. Right clicking on the block will cycle it to the next player (if the next player has no song playing then the block will collapse, however you can continue to right click to the next player.).  You can pin the widget to a given player via the "player" setting.
 
 #### Examples
 
