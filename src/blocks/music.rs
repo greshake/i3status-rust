@@ -402,10 +402,6 @@ impl ConfigBlock for Music {
                                     p.title = Some(title);
                                     updated = true;
                                 }
-                            } else {
-                                p.artist = None;
-                                p.title = None;
-                                updated = true;
                             };
                             let raw_metadata = signal.changed_properties.get("PlaybackStatus");
                             if let Some(data) = raw_metadata {
