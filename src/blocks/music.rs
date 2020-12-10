@@ -411,6 +411,16 @@ impl ConfigBlock for Music {
                                     updated = true;
                                 }
                             };
+                            // workaround for `playerctld`
+                            let raw_metadata = signal.changed_properties.get("PlayerNames");
+                            if let Some(data) = raw_metadata {
+                                let mut playerctl_playerlist = data.0.as_iter().unwrap().peekable();
+                                if playerctl_playerlist.peek().is_none() {
+                                    p.artist = None;
+                                    p.title = None;
+                                    updated = true;
+                                }
+                            };
                             if updated {
                                 send.send(Task {
                                     id: id.clone(),
