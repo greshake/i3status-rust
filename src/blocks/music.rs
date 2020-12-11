@@ -412,6 +412,14 @@ impl ConfigBlock for Music {
                                 }
                             };
                             // workaround for `playerctld`
+                            // This block keeps track of players currently activeon the MPRIS bus, 
+                            // and only clears the metadata when a player has disappeared from the bus.
+                            // However `playerctl` is essentially doing the same thing as this block by
+                            // keeping track of players by itself, and when the last player is closed
+                            // the playerctld bus still remains which means the block never clears the
+                            // metadata for the last player that disappeared. We can get around this by
+                            // listening to the PlayerNames signal sent by playerctld and then only clear 
+                            // the metadata when there are no more players left.
                             let raw_metadata = signal.changed_properties.get("PlayerNames");
                             if let Some(data) = raw_metadata {
                                 let mut playerctl_playerlist = data.0.as_iter().unwrap().peekable();
@@ -684,6 +692,9 @@ impl Block for Music {
                         }
                     }
                 }
+                // TODO(?): If there is only one player in the queue and it is playerctld,
+                // then in that case send the "Shift" command via D-Bus to make playerctl
+                // cycle to the next player. Then this block will also update automatically.
                 MouseButton::Right => {
                     if (name.as_str() == self.id || name == &collapsed_id) && players.len() > 0 {
                         players.rotate_left(1);
