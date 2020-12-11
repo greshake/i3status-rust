@@ -695,6 +695,11 @@ impl Block for Music {
                 // TODO(?): If there is only one player in the queue and it is playerctld,
                 // then in that case send the "Shift" command via D-Bus to make playerctl
                 // cycle to the next player. Then this block will also update automatically.
+                // CLI cmd for reference (see "Seek" below for how to implement it in code):
+                // busctl --user call org.mpris.MediaPlayer2.playerctld \
+                //                    /org/mpris/MediaPlayer2 \
+                //                    com.github.altdesktop.playerctld \
+                //                    Shift
                 MouseButton::Right => {
                     if (name.as_str() == self.id || name == &collapsed_id) && players.len() > 0 {
                         players.rotate_left(1);
