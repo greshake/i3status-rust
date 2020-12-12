@@ -36,6 +36,7 @@ pub mod uptime;
 pub mod watson;
 pub mod weather;
 pub mod xrandr;
+pub mod workspaces;
 
 use self::apt::*;
 use self::backlight::*;
@@ -75,6 +76,7 @@ use self::uptime::*;
 use self::watson::*;
 use self::weather::*;
 use self::xrandr::*;
+use self::workspaces::*;
 
 use std::time::Duration;
 
@@ -226,6 +228,7 @@ pub fn create_block(
         "watson" => block!(Watson, block_config, config, update_request),
         "weather" => block!(Weather, block_config, config, update_request),
         "xrandr" => block!(Xrandr, block_config, config, update_request),
+        "workspaces" => block!(Workspaces, block_config, config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
     }
 }
