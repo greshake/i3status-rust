@@ -288,6 +288,18 @@ impl ConfigBlock for Workspaces {
 								//}}}
 								//{{{
 								WorkspaceChange::Urgent => {
+									let mut workspaces = workspaces_original.lock().unwrap();
+                                    if let Some(ws_current) = e.current {
+										if let Some(ws) = workspaces.get_mut(&WsKey::new(ws_current.num, ws_current.name)) {
+											ws.urgent = ws_current.urgent;
+										}
+									}
+
+                                    tx_update_request.send(Task {
+                                        id: id_clone.clone(),
+                                        update_time: Instant::now(),
+                                    })
+                                    .unwrap();
 								}
 								//}}}
 								//{{{
@@ -367,20 +379,22 @@ impl Block for Workspaces {
 	//{{{
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = event.name {
-			for ws_button in &mut self.ws_buttons
-			{
-				if name == ws_button.id()
+			if name.contains(&self.id) { // save some performance: only check each button if it was the workspaces block that was clicked...
+				for ws_button in &mut self.ws_buttons
 				{
-					// The workspace name is encoded into the button id. So let's extract it
-					let ws_name = ws_button.id().strip_prefix( &format!("{}_", self.id) ).unwrap_or_else(|| &ws_button.id()).to_string();
-
-					if let Err(e) = self.sway_connection.run_command(format!("workspace {}", ws_name))
+					if name == ws_button.id()
 					{
-						ws_button.set_text("error");
-						// TODO: Is there a better way to return this error?
-						return Err(BlockError("workspaces".to_string(), format!("workspaces::click(): cannot switch workspace: {}", e)))
+						// The workspace name is encoded into the button id. So let's extract it
+						let ws_name = ws_button.id().strip_prefix( &format!("{}_", self.id) ).unwrap_or_else(|| &ws_button.id()).to_string();
+
+						if let Err(e) = self.sway_connection.run_command(format!("workspace {}", ws_name))
+						{
+							ws_button.set_text("error");
+							// TODO: Is there a better way to return this error?
+							return Err(BlockError("workspaces".to_string(), format!("workspaces::click(): cannot switch workspace: {}", e)))
+						}
+						break;
 					}
-					break;
 				}
 			}
 		}
