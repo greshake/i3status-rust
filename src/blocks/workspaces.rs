@@ -1,12 +1,11 @@
 use std::collections::{LinkedList, BTreeMap};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
-use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
@@ -31,7 +30,6 @@ struct WsKey {
 
 //{{{
 impl WsKey {
-	//{{{
 	fn new(num_opt: Option<i32>, name_opt: Option<String>) -> WsKey
 	{
 		match (num_opt, name_opt) {
@@ -41,10 +39,8 @@ impl WsKey {
 			(Some(num), Some(name)) if num == -1               => WsKey{ num:  None,      name: Some(name) },
 			(Some(num), Some(name)) if num.to_string() == name => WsKey{ num:  Some(num), name: None },
 			(Some(num), Some(name))                            => WsKey{ num:  Some(num), name: Some(name) },
-			//(Some(num), Some(name))                            => WsKey{ num:  Some(num), name: Some(name.strip_prefix(&num.to_string()).unwrap_or_else(|| &name).to_string()) },
 		}
 	}
-	//}}}
 }
 //}}}
 
@@ -57,7 +53,7 @@ impl Ord for WsKey {
 		let mut comp = match (self.num, other.num)
 		{
 			(Some(_), None)    => -100,
-			(Some(s), Some(o)) => if s<o {-10} else if s>o {10} else {0},
+			(Some(s), Some(o)) => if s<o {-10} else if s==o {0} else {10},
 			(None,    Some(_)) => 100,
 			(None,    None)    =>  0,
 		};
@@ -79,27 +75,19 @@ impl PartialOrd for WsKey {
 //{{{
 impl PartialEq for WsKey {
     fn eq(&self, other: &Self) -> bool {
-		if let Some(s) = self.num
+		match (self.num, other.num, &self.name, &other.name)
 		{
-			if let Some(o) = other.num
-			{
-				s==o
-			}
-			else
-			{
-				false
-			}
-		}
-		else
-		{
-			if let Some(_) = other.num
-			{
-				false
-			}
-			else
-			{
-				self.name==other.name
-			}
+			(Some(s_num), Some(o_num), Some(s_name), Some(o_name)) => s_num==o_num && s_name==o_name,
+
+			(Some(s_num), Some(o_num), None,         None)         => s_num==o_num,
+			(None,        None,        Some(s_name), Some(o_name)) => s_name==o_name,
+
+			(Some(_),     None,        _,            _)            => false,
+			(None,        Some(_),     _,            _)            => false,
+
+			(_,           _,           Some(_),      None)         => false,
+			(_,           _,           None,         Some(_))      => false,
+			(None,        None,        None,         None)         => unreachable!(),
 		}
     }
 }
@@ -110,25 +98,21 @@ impl PartialEq for WsKey {
 struct WS {
 	urgent:  bool,
 	focused: bool,
-	config: Config,
 }
 //}}}
 
 //{{{
 pub struct Workspaces {
     id: String,
-    update_interval: Duration,
+	strip_workspace_numbers: bool,
+	strip_workspace_name:    bool,
 
 	sway_connection: swayipc::Connection,
 
     workspaces: Arc<Mutex<BTreeMap<WsKey, WS>>>,
 	ws_buttons: LinkedList<ButtonWidget>,
 
-    //useful, but optional
-    #[allow(dead_code)]
     config: Config,
-    //#[allow(dead_code)]
-    //tx_update_request: Sender<Task>,
 }
 //}}}
 
@@ -137,20 +121,11 @@ pub struct Workspaces {
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct WorkspacesConfig {
-    ///// Truncates titles if longer than max-width
-    //#[serde(default = "WorkspacesConfig::default_max_width")]
-    //pub max_width: usize,
+	#[serde(default = "WorkspacesConfig::default_strip_workspace_numbers")]
+	pub strip_workspace_numbers: bool,
 
-    ///// Show marks in place of title (if exist)
-    //#[serde(default = "WorkspacesConfig::default_show_marks")]
-    //pub show_marks: bool,
-
-    /// Update interval in seconds
-    #[serde(
-        default = "WorkspacesConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
-    pub interval: Duration,
+	#[serde(default = "WorkspacesConfig::default_strip_workspace_name")]
+	pub strip_workspace_name: bool,
 
     #[serde(default = "WorkspacesConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
@@ -159,9 +134,13 @@ pub struct WorkspacesConfig {
 
 //{{{
 impl WorkspacesConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
+	fn default_strip_workspace_numbers() -> bool {
+		false
+	}
+
+	fn default_strip_workspace_name() -> bool {
+		false
+	}
 
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
@@ -184,8 +163,6 @@ impl ConfigBlock for Workspaces {
 
 		let ws_buttons = LinkedList::new();
 
-		let config_clone = config.clone();
-
         let mut sway_connection = Connection::new().block_error("workspaces", "failed to acquire connect to IPC")?;
 
 		//{{{ Add initial workspaces
@@ -198,7 +175,6 @@ impl ConfigBlock for Workspaces {
 					WS {
 						urgent: workspace.urgent,
 						focused: workspace.focused,
-						config: config_clone.clone()
 					}
 				);
 			}
@@ -228,7 +204,6 @@ impl ConfigBlock for Workspaces {
 											WS {
 												urgent: ws_current.urgent,
 												focused: ws_current.focused,
-												config: config_clone.clone()
 											}
 										);
                                     }
@@ -318,8 +293,9 @@ impl ConfigBlock for Workspaces {
 
         Ok(Workspaces {
             id: id.clone(),
-            update_interval: block_config.interval,
-            //tx_update_request,
+			strip_workspace_numbers: block_config.strip_workspace_numbers,
+			strip_workspace_name:    block_config.strip_workspace_name,
+
 			sway_connection: sway_connection,
             config: config,
 			workspaces: workspaces,
@@ -340,15 +316,22 @@ impl Block for Workspaces {
 
 		for (idx, ws) in workspaces
 		{
-			// TODO: use the strim_prefix() if option strip_ws_numbers is set
-			let button_text = &if let Some(name) = &idx.name { name.clone() } else if let Some(num) = idx.num { num.to_string() } else { "INVALID".to_string() };
+			let button_text = match(idx.num, &idx.name, self.strip_workspace_numbers, self.strip_workspace_name) {
+				//pathological cases first:
+				(_,         _,          true,  true)  => "".to_string(),   // Well, what did you expect?
+				(None,      None,       _,     _)     => "INVALID".to_string(),
 
+				(None,      Some(name), _,     _)     => name.to_string(),
+				(Some(num), None,       _,     _)     => num.to_string(),
+				(Some(_),   Some(name), false, false) => name.to_string(), // counter-intuitively number is already part of the name...
+				(Some(num), Some(_),    false, true)  => num.to_string(),
+				(Some(num), Some(name), true,  false) => name.trim_start_matches(&num.to_string()).trim_start().to_string(),
+			};
 			let button_id = self.id.clone() + "_" +
 				&(if let Some(name) = &idx.name { name.to_string() } else if let Some(num) = idx.num { num.to_string() } else { "INVALID".to_string() });
 
 			self.ws_buttons.push_back(
-				ButtonWidget::new(ws.config.clone(), &button_id)
-					//.with_text(&idx.name)
+				ButtonWidget::new(self.config.clone(), &button_id)
 					.with_text(&button_text)
 					.with_state(
 						match (ws.focused, ws.urgent) {
@@ -360,7 +343,7 @@ impl Block for Workspaces {
 					)
 			);
 		}
-        Ok(Some(self.update_interval.into()))
+        Ok(None)
     }
 	//}}}
 
