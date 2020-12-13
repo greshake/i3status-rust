@@ -26,34 +26,44 @@ use std::cmp::Ordering;
 #[derive(Eq)]
 struct WsKey {
 	num:     Option<i32>,
-	name:    String,
+	name:    Option<String>,
 }
+
+//{{{
+impl WsKey {
+	//{{{
+	fn new(num_opt: Option<i32>, name_opt: Option<String>) -> WsKey
+	{
+		match (num_opt, name_opt) {
+			(None,      None)                                  => unreachable!(),
+			(None,      Some(name))                            => WsKey{ num:  None,      name: Some(name) },
+			(Some(num), None)                                  => WsKey{ num:  Some(num), name: None },
+			(Some(num), Some(name)) if num == -1               => WsKey{ num:  None,      name: Some(name) },
+			(Some(num), Some(name)) if num.to_string() == name => WsKey{ num:  Some(num), name: None },
+			(Some(num), Some(name))                            => WsKey{ num:  Some(num), name: Some(name) },
+			//(Some(num), Some(name))                            => WsKey{ num:  Some(num), name: Some(name.strip_prefix(&num.to_string()).unwrap_or_else(|| &name).to_string()) },
+		}
+	}
+	//}}}
+}
+//}}}
 
 //{{{
 impl Ord for WsKey {
     fn cmp(&self, other: &Self) -> Ordering {
-		if let Some(s) = self.num
+		// Goal (num, _) < (num, name) < (_, name)
+		// priority for (num, name) is num
+
+		let mut comp = match (self.num, other.num)
 		{
-			if let Some(o) = other.num
-			{
-				s.cmp(&o)
-			}
-			else
-			{
-				Ordering::Less
-			}
-		}
-		else
-		{
-			if let Some(_) = other.num
-			{
-				Ordering::Greater
-			}
-			else
-			{
-				self.name.cmp(&other.name)
-			}
-		}
+			(Some(_), None)    => -100,
+			(Some(s), Some(o)) => if s<o {-10} else if s>o {10} else {0},
+			(None,    Some(_)) => 100,
+			(None,    None)    =>  0,
+		};
+
+		comp += if self.name<other.name {-1} else if self.name==other.name {0} else {1};
+		return comp.cmp(&0)
     }
 }
 //}}}
@@ -98,8 +108,6 @@ impl PartialEq for WsKey {
 
 //{{{
 struct WS {
-	//id:      i64,
-	//name:    String,
 	urgent:  bool,
 	focused: bool,
 	config: Config,
@@ -110,6 +118,8 @@ struct WS {
 pub struct Workspaces {
     id: String,
     update_interval: Duration,
+
+	sway_connection: swayipc::Connection,
 
     workspaces: Arc<Mutex<BTreeMap<WsKey, WS>>>,
 	ws_buttons: LinkedList<ButtonWidget>,
@@ -176,24 +186,22 @@ impl ConfigBlock for Workspaces {
 
 		let config_clone = config.clone();
 
-        let _test_conn = Connection::new().block_error("workspaces", "failed to acquire connect to IPC")?;
+        let mut sway_connection = Connection::new().block_error("workspaces", "failed to acquire connect to IPC")?;
 
-		//{{{
-		for workspace in Connection::new().unwrap().get_workspaces().unwrap()
+		//{{{ Add initial workspaces
 		{
 			let mut workspaces = workspaces_original.lock().unwrap();
-			workspaces.insert(
-				WsKey {
-				           num:  Some(workspace.num),
-				           name: workspace.name
-				},
-				WS    {
-				           /*id: ws_current.id,*/
-				           urgent: workspace.urgent,
-				           focused: workspace.focused,
-				           config: config_clone.clone()
-				}
-			);
+			for workspace in sway_connection.get_workspaces().unwrap()
+			{
+				workspaces.insert(
+					WsKey::new(Some(workspace.num), Some(workspace.name)),
+					WS {
+						urgent: workspace.urgent,
+						focused: workspace.focused,
+						config: config_clone.clone()
+					}
+				);
+			}
 		}
 		//}}}
 
@@ -215,18 +223,13 @@ impl ConfigBlock for Workspaces {
 
 										let mut workspaces = workspaces_original.lock().unwrap();
 
-										let ws_name = if let Some(name) = ws_current.name { name } else { String::from("") };
-
 										workspaces.insert(
-											WsKey {
-												num: ws_current.num,
-												name: ws_name,
-											},
-														  WS {//id: ws_current.id,
-														  	urgent: ws_current.urgent,
-														  	focused: ws_current.focused,
-														  	config: config_clone.clone()
-														  }
+											WsKey::new(ws_current.num, ws_current.name),
+											WS {
+												urgent: ws_current.urgent,
+												focused: ws_current.focused,
+												config: config_clone.clone()
+											}
 										);
                                     }
                                     tx_update_request.send(Task {
@@ -242,11 +245,7 @@ impl ConfigBlock for Workspaces {
 
 										let mut workspaces = workspaces_original.lock().unwrap();
 
-										if let Some(ws_name) = ws_current.name
-										{
-											//workspaces.remove(&ws_name);
-											workspaces.remove(&WsKey{ num: ws_current.num, name: ws_name});
-										}
+										workspaces.remove(&WsKey::new(ws_current.num, ws_current.name));
 									}
                                     tx_update_request.send(Task {
                                         id: id_clone.clone(),
@@ -260,20 +259,14 @@ impl ConfigBlock for Workspaces {
 									let mut workspaces = workspaces_original.lock().unwrap();
 
                                     if let Some(ws_current) = e.current {
-										if let Some(ws_name) = ws_current.name
-										{
-											if let Some(ws) = workspaces.get_mut(&WsKey{num: ws_current.num, name: ws_name}) {
-												ws.focused = true;
-											}
+										if let Some(ws) = workspaces.get_mut(&WsKey::new(ws_current.num, ws_current.name)) {
+											ws.focused = true;
 										}
 									}
 
                                     if let Some(ws_old) = e.old {
-										if let Some(ws_name) = ws_old.name
-										{
-											if let Some(ws) = workspaces.get_mut(&WsKey{ num: ws_old.num, name: ws_name}) {
-												ws.focused = false;
-											}
+										if let Some(ws) = workspaces.get_mut(&WsKey::new(ws_old.num, ws_old.name)) {
+											ws.focused = false;
 										}
 									}
 
@@ -315,9 +308,10 @@ impl ConfigBlock for Workspaces {
             id: id.clone(),
             update_interval: block_config.interval,
             //tx_update_request,
-            config,
-			workspaces,
-			ws_buttons,
+			sway_connection: sway_connection,
+            config: config,
+			workspaces: workspaces,
+			ws_buttons: ws_buttons,
         })
     }
 	//}}}
@@ -334,9 +328,16 @@ impl Block for Workspaces {
 
 		for (idx, ws) in workspaces
 		{
+			// TODO: use the strim_prefix() if option strip_ws_numbers is set
+			let button_text = &if let Some(name) = &idx.name { name.clone() } else if let Some(num) = idx.num { num.to_string() } else { "INVALID".to_string() };
+
+			let button_id = self.id.clone() + "_" +
+				&(if let Some(name) = &idx.name { name.to_string() } else if let Some(num) = idx.num { num.to_string() } else { "INVALID".to_string() });
+
 			self.ws_buttons.push_back(
-				ButtonWidget::new(ws.config.clone(), &idx.name)
-					.with_text(&idx.name)
+				ButtonWidget::new(ws.config.clone(), &button_id)
+					//.with_text(&idx.name)
+					.with_text(&button_text)
 					.with_state(
 						match (ws.focused, ws.urgent) {
 							(false, false) => State::Idle,
@@ -364,7 +365,25 @@ impl Block for Workspaces {
 	//}}}
 
 	//{{{
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if let Some(ref name) = event.name {
+			for ws_button in &mut self.ws_buttons
+			{
+				if name == ws_button.id()
+				{
+					// The workspace name is encoded into the button id. So let's extract it
+					let ws_name = ws_button.id().strip_prefix( &format!("{}_", self.id) ).unwrap_or_else(|| &ws_button.id()).to_string();
+
+					if let Err(e) = self.sway_connection.run_command(format!("workspace {}", ws_name))
+					{
+						ws_button.set_text("error");
+						// TODO: Is there a better way to return this error?
+						return Err(BlockError("workspaces".to_string(), format!("workspaces::click(): cannot switch workspace: {}", e)))
+					}
+					break;
+				}
+			}
+		}
         Ok(())
     }
 	//}}}

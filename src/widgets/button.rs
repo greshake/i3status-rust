@@ -88,6 +88,10 @@ impl ButtonWidget {
         self.update();
     }
 
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
 
