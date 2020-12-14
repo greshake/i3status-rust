@@ -5,8 +5,7 @@ use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use swayipc::reply::{Event, Node, WindowChange, WorkspaceChange};
-use swayipc::{Connection, EventType};
+use swayipc::{Event, Node, WindowChange, WorkspaceChange, Connection, EventType, Event::Window};
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
@@ -146,7 +145,7 @@ impl ConfigBlock for FocusedWindow {
 
                 for event in events {
                     let updated = match event.expect("could not read event in `window` block") {
-                        Event::Window(e) => match (e.change, e.container) {
+                        Window(e) => match (e.change, e.container) {
                             (WindowChange::Mark, Node { marks, .. }) => update_marks(marks),
                             (WindowChange::Focus, Node { name, marks, .. }) => {
                                 let updated_for_window = name.map(&update_window).unwrap_or(false);

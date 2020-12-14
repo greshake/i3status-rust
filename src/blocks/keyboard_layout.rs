@@ -11,9 +11,7 @@ use dbus::{
     Message,
 };
 use serde_derive::Deserialize;
-use swayipc::reply::Event;
-use swayipc::reply::InputChange;
-use swayipc::{Connection, EventType};
+use swayipc::{Connection, InputChange, EventType, Event::Input};
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
@@ -388,7 +386,7 @@ impl KeyboardLayoutMonitor for Sway {
                     .unwrap()
                 {
                     match event.unwrap() {
-                        Event::Input(e) => match e.change {
+                        Input(e) => match e.change {
                             InputChange::XkbLayout => {
                                 if let Some(name) = e.input.xkb_active_layout_name {
                                     let mut layout = arc.lock().unwrap();

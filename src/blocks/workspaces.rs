@@ -13,9 +13,7 @@ use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 
 use std::thread;
-use swayipc::reply::Event;
-use swayipc::reply::WorkspaceChange;
-use swayipc::{Connection, EventType};
+use swayipc::{Connection, EventType, WorkspaceChange, Event::Workspace};
 use std::sync::{Arc, Mutex};
 use crate::widgets::button::ButtonWidget;
 
@@ -46,7 +44,7 @@ impl WsKey {
 
 //{{{
 impl Ord for WsKey {
-    fn cmp(&self, other: &Self) -> Ordering {
+	fn cmp(&self, other: &Self) -> Ordering {
 		// Goal (num, _) < (num, name) < (_, name)
 		// priority for (num, name) is num
 
@@ -60,21 +58,21 @@ impl Ord for WsKey {
 
 		comp += if self.name<other.name {-1} else if self.name==other.name {0} else {1};
 		return comp.cmp(&0)
-    }
+	}
 }
 //}}}
 
 //{{{
 impl PartialOrd for WsKey {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
 }
 //}}}
 
 //{{{
 impl PartialEq for WsKey {
-    fn eq(&self, other: &Self) -> bool {
+	fn eq(&self, other: &Self) -> bool {
 		match (self.num, other.num, &self.name, &other.name)
 		{
 			(Some(s_num), Some(o_num), Some(s_name), Some(o_name)) => s_num==o_num && s_name==o_name,
@@ -89,7 +87,7 @@ impl PartialEq for WsKey {
 			(_,           _,           None,         Some(_))      => false,
 			(None,        None,        None,         None)         => unreachable!(),
 		}
-    }
+	}
 }
 //}}}
 //}}}
@@ -103,16 +101,16 @@ struct WS {
 
 //{{{
 pub struct Workspaces {
-    id: String,
+	id: String,
 	strip_workspace_numbers: bool,
 	strip_workspace_name:    bool,
 
 	sway_connection: swayipc::Connection,
 
-    workspaces: Arc<Mutex<BTreeMap<WsKey, WS>>>,
+	workspaces: Arc<Mutex<BTreeMap<WsKey, WS>>>,
 	ws_buttons: LinkedList<ButtonWidget>,
 
-    config: Config,
+	config: Config,
 }
 //}}}
 
@@ -127,8 +125,8 @@ pub struct WorkspacesConfig {
 	#[serde(default = "WorkspacesConfig::default_strip_workspace_name")]
 	pub strip_workspace_name: bool,
 
-    #[serde(default = "WorkspacesConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+	#[serde(default = "WorkspacesConfig::default_color_overrides")]
+	pub color_overrides: Option<BTreeMap<String, String>>,
 }
 //}}}
 
@@ -142,28 +140,28 @@ impl WorkspacesConfig {
 		false
 	}
 
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
+	fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+		None
+	}
 }
 //}}}
 
 //{{{
 impl ConfigBlock for Workspaces {
-    type Config = WorkspacesConfig;
+	type Config = WorkspacesConfig;
 
 	//{{{
-    fn new( block_config: Self::Config, config: Config, tx_update_request: Sender<Task>,) -> Result<Self>
+	fn new( block_config: Self::Config, config: Config, tx_update_request: Sender<Task>,) -> Result<Self>
 	{
-        let id: String = pseudo_uuid();
-        let id_clone = id.clone();
+		let id: String = pseudo_uuid();
+		let id_clone = id.clone();
 
 		let workspaces_original = Arc::new(Mutex::new(BTreeMap::new()));
 		let workspaces = workspaces_original.clone();
 
 		let ws_buttons = LinkedList::new();
 
-        let mut sway_connection = Connection::new().block_error("workspaces", "failed to acquire connect to IPC")?;
+		let mut sway_connection = Connection::new().block_error("workspaces", "failed to acquire connect to IPC")?;
 
 		//{{{ Add initial workspaces
 		{
@@ -182,20 +180,21 @@ impl ConfigBlock for Workspaces {
 		//}}}
 
 		//{{{
-        thread::Builder::new()
-            .name("workspaces".into())
-            .spawn(move || {
-                for event in Connection::new()
-                    .unwrap()
-                    .subscribe(&[EventType::Workspace])
-                    .unwrap()
-                {
-                    match event.unwrap() {
-                        Event::Workspace(e) => {
-                            match e.change {
+		thread::Builder::new()
+			.name("workspaces".into())
+			.spawn(move || {
+				for event in Connection::new()
+					.unwrap()
+					.subscribe(&[EventType::Workspace])
+					.unwrap()
+				{
+					match event.unwrap() {
+						Workspace(e) => {
+						//WorkspaceEvent { change, current, old, .. } => {
+							match e.change {
 								//{{{
 								WorkspaceChange::Init   => {
-                                    if let Some(ws_current) = e.current {
+									if let Some(ws_current) = e.current {
 
 										let mut workspaces = workspaces_original.lock().unwrap();
 
@@ -206,51 +205,51 @@ impl ConfigBlock for Workspaces {
 												focused: ws_current.focused,
 											}
 										);
-                                    }
-                                    tx_update_request.send(Task {
-                                        id: id_clone.clone(),
-                                        update_time: Instant::now(),
-                                    })
-                                    .unwrap();
+									}
+									tx_update_request.send(Task {
+										id: id_clone.clone(),
+										update_time: Instant::now(),
+									})
+									.unwrap();
 								}
 								//}}}
 								//{{{
 								WorkspaceChange::Empty  => {
-                                    if let Some(ws_current) = e.current {
+									if let Some(ws_current) = e.current {
 
 										let mut workspaces = workspaces_original.lock().unwrap();
 
 										workspaces.remove(&WsKey::new(ws_current.num, ws_current.name));
 									}
-                                    tx_update_request.send(Task {
-                                        id: id_clone.clone(),
-                                        update_time: Instant::now(),
-                                    })
-                                    .unwrap();
+									tx_update_request.send(Task {
+										id: id_clone.clone(),
+										update_time: Instant::now(),
+									})
+									.unwrap();
 								}
 								//}}}
 								//{{{
 								WorkspaceChange::Focus  => {
 									let mut workspaces = workspaces_original.lock().unwrap();
 
-                                    if let Some(ws_current) = e.current {
+									if let Some(ws_current) = e.current {
 										if let Some(ws) = workspaces.get_mut(&WsKey::new(ws_current.num, ws_current.name)) {
 											ws.focused = true;
 										}
 									}
 
-                                    if let Some(ws_old) = e.old {
+									if let Some(ws_old) = e.old {
 										if let Some(ws) = workspaces.get_mut(&WsKey::new(ws_old.num, ws_old.name)) {
 											ws.focused = false;
 										}
 									}
 
 
-                                    tx_update_request.send(Task {
-                                        id: id_clone.clone(),
-                                        update_time: Instant::now(),
-                                    })
-                                    .unwrap();
+									tx_update_request.send(Task {
+										id: id_clone.clone(),
+										update_time: Instant::now(),
+									})
+									.unwrap();
 								}
 								//}}}
 								//{{{
@@ -264,44 +263,45 @@ impl ConfigBlock for Workspaces {
 								//{{{
 								WorkspaceChange::Urgent => {
 									let mut workspaces = workspaces_original.lock().unwrap();
-                                    if let Some(ws_current) = e.current {
+									if let Some(ws_current) = e.current {
 										if let Some(ws) = workspaces.get_mut(&WsKey::new(ws_current.num, ws_current.name)) {
 											ws.urgent = ws_current.urgent;
 										}
 									}
 
-                                    tx_update_request.send(Task {
-                                        id: id_clone.clone(),
-                                        update_time: Instant::now(),
-                                    })
-                                    .unwrap();
+									tx_update_request.send(Task {
+										id: id_clone.clone(),
+										update_time: Instant::now(),
+									})
+									.unwrap();
 								}
 								//}}}
 								//{{{
 								WorkspaceChange::Reload => {
 								}
 								//}}}
-                            };
-                        }
-                        _ => unreachable!(),
-                        //_ => {},
-                    }
-                }
-            })
-            .unwrap();
+								_ => unreachable!(), // WorkspaceChange is marked Non-exhaustive
+							};
+						}
+						_ => unreachable!(),
+						//_ => {},
+					}
+				}
+			})
+			.unwrap();
 		//}}}
 
-        Ok(Workspaces {
-            id: id.clone(),
+		Ok(Workspaces {
+			id: id.clone(),
 			strip_workspace_numbers: block_config.strip_workspace_numbers,
 			strip_workspace_name:    block_config.strip_workspace_name,
 
 			sway_connection: sway_connection,
-            config: config,
+			config: config,
 			workspaces: workspaces,
 			ws_buttons: ws_buttons,
-        })
-    }
+		})
+	}
 	//}}}
 }
 //}}}
@@ -309,7 +309,7 @@ impl ConfigBlock for Workspaces {
 //{{{
 impl Block for Workspaces {
 	//{{{
-    fn update(&mut self) -> Result<Option<Update>> {
+	fn update(&mut self) -> Result<Option<Update>> {
 		let workspaces = &(*self.workspaces.lock().block_error("workspaces", "failed to aquire lock")?);
 
 		self.ws_buttons.clear();
@@ -343,12 +343,12 @@ impl Block for Workspaces {
 					)
 			);
 		}
-        Ok(None)
-    }
+		Ok(None)
+	}
 	//}}}
 
 	//{{{
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
+	fn view(&self) -> Vec<&dyn I3BarWidget> {
 		let mut elements: Vec<&dyn I3BarWidget> = Vec::new();
 
 		for button in &self.ws_buttons {
@@ -356,12 +356,12 @@ impl Block for Workspaces {
 		}
 
 		elements
-    }
+	}
 	//}}}
 
 	//{{{
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
+	fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+		if let Some(ref name) = event.name {
 			if name.contains(&self.id) { // save some performance: only check each button if it was the workspaces block that was clicked...
 				for ws_button in &mut self.ws_buttons
 				{
@@ -381,14 +381,14 @@ impl Block for Workspaces {
 				}
 			}
 		}
-        Ok(())
-    }
+		Ok(())
+	}
 	//}}}
 
 	//{{{
-    fn id(&self) -> &str {
-        &self.id
-    }
+	fn id(&self) -> &str {
+		&self.id
+	}
 	//}}}
 }
 //}}}
