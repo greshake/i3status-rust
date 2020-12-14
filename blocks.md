@@ -3,6 +3,7 @@
 - [Apt](#apt)
 - [Backlight](#backlight)
 - [Battery](#battery)
+- [Bindingmode](#bindingmode)
 - [Bluetooth](#bluetooth)
 - [CPU Utilization](#cpu-utilization)
 - [Custom](#custom)
@@ -35,6 +36,7 @@
 - [Uptime](#uptime)
 - [Watson](#watson)
 - [Weather](#weather)
+- [Workspaces](#workspaces)
 - [Xrandr](#xrandr)
 
 ## Apt 
@@ -187,6 +189,29 @@ Placeholder | Description
 `{bar}` | The current battery level in a bar chart
 `{time}` | Time remaining until (dis)charge is complete
 `{power}` | Power consumption (in watts) by the battery or from the power supply when charging
+
+###### [↥ back to top](#list-of-available-blocks)
+
+## Bindingmode
+Creates a block which shows the binding mode in i3/sway compatible window managers. That is for example, when you press `$mod+r` to start resizing windows.
+
+When no special mode is active, i.e. the state is `default`, nothing will be shown. If another mode is triggered, the block will show a button with the name of the mode. Clicking on the button will reset the mode to `default`.
+This block is mainly usefull in combination with the [Workspaces](#workspaces) block to have a style-able replacement for the workspaces block provided with i3-bar and swaybar.
+
+#### Examples
+
+A bindingmode block:
+
+```toml
+[[block]]
+block = "bindingmode"
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`show_default_mode` | Whether to show the button even it the mode is `default`, i.e. always. | No | `false`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1544,6 +1569,44 @@ Key | Value
 `{weather}` | Textual description of the weather, e.g. "Raining"
 `{wind}` | Wind speed
 `{direction}` | Wind direction, e.g. "NE"
+
+###### [↥ back to top](#list-of-available-blocks)
+
+## Workspaces
+
+Creates a block which shows the workspaces on i3/sway compatible window managers. This is mainly usefull in combination with the [Bindingmode](#bindingmode) block to have a style-able replacement for the workspaces block provided with i3-bar and swaybar. Like in the originals, clicking on a workspace changes focus to that workspace.
+
+Currently, the workspaces use the Idle, Good, Critical and Warning colors to show which workspace has focus und/or the urgent hint set.
+
+#### Examples
+
+Shows workspaces stripping their number. Define your workspaces like
+
+```
+set $WS1    1 
+bindsym $mod+F1  workspace $WS1
+...
+```
+
+```toml
+[[block]]
+block = "workspaces"
+strip_workspace_numbers = true
+```
+
+The workspaces block will use the workspace numbers for ordering but will only show the symbols.
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`strip_workspace_numbers` | Whether to remove the workspace number when displaying a workspace. | No | `false`
+`strip_workspace_name` | Whether to remove the workspace name when displaying a workspace. | No | `false`
+
+If neither `strip_workspace_numbers` nor `strip_workspace_name` are set, workspace number and name are shown, e.g. the workspace in the example would show as `1 `. Seting either options removes one part of the display, setting both options results in an empty display for each workspace. If a workspace has only the stripped part, e.g. `1` with `strip_workspace_name`, it will show that part, lest there would be nothing shown.
+
+#### TODO
+Find out what the Move, Reload and Rename events do and how to react to them.
 
 ###### [↥ back to top](#list-of-available-blocks)
 

@@ -540,6 +540,58 @@ when charging
 T}
 .TE
 .SS \[u21A5] back to top
+.SS Bindingmode
+.PP
+Creates a block which shows the binding mode in i3/sway compatible
+window managers.
+That is for example, when you press \f[C]$mod+r\f[R] to start resizing
+windows.
+.PP
+When no special mode is active, i.e.\ the state is \f[C]default\f[R],
+nothing will be shown.
+If another mode is triggered, the block will show a button with the name
+of the mode.
+Clicking on the button will reset the mode to \f[C]default\f[R].
+This block is mainly usefull in combination with the Workspaces block to
+have a style-able replacement for the workspaces block provided with
+i3-bar and swaybar.
+.SS Examples
+.PP
+A bindingmode block:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]bindingmode\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]show_default_mode\f[R]
+T}@T{
+Whether to show the button even it the mode is \f[C]default\f[R],
+i.e.\ always.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.SS \[u21A5] back to top
 .SS Bluetooth
 .PP
 Creates a block which displays the connectivity of a given Bluetooth
@@ -2454,8 +2506,10 @@ mpd (via mpDris2 (https://github.com/eonpatapon/mpDris2))
 .PP
 and many others.
 .PP
-The block discovers all active players.
-Right click on the widget to switch to the next active player.
+By default the block tracks all players available on the MPRIS bus.
+Right clicking on the block will cycle it to the next player (if the
+next player has no song playing then the block will collapse, however
+you can continue to right click to the next player.).
 You can pin the widget to a given player via the \[lq]player\[rq]
 setting.
 .SS Examples
@@ -2759,9 +2813,9 @@ T{
 T}@T{
 Network interface to monitor (name from /sys/class/net).
 T}@T{
-Yes
+No
 T}@T{
-\f[C]lo\f[R] (loopback interface)
+Automatically chosen from the output of \f[C]ip route default show\f[R]
 T}
 T{
 \f[C]format\f[R]
@@ -4819,6 +4873,90 @@ T}@T{
 Wind direction, e.g.\ \[lq]NE\[rq]
 T}
 .TE
+.SS \[u21A5] back to top
+.SS Workspaces
+.PP
+Creates a block which shows the workspaces on i3/sway compatible window
+managers.
+This is mainly usefull in combination with the Bindingmode block to have
+a style-able replacement for the workspaces block provided with i3-bar
+and swaybar.
+Like in the originals, clicking on a workspace changes focus to that
+workspace.
+.PP
+Currently, the workspaces use the Idle, Good, Critical and Warning
+colors to show which workspace has focus und/or the urgent hint set.
+.SS Examples
+.PP
+Shows workspaces stripping their number.
+Define your workspaces like
+.IP
+.nf
+\f[C]
+set $WS1    1 \[uF269]
+bindsym $mod+F1  workspace $WS1
+\&...
+\f[R]
+.fi
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]workspaces\[dq]
+strip_workspace_numbers = true
+\f[R]
+.fi
+.PP
+The workspaces block will use the workspace numbers for ordering but
+will only show the symbols.
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]strip_workspace_numbers\f[R]
+T}@T{
+Whether to remove the workspace number when displaying a workspace.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+T{
+\f[C]strip_workspace_name\f[R]
+T}@T{
+Whether to remove the workspace name when displaying a workspace.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
+.TE
+.PP
+If neither \f[C]strip_workspace_numbers\f[R] nor
+\f[C]strip_workspace_name\f[R] are set, workspace number and name are
+shown, e.g.\ the workspace in the example would show as
+\f[C]1 \[uF269]\f[R].
+Seting either options removes one part of the display, setting both
+options results in an empty display for each workspace.
+If a workspace has only the stripped part, e.g.\ \f[C]1\f[R] with
+\f[C]strip_workspace_name\f[R], it will show that part, lest there would
+be nothing shown.
+.SS TODO
+.PP
+Find out what the Move, Reload and Rename events do and how to react to
+them.
 .SS \[u21A5] back to top
 .SS Xrandr
 .PP
