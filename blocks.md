@@ -1172,6 +1172,7 @@ Key | Values | Required | Default
 `warning_updates_regex` | Display block as warning if updates matching regex are available. | No | `None`
 `critical_updates_regex` | Display block as critical if updates matching regex are available. | No | `None`
 `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `pikaur -Qua` | if `{both}` or `{aur}` are used. | `None`
+`hide_when_uptodate` | Hides the block when there are no updates available | `false`
 
 ### Available Format Keys
 
