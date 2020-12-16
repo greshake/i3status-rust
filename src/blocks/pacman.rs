@@ -31,6 +31,8 @@ pub struct Pacman {
     warning_updates_regex: Option<Regex>,
     critical_updates_regex: Option<Regex>,
     watched: Watched,
+    uptodate: bool,
+    hide_when_uptodate: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -81,6 +83,9 @@ pub struct PacmanConfig {
 
     #[serde(default = "PacmanConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
+
+    #[serde(default = "PacmanConfig::default_hide_when_uptodate")]
+    pub hide_when_uptodate: bool,
 }
 
 impl PacmanConfig {
@@ -145,6 +150,10 @@ impl PacmanConfig {
             ))
         }
     }
+
+    fn default_hide_when_uptodate() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Pacman {
@@ -207,6 +216,8 @@ impl ConfigBlock for Pacman {
                 &block_config.format_up_to_date,
                 block_config.aur_command,
             )?,
+            uptodate: false,
+            hide_when_uptodate: block_config.hide_when_uptodate,
         })
     }
 }
@@ -331,7 +342,11 @@ impl Block for Pacman {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
+        if self.uptodate && self.hide_when_uptodate {
+            vec![]
+        } else {
+            vec![&self.output]
+        }
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -402,6 +417,7 @@ impl Block for Pacman {
                 }
             }
         });
+        self.uptodate = cum_count == 0;
         Ok(Some(self.update_interval.into()))
     }
 
