@@ -341,9 +341,10 @@ Key | Values | Required | Default
 Creates a block that can be updated asynchronously using DBus.
 
 For example, updating the block using command line tools:  
-`busctl`: `busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`  
+`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`  
 or
-`qdbus`: `qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus Headphones music Good`.  
+`qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus Headphones music Good`.  
+
 The first argument is the text content of the block, the second (optional) argument is the icon to use (as found in `icons.rs`; default `""`), and the third (optional) argument is the state (one of Idle, Info, Good, Warning, or Critical; default Idle).
 
 Note that the text you set may need to be escaped, refer to [Escaping Text](#escaping-text).
