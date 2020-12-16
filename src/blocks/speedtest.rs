@@ -14,7 +14,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{format_speed, pseudo_uuid};
+use crate::util::{format_number, pseudo_uuid};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -204,38 +204,30 @@ impl Block for SpeedTest {
             *updated = false;
 
             if vals.len() == 3 {
-                self.text[0].set_text(format!("{}ms", vals[0]));
-                let (down_bytes, up_bytes) = if self.config.bytes {
-                    (vals[1] * 1_000_000.0, vals[2] * 1_000_000.0)
-                } else {
-                    (vals[1] * 125_000.0, vals[2] * 125_000.0)
-                };
-                self.text[1].set_text(format!(
-                    "{}/s",
-                    format_speed(
-                        down_bytes as u64,
-                        self.config.speed_digits,
-                        &self.config.speed_min_unit.to_string(),
-                        !self.config.bytes
-                    )
+                let ping = vals[0] as f64 / 1_000.0;
+                let down = vals[1] as f64 * 1_000_000.0;
+                let up = vals[2] as f64 * 1_000_000.0;
+                self.text[0].set_text(format_number(ping, self.config.speed_digits, "", "s"));
+                self.text[1].set_text(format_number(
+                    down,
+                    self.config.speed_digits,
+                    &self.config.speed_min_unit.to_string(),
+                    if self.config.bytes { "B/s" } else { "b/s" },
                 ));
-                self.text[2].set_text(format!(
-                    "{}/s",
-                    format_speed(
-                        up_bytes as u64,
-                        self.config.speed_digits,
-                        &self.config.speed_min_unit.to_string(),
-                        !self.config.bytes
-                    )
+                self.text[2].set_text(format_number(
+                    up,
+                    self.config.speed_digits,
+                    &self.config.speed_min_unit.to_string(),
+                    if self.config.bytes { "B/s" } else { "b/s" },
                 ));
 
                 // TODO: remove clippy workaround
                 #[allow(clippy::unknown_clippy_lints)]
                 #[allow(clippy::match_on_vec_items)]
                 self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
-                            0.0 ; 25.0 => State::Good,
-                            25.0 ; 60.0 => State::Info,
-                            60.0 ; 100.0 => State::Warning
+                    0.0 ; 25.0 => State::Good,
+                    25.0 ; 60.0 => State::Info,
+                    60.0 ; 100.0 => State::Warning
                 }));
             }
 

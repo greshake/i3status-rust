@@ -36,33 +36,34 @@ pub fn escape_pango_text(text: String) -> String {
         .collect()
 }
 
-pub fn format_speed(
-    bytes_speed: u64,
-    total_digits: usize,
-    min_unit: &str,
-    use_bits: bool,
-) -> String {
-    let raw_value = if use_bits {
-        bytes_speed * 8
-    } else {
-        bytes_speed
+pub fn format_number(raw_value: f64, total_digits: usize, min_unit: &str, suffix: &str) -> String {
+    let (min_unit_value, min_unit_level) = match min_unit {
+        "T" => (raw_value / 1_000_000_000_000.0, 4),
+        "G" => (raw_value / 1_000_000_000.0, 3),
+        "M" => (raw_value / 1_000_000.0, 2),
+        "K" => (raw_value / 1_000.0, 1),
+        "1" => (raw_value, 0),
+        "m" => (raw_value * 1_000.0, -1),
+        "u" => (raw_value * 1_000_000.0, -2),
+        "n" => (raw_value * 1_000_000_000.0, -3),
+        _ => (raw_value * 1_000_000_000_000.0, -4),
     };
 
-    let (min_unit_value, min_unit_level) = match min_unit {
-        "T" => (raw_value as f64 / 1_000_000_000_000.0, 4),
-        "G" => (raw_value as f64 / 1_000_000_000.0, 3),
-        "M" => (raw_value as f64 / 1_000_000.0, 2),
-        "K" => (raw_value as f64 / 1_000.0, 1),
-        _ => (raw_value as f64, 0),
-    };
+    //println!("Min Unit:  ({}, {})", min_unit_value, min_unit_level);
 
     let (magnitude_value, magnitude_level) = match raw_value {
-        x if x > 99_999_999_999 => (raw_value as f64 / 1_000_000_000_000.0, 4),
-        x if x > 99_999_999 => (raw_value as f64 / 1_000_000_000.0, 3),
-        x if x > 99_999 => (raw_value as f64 / 1_000_000.0, 2),
-        x if x > 99 => (raw_value as f64 / 1_000.0, 1),
-        _ => (raw_value as f64, 0),
+        x if x >= 100_000_000_000.0 => (raw_value / 1_000_000_000_000.0, 4),
+        x if x >= 100_000_000.0 => (raw_value / 1_000_000_000.0, 3),
+        x if x >= 100_000.0 => (raw_value / 1_000_000.0, 2),
+        x if x >= 100.0 => (raw_value / 1_000.0, 1),
+        x if x >= 0.1 => (raw_value, 0),
+        x if x >= 0.000_1 => (raw_value * 1_000.0, -1),
+        x if x >= 0.000_000_1 => (raw_value * 1_000_000.0, -2),
+        x if x >= 0.000_000_000_1 => (raw_value * 1_000_000_000.0, -3),
+        _ => (raw_value * 1_000_000_000_000.0, -4),
     };
+
+    //println!("Magnitude: ({}, {})", magnitude_value, magnitude_level);
 
     let (value, level) = if magnitude_level < min_unit_level {
         (min_unit_value, min_unit_level)
@@ -70,22 +71,16 @@ pub fn format_speed(
         (magnitude_value, magnitude_level)
     };
 
-    let unit = if use_bits {
-        match level {
-            4 => "Tb",
-            3 => "Gb",
-            2 => "Mb",
-            1 => "Kb",
-            _ => "b",
-        }
-    } else {
-        match level {
-            4 => "TB",
-            3 => "GB",
-            2 => "MB",
-            1 => "KB",
-            _ => "B",
-        }
+    let unit = match level {
+        4 => "T",
+        3 => "G",
+        2 => "M",
+        1 => "K",
+        0 => "",
+        -1 => "m",
+        -2 => "u",
+        -3 => "n",
+        _ => "p",
     };
 
     let _decimal_precision = total_digits as i16 - if value >= 10.0 { 2 } else { 1 };
@@ -95,7 +90,7 @@ pub fn format_speed(
         _decimal_precision
     };
 
-    format!("{:.*}{}", decimal_precision as usize, value, unit)
+    format!("{:.*}{}{}", decimal_precision as usize, value, unit, suffix)
 }
 
 pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
