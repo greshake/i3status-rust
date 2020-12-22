@@ -416,11 +416,7 @@ pub struct NetConfig {
     pub format: String,
 
     /// Which interface in /sys/class/net/ to read from.
-    #[serde(default = "NetConfig::default_device")]
-    pub device: String,
-
-    #[serde(default = "NetConfig::default_auto_device")]
-    pub auto_device: bool,
+    pub device: Option<String>,
 
     /// Whether to show the SSID of active wireless networks.
     #[serde(default = "NetConfig::default_ssid")]
@@ -500,17 +496,6 @@ impl NetConfig {
 
     fn default_format() -> String {
         "{speed_up} {speed_down}".to_owned()
-    }
-
-    fn default_device() -> String {
-        match NetworkDevice::default_device() {
-            Some(ref s) if !s.is_empty() => s.to_string(),
-            _ => "lo".to_string(),
-        }
-    }
-
-    fn default_auto_device() -> bool {
-        false
     }
 
     fn default_hide_inactive() -> bool {
@@ -594,7 +579,14 @@ impl ConfigBlock for Net {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let device = NetworkDevice::from_device(block_config.device);
+        let default_device = match NetworkDevice::default_device() {
+            Some(ref s) if !s.is_empty() => s.to_string(),
+            _ => "lo".to_string(),
+        };
+        let device = match block_config.device.clone() {
+            Some(d) => NetworkDevice::from_device(d),
+            _ => NetworkDevice::from_device(default_device),
+        };
         let init_rx_bytes = device.rx_bytes().unwrap_or(0);
         let init_tx_bytes = device.tx_bytes().unwrap_or(0);
         let wireless = device.is_wireless();
@@ -676,7 +668,7 @@ impl ConfigBlock for Net {
             graph_tx: Some("".to_string()),
             graph_rx: Some("".to_string()),
             device,
-            auto_device: block_config.auto_device,
+            auto_device: block_config.device.is_none(),
             rx_buff: vec![0; 10],
             tx_buff: vec![0; 10],
             rx_bytes: init_rx_bytes,
@@ -742,7 +734,11 @@ fn read_file(path: &Path) -> Result<String> {
 impl Net {
     fn update_device(&mut self) {
         if self.auto_device {
-            let dev = NetConfig::default_device();
+            let dev = match NetworkDevice::default_device() {
+                Some(ref s) if !s.is_empty() => s.to_string(),
+                _ => "lo".to_string(),
+            };
+
             if self.device.device() != dev {
                 self.device = NetworkDevice::from_device(dev);
                 self.network.set_icon(if self.device.is_wireless() {
