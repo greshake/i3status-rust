@@ -816,11 +816,15 @@ impl Net {
     fn update_tx_rx(&mut self) -> Result<()> {
         // TODO: consider using `as_nanos`
         let update_interval = (self.update_interval.as_secs() as f64)
-            // Update the throughput/graph widgets if they are enabled
             + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
+        // Update the throughput/graph widgets if they are enabled
         if self.output_tx.is_some() || self.graph_tx.is_some() {
             let current_tx = self.device.tx_bytes()?;
-            let tx_bytes = ((current_tx - self.tx_bytes) as f64 / update_interval) as u64;
+            let diff = match current_tx.checked_sub(self.tx_bytes) {
+                Some(tx) => tx,
+                _ => 0,
+            };
+            let tx_bytes = (diff as f64 / update_interval) as u64;
             self.tx_bytes = current_tx;
 
             if let Some(ref mut tx) = self.output_tx {
@@ -840,7 +844,11 @@ impl Net {
         }
         if self.output_rx.is_some() || self.graph_rx.is_some() {
             let current_rx = self.device.rx_bytes()?;
-            let rx_bytes = ((current_rx - self.rx_bytes) as f64 / update_interval) as u64;
+            let diff = match current_rx.checked_sub(self.rx_bytes) {
+                Some(rx) => rx,
+                _ => 0,
+            };
+            let rx_bytes = (diff as f64 / update_interval) as u64;
             self.rx_bytes = current_rx;
 
             if let Some(ref mut rx) = self.output_rx {
