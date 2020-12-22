@@ -20,7 +20,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{
-    escape_pango_text, format_percent_bar, format_speed, format_vec_to_bar_graph, pseudo_uuid,
+    escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, pseudo_uuid,
     FormatTemplate,
 };
 use crate::widget::{I3BarWidget, Spacing};
@@ -828,11 +828,15 @@ impl Net {
             self.tx_bytes = current_tx;
 
             if let Some(ref mut tx) = self.output_tx {
-                *tx = format_speed(
-                    tx_bytes,
+                *tx = format_number(
+                    if self.use_bits {
+                        tx_bytes * 8
+                    } else {
+                        tx_bytes
+                    } as f64,
                     self.speed_digits,
                     &self.speed_min_unit.to_string(),
-                    self.use_bits,
+                    if self.use_bits { "b" } else { "B" },
                 );
             };
 
@@ -852,11 +856,15 @@ impl Net {
             self.rx_bytes = current_rx;
 
             if let Some(ref mut rx) = self.output_rx {
-                *rx = format_speed(
-                    rx_bytes,
+                *rx = format_number(
+                    if self.use_bits {
+                        rx_bytes * 8
+                    } else {
+                        rx_bytes
+                    } as f64,
                     self.speed_digits,
                     &self.speed_min_unit.to_string(),
-                    self.use_bits,
+                    if self.use_bits { "b" } else { "B" },
                 );
             };
 
