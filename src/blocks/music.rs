@@ -682,8 +682,8 @@ impl Block for Music {
                             .send(m)
                             .block_error("music", "failed to call method via D-Bus")?;
                     } else if name == &collapsed_id && self.on_collapsed_click.is_some() {
-                        let command = self.on_collapsed_click.as_ref().unwrap();
-                        spawn_child_async("sh", &["-c", command])
+                        let cmd = self.on_collapsed_click.as_ref().unwrap();
+                        spawn_child_async("sh", &["-c", cmd])
                             .block_error("music", "could not spawn child")?;
                     } else if event.matches_name(self.id()) {
                         if let Some(ref cmd) = self.on_click {
