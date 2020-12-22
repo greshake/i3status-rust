@@ -13,6 +13,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
@@ -33,18 +34,16 @@ impl Monitor {
     }
 
     fn set_brightness(&mut self, step: i32) {
-        Command::new("sh")
-            .args(&[
-                "-c",
-                format!(
-                    "xrandr --output {} --brightness {}",
-                    self.name,
-                    (self.brightness as i32 + step) as f32 / 100.0
-                )
-                .as_str(),
-            ])
-            .spawn()
-            .expect("Failed to set xrandr output.");
+        spawn_child_async(
+            "xrandr",
+            &[
+                "--output",
+                &self.name,
+                "--brightness",
+                &format!("{}", (self.brightness as i32 + step) as f32 / 100.0),
+            ],
+        )
+        .expect("Failed to set xrandr output.");
         self.brightness = (self.brightness as i32 + step) as u32;
     }
 }
