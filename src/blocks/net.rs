@@ -635,7 +635,7 @@ impl ConfigBlock for Net {
             } else if vpn {
                 "net_vpn"
             } else if device.device == "lo" {
-                "net_lo"
+                "net_loopback"
             } else {
                 "net_wired"
             }),
@@ -752,7 +752,7 @@ impl Net {
                 } else if self.device.is_vpn() {
                     "net_vpn"
                 } else if self.device.device == "lo" {
-                    "net_lo"
+                    "net_loopback"
                 } else {
                     "net_wired"
                 });
