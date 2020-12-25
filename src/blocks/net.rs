@@ -634,6 +634,8 @@ impl ConfigBlock for Net {
                 "net_wireless"
             } else if vpn {
                 "net_vpn"
+            } else if device.device == "lo" {
+                "net_lo"
             } else {
                 "net_wired"
             }),
@@ -749,6 +751,8 @@ impl Net {
                     "net_wireless"
                 } else if self.device.is_vpn() {
                     "net_vpn"
+                } else if self.device.device == "lo" {
+                    "net_lo"
                 } else {
                     "net_wired"
                 });
