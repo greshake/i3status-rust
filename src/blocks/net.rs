@@ -1169,7 +1169,7 @@ fn decode_escaped_unicode(raw: &[u8]) -> Vec<u8> {
             idx += 2; // skip "\x"
 
             let hex = std::str::from_utf8(&raw[idx..idx + 2]).unwrap();
-            result.extend_from_slice(&[u8::from_str_radix(hex, 16).unwrap()]);
+            result.extend(Some(u8::from_str_radix(hex, 16).unwrap()));
             idx += 2;
         } else {
             result.extend(Some(&raw[idx]));
