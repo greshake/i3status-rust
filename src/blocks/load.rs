@@ -153,7 +153,7 @@ impl Block for Load {
             .minimum_visible
             .iter()
             .zip(parsed.iter())
-            .all(|(min, v)| v > min);
+            .all(|(min, v)| v >= min);
 
         let used_perc = parsed[0] / self.logical_cores as f32;
 
