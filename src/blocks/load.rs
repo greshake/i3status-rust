@@ -147,12 +147,7 @@ impl Block for Load {
         /* Parse all the loadavg values. The block is
          * visible if they are all greater than their min
          * in self.minimum_visible */
-        let mut parsed = [0.0; 3];
-        for (e, v) in parsed.iter_mut().zip(split.iter()) {
-            *e = v
-                .parse::<f32>()
-                .block_error("load", "failed to parse load value as float")?;
-        }
+        let parsed: Vec<f32> = split.iter().take(3).map(|v| v.parse::<f32>().unwrap_or(f32::INFINITY)).collect();
 
         self.visible = self
             .minimum_visible
