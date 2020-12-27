@@ -13,7 +13,6 @@ use {
     crossbeam_channel::unbounded,
     lazy_static::lazy_static,
     std::cell::RefCell,
-    std::cmp::min,
     std::collections::HashMap,
     std::convert::{TryFrom, TryInto},
     std::ops::Deref,
@@ -21,7 +20,7 @@ use {
     std::sync::Mutex,
 };
 
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::collections::BTreeMap;
 use std::io::Read;
 use std::process::{Command, Stdio};
@@ -30,17 +29,15 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{Config, LogicalDirection};
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{format_percent_bar, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
+use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
 trait SoundDevice {
@@ -772,6 +769,9 @@ pub struct SoundConfig {
 
     #[serde(default = "SoundConfig::default_max_vol")]
     pub max_vol: Option<u32>,
+
+    #[serde(default = "SoundConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -829,6 +829,10 @@ impl SoundConfig {
     fn default_max_vol() -> Option<u32> {
         None
     }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl Sound {
@@ -874,8 +878,10 @@ impl Sound {
                 } else {
                     self.text.set_text(text);
                 }
+                self.text.set_spacing(Spacing::Normal);
             } else {
                 self.text.set_text("");
+                self.text.set_spacing(Spacing::Hidden);
             }
             self.text.set_state(State::Warning);
         } else {
@@ -885,6 +891,7 @@ impl Sound {
             } else {
                 text
             });
+            self.text.set_spacing(Spacing::Normal);
             self.text.set_state(State::Idle);
         }
 
@@ -900,7 +907,7 @@ impl ConfigBlock for Sound {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid();
         let mut step_width = block_config.step_width;
         if step_width > 50 {
             step_width = 50;

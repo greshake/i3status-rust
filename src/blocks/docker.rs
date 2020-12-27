@@ -1,18 +1,17 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
+use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -54,14 +53,22 @@ pub struct DockerConfig {
     /// Format override
     #[serde(default = "DockerConfig::default_format")]
     pub format: String,
+
+    #[serde(default = "DockerConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl DockerConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(5)
     }
+
     fn default_format() -> String {
         "{running}%".to_owned()
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -70,7 +77,7 @@ impl ConfigBlock for Docker {
 
     fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
         Ok(Docker {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid(),
             text: TextWidget::new(config).with_text("N/A").with_icon("docker"),
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("docker", "Invalid format specified")?,

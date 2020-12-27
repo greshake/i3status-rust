@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::process::Command;
 use std::time::Duration;
 
@@ -6,7 +6,6 @@ use crossbeam_channel::Sender;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
@@ -14,7 +13,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
+use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -45,6 +44,9 @@ pub struct GithubConfig {
     /// Format override
     #[serde(default = "GithubConfig::default_format")]
     pub format: String,
+
+    #[serde(default = "GithubConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl GithubConfig {
@@ -58,6 +60,10 @@ impl GithubConfig {
 
     fn default_format() -> String {
         "{total}".to_owned()
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -76,7 +82,7 @@ impl ConfigBlock for Github {
         };
 
         Ok(Github {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             text: TextWidget::new(config).with_text("x").with_icon("github"),
             api_server: block_config.api_server,

@@ -1,18 +1,18 @@
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::de::deserialize_local_timestamp;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::xdg_config_home;
+use crate::util::{pseudo_uuid, xdg_config_home};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use chrono::offset::Local;
@@ -20,7 +20,6 @@ use chrono::DateTime;
 use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 pub struct Watson {
     id: String,
@@ -46,6 +45,9 @@ pub struct WatsonConfig {
     /// Show time spent
     #[serde(default = "WatsonConfig::default_show_time")]
     pub show_time: bool,
+
+    #[serde(default = "WatsonConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl WatsonConfig {
@@ -60,6 +62,9 @@ impl WatsonConfig {
     fn default_show_time() -> bool {
         false
     }
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for Watson {
@@ -70,7 +75,7 @@ impl ConfigBlock for Watson {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid();
 
         let watson = Watson {
             id: id.clone(),

@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -13,15 +14,13 @@ use serde_derive::Deserialize;
 use swayipc::reply::Event;
 use swayipc::reply::InputChange;
 use swayipc::{Connection, EventType};
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
+use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -43,6 +42,9 @@ impl Default for KeyboardLayoutDriver {
 pub trait KeyboardLayoutMonitor {
     /// Retrieve the current keyboard layout.
     fn keyboard_layout(&self) -> Result<String>;
+
+    /// Retrieve the current keyboard variant.
+    fn keyboard_variant(&self) -> Result<String>;
 
     /// Specify that the monitor does not send update requests and must be
     /// polled manually.
@@ -98,6 +100,11 @@ impl KeyboardLayoutMonitor for SetXkbMap {
         setxkbmap_layouts()
     }
 
+    // Not implemented (TODO?)
+    fn keyboard_variant(&self) -> Result<String> {
+        Ok("N/A".to_string())
+    }
+
     fn must_poll(&self) -> bool {
         true
     }
@@ -127,12 +134,23 @@ impl KeyboardLayoutMonitor for LocaleBus {
         Ok(layout)
     }
 
+    fn keyboard_variant(&self) -> Result<String> {
+        let layout: String = self
+            .con
+            .with_path("org.freedesktop.locale1", "/org/freedesktop/locale1", 1000)
+            .get("org.freedesktop.locale1", "X11Variant")
+            .block_error("locale", "Failed to get X11Variant property.")?;
+
+        Ok(layout)
+    }
+
     fn must_poll(&self) -> bool {
         false
     }
 
     /// Monitor Locale property changes in a separate thread and send updates
     /// via the `update_request` channel.
+    // TODO: pull the new value from the PropertiesChanged message instead of making another method call
     fn monitor(&self, id: String, update_request: Sender<Task>) {
         thread::Builder::new()
             .name("keyboard_layout".into())
@@ -238,6 +256,11 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
         }
     }
 
+    fn keyboard_variant(&self) -> Result<String> {
+        // Not implemented (TODO?)
+        Ok("N/A".to_string())
+    }
+
     fn must_poll(&self) -> bool {
         false
     }
@@ -307,15 +330,29 @@ pub struct Sway {
 
 impl Sway {
     pub fn new(sway_kb_identifier: String) -> Result<Self> {
-        let layout = swayipc::Connection::new()
-            .unwrap()
-            .get_inputs()
-            .unwrap()
-            .into_iter()
-            .find(|input| input.identifier == sway_kb_identifier)
-            .and_then(|input| input.xkb_active_layout_name)
-            .ok_or_else(|| "".to_string())
-            .block_error("sway", "Failed to get xkb_active_layout_name.")?;
+        let layout = if sway_kb_identifier.is_empty() {
+            swayipc::Connection::new()
+                .unwrap()
+                .get_inputs()
+                .unwrap()
+                .into_iter()
+                .find(|input| input.input_type == "keyboard")
+                .and_then(|input| input.xkb_active_layout_name)
+                .ok_or_else(|| "".to_string())
+                .block_error("sway", "Failed to get xkb_active_layout_name.")?
+        } else {
+            swayipc::Connection::new()
+                .unwrap()
+                .get_inputs()
+                .unwrap()
+                .into_iter()
+                .find(|input| {
+                    input.identifier == sway_kb_identifier && input.input_type == "keyboard"
+                })
+                .and_then(|input| input.xkb_active_layout_name)
+                .ok_or_else(|| "".to_string())
+                .block_error("sway", "Failed to get xkb_active_layout_name.")?
+        };
 
         Ok(Sway {
             sway_kb_layout: Arc::new(Mutex::new(layout)),
@@ -327,6 +364,11 @@ impl KeyboardLayoutMonitor for Sway {
     fn keyboard_layout(&self) -> Result<String> {
         let layout = self.sway_kb_layout.lock().unwrap();
         Ok(layout.to_string())
+    }
+
+    fn keyboard_variant(&self) -> Result<String> {
+        // Not implemented (TODO? Doesn't look like sway IPC exposes this anyway)
+        Ok("N/A".to_string())
     }
 
     fn must_poll(&self) -> bool {
@@ -395,6 +437,9 @@ pub struct KeyboardLayoutConfig {
     interval: Duration,
 
     sway_kb_identifier: String,
+
+    #[serde(default = "KeyboardLayoutConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl KeyboardLayoutConfig {
@@ -404,6 +449,10 @@ impl KeyboardLayoutConfig {
 
     fn default_interval() -> Duration {
         Duration::from_secs(60)
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -419,7 +468,7 @@ impl ConfigBlock for KeyboardLayout {
     type Config = KeyboardLayoutConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid();
         let monitor: Box<dyn KeyboardLayoutMonitor> = match block_config.driver {
             KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap::new()?),
             KeyboardLayoutDriver::LocaleBus => {
@@ -463,7 +512,11 @@ impl Block for KeyboardLayout {
 
     fn update(&mut self) -> Result<Option<Update>> {
         let layout = self.monitor.keyboard_layout()?;
-        let values = map!("{layout}" => layout);
+        let variant = self.monitor.keyboard_variant()?;
+        let values = map!(
+            "{layout}" => layout,
+            "{variant}" => variant
+        );
 
         self.output
             .set_text(self.format.render_static_str(&values)?);

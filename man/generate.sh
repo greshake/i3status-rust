@@ -9,6 +9,7 @@ else
 fi
 
 pandoc -o man/blocks.1 -t man blocks.md
+# TODO: fix deprecation warning
 pandoc -o man/themes.1 -t man --base-header-level=2 themes.md
 
 # Delete the table of contents from the block documentation.

@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -7,14 +8,13 @@ use dbus::arg;
 use dbus::blocking::{stdintf::org_freedesktop_dbus::Properties, Connection};
 use dbus::Message;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, FormatTemplate};
+use crate::util::{battery_level_to_icon, pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -28,10 +28,10 @@ pub struct KDEConnect {
     phone_reachable: Arc<Mutex<bool>>,
     // TODO
     //notif_text: Arc<Mutex<String>>,
-    bat_good: u64,
-    bat_info: u64,
-    bat_warning: u64,
-    bat_critical: u64,
+    bat_good: i32,
+    bat_info: i32,
+    bat_warning: i32,
+    bat_critical: i32,
     format: FormatTemplate,
     format_disconnected: FormatTemplate,
     output: ButtonWidget,
@@ -46,19 +46,19 @@ pub struct KDEConnectConfig {
 
     /// The threshold above which the remaining capacity is shown as good
     #[serde(default = "KDEConnectConfig::default_bat_good")]
-    pub bat_good: u64,
+    pub bat_good: i32,
 
     /// The threshold below which the remaining capacity is shown as info
     #[serde(default = "KDEConnectConfig::default_bat_info")]
-    pub bat_info: u64,
+    pub bat_info: i32,
 
     /// The threshold below which the remaining capacity is shown as warning
     #[serde(default = "KDEConnectConfig::default_bat_warning")]
-    pub bat_warning: u64,
+    pub bat_warning: i32,
 
     /// The threshold below which the remaining capacity is shown as critical
     #[serde(default = "KDEConnectConfig::default_bat_critical")]
-    pub bat_critical: u64,
+    pub bat_critical: i32,
 
     /// Format string for displaying phone information.
     #[serde(default = "KDEConnectConfig::default_format")]
@@ -67,6 +67,9 @@ pub struct KDEConnectConfig {
     /// Format string for displaying phone information when it is disconnected.
     #[serde(default = "KDEConnectConfig::default_format_disconnected")]
     pub format_disconnected: String,
+
+    #[serde(default = "KDEConnectConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl KDEConnectConfig {
@@ -74,19 +77,19 @@ impl KDEConnectConfig {
         None
     }
 
-    fn default_bat_critical() -> u64 {
+    fn default_bat_critical() -> i32 {
         15
     }
 
-    fn default_bat_warning() -> u64 {
+    fn default_bat_warning() -> i32 {
         30
     }
 
-    fn default_bat_info() -> u64 {
+    fn default_bat_info() -> i32 {
         60
     }
 
-    fn default_bat_good() -> u64 {
+    fn default_bat_good() -> i32 {
         60
     }
 
@@ -97,13 +100,17 @@ impl KDEConnectConfig {
     fn default_format_disconnected() -> String {
         "{name}".into()
     }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for KDEConnect {
     type Config = KDEConnectConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid();
 
         let id1 = id.clone();
         let id2 = id.clone();
@@ -290,7 +297,7 @@ impl ConfigBlock for KDEConnect {
                     },
                 );
 
-                let _notification_added_handler = p.match_signal(
+                let _notification_removed_handler = p.match_signal(
                     move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationRemoved,
                           _: &Connection,
                           _: &Message| {
@@ -423,7 +430,7 @@ impl Block for KDEConnect {
             .battery_charge
             .lock()
             .block_error("kdeconnect", "failed to acquire lock for `charge`")?)
-            as u64;
+            as i32;
 
         let charging = *self
             .battery_state
@@ -453,17 +460,25 @@ impl Block for KDEConnect {
             .block_error("kdeconnect", "failed to acquire lock for `name`")?)
         .clone();
 
-        let bat_icon = self.config.icons.get(if charging {
-            "bat_charging"
-        } else {
-            battery_level_to_icon(Ok(charge))
-        });
+        let bat_icon = self
+            .config
+            .icons
+            .get(if charging {
+                "bat_charging"
+            } else if charge < 0 {
+                // better than nothing I guess?
+                "bat_full"
+            } else {
+                battery_level_to_icon(Ok(charge as u64))
+            })
+            .cloned()
+            .unwrap_or_else(|| "".to_string());
 
         let values = map!(
-            "{bat_icon}" => bat_icon.unwrap().trim().to_string(),
-            "{bat_charge}" => charge.to_string(),
+            "{bat_icon}" => bat_icon.trim().to_string(),
+            "{bat_charge}" => if charge < 0 { "x".to_string() } else { charge.to_string() },
             "{bat_state}" => charging.to_string(),
-            "{notif_icon}" => self.config.icons.get("notification").unwrap().trim().to_string(),
+            "{notif_icon}" => self.config.icons.get("notification").cloned().unwrap_or_else(|| "".to_string()).trim().to_string(),
             "{notif_count}" => notif_count.to_string(),
             // TODO
             //"{notif_text}" => notif_text,

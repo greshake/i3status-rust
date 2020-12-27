@@ -1,18 +1,23 @@
+use std::collections::BTreeMap;
+use std::convert::TryInto;
 use std::time::Duration;
 
-use chrono::offset::{Local, Utc};
+use chrono::{
+    offset::{Local, Utc},
+    Locale,
+};
 use chrono_tz::Tz;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
-use crate::de::{deserialize_duration, deserialize_timezone};
+use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
+use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -23,6 +28,7 @@ pub struct Time {
     format: String,
     on_click: Option<String>,
     timezone: Option<Tz>,
+    locale: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -42,11 +48,14 @@ pub struct TimeConfig {
     #[serde(default = "TimeConfig::default_on_click")]
     pub on_click: Option<String>,
 
-    #[serde(
-        default = "TimeConfig::default_timezone",
-        deserialize_with = "deserialize_timezone"
-    )]
+    #[serde(default = "TimeConfig::default_timezone")]
     pub timezone: Option<Tz>,
+
+    #[serde(default = "TimeConfig::default_locale")]
+    pub locale: Option<String>,
+
+    #[serde(default = "TimeConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl TimeConfig {
@@ -65,6 +74,14 @@ impl TimeConfig {
     fn default_timezone() -> Option<Tz> {
         None
     }
+
+    fn default_locale() -> Option<String> {
+        None
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for Time {
@@ -75,7 +92,7 @@ impl ConfigBlock for Time {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let i = Uuid::new_v4().to_simple().to_string();
+        let i = pseudo_uuid();
         Ok(Time {
             id: i.clone(),
             format: block_config.format,
@@ -85,15 +102,30 @@ impl ConfigBlock for Time {
             update_interval: block_config.interval,
             on_click: block_config.on_click,
             timezone: block_config.timezone,
+            locale: block_config.locale,
         })
     }
 }
 
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Update>> {
-        let time = match self.timezone {
-            Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
-            None => Local::now().format(&self.format),
+        let time = match &self.locale {
+            Some(l) => {
+                let locale: Locale = l
+                    .as_str()
+                    .try_into()
+                    .block_error("time", "invalid locale")?;
+                match self.timezone {
+                    Some(tz) => Utc::now()
+                        .with_timezone(&tz)
+                        .format_localized(&self.format, locale),
+                    None => Local::now().format_localized(&self.format, locale),
+                }
+            }
+            None => match self.timezone {
+                Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
+                None => Local::now().format(&self.format),
+            },
         };
         self.time.set_text(format!("{}", time));
         Ok(Some(self.update_interval.into()))

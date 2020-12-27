@@ -1,18 +1,17 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use nix::sys::statvfs::statvfs;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, FormatTemplate};
+use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -120,6 +119,9 @@ pub struct DiskSpaceConfig {
     /// use absolute (unit) values for disk space alerts
     #[serde(default = "DiskSpaceConfig::default_alert_absolute")]
     pub alert_absolute: bool,
+
+    #[serde(default = "DiskSpaceConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl DiskSpaceConfig {
@@ -168,6 +170,10 @@ impl DiskSpaceConfig {
     fn default_alert_absolute() -> bool {
         false
     }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 enum AlertType {
@@ -212,10 +218,10 @@ impl ConfigBlock for DiskSpace {
             .icons
             .get("disk_drive")
             .cloned()
-            .expect("Could not find disk drive icon");
+            .unwrap_or_else(|| "".to_string());
 
         Ok(DiskSpace {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             disk_space: TextWidget::new(config),
             alias: block_config.alias,

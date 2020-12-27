@@ -1,18 +1,17 @@
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
+use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -68,6 +67,9 @@ pub struct TaskwarriorConfig {
     /// Format override if all tasks are completed
     #[serde(default = "TaskwarriorConfig::default_format")]
     pub format_everything_done: String,
+
+    #[serde(default = "TaskwarriorConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 enum TaskwarriorBlockMode {
@@ -97,6 +99,10 @@ impl TaskwarriorConfig {
     fn default_format() -> String {
         "{count}".to_owned()
     }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for Taskwarrior {
@@ -108,7 +114,7 @@ impl ConfigBlock for Taskwarrior {
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Taskwarrior {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid(),
             update_interval: block_config.interval,
             warning_threshold: block_config.warning_threshold,
             critical_threshold: block_config.critical_threshold,

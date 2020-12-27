@@ -1,14 +1,14 @@
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
+use std::collections::BTreeMap;
 use std::fmt;
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -211,6 +211,9 @@ pub struct MemoryConfig {
     /// Percentage of swap usage, where state is set to critical
     #[serde(default = "MemoryConfig::default_critical_swap")]
     pub critical_swap: f64,
+
+    #[serde(default = "MemoryConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl MemoryConfig {
@@ -252,6 +255,10 @@ impl MemoryConfig {
 
     fn default_critical_swap() -> f64 {
         95.0
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -330,16 +337,6 @@ impl Memory {
                 }),
         };
 
-        if_debug!({
-            let mut f = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("/tmp/i3log")
-                .block_error("memory", "can't open /tmp/i3log")?;
-            writeln!(f, "Inserted values: {:?}", values)
-                .block_error("memory", "failed to write to /tmp/i3log")?;
-        });
-
         Ok(match self.memtype {
             Memtype::Memory => self.format.0.render_static_str(&values)?,
             Memtype::Swap => self.format.1.render_static_str(&values)?,
@@ -362,7 +359,7 @@ impl ConfigBlock for Memory {
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, "memory").with_text("");
         Ok(Memory {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid(),
             memtype: block_config.display_type,
             output: if icons {
                 (
@@ -398,16 +395,6 @@ impl Block for Memory {
         let mut mem_state = Memstate::new();
 
         for line in f.lines() {
-            if_debug!({
-                let mut f = OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open("/tmp/i3log")
-                    .block_error("memory", "can't open /tmp/i3log")?;
-                writeln!(f, "Updated: {:?}", mem_state)
-                    .block_error("memory", "failed to write to /tmp/i3log")?;
-            });
-
             // stop reading if all values are already present
             if mem_state.done() {
                 break;
@@ -494,29 +481,10 @@ impl Block for Memory {
             Memtype::Swap => self.output.1.set_text(output_text),
         }
 
-        if_debug!({
-            let mut f = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("/tmp/i3log")
-                .block_error("memory", "failed to open /tmp/i3log")?;
-            writeln!(f, "Updated: {:?}", self)
-                .block_error("memory", "failed to write to /tmp/i3log")?;
-        });
         Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if_debug!({
-            let mut f = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open("/tmp/i3log")
-                .block_error("memory", "failed to open /tmp/i3log")?;
-            writeln!(f, "Click received: {:?}", event)
-                .block_error("memory", "failed to write to /tmp/i3log")?;
-        });
-
         if let Some(ref s) = event.name {
             if self.clickable && event.button == MouseButton::Left && *s == "memory" {
                 self.switch();

@@ -10,13 +10,19 @@ use std::process::Command;
 
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use serde_json::value::Value;
 
 use crate::blocks::Block;
 use crate::config::Config;
 use crate::errors::*;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
+
+pub fn pseudo_uuid() -> String {
+    let mut bytes = [0u8; 16];
+    getrandom::getrandom(&mut bytes).unwrap();
+    let uuid: String = bytes.iter().map(|&x| format!("{:02x?}", x)).collect();
+    uuid
+}
 
 pub fn escape_pango_text(text: String) -> String {
     text.chars()
@@ -30,33 +36,34 @@ pub fn escape_pango_text(text: String) -> String {
         .collect()
 }
 
-pub fn format_speed(
-    bytes_speed: u64,
-    total_digits: usize,
-    min_unit: &str,
-    use_bits: bool,
-) -> String {
-    let raw_value = if use_bits {
-        bytes_speed * 8
-    } else {
-        bytes_speed
+pub fn format_number(raw_value: f64, total_digits: usize, min_unit: &str, suffix: &str) -> String {
+    let (min_unit_value, min_unit_level) = match min_unit {
+        "T" => (raw_value / 1_000_000_000_000.0, 4),
+        "G" => (raw_value / 1_000_000_000.0, 3),
+        "M" => (raw_value / 1_000_000.0, 2),
+        "K" => (raw_value / 1_000.0, 1),
+        "1" => (raw_value, 0),
+        "m" => (raw_value * 1_000.0, -1),
+        "u" => (raw_value * 1_000_000.0, -2),
+        "n" => (raw_value * 1_000_000_000.0, -3),
+        _ => (raw_value * 1_000_000_000_000.0, -4),
     };
 
-    let (min_unit_value, min_unit_level) = match min_unit {
-        "T" => (raw_value as f64 / 1_000_000_000_000.0, 4),
-        "G" => (raw_value as f64 / 1_000_000_000.0, 3),
-        "M" => (raw_value as f64 / 1_000_000.0, 2),
-        "K" => (raw_value as f64 / 1_000.0, 1),
-        _ => (raw_value as f64, 0),
-    };
+    //println!("Min Unit:  ({}, {})", min_unit_value, min_unit_level);
 
     let (magnitude_value, magnitude_level) = match raw_value {
-        x if x > 99_999_999_999 => (raw_value as f64 / 1_000_000_000_000.0, 4),
-        x if x > 99_999_999 => (raw_value as f64 / 1_000_000_000.0, 3),
-        x if x > 99_999 => (raw_value as f64 / 1_000_000.0, 2),
-        x if x > 99 => (raw_value as f64 / 1_000.0, 1),
-        _ => (raw_value as f64, 0),
+        x if x >= 100_000_000_000.0 => (raw_value / 1_000_000_000_000.0, 4),
+        x if x >= 100_000_000.0 => (raw_value / 1_000_000_000.0, 3),
+        x if x >= 100_000.0 => (raw_value / 1_000_000.0, 2),
+        x if x >= 100.0 => (raw_value / 1_000.0, 1),
+        x if x >= 0.1 => (raw_value, 0),
+        x if x >= 0.000_1 => (raw_value * 1_000.0, -1),
+        x if x >= 0.000_000_1 => (raw_value * 1_000_000.0, -2),
+        x if x >= 0.000_000_000_1 => (raw_value * 1_000_000_000.0, -3),
+        _ => (raw_value * 1_000_000_000_000.0, -4),
     };
+
+    //println!("Magnitude: ({}, {})", magnitude_value, magnitude_level);
 
     let (value, level) = if magnitude_level < min_unit_level {
         (min_unit_value, min_unit_level)
@@ -64,22 +71,16 @@ pub fn format_speed(
         (magnitude_value, magnitude_level)
     };
 
-    let unit = if use_bits {
-        match level {
-            4 => "Tb",
-            3 => "Gb",
-            2 => "Mb",
-            1 => "Kb",
-            _ => "b",
-        }
-    } else {
-        match level {
-            4 => "TB",
-            3 => "GB",
-            2 => "MB",
-            1 => "KB",
-            _ => "B",
-        }
+    let unit = match level {
+        4 => "T",
+        3 => "G",
+        2 => "M",
+        1 => "K",
+        0 => "",
+        -1 => "m",
+        -2 => "u",
+        -3 => "n",
+        _ => "p",
     };
 
     let _decimal_precision = total_digits as i16 - if value >= 10.0 { 2 } else { 1 };
@@ -89,7 +90,7 @@ pub fn format_speed(
         _decimal_precision
     };
 
-    format!("{:.*}{}", decimal_precision as usize, value, unit)
+    format!("{:.*}{}{}", decimal_precision as usize, value, unit, suffix)
 }
 
 pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
@@ -138,15 +139,6 @@ pub fn read_file(blockname: &str, path: &Path) -> Result<String> {
     // Removes trailing newline
     content.pop();
     Ok(content)
-}
-
-#[allow(dead_code)]
-pub fn get_file(name: &str) -> Result<String> {
-    let mut file_contents = String::new();
-    let mut file = File::open(name).internal_error("util", &format!("Unable to open {}", name))?;
-    file.read_to_string(&mut file_contents)
-        .internal_error("util", &format!("Unable to read {}", name))?;
-    Ok(file_contents)
 }
 
 pub fn has_command(block_name: &str, command: &str) -> Result<bool> {
@@ -198,31 +190,30 @@ macro_rules! map_to_owned (
      };
 );
 
-struct PrintState {
-    pub last_bg: Option<String>,
-    pub has_predecessor: bool,
-}
-
-impl PrintState {
-    fn set_last_bg(&mut self, bg: String) {
-        self.last_bg = Some(bg);
-    }
-    fn set_predecessor(&mut self, pre: bool) {
-        self.has_predecessor = pre;
-    }
-}
-
 pub fn print_blocks(
     order: &[String],
     block_map: &HashMap<String, &mut dyn Block>,
     config: &Config,
 ) -> Result<()> {
-    let mut state = PrintState {
-        has_predecessor: false,
-        last_bg: None,
-    };
+    let mut last_bg: Option<String> = None;
 
-    print!("[");
+    let mut rendered_blocks = vec![];
+
+    /* To always start with the same alternating tint on the right side of the
+     * bar it is easiest to calculate the number of visible blocks here and
+     * flip the starting tint if an even number of blocks is visible. This way,
+     * the last block should always be untinted.
+     */
+    let visible_count = order
+        .iter()
+        .filter(|block_id| {
+            let block = block_map.get(block_id.as_str()).unwrap();
+            !block.view().is_empty()
+        })
+        .count();
+
+    let mut alternator = visible_count % 2 == 0;
+
     for block_id in order {
         let block = &(*(block_map
             .get(block_id)
@@ -231,58 +222,97 @@ pub fn print_blocks(
         if widgets.is_empty() {
             continue;
         }
-        let first = widgets[0];
-        let color = first.get_rendered()["background"]
+
+        // Get the final JSON from all the widgets for this block
+        let mut rendered_widgets = widgets
+            .iter()
+            .map(|widget| {
+                let mut w_json: serde_json::Value = widget.get_rendered().to_owned();
+                if alternator {
+                    // Apply tint for all widgets of every second block
+                    *w_json.get_mut("background").unwrap() = json!(add_colors(
+                        w_json["background"].as_str(),
+                        config.theme.alternating_tint_bg.as_deref()
+                    )
+                    .unwrap());
+                    *w_json.get_mut("color").unwrap() = json!(add_colors(
+                        w_json["color"].as_str(),
+                        config.theme.alternating_tint_fg.as_deref()
+                    )
+                    .unwrap());
+                }
+                w_json
+            })
+            .collect::<Vec<serde_json::Value>>();
+
+        alternator = !alternator;
+
+        if config.theme.native_separators == Some(true) {
+            // Re-add native separator on last widget for native theme
+            *rendered_widgets
+                .last_mut()
+                .unwrap()
+                .get_mut("separator")
+                .unwrap() = json!(null);
+            *rendered_widgets
+                .last_mut()
+                .unwrap()
+                .get_mut("separator_block_width")
+                .unwrap() = json!(null);
+        }
+
+        // Serialize and concatenate widgets
+        let block_str = rendered_widgets
+            .iter()
+            .map(|w| w.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+
+        if config.theme.native_separators == Some(true) {
+            // Skip separator block for native theme
+            rendered_blocks.push(block_str.to_string());
+            continue;
+        }
+
+        // The first widget's BG is used to get the FG color for the current separator
+        let first_bg = rendered_widgets.first().unwrap()["background"]
             .as_str()
             .internal_error("util", "couldn't get background color")?;
 
-        let sep_fg = if config.theme.separator_fg == "auto" {
-            color
+        let sep_fg = if config.theme.separator_fg == Some("auto".to_string()) {
+            Some(first_bg.to_string())
         } else {
-            &config.theme.separator_fg
+            config.theme.separator_fg.clone()
         };
 
-        let sep_bg = if config.theme.separator_bg == "auto" {
-            state.last_bg.clone()
+        // The separator's BG is the last block's last widget's BG
+        let sep_bg = if config.theme.separator_bg == Some("auto".to_string()) {
+            last_bg
         } else {
-            Some(config.theme.separator_bg.clone())
+            config.theme.separator_bg.clone()
         };
 
         let separator = json!({
             "full_text": config.theme.separator,
             "separator": false,
             "separator_block_width": 0,
-            "background": match sep_bg {
-                Some(bg) => Value::String(bg),
-                None => Value::Null
-            },
+            "background": sep_bg,
             "color": sep_fg,
             "markup": "pango"
         });
-        print!(
-            "{}{},",
-            if state.has_predecessor { "," } else { "" },
-            separator.to_string()
-        );
-        print!("{}", first.to_string());
-        state.set_last_bg(color.to_owned());
-        state.set_predecessor(true);
 
-        for widget in widgets.iter().skip(1) {
-            print!(
-                "{}{}",
-                if state.has_predecessor { "," } else { "" },
-                widget.to_string()
-            );
-            state.set_last_bg(String::from(
-                widget.get_rendered()["background"]
-                    .as_str()
-                    .internal_error("util", "couldn't get background color")?,
-            ));
-            state.set_predecessor(true);
-        }
+        rendered_blocks.push(format!("{},{}", separator.to_string(), block_str));
+
+        // The last widget's BG is used to get the BG color for the next separator
+        last_bg = Some(
+            rendered_widgets.last().unwrap()["background"]
+                .as_str()
+                .internal_error("util", "couldn't get background color")?
+                .to_string(),
+        );
     }
-    println!("],");
+
+    println!("[{}],", rendered_blocks.join(","));
 
     Ok(())
 }
@@ -303,6 +333,28 @@ pub fn color_to_rgba(color: (u8, u8, u8, u8)) -> String {
         "#{:02X}{:02X}{:02X}{:02X}",
         color.0, color.1, color.2, color.3
     )
+}
+
+// TODO: Allow for other non-additive tints
+pub fn add_colors(
+    a: Option<&str>,
+    b: Option<&str>,
+) -> ::std::result::Result<Option<String>, Box<dyn std::error::Error>> {
+    match (a, b) {
+        (None, _) => Ok(None),
+        (Some(a), None) => Ok(Some(a.to_string())),
+        (Some(a), Some(b)) => {
+            let (r_a, g_a, b_a, a_a) = color_from_rgba(a)?;
+            let (r_b, g_b, b_b, a_b) = color_from_rgba(b)?;
+
+            Ok(Some(color_to_rgba((
+                r_a.saturating_add(r_b),
+                g_a.saturating_add(g_b),
+                b_a.saturating_add(b_b),
+                a_a.saturating_add(a_b),
+            ))))
+        }
+    }
 }
 
 pub fn format_percent_bar(percent: f32) -> String {
@@ -364,19 +416,6 @@ where
     } else {
         (0..content.len() - 1).map(|_| bars[0]).collect::<_>()
     }
-}
-
-// TODO: Allow for other non-additive tints
-pub fn add_colors(a: &str, b: &str) -> ::std::result::Result<String, Box<dyn std::error::Error>> {
-    let (r_a, g_a, b_a, a_a) = color_from_rgba(a)?;
-    let (r_b, g_b, b_b, a_b) = color_from_rgba(b)?;
-
-    Ok(color_to_rgba((
-        r_a.saturating_add(r_b),
-        g_a.saturating_add(g_b),
-        b_a.saturating_add(b_b),
-        a_a.saturating_add(a_b),
-    )))
 }
 
 #[derive(Debug, Clone)]

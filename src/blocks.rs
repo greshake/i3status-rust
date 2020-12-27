@@ -1,3 +1,4 @@
+pub mod apt;
 pub mod backlight;
 pub mod battery;
 pub mod bluetooth;
@@ -18,6 +19,7 @@ pub mod memory;
 pub mod music;
 pub mod net;
 pub mod networkmanager;
+pub mod notify;
 #[cfg(feature = "notmuch")]
 pub mod notmuch;
 pub mod nvidia_gpu;
@@ -35,6 +37,7 @@ pub mod watson;
 pub mod weather;
 pub mod xrandr;
 
+use self::apt::*;
 use self::backlight::*;
 use self::battery::*;
 use self::bluetooth::*;
@@ -55,6 +58,7 @@ use self::memory::*;
 use self::music::*;
 use self::net::*;
 use self::networkmanager::*;
+use self::notify::*;
 #[cfg(feature = "notmuch")]
 use self::notmuch::*;
 use self::nvidia_gpu::*;
@@ -145,7 +149,34 @@ macro_rules! block {
         let block_config: <$block_type as ConfigBlock>::Config =
             <$block_type as ConfigBlock>::Config::deserialize($block_config)
                 .configuration_error("Failed to deserialize block config.")?;
-        Ok(Box::new($block_type::new(block_config, $config, $update_request)?) as Box<dyn Block>)
+        let mut main_config = $config;
+        if let Some(ref overrides) = block_config.color_overrides {
+            for entry in overrides {
+                match entry.0.as_str() {
+                    "idle_fg" => main_config.theme.idle_fg = Some(entry.1.to_string()),
+                    "idle_bg" => main_config.theme.idle_bg = Some(entry.1.to_string()),
+                    "info_fg" => main_config.theme.info_fg = Some(entry.1.to_string()),
+                    "info_bg" => main_config.theme.info_bg = Some(entry.1.to_string()),
+                    "good_fg" => main_config.theme.good_fg = Some(entry.1.to_string()),
+                    "good_bg" => main_config.theme.good_bg = Some(entry.1.to_string()),
+                    "warning_fg" => main_config.theme.warning_fg = Some(entry.1.to_string()),
+                    "warning_bg" => main_config.theme.warning_bg = Some(entry.1.to_string()),
+                    "critical_fg" => main_config.theme.critical_fg = Some(entry.1.to_string()),
+                    "critical_bg" => main_config.theme.critical_bg = Some(entry.1.to_string()),
+                    // TODO the below as well?
+                    // "separator"
+                    // "separator_bg"
+                    // "separator_fg"
+                    // "alternating_tint_bg"
+                    _ => (),
+                }
+            }
+        }
+        Ok(Box::new($block_type::new(
+            block_config,
+            main_config,
+            $update_request,
+        )?) as Box<dyn Block>)
     }};
 }
 
@@ -157,6 +188,7 @@ pub fn create_block(
 ) -> Result<Box<dyn Block>> {
     match name {
         // Please keep these in alphabetical order.
+        "apt" => block!(Apt, block_config, config, update_request),
         "backlight" => block!(Backlight, block_config, config, update_request),
         "battery" => block!(Battery, block_config, config, update_request),
         "bluetooth" => block!(Bluetooth, block_config, config, update_request),
@@ -167,6 +199,7 @@ pub fn create_block(
         "docker" => block!(Docker, block_config, config, update_request),
         "focused_window" => block!(FocusedWindow, block_config, config, update_request),
         "github" => block!(Github, block_config, config, update_request),
+        "hueshift" => block!(Hueshift, block_config, config, update_request),
         "ibus" => block!(IBus, block_config, config, update_request),
         "kdeconnect" => block!(KDEConnect, block_config, config, update_request),
         "keyboard_layout" => block!(KeyboardLayout, block_config, config, update_request),
@@ -176,6 +209,7 @@ pub fn create_block(
         "music" => block!(Music, block_config, config, update_request),
         "net" => block!(Net, block_config, config, update_request),
         "networkmanager" => block!(NetworkManager, block_config, config, update_request),
+        "notify" => block!(Notify, block_config, config, update_request),
         #[cfg(feature = "notmuch")]
         "notmuch" => block!(Notmuch, block_config, config, update_request),
         "nvidia_gpu" => block!(NvidiaGpu, block_config, config, update_request),
@@ -192,7 +226,6 @@ pub fn create_block(
         "watson" => block!(Watson, block_config, config, update_request),
         "weather" => block!(Weather, block_config, config, update_request),
         "xrandr" => block!(Xrandr, block_config, config, update_request),
-        "hueshift" => block!(Hueshift, block_config, config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
     }
 }

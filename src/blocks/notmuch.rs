@@ -1,17 +1,17 @@
+use std::collections::BTreeMap;
 use std::env;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -53,6 +53,9 @@ pub struct NotmuchConfig {
     pub name: Option<String>,
     #[serde(default = "NotmuchConfig::default_no_icon")]
     pub no_icon: bool,
+
+    #[serde(default = "NotmuchConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NotmuchConfig {
@@ -93,8 +96,13 @@ impl NotmuchConfig {
     fn default_name() -> Option<String> {
         None
     }
+
     fn default_no_icon() -> bool {
         false
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -117,7 +125,7 @@ impl ConfigBlock for Notmuch {
             widget.set_icon("mail");
         }
         Ok(Notmuch {
-            id: Uuid::new_v4().to_simple().to_string(),
+            id: pseudo_uuid().to_string(),
             update_interval: block_config.interval,
             db: block_config.maildir,
             query: block_config.query,
@@ -126,7 +134,6 @@ impl ConfigBlock for Notmuch {
             threshold_warning: block_config.threshold_warning,
             threshold_critical: block_config.threshold_critical,
             name: block_config.name,
-
             text: widget,
         })
     }

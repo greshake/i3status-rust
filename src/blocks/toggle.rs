@@ -1,20 +1,20 @@
-use crate::scheduler::Task;
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
+use std::collections::BTreeMap;
 use std::env;
 use std::process::Command;
 use std::time::Duration;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_opt_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
+use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
-
-use uuid::Uuid;
 
 pub struct Toggle {
     text: ButtonWidget,
@@ -54,6 +54,8 @@ pub struct ToggleConfig {
 
     /// Text to display in i3bar for this block
     pub text: Option<String>,
+    #[serde(default = "ToggleConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl ToggleConfig {
@@ -63,6 +65,9 @@ impl ToggleConfig {
 
     fn default_icon_off() -> String {
         "toggle_off".to_owned()
+    }
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -74,7 +79,7 @@ impl ConfigBlock for Toggle {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid();
         Ok(Toggle {
             text: ButtonWidget::new(config, &id).with_content(block_config.text),
             command_on: block_config.command_on,

@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -8,13 +9,13 @@ use dbus::blocking::LocalConnection;
 use dbus::strings::Signature;
 use dbus::tree::Factory;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -35,13 +36,22 @@ pub struct CustomDBus {
 #[serde(deny_unknown_fields)]
 pub struct CustomDBusConfig {
     pub name: String,
+
+    #[serde(default = "CustomDBusConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
+}
+
+impl CustomDBusConfig {
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for CustomDBus {
     type Config = CustomDBusConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid();
         let id_copy = id.clone();
 
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
@@ -50,6 +60,7 @@ impl ConfigBlock for CustomDBus {
             state: State::Idle,
         }));
         let status = status_original.clone();
+        let name = block_config.name;
         thread::Builder::new()
             .name("custom_dbus".into())
             .spawn(move || {
@@ -63,7 +74,7 @@ impl ConfigBlock for CustomDBus {
                 let tree = f
                     .tree(())
                     .add(
-                        f.object_path(format!("/{}", block_config.name), ())
+                        f.object_path(format!("/{}", name), ())
                             .introspectable()
                             .add(
                                 f.interface("i3.status.rs", ()).add_m(

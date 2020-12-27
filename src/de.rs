@@ -7,7 +7,6 @@ use std::time::Duration;
 
 use crate::blocks::Update;
 use chrono::{DateTime, Local};
-use chrono_tz::Tz;
 use serde::de::{self, Deserialize, DeserializeSeed, Deserializer};
 use toml::{self, value};
 
@@ -235,14 +234,6 @@ where
             Ok(combined)
         }
     }
-}
-
-pub fn deserialize_timezone<'de, D>(deserializer: D) -> Result<Option<Tz>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    Tz::from_str(&s).map(Some).map_err(de::Error::custom)
 }
 
 pub fn deserialize_local_timestamp<'de, D>(deserializer: D) -> Result<DateTime<Local>, D::Error>

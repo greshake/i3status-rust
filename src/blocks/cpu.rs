@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -5,17 +6,15 @@ use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{format_percent_bar, FormatTemplate};
+use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -74,6 +73,9 @@ pub struct CpuConfig {
     /// Compute the metrics (utilization and frequency) per core.
     #[serde(default)]
     pub per_core: bool,
+
+    #[serde(default = "CpuConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl CpuConfig {
@@ -104,6 +106,10 @@ impl CpuConfig {
     fn default_on_click() -> Option<String> {
         None
     }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for Cpu {
@@ -122,7 +128,7 @@ impl ConfigBlock for Cpu {
             block_config.format
         };
 
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid();
 
         Ok(Cpu {
             id: id.clone(),

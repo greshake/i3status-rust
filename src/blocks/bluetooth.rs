@@ -1,17 +1,17 @@
 use serde_derive::Deserialize;
+use std::collections::BTreeMap;
 use std::thread;
 use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -158,6 +158,7 @@ pub struct Bluetooth {
     id: String,
     output: ButtonWidget,
     device: BluetoothDevice,
+    hide_disconnected: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -165,13 +166,27 @@ pub struct Bluetooth {
 pub struct BluetoothConfig {
     pub mac: String,
     pub label: Option<String>,
+    #[serde(default = "BluetoothConfig::default_hide_disconnected")]
+    pub hide_disconnected: bool,
+    #[serde(default = "BluetoothConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
+}
+
+impl BluetoothConfig {
+    fn default_hide_disconnected() -> bool {
+        false
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for Bluetooth {
     type Config = BluetoothConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid();
         let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
         device.monitor(id.clone(), send);
 
@@ -185,6 +200,7 @@ impl ConfigBlock for Bluetooth {
                 _ => "bluetooth",
             }),
             device,
+            hide_disconnected: block_config.hide_disconnected,
         })
     }
 }
@@ -228,6 +244,10 @@ impl Block for Bluetooth {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
+        if !self.device.connected() && self.hide_disconnected {
+            vec![]
+        } else {
+            vec![&self.output]
+        }
     }
 }

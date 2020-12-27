@@ -7,6 +7,7 @@
 //! brightness levels using `xrandr`, see the
 //! [`Xrandr`](../xrandr/struct.Xrandr.html) block.
 
+use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -16,14 +17,13 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -47,12 +47,22 @@ fn read_brightness(device_file: &Path) -> Result<u64> {
 pub struct BacklitDevice {
     max_brightness: u64,
     device_path: PathBuf,
+    root_scaling: f64,
+}
+
+/// Clamp scale root to a safe range. Useful values are 1.0 to 3.0.
+fn clamp_root_scaling(root_scaling: f64) -> f64 {
+    if 0.1 < root_scaling && root_scaling < 10.0 {
+        root_scaling
+    } else {
+        1.0
+    }
 }
 
 impl BacklitDevice {
     /// Use the default backlit device, i.e. the first one found in the
     /// `/sys/class/backlight` directory.
-    pub fn default() -> Result<Self> {
+    pub fn default(root_scaling: f64) -> Result<Self> {
         let devices = Path::new("/sys/class/backlight")
             .read_dir() // Iterate over entries in the directory.
             .block_error("backlight", "Failed to read backlight device directory")?;
@@ -75,12 +85,13 @@ impl BacklitDevice {
         Ok(BacklitDevice {
             max_brightness,
             device_path: first_device.path(),
+            root_scaling: clamp_root_scaling(root_scaling),
         })
     }
 
     /// Use the backlit device `device`. Returns an error if a directory for
     /// that device is not found.
-    pub fn from_device(device: String) -> Result<Self> {
+    pub fn from_device(device: String, root_scaling: f64) -> Result<Self> {
         let device_path = Path::new("/sys/class/backlight").join(device);
         if !device_path.exists() {
             return Err(BlockError(
@@ -97,13 +108,16 @@ impl BacklitDevice {
         Ok(BacklitDevice {
             max_brightness,
             device_path,
+            root_scaling: clamp_root_scaling(root_scaling),
         })
     }
 
     /// Query the brightness value for this backlit device, as a percent.
     pub fn brightness(&self) -> Result<u64> {
         let raw = read_brightness(&self.brightness_file())?;
-        let brightness = ((raw as f64 / self.max_brightness as f64) * 100.0).round() as u64;
+        let brightness_ratio =
+            (raw as f64 / self.max_brightness as f64).powf(self.root_scaling.recip());
+        let brightness = (brightness_ratio * 100.0).round() as u64;
         match brightness {
             0..=100 => Ok(brightness),
             _ => Ok(100),
@@ -116,7 +130,8 @@ impl BacklitDevice {
             0..=100 => value,
             _ => 100,
         };
-        let raw = (((safe_value as f64) / 100.0) * (self.max_brightness as f64)).round() as u64;
+        let ratio = (safe_value as f64 / 100.0).powf(self.root_scaling);
+        let raw = std::cmp::max(1, (ratio * (self.max_brightness as f64)).round() as u64);
 
         let file = OpenOptions::new()
             .write(true)
@@ -191,6 +206,19 @@ pub struct BacklightConfig {
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
     #[serde(default = "BacklightConfig::default_step_width")]
     pub step_width: u64,
+
+    /// Scaling exponent reciprocal (ie. root). Some devices expose raw values
+    /// that are best handled with nonlinear scaling. The human perception of
+    /// lightness is close to the cube root of relative luminance. Settings
+    /// between 2.4 and 3.0 are worth trying.
+    /// More information: <https://en.wikipedia.org/wiki/Lightness>
+    ///
+    /// For devices with few discrete steps this should be 1.0 (linear).
+    #[serde(default = "BacklightConfig::default_root_scaling")]
+    pub root_scaling: f64,
+
+    #[serde(default = "BacklightConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl BacklightConfig {
@@ -200,6 +228,14 @@ impl BacklightConfig {
 
     fn default_step_width() -> u64 {
         5
+    }
+
+    fn default_root_scaling() -> f64 {
+        1f64
+    }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
     }
 }
 
@@ -212,11 +248,11 @@ impl ConfigBlock for Backlight {
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let device = match block_config.device {
-            Some(path) => BacklitDevice::from_device(path),
-            None => BacklitDevice::default(),
+            Some(path) => BacklitDevice::from_device(path, block_config.root_scaling),
+            None => BacklitDevice::default(block_config.root_scaling),
         }?;
 
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid();
         let brightness_file = device.brightness_file();
 
         let scrolling = config.scrolling;

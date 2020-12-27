@@ -4,6 +4,7 @@
 //! display the status, capacity, and time remaining for (dis)charge for an
 //! internal power supply.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -12,16 +13,16 @@ use crossbeam_channel::Sender;
 use dbus::arg::Array;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
+use crate::util::{
+    battery_level_to_icon, format_percent_bar, pseudo_uuid, read_file, FormatTemplate,
+};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::text::TextWidget;
 
 /// A battery device can be queried for a few properties relevant to the user.
@@ -569,6 +570,9 @@ pub struct BatteryConfig {
     /// If the battery device cannot be found, completely hide this block.
     #[serde(default = "BatteryConfig::default_hide_missing")]
     pub hide_missing: bool,
+
+    #[serde(default = "BatteryConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl BatteryConfig {
@@ -619,6 +623,10 @@ impl BatteryConfig {
     fn default_hide_missing() -> bool {
         false
     }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for Battery {
@@ -649,7 +657,7 @@ impl ConfigBlock for Battery {
             _ => BatteryDriver::Sysfs,
         };
 
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid();
         let device: Box<dyn BatteryDevice> = match driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
@@ -726,7 +734,7 @@ impl Block for Battery {
         let time = match self.device.time_remaining() {
             Ok(time) => match time {
                 0 => "".into(),
-                _ => format!("{}:{:02}", time / 60, time % 60),
+                _ => format!("{}:{:02}", std::cmp::min(time / 60, 99), time % 60),
             },
             Err(_) => "×".into(),
         };
@@ -745,6 +753,7 @@ impl Block for Battery {
             self.output
                 .set_text(self.full_format.render_static_str(&values)?);
             self.output.set_state(State::Good);
+            self.output.set_spacing(Spacing::Hidden);
         } else {
             self.output
                 .set_text(self.format.render_static_str(&values)?);
@@ -780,6 +789,7 @@ impl Block for Battery {
                 "Charging" => "bat_charging",
                 _ => battery_level_to_icon(capacity),
             });
+            self.output.set_spacing(Spacing::Normal);
         }
 
         match self.driver {

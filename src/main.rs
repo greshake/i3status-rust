@@ -26,7 +26,7 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::time::Duration;
 
-use clap::{crate_authors, crate_description, crate_version, App, Arg, ArgMatches};
+use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
 
 use crate::blocks::create_block;
@@ -40,8 +40,18 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
 fn main() {
+    let ver = if env!("GIT_COMMIT_HASH").is_empty() || env!("GIT_COMMIT_DATE").is_empty() {
+        env!("CARGO_PKG_VERSION").to_string()
+    } else {
+        format!(
+            "{} (commit {} {})",
+            env!("CARGO_PKG_VERSION"),
+            env!("GIT_COMMIT_HASH"),
+            env!("GIT_COMMIT_DATE")
+        )
+    };
     let mut builder = App::new("i3status-rs")
-        .version(crate_version!())
+        .version(&*ver)
         .author(crate_authors!())
         .about(crate_description!())
         .arg(
@@ -149,59 +159,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Ok(());
     }
 
-    let mut config_alternating_tint = config.clone();
-    {
-        let tint_bg = &config.theme.alternating_tint_bg;
-        config_alternating_tint.theme.idle_bg =
-            util::add_colors(&config_alternating_tint.theme.idle_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.info_bg =
-            util::add_colors(&config_alternating_tint.theme.info_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.good_bg =
-            util::add_colors(&config_alternating_tint.theme.good_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.warning_bg =
-            util::add_colors(&config_alternating_tint.theme.warning_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.critical_bg =
-            util::add_colors(&config_alternating_tint.theme.critical_bg, tint_bg)
-                .configuration_error("can't parse alternative_tint color code")?;
-
-        let tint_fg = &config.theme.alternating_tint_fg;
-        config_alternating_tint.theme.idle_fg =
-            util::add_colors(&config_alternating_tint.theme.idle_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.info_fg =
-            util::add_colors(&config_alternating_tint.theme.info_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.good_fg =
-            util::add_colors(&config_alternating_tint.theme.good_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.warning_fg =
-            util::add_colors(&config_alternating_tint.theme.warning_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.critical_fg =
-            util::add_colors(&config_alternating_tint.theme.critical_fg, tint_fg)
-                .configuration_error("can't parse alternative_tint color code")?;
-    }
-
-    let mut blocks: Vec<Box<dyn Block>> = Vec::new();
-
-    let mut alternator = false;
     // Initialize the blocks
+    let mut blocks: Vec<Box<dyn Block>> = Vec::new();
     for &(ref block_name, ref block_config) in &config.blocks {
         blocks.push(create_block(
             block_name,
             block_config.clone(),
-            if alternator {
-                config_alternating_tint.clone()
-            } else {
-                config.clone()
-            },
+            config.clone(),
             tx_update_requests.clone(),
         )?);
-        alternator = !alternator;
     }
 
     // We save the order of the blocks here,
@@ -267,6 +233,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         for block in block_map.values_mut() {
                             block.update()?;
                         }
+                        util::print_blocks(&order, &block_map, &config)?;
                     },
                     signal_hook::SIGUSR2 => {
                         //USR2 signal that should reload the config
@@ -281,7 +248,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         }
                     },
                 };
-                util::print_blocks(&order, &block_map, &config)?;
             }
         }
 

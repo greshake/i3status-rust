@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -6,12 +7,12 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 use swayipc::reply::{Event, Node, WindowChange, WorkspaceChange};
 use swayipc::{Connection, EventType};
-use uuid::Uuid;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
+use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -42,6 +43,9 @@ pub struct FocusedWindowConfig {
     /// Show marks in place of title (if exist)
     #[serde(default = "FocusedWindowConfig::default_show_marks")]
     pub show_marks: MarksType,
+
+    #[serde(default = "FocusedWindowConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl FocusedWindowConfig {
@@ -52,13 +56,17 @@ impl FocusedWindowConfig {
     fn default_show_marks() -> MarksType {
         MarksType::None
     }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for FocusedWindow {
     type Config = FocusedWindowConfig;
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let id = Uuid::new_v4().to_simple().to_string();
+        let id = pseudo_uuid();
         let id_clone = id.clone();
 
         let title = Arc::new(Mutex::new(String::from("")));

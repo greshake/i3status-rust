@@ -34,6 +34,8 @@ Stable releases are packaged on some distributions:
 
 * On NixOS: `nix-env -iA nixos.i3status-rust`
 
+* With [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.html#opt-programs.i3status-rust.enable) 
+
 Otherwise, you can install from source:
 
 ```shell
@@ -54,7 +56,8 @@ $ cp target/release/i3status-rs ~/bin/i3status-rs
 ## Configuration
 
 After installing `i3status-rust`, you need to create a configuration file.
-Edit the [example configuration](https://raw.githubusercontent.com/greshake/i3status-rust/master/example_config.toml) to your liking and put it to a sensible place, such as `~/.config/i3/status.toml`.
+Edit the [example configuration](https://raw.githubusercontent.com/greshake/i3status-rust/master/example_config.toml) to your liking.
+The default location is `$XDG_CONFIG_HOME/i3status-rust/config.toml`.
 
 There are some top-level configuration variables:
 
@@ -63,7 +66,7 @@ Key | Description | Required | Default
 `icons` | The icon set that should be used. Possible values are `none`, `awesome`, `awesome5` and `material`. Check [themes.md](https://github.com/greshake/i3status-rust/blob/master/themes.md) for more information | No | `none`
 `theme` | The predefined theme that should be used. You can also add your own overrides. Check [themes.md](https://github.com/greshake/i3status-rust/blob/master/themes.md) for all available themes. | No | `plain`
 `scrolling` | The direction of scrolling, either `natural` or `reverse` | No | `natural`
-`block` | All blocks that will exist in your i3bar. Check [blocks.md](https://github.com/greshake/i3status-rust/blob/master/blocks.md) for all blocks and their parameters. Don't forget about the [example configuration](https://raw.githubusercontent.com/greshake/i3status-rust/master/example_config.toml). | No | none
+`block` | All blocks that will exist in your i3bar. Check [blocks.md](https://github.com/greshake/i3status-rust/blob/master/blocks.md) for all blocks and their parameters. | No | none
 
 ## Integrate it into i3
 

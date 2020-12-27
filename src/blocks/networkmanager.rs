@@ -1,7 +1,6 @@
-use std::ffi::OsStr;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::net::Ipv4Addr;
-use std::process::Command;
 use std::result;
 use std::thread;
 use std::time::Instant;
@@ -15,16 +14,15 @@ use dbus::{
 };
 use regex::Regex;
 use serde_derive::Deserialize;
-use uuid::Uuid;
 
-use crate::blocks::Update;
-use crate::blocks::{Block, ConfigBlock};
+use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, State};
+use crate::subprocess::spawn_child_async;
+use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
 enum NetworkState {
@@ -495,6 +493,9 @@ pub struct NetworkManagerConfig {
     /// Interface name regex patterns to ignore.
     #[serde(default = "NetworkManagerConfig::default_interface_name_exclude_patterns")]
     pub interface_name_include: Vec<String>,
+
+    #[serde(default = "NetworkManagerConfig::default_color_overrides")]
+    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NetworkManagerConfig {
@@ -529,13 +530,17 @@ impl NetworkManagerConfig {
     fn default_interface_name_exclude_patterns() -> Vec<String> {
         vec![]
     }
+
+    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
+        None
+    }
 }
 
 impl ConfigBlock for NetworkManager {
     type Config = NetworkManagerConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = Uuid::new_v4().to_simple().to_string();
+        let id: String = pseudo_uuid();
         let id_copy = id.clone();
         let dbus_conn = Connection::get_private(BusType::System)
             .block_error("networkmanager", "failed to establish D-Bus connection")?;
@@ -654,7 +659,9 @@ impl Block for NetworkManager {
                 connections
                     .into_iter()
                     .filter_map(|conn| {
-                        let mut widget = ButtonWidget::new(self.config.clone(), &self.id);
+                        // inline spacing for no leading space, because the icon is set in the string
+                        let mut widget = ButtonWidget::new(self.config.clone(), &self.id)
+                            .with_spacing(Spacing::Inline);
 
                         // Set the state for this connection
                         widget.set_state(if let Ok(conn_state) = conn.state(&self.dbus_conn) {
@@ -817,11 +824,8 @@ impl Block for NetworkManager {
             if name.as_str() == self.id {
                 if let MouseButton::Left = e.button {
                     if let Some(ref cmd) = self.on_click {
-                        let command_broken: Vec<&str> = cmd.split_whitespace().collect();
-                        let mut itr = command_broken.iter();
-                        let mut _cmd = Command::new(OsStr::new(&itr.next().unwrap()))
-                            .args(itr)
-                            .spawn();
+                        spawn_child_async("sh", &["-c", cmd])
+                            .block_error("networkmanager", "could not spawn child")?;
                     }
                 }
             }

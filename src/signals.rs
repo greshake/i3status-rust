@@ -36,7 +36,7 @@ pub fn convert_to_valid_signal(signal: i32) -> Result<i32> {
     if signal < 0 || signal > sigmax - sigmin {
         //NOTE If some important information is encoded in the third field of this error this might
         //need to be added
-        return Err(Error::ConfigurationError(
+        Err(Error::ConfigurationError(
             format!(
             "A provided signal was out of bounds. An allowed signal needs to be between {} and {}",
             0,
@@ -51,9 +51,9 @@ pub fn convert_to_valid_signal(signal: i32) -> Result<i32> {
                 ),
                 String::new(),
             ),
-        ));
+        ))
     } else {
-        return Ok(signal + sigmin);
+        Ok(signal + sigmin)
     }
 }
 
