@@ -1152,10 +1152,67 @@ where
 #[inline]
 fn maybe_ssid_convert(raw: Option<&[u8]>) -> Result<Option<String>> {
     if let Some(raw_ssid) = raw {
-        String::from_utf8(raw_ssid.to_vec())
+        String::from_utf8(decode_escaped_unicode(raw_ssid))
             .block_error("net", "Non-UTF8 SSID")
             .map(Some)
     } else {
         Ok(None)
+    }
+}
+
+fn decode_escaped_unicode(raw: &[u8]) -> Vec<u8> {
+    let mut result: Vec<u8> = Vec::new();
+
+    let mut idx = 0;
+    while idx < raw.len() {
+        if raw[idx] == b'\\' {
+            idx += 2; // skip "\x"
+
+            let hex = std::str::from_utf8(&raw[idx..idx + 2]).unwrap();
+            result.extend(Some(u8::from_str_radix(hex, 16).unwrap()));
+            idx += 2;
+        } else {
+            result.extend(Some(&raw[idx]));
+            idx += 1;
+        }
+    }
+
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::blocks::net::maybe_ssid_convert;
+
+    #[test]
+    fn test_ssid_decode_escaped_unicode() {
+        assert_eq!(
+            maybe_ssid_convert(Some(r"\xc4\x85\xc5\xbeuolas".as_bytes())).unwrap(),
+            Some("ąžuolas".to_string())
+        );
+    }
+
+    #[test]
+    fn test_ssid_decode_escaped_emoji() {
+        assert_eq!(
+            maybe_ssid_convert(Some(r"\xf0\x9f\x8c\xb3oak".as_bytes())).unwrap(),
+            Some("🌳oak".to_string())
+        );
+    }
+
+    #[test]
+    fn test_ssid_decode_legit_backslash() {
+        assert_eq!(
+            maybe_ssid_convert(Some(r"\x5cx backslash".as_bytes())).unwrap(),
+            Some(r"\x backslash".to_string())
+        );
+    }
+
+    #[test]
+    fn test_ssid_decode_surrounded_by_spaces() {
+        assert_eq!(
+            maybe_ssid_convert(Some(r"\x20surrounded by spaces\x20".as_bytes())).unwrap(),
+            Some(r" surrounded by spaces ".to_string())
+        );
     }
 }
