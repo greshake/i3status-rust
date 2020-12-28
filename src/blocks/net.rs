@@ -1207,4 +1207,12 @@ mod tests {
             Some(r"\x backslash".to_string())
         );
     }
+
+    #[test]
+    fn test_ssid_decode_surrounded_by_spaces() {
+        assert_eq!(
+            maybe_ssid_convert(Some(r"\x20surrounded by spaces\x20".as_bytes())).unwrap(),
+            Some(r" surrounded by spaces ".to_string())
+        );
+    }
 }
