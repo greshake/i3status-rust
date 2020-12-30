@@ -266,10 +266,16 @@ impl NetworkDevice {
 
         let ip = ip_devs
             .iter()
+            .filter(|dev| dev.addr_info.is_some())
             .flat_map(|dev| &dev.addr_info)
+            .flatten()
             .filter_map(|addr| addr.local.clone())
             .next();
-        Ok(ip)
+
+        Ok(match ip {
+            Some(addr) => Some(addr),
+            _ => Some("".to_string()),
+        })
     }
 
     /// Queries the inet IPv6 of this device (using `ip`).
@@ -295,10 +301,16 @@ impl NetworkDevice {
 
         let ip = ip_devs
             .iter()
+            .filter(|dev| dev.addr_info.is_some())
             .flat_map(|dev| &dev.addr_info)
+            .flatten()
             .filter_map(|addr| addr.local.clone())
             .next();
-        Ok(ip)
+
+        Ok(match ip {
+            Some(addr) => Some(addr),
+            _ => Some("".to_string()),
+        })
     }
 
     /// Queries the bitrate of this device
@@ -1000,7 +1012,7 @@ impl Block for Net {
 
 #[derive(Deserialize)]
 struct IpDev {
-    addr_info: Vec<IpAddrInfo>,
+    addr_info: Option<Vec<IpAddrInfo>>,
 }
 
 #[derive(Deserialize)]
