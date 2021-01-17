@@ -14,9 +14,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
 use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
@@ -26,7 +24,6 @@ pub struct Time {
     id: String,
     update_interval: Duration,
     format: String,
-    on_click: Option<String>,
     timezone: Option<Tz>,
     locale: Option<String>,
 }
@@ -45,9 +42,6 @@ pub struct TimeConfig {
     )]
     pub interval: Duration,
 
-    #[serde(default = "TimeConfig::default_on_click")]
-    pub on_click: Option<String>,
-
     #[serde(default = "TimeConfig::default_timezone")]
     pub timezone: Option<Tz>,
 
@@ -65,10 +59,6 @@ impl TimeConfig {
 
     fn default_interval() -> Duration {
         Duration::from_secs(5)
-    }
-
-    fn default_on_click() -> Option<String> {
-        None
     }
 
     fn default_timezone() -> Option<Tz> {
@@ -100,7 +90,6 @@ impl ConfigBlock for Time {
                 .with_text("")
                 .with_icon("time"),
             update_interval: block_config.interval,
-            on_click: block_config.on_click,
             timezone: block_config.timezone,
             locale: block_config.locale,
         })
@@ -129,20 +118,6 @@ impl Block for Time {
         };
         self.time.set_text(format!("{}", time));
         Ok(Some(self.update_interval.into()))
-    }
-
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                if let MouseButton::Left = e.button {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("time", "could not spawn child")?;
-                    }
-                }
-            }
-        }
-        Ok(())
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

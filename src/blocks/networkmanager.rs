@@ -18,9 +18,7 @@ use serde_derive::Deserialize;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
 use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
@@ -450,7 +448,6 @@ pub struct NetworkManager {
     dbus_conn: Connection,
     manager: ConnectionManager,
     config: Config,
-    on_click: Option<String>,
     primary_only: bool,
     max_ssid_width: usize,
     ap_format: FormatTemplate,
@@ -463,9 +460,6 @@ pub struct NetworkManager {
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct NetworkManagerConfig {
-    #[serde(default = "NetworkManagerConfig::default_on_click")]
-    pub on_click: Option<String>,
-
     /// Whether to only show the primary connection, or all active connections.
     #[serde(default = "NetworkManagerConfig::default_primary_only")]
     pub primary_only: bool,
@@ -499,10 +493,6 @@ pub struct NetworkManagerConfig {
 }
 
 impl NetworkManagerConfig {
-    fn default_on_click() -> Option<String> {
-        None
-    }
-
     fn default_primary_only() -> bool {
         false
     }
@@ -586,7 +576,6 @@ impl ConfigBlock for NetworkManager {
             output: Vec::new(),
             dbus_conn,
             manager,
-            on_click: block_config.on_click,
             primary_only: block_config.primary_only,
             max_ssid_width: block_config.max_ssid_width,
             ap_format: FormatTemplate::from_string(&block_config.ap_format)?,
@@ -817,20 +806,5 @@ impl Block for NetworkManager {
         } else {
             self.output.iter().map(|x| x as &dyn I3BarWidget).collect()
         }
-    }
-
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                if let MouseButton::Left = e.button {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("networkmanager", "could not spawn child")?;
-                    }
-                }
-            }
-        }
-
-        Ok(())
     }
 }
