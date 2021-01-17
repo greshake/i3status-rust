@@ -1,5 +1,6 @@
 pub mod apt;
 pub mod backlight;
+pub mod base_block;
 pub mod battery;
 pub mod bluetooth;
 pub mod cpu;
@@ -39,6 +40,7 @@ pub mod xrandr;
 
 use self::apt::*;
 use self::backlight::*;
+use self::base_block::*;
 use self::battery::*;
 use self::bluetooth::*;
 use self::cpu::*;
@@ -146,11 +148,12 @@ pub trait ConfigBlock: Block {
 
 macro_rules! block {
     ($block_type:ident, $block_config:expr, $config:expr, $update_request:expr) => {{
-        let block_config: <$block_type as ConfigBlock>::Config =
-            <$block_type as ConfigBlock>::Config::deserialize($block_config)
+        let block_config: BaseBlockConfig<<$block_type as ConfigBlock>::Config> =
+            BaseBlockConfig::<<$block_type as ConfigBlock>::Config>::deserialize($block_config)
                 .configuration_error("Failed to deserialize block config.")?;
+
         let mut main_config = $config;
-        if let Some(ref overrides) = block_config.color_overrides {
+        if let Some(ref overrides) = block_config.inner.color_overrides {
             for entry in overrides {
                 match entry.0.as_str() {
                     "idle_fg" => main_config.theme.idle_fg = Some(entry.1.to_string()),
@@ -172,11 +175,13 @@ macro_rules! block {
                 }
             }
         }
-        Ok(Box::new($block_type::new(
-            block_config,
-            main_config,
-            $update_request,
-        )?) as Box<dyn Block>)
+
+        let block = $block_type::new(block_config.inner, main_config, $update_request)?;
+        Ok(Box::new(BaseBlock {
+            name: stringify!($block_type).to_string(),
+            inner: block,
+            on_click: block_config.on_click,
+        }) as Box<dyn Block>)
     }};
 }
 
