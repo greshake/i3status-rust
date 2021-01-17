@@ -129,9 +129,10 @@ impl ConfigBlock for CustomDBus {
             })
             .unwrap();
 
+        let text = TextWidget::new(config, &id_copy).with_text("CustomDBus");
         Ok(CustomDBus {
             id: id_copy,
-            text: TextWidget::new(config).with_text("CustomDBus"),
+            text,
             status,
         })
     }

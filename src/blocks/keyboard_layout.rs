@@ -492,9 +492,10 @@ impl ConfigBlock for KeyboardLayout {
         } else {
             None
         };
+        let output = TextWidget::new(config, &id);
         Ok(KeyboardLayout {
             id,
-            output: TextWidget::new(config),
+            output,
             monitor,
             update_interval,
             format: FormatTemplate::from_string(&block_config.format).block_error(

@@ -217,9 +217,10 @@ impl ConfigBlock for IBus {
             })
             .unwrap();
 
+        let text = TextWidget::new(config, &id_copy).with_text("IBus");
         Ok(IBus {
             id: id_copy,
-            text: TextWidget::new(config).with_text("IBus"),
+            text,
             engine: engine_original,
             mappings: block_config.mappings,
             format: FormatTemplate::from_string(&block_config.format)?,

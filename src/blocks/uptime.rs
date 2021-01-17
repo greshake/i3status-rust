@@ -56,10 +56,13 @@ impl ConfigBlock for Uptime {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let id = pseudo_uuid();
+        let text = TextWidget::new(config.clone(), &id).with_icon("uptime");
+
         Ok(Uptime {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            text: TextWidget::new(config.clone()).with_icon("uptime"),
+            text,
             tx_update_request,
             config,
         })
