@@ -161,6 +161,7 @@ impl RotatingTextWidget {
                                 }),
             "separator": false,
             "separator_block_width": 0,
+            "name" : self.id,
             "min_width":
                 if self.content == "" {
                     "".to_string()
