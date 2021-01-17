@@ -144,11 +144,15 @@ pub trait ConfigBlock: Block {
     ) -> Result<Self>
     where
         Self: Sized;
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        None
+    }
 }
 
 macro_rules! block {
     ($block_type:ident, $block_config:expr, $config:expr, $update_request:expr) => {{
-        let block_config: BaseBlockConfig<<$block_type as ConfigBlock>::Config> =
+        let mut block_config: BaseBlockConfig<<$block_type as ConfigBlock>::Config> =
             BaseBlockConfig::<<$block_type as ConfigBlock>::Config>::deserialize($block_config)
                 .configuration_error("Failed to deserialize block config.")?;
 
@@ -176,7 +180,11 @@ macro_rules! block {
             }
         }
 
-        let block = $block_type::new(block_config.inner, main_config, $update_request)?;
+        let mut block = $block_type::new(block_config.inner, main_config, $update_request)?;
+        if let Some(overrided) = block.override_on_click() {
+            *overrided = block_config.on_click.take();
+        }
+
         Ok(Box::new(BaseBlock {
             name: stringify!($block_type).to_string(),
             inner: block,

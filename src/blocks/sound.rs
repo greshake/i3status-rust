@@ -754,9 +754,6 @@ pub struct SoundConfig {
     #[serde(default = "SoundConfig::default_format")]
     pub format: String,
 
-    #[serde(default = "SoundConfig::default_on_click")]
-    pub on_click: Option<String>,
-
     #[serde(default = "SoundConfig::default_show_volume_when_muted")]
     pub show_volume_when_muted: bool,
 
@@ -808,10 +805,6 @@ impl SoundConfig {
 
     fn default_format() -> String {
         "{volume}%".into()
-    }
-
-    fn default_on_click() -> Option<String> {
-        None
     }
 
     fn default_show_volume_when_muted() -> bool {
@@ -951,7 +944,7 @@ impl ConfigBlock for Sound {
             format: FormatTemplate::from_string(&block_config.format)?,
             step_width,
             config,
-            on_click: block_config.on_click,
+            on_click: None,
             show_volume_when_muted: block_config.show_volume_when_muted,
             bar: block_config.bar,
             mappings: block_config.mappings,
@@ -961,6 +954,10 @@ impl ConfigBlock for Sound {
         sound.device.monitor(id, tx_update_request)?;
 
         Ok(sound)
+    }
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        Some(&mut self.on_click)
     }
 }
 

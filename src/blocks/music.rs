@@ -200,9 +200,6 @@ pub struct MusicConfig {
     #[serde(default = "MusicConfig::default_on_collapsed_click")]
     pub on_collapsed_click: Option<String>,
 
-    #[serde(default = "MusicConfig::default_on_click")]
-    pub on_click: Option<String>,
-
     // Number of microseconds to seek forward/backward when scrolling on the bar.
     #[serde(default = "MusicConfig::default_seek_step")]
     pub seek_step: i64,
@@ -256,10 +253,6 @@ impl MusicConfig {
     }
 
     fn default_on_collapsed_click() -> Option<String> {
-        None
-    }
-
-    fn default_on_click() -> Option<String> {
         None
     }
 
@@ -545,7 +538,7 @@ impl ConfigBlock for Music {
             prev,
             play,
             next,
-            on_click: block_config.on_click,
+            on_click: None,
             on_collapsed_click_widget: ButtonWidget::new(config.clone(), &id_collapsed)
                 .with_icon("music")
                 .with_state(State::Info)
@@ -565,6 +558,10 @@ impl ConfigBlock for Music {
             send: send3,
             format: FormatTemplate::from_string(&block_config.format)?,
         })
+    }
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        Some(&mut self.on_click)
     }
 }
 

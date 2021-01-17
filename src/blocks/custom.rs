@@ -48,9 +48,6 @@ pub struct CustomConfig {
     /// Shell Command to execute & display
     pub command: Option<String>,
 
-    /// Command to execute when the button is clicked
-    pub on_click: Option<String>,
-
     /// Commands to execute and change when the button is clicked
     pub cycle: Option<Vec<String>>,
 
@@ -112,10 +109,6 @@ impl ConfigBlock for Custom {
         };
         custom.output = ButtonWidget::new(config, &custom.id);
 
-        if let Some(on_click) = block_config.on_click {
-            custom.on_click = Some(on_click)
-        };
-
         if let Some(signal) = block_config.signal {
             // If the signal is not in the valid range we return an error
             custom.signal = Some(convert_to_valid_signal(signal)?);
@@ -138,6 +131,10 @@ impl ConfigBlock for Custom {
         };
 
         Ok(custom)
+    }
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        Some(&mut self.on_click)
     }
 }
 
