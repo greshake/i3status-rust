@@ -25,6 +25,7 @@
 - [Notmuch](#notmuch)
 - [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
+- [PiHole](#pihole)
 - [Pomodoro](#pomodoro)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
@@ -1187,6 +1188,32 @@ Key | Value
 `{pacman}`| Number of updates available according to `pacman`
 `{aur}` | Number of updates available according to `<aur_command>`
 `{both}` | Cumulative number of updates available according to `pacman` and `<aur_command>` 
+
+###### [↥ back to top](#list-of-available-blocks)
+
+## PiHole
+
+Creates a block which displays pi-hole status (up/down) together with the number of ads that were blocked today
+
+#### Examples
+
+Update pi-hole status and the number of ads blocked every 60 seconds:
+
+```toml
+[[block]]
+block = "pihole"
+interval = 60
+address = "http://pi.hole"
+pwhash = "<pihole password hash>"
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`address` | pi-hole address (e.q: http://pi.hole) | No | http://pi.hole
+`pwhash` | pi-hole webinterface password hash (can be obtained from the /etc/pihole/setupVars.conf file) | Yes | None
+`interval` | Update interval in seconds. | No | `60`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
