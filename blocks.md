@@ -1322,7 +1322,7 @@ format_singular = "{count} open task"
 format_everything_done = "nothing to do!"
 warning_threshold = 10
 critical_threshold = 20
-filter_tags = ["work", "important"]
+filter = "+work +important"
 ```
 
 #### Options
@@ -1332,7 +1332,8 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `600` (10min)
 `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
 `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
-`filter_tags` | A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
+`filter_tags` | Deprecated in favour of `filter`. A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
+`filter` | A filter that a task has to match to be counted as a pending task. | No | ```<empty```
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{count}"`
 `format_singular` | Same as `format` but for when exactly one task is pending. | No | `"{count}"`
 `format_everything_done` | Same as `format` but for when all tasks are completed. | No | `"{count}"`

@@ -21,7 +21,7 @@ pub struct Taskwarrior {
     update_interval: Duration,
     warning_threshold: u32,
     critical_threshold: u32,
-    filter_tags: Vec<String>,
+    filter: String,
     block_mode: TaskwarriorBlockMode,
     format: FormatTemplate,
     format_singular: FormatTemplate,
@@ -53,8 +53,13 @@ pub struct TaskwarriorConfig {
     pub critical_threshold: u32,
 
     /// A list of tags a task has to have before it's used for counting pending tasks
+    /// (DEPRECATED) use filter instead
     #[serde(default = "TaskwarriorConfig::default_filter_tags")]
     pub filter_tags: Vec<String>,
+
+    /// The search criteria that matching tasks must have to be counted
+    #[serde(default = "TaskwarriorConfig::default_filter")]
+    pub filter: String,
 
     /// Format override
     #[serde(default = "TaskwarriorConfig::default_format")]
@@ -96,6 +101,10 @@ impl TaskwarriorConfig {
         vec![]
     }
 
+    fn default_filter() -> String {
+        String::new()
+    }
+
     fn default_format() -> String {
         "{count}".to_owned()
     }
@@ -123,7 +132,11 @@ impl ConfigBlock for Taskwarrior {
             update_interval: block_config.interval,
             warning_threshold: block_config.warning_threshold,
             critical_threshold: block_config.critical_threshold,
-            filter_tags: block_config.filter_tags,
+            filter: if block_config.filter_tags.len() > 0 {
+                tags_to_filter(&block_config.filter_tags)
+            } else {
+                block_config.filter
+            },
             block_mode: TaskwarriorBlockMode::OnlyFilteredPendingTasks,
             output,
             format: FormatTemplate::from_string(&block_config.format).block_error(
@@ -171,14 +184,14 @@ fn tags_to_filter(tags: &[String]) -> String {
         .join(" ")
 }
 
-fn get_number_of_pending_tasks(tags: &[String]) -> Result<u32> {
+fn get_number_of_pending_tasks(filter: &str) -> Result<u32> {
     String::from_utf8(
         Command::new("sh")
             .args(&[
                 "-c",
                 &format!(
                     "task rc.gc=off -COMPLETED -DELETED {} count",
-                    tags_to_filter(tags)
+                    filter
                 ),
             ])
             .output()
@@ -202,11 +215,11 @@ impl Block for Taskwarrior {
         if !has_taskwarrior()? {
             self.output.set_text("?")
         } else {
-            let filter_tags = match self.block_mode {
-                TaskwarriorBlockMode::OnlyFilteredPendingTasks => self.filter_tags.clone(),
-                TaskwarriorBlockMode::AllPendingTasks => vec![],
+            let filter = match self.block_mode {
+                TaskwarriorBlockMode::OnlyFilteredPendingTasks => &self.filter,
+                TaskwarriorBlockMode::AllPendingTasks => "",
             };
-            let number_of_pending_tasks = get_number_of_pending_tasks(&filter_tags)?;
+            let number_of_pending_tasks = get_number_of_pending_tasks(filter)?;
             let values = map!("{count}" => number_of_pending_tasks);
             self.output.set_text(match number_of_pending_tasks {
                 0 => self.format_everything_done.render_static_str(&values)?,
