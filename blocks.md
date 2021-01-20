@@ -1303,13 +1303,12 @@ Key | Values | Required | Default
 
 ## Taskwarrior
 
-Creates a block which displays number of pending and started tasks of the current users taskwarrior list.
+Creates a block which displays the number of tasks matching user-defined filters from the current user's taskwarrior list.
 
-Clicking the left mouse button on the icon updates the number of pending tasks immediately.
+Clicking the left mouse button on the icon updates the number of tasks immediately.
 
-Clicking the right mouse button on the icon toggles the view of the block between filtered (default) and non-filtered
-tasks. If there are no filters configured, the number of tasks stays the same and both modes are behaving
-equally.  
+Clicking the right mouse button on the icon cycles the view of the block through the user's filters.
+
 
 #### Examples
 
@@ -1317,12 +1316,17 @@ equally.
 [[block]]
 block = "taskwarrior"
 interval = 60
-format = "{count} open tasks"
-format_singular = "{count} open task"
+format = "{count} open tasks ({filter_name})"
+format_singular = "{count} open task ({filter_name})"
 format_everything_done = "nothing to do!"
 warning_threshold = 10
 critical_threshold = 20
-filter = "+work +important"
+[[block.filters]]
+name = "today"
+filter = "+PENDING +OVERDUE or +DUETODAY"
+[[block.filters]]
+name = "some-project"
+filter = "project:some-project +PENDING"
 ```
 
 #### Options
@@ -1332,8 +1336,8 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `600` (10min)
 `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state. | No | `10`
 `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state. | No | `20`
-`filter_tags` | Deprecated in favour of `filter`. A list of tags a task has to have before its counted as a pending task. | No | ```<empty>```
-`filter` | A filter that a task has to match to be counted as a pending task. | No | ```<empty```
+`filter_tags` | Deprecated in favour of `filters`. A list of tags a task has to have before its counted as a pending task. The list of tags will be appended to the base filter `-COMPLETED -DELETED`. | No | ```<empty>```
+`filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | No | ```[{name = "pending", filter = "-COMPLETED -DELETED"}]```
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{count}"`
 `format_singular` | Same as `format` but for when exactly one task is pending. | No | `"{count}"`
 `format_everything_done` | Same as `format` but for when all tasks are completed. | No | `"{count}"`
@@ -1343,6 +1347,7 @@ Key | Values | Required | Default
 Key | Value
 ----|-------
 `{count}` | The number of pending tasks
+`{filter_name}` | The name of the current filter
 
 ###### [↥ back to top](#list-of-available-blocks)
 
