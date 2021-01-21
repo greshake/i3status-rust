@@ -9,6 +9,7 @@ use crate::{
     Block,
 };
 use serde_derive::Deserialize;
+use toml::{value::Table, Value};
 
 pub(super) struct BaseBlock<T: Block> {
     pub name: String,
@@ -52,11 +53,24 @@ impl<T: Block> Block for BaseBlock<T> {
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
-pub(super) struct BaseBlockConfig<T> {
+pub(super) struct BaseBlockConfig {
     /// Command to execute when the button is clicked
     pub on_click: Option<String>,
+}
 
-    #[serde(flatten)]
-    pub inner: T,
+impl BaseBlockConfig {
+    const FIELDS: &'static [&'static str] = &["on_click"];
+
+    // FIXME: this function is to paper over https://github.com/serde-rs/serde/issues/1957
+    pub(super) fn extract(config: &mut Value) -> Value {
+        let mut common_table = Table::new();
+        if let Some(table) = config.as_table_mut() {
+            for &field in Self::FIELDS {
+                if let Some(it) = table.remove(field) {
+                    common_table.insert(field.to_string(), it);
+                }
+            }
+        }
+        common_table.into()
+    }
 }
