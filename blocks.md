@@ -923,7 +923,7 @@ use_bits = false
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | Network interface to monitor (name from /sys/class/net). | No | Automatically chosen from the output of `ip route default show`
+`device` | Network interface to monitor (name from /sys/class/net). | No | Automatically chosen from the output of `ip route show default`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | "{speed_up} {speed_down}" 
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`. | No | `"K"`
