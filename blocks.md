@@ -326,6 +326,7 @@ Note that `command` and `cycle` are mutually exclusive.
 Key | Values | Required | Default
 ----|--------|----------|--------
 `command` | Shell command to execute & display. Shell command output may need to be escaped, refer to [Escaping Text](#escaping-text). | No | None
+`short_command` | Shell command to execute & display for short with widget. Shell command output may need to be escaped, refer to [Escaping Text](#escaping-text).| No | None
 `on_click` | Command to execute when the button is clicked. | No | None
 `cycle` | Commands to execute and change when the button is clicked. | No | None
 `interval` | Update interval, in seconds (or `"once"` to update only once). | No | `10`
@@ -333,6 +334,11 @@ Key | Values | Required | Default
 `signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX`. | No | None
 `hide_when_empty` | Hides the block when the command output (or json text field) is empty. | No | false
 `shell` | Specify the shell to use when running commands. | No | `$SHELL` if set, otherwise fallback to `sh`
+`width` | `Default`, `Full`, `Short` | No | `Default`
+
+With `Default` width, `i3bar` selects the full text obtained via `command` if 
+there is enough room on the bar or else the short text obtained via  
+`short_command`.  
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -935,6 +941,10 @@ Key | Values | Required | Default
 `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
 `width` | Whether to force the widget to display `Full` or `Short` text (default is to let i3bar choose) | No | `Default`
 
+With `Default` width, `i3bar` selects the full text representation if there is
+enough room on the bar else the short text representation where bitrate, ip
+addresses and speeds are hidden.
+
 #### Available Format Keys
 
 Placeholder | Description
@@ -1415,10 +1425,16 @@ locale = "fr_BE"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `format` | A string to customise the output of this block. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"%a %d/%m %R"`
+`format` | A string to customise the *short* output of this block. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"%a %d/%m %R"`
 `on_click` | Shell command to run when the time block is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `5`
 `timezone` | A timezone specifier (e.g. "Europe/Lisbon"). | No | Local timezone
 `locale` | Locale to apply when formatting the time. | No | System locale
+`width` | `Default`, `Full`, `Short` | No | `Default`
+
+With `Default` width, `i3bar` select the full text obtained via `format` if 
+there is enough room on the bar or else the short text obtained via  
+`format_short`.  
 
 ###### [↥ back to top](#list-of-available-blocks)
 
