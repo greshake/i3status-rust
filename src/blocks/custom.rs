@@ -220,14 +220,13 @@ impl Block for Custom {
             self.output
                 .set_text_with_width(&self.width, output.text, short_text);
         } else {
-            let short_raw_output ;
+            let short_raw_output;
             if let Some(ref short_command) = self.short_command {
-                short_raw_output =
-                    Command::new(&self.shell)
-                        .args(&["-c", short_command])
-                        .output()
-                        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-                        .unwrap_or_else(|e| e.to_string());
+                short_raw_output = Command::new(&self.shell)
+                    .args(&["-c", short_command])
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+                    .unwrap_or_else(|e| e.to_string());
             } else {
                 short_raw_output = raw_output.clone();
             }

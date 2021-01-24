@@ -3,8 +3,8 @@ use std::convert::TryInto;
 use std::time::Duration;
 
 use chrono::{
+    format::{strftime::StrftimeItems, DelayedFormat},
     offset::{Local, TimeZone, Utc},
-    format::{DelayedFormat, strftime::StrftimeItems},
     Locale,
 };
 use chrono_tz::Tz;
@@ -104,7 +104,11 @@ impl TimeConfig {
 }
 
 impl Time {
-    fn format<'a>(& self, time: &chrono::DateTime<Local>, format: &'a str) -> Result<DelayedFormat<StrftimeItems<'a>>> {
+    fn format<'a>(
+        &self,
+        time: &chrono::DateTime<Local>,
+        format: &'a str,
+    ) -> Result<DelayedFormat<StrftimeItems<'a>>> {
         let formatted_time = match &self.locale {
             Some(l) => {
                 let locale: Locale = l
@@ -112,16 +116,14 @@ impl Time {
                     .try_into()
                     .block_error("time", "invalid locale")?;
                 match self.timezone {
-                    Some(tz) => time
-                        .with_timezone(&tz)
-                        .format_localized(format, locale),
+                    Some(tz) => time.with_timezone(&tz).format_localized(format, locale),
                     None => time.format_localized(format, locale),
                 }
             }
             None => match self.timezone {
                 Some(tz) => time.with_timezone(&tz).format(format),
                 None => time.format(format),
-            }
+            },
         };
         Ok(formatted_time)
     }
@@ -165,7 +167,6 @@ impl Block for Time {
         );
         Ok(Some(self.update_interval.into()))
     }
-
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {

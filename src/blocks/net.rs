@@ -677,12 +677,18 @@ impl ConfigBlock for Net {
                 None
             },
             max_ssid_width: block_config.max_ssid_width,
-            signal_strength: if wireless && (format.contains("{signal_strength}") || short_format.contains("{signal_strength}")) {
+            signal_strength: if wireless
+                && (format.contains("{signal_strength}")
+                    || short_format.contains("{signal_strength}"))
+            {
                 Some(0.to_string())
             } else {
                 None
             },
-            signal_strength_bar: if wireless && (format.contains("{signal_strength_bar}") || short_format.contains("{signal_strength_bar}")) {
+            signal_strength_bar: if wireless
+                && (format.contains("{signal_strength_bar}")
+                    || short_format.contains("{signal_strength_bar}"))
+            {
                 Some("".to_string())
             } else {
                 None
@@ -771,7 +777,6 @@ fn read_file(path: &Path) -> Result<String> {
     content.pop();
     Ok(content)
 }
-
 
 #[derive(PartialEq, Debug)]
 enum WidthChanged {
@@ -1008,8 +1013,11 @@ impl Net {
             "{graph_down}" =>  self.graph_rx.as_ref().unwrap_or(&empty_string)
         );
 
-        self.output
-            .set_text_with_width(&self.width, self.format.render_static_str(&values)?, self.short_format.render_static_str(&values)?);
+        self.output.set_text_with_width(
+            &self.width,
+            self.format.render_static_str(&values)?,
+            self.short_format.render_static_str(&values)?,
+        );
         Ok(())
     }
 }
