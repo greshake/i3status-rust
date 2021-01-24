@@ -773,7 +773,7 @@ fn read_file(path: &Path) -> Result<String> {
 }
 
 
-#[derive(PartialEq,Debug)]
+#[derive(PartialEq, Debug)]
 enum WidthChanged {
     Yes,
     No,
@@ -943,7 +943,7 @@ impl Net {
 
         self.network.set_text("".to_string());
 
-        // Update SSID and IP address every 30s and the bitrate every 10s
+        // Update SSID and IP address every 30s and the bitrate every 10s or when width change
         let now = Instant::now();
         if changed == WidthChanged::Yes || now.duration_since(self.last_update).as_secs() % 10 == 0
         {
