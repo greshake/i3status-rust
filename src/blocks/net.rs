@@ -643,7 +643,7 @@ impl ConfigBlock for Net {
             block_config.short_format
         } else {
             // Default format
-            block_config.short_format
+            format.clone()
         };
 
         Ok(Net {
