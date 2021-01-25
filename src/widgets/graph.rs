@@ -12,18 +12,20 @@ pub struct GraphWidget {
     icon: Option<String>,
     state: State,
     spacing: Spacing,
+    id: String,
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
 }
 #[allow(dead_code)]
 impl GraphWidget {
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: Config, id: &str) -> Self {
         GraphWidget {
             content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
+            id: id.to_string(),
             rendered: json!({
                 "full_text": "",
                 "separator": false,
@@ -117,6 +119,7 @@ impl GraphWidget {
                             ),
             "separator": false,
             "separator_block_width": 0,
+            "name": self.id,
             "background": key_bg.to_owned(),
             "color": key_fg.to_owned()
         });

@@ -1,5 +1,6 @@
 pub mod apt;
 pub mod backlight;
+pub mod base_block;
 pub mod battery;
 pub mod bluetooth;
 pub mod cpu;
@@ -39,6 +40,7 @@ pub mod xrandr;
 
 use self::apt::*;
 use self::backlight::*;
+use self::base_block::*;
 use self::battery::*;
 use self::bluetooth::*;
 use self::cpu::*;
@@ -142,13 +144,22 @@ pub trait ConfigBlock: Block {
     ) -> Result<Self>
     where
         Self: Sized;
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        None
+    }
 }
 
 macro_rules! block {
     ($block_type:ident, $block_config:expr, $config:expr, $update_request:expr) => {{
+        let common_config = BaseBlockConfig::extract(&mut $block_config);
+        let mut common_config = BaseBlockConfig::deserialize(common_config)
+            .configuration_error("Failed to deserialize common block config.")?;
+
         let block_config: <$block_type as ConfigBlock>::Config =
             <$block_type as ConfigBlock>::Config::deserialize($block_config)
                 .configuration_error("Failed to deserialize block config.")?;
+
         let mut main_config = $config;
         if let Some(ref overrides) = block_config.color_overrides {
             for entry in overrides {
@@ -172,17 +183,23 @@ macro_rules! block {
                 }
             }
         }
-        Ok(Box::new($block_type::new(
-            block_config,
-            main_config,
-            $update_request,
-        )?) as Box<dyn Block>)
+
+        let mut block = $block_type::new(block_config, main_config, $update_request)?;
+        if let Some(overrided) = block.override_on_click() {
+            *overrided = common_config.on_click.take();
+        }
+
+        Ok(Box::new(BaseBlock {
+            name: stringify!($block_type).to_string(),
+            inner: block,
+            on_click: common_config.on_click,
+        }) as Box<dyn Block>)
     }};
 }
 
 pub fn create_block(
     name: &str,
-    block_config: Value,
+    mut block_config: Value,
     config: Config,
     update_request: Sender<Task>,
 ) -> Result<Box<dyn Block>> {

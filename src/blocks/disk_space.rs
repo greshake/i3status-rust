@@ -220,10 +220,12 @@ impl ConfigBlock for DiskSpace {
             .cloned()
             .unwrap_or_else(|| "".to_string());
 
+        let id = pseudo_uuid();
+        let disk_space = TextWidget::new(config, &id);
         Ok(DiskSpace {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            disk_space: TextWidget::new(config),
+            disk_space,
             alias: block_config.alias,
             path: block_config.path,
             format: FormatTemplate::from_string(&block_config.format)?,

@@ -120,12 +120,13 @@ impl ConfigBlock for Notmuch {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut widget = TextWidget::new(config);
+        let id = pseudo_uuid();
+        let mut widget = TextWidget::new(config, &id);
         if !block_config.no_icon {
             widget.set_icon("mail");
         }
         Ok(Notmuch {
-            id: pseudo_uuid().to_string(),
+            id,
             update_interval: block_config.interval,
             db: block_config.maildir,
             query: block_config.query,

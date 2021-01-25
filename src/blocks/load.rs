@@ -87,7 +87,8 @@ impl ConfigBlock for Load {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(config)
+        let id = pseudo_uuid();
+        let text = TextWidget::new(config, &id)
             .with_icon("cogs")
             .with_state(State::Info);
 
@@ -100,7 +101,7 @@ impl ConfigBlock for Load {
             .count() as u32;
 
         Ok(Load {
-            id: pseudo_uuid(),
+            id,
             logical_cores,
             update_interval: block_config.interval,
             minimum_info: block_config.info,

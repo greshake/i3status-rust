@@ -16,9 +16,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
 use crate::util::{
     escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, pseudo_uuid,
     FormatTemplate,
@@ -390,7 +388,6 @@ pub struct Net {
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
-    on_click: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, Deserialize)]
@@ -494,9 +491,6 @@ pub struct NetConfig {
     #[serde(default = "NetConfig::default_graph_down")]
     pub graph_down: bool,
 
-    #[serde(default = "NetConfig::default_on_click")]
-    pub on_click: Option<String>,
-
     #[serde(default = "NetConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
 }
@@ -572,10 +566,6 @@ impl NetConfig {
 
     fn default_speed_digits() -> usize {
         3
-    }
-
-    fn default_on_click() -> Option<String> {
-        None
     }
 
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
@@ -692,7 +682,6 @@ impl ConfigBlock for Net {
             hide_inactive: block_config.hide_inactive,
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
-            on_click: block_config.on_click,
         })
     }
 }
@@ -988,21 +977,6 @@ impl Block for Net {
         } else {
             vec![&self.network]
         }
-    }
-
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                if let MouseButton::Left = e.button {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("net", "could not spawn child")?;
-                    }
-                }
-            }
-        }
-
-        Ok(())
     }
 
     fn id(&self) -> &str {

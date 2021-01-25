@@ -11,9 +11,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
 use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
@@ -30,7 +28,6 @@ pub struct Cpu {
     minimum_info: u64,
     minimum_warning: u64,
     minimum_critical: u64,
-    on_click: Option<String>,
     format: FormatTemplate,
     has_barchart: bool,
     has_frequency: bool,
@@ -58,9 +55,6 @@ pub struct CpuConfig {
     /// Minimum usage, where state is set to critical
     #[serde(default = "CpuConfig::default_critical")]
     pub critical: u64,
-
-    #[serde(default = "CpuConfig::default_on_click")]
-    pub on_click: Option<String>,
 
     /// Display frequency
     #[serde(default = "CpuConfig::default_frequency")]
@@ -103,10 +97,6 @@ impl CpuConfig {
         false
     }
 
-    fn default_on_click() -> Option<String> {
-        None
-    }
-
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
@@ -144,7 +134,6 @@ impl ConfigBlock for Cpu {
             has_frequency: format.contains("{frequency}"),
             has_barchart: format.contains("{barchart}"),
             per_core: block_config.per_core,
-            on_click: block_config.on_click,
         })
     }
 }
@@ -261,18 +250,6 @@ impl Block for Cpu {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
-    }
-
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.matches_name(self.id()) {
-            if let MouseButton::Left = e.button {
-                if let Some(ref cmd) = self.on_click {
-                    spawn_child_async("sh", &["-c", cmd])
-                        .block_error("cpu", "could not spawn child")?;
-                }
-            }
-        }
-        Ok(())
     }
 
     fn id(&self) -> &str {

@@ -211,13 +211,13 @@ impl ConfigBlock for NvidiaGpu {
             memory_widget_mode: MemoryWidgetMode::ShowUsedMemory,
 
             show_utilization: if block_config.show_utilization {
-                Some(TextWidget::new(config.clone()).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(config.clone(), &id).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_temperature: if block_config.show_temperature {
-                Some(TextWidget::new(config.clone()).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(config.clone(), &id).with_spacing(Spacing::Inline))
             } else {
                 None
             },
@@ -232,7 +232,7 @@ impl ConfigBlock for NvidiaGpu {
             scrolling: config.scrolling,
 
             show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(config).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(config, &id).with_spacing(Spacing::Inline))
             } else {
                 None
             },

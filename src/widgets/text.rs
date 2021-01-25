@@ -11,18 +11,20 @@ pub struct TextWidget {
     icon: Option<String>,
     state: State,
     spacing: Spacing,
+    id: String,
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
 }
 
 impl TextWidget {
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: Config, id: &str) -> Self {
         TextWidget {
             content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
+            id: id.to_string(),
             rendered: json!({
                 "full_text": "",
                 "separator": false,
@@ -98,6 +100,7 @@ impl TextWidget {
                             ),
             "separator": false,
             "separator_block_width": 0,
+            "name": self.id.clone(),
             "background": key_bg.to_owned(),
             "color": key_fg.to_owned()
         });

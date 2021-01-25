@@ -81,10 +81,14 @@ impl ConfigBlock for Github {
             }
         };
 
+        let id = pseudo_uuid();
+        let text = TextWidget::new(config, &id)
+            .with_text("x")
+            .with_icon("github");
         Ok(Github {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            text: TextWidget::new(config).with_text("x").with_icon("github"),
+            text,
             api_server: block_config.api_server,
             token,
             format: FormatTemplate::from_string(&block_config.format)

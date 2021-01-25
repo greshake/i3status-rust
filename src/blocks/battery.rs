@@ -670,10 +670,11 @@ impl ConfigBlock for Battery {
             )?),
         };
 
+        let output = TextWidget::new(config, &id);
         Ok(Battery {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(config),
+            output,
             device,
             format: FormatTemplate::from_string(&format)?,
             full_format: FormatTemplate::from_string(&block_config.full_format)?,
