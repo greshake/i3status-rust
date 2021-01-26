@@ -164,8 +164,11 @@ impl ConfigBlock for Pacman {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let id = pseudo_uuid();
+        let output = ButtonWidget::new(config, &id).with_icon("update");
+
         Ok(Pacman {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("pacman", "Invalid format specified for pacman::format")?,
@@ -179,7 +182,7 @@ impl ConfigBlock for Pacman {
                     "pacman",
                     "Invalid format specified for pacman::format_up_to_date",
                 )?,
-            output: ButtonWidget::new(config, "pacman").with_icon("update"),
+            output,
             warning_updates_regex: match block_config.warning_updates_regex {
                 None => None, // no regex configured
                 Some(regex_str) => {
@@ -422,7 +425,7 @@ impl Block for Pacman {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == "pacman").unwrap_or(false)
+        if event.name.as_ref().map(|s| s == &self.id).unwrap_or(false)
             && event.button == MouseButton::Left
         {
             self.update()?;

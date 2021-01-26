@@ -356,10 +356,11 @@ impl ConfigBlock for Memory {
     type Config = MemoryConfig;
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
+        let id = pseudo_uuid();
         let icons: bool = block_config.icons;
-        let widget = ButtonWidget::new(config, "memory").with_text("");
+        let widget = ButtonWidget::new(config, &id).with_text("");
         Ok(Memory {
-            id: pseudo_uuid(),
+            id,
             memtype: block_config.display_type,
             output: if icons {
                 (
@@ -486,7 +487,7 @@ impl Block for Memory {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if let Some(ref s) = event.name {
-            if self.clickable && event.button == MouseButton::Left && *s == "memory" {
+            if self.clickable && event.button == MouseButton::Left && *s == self.id {
                 self.switch();
                 self.update()?;
                 self.tx_update_request.send(Task {

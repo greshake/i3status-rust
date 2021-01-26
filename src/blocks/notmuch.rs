@@ -181,7 +181,7 @@ impl Block for Notmuch {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == "notmuch").unwrap_or(false)
+        if event.name.as_ref().map(|s| s == &self.id).unwrap_or(false)
             && event.button == MouseButton::Left
         {
             self.update()?;
