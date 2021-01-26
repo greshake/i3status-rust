@@ -113,6 +113,11 @@ impl ConfigBlock for Taskwarrior {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let id = pseudo_uuid();
+        let output = ButtonWidget::new(config.clone(), &id)
+            .with_icon("tasks")
+            .with_text("-");
+
         Ok(Taskwarrior {
             id: pseudo_uuid(),
             update_interval: block_config.interval,
@@ -120,9 +125,7 @@ impl ConfigBlock for Taskwarrior {
             critical_threshold: block_config.critical_threshold,
             filter_tags: block_config.filter_tags,
             block_mode: TaskwarriorBlockMode::OnlyFilteredPendingTasks,
-            output: ButtonWidget::new(config.clone(), "taskwarrior")
-                .with_icon("tasks")
-                .with_text("-"),
+            output,
             format: FormatTemplate::from_string(&block_config.format).block_error(
                 "taskwarrior",
                 "Invalid format specified for taskwarrior::format",
@@ -228,12 +231,7 @@ impl Block for Taskwarrior {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event
-            .name
-            .as_ref()
-            .map(|s| s == "taskwarrior")
-            .unwrap_or(false)
-        {
+        if event.name.as_ref().map(|s| s == &self.id).unwrap_or(false) {
             match event.button {
                 MouseButton::Left => {
                     self.update()?;
