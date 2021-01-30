@@ -1549,6 +1549,7 @@ Key | Value
 `{humidity}` | Humidity
 `{weather}` | Textual description of the weather, e.g. "Raining"
 `{wind}` | Wind speed
+`{wind_kmh}` | Wind speed. The wind speed in km/h.
 `{direction}` | Wind direction, e.g. "NE"
 
 ###### [↥ back to top](#list-of-available-blocks)

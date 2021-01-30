@@ -234,6 +234,8 @@ impl Weather {
                     raw_wind_speed * 0.447
                 };
 
+                let kmh_wind_speed = metric_wind_speed * 3600.0 / 1000.0;
+
                 let metric_apparent_temp =
                     temp_celsius + 0.33 * water_vapor_pressure - 0.7 * metric_wind_speed - 4.0;
                 let apparent_temp = if metric {
@@ -273,6 +275,7 @@ impl Weather {
                                   "{humidity}" => format!("{:.0}", raw_humidity),
                                   "{apparent}" => format!("{:.0}",apparent_temp),
                                   "{wind}" => format!("{:.1}", raw_wind_speed),
+                                  "{wind_kmh}" => format!("{:.1}", kmh_wind_speed),
                                   "{direction}" => convert_wind_direction(raw_wind_direction),
                                   "{location}" => raw_location);
                 Ok(())
