@@ -81,7 +81,7 @@ impl Weather {
             } => {
                 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
                 let geoip_city = if self.autolocate {
-                    let http_call_result = http::http_get_json("https://ipapi.co/json/", Duration::from_secs(3));
+                    let http_call_result = http::http_get_json("https://ipapi.co/json/", Duration::from_secs(3), vec![]);
 
                     if let Ok(geoip_response) = http_call_result {
                         geoip_response.content
