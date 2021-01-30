@@ -1,9 +1,9 @@
-use std::time::Duration;
-use serde_json::value::Value;
 use curl::easy::Easy;
+use serde_json::value::Value;
+use std::time::Duration;
 
-use crate::errors::{Result, ResultExtInternal};
 use crate::errors;
+use crate::errors::{Result, ResultExtInternal};
 
 pub struct HttpResponse<T> {
     pub code: u32,
@@ -23,7 +23,6 @@ fn http_easy(mut easy: Easy) -> Result<HttpResponse<Vec<u8>>> {
             true
         })?;
 
-
         transfer.write_function(|data| {
             buf.extend_from_slice(data);
             Ok(data.len())
@@ -34,7 +33,11 @@ fn http_easy(mut easy: Easy) -> Result<HttpResponse<Vec<u8>>> {
 
     let code = easy.response_code()?;
 
-    Ok(HttpResponse { code, content: buf, headers })
+    Ok(HttpResponse {
+        code,
+        content: buf,
+        headers,
+    })
 }
 
 pub fn http_get_socket_json(path: std::path::PathBuf, url: &str) -> Result<HttpResponse<Value>> {
@@ -48,10 +51,18 @@ pub fn http_get_socket_json(path: std::path::PathBuf, url: &str) -> Result<HttpR
     let content = serde_json::from_slice(&response.content)
         .internal_error("curl", "could not parse json response from server")?;
 
-    Ok(HttpResponse { code: response.code, content, headers: response.headers })
+    Ok(HttpResponse {
+        code: response.code,
+        content,
+        headers: response.headers,
+    })
 }
 
-pub fn http_get_json(url: &str, timeout: Option<Duration>, request_headers: Vec<(&str, &str)>) -> Result<HttpResponse<Value>> {
+pub fn http_get_json(
+    url: &str,
+    timeout: Option<Duration>,
+    request_headers: Vec<(&str, &str)>,
+) -> Result<HttpResponse<Value>> {
     let mut easy = curl::easy::Easy::new();
 
     easy.url(url)?;
@@ -73,9 +84,12 @@ pub fn http_get_json(url: &str, timeout: Option<Duration>, request_headers: Vec<
     let content = serde_json::from_slice(&response.content)
         .internal_error("curl", "could not parse json response from server")?;
 
-    Ok(HttpResponse { code: response.code, content, headers: response.headers })
+    Ok(HttpResponse {
+        code: response.code,
+        content,
+        headers: response.headers,
+    })
 }
-
 
 impl From<curl::Error> for errors::Error {
     fn from(err: curl::Error) -> Self {

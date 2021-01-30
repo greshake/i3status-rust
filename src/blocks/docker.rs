@@ -8,12 +8,12 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::http;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
-use crate::http;
 
 pub struct Docker {
     text: TextWidget,

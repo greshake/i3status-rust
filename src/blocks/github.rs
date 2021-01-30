@@ -10,12 +10,12 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::http;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
-use crate::http;
 
 const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
@@ -199,17 +199,23 @@ impl<'a> Notifications<'a> {
 
         let header_value = format!("Bearer {}", self.token);
         let headers = vec![("Authorization", header_value.as_str())];
-        let result = http::http_get_json(&self.next_page_url, Some(Duration::from_secs(3)), headers)?;
+        let result =
+            http::http_get_json(&self.next_page_url, Some(Duration::from_secs(3)), headers)?;
 
-        self.next_page_url = result.headers.iter().find_map(|header| {
-            if header.starts_with("Link:") {
-                parse_links_header(header).get("next").cloned()
-           } else {
-                None
-            }
-        }).unwrap_or(&"").to_string();
+        self.next_page_url = result
+            .headers
+            .iter()
+            .find_map(|header| {
+                if header.starts_with("Link:") {
+                    parse_links_header(header).get("next").cloned()
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(&"")
+            .to_string();
 
-        let notifications: Vec<Notification> =  serde_json::from_value(result.content)?;
+        let notifications: Vec<Notification> = serde_json::from_value(result.content)?;
         self.notifications = notifications.into_iter();
 
         Ok(self.notifications.next())

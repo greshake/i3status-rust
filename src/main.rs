@@ -10,6 +10,7 @@ mod util;
 pub mod blocks;
 mod config;
 mod errors;
+mod http;
 mod icons;
 mod input;
 mod scheduler;
@@ -18,7 +19,6 @@ mod subprocess;
 mod themes;
 mod widget;
 mod widgets;
-mod http;
 
 #[cfg(feature = "profiling")]
 use cpuprofiler::PROFILER;
