@@ -15,7 +15,6 @@ use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use crate::http;
-use crate::widgets::text::TextWidget;
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
@@ -48,7 +47,7 @@ impl WeatherService {
     }
 }
 
-#[derive(Copy, Clone, Debug, Deserialize)]
+#[derive(Copy, Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum OpenWeatherMapUnits {
     Metric,
@@ -63,37 +62,99 @@ pub struct Weather {
     service: WeatherService,
     update_interval: Duration,
     autolocate: bool,
-    last_error: Option<Error>,
-    error_widget: TextWidget,
 }
 
 fn malformed_json_error() -> Error {
     BlockError("weather".to_string(), "Malformed JSON.".to_string())
 }
 
+// TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
+fn find_ip_location() -> Result<Option<String>> {
+    let http_call_result = http::http_get_json("https://ipapi.co/json/", Some(Duration::from_secs(3)), vec![])?;
+
+    let city = http_call_result
+        .content
+        .pointer("/city")
+        .map(|v| v.to_owned().to_string());
+
+    Ok(city)
+}
+
+// Compute the Australian Apparent Temperature (AT),
+// using the metric formula found on Wikipedia.
+// If using imperial units, we must first convert to metric.
+fn australian_apparent_temp(raw_temp: f64, raw_humidity: f64, raw_wind_speed: f64, units: OpenWeatherMapUnits) -> f64 {
+    let metric = units == OpenWeatherMapUnits::Metric;
+
+    let temp_celsius = if units == OpenWeatherMapUnits::Metric {
+        raw_temp
+    } else {
+        // convert Fahrenheit to Celsius
+        (raw_temp - 32.0) * 0.556
+    };
+
+    let exponent = 17.27 * temp_celsius / (237.7 + temp_celsius);
+    let water_vapor_pressure = raw_humidity * 0.06105 * exponent.exp();
+
+    let metric_wind_speed = if metric {
+        raw_wind_speed
+    } else {
+        // convert mph to m/s
+        raw_wind_speed * 0.447
+    };
+
+    let metric_apparent_temp =
+        temp_celsius + 0.33 * water_vapor_pressure - 0.7 * metric_wind_speed - 4.0;
+    let apparent_temp = if metric {
+        metric_apparent_temp
+    } else {
+        1.8 * metric_apparent_temp + 32.0
+    };
+
+    apparent_temp
+}
+
+// Convert wind direction in azimuth degrees to abbreviation names
+fn convert_wind_direction(direction_opt: Option<f64>) -> String {
+    match direction_opt {
+        Some(direction) => match direction.round() as i64 {
+            24..=68 => "NE".to_string(),
+            69..=113 => "E".to_string(),
+            114..=158 => "SE".to_string(),
+            159..=203 => "S".to_string(),
+            204..=248 => "SW".to_string(),
+            249..=293 => "W".to_string(),
+            294..=338 => "NW".to_string(),
+            _ => "N".to_string(),
+        },
+        None => "-".to_string(),
+    }
+}
+
+fn configuration_error(msg: &str) -> Result<()> {
+    Err(ConfigurationError("weather".to_owned(), (msg.to_owned(), msg.to_owned())))
+}
 
 impl Weather {
     fn update_weather(&mut self) -> Result<()> {
-        match self.service {
+        match &self.service {
             WeatherService::OpenWeatherMap {
-                api_key: Some(ref api_key),
-                ref city_id,
-                ref place,
-                ref units,
-                ref coordinates,
-                ..
+                api_key: api_key_opt,
+                city_id,
+                place,
+                units,
+                coordinates
             } => {
-                // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
-                let geoip_city = if self.autolocate {
-                    let http_call_result = http::http_get_json("https://ipapi.co/json/", Some(Duration::from_secs(3)), vec![]);
+                if api_key_opt.is_none() {
+                    return configuration_error(&format!(
+                        "Missing member 'service.api_key'. Add the member or configure with the environment variable {}",
+                        OPENWEATHERMAP_API_KEY_ENV.to_string()))
+                }
 
-                    if let Ok(geoip_response) = http_call_result {
-                        geoip_response.content
-                            .pointer("/city")
-                            .map(|v| v.to_owned().to_string() )
-                    } else { // We don't want the bar to crash if we can't reach the geoip service
-                        None
-                    }
+                let api_key = api_key_opt.as_ref().unwrap();
+
+                let geoip_city = if self.autolocate {
+                    find_ip_location().ok().unwrap_or(None) // If geo location fails, try other configuration methods
                 } else {
                     None
                 };
@@ -107,20 +168,12 @@ impl Weather {
                 } else if let Some((lat, lon)) = coordinates {
                     format!("lat={}&lon={}", lat, lon)
                 } else if self.autolocate {
-                    return Err(BlockError(
-                        "weather".to_string(),
-                        "weather is configured to use geolocation, but it could not be obtained"
-                            .to_string(),
-                    ));
+                    return configuration_error("weather is configured to use geolocation, but it could not be obtained")
                 } else {
-                    return Err(BlockError(
-                        "weather".to_string(),
-                        format!(
-                            "Either 'service.city_id' or 'service.place' must be provided. Add one to your config file or set with the environment variables {} or {}",
-                            OPENWEATHERMAP_CITY_ID_ENV.to_string(),
-                            OPENWEATHERMAP_PLACE_ENV.to_string(),
-                        ),
-                    ));
+                    return configuration_error(&format!(
+                        "Either 'service.city_id' or 'service.place' must be provided. Add one to your config file or set with the environment variables {} or {}",
+                        OPENWEATHERMAP_CITY_ID_ENV.to_string(),
+                        OPENWEATHERMAP_PLACE_ENV.to_string()))
                 };
 
                 let openweather_url = &format!(
@@ -138,9 +191,7 @@ impl Weather {
                 // All 300-399 and >500 http codes should be considered as temporary error,
                 // and not result in block error, i.e. leave the output empty.
                 if (output.code >= 300 && output.code < 400) || output.code >= 500 {
-                    self.weather.set_icon("weather_default");
-                    self.weather_keys = HashMap::new();
-                    return Ok(())
+                    return Err(BlockError("weather".to_owned(), format!("Invalid result from curl: {}", output.code).to_owned()))
                 };
 
                 let json = output.content;
@@ -184,58 +235,6 @@ impl Weather {
                     .map(|s| s.to_string())
                     .ok_or_else(malformed_json_error)?;
 
-                // Compute the Australian Apparent Temperature (AT),
-                // using the metric formula found on Wikipedia.
-                // If using imperial units, we must first convert to metric.
-                let metric = match *units {
-                    OpenWeatherMapUnits::Metric => true,
-                    OpenWeatherMapUnits::Imperial => false,
-                };
-
-                let temp_celsius = if metric {
-                    raw_temp
-                } else {
-                    // convert Fahrenheit to Celsius
-                    (raw_temp - 32.0) * 0.556
-                };
-
-                let exponent = 17.27 * temp_celsius / (237.7 + temp_celsius);
-                let water_vapor_pressure = raw_humidity * 0.06105 * exponent.exp();
-
-                let metric_wind_speed = if metric {
-                    raw_wind_speed
-                } else {
-                    // convert mph to m/s
-                    raw_wind_speed * 0.447
-                };
-
-                let kmh_wind_speed = metric_wind_speed * 3600.0 / 1000.0;
-
-                let metric_apparent_temp =
-                    temp_celsius + 0.33 * water_vapor_pressure - 0.7 * metric_wind_speed - 4.0;
-                let apparent_temp = if metric {
-                    metric_apparent_temp
-                } else {
-                    1.8 * metric_apparent_temp + 32.0
-                };
-
-                // Convert wind direction in azimuth degrees to abbreviation names
-                fn convert_wind_direction(direction_opt: Option<f64>) -> String {
-                    match direction_opt {
-                        Some(direction) => match direction.round() as i64 {
-                            24..=68 => "NE".to_string(),
-                            69..=113 => "E".to_string(),
-                            114..=158 => "SE".to_string(),
-                            159..=203 => "S".to_string(),
-                            204..=248 => "SW".to_string(),
-                            249..=293 => "W".to_string(),
-                            294..=338 => "NW".to_string(),
-                            _ => "N".to_string(),
-                        },
-                        None => "-".to_string(),
-                    }
-                }
-
                 self.weather.set_icon(match raw_weather.as_str() {
                     "Clear" => "weather_sun",
                     "Rain" | "Drizzle" => "weather_rain",
@@ -244,6 +243,15 @@ impl Weather {
                     "Snow" => "weather_snow",
                     _ => "weather_default",
                 });
+
+                let kmh_wind_speed = if *units == OpenWeatherMapUnits::Metric {
+                    raw_wind_speed * 3600.0 / 1000.0
+                } else {
+                    // convert mph to m/s, then km/h
+                    (raw_wind_speed * 0.447) * 3600.0 / 1000.0
+                };
+
+                let apparent_temp = australian_apparent_temp(raw_temp, raw_humidity, raw_wind_speed, *units);
 
                 self.weather_keys = map_to_owned!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
@@ -255,22 +263,10 @@ impl Weather {
                                   "{location}" => raw_location);
                 Ok(())
             }
-            WeatherService::OpenWeatherMap { ref api_key, .. } => {
-                if api_key.is_none() {
-                    Err(BlockError(
-                        "weather".to_string(),
-                        format!(
-                            "Missing member 'service.api_key'. Add the member or configure with the environment variable {}",
-                            OPENWEATHERMAP_API_KEY_ENV.to_string()
-                        ),
-                    ))
-                } else {
-                    Ok(())
-                }
-            }
         }
     }
 }
+
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
@@ -324,8 +320,6 @@ impl ConfigBlock for Weather {
             service: block_config.service,
             update_interval: block_config.interval,
             autolocate: block_config.autolocate,
-            last_error: None,
-            error_widget: TextWidget::new(config, &pseudo_uuid())
         })
     }
 }
@@ -334,21 +328,18 @@ impl Block for Weather {
     fn update(&mut self) -> Result<Option<Update>> {
         match self.update_weather() {
             Ok(_) => {
-                // Display an error/disabled-looking widget when we don't have any
-                // weather information, which is likely due to internet connectivity.
-                if self.weather_keys.keys().len() == 0 {
-                    self.weather.set_text("×".to_string());
-                } else {
-                    let fmt = FormatTemplate::from_string(&self.format)?;
-                    self.weather.set_text(fmt.render(&self.weather_keys));
-                }
-                self.last_error = None;
+                let fmt = FormatTemplate::from_string(&self.format)?;
+                self.weather.set_text(fmt.render(&self.weather_keys));
+                self.weather.set_state(State::Idle)
+            },
+            Err(BlockError(block, _)) | Err(InternalError(block, _, _)) if block == "curl" => { // Ignore curl/api errors
+                self.weather.set_icon("weather_default");
+                self.weather.set_text("×".to_string());
+                self.weather.set_state(State::Warning)
             },
             Err(err) => {
-                self.error_widget.set_text(format!("weather error {}:", err));
-                self.error_widget.set_state(State::Critical);
-
-                self.last_error = Some(err)
+                self.weather.set_text(format!("weather error {}:", err));
+                self.weather.set_state(State::Critical);
             }
         }
 
@@ -356,11 +347,7 @@ impl Block for Weather {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if let Some(_) = self.last_error {
-            vec![&self.error_widget]
-        } else {
-            vec![&self.weather]
-        }
+        vec![&self.weather]
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
