@@ -30,6 +30,7 @@ pub enum WeatherService {
         city_id: Option<String>,
         #[serde(default = "WeatherService::getenv_openweathermap_place")]
         place: Option<String>,
+        coordinates: Option<(String, String)>,
         units: OpenWeatherMapUnits,
     },
 }
@@ -75,6 +76,7 @@ impl Weather {
                 ref city_id,
                 ref place,
                 ref units,
+                ref coordinates,
             } => {
                 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
                 let geoip_city = if self.autolocate {
@@ -110,10 +112,18 @@ impl Weather {
 
                 let location_query = if let Some(city) = geoip_city {
                     format!("q={}", city)
-                } else if city_id.is_some() {
-                    format!("id={}", city_id.as_ref().unwrap())
-                } else if place.is_some() {
-                    format!("q={}", place.as_ref().unwrap())
+                } else if let Some(cid) = city_id.as_ref() {
+                    format!("id={}", cid)
+                } else if let Some(p) = place.as_ref() {
+                    format!("q={}", p)
+                } else if let Some((lat, lon)) = coordinates {
+                    format!("lat={}&lon={}", lat, lon)
+                } else if self.autolocate {
+                    return Err(BlockError(
+                        "weather".to_string(),
+                        "weather is configured to use geolocation, but it could not be obtained"
+                            .to_string(),
+                    ));
                 } else {
                     return Err(BlockError(
                         "weather".to_string(),
@@ -124,6 +134,7 @@ impl Weather {
                         ),
                     ));
                 };
+
                 let output = Command::new("sh")
                     .args(&[
                         "-c",
