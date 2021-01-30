@@ -12,9 +12,10 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::I3BarWidget;
+use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use crate::http;
+use crate::widgets::text::TextWidget;
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
@@ -62,6 +63,8 @@ pub struct Weather {
     service: WeatherService,
     update_interval: Duration,
     autolocate: bool,
+    last_error: Option<Error>,
+    error_widget: TextWidget,
 }
 
 fn malformed_json_error() -> Error {
@@ -78,6 +81,7 @@ impl Weather {
                 ref place,
                 ref units,
                 ref coordinates,
+                ..
             } => {
                 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
                 let geoip_city = if self.autolocate {
@@ -133,8 +137,6 @@ impl Weather {
 
                 // All 300-399 and >500 http codes should be considered as temporary error,
                 // and not result in block error, i.e. leave the output empty.
-                // Don't error out on empty responses e.g. for when not
-                // connected to the internet.
                 if (output.code >= 300 && output.code < 400) || output.code >= 500 {
                     self.weather.set_icon("weather_default");
                     self.weather_keys = HashMap::new();
@@ -316,32 +318,49 @@ impl ConfigBlock for Weather {
         let id = pseudo_uuid();
         Ok(Weather {
             id: id.clone(),
-            weather: ButtonWidget::new(config, &id),
+            weather: ButtonWidget::new(config.clone(), &id),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,
             update_interval: block_config.interval,
             autolocate: block_config.autolocate,
+            last_error: None,
+            error_widget: TextWidget::new(config, &pseudo_uuid())
         })
     }
 }
 
 impl Block for Weather {
     fn update(&mut self) -> Result<Option<Update>> {
-        self.update_weather()?;
-        // Display an error/disabled-looking widget when we don't have any
-        // weather information, which is likely due to internet connectivity.
-        if self.weather_keys.keys().len() == 0 {
-            self.weather.set_text("×".to_string());
-        } else {
-            let fmt = FormatTemplate::from_string(&self.format)?;
-            self.weather.set_text(fmt.render(&self.weather_keys));
+        match self.update_weather() {
+            Ok(_) => {
+                // Display an error/disabled-looking widget when we don't have any
+                // weather information, which is likely due to internet connectivity.
+                if self.weather_keys.keys().len() == 0 {
+                    self.weather.set_text("×".to_string());
+                } else {
+                    let fmt = FormatTemplate::from_string(&self.format)?;
+                    self.weather.set_text(fmt.render(&self.weather_keys));
+                }
+                self.last_error = None;
+            },
+            Err(err) => {
+                self.error_widget.set_text(format!("weather error {}:", err));
+                self.error_widget.set_state(State::Critical);
+
+                self.last_error = Some(err)
+            }
         }
+
         Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.weather]
+        if let Some(_) = self.last_error {
+            vec![&self.error_widget]
+        } else {
+            vec![&self.weather]
+        }
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
