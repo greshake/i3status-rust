@@ -14,6 +14,7 @@ use crate::scheduler::Task;
 use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::http;
 
 pub struct Docker {
     text: TextWidget,
@@ -92,29 +93,15 @@ impl ConfigBlock for Docker {
 
 impl Block for Docker {
     fn update(&mut self) -> Result<Option<Update>> {
-        let output = match Command::new("sh")
-            .args(&[
-                "-c",
-                "curl --fail --unix-socket /var/run/docker.sock http:/api/info",
-            ])
-            .output()
-        {
-            Ok(raw_output) => {
-                String::from_utf8(raw_output.stdout).block_error("docker", "Failed to decode")?
-            }
-            Err(_) => {
-                // We don't want the bar to crash if we can't reach the docker daemon.
-                self.text.set_text("N/A".to_string());
-                return Ok(Some(self.update_interval.into()));
-            }
-        };
+        let socket_path = std::path::PathBuf::from("/var/run/docker.sock");
+        let output = http::http_get_socket_json(socket_path, "http:/api/info");
 
-        if output.is_empty() {
+        if output.is_err() {
             self.text.set_text("N/A".to_string());
             return Ok(Some(self.update_interval.into()));
         }
 
-        let status: Status = serde_json::from_str(&output)
+        let status: Status = serde_json::from_value(output.unwrap().content)
             .block_error("docker", "Failed to parse JSON response.")?;
 
         let values = map!(
