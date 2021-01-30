@@ -199,7 +199,7 @@ impl<'a> Notifications<'a> {
 
         let header_value = format!("Bearer {}", self.token);
         let headers = vec![("Authorization", header_value.as_str())];
-        let result = http::http_get_json(&self.next_page_url, Duration::from_secs(3), headers)?;
+        let result = http::http_get_json(&self.next_page_url, Some(Duration::from_secs(3)), headers)?;
 
         self.next_page_url = result.headers.iter().find_map(|header| {
             if header.starts_with("Link:") {

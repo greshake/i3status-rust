@@ -81,7 +81,7 @@ impl Weather {
             } => {
                 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
                 let geoip_city = if self.autolocate {
-                    let http_call_result = http::http_get_json("https://ipapi.co/json/", Duration::from_secs(3), vec![]);
+                    let http_call_result = http::http_get_json("https://ipapi.co/json/", Some(Duration::from_secs(3)), vec![]);
 
                     if let Ok(geoip_response) = http_call_result {
                         geoip_response.content
@@ -129,25 +129,19 @@ impl Weather {
                     },
                 );
 
-                let output = http::http_get(openweather_url, Duration::from_secs(3)).map(|(status_code, output)| {
-                    // All 300-399 and >500 http codes should be considered as temporary error,
-                    // and not result in block error, i.e. leave the output empty.
-                    match status_code {
-                        code if (code >= 300 && code < 400) || code >= 500 => "".to_string(),
-                        _ => output,
-                    }
-                })?;
+                let output = http::http_get_json(openweather_url, Some(Duration::from_secs(3)), vec![])?;
 
+                // All 300-399 and >500 http codes should be considered as temporary error,
+                // and not result in block error, i.e. leave the output empty.
                 // Don't error out on empty responses e.g. for when not
                 // connected to the internet.
-                if output.is_empty() {
+                if (output.code >= 300 && output.code < 400) || output.code >= 500 {
                     self.weather.set_icon("weather_default");
                     self.weather_keys = HashMap::new();
-                    return Ok(());
-                }
+                    return Ok(())
+                };
 
-                let json: serde_json::value::Value = serde_json::from_str(&output)
-                    .block_error("weather", "Failed to parse JSON response.")?;
+                let json = output.content;
 
                 // Try to convert an API error into a block error.
                 if let Some(val) = json.get("message") {
@@ -156,6 +150,7 @@ impl Weather {
                         format!("API Error: {}", val.as_str().unwrap()),
                     ));
                 };
+
                 let raw_weather = json
                     .pointer("/weather/0/main")
                     .ok_or_else(malformed_json_error)?
