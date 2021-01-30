@@ -29,6 +29,7 @@ serde_json = "1.0"
 swayipc = "2.7"
 toml = "0.5"
 signal-hook = "0.1.16"
+curl = "0.4"
 
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.15.0", default-features = false }

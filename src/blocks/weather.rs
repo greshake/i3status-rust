@@ -1,6 +1,5 @@
 use std::collections::{BTreeMap, HashMap};
 use std::env;
-use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -15,6 +14,7 @@ use crate::scheduler::Task;
 use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use crate::http;
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
@@ -68,6 +68,7 @@ fn malformed_json_error() -> Error {
     BlockError("weather".to_string(), "Malformed JSON.".to_string())
 }
 
+
 impl Weather {
     fn update_weather(&mut self) -> Result<()> {
         match self.service {
@@ -80,31 +81,14 @@ impl Weather {
             } => {
                 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
                 let geoip_city = if self.autolocate {
-                    let geoip_output = match Command::new("sh")
-                        .args(&["-c", "curl --max-time 3 --silent 'https://ipapi.co/json/'"])
-                        .output()
-                    {
-                        Ok(raw_output) => String::from_utf8(raw_output.stdout)
-                            .block_error("weather", "Failed to decode")?,
-                        Err(_) => {
-                            // We don't want the bar to crash if we can't reach the geoip service
-                            String::from("")
-                        }
-                    };
+                    let http_call_result = http::http_get_json("https://ipapi.co/json/", Duration::from_secs(3));
 
-                    if geoip_output.is_empty() {
-                        None
-                    } else {
-                        let geoip_json: serde_json::value::Value =
-                            serde_json::from_str(&geoip_output).block_error(
-                                "weather",
-                                "Failed to parse JSON response from geoip service.",
-                            )?;
-
-                        geoip_json
+                    if let Ok(geoip_response) = http_call_result {
+                        geoip_response.content
                             .pointer("/city")
-                            .and_then(|v| v.as_str())
-                            .map(|s| s.to_string())
+                            .map(|v| v.to_owned().to_string() )
+                    } else { // We don't want the bar to crash if we can't reach the geoip service
+                        None
                     }
                 } else {
                     None
@@ -135,40 +119,24 @@ impl Weather {
                     ));
                 };
 
-                let output = Command::new("sh")
-                    .args(&[
-                        "-c",
-                        // with these options curl will print http response body to stdout, http status code to stderr
-                        &format!(
-                            r#"curl -m 3 --silent \
-                                "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}" \
-                                --write-out "%{{stderr}} %{{http_code}}""#,
-                            location_query = location_query,
-                            api_key = api_key,
-                            units = match *units {
-                                OpenWeatherMapUnits::Metric => "metric",
-                                OpenWeatherMapUnits::Imperial => "imperial",
-                            },
-                        ),
-                    ])
-                    .output()
-                    .block_error("weather", "Failed to execute curl.")
-                    .and_then(|raw_output| {
-                        let status_code = String::from_utf8(raw_output.stderr)
-                            .block_error("weather", "Invalid curl output")
-                            .and_then(|out|
-                                out.trim().parse::<i32>()
-                                    .block_error("weather", &format!("Unexpected curl output {}", out))
-                            )?;
+                let openweather_url = &format!(
+                    "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}",
+                    location_query = location_query,
+                    api_key = api_key,
+                    units = match *units {
+                        OpenWeatherMapUnits::Metric => "metric",
+                        OpenWeatherMapUnits::Imperial => "imperial",
+                    },
+                );
 
-                        // All 300-399 and >500 http codes should be considered as temporary error,
-                        // and not result in block error, i.e. leave the output empty.
-                        match status_code {
-                            code if (code >= 300 && code < 400) || code >= 500 => Ok("".to_string()),
-                            _ => String::from_utf8(raw_output.stdout)
-                                .block_error("weather", "Received non-UTF8 characters in response."),
-                        }
-                    })?;
+                let output = http::http_get(openweather_url, Duration::from_secs(3)).map(|(status_code, output)| {
+                    // All 300-399 and >500 http codes should be considered as temporary error,
+                    // and not result in block error, i.e. leave the output empty.
+                    match status_code {
+                        code if (code >= 300 && code < 400) || code >= 500 => "".to_string(),
+                        _ => output,
+                    }
+                })?;
 
                 // Don't error out on empty responses e.g. for when not
                 // connected to the internet.
@@ -190,9 +158,8 @@ impl Weather {
                 };
                 let raw_weather = json
                     .pointer("/weather/0/main")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .ok_or_else(malformed_json_error)?;
+                    .ok_or_else(malformed_json_error)?
+                    .to_string();
 
                 let raw_temp = json
                     .pointer("/main/temp")

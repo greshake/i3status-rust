@@ -18,6 +18,7 @@ mod subprocess;
 mod themes;
 mod widget;
 mod widgets;
+mod http;
 
 #[cfg(feature = "profiling")]
 use cpuprofiler::PROFILER;
