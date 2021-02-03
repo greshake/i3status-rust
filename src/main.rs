@@ -10,6 +10,7 @@ mod util;
 pub mod blocks;
 mod config;
 mod errors;
+mod http;
 mod icons;
 mod input;
 mod scheduler;

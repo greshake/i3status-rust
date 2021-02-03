@@ -1531,9 +1531,10 @@ Key | Values | Required | Default
 `api_key` | Your OpenWeatherMap API key. | Yes | None
 `city_id` | OpenWeatherMap's ID for the city. | Yes* | None
 `place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
+`coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.236229089090216","9.331730718685696"]`
 `units` | Either `metric` or `imperial`. | Yes | `metric`
 
-Either one of `city_id` or `place` is required. If both are supplied, `city_id` takes precedence.
+One of `city_id`, `place` or `coordinates` is required. If more than one are supplied, `city_id` takes precedence over `place` which takes place over `coordinates`.
 
 The options `api_key`, `city_id`, `place` can be omitted from configuration,
 in which case they must be provided in the environment variables
@@ -1549,6 +1550,7 @@ Key | Value
 `{humidity}` | Humidity
 `{weather}` | Textual description of the weather, e.g. "Raining"
 `{wind}` | Wind speed
+`{wind_kmh}` | Wind speed. The wind speed in km/h.
 `{direction}` | Wind direction, e.g. "NE"
 
 ###### [↥ back to top](#list-of-available-blocks)

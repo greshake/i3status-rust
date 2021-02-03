@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, HashMap};
-use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -11,6 +10,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::http;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::{pseudo_uuid, FormatTemplate};
@@ -197,48 +197,25 @@ impl<'a> Notifications<'a> {
             return Ok(None);
         }
 
-        let result = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!(
-                    "curl --silent --dump-header - --header \"Authorization: Bearer {token}\" -m 3 \"{next_page_url}\"",
-                    token = self.token,
-                    next_page_url = self.next_page_url,
-                ),
-            ])
-            .output()?;
+        let header_value = format!("Bearer {}", self.token);
+        let headers = vec![("Authorization", header_value.as_str())];
+        let result =
+            http::http_get_json(&self.next_page_url, Some(Duration::from_secs(3)), headers)?;
 
-        // Catch all errors, if response status is not 200, then curl wont exit with status code 0.
-        if !result.status.success() {
-            return Err(Box::new(BlockError(
-                "github".to_owned(),
-                "curl status code different than 0".to_owned(),
-            )));
-        }
+        self.next_page_url = result
+            .headers
+            .iter()
+            .find_map(|header| {
+                if header.starts_with("Link:") {
+                    parse_links_header(header).get("next").cloned()
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(&"")
+            .to_string();
 
-        let output = String::from_utf8(result.stdout)?;
-
-        // Status / headers sections are separed by a blank line.
-        let split: Vec<&str> = output.split("\r\n\r\n").collect();
-        if split.len() != 2 {
-            return Err(Box::new(BlockError(
-                "github".to_owned(),
-                "unexpected curl output".to_owned(),
-            )));
-        }
-
-        let (meta, body) = (split[0], split[1]);
-
-        let next = match meta.lines().find(|&l| l.starts_with("Link:")) {
-            Some(v) => match parse_links_header(v).get("next") {
-                Some(next) => next,
-                None => "",
-            },
-            None => "",
-        };
-        self.next_page_url = next.to_owned();
-
-        let notifications: Vec<Notification> = serde_json::from_str(body)?;
+        let notifications: Vec<Notification> = serde_json::from_value(result.content)?;
         self.notifications = notifications.into_iter();
 
         Ok(self.notifications.next())
