@@ -77,6 +77,8 @@ pub fn http_get_json(
         header_list.append(&format!("{}: {}", k, v))?;
     }
 
+    easy.useragent("i3status")?;
+
     easy.http_headers(header_list)?;
 
     let response = http_easy(easy)?;
