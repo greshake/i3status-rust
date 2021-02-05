@@ -50,7 +50,9 @@ pub fn format_number(raw_value: f64, total_digits: usize, min_suffix: &str, unit
         _ => -4,
     };
 
-    let exp_level = (raw_value.log10().div_euclid(3.) as i32).max(min_exp_level);
+    let exp_level = (raw_value.log10().div_euclid(3.) as i32)
+        .max(min_exp_level)
+        .min(4);
     let value = raw_value / (10f64).powi(exp_level * 3);
 
     let suffix = match exp_level {
