@@ -28,6 +28,7 @@ pub mod pacman;
 pub mod pomodoro;
 pub mod sound;
 pub mod speedtest;
+pub mod stock;
 pub mod taskwarrior;
 pub mod temperature;
 pub mod template;
@@ -68,6 +69,7 @@ use self::pacman::*;
 use self::pomodoro::*;
 use self::sound::*;
 use self::speedtest::*;
+use self::stock::*;
 use self::taskwarrior::*;
 use self::temperature::*;
 use self::template::*;
@@ -234,6 +236,7 @@ pub fn create_block(
         "pomodoro" => block!(Pomodoro, block_config, config, update_request),
         "sound" => block!(Sound, block_config, config, update_request),
         "speedtest" => block!(SpeedTest, block_config, config, update_request),
+        "stock" => block!(Stock, block_config, config, update_request),
         "taskwarrior" => block!(Taskwarrior, block_config, config, update_request),
         "temperature" => block!(Temperature, block_config, config, update_request),
         "template" => block!(Template, block_config, config, update_request),

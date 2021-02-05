@@ -1301,6 +1301,28 @@ Key | Values | Required | Default
 
 ###### [↥ back to top](#list-of-available-blocks)
 
+## Stock
+
+Creates a block which uses the [`yahoo finance api`](https://finance.yahoo.com) to display current symbol values.
+
+#### Examples
+
+```toml
+[[block]]
+block = "stock"
+symbol = "ETH-EUR"
+interval = 1800
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval in seconds. The minimum value is 60 | No | `60`
+`symbol` | The stock symbol to display. Visit https://finance.yahoo.com/ to see the available symbols. | No | `3`
+
+###### [↥ back to top](#list-of-available-blocks)
+
 ## Taskwarrior
 
 Creates a block which displays number of pending and started tasks of the current users taskwarrior list.
