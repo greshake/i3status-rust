@@ -503,12 +503,12 @@ mod tests {
 
     #[test]
     fn test_format_number() {
-        //assert_eq!(format_number(1.0, 3, "", "s"), "1.00s");
-        //assert_eq!(format_number(1.007, 3, "", "s"), "1.01s");
-        //assert_eq!(format_number(1.007, 4, "K", "s"), "0.001Ks");
-        //assert_eq!(format_number(1007., 3, "K", "s"), "1.01Ks");
-        //assert_eq!(format_number(107_000., 3, "", "s"), "107Ks");
-        //assert_eq!(format_number(107., 3, "", "s"), "107s");
+        assert_eq!(format_number(1.0, 3, "", "s"), "1.00s");
+        assert_eq!(format_number(1.007, 3, "", "s"), "1.01s");
+        assert_eq!(format_number(1.007, 4, "K", "s"), "0.001Ks");
+        assert_eq!(format_number(1007., 3, "K", "s"), "1.01Ks");
+        assert_eq!(format_number(107_000., 3, "", "s"), "107Ks");
+        assert_eq!(format_number(107., 3, "", "s"), "107s");
         assert_eq!(format_number(0.000_123_123, 3, "", "N"), "123uN");
     }
 
