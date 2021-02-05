@@ -79,7 +79,7 @@ fn find_ip_location() -> Result<Option<String>> {
     let city = http_call_result
         .content
         .pointer("/city")
-        .map(|v| v.to_owned().to_string());
+        .map(|v| v.to_string());
 
     Ok(city)
 }
@@ -114,13 +114,12 @@ fn australian_apparent_temp(
 
     let metric_apparent_temp =
         temp_celsius + 0.33 * water_vapor_pressure - 0.7 * metric_wind_speed - 4.0;
-    let apparent_temp = if metric {
+
+    if metric {
         metric_apparent_temp
     } else {
         1.8 * metric_apparent_temp + 32.0
-    };
-
-    apparent_temp
+    }
 }
 
 // Convert wind direction in azimuth degrees to abbreviation names
@@ -208,7 +207,7 @@ impl Weather {
                 if (output.code >= 300 && output.code < 400) || output.code >= 500 {
                     return Err(BlockError(
                         "weather".to_owned(),
-                        format!("Invalid result from curl: {}", output.code).to_owned(),
+                        format!("Invalid result from curl: {}", output.code),
                     ));
                 };
 
@@ -332,7 +331,7 @@ impl ConfigBlock for Weather {
         let id = pseudo_uuid();
         Ok(Weather {
             id: id.clone(),
-            weather: ButtonWidget::new(config.clone(), &id),
+            weather: ButtonWidget::new(config, &id),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,

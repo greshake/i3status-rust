@@ -9,3 +9,5 @@ i3status-rust.iml
 
 *.bk
 /.config/
+
+.cargo

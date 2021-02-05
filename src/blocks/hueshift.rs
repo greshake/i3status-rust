@@ -81,36 +81,35 @@ impl HueshiftConfig {
 
     /// Default current temp for any screens
     fn default_current_temp() -> u16 {
-        6500 as u16
+        6500
     }
     /// Max/Min hue temperature (min 1000K, max 10_000K)
     // TODO: Try to detect if we're using redshift or not
     // to set default max_temp either to 10_000K to 25_000K
     fn default_min_temp() -> u16 {
-        1000 as u16
+        1000
     }
     fn default_max_temp() -> u16 {
-        10_000 as u16
+        10_000
     }
 
     fn default_step() -> u16 {
-        100 as u16
+        100
     }
 
     /// Prefer any installed shifter, redshift is preferred though.
     fn default_hue_shifter() -> Option<HueShifter> {
-        let (redshift, sct) = what_is_supported();
-        if redshift {
-            return Some(HueShifter::Redshift);
-        } else if sct {
-            return Some(HueShifter::Sct);
+        if has_command("hueshift", "redshift").unwrap_or(false) {
+            Some(HueShifter::Redshift)
+        } else if has_command("hueshift", "sct").unwrap_or(false) {
+            Some(HueShifter::Sct)
+        } else {
+            None
         }
-
-        None
     }
 
     fn default_click_temp() -> u16 {
-        6500 as u16
+        6500
     }
 
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
@@ -214,22 +213,6 @@ impl Block for Hueshift {
     fn id(&self) -> &str {
         &self.id
     }
-}
-
-/// Currently, detects whether sct and redshift are installed.
-#[inline]
-fn what_is_supported() -> (bool, bool) {
-    let has_redshift = match has_command("hueshift", "redshift") {
-        Ok(has_redshift) => has_redshift,
-        Err(_) => false,
-    };
-
-    let has_sct = match has_command("hueshift", "sct") {
-        Ok(has_sct) => has_sct,
-        Err(_) => false,
-    };
-
-    (has_redshift, has_sct)
 }
 
 #[inline]
