@@ -193,7 +193,7 @@ impl<'a> Notifications<'a> {
             return Ok(Some(notif));
         }
 
-        if self.next_page_url == "" {
+        if self.next_page_url.is_empty() {
             return Ok(None);
         }
 

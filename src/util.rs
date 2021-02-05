@@ -155,17 +155,6 @@ pub fn has_command(block_name: &str, command: &str) -> Result<bool> {
     Ok(exit_status.success())
 }
 
-macro_rules! match_range {
-    ($a:expr, default: ($default:expr) {$($lower:expr ; $upper:expr => $e:expr),+}) => (
-        match $a {
-            $(
-                t if t >= $lower && t <= $upper => { $e },
-            )+
-            _ => { $default }
-        }
-    )
-}
-
 macro_rules! map (
     { $($key:expr => $value:expr),+ } => {
         {

@@ -76,10 +76,10 @@ impl MaildirConfig {
         Duration::from_secs(5)
     }
     fn default_threshold_warning() -> usize {
-        1 as usize
+        1
     }
     fn default_threshold_critical() -> usize {
-        10 as usize
+        10
     }
     fn default_icon() -> bool {
         true

@@ -221,14 +221,13 @@ impl Block for SpeedTest {
                     if self.config.bytes { "B/s" } else { "b/s" },
                 ));
 
-                // TODO: remove clippy workaround
-                #[allow(clippy::unknown_clippy_lints)]
-                #[allow(clippy::match_on_vec_items)]
-                self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
-                    0.0 ; 25.0 => State::Good,
-                    25.0 ; 60.0 => State::Info,
-                    60.0 ; 100.0 => State::Warning
-                }));
+                // ping is in milliseconds
+                self.text[0].set_state(match ping as i32 {
+                    0..=25_000 => State::Good,
+                    25_001..=60_000 => State::Info,
+                    60_001..=100_000 => State::Warning,
+                    _ => State::Critical,
+                });
             }
 
             Ok(None)

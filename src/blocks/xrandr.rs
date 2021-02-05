@@ -102,7 +102,7 @@ impl XrandrConfig {
     }
 
     fn default_step_width() -> u32 {
-        5 as u32
+        5
     }
 
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {

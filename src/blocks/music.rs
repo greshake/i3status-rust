@@ -117,12 +117,12 @@ impl Music {
 
             // Calculate how many chars to keep from title and artist
             let mut ttrc = tlen - tnum;
-            if ttrc < 1 || ttrc > 5000 {
+            if !(1..5001).contains(&ttrc) {
                 ttrc = 1
             }
 
             let mut atrc = alen - anum;
-            if atrc < 1 || atrc > 5000 {
+            if !(1..5001).contains(&atrc) {
                 atrc = 1
             }
 
@@ -666,7 +666,7 @@ impl Block for Music {
 
             match event.button {
                 MouseButton::Left => {
-                    if action != "" && players.len() > 0 {
+                    if !action.is_empty() && players.len() > 0 {
                         let metadata = players.first().unwrap();
                         let m = Message::new_method_call(
                             metadata.interface_name.clone(),

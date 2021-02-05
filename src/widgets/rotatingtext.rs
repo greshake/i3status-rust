@@ -163,7 +163,7 @@ impl RotatingTextWidget {
             "separator_block_width": 0,
             "name" : self.id,
             "min_width":
-                if self.content == "" {
+                if self.content.is_empty() {
                     "".to_string()
                 } else {
                     let text_width = self.get_rotated_content().chars().count();
