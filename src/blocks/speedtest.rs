@@ -221,11 +221,11 @@ impl Block for SpeedTest {
                     if self.config.bytes { "B/s" } else { "b/s" },
                 ));
 
-                // ping is in milliseconds
-                self.text[0].set_state(match ping as i32 {
-                    0..=25_000 => State::Good,
-                    25_001..=60_000 => State::Info,
-                    60_001..=100_000 => State::Warning,
+                // ping is in seconds
+                self.text[0].set_state(match (ping * 1000.) as i32 {
+                    0..=25 => State::Good,
+                    26..=60 => State::Info,
+                    61..=100 => State::Warning,
                     _ => State::Critical,
                 });
             }
