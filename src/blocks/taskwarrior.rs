@@ -21,8 +21,8 @@ pub struct Taskwarrior {
     update_interval: Duration,
     warning_threshold: u32,
     critical_threshold: u32,
-    filter_tags: Vec<String>,
-    block_mode: TaskwarriorBlockMode,
+    filters: Vec<Filter>,
+    filter_index: usize,
     format: FormatTemplate,
     format_singular: FormatTemplate,
     format_everything_done: FormatTemplate,
@@ -32,6 +32,29 @@ pub struct Taskwarrior {
     config: Config,
     #[allow(dead_code)]
     tx_update_request: Sender<Task>,
+}
+
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct Filter {
+    pub name: String,
+    pub filter: String,
+}
+
+impl Filter {
+    pub fn new(name: String, filter: String) -> Self {
+        Filter { name, filter }
+    }
+
+    pub fn legacy(name: String, tags: &[String]) -> Self {
+        let tags = tags
+            .iter()
+            .map(|element| format!("+{}", element))
+            .collect::<Vec<String>>()
+            .join(" ");
+        let filter = format!("-COMPLETED -DELETED {}", tags);
+        Self::new(name, filter)
+    }
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -53,30 +76,29 @@ pub struct TaskwarriorConfig {
     pub critical_threshold: u32,
 
     /// A list of tags a task has to have before it's used for counting pending tasks
+    /// (DEPRECATED) use filters instead
     #[serde(default = "TaskwarriorConfig::default_filter_tags")]
     pub filter_tags: Vec<String>,
+
+    /// A list of named filter criteria which must be fulfilled to be counted towards
+    /// the total, when that filter is active.
+    #[serde(default = "TaskwarriorConfig::default_filters")]
+    pub filters: Vec<Filter>,
 
     /// Format override
     #[serde(default = "TaskwarriorConfig::default_format")]
     pub format: String,
 
-    /// Format override if exactly one task is pending
+    /// Format override if the count is one
     #[serde(default = "TaskwarriorConfig::default_format")]
     pub format_singular: String,
 
-    /// Format override if all tasks are completed
+    /// Format override if the count is zero
     #[serde(default = "TaskwarriorConfig::default_format")]
     pub format_everything_done: String,
 
     #[serde(default = "TaskwarriorConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
-}
-
-enum TaskwarriorBlockMode {
-    // Show only the tasks which are filtered by the set tags and which are not completed.
-    OnlyFilteredPendingTasks,
-    // Show all pending tasks and ignore the filtering tags.
-    AllPendingTasks,
 }
 
 impl TaskwarriorConfig {
@@ -94,6 +116,13 @@ impl TaskwarriorConfig {
 
     fn default_filter_tags() -> Vec<String> {
         vec![]
+    }
+
+    fn default_filters() -> Vec<Filter> {
+        vec![Filter::new(
+            "pending".to_string(),
+            "-COMPLETED -DELETED".to_string(),
+        )]
     }
 
     fn default_format() -> String {
@@ -117,15 +146,22 @@ impl ConfigBlock for Taskwarrior {
         let output = ButtonWidget::new(config.clone(), &id)
             .with_icon("tasks")
             .with_text("-");
+        // If the deprecated `filter_tags` option has been set,
+        // convert it to the new `filter` format.
+        let filters = if block_config.filter_tags.len() > 0 {
+            vec![
+                Filter::legacy("filtered".to_string(), &block_config.filter_tags),
+                Filter::legacy("all".to_string(), &vec![]),
+            ]
+        } else {
+            block_config.filters
+        };
 
         Ok(Taskwarrior {
             id: pseudo_uuid(),
             update_interval: block_config.interval,
             warning_threshold: block_config.warning_threshold,
             critical_threshold: block_config.critical_threshold,
-            filter_tags: block_config.filter_tags,
-            block_mode: TaskwarriorBlockMode::OnlyFilteredPendingTasks,
-            output,
             format: FormatTemplate::from_string(&block_config.format).block_error(
                 "taskwarrior",
                 "Invalid format specified for taskwarrior::format",
@@ -143,7 +179,10 @@ impl ConfigBlock for Taskwarrior {
                 "Invalid format specified for taskwarrior::format_everything_done",
             )?,
             tx_update_request,
+            filter_index: 0,
             config,
+            filters,
+            output,
         })
     }
 }
@@ -164,33 +203,20 @@ fn has_taskwarrior() -> Result<bool> {
         != "")
 }
 
-fn tags_to_filter(tags: &[String]) -> String {
-    tags.iter()
-        .map(|element| format!("+{}", element))
-        .collect::<Vec<String>>()
-        .join(" ")
-}
-
-fn get_number_of_pending_tasks(tags: &[String]) -> Result<u32> {
+fn get_number_of_tasks(filter: &str) -> Result<u32> {
     String::from_utf8(
         Command::new("sh")
-            .args(&[
-                "-c",
-                &format!(
-                    "task rc.gc=off -COMPLETED -DELETED {} count",
-                    tags_to_filter(tags)
-                ),
-            ])
+            .args(&["-c", &format!("task rc.gc=off {} count", filter)])
             .output()
             .block_error(
                 "taskwarrior",
-                "failed to run taskwarrior for getting the number of pending tasks",
+                "failed to run taskwarrior for getting the number of tasks",
             )?
             .stdout,
     )
     .block_error(
         "taskwarrior",
-        "failed to get the number of pending tasks from taskwarrior",
+        "failed to get the number of tasks from taskwarrior",
     )?
     .trim()
     .parse::<u32>()
@@ -202,20 +228,23 @@ impl Block for Taskwarrior {
         if !has_taskwarrior()? {
             self.output.set_text("?")
         } else {
-            let filter_tags = match self.block_mode {
-                TaskwarriorBlockMode::OnlyFilteredPendingTasks => self.filter_tags.clone(),
-                TaskwarriorBlockMode::AllPendingTasks => vec![],
-            };
-            let number_of_pending_tasks = get_number_of_pending_tasks(&filter_tags)?;
-            let values = map!("{count}" => number_of_pending_tasks);
-            self.output.set_text(match number_of_pending_tasks {
+            let filter = self.filters.get(self.filter_index).block_error(
+                "taskwarrior",
+                &format!("Filter at index {} does not exist", self.filter_index),
+            )?;
+            let number_of_tasks = get_number_of_tasks(&filter.filter)?;
+            let values = map!(
+                "{count}" => number_of_tasks.to_string(),
+                "{filter_name}" => filter.name.clone()
+            );
+            self.output.set_text(match number_of_tasks {
                 0 => self.format_everything_done.render_static_str(&values)?,
                 1 => self.format_singular.render_static_str(&values)?,
                 _ => self.format.render_static_str(&values)?,
             });
-            if number_of_pending_tasks >= self.critical_threshold {
+            if number_of_tasks >= self.critical_threshold {
                 self.output.set_state(State::Critical);
-            } else if number_of_pending_tasks >= self.warning_threshold {
+            } else if number_of_tasks >= self.warning_threshold {
                 self.output.set_state(State::Warning);
             } else {
                 self.output.set_state(State::Idle);
@@ -237,14 +266,8 @@ impl Block for Taskwarrior {
                     self.update()?;
                 }
                 MouseButton::Right => {
-                    match self.block_mode {
-                        TaskwarriorBlockMode::OnlyFilteredPendingTasks => {
-                            self.block_mode = TaskwarriorBlockMode::AllPendingTasks
-                        }
-                        TaskwarriorBlockMode::AllPendingTasks => {
-                            self.block_mode = TaskwarriorBlockMode::OnlyFilteredPendingTasks
-                        }
-                    }
+                    // Increment the filter_index, rotating at the end
+                    self.filter_index = (self.filter_index + 1) % self.filters.len();
                     self.update()?;
                 }
                 _ => {}
