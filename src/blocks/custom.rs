@@ -171,15 +171,9 @@ impl Block for Custom {
             .unwrap_or_else(|e| e.to_string());
 
         if self.json {
-            let output: Output = match serde_json::from_str(&*raw_output) {
-                Err(e) => {
-                    return Err(BlockError(
-                        "custom".to_string(),
-                        format!("Error parsing JSON: {}", e),
-                    ));
-                }
-                Ok(s) => s,
-            };
+            let output: Output = serde_json::from_str(&*raw_output).map_err(|e| {
+                BlockError("custom".to_string(), format!("Error parsing JSON: {}", e))
+            })?;
             self.output.set_icon(&output.icon);
             self.output.set_state(output.state);
             self.is_empty = output.text.is_empty();

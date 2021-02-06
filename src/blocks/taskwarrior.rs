@@ -148,10 +148,10 @@ impl ConfigBlock for Taskwarrior {
             .with_text("-");
         // If the deprecated `filter_tags` option has been set,
         // convert it to the new `filter` format.
-        let filters = if block_config.filter_tags.len() > 0 {
+        let filters = if !block_config.filter_tags.is_empty() {
             vec![
                 Filter::legacy("filtered".to_string(), &block_config.filter_tags),
-                Filter::legacy("all".to_string(), &vec![]),
+                Filter::legacy("all".to_string(), &[]),
             ]
         } else {
             block_config.filters

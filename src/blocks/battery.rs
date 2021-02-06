@@ -333,19 +333,23 @@ impl UpowerDevice {
                 "org.freedesktop.UPower",
                 "EnumerateDevices",
             )
-            .unwrap();
-            let dbus_reply = con.send_with_reply_and_block(msg, 2000).unwrap();
+            .block_error("battery", "Failed to create DBus message")?;
+
+            let dbus_reply = con
+                .send_with_reply_and_block(msg, 2000)
+                .block_error("battery", "Failed to retrieve DBus reply")?;
 
             // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
-            let mut paths: Array<dbus::Path, _> = dbus_reply.get1().unwrap();
-            let path = paths.find(|entry| entry.ends_with(device));
-            if path.is_none() {
-                return Err(BlockError(
-                    "battery".into(),
-                    "UPower device could not be found.".into(),
-                ));
-            }
-            device_path = path.unwrap().as_cstr().to_string_lossy().into_owned();
+            let mut paths: Array<dbus::Path, _> = dbus_reply
+                .get1()
+                .block_error("battery", "Failed to read DBus reply")?;
+
+            device_path = paths
+                .find(|entry| entry.ends_with(device))
+                .block_error("battery", "UPower device could not be found.")?
+                .as_cstr()
+                .to_string_lossy()
+                .into_owned();
         }
         let upower_type: u32 = con
             .with_path("org.freedesktop.UPower", &device_path, 1000)
