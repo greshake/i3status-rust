@@ -1417,7 +1417,7 @@ locale = "fr_BE"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | A string to customise the output of this block. See the [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"%a %d/%m %R"`
+`format` | A string to customise the output of this block. See the [chrono docs](https://docs.rs/chrono/0.4/chrono/format/strftime/index.html#specifiers) for all options. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"%a %d/%m %R"`
 `on_click` | Shell command to run when the time block is clicked. | No | None
 `interval` | Update interval, in seconds. | No | `5`
 `timezone` | A timezone specifier (e.g. "Europe/Lisbon"). | No | Local timezone
