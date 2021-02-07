@@ -26,6 +26,8 @@ pub struct Github {
     api_server: String,
     token: String,
     format: FormatTemplate,
+    total_notifications: u64,
+    hide_if_total_is_zero: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -47,6 +49,9 @@ pub struct GithubConfig {
 
     #[serde(default = "GithubConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
+
+    #[serde(default = "GithubConfig::default_hide_if_total_is_zero")]
+    pub hide_if_total_is_zero: bool,
 }
 
 impl GithubConfig {
@@ -65,21 +70,18 @@ impl GithubConfig {
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
+
+    fn default_hide_if_total_is_zero() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Github {
     type Config = GithubConfig;
 
     fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
-        let token = match std::env::var(GITHUB_TOKEN_ENV).ok() {
-            Some(v) => v,
-            None => {
-                return Err(BlockError(
-                    "github".to_owned(),
-                    "missing I3RS_GITHUB_TOKEN environment variable".to_owned(),
-                ))
-            }
-        };
+        let token = std::env::var(GITHUB_TOKEN_ENV)
+            .block_error("github", "missing I3RS_GITHUB_TOKEN environment variable")?;
 
         let id = pseudo_uuid();
         let text = TextWidget::new(config, &id)
@@ -93,6 +95,8 @@ impl ConfigBlock for Github {
             token,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("github", "Invalid format specified")?,
+            total_notifications: 0,
+            hide_if_total_is_zero: block_config.hide_if_total_is_zero,
         })
     }
 }
@@ -119,8 +123,9 @@ impl Block for Github {
         };
 
         let default: u64 = 0;
+        self.total_notifications = *aggregations.get("total").unwrap_or(&default);
         let values = map!(
-            "{total}" => format!("{}", aggregations.get("total").unwrap_or(&default)),
+            "{total}" => format!("{}", self.total_notifications),
             // As specified by:
             // https://developer.github.com/v3/activity/notifications/#notification-reasons
             "{assign}" => format!("{}", aggregations.get("assign").unwrap_or(&default)),
@@ -142,7 +147,11 @@ impl Block for Github {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
+        if self.hide_if_total_is_zero && self.total_notifications == 0 {
+            vec![]
+        } else {
+            vec![&self.text]
+        }
     }
 
     fn click(&mut self, _: &I3BarEvent) -> Result<()> {

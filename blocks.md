@@ -486,6 +486,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `30`
 `format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{total}"`
 `api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
+`hide_if_total_is_zero` | Hide this block if the total count of notifications is zero | No | `false`
 
 #### Available Format Keys
 
