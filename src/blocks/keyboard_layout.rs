@@ -77,22 +77,17 @@ fn setxkbmap_layouts() -> Result<String> {
     let layout = output
         .split('\n')
         .find(|line| line.starts_with("layout"))
-        .ok_or_else(|| {
-            BlockError(
-                "keyboard_layout".to_string(),
-                "Could not find the layout entry from setxkbmap.".to_string(),
-            )
-        })?
+        .block_error(
+            "keyboard_layout",
+            "Could not find the layout entry from setxkbmap.",
+        )?
         .split(char::is_whitespace)
         .last();
 
-    match layout {
-        Some(layout) => Ok(layout.to_string()),
-        None => Err(BlockError(
-            "keyboard_layout".to_string(),
-            "Could not read the layout entry from setxkbmap.".to_string(),
-        )),
-    }
+    layout.map(|s| s.to_string()).block_error(
+        "keyboard_layout",
+        "Could not read the layout entry from setxkbmap.",
+    )
 }
 
 impl KeyboardLayoutMonitor for SetXkbMap {

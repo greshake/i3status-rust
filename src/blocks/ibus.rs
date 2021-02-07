@@ -144,18 +144,15 @@ impl ConfigBlock for IBus {
             )?;
             let p = c.with_path("org.freedesktop.IBus", "/org/freedesktop/IBus", 5000);
             let info: arg::Variant<Box<dyn arg::RefArg>> =
-                match p.get("org.freedesktop.IBus", "GlobalEngine") {
-                    Ok(i) => i,
-                    Err(e) => {
-                        return Err(BlockError(
-                            "ibus".to_string(),
-                            format!(
-                                "Failed to query IBus for GlobalEngine at {} with error {}",
-                                ibus_address, e
-                            ),
-                        ))
-                    }
-                };
+                p.get("org.freedesktop.IBus", "GlobalEngine").map_err(|e| {
+                    BlockError(
+                        "ibus".to_string(),
+                        format!(
+                            "Failed to query IBus for GlobalEngine at {} with error {}",
+                            ibus_address, e
+                        ),
+                    )
+                })?;
 
             // `info` should contain something containing an array with the contents as such:
             // [name, longname, description, language, license, author, icon, layout, layout_variant, layout_option, rank, hotkeys, symbol, setup, version, textdomain, icon_prop_key]
