@@ -362,13 +362,9 @@ impl PulseAudioClient {
             }
         };
         let thread_result = || -> Result<()> {
-            match recv_result.recv() {
-                Err(_) => Err(BlockError(
-                    "sound".into(),
-                    "failed to receive from pulseaudio thread channel".into(),
-                )),
-                Ok(result) => result,
-            }
+            recv_result
+                .recv()
+                .block_error("sound", "failed to receive from pulseaudio thread channel")?
         };
 
         // requests
