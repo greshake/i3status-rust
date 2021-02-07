@@ -342,6 +342,7 @@ Creates a block that can be updated asynchronously using DBus.
 
 For example, updating the block using command line tools:  
 `busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`  
+`busctl --user call i3.status.rs /test i3.status.rs SetStatus s just-some-text`  
 or
 `qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus Headphones music Good`.  
 
