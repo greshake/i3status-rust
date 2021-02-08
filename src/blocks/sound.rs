@@ -362,13 +362,9 @@ impl PulseAudioClient {
             }
         };
         let thread_result = || -> Result<()> {
-            match recv_result.recv() {
-                Err(_) => Err(BlockError(
-                    "sound".into(),
-                    "failed to receive from pulseaudio thread channel".into(),
-                )),
-                Ok(result) => result,
-            }
+            recv_result
+                .recv()
+                .block_error("sound", "failed to receive from pulseaudio thread channel")?
         };
 
         // requests
@@ -630,10 +626,7 @@ impl SoundDevice for PulseAudioSoundDevice {
     }
 
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()> {
-        let mut volume = match self.volume {
-            Some(volume) => volume,
-            None => return Err(BlockError("sound".into(), "volume unknown".into())),
-        };
+        let mut volume = self.volume.block_error("sound", "volume unknown")?;
 
         // apply step to volumes
         let step = (step as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as i32;

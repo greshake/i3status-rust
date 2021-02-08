@@ -67,18 +67,11 @@ impl BacklitDevice {
             .read_dir() // Iterate over entries in the directory.
             .block_error("backlight", "Failed to read backlight device directory")?;
 
-        let first_device = match devices.take(1).next() {
-            None => Err(BlockError(
-                "backlight".to_string(),
-                "No backlit devices found".to_string(),
-            )),
-            Some(device) => device.map_err(|_| {
-                BlockError(
-                    "backlight".to_string(),
-                    "Failed to read default device file".to_string(),
-                )
-            }),
-        }?;
+        let first_device = devices
+            .take(1)
+            .next()
+            .block_error("backlight", "No backlit devices found")?
+            .block_error("backlight", "Failed to read default device file")?;
 
         let max_brightness = read_brightness(&first_device.path().join("max_brightness"))?;
 
