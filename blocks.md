@@ -231,7 +231,7 @@ Update CPU usage every second:
 [[block]]
 block = "cpu"
 interval = 1
-format = "{barchart} {utilization}% {frequency}GHz"
+format = "{barchart} {utilization} {frequency}"
 ```
 
 #### Options
@@ -242,7 +242,7 @@ Key | Values | Required | Default
 `warning` | Minimum usage, where state is set to warning. | No | `60`
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{utilization}%"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{utilization}"`
 `per_core` | Display CPU frequencies and utilization per core. | No | `false`
 `on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
 
@@ -250,7 +250,7 @@ Key | Values | Required | Default
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`frequency` | Deprecated in favour of `format`. Sets format to `{utilization}% {frequency}GHz`. | No | `false`
+`frequency` | Deprecated in favour of `format`. Sets format to `{utilization} {frequency}`. | No | `false`
 
 #### Available Format Keys
 
@@ -258,7 +258,7 @@ Placeholder | Description
 ------------|-------------
 `{barchart}` | Bar chart of each CPU's core utilization
 `{utilization}` | Average CPU utilization in percent
-`{frequency}` | CPU frequency in Hz
+`{frequency}` | CPU frequency in GHz
 
 ###### [↥ back to top](#list-of-available-blocks)
 

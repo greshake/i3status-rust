@@ -74,7 +74,7 @@ pub struct CpuConfig {
 
 impl CpuConfig {
     fn default_format() -> String {
-        "{utilization}%".to_owned()
+        "{utilization}".to_owned()
     }
 
     fn default_interval() -> Duration {
@@ -111,9 +111,7 @@ impl ConfigBlock for Cpu {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let format = if block_config.frequency {
-            "{utilization}% {frequency}GHz".into()
-        } else if block_config.per_core {
-            "{utilization}".to_owned()
+            "{utilization} {frequency}".into()
         } else {
             block_config.format
         };
@@ -175,8 +173,6 @@ impl Block for Cpu {
             if line.starts_with("cpu") {
                 let data: Vec<u64> = (&line)
                     .split(' ')
-                    .collect::<Vec<&str>>()
-                    .iter()
                     .skip(if cpu_i == 0 { 2 } else { 1 })
                     .filter_map(|x| x.parse::<u64>().ok())
                     .collect::<Vec<_>>();
@@ -237,9 +233,9 @@ impl Block for Cpu {
                 );
             }
         }
-        let values = map!("{frequency}" => format_frequency(&cpu_freqs, n_cpu, self.per_core),
+        let values = map!("{frequency}" => format_frequency(&cpu_freqs[..n_cpu], self.per_core),
                           "{barchart}" => barchart,
-                          "{utilization}" => format_utilization(&cpu_utilizations, cpu_i, self.per_core),
+                          "{utilization}" => format_utilization(&cpu_utilizations[..cpu_i], self.per_core),
                           "{utilizationbar}" => format_percent_bar(avg_utilization as f32));
 
         self.output
@@ -258,31 +254,29 @@ impl Block for Cpu {
 }
 
 #[inline]
-fn format_utilization(values: &[f64], count: usize, per_core: bool) -> String {
+fn format_utilization(values: &[f64], per_core: bool) -> String {
     if per_core {
         values
             .iter()
-            .take(count)
             .skip(1) // The first value is a global one.
             .map(|v| format!("{:02.0}%", 100.0 * v))
             .collect::<Vec<String>>()
             .join(" ")
     } else {
-        format!("{:02.0}", 100.0 * values[0])
+        format!("{:02.0}%", 100.0 * values[0])
     }
 }
 
 #[inline]
-fn format_frequency(cpu_freqs: &[f32], count: usize, per_core: bool) -> String {
+fn format_frequency(cpu_freqs: &[f32], per_core: bool) -> String {
     if per_core {
         cpu_freqs
             .iter()
-            .take(count)
             .map(|v| format!("{0:.1}GHz", v / 1000.0))
             .collect::<Vec<String>>()
             .join(" ")
     } else {
-        let avg = cpu_freqs.iter().take(count).sum::<f32>() / (count as f32) / 1000.0;
-        format!("{:.1}", avg)
+        let avg = cpu_freqs.iter().sum::<f32>() / (cpu_freqs.len() as f32) / 1000.0;
+        format!("{:.1}GHz", avg)
     }
 }
