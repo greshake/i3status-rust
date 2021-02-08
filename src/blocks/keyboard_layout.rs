@@ -325,29 +325,17 @@ pub struct Sway {
 
 impl Sway {
     pub fn new(sway_kb_identifier: String) -> Result<Self> {
-        let layout = if sway_kb_identifier.is_empty() {
-            swayipc::Connection::new()
-                .unwrap()
-                .get_inputs()
-                .unwrap()
-                .into_iter()
-                .find(|input| input.input_type == "keyboard")
-                .and_then(|input| input.xkb_active_layout_name)
-                .ok_or_else(|| "".to_string())
-                .block_error("sway", "Failed to get xkb_active_layout_name.")?
-        } else {
-            swayipc::Connection::new()
-                .unwrap()
-                .get_inputs()
-                .unwrap()
-                .into_iter()
-                .find(|input| {
-                    input.identifier == sway_kb_identifier && input.input_type == "keyboard"
-                })
-                .and_then(|input| input.xkb_active_layout_name)
-                .ok_or_else(|| "".to_string())
-                .block_error("sway", "Failed to get xkb_active_layout_name.")?
-        };
+        let layout = swayipc::Connection::new()
+            .unwrap()
+            .get_inputs()
+            .unwrap()
+            .into_iter()
+            .find(|input| {
+                (sway_kb_identifier.is_empty() || input.identifier == sway_kb_identifier)
+                    && input.input_type == "keyboard"
+            })
+            .and_then(|input| input.xkb_active_layout_name)
+            .block_error("sway", "Failed to get xkb_active_layout_name.")?;
 
         Ok(Sway {
             sway_kb_layout: Arc::new(Mutex::new(layout)),
@@ -357,13 +345,27 @@ impl Sway {
 
 impl KeyboardLayoutMonitor for Sway {
     fn keyboard_layout(&self) -> Result<String> {
+        // Layout is either `layout (varinat)` or `layout`
         let layout = self.sway_kb_layout.lock().unwrap();
-        Ok(layout.to_string())
+        let (layout, _variant) = match layout.find("(") {
+            Some(i) => layout.split_at(i),
+            None => return Ok(layout.to_string()),
+        };
+        Ok(layout
+            .split_whitespace()
+            .next()
+            .unwrap_or(layout)
+            .to_string())
     }
 
     fn keyboard_variant(&self) -> Result<String> {
-        // Not implemented (TODO? Doesn't look like sway IPC exposes this anyway)
-        Ok("N/A".to_string())
+        // Layout is either `layout (varinat)` or `layout`
+        let layout = self.sway_kb_layout.lock().unwrap();
+        let (_layout, variant) = match layout.find("(") {
+            Some(i) => layout.split_at(i),
+            None => return Ok("N/A".to_string()),
+        };
+        Ok(variant[1..variant.len() - 1].to_string())
     }
 
     fn must_poll(&self) -> bool {
