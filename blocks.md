@@ -674,7 +674,7 @@ Key | Values | Required | Default
   Key    | Value
 ---------|-------
 `{layout}` | Keyboard layout name
-`{variant}` | Keyboard variant (only `localebus` is supported so far)
+`{variant}` | Keyboard variant (only `localebus` and `sway` are supported so far)
 
 ###### [↥ back to top](#list-of-available-blocks)
 
