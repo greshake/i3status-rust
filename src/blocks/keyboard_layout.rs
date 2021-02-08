@@ -347,7 +347,7 @@ impl KeyboardLayoutMonitor for Sway {
     fn keyboard_layout(&self) -> Result<String> {
         // Layout is either `layout (varinat)` or `layout`
         let layout = self.sway_kb_layout.lock().unwrap();
-        let (layout, _variant) = match layout.find("(") {
+        let (layout, _variant) = match layout.find('(') {
             Some(i) => layout.split_at(i),
             None => return Ok(layout.to_string()),
         };
@@ -361,7 +361,7 @@ impl KeyboardLayoutMonitor for Sway {
     fn keyboard_variant(&self) -> Result<String> {
         // Layout is either `layout (varinat)` or `layout`
         let layout = self.sway_kb_layout.lock().unwrap();
-        let (_layout, variant) = match layout.find("(") {
+        let (_layout, variant) = match layout.find('(') {
             Some(i) => layout.split_at(i),
             None => return Ok("N/A".to_string()),
         };
