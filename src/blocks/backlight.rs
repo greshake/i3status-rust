@@ -252,7 +252,7 @@ impl ConfigBlock for Backlight {
         let scrolling = config.scrolling;
         let backlight = Backlight {
             output: ButtonWidget::new(config, id),
-            id: id.clone(),
+            id,
             device,
             step_width: block_config.step_width,
             scrolling,
@@ -277,7 +277,7 @@ impl ConfigBlock for Backlight {
                     if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
                         tx_update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();

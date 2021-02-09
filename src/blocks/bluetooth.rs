@@ -189,7 +189,7 @@ impl ConfigBlock for Bluetooth {
         let id = pseudo_uuid();
 
         let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
-        device.monitor(id.clone(), send);
+        device.monitor(id, send);
 
         Ok(Bluetooth {
             id,

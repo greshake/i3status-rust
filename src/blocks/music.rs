@@ -431,7 +431,7 @@ impl ConfigBlock for Music {
                             };
                             if updated {
                                 send.send(Task {
-                                    id: id.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap();
@@ -705,7 +705,7 @@ impl Block for Music {
                     if (event_id == self.id || event_id == self.collapsed_id) && players.len() > 0 {
                         players.rotate_left(1);
                         self.send.send(Task {
-                            id: self.id.clone(),
+                            id: self.id,
                             update_time: Instant::now(),
                         })?;
                     }

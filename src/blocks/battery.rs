@@ -394,7 +394,7 @@ impl UpowerDevice {
                     if con.incoming(10_000).next().is_some() {
                         update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -666,7 +666,7 @@ impl ConfigBlock for Battery {
         let device: Box<dyn BatteryDevice> = match driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
-                out.monitor(id.clone(), update_request);
+                out.monitor(id, update_request);
                 Box::new(out)
             }
             BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(

@@ -16,8 +16,8 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
 pub struct Notmuch {
+    id: u64,
     text: TextWidget,
-    id: String,
     update_interval: Duration,
     query: String,
     db: String,
@@ -121,7 +121,8 @@ impl ConfigBlock for Notmuch {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id = pseudo_uuid();
-        let mut widget = TextWidget::new(config, &id);
+
+        let mut widget = TextWidget::new(config, id);
         if !block_config.no_icon {
             widget.set_icon("mail");
         }
@@ -181,16 +182,14 @@ impl Block for Notmuch {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == &self.id).unwrap_or(false)
-            && event.button == MouseButton::Left
-        {
+        if event.matches_id(self.id) && event.button == MouseButton::Left {
             self.update()?;
         }
 
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

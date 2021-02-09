@@ -52,7 +52,7 @@ impl ConfigBlock for Uptime {
     ) -> Result<Self> {
         let id = pseudo_uuid();
 
-        let text = TextWidget::new(config.clone(), id).with_icon("uptime");
+        let text = TextWidget::new(config, id).with_icon("uptime");
 
         Ok(Uptime {
             id,

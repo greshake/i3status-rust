@@ -171,7 +171,7 @@ impl ConfigBlock for SpeedTest {
         let vals = Arc::new(Mutex::new((false, vec![])));
 
         // Make the update thread
-        make_thread(recv, done, vals.clone(), block_config.clone(), id.clone());
+        make_thread(recv, done, vals.clone(), block_config.clone(), id);
 
         let ty = if block_config.bytes { "MB/s" } else { "Mb/s" };
         Ok(SpeedTest {

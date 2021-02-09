@@ -264,16 +264,14 @@ impl Block for Temperature {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.matches_id(self.id) {
-            if e.button == MouseButton::Left {
-                self.collapsed = !self.collapsed;
-                if self.collapsed {
-                    self.text.set_text(String::new());
-                    self.text.set_spacing(Spacing::Hidden);
-                } else {
-                    self.text.set_text(self.output.clone());
-                    self.text.set_spacing(Spacing::Normal);
-                }
+        if e.matches_id(self.id) && e.button == MouseButton::Left {
+            self.collapsed = !self.collapsed;
+            if self.collapsed {
+                self.text.set_text(String::new());
+                self.text.set_spacing(Spacing::Hidden);
+            } else {
+                self.text.set_text(self.output.clone());
+                self.text.set_spacing(Spacing::Normal);
             }
         }
 

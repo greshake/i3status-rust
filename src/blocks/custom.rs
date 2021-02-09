@@ -94,7 +94,7 @@ impl ConfigBlock for Custom {
         let mut custom = Custom {
             id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(config.clone(), id),
+            output: ButtonWidget::new(config, id),
             command: None,
             on_click: None,
             cycle: None,
@@ -199,7 +199,7 @@ impl Block for Custom {
         if let Some(sig) = self.signal {
             if sig == signal {
                 self.tx_update_request.send(Task {
-                    id: self.id.clone(),
+                    id: self.id,
                     update_time: Instant::now(),
                 })?;
             }
@@ -223,7 +223,7 @@ impl Block for Custom {
 
             if update {
                 self.tx_update_request.send(Task {
-                    id: self.id.clone(),
+                    id: self.id,
                     update_time: Instant::now(),
                 })?;
             }

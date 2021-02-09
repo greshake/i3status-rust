@@ -100,7 +100,7 @@ impl ConfigBlock for CustomDBus {
 
                                         // Tell block to update now.
                                         send.send(Task {
-                                            id: id.clone(),
+                                            id,
                                             update_time: Instant::now(),
                                         })
                                         .unwrap();

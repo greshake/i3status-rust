@@ -186,7 +186,7 @@ macro_rules! map_to_owned (
      };
 );
 
-pub fn print_blocks(blocks: &Vec<Box<dyn Block>>, config: &Config) -> Result<()> {
+pub fn print_blocks(blocks: &[Box<dyn Block>], config: &Config) -> Result<()> {
     let mut last_bg: Option<String> = None;
 
     let mut rendered_blocks = vec![];

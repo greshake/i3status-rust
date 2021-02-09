@@ -406,7 +406,7 @@ impl KeyboardLayoutMonitor for Sway {
                                 }
                                 update_request
                                     .send(Task {
-                                        id: id.clone(),
+                                        id,
                                         update_time: Instant::now(),
                                     })
                                     .unwrap();

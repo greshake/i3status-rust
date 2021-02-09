@@ -554,7 +554,7 @@ impl PulseAudioClient {
         for (id, tx_update_request) in &*PULSEAUDIO_EVENT_LISTENER.lock().unwrap() {
             tx_update_request
                 .send(Task {
-                    id: id.clone(),
+                    id: *id,
                     update_time: Instant::now(),
                 })
                 .unwrap();

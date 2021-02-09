@@ -122,7 +122,7 @@ impl ConfigBlock for Watson {
                         EventMask::CREATE if event.name == Some(&file_name) => {
                             tx_update_request
                                 .send(Task {
-                                    id: id.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .expect("unable to send task from watson watcher");
