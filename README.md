@@ -65,7 +65,7 @@ Key | Description | Required | Default
 ----|-------------|----------|--------
 `icons` | The icon set that should be used. Possible values are `none`, `awesome`, `awesome5` and `material`. Check [themes.md](https://github.com/greshake/i3status-rust/blob/master/themes.md) for more information | No | `none`
 `theme` | The predefined theme that should be used. You can also add your own overrides. Check [themes.md](https://github.com/greshake/i3status-rust/blob/master/themes.md) for all available themes. | No | `plain`
-`scrolling` | The direction of scrolling, either `natural` or `reverse` | No | `natural`
+`scrolling` | The direction of scrolling, either `natural` or `reverse` | No | `reverse`
 `block` | All blocks that will exist in your i3bar. Check [blocks.md](https://github.com/greshake/i3status-rust/blob/master/blocks.md) for all blocks and their parameters. | No | none
 
 ## Integrate it into i3
