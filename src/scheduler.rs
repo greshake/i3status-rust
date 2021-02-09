@@ -1,6 +1,6 @@
 use crate::blocks::Update;
 use std::cmp;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::BinaryHeap;
 use std::fmt;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -74,10 +74,7 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(
-        &mut self,
-        block_map: &mut HashMap<String, &mut dyn Block>,
-    ) -> Result<()> {
+    pub fn do_scheduled_updates(&mut self, blocks: &mut Vec<Box<dyn Block>>) -> Result<()> {
         let t = self
             .schedule
             .pop()
@@ -107,8 +104,8 @@ impl UpdateScheduler {
         let now = Instant::now();
 
         for task in tasks_next {
-            if let Some(dur) = block_map
-                .get_mut(&task.id)
+            if let Some(dur) = blocks
+                .get_mut(task.id.parse::<usize>().unwrap())
                 .internal_error("scheduler", "could not get required block")?
                 .update()?
             {

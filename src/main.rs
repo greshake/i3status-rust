@@ -23,8 +23,6 @@ mod widgets;
 #[cfg(feature = "profiling")]
 use cpuprofiler::PROFILER;
 
-use std::collections::HashMap;
-use std::ops::DerefMut;
 use std::time::Duration;
 
 use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
@@ -129,12 +127,9 @@ fn main() {
 fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
     let initialise = if matches.is_present("never-pause") {
-        format!(
-            "\"version\": 1, \"click_events\": true, \"stop_signal\": {}",
-            nix::sys::signal::Signal::SIGCONT as i8
-        )
+        "\"version\": 1, \"click_events\": true, \"stop_signal\": 0"
     } else {
-        "\"version\": 1, \"click_events\": true".to_string()
+        "\"version\": 1, \"click_events\": true"
     };
     print!("{{{}}}\n[", initialise);
 
@@ -151,13 +146,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // In dev build, we might diverge into profiling blocks here
     if let Some(name) = matches.value_of("profile") {
-        profile_config(
+        return profile_config(
             name,
             matches.value_of("profile-runs").unwrap(),
             &config,
             tx_update_requests,
-        )?;
-        return Ok(());
+        );
     }
 
     // Initialize the blocks
@@ -171,20 +165,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         )?);
     }
 
-    // We save the order of the blocks here,
-    // because they will be passed to an unordered HashMap
-    let order = blocks
-        .iter()
-        .map(|x| String::from(x.id()))
-        .collect::<Vec<_>>();
-
     let mut scheduler = UpdateScheduler::new(&blocks);
-
-    let mut block_map: HashMap<String, &mut dyn Block> = HashMap::new();
-
-    for block in &mut blocks {
-        block_map.insert(String::from(block.id()), (*block).deref_mut());
-    }
 
     // We wait for click events in a separate thread, to avoid blocking to wait for stdin
     let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =
@@ -206,35 +187,34 @@ fn run(matches: &ArgMatches) -> Result<()> {
         select! {
             // Receive click events
             recv(rx_clicks) -> res => if let Ok(event) = res {
-                    for block in block_map.values_mut() {
+                    for block in blocks.iter_mut() {
                         block.click(&event)?;
                     }
-                    util::print_blocks(&order, &block_map, &config)?;
+                    util::print_blocks(&blocks, &config)?;
             },
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
                 // Process immediately and forget
-                block_map
-                    .get_mut(&req.id)
+                blocks.get_mut(req.id.parse::<usize>().unwrap())
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
-                util::print_blocks(&order, &block_map, &config)?;
+                util::print_blocks(&blocks, &config)?;
             },
             // Receive update timer events
             recv(ttnu) -> _ => {
-                scheduler.do_scheduled_updates(&mut block_map)?;
+                scheduler.do_scheduled_updates(&mut blocks)?;
                 // redraw the blocks, state changed
-                util::print_blocks(&order, &block_map, &config)?;
+                util::print_blocks(&blocks, &config)?;
             },
             // Receive signal events
             recv(rx_signals) -> res => if let Ok(sig) = res {
                 match sig {
                     signal_hook::SIGUSR1 => {
                         //USR1 signal that updates every block in the bar
-                        for block in block_map.values_mut() {
+                        for block in blocks.iter_mut() {
                             block.update()?;
                         }
-                        util::print_blocks(&order, &block_map, &config)?;
+                        util::print_blocks(&blocks, &config)?;
                     },
                     signal_hook::SIGUSR2 => {
                         //USR2 signal that should reload the config
@@ -244,7 +224,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     _ => {
                         //Real time signal that updates only the blocks listening
                         //for that signal
-                        for block in block_map.values_mut() {
+                        for block in blocks.iter_mut() {
                             block.signal(sig)?;
                         }
                     },
