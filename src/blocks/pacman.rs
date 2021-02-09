@@ -22,8 +22,8 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Pacman {
+    id: u64,
     output: ButtonWidget,
-    id: String,
     update_interval: Duration,
     format: FormatTemplate,
     format_singular: FormatTemplate,
@@ -165,7 +165,8 @@ impl ConfigBlock for Pacman {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id = pseudo_uuid();
-        let output = ButtonWidget::new(config, &id).with_icon("update");
+
+        let output = ButtonWidget::new(config, id).with_icon("update");
 
         Ok(Pacman {
             id,
@@ -340,8 +341,8 @@ fn has_critical_update(updates: &str, regex: &Regex) -> bool {
 }
 
 impl Block for Pacman {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
@@ -425,10 +426,10 @@ impl Block for Pacman {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == &self.id).unwrap_or(false)
-            && event.button == MouseButton::Left
-        {
-            self.update()?;
+        if event.matches_id(self.id) {
+            if let MouseButton::Left = event.button {
+                self.update()?;
+            }
         }
 
         Ok(())

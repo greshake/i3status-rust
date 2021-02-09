@@ -14,12 +14,12 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, pseudo_uuid, FormatTemplate};
+use crate::util::{battery_level_to_icon, hash, pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct KDEConnect {
-    id: String,
+    id: u64,
     device_id: String,
     device_name: Arc<Mutex<String>>,
     battery_charge: Arc<Mutex<i32>>,
@@ -110,15 +110,8 @@ impl ConfigBlock for KDEConnect {
     type Config = KDEConnectConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
+        let id = pseudo_uuid();
 
-        let id1 = id.clone();
-        let id2 = id.clone();
-        let id3 = id.clone();
-        let id4 = id.clone();
-        let id5 = id.clone();
-        let id6 = id.clone();
-        let id7 = id.clone();
         let send2 = send.clone();
         let send3 = send.clone();
         let send4 = send.clone();
@@ -241,7 +234,7 @@ impl ConfigBlock for KDEConnect {
                         // in one of the two battery signal handlers. Hopefully
                         // one day they add proper PropertiesChanged signals.
                         send.send(Task {
-                            id: id1.clone(),
+                            id,
                             update_time: Instant::now(),
                         })
                         .unwrap();
@@ -269,7 +262,7 @@ impl ConfigBlock for KDEConnect {
                         // Tell block to update now.
                         send2
                             .send(Task {
-                                id: id2.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -288,7 +281,7 @@ impl ConfigBlock for KDEConnect {
                         // Tell block to update now.
                         send3
                             .send(Task {
-                                id: id3.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -311,7 +304,7 @@ impl ConfigBlock for KDEConnect {
                         // Tell block to update now.
                         send4
                             .send(Task {
-                                id: id4.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -330,7 +323,7 @@ impl ConfigBlock for KDEConnect {
                         // Tell block to update now.
                         send5
                             .send(Task {
-                                id: id5.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -357,7 +350,7 @@ impl ConfigBlock for KDEConnect {
                         // one day they add proper PropertiesChanged signals.
                         send6
                             .send(Task {
-                                id: id6.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -383,7 +376,7 @@ impl ConfigBlock for KDEConnect {
                         // Tell block to update now.
                         send7
                             .send(Task {
-                                id: id7.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -414,15 +407,15 @@ impl ConfigBlock for KDEConnect {
             bat_critical: block_config.bat_critical,
             format: FormatTemplate::from_string(&block_config.format)?,
             format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
-            output: ButtonWidget::new(config.clone(), "kdeconnect").with_icon("phone"),
+            output: ButtonWidget::new(config.clone(), hash("kdeconnect")).with_icon("phone"),
             config,
         })
     }
 }
 
 impl Block for KDEConnect {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {

@@ -19,9 +19,9 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct SpeedTest {
+    id: u64,
     vals: Arc<Mutex<(bool, Vec<f32>)>>,
     text: Vec<ButtonWidget>,
-    id: String,
     config: SpeedTestConfig,
     send: Sender<()>,
 }
@@ -131,7 +131,7 @@ fn make_thread(
     done: Sender<Task>,
     values: Arc<Mutex<(bool, Vec<f32>)>>,
     config: SpeedTestConfig,
-    id: String,
+    id: u64,
 ) {
     thread::Builder::new()
         .name("speedtest".into())
@@ -148,7 +148,7 @@ fn make_thread(
                             *update = true;
 
                             done.send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -164,10 +164,11 @@ impl ConfigBlock for SpeedTest {
     type Config = SpeedTestConfig;
 
     fn new(block_config: Self::Config, config: Config, done: Sender<Task>) -> Result<Self> {
+        let id = pseudo_uuid();
+
         // Create all the things we are going to send and take for ourselves.
         let (send, recv): (Sender<()>, Receiver<()>) = unbounded();
         let vals = Arc::new(Mutex::new((false, vec![])));
-        let id = pseudo_uuid();
 
         // Make the update thread
         make_thread(recv, done, vals.clone(), block_config.clone(), id.clone());
@@ -176,13 +177,13 @@ impl ConfigBlock for SpeedTest {
         Ok(SpeedTest {
             vals,
             text: vec![
-                ButtonWidget::new(config.clone(), &id)
+                ButtonWidget::new(config.clone(), id)
                     .with_icon("ping")
                     .with_text("0ms"),
-                ButtonWidget::new(config.clone(), &id)
+                ButtonWidget::new(config.clone(), id)
                     .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
-                ButtonWidget::new(config, &id)
+                ButtonWidget::new(config, id)
                     .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
             ],
@@ -238,8 +239,8 @@ impl Block for SpeedTest {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id && e.button == MouseButton::Left {
+        if e.matches_id(self.id) {
+            if let MouseButton::Left = e.button {
                 self.send.send(())?;
             }
         }
@@ -254,7 +255,7 @@ impl Block for SpeedTest {
         new
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

@@ -181,7 +181,7 @@ impl BacklitDevice {
 
 /// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
-    id: String,
+    id: u64,
     output: ButtonWidget,
     device: BacklitDevice,
     step_width: u64,
@@ -240,17 +240,18 @@ impl ConfigBlock for Backlight {
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let id = pseudo_uuid();
+
         let device = match block_config.device {
             Some(path) => BacklitDevice::from_device(path, block_config.root_scaling),
             None => BacklitDevice::default(block_config.root_scaling),
         }?;
 
-        let id = pseudo_uuid();
         let brightness_file = device.brightness_file();
 
         let scrolling = config.scrolling;
         let backlight = Backlight {
-            output: ButtonWidget::new(config, &id),
+            output: ButtonWidget::new(config, id),
             id: id.clone(),
             device,
             step_width: block_config.step_width,
@@ -311,30 +312,28 @@ impl Block for Backlight {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            if name.as_str() == self.id {
-                let brightness = self.device.brightness()?;
-                use LogicalDirection::*;
-                match self.scrolling.to_logical_direction(event.button) {
-                    Some(Up) => {
-                        if brightness < 100 {
-                            self.device.set_brightness(brightness + self.step_width)?;
-                        }
+        if event.matches_id(self.id) {
+            let brightness = self.device.brightness()?;
+            use LogicalDirection::*;
+            match self.scrolling.to_logical_direction(event.button) {
+                Some(Up) => {
+                    if brightness < 100 {
+                        self.device.set_brightness(brightness + self.step_width)?;
                     }
-                    Some(Down) => {
-                        if brightness > self.step_width {
-                            self.device.set_brightness(brightness - self.step_width)?;
-                        }
-                    }
-                    None => {}
                 }
+                Some(Down) => {
+                    if brightness > self.step_width {
+                        self.device.set_brightness(brightness - self.step_width)?;
+                    }
+                }
+                None => {}
             }
         }
 
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

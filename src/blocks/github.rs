@@ -21,7 +21,7 @@ const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
 pub struct Github {
     text: TextWidget,
-    id: String,
+    id: u64,
     update_interval: Duration,
     api_server: String,
     token: String,
@@ -84,7 +84,7 @@ impl ConfigBlock for Github {
             .block_error("github", "missing I3RS_GITHUB_TOKEN environment variable")?;
 
         let id = pseudo_uuid();
-        let text = TextWidget::new(config, &id)
+        let text = TextWidget::new(config, id)
             .with_text("x")
             .with_icon("github");
         Ok(Github {
@@ -158,8 +158,8 @@ impl Block for Github {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }
 

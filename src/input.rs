@@ -21,7 +21,7 @@ pub enum MouseButton {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct I3BarEvent {
+struct I3BarEventInternal {
     pub name: Option<String>,
     pub instance: Option<String>,
     pub x: u64,
@@ -31,10 +31,16 @@ pub struct I3BarEvent {
     pub button: MouseButton,
 }
 
+#[derive(Debug, Clone)]
+pub struct I3BarEvent {
+    pub id: Option<u64>,
+    pub button: MouseButton,
+}
+
 impl I3BarEvent {
-    pub fn matches_name(&self, other: &str) -> bool {
-        match self.name {
-            Some(ref name) => name.as_str() == other,
+    pub fn matches_id(&self, other: u64) -> bool {
+        match self.id {
+            Some(id) => id == other,
             _ => false,
         }
     }
@@ -52,8 +58,13 @@ pub fn process_events(sender: Sender<I3BarEvent>) {
             let slice = slice.trim_end_matches(|c| c != '}');
 
             if !slice.is_empty() {
-                let e: I3BarEvent = serde_json::from_str(slice).unwrap();
-                sender.send(e).unwrap();
+                let e: I3BarEventInternal = serde_json::from_str(slice).unwrap();
+                sender
+                    .send(I3BarEvent {
+                        id: e.name.map(|x| x.parse::<u64>().unwrap()),
+                        button: e.button,
+                    })
+                    .unwrap();
             }
         })
         .unwrap();

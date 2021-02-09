@@ -16,8 +16,8 @@ use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct Docker {
+    id: u64,
     text: TextWidget,
-    id: String,
     format: FormatTemplate,
     update_interval: Duration,
 }
@@ -77,7 +77,8 @@ impl ConfigBlock for Docker {
 
     fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
         let id = pseudo_uuid();
-        let text = TextWidget::new(config, &id)
+
+        let text = TextWidget::new(config, id)
             .with_text("N/A")
             .with_icon("docker");
         Ok(Docker {
@@ -124,7 +125,7 @@ impl Block for Docker {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

@@ -28,7 +28,7 @@ use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct IBus {
-    id: String,
+    id: u64,
     text: TextWidget,
     engine: Arc<Mutex<String>>,
     mappings: Option<BTreeMap<String, String>>,
@@ -67,9 +67,8 @@ impl ConfigBlock for IBus {
 
     #[allow(clippy::many_single_char_names)]
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id_copy = id.clone();
-        let id_copy2 = id.clone();
+        let id = pseudo_uuid();
+
         let send2 = send.clone();
 
         let engine_original = Arc::new(Mutex::new(String::from("??")));
@@ -117,7 +116,7 @@ impl ConfigBlock for IBus {
                             // see comment on L167
                             *engine = "Reload the bar!".to_string();
 							send2.send(Task {
-								id: id_copy2.clone(),
+								id,
 								update_time: Instant::now(),
 							}).unwrap();
 						} else if name.contains("IBus") && old_owner.is_empty() && !new_owner.is_empty() {
@@ -127,7 +126,7 @@ impl ConfigBlock for IBus {
 							cvar.notify_one();
 
 							send2.send(Task {
-						   		id: id_copy2.clone(),
+						   		id,
 						   		update_time: Instant::now(),
 							}).unwrap();
 						}
@@ -214,9 +213,9 @@ impl ConfigBlock for IBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(config, &id_copy).with_text("IBus");
+        let text = TextWidget::new(config, id).with_text("IBus");
         Ok(IBus {
-            id: id_copy,
+            id,
             text,
             engine: engine_original,
             mappings: block_config.mappings,
@@ -226,8 +225,8 @@ impl ConfigBlock for IBus {
 }
 
 impl Block for IBus {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 
     // Updates the internal state of the block.

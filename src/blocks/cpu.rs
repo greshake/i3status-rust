@@ -20,10 +20,10 @@ use crate::widgets::button::ButtonWidget;
 const MAX_CPUS: usize = 32;
 
 pub struct Cpu {
+    id: u64,
     output: ButtonWidget,
     prev_idles: [u64; MAX_CPUS],
     prev_non_idles: [u64; MAX_CPUS],
-    id: String,
     update_interval: Duration,
     minimum_info: u64,
     minimum_warning: u64,
@@ -119,9 +119,9 @@ impl ConfigBlock for Cpu {
         let id = pseudo_uuid();
 
         Ok(Cpu {
-            id: id.clone(),
+            id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(config, &id).with_icon("cpu"),
+            output: ButtonWidget::new(config, id).with_icon("cpu"),
             prev_idles: [0; MAX_CPUS],
             prev_non_idles: [0; MAX_CPUS],
             minimum_info: block_config.info,
@@ -248,8 +248,8 @@ impl Block for Cpu {
         vec![&self.output]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }
 

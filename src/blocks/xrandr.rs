@@ -49,8 +49,8 @@ impl Monitor {
 }
 
 pub struct Xrandr {
+    id: u64,
     text: ButtonWidget,
-    id: String,
     update_interval: Duration,
     monitors: Vec<Monitor>,
     icons: bool,
@@ -241,12 +241,13 @@ impl ConfigBlock for Xrandr {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id = pseudo_uuid();
+
         let mut step_width = block_config.step_width;
         if step_width > 50 {
             step_width = 50;
         }
         Ok(Xrandr {
-            text: ButtonWidget::new(config.clone(), &id).with_icon("xrandr"),
+            text: ButtonWidget::new(config.clone(), id).with_icon("xrandr"),
             id,
             update_interval: block_config.interval,
             current_idx: 0,
@@ -276,45 +277,43 @@ impl Block for Xrandr {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                match e.button {
-                    MouseButton::Left => {
-                        if self.current_idx < self.monitors.len() - 1 {
-                            self.current_idx += 1;
-                        } else {
-                            self.current_idx = 0;
-                        }
-                    }
-                    mb => {
-                        use LogicalDirection::*;
-                        match self.config.scrolling.to_logical_direction(mb) {
-                            Some(Up) => {
-                                if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                                    if monitor.brightness <= (100 - self.step_width) {
-                                        monitor.set_brightness(self.step_width as i32);
-                                    }
-                                }
-                            }
-                            Some(Down) => {
-                                if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                                    if monitor.brightness >= self.step_width {
-                                        monitor.set_brightness(-(self.step_width as i32));
-                                    }
-                                }
-                            }
-                            None => {}
-                        }
+        if e.matches_id(self.id) {
+            match e.button {
+                MouseButton::Left => {
+                    if self.current_idx < self.monitors.len() - 1 {
+                        self.current_idx += 1;
+                    } else {
+                        self.current_idx = 0;
                     }
                 }
-                self.display()?;
+                mb => {
+                    use LogicalDirection::*;
+                    match self.config.scrolling.to_logical_direction(mb) {
+                        Some(Up) => {
+                            if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                                if monitor.brightness <= (100 - self.step_width) {
+                                    monitor.set_brightness(self.step_width as i32);
+                                }
+                            }
+                        }
+                        Some(Down) => {
+                            if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                                if monitor.brightness >= self.step_width {
+                                    monitor.set_brightness(-(self.step_width as i32));
+                                }
+                            }
+                        }
+                        None => {}
+                    }
+                }
             }
+            self.display()?;
         }
 
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

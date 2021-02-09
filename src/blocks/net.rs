@@ -357,6 +357,7 @@ impl NetworkDevice {
 }
 
 pub struct Net {
+    id: u64,
     format: FormatTemplate,
     output: ButtonWidget,
     config: Config,
@@ -372,7 +373,6 @@ pub struct Net {
     graph_tx: Option<String>,
     output_rx: Option<String>,
     graph_rx: Option<String>,
-    id: String,
     update_interval: Duration,
     device: NetworkDevice,
     auto_device: bool,
@@ -581,6 +581,8 @@ impl ConfigBlock for Net {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let id = pseudo_uuid();
+
         let default_device = match NetworkDevice::default_device() {
             Some(ref s) if !s.is_empty() => s.to_string(),
             _ => "lo".to_string(),
@@ -593,7 +595,6 @@ impl ConfigBlock for Net {
         let init_tx_bytes = device.tx_bytes().unwrap_or(0);
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
-        let id = pseudo_uuid();
 
         let (_, net_config) = config
             .blocks
@@ -613,18 +614,18 @@ impl ConfigBlock for Net {
         };
 
         Ok(Net {
-            id: id.clone(),
+            id,
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&format)
                 .block_error("net", "Invalid format specified")?,
-            output: ButtonWidget::new(config.clone(), "")
+            output: ButtonWidget::new(config.clone(), 0)
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             config: config.clone(),
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
-            network: ButtonWidget::new(config, &id).with_icon(if wireless {
+            network: ButtonWidget::new(config, id).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
                 "net_vpn"
@@ -979,8 +980,8 @@ impl Block for Net {
         }
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }
 

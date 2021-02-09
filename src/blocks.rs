@@ -110,7 +110,7 @@ impl Into<Update> for Duration {
 
 pub trait Block {
     /// A unique id for the block.
-    fn id(&self) -> &str;
+    fn id(&self) -> u64;
 
     /// The current "view" of the block, comprised of widgets.
     fn view(&self) -> Vec<&dyn I3BarWidget>;

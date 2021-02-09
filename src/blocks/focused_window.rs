@@ -25,12 +25,12 @@ pub enum MarksType {
 }
 
 pub struct FocusedWindow {
+    id: u64,
     text: TextWidget,
     title: Arc<Mutex<String>>,
     marks: Arc<Mutex<String>>,
     show_marks: MarksType,
     max_width: usize,
-    id: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -67,7 +67,6 @@ impl ConfigBlock for FocusedWindow {
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let id = pseudo_uuid();
-        let id_clone = id.clone();
 
         let title = Arc::new(Mutex::new(String::from("")));
         let marks = Arc::new(Mutex::new(String::from("")));
@@ -177,7 +176,7 @@ impl ConfigBlock for FocusedWindow {
 
                     if updated {
                         tx.send(Task {
-                            id: id_clone.clone(),
+                            id,
                             update_time: Instant::now(),
                         })
                         .expect("could not communicate with channel in `window` block");
@@ -186,7 +185,7 @@ impl ConfigBlock for FocusedWindow {
             })
             .expect("failed to start watching thread for `window` block");
 
-        let text = TextWidget::new(config, &id);
+        let text = TextWidget::new(config, id);
         Ok(FocusedWindow {
             id,
             text,
@@ -240,7 +239,7 @@ impl Block for FocusedWindow {
         }
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

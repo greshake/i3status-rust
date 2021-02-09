@@ -29,10 +29,10 @@ impl Default for TemperatureScale {
 }
 
 pub struct Temperature {
+    id: u64,
     text: ButtonWidget,
     output: String,
     collapsed: bool,
-    id: String,
     update_interval: Duration,
     scale: TemperatureScale,
     maximum_good: i64,
@@ -130,8 +130,9 @@ impl ConfigBlock for Temperature {
     ) -> Result<Self> {
         let id = pseudo_uuid();
         Ok(Temperature {
+            id,
             update_interval: block_config.interval,
-            text: ButtonWidget::new(config, &id)
+            text: ButtonWidget::new(config, id)
                 .with_icon("thermometer")
                 .with_spacing(if block_config.collapsed {
                     Spacing::Hidden
@@ -140,7 +141,6 @@ impl ConfigBlock for Temperature {
                 }),
             output: String::new(),
             collapsed: block_config.collapsed,
-            id,
             scale: block_config.scale,
             maximum_good: block_config
                 .good
@@ -264,8 +264,8 @@ impl Block for Temperature {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id && e.button == MouseButton::Left {
+        if e.matches_id(self.id) {
+            if e.button == MouseButton::Left {
                 self.collapsed = !self.collapsed;
                 if self.collapsed {
                     self.text.set_text(String::new());
@@ -280,7 +280,7 @@ impl Block for Temperature {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

@@ -48,7 +48,7 @@ trait SoundDevice {
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
     fn toggle(&mut self) -> Result<()>;
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()>;
+    fn monitor(&mut self, id: u64, tx_update_request: Sender<Task>) -> Result<()>;
 }
 
 struct AlsaSoundDevice {
@@ -161,7 +161,7 @@ impl SoundDevice for AlsaSoundDevice {
         Ok(())
     }
 
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
+    fn monitor(&mut self, id: u64, tx_update_request: Sender<Task>) -> Result<()> {
         // Monitor volume changes in a separate thread.
         thread::Builder::new()
             .name("sound_alsa".into())
@@ -183,7 +183,7 @@ impl SoundDevice for AlsaSoundDevice {
                     if monitor.read(&mut buffer).is_ok() {
                         tx_update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -272,7 +272,7 @@ enum PulseAudioClientRequest {
 #[cfg(feature = "pulseaudio")]
 lazy_static! {
     static ref PULSEAUDIO_CLIENT: Result<PulseAudioClient> = PulseAudioClient::new();
-    static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<String, Sender<Task>>> =
+    static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<u64, Sender<Task>>> =
         Mutex::new(HashMap::new());
 
     // Default device names
@@ -666,7 +666,7 @@ impl SoundDevice for PulseAudioSoundDevice {
         Ok(())
     }
 
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
+    fn monitor(&mut self, id: u64, tx_update_request: Sender<Task>) -> Result<()> {
         PULSEAUDIO_EVENT_LISTENER
             .lock()
             .unwrap()
@@ -678,7 +678,7 @@ impl SoundDevice for PulseAudioSoundDevice {
 // TODO: Use the alsa control bindings to implement push updates
 pub struct Sound {
     text: ButtonWidget,
-    id: String,
+    id: u64,
     device: Box<dyn SoundDevice>,
     device_kind: DeviceKind,
     step_width: u32,
@@ -930,8 +930,8 @@ impl ConfigBlock for Sound {
         };
 
         let mut sound = Self {
-            text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
-            id: id.clone(),
+            text: ButtonWidget::new(config.clone(), id).with_icon("volume_empty"),
+            id,
             device,
             device_kind: block_config.device_kind,
             format: FormatTemplate::from_string(&block_config.format)?,
@@ -968,37 +968,34 @@ impl Block for Sound {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                match e.button {
-                    MouseButton::Right => self.device.toggle()?,
-                    MouseButton::Left => {
-                        if let Some(ref cmd) = self.on_click {
-                            spawn_child_async("sh", &["-c", cmd])
-                                .block_error("sound", "could not spawn child")?;
-                        }
-                    }
-                    _ => {
-                        use LogicalDirection::*;
-                        match self.config.scrolling.to_logical_direction(e.button) {
-                            Some(Up) => self
-                                .device
-                                .set_volume(self.step_width as i32, self.max_vol)?,
-                            Some(Down) => self
-                                .device
-                                .set_volume(-(self.step_width as i32), self.max_vol)?,
-                            None => (),
-                        }
+        if e.matches_id(self.id) {
+            match e.button {
+                MouseButton::Right => self.device.toggle()?,
+                MouseButton::Left => {
+                    if let Some(ref cmd) = self.on_click {
+                        spawn_child_async("sh", &["-c", cmd])
+                            .block_error("sound", "could not spawn child")?;
                     }
                 }
-                self.display()?;
+                _ => {
+                    use LogicalDirection::*;
+                    match self.config.scrolling.to_logical_direction(e.button) {
+                        Some(Up) => self
+                            .device
+                            .set_volume(self.step_width as i32, self.max_vol)?,
+                        Some(Down) => self
+                            .device
+                            .set_volume(-(self.step_width as i32), self.max_vol)?,
+                        None => (),
+                    }
+                }
             }
+            self.display()?;
         }
-
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

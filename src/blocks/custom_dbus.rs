@@ -27,7 +27,7 @@ struct CustomDBusStatus {
 }
 
 pub struct CustomDBus {
-    id: String,
+    id: u64,
     text: TextWidget,
     status: Arc<Mutex<CustomDBusStatus>>,
 }
@@ -51,8 +51,7 @@ impl ConfigBlock for CustomDBus {
     type Config = CustomDBusConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id_copy = id.clone();
+        let id = pseudo_uuid();
 
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
             content: String::from("??"),
@@ -129,18 +128,14 @@ impl ConfigBlock for CustomDBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(config, &id_copy).with_text("CustomDBus");
-        Ok(CustomDBus {
-            id: id_copy,
-            text,
-            status,
-        })
+        let text = TextWidget::new(config, id).with_text("CustomDBus");
+        Ok(CustomDBus { id, text, status })
     }
 }
 
 impl Block for CustomDBus {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 
     // Updates the internal state of the block.

@@ -22,7 +22,7 @@ use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 pub struct Watson {
-    id: String,
+    id: u64,
     text: ButtonWidget,
     state_path: PathBuf,
     show_time: bool,
@@ -78,8 +78,8 @@ impl ConfigBlock for Watson {
         let id = pseudo_uuid();
 
         let watson = Watson {
-            id: id.clone(),
-            text: ButtonWidget::new(config, &id),
+            id,
+            text: ButtonWidget::new(config, id),
             state_path: block_config.state_path.clone(),
             show_time: block_config.show_time,
             update_interval: block_config.interval,
@@ -196,11 +196,9 @@ impl Block for Watson {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                self.show_time = !self.show_time;
-                self.update()?;
-            }
+        if e.matches_id(self.id) {
+            self.show_time = !self.show_time;
+            self.update()?;
         }
         Ok(())
     }
@@ -209,8 +207,8 @@ impl Block for Watson {
         vec![&self.text]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }
 

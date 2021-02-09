@@ -11,15 +11,15 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
+use crate::util::{hash, pseudo_uuid};
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct NvidiaGpu {
-    id: String,
-    id_fans: String,
-    id_memory: String,
+    id: u64,
+    id_fans: u64,
+    id_memory: u64,
     update_interval: Duration,
 
     gpu_enabled: bool,
@@ -178,18 +178,19 @@ impl ConfigBlock for NvidiaGpu {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id = pseudo_uuid();
-        let id_memory = pseudo_uuid();
-        let id_fans = pseudo_uuid();
+
+        let id_memory = hash("memory") + id;
+        let id_fans = hash("fans") + id;
 
         Ok(NvidiaGpu {
-            id: id.clone(),
-            id_fans: id_fans.clone(),
-            id_memory: id_memory.clone(),
+            id,
+            id_fans,
+            id_memory,
             update_interval: block_config.interval,
             gpu_enabled: false,
             gpu_id: block_config.gpu_id,
 
-            name_widget: ButtonWidget::new(config.clone(), &id)
+            name_widget: ButtonWidget::new(config.clone(), id)
                 .with_icon("gpu")
                 .with_spacing(Spacing::Inline),
             name_widget_mode: if block_config.label.is_some() {
@@ -204,26 +205,26 @@ impl ConfigBlock for NvidiaGpu {
             },
 
             show_memory: if block_config.show_memory {
-                Some(ButtonWidget::new(config.clone(), &id_memory).with_spacing(Spacing::Inline))
+                Some(ButtonWidget::new(config.clone(), id_memory).with_spacing(Spacing::Inline))
             } else {
                 None
             },
             memory_widget_mode: MemoryWidgetMode::ShowUsedMemory,
 
             show_utilization: if block_config.show_utilization {
-                Some(TextWidget::new(config.clone(), &id).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(config.clone(), id).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_temperature: if block_config.show_temperature {
-                Some(TextWidget::new(config.clone(), &id).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(config.clone(), id).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_fan: if block_config.show_fan_speed {
-                Some(ButtonWidget::new(config.clone(), &id_fans).with_spacing(Spacing::Inline))
+                Some(ButtonWidget::new(config.clone(), id_fans).with_spacing(Spacing::Inline))
             } else {
                 None
             },
@@ -232,7 +233,7 @@ impl ConfigBlock for NvidiaGpu {
             scrolling: config.scrolling,
 
             show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(config, &id).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(config, id).with_spacing(Spacing::Inline))
             } else {
                 None
             },
@@ -384,10 +385,8 @@ impl Block for NvidiaGpu {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            let event_name = name.as_str();
-
-            if event_name == self.id {
+        if let Some(event_id) = e.id {
+            if event_id == self.id {
                 if let MouseButton::Left = e.button {
                     match self.name_widget_mode {
                         NameWidgetMode::ShowDefaultName => {
@@ -401,7 +400,7 @@ impl Block for NvidiaGpu {
                 }
             }
 
-            if event_name == self.id_memory {
+            if event_id == self.id_memory {
                 if let MouseButton::Left = e.button {
                     match self.memory_widget_mode {
                         MemoryWidgetMode::ShowUsedMemory => {
@@ -415,7 +414,7 @@ impl Block for NvidiaGpu {
                 }
             }
 
-            if event_name == self.id_fans {
+            if event_id == self.id_fans {
                 let mut controlled_changed = false;
                 let mut new_fan_speed = self.fan_speed;
                 match e.button {
@@ -489,7 +488,7 @@ impl Block for NvidiaGpu {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

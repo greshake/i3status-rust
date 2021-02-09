@@ -52,7 +52,7 @@ pub trait KeyboardLayoutMonitor {
 
     /// Monitor layout changes and send updates via the `update_request`
     /// channel. By default, this method does nothing.
-    fn monitor(&self, _id: String, _update_request: Sender<Task>) {}
+    fn monitor(&self, _id: u64, _update_request: Sender<Task>) {}
 }
 
 pub struct SetXkbMap;
@@ -146,7 +146,7 @@ impl KeyboardLayoutMonitor for LocaleBus {
     /// Monitor Locale property changes in a separate thread and send updates
     /// via the `update_request` channel.
     // TODO: pull the new value from the PropertiesChanged message instead of making another method call
-    fn monitor(&self, id: String, update_request: Sender<Task>) {
+    fn monitor(&self, id: u64, update_request: Sender<Task>) {
         thread::Builder::new()
             .name("keyboard_layout".into())
             .spawn(move || {
@@ -169,7 +169,7 @@ impl KeyboardLayoutMonitor for LocaleBus {
                     if con.incoming(10_000).next().is_some() {
                         update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -262,7 +262,7 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
 
     // Monitor KbdDaemon 'layoutChanged' property in a separate thread and send updates
     // via the `update_request` channel.
-    fn monitor(&self, id: String, update_request: Sender<Task>) {
+    fn monitor(&self, id: u64, update_request: Sender<Task>) {
         let arc = Arc::clone(&self.kbdd_layout_id);
         thread::Builder::new()
             .name("keyboard_layout".into())
@@ -285,7 +285,7 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
                         if let dbus::ffidisp::ConnectionItem::Signal(_) = ci {
                             update_request
                                 .send(Task {
-                                    id: id.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap();
@@ -375,7 +375,7 @@ impl KeyboardLayoutMonitor for Sway {
 
     /// Monitor layout changes in a separate thread and send updates
     /// via the `update_request` channel.
-    fn monitor(&self, id: String, update_request: Sender<Task>) {
+    fn monitor(&self, id: u64, update_request: Sender<Task>) {
         let arc = Arc::clone(&self.sway_kb_layout);
         thread::Builder::new()
             .name("keyboard_layout".into())
@@ -394,7 +394,7 @@ impl KeyboardLayoutMonitor for Sway {
                                 }
                                 update_request
                                     .send(Task {
-                                        id: id.clone(),
+                                        id,
                                         update_time: Instant::now(),
                                     })
                                     .unwrap();
@@ -455,7 +455,7 @@ impl KeyboardLayoutConfig {
 }
 
 pub struct KeyboardLayout {
-    id: String,
+    id: u64,
     output: TextWidget,
     monitor: Box<dyn KeyboardLayoutMonitor>,
     update_interval: Option<Duration>,
@@ -466,22 +466,22 @@ impl ConfigBlock for KeyboardLayout {
     type Config = KeyboardLayoutConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
+        let id = pseudo_uuid();
         let monitor: Box<dyn KeyboardLayoutMonitor> = match block_config.driver {
             KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap::new()?),
             KeyboardLayoutDriver::LocaleBus => {
                 let monitor = LocaleBus::new()?;
-                monitor.monitor(id.clone(), send);
+                monitor.monitor(id, send);
                 Box::new(monitor)
             }
             KeyboardLayoutDriver::KbddBus => {
                 let monitor = KbdDaemonBus::new()?;
-                monitor.monitor(id.clone(), send);
+                monitor.monitor(id, send);
                 Box::new(monitor)
             }
             KeyboardLayoutDriver::Sway => {
                 let monitor = Sway::new(block_config.sway_kb_identifier)?;
-                monitor.monitor(id.clone(), send);
+                monitor.monitor(id, send);
                 Box::new(monitor)
             }
         };
@@ -490,7 +490,7 @@ impl ConfigBlock for KeyboardLayout {
         } else {
             None
         };
-        let output = TextWidget::new(config, &id);
+        let output = TextWidget::new(config, id);
         Ok(KeyboardLayout {
             id,
             output,
@@ -505,8 +505,8 @@ impl ConfigBlock for KeyboardLayout {
 }
 
 impl Block for KeyboardLayout {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {

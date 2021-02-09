@@ -21,7 +21,7 @@ use crate::widgets::button::ButtonWidget;
 
 pub struct Time {
     time: ButtonWidget,
-    id: String,
+    id: u64,
     update_interval: Duration,
     format: String,
     timezone: Option<Tz>,
@@ -82,11 +82,11 @@ impl ConfigBlock for Time {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let i = pseudo_uuid();
+        let id = pseudo_uuid();
         Ok(Time {
-            id: i.clone(),
+            id,
             format: block_config.format,
-            time: ButtonWidget::new(config, i.as_str())
+            time: ButtonWidget::new(config, id)
                 .with_text("")
                 .with_icon("time"),
             update_interval: block_config.interval,
@@ -124,7 +124,7 @@ impl Block for Time {
         vec![&self.time]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

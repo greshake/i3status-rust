@@ -11,20 +11,20 @@ pub struct ButtonWidget {
     icon: Option<String>,
     state: State,
     spacing: Spacing,
-    id: String,
+    id: u64,
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
 }
 
 impl ButtonWidget {
-    pub fn new(config: Config, id: &str) -> Self {
+    pub fn new(config: Config, id: u64) -> Self {
         ButtonWidget {
             content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
-            id: String::from(id),
+            id,
             rendered: json!({
                 "full_text": "",
                 "separator": false,

@@ -50,8 +50,8 @@ pub enum InfoType {
 }
 
 pub struct DiskSpace {
+    id: u64,
     disk_space: TextWidget,
-    id: String,
     update_interval: Duration,
     alias: String,
     path: String,
@@ -214,14 +214,11 @@ impl ConfigBlock for DiskSpace {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let icon = config
-            .icons
-            .get("disk_drive")
-            .cloned()
-            .unwrap_or_else(|| "".to_string());
-
         let id = pseudo_uuid();
-        let disk_space = TextWidget::new(config, &id);
+
+        let icon = config.icons.get("disk_drive").cloned().unwrap_or_default();
+
+        let disk_space = TextWidget::new(config, id);
         Ok(DiskSpace {
             id,
             update_interval: block_config.interval,
@@ -316,7 +313,7 @@ impl Block for DiskSpace {
         vec![&self.disk_space]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

@@ -369,7 +369,7 @@ impl UpowerDevice {
 
     /// Monitor UPower property changes in a separate thread and send updates
     /// via the `update_request` channel.
-    pub fn monitor(&self, id: String, update_request: Sender<Task>) {
+    pub fn monitor(&self, id: u64, update_request: Sender<Task>) {
         let path = self.device_path.clone();
         thread::Builder::new()
             .name("battery".into())
@@ -480,8 +480,8 @@ impl BatteryDevice for UpowerDevice {
 
 /// A block for displaying information about an internal power supply.
 pub struct Battery {
+    id: u64,
     output: TextWidget,
-    id: String,
     update_interval: Duration,
     device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
@@ -641,6 +641,8 @@ impl ConfigBlock for Battery {
         config: Config,
         update_request: Sender<Task>,
     ) -> Result<Self> {
+        let id = pseudo_uuid();
+
         // TODO: remove deprecated show types eventually
         let format = match block_config.show {
             Some(show) => match show.as_ref() {
@@ -661,7 +663,6 @@ impl ConfigBlock for Battery {
             _ => BatteryDriver::Sysfs,
         };
 
-        let id = pseudo_uuid();
         let device: Box<dyn BatteryDevice> = match driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
@@ -674,7 +675,7 @@ impl ConfigBlock for Battery {
             )?),
         };
 
-        let output = TextWidget::new(config, &id);
+        let output = TextWidget::new(config, id);
         Ok(Battery {
             id,
             update_interval: block_config.interval,
@@ -812,7 +813,7 @@ impl Block for Battery {
         vec![&self.output]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

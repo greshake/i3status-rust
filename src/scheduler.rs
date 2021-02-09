@@ -10,7 +10,7 @@ use crate::errors::*;
 
 #[derive(Debug, Clone)]
 pub struct Task {
-    pub id: String,
+    pub id: u64,
     pub update_time: Instant,
 }
 
@@ -51,7 +51,7 @@ impl UpdateScheduler {
         let now = Instant::now();
         for block in blocks.iter() {
             schedule.push(Task {
-                id: String::from(block.id()),
+                id: block.id(),
                 update_time: now,
             });
         }
@@ -105,7 +105,7 @@ impl UpdateScheduler {
 
         for task in tasks_next {
             if let Some(dur) = blocks
-                .get_mut(task.id.parse::<usize>().unwrap())
+                .get_mut(task.id as usize)
                 .internal_error("scheduler", "could not get required block")?
                 .update()?
             {

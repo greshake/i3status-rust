@@ -40,8 +40,8 @@ impl Default for MailType {
 }
 
 pub struct Maildir {
+    id: u64,
     text: TextWidget,
-    id: String,
     update_interval: Duration,
     inboxes: Vec<String>,
     threshold_warning: usize,
@@ -98,7 +98,8 @@ impl ConfigBlock for Maildir {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id = pseudo_uuid();
-        let widget = TextWidget::new(config, &id).with_text("");
+
+        let widget = TextWidget::new(config, id).with_text("");
         Ok(Maildir {
             id,
             update_interval: block_config.interval,
@@ -142,7 +143,7 @@ impl Block for Maildir {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

@@ -23,7 +23,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::{hash, pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
@@ -54,7 +54,12 @@ impl Default for PlaybackStatus {
 }
 
 pub struct Music {
-    id: String,
+    id: u64,
+    play_id: u64,
+    next_id: u64,
+    prev_id: u64,
+    collapsed_id: u64,
+
     current_song_widget: RotatingTextWidget,
     prev: Option<ButtonWidget>,
     play: Option<ButtonWidget>,
@@ -281,10 +286,12 @@ impl ConfigBlock for Music {
     type Config = MusicConfig;
 
     fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id_copy = id.clone();
-        let id_copy2 = id.clone();
-        let id_copy3 = id.clone();
+        let id = pseudo_uuid();
+        let play_id = hash("PLAY") + id;
+        let prev_id = hash("PREV") + id;
+        let next_id = hash("NEXT") + id;
+        let collapsed_id = hash("COLLAPSED") + id;
+
         let send2 = send.clone();
         let send3 = send.clone();
 
@@ -453,7 +460,7 @@ impl ConfigBlock for Music {
                              if let Some(pos) = players.iter().position(|p| p.bus_name == old_owner) {
                                  players.remove(pos);
                                  send2.send(Task {
-                                     id: id_copy3.clone(),
+                                     id,
                                      update_time: Instant::now(),
                                  })
                                  .unwrap();
@@ -467,7 +474,7 @@ impl ConfigBlock for Music {
                              title: None,
                          });
                          send2.send(Task {
-                             id: id_copy3.clone(),
+                             id,
                              update_time: Instant::now(),
                          })
                          .unwrap();
@@ -483,27 +490,24 @@ impl ConfigBlock for Music {
         for button in block_config.buttons {
             match &*button {
                 "play" => {
-                    let button_id = format!("{}_PLAY", id_copy);
                     play = Some(
-                        ButtonWidget::new(config.clone(), &button_id)
+                        ButtonWidget::new(config.clone(), play_id)
                             .with_icon("music_play")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
                     )
                 }
                 "next" => {
-                    let button_id = format!("{}_NEXT", id_copy);
                     next = Some(
-                        ButtonWidget::new(config.clone(), &button_id)
+                        ButtonWidget::new(config.clone(), next_id)
                             .with_icon("music_next")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
                     )
                 }
                 "prev" => {
-                    let button_id = format!("{}_PREV", id_copy);
                     prev = Some(
-                        ButtonWidget::new(config.clone(), &button_id)
+                        ButtonWidget::new(config.clone(), prev_id)
                             .with_icon("music_prev")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
@@ -522,16 +526,19 @@ impl ConfigBlock for Music {
             patterns.iter().map(|p| Regex::new(&p)).collect()
         }
 
-        let id_collapsed = format!("{}_COLLAPSED", id_copy);
         Ok(Music {
-            id: id_copy,
+            id,
+            play_id,
+            prev_id,
+            next_id,
+            collapsed_id,
             current_song_widget: RotatingTextWidget::new(
                 Duration::new(block_config.marquee_interval.as_secs(), 0),
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
                 block_config.dynamic_width,
                 config.clone(),
-                &id_copy2,
+                id,
             )
             .with_icon("music")
             .with_state(State::Info),
@@ -539,7 +546,7 @@ impl ConfigBlock for Music {
             play,
             next,
             on_click: None,
-            on_collapsed_click_widget: ButtonWidget::new(config.clone(), &id_collapsed)
+            on_collapsed_click_widget: ButtonWidget::new(config.clone(), collapsed_id)
                 .with_icon("music")
                 .with_state(State::Info)
                 .with_spacing(Spacing::Hidden),
@@ -566,8 +573,8 @@ impl ConfigBlock for Music {
 }
 
 impl Block for Music {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -647,16 +654,13 @@ impl Block for Music {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            let play_id = format!("{}_PLAY", self.id);
-            let prev_id = format!("{}_PREV", self.id);
-            let next_id = format!("{}_NEXT", self.id);
-            let collapsed_id = format!("{}_COLLAPSED", self.id);
-            let action = match name as &str {
-                id if id == play_id => "PlayPause",
-                id if id == next_id => "Next",
-                id if id == prev_id => "Previous",
-                _ => "",
+        if let Some(event_id) = event.id {
+            let action = match event_id {
+                id if id == self.play_id => "PlayPause",
+                id if id == self.next_id => "Next",
+                id if id == self.prev_id => "Previous",
+                id if id == self.id => "",
+                _ => return Ok(()),
             };
 
             let mut players = self
@@ -678,11 +682,11 @@ impl Block for Music {
                         self.dbus_conn
                             .send(m)
                             .block_error("music", "failed to call method via D-Bus")?;
-                    } else if name == &collapsed_id && self.on_collapsed_click.is_some() {
+                    } else if event_id == self.collapsed_id && self.on_collapsed_click.is_some() {
                         let cmd = self.on_collapsed_click.as_ref().unwrap();
                         spawn_child_async("sh", &["-c", cmd])
                             .block_error("music", "could not spawn child")?;
-                    } else if event.matches_name(self.id()) {
+                    } else if event_id == self.id {
                         if let Some(ref cmd) = self.on_click {
                             spawn_child_async("sh", &["-c", cmd])
                                 .block_error("music", "could not spawn child")?;
@@ -698,7 +702,7 @@ impl Block for Music {
                 //                    com.github.altdesktop.playerctld \
                 //                    Shift
                 MouseButton::Right => {
-                    if (name.as_str() == self.id || name == &collapsed_id) && players.len() > 0 {
+                    if (event_id == self.id || event_id == self.collapsed_id) && players.len() > 0 {
                         players.rotate_left(1);
                         self.send.send(Task {
                             id: self.id.clone(),
@@ -707,7 +711,7 @@ impl Block for Music {
                     }
                 }
                 _ => {
-                    if name.as_str() == self.id && players.len() > 0 {
+                    if event_id == self.id && players.len() > 0 {
                         let metadata = players.first().unwrap();
                         let m = Message::new_method_call(
                             metadata.interface_name.clone(),

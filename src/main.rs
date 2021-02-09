@@ -107,7 +107,7 @@ fn main() {
             ::std::process::exit(1);
         }
 
-        let error_widget = TextWidget::new(Default::default(), "error")
+        let error_widget = TextWidget::new(Default::default(), 9999999999)
             .with_state(State::Critical)
             .with_text(&format!("{:?}", error));
         let error_rendered = error_widget.get_rendered();
@@ -195,7 +195,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
                 // Process immediately and forget
-                blocks.get_mut(req.id.parse::<usize>().unwrap())
+                blocks.get_mut(req.id as usize)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
                 util::print_blocks(&blocks, &config)?;

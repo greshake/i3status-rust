@@ -55,7 +55,7 @@ pub enum OpenWeatherMapUnits {
 }
 
 pub struct Weather {
-    id: String,
+    id: u64,
     weather: ButtonWidget,
     format: String,
     weather_keys: HashMap<String, String>,
@@ -329,9 +329,10 @@ impl ConfigBlock for Weather {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id = pseudo_uuid();
+
         Ok(Weather {
-            id: id.clone(),
-            weather: ButtonWidget::new(config, &id),
+            id,
+            weather: ButtonWidget::new(config, id),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,
@@ -369,7 +370,7 @@ impl Block for Weather {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_name(self.id()) {
+        if event.matches_id(self.id()) {
             if let MouseButton::Left = event.button {
                 self.update()?;
             }
@@ -377,7 +378,7 @@ impl Block for Weather {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

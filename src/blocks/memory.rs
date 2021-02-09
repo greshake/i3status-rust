@@ -156,7 +156,7 @@ impl Memstate {
 
 #[derive(Clone, Debug)]
 pub struct Memory {
-    id: String,
+    id: u64,
     memtype: Memtype,
     output: (ButtonWidget, ButtonWidget),
     clickable: bool,
@@ -357,8 +357,9 @@ impl ConfigBlock for Memory {
 
     fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let id = pseudo_uuid();
+
         let icons: bool = block_config.icons;
-        let widget = ButtonWidget::new(config, &id).with_text("");
+        let widget = ButtonWidget::new(config, id).with_text("");
         Ok(Memory {
             id,
             memtype: block_config.display_type,
@@ -384,8 +385,8 @@ impl ConfigBlock for Memory {
 }
 
 impl Block for Memory {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -486,8 +487,8 @@ impl Block for Memory {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref s) = event.name {
-            if self.clickable && event.button == MouseButton::Left && *s == self.id {
+        if event.matches_id(self.id) {
+            if let MouseButton::Left = event.button {
                 self.switch();
                 self.update()?;
                 self.tx_update_request.send(Task {

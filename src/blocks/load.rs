@@ -16,10 +16,10 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
 pub struct Load {
+    id: u64,
     text: TextWidget,
     logical_cores: u32,
     format: FormatTemplate,
-    id: String,
     update_interval: Duration,
     minimum_info: f32,
     minimum_warning: f32,
@@ -88,7 +88,8 @@ impl ConfigBlock for Load {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id = pseudo_uuid();
-        let text = TextWidget::new(config, &id)
+
+        let text = TextWidget::new(config, id)
             .with_icon("cogs")
             .with_state(State::Info);
 
@@ -154,7 +155,7 @@ impl Block for Load {
         vec![&self.text]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 }

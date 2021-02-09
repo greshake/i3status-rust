@@ -20,8 +20,8 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Apt {
+    id: u64,
     output: ButtonWidget,
-    id: String,
     update_interval: Duration,
     format: FormatTemplate,
     format_singular: FormatTemplate,
@@ -98,6 +98,8 @@ impl ConfigBlock for Apt {
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let id = pseudo_uuid();
+
         let mut cache_dir = env::temp_dir();
         cache_dir.push("i3rs-apt");
         if !cache_dir.exists() {
@@ -118,8 +120,7 @@ impl ConfigBlock for Apt {
             .block_error("apt", "Failed to create config file")?;
         write!(config_file, "{}", apt_conf).block_error("apt", "Failed to write to config file")?;
 
-        let id = pseudo_uuid();
-        let output = ButtonWidget::new(config, &id).with_icon("update");
+        let output = ButtonWidget::new(config, id).with_icon("update");
 
         Ok(Apt {
             id,
@@ -201,8 +202,8 @@ fn get_update_count(updates: &str) -> usize {
 }
 
 impl Block for Apt {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> u64 {
+        self.id
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
@@ -247,12 +248,9 @@ impl Block for Apt {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == &self.id).unwrap_or(false)
-            && event.button == MouseButton::Left
-        {
+        if event.matches_id(self.id) && event.button == MouseButton::Left {
             self.update()?;
         }
-
         Ok(())
     }
 }
