@@ -168,30 +168,77 @@ impl ConfigBlock for KDEConnect {
             .get("org.kde.kdeconnect.device", "isReachable")
             .unwrap_or(false);
 
-        let p3 = c.with_proxy(
-            "org.kde.kdeconnect",
-            format!("/modules/kdeconnect/devices/{}/notifications", device_id),
-            Duration::from_millis(5000),
-        );
-        let (initial_notifications,): (Vec<String>,) = p3
-            .method_call(
-                "org.kde.kdeconnect.device.notifications",
-                "activeNotifications",
-                (),
-            )
-            .unwrap_or((vec![String::from("")],));
-
-        let p4 = c.with_proxy(
+        // Hacky test whether we are dealing with kdeconnect v20.08.03 or older,
+        // or kdeconnect v20.11.80 or newer, so we can adapt to the differences.
+        //
+        let ptest = c.with_proxy(
             "org.kde.kdeconnect",
             format!("/modules/kdeconnect/devices/{}/battery", device_id),
             Duration::from_millis(5000),
         );
-        let initial_charge: i32 = p4
+        let test: i32 = ptest
             .get("org.kde.kdeconnect.device.battery", "charge")
-            .unwrap_or(0);
-        let initial_charging: bool = p4
-            .get("org.kde.kdeconnect.device.battery", "isCharging")
-            .unwrap_or(false);
+            .unwrap_or(200803);
+        let old_kdeconnect = if test == 200803 { true } else { false };
+
+        let initial_charge = if old_kdeconnect {
+            let (charge,): (i32,) = p2
+                .method_call("org.kde.kdeconnect.device.battery", "charge", ())
+                .unwrap_or((0,));
+            charge
+        } else {
+            let p3 = c.with_proxy(
+                "org.kde.kdeconnect",
+                format!("/modules/kdeconnect/devices/{}/battery", device_id),
+                Duration::from_millis(5000),
+            );
+            let charge: i32 = p3
+                .get("org.kde.kdeconnect.device.battery", "charge")
+                .unwrap_or(0);
+            charge
+        };
+
+        let initial_charging = if old_kdeconnect {
+            let (charging,): (bool,) = p2
+                .method_call("org.kde.kdeconnect.device.battery", "isCharging", ())
+                .unwrap_or((false,));
+            charging
+        } else {
+            let p3 = c.with_proxy(
+                "org.kde.kdeconnect",
+                format!("/modules/kdeconnect/devices/{}/battery", device_id),
+                Duration::from_millis(5000),
+            );
+            let charging: bool = p3
+                .get("org.kde.kdeconnect.device.battery", "isCharging")
+                .unwrap_or(false);
+            charging
+        };
+
+        let initial_notifications = if old_kdeconnect {
+            let (notifications,): (Vec<String>,) = p2
+                .method_call(
+                    "org.kde.kdeconnect.device.notifications",
+                    "activeNotifications",
+                    (),
+                )
+                .unwrap_or((vec![String::from("")],));
+            notifications
+        } else {
+            let p4 = c.with_proxy(
+                "org.kde.kdeconnect",
+                format!("/modules/kdeconnect/devices/{}/notifications", device_id),
+                Duration::from_millis(5000),
+            );
+            let (notifications,): (Vec<String>,) = p4
+                .method_call(
+                    "org.kde.kdeconnect.device.notifications",
+                    "activeNotifications",
+                    (),
+                )
+                .unwrap_or((vec![String::from("")],));
+            notifications
+        };
 
         let device_id_copy = device_id.clone();
         let device_name = Arc::new(Mutex::new(initial_name));
@@ -275,104 +322,202 @@ impl ConfigBlock for KDEConnect {
                     },
                 );
 
-                let p2 = c.with_proxy(
-                    "org.kde.kdeconnect",
-                    format!("/modules/kdeconnect/devices/{}/battery", device_id_copy),
-                    Duration::from_millis(5000),
-                );
+                if old_kdeconnect {
+                    let _battery_state_handler = p1.match_signal(
+                        move |s: OrgKdeKdeconnectDeviceBatteryStateChanged,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut charging = charging_copy.lock().unwrap();
+                            *charging = s.charging;
 
-                let _battery_state_handler = p2.match_signal(
-                    move |s: OrgKdeKdeconnectDeviceBatteryRefreshed,
-                          _: &Connection,
-                          _: &Message| {
-                        let mut charging = charging_copy.lock().unwrap();
-                        *charging = s.is_charging;
-
-                        let mut charge = charge_copy.lock().unwrap();
-                        *charge = s.charge;
-
-                        send.send(Task {
-                            id: id1.clone(),
-                            update_time: Instant::now(),
-                        })
-                        .unwrap();
-
-                        true
-                    },
-                );
-
-                let p3 = c.with_proxy(
-                    "org.kde.kdeconnect",
-                    format!(
-                        "/modules/kdeconnect/devices/{}/notifications",
-                        device_id_copy
-                    ),
-                    Duration::from_millis(5000),
-                );
-
-                let _notification_added_handler = p3.match_signal(
-                    move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationPosted,
-                          _: &Connection,
-                          _: &Message| {
-                        let mut notif_count = notif_count_copy1.lock().unwrap();
-                        *notif_count += 1;
-
-                        // Tell block to update now.
-                        send3
-                            .send(Task {
-                                id: id3.clone(),
+                            // Tell block to update now.
+                            // KDEConnect emits both stateChanged and chargeChanged
+                            // whenever there is an update regardless of whether or
+                            // not they both changed. So we only need to send updates
+                            // in one of the two battery signal handlers. Hopefully
+                            // one day they add proper PropertiesChanged signals.
+                            send.send(Task {
+                                id: id1.clone(),
                                 update_time: Instant::now(),
                             })
                             .unwrap();
 
-                        true
-                    },
-                );
+                            true
+                        },
+                    );
 
-                let _notification_removed_handler = p3.match_signal(
-                    move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationRemoved,
-                          _: &Connection,
-                          _: &Message| {
-                        let mut notif_count = notif_count_copy2.lock().unwrap();
-                        *notif_count = if *notif_count - 1 < 0 {
-                            0
-                        } else {
-                            *notif_count - 1
-                        };
+                    let _battery_charge_handler = p1.match_signal(
+                        move |s: OrgKdeKdeconnectDeviceBatteryChargeChanged,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut charge = charge_copy.lock().unwrap();
+                            *charge = s.charge;
 
-                        // Tell block to update now.
-                        send4
-                            .send(Task {
-                                id: id4.clone(),
+                            true
+                        },
+                    );
+                } else {
+                    let p2 = c.with_proxy(
+                        "org.kde.kdeconnect",
+                        format!("/modules/kdeconnect/devices/{}/battery", device_id_copy),
+                        Duration::from_millis(5000),
+                    );
+                    let _battery_state_handler = p2.match_signal(
+                        move |s: OrgKdeKdeconnectDeviceBatteryRefreshed,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut charging = charging_copy.lock().unwrap();
+                            *charging = s.is_charging;
+
+                            let mut charge = charge_copy.lock().unwrap();
+                            *charge = s.charge;
+
+                            send.send(Task {
+                                id: id1.clone(),
                                 update_time: Instant::now(),
                             })
                             .unwrap();
 
-                        true
-                    },
-                );
+                            true
+                        },
+                    );
+                };
 
-                let _notification_all_removed_handler = p3.match_signal(
-                    move |_s: OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved,
-                          _: &Connection,
-                          _: &Message| {
-                        let mut notif_count = notif_count_copy3.lock().unwrap();
-                        *notif_count = 0;
+                if old_kdeconnect {
+                    let _notification_added_handler = p1.match_signal(
+                        move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationPosted,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut notif_count = notif_count_copy1.lock().unwrap();
+                            *notif_count += 1;
 
-                        // Tell block to update now.
-                        send5
-                            .send(Task {
-                                id: id5.clone(),
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
+                            // Tell block to update now.
+                            send3
+                                .send(Task {
+                                    id: id3.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
 
-                        true
-                    },
-                );
+                            true
+                        },
+                    );
 
-                //if notif_text is ever implemented this may be handy
-                //OrgKdeKdeconnectDeviceNotificationsNotificationUpdated
+                    let _notification_removed_handler = p1.match_signal(
+                        move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationRemoved,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut notif_count = notif_count_copy2.lock().unwrap();
+                            *notif_count = if *notif_count - 1 < 0 {
+                                0
+                            } else {
+                                *notif_count - 1
+                            };
+
+                            // Tell block to update now.
+                            send4
+                                .send(Task {
+                                    id: id4.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+
+                            true
+                        },
+                    );
+
+                    let _notification_all_removed_handler = p1.match_signal(
+                        move |_s: OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut notif_count = notif_count_copy3.lock().unwrap();
+                            *notif_count = 0;
+
+                            // Tell block to update now.
+                            send5
+                                .send(Task {
+                                    id: id5.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+
+                            true
+                        },
+                    );
+                } else {
+                    let p3 = c.with_proxy(
+                        "org.kde.kdeconnect",
+                        format!(
+                            "/modules/kdeconnect/devices/{}/notifications",
+                            device_id_copy
+                        ),
+                        Duration::from_millis(5000),
+                    );
+
+                    let _notification_added_handler = p3.match_signal(
+                        move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationPosted,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut notif_count = notif_count_copy1.lock().unwrap();
+                            *notif_count += 1;
+
+                            // Tell block to update now.
+                            send3
+                                .send(Task {
+                                    id: id3.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+
+                            true
+                        },
+                    );
+
+                    let _notification_removed_handler = p3.match_signal(
+                        move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationRemoved,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut notif_count = notif_count_copy2.lock().unwrap();
+                            *notif_count = if *notif_count - 1 < 0 {
+                                0
+                            } else {
+                                *notif_count - 1
+                            };
+
+                            // Tell block to update now.
+                            send4
+                                .send(Task {
+                                    id: id4.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+
+                            true
+                        },
+                    );
+
+                    let _notification_all_removed_handler = p3.match_signal(
+                        move |_s: OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved,
+                              _: &Connection,
+                              _: &Message| {
+                            let mut notif_count = notif_count_copy3.lock().unwrap();
+                            *notif_count = 0;
+
+                            // Tell block to update now.
+                            send5
+                                .send(Task {
+                                    id: id5.clone(),
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+
+                            true
+                        },
+                    );
+
+                    //if notif_text is ever implemented this may be handy
+                    //OrgKdeKdeconnectDeviceNotificationsNotificationUpdated
+                };
 
                 let p4 = c.with_proxy(
                     "org.kde.kdeconnect",
@@ -803,4 +948,51 @@ impl arg::ReadAll for OrgKdeKdeconnectDaemonDeviceListChanged {
 impl dbus::message::SignalArgs for OrgKdeKdeconnectDaemonDeviceListChanged {
     const NAME: &'static str = "deviceListChanged";
     const INTERFACE: &'static str = "org.kde.kdeconnect.daemon";
+}
+
+// these are for kdeconnect versions 20.08.3 and lower
+#[derive(Debug)]
+pub struct OrgKdeKdeconnectDeviceBatteryStateChanged {
+    pub charging: bool,
+}
+
+impl arg::AppendAll for OrgKdeKdeconnectDeviceBatteryStateChanged {
+    fn append(&self, i: &mut arg::IterAppend) {
+        arg::RefArg::append(&self.charging, i);
+    }
+}
+
+impl arg::ReadAll for OrgKdeKdeconnectDeviceBatteryStateChanged {
+    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
+        Ok(OrgKdeKdeconnectDeviceBatteryStateChanged {
+            charging: i.read()?,
+        })
+    }
+}
+
+impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceBatteryStateChanged {
+    const NAME: &'static str = "stateChanged";
+    const INTERFACE: &'static str = "org.kde.kdeconnect.device.battery";
+}
+
+#[derive(Debug)]
+pub struct OrgKdeKdeconnectDeviceBatteryChargeChanged {
+    pub charge: i32,
+}
+
+impl arg::AppendAll for OrgKdeKdeconnectDeviceBatteryChargeChanged {
+    fn append(&self, i: &mut arg::IterAppend) {
+        arg::RefArg::append(&self.charge, i);
+    }
+}
+
+impl arg::ReadAll for OrgKdeKdeconnectDeviceBatteryChargeChanged {
+    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
+        Ok(OrgKdeKdeconnectDeviceBatteryChargeChanged { charge: i.read()? })
+    }
+}
+
+impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceBatteryChargeChanged {
+    const NAME: &'static str = "chargeChanged";
+    const INTERFACE: &'static str = "org.kde.kdeconnect.device.battery";
 }
