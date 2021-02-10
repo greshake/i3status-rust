@@ -168,18 +168,20 @@ impl ConfigBlock for KDEConnect {
             .get("org.kde.kdeconnect.device", "isReachable")
             .unwrap_or(false);
 
-        // Hacky test whether we are dealing with kdeconnect v20.08.03 or older,
+        // Test whether we are dealing with kdeconnect v20.08.03 or older,
         // or kdeconnect v20.11.80 or newer, so we can adapt to the differences.
         //
-        let ptest = c.with_proxy(
-            "org.kde.kdeconnect",
-            format!("/modules/kdeconnect/devices/{}/battery", device_id),
-            Duration::from_millis(5000),
-        );
-        let test: i32 = ptest
-            .get("org.kde.kdeconnect.device.battery", "charge")
-            .unwrap_or(200803);
-        let old_kdeconnect = if test == 200803 { true } else { false };
+        // Possible caveat: even with the new version this could return true if
+        // the battery plugin hasn't been enabled on the phone, or if there is
+        // some other issue with it.
+        let old_kdeconnect: bool = c
+            .with_proxy(
+                "org.kde.kdeconnect",
+                format!("/modules/kdeconnect/devices/{}/battery", device_id),
+                Duration::from_millis(5000),
+            )
+            .get::<i32>("org.kde.kdeconnect.device.battery", "charge")
+            .is_err();
 
         let initial_charge = if old_kdeconnect {
             let (charge,): (i32,) = p2
