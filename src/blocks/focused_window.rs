@@ -12,7 +12,6 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -65,9 +64,7 @@ impl FocusedWindowConfig {
 impl ConfigBlock for FocusedWindow {
     type Config = FocusedWindowConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(id: u64, block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let title = Arc::new(Mutex::new(String::from("")));
         let marks = Arc::new(Mutex::new(String::from("")));
         let marks_type = block_config.show_marks;

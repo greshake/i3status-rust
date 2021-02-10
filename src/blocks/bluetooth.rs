@@ -11,7 +11,6 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -185,9 +184,12 @@ impl BluetoothConfig {
 impl ConfigBlock for Bluetooth {
     type Config = BluetoothConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(
+        id: u64,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
         device.monitor(id, send);
 

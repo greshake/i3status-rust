@@ -12,7 +12,7 @@ use crate::errors::*;
 use crate::http;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -324,12 +324,11 @@ impl ConfigBlock for Weather {
     type Config = WeatherConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         Ok(Weather {
             id,
             weather: ButtonWidget::new(config, id),

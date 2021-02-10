@@ -14,7 +14,7 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, hash, pseudo_uuid, FormatTemplate};
+use crate::util::{battery_level_to_icon, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -109,9 +109,12 @@ impl KDEConnectConfig {
 impl ConfigBlock for KDEConnect {
     type Config = KDEConnectConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(
+        id: u64,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let send2 = send.clone();
         let send3 = send.clone();
         let send4 = send.clone();
@@ -562,7 +565,7 @@ impl ConfigBlock for KDEConnect {
             bat_critical: block_config.bat_critical,
             format: FormatTemplate::from_string(&block_config.format)?,
             format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
-            output: ButtonWidget::new(config.clone(), hash("kdeconnect")).with_icon("phone"),
+            output: ButtonWidget::new(config.clone(), id).with_icon("phone"),
             config,
         })
     }

@@ -16,7 +16,6 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
-use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -88,9 +87,7 @@ impl CustomConfig {
 impl ConfigBlock for Custom {
     type Config = CustomConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(id: u64, block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let mut custom = Custom {
             id,
             update_interval: block_config.interval,

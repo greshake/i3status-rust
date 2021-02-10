@@ -1,10 +1,8 @@
 // TODO: Replace with clamp() once the feature is stable? Ideally, remove num_traits altogether.
 use num_traits::{clamp, ToPrimitive};
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs::{File, OpenOptions};
-use std::hash::{Hash, Hasher};
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
@@ -21,15 +19,9 @@ use crate::errors::*;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 
-pub fn hash(string: &str) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    string.hash(&mut hasher);
-    hasher.finish()
-}
-
 pub fn pseudo_uuid() -> u64 {
-    static ID: AtomicU64 = AtomicU64::new(0);
-    ID.fetch_add(1, Ordering::SeqCst)
+    static ID: AtomicU64 = AtomicU64::new(u64::MAX);
+    ID.fetch_sub(1, Ordering::SeqCst)
 }
 
 pub fn escape_pango_text(text: String) -> String {

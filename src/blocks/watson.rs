@@ -12,7 +12,7 @@ use crate::de::deserialize_local_timestamp;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, xdg_config_home};
+use crate::util::xdg_config_home;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use chrono::offset::Local;
@@ -71,12 +71,11 @@ impl ConfigBlock for Watson {
     type Config = WatsonConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let watson = Watson {
             id,
             text: ButtonWidget::new(config, id),

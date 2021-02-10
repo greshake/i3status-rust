@@ -11,7 +11,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{hash, pseudo_uuid};
+use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
@@ -173,14 +173,13 @@ impl ConfigBlock for NvidiaGpu {
     type Config = NvidiaGpuConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
-        let id_memory = hash("memory") + id;
-        let id_fans = hash("fans") + id;
+        let id_memory = pseudo_uuid();
+        let id_fans = pseudo_uuid();
 
         Ok(NvidiaGpu {
             id,

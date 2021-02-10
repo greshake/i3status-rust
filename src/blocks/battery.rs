@@ -19,9 +19,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{
-    battery_level_to_icon, format_percent_bar, pseudo_uuid, read_file, FormatTemplate,
-};
+use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::text::TextWidget;
 
@@ -637,12 +635,11 @@ impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         // TODO: remove deprecated show types eventually
         let format = match block_config.show {
             Some(show) => match show.as_ref() {

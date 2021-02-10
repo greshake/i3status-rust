@@ -18,8 +18,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::{
-    escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, pseudo_uuid,
-    FormatTemplate,
+    escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, FormatTemplate,
 };
 use crate::widget::{I3BarWidget, Spacing};
 use crate::widgets::button::ButtonWidget;
@@ -577,12 +576,11 @@ impl ConfigBlock for Net {
     type Config = NetConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let default_device = match NetworkDevice::default_device() {
             Some(ref s) if !s.is_empty() => s.to_string(),
             _ => "lo".to_string(),

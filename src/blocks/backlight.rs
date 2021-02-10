@@ -23,7 +23,6 @@ use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -236,12 +235,11 @@ impl ConfigBlock for Backlight {
     type Config = BacklightConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let device = match block_config.device {
             Some(path) => BacklitDevice::from_device(path, block_config.root_scaling),
             None => BacklitDevice::default(block_config.root_scaling),

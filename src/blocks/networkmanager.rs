@@ -19,7 +19,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -529,9 +529,12 @@ impl NetworkManagerConfig {
 impl ConfigBlock for NetworkManager {
     type Config = NetworkManagerConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(
+        id: u64,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let dbus_conn = Connection::get_private(BusType::System)
             .block_error("networkmanager", "failed to establish D-Bus connection")?;
         let manager = ConnectionManager::new();

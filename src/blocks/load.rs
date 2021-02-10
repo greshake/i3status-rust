@@ -11,7 +11,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -83,12 +83,11 @@ impl ConfigBlock for Load {
     type Config = LoadConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let text = TextWidget::new(config, id)
             .with_icon("cogs")
             .with_state(State::Info);

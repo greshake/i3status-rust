@@ -160,6 +160,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
     for &(ref block_name, ref block_config) in &config.blocks {
         blocks.push(create_block(
+            blocks.len() as u64,
             block_name,
             block_config.clone(),
             config.clone(),

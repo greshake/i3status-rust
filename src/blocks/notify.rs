@@ -14,7 +14,7 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{hash, pseudo_uuid, FormatTemplate};
+use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -54,9 +54,13 @@ impl NotifyConfig {
 impl ConfigBlock for Notify {
     type Config = NotifyConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-        let notify_id = hash("notify") + id;
+    fn new(
+        id: u64,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
+        let notify_id = pseudo_uuid();
 
         let c = Connection::get_private(BusType::Session).block_error(
             "notify",

@@ -355,9 +355,7 @@ impl Memory {
 impl ConfigBlock for Memory {
     type Config = MemoryConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(id: u64, block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, id).with_text("");
         Ok(Memory {

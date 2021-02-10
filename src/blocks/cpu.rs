@@ -12,7 +12,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
+use crate::util::{format_percent_bar, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -106,6 +106,7 @@ impl ConfigBlock for Cpu {
     type Config = CpuConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -115,8 +116,6 @@ impl ConfigBlock for Cpu {
         } else {
             block_config.format
         };
-
-        let id = pseudo_uuid();
 
         Ok(Cpu {
             id,

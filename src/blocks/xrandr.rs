@@ -14,7 +14,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -236,12 +236,11 @@ impl ConfigBlock for Xrandr {
     type Config = XrandrConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let mut step_width = block_config.step_width;
         if step_width > 50 {
             step_width = 50;

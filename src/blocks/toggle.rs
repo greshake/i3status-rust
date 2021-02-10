@@ -12,7 +12,6 @@ use crate::de::deserialize_opt_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -75,12 +74,11 @@ impl ConfigBlock for Toggle {
     type Config = ToggleConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         Ok(Toggle {
             id,
             text: ButtonWidget::new(config, id).with_content(block_config.text),

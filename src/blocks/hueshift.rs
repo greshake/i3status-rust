@@ -11,7 +11,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{has_command, pseudo_uuid};
+use crate::util::has_command;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -198,12 +198,11 @@ impl ConfigBlock for Hueshift {
     type Config = HueshiftConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let current_temp = block_config.current_temp;
         let mut step = block_config.step;
         let mut max_temp = block_config.max_temp;

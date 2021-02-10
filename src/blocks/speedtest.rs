@@ -14,7 +14,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{format_number, pseudo_uuid};
+use crate::util::format_number;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -163,9 +163,12 @@ fn make_thread(
 impl ConfigBlock for SpeedTest {
     type Config = SpeedTestConfig;
 
-    fn new(block_config: Self::Config, config: Config, done: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(
+        id: u64,
+        block_config: Self::Config,
+        config: Config,
+        done: Sender<Task>,
+    ) -> Result<Self> {
         // Create all the things we are going to send and take for ourselves.
         let (send, recv): (Sender<()>, Receiver<()>) = unbounded();
         let vals = Arc::new(Mutex::new((false, vec![])));

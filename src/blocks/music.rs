@@ -23,7 +23,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{hash, pseudo_uuid, FormatTemplate};
+use crate::util::{pseudo_uuid, FormatTemplate};
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
@@ -285,12 +285,16 @@ impl MusicConfig {
 impl ConfigBlock for Music {
     type Config = MusicConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-        let play_id = hash("PLAY") + id;
-        let prev_id = hash("PREV") + id;
-        let next_id = hash("NEXT") + id;
-        let collapsed_id = hash("COLLAPSED") + id;
+    fn new(
+        id: u64,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
+        let play_id = pseudo_uuid();
+        let prev_id = pseudo_uuid();
+        let next_id = pseudo_uuid();
+        let collapsed_id = pseudo_uuid();
 
         let send2 = send.clone();
         let send3 = send.clone();

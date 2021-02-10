@@ -15,7 +15,6 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -50,9 +49,12 @@ impl CustomDBusConfig {
 impl ConfigBlock for CustomDBus {
     type Config = CustomDBusConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(
+        id: u64,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
             content: String::from("??"),
             icon: String::from(""),

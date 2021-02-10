@@ -11,7 +11,6 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -140,9 +139,12 @@ impl PomodoroConfig {
 impl ConfigBlock for Pomodoro {
     type Config = PomodoroConfig;
 
-    fn new(block_config: Self::Config, config: Config, _send: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-
+    fn new(
+        id: u64,
+        block_config: Self::Config,
+        config: Config,
+        _send: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Pomodoro {
             id,
             time: ButtonWidget::new(config, id).with_icon("pomodoro"),

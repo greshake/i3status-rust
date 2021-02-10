@@ -11,7 +11,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
+use crate::util::{format_percent_bar, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -210,12 +210,11 @@ impl ConfigBlock for DiskSpace {
     type Config = DiskSpaceConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let icon = config.icons.get("disk_drive").cloned().unwrap_or_default();
 
         let disk_space = TextWidget::new(config, id);

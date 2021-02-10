@@ -17,7 +17,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{has_command, pseudo_uuid, FormatTemplate};
+use crate::util::{has_command, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -160,12 +160,11 @@ impl ConfigBlock for Pacman {
     type Config = PacmanConfig;
 
     fn new(
+        id: u64,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let output = ButtonWidget::new(config, id).with_icon("update");
 
         Ok(Pacman {
