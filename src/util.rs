@@ -1,3 +1,4 @@
+// TODO: Replace with clamp() once the feature is stable? Ideally, remove num_traits altogether.
 use num_traits::{clamp, ToPrimitive};
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -50,6 +51,7 @@ pub fn format_number(raw_value: f64, total_digits: usize, min_suffix: &str, unit
         _ => -4,
     };
 
+    // TODO: Replace with .clamp once the feature is stable
     let exp_level = (raw_value.log10().div_euclid(3.) as i32)
         .max(min_exp_level)
         .min(4);
