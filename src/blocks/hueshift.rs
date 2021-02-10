@@ -23,7 +23,7 @@ pub struct Hueshift {
     current_temp: u16,
     max_temp: u16,
     min_temp: u16,
-    hue_shifter: Option<HueShifter>,
+    hue_shift_driver: Box<dyn HueShiftDriver>,
     click_temp: u16,
 
     //useful, but optional
@@ -33,11 +33,86 @@ pub struct Hueshift {
     tx_update_request: Sender<Task>,
 }
 
+trait HueShiftDriver {
+    fn update(&self, temp: u16) -> Result<()>;
+    fn reset(&self) -> Result<()>;
+}
+struct Redshift();
+impl HueShiftDriver for Redshift {
+    fn update(&self, temp: u16) -> Result<()> {
+        Command::new("sh")
+            .args(&[
+                "-c",
+                format!("redshift -O {} -P >/dev/null 2>&1", temp).as_str(),
+            ])
+            .spawn()
+            .block_error(
+                "hueshift",
+                "Failed to set new color temperature using redshift.",
+            )?;
+        Ok(())
+    }
+    fn reset(&self) -> Result<()> {
+        Command::new("sh")
+            .args(&["-c", "redshift -x >/dev/null 2>&1"])
+            .spawn()
+            .block_error(
+                "redshift",
+                "Failed to set new color temperature using redshift.",
+            )?;
+        Ok(())
+    }
+}
+struct Sct();
+impl HueShiftDriver for Sct {
+    fn update(&self, temp: u16) -> Result<()> {
+        Command::new("sh")
+            .args(&["-c", format!("sct {} >/dev/null 2>&1", temp).as_str()])
+            .spawn()
+            .block_error("hueshift", "Failed to set new color temperature using sct.")?;
+        Ok(())
+    }
+    fn reset(&self) -> Result<()> {
+        Command::new("sh")
+            .args(&["-c", "sct >/dev/null 2>&1"])
+            .spawn()
+            .block_error("hueshift", "Failed to set new color temperature using sct.")?;
+        Ok(())
+    }
+}
+struct Gammastep();
+impl HueShiftDriver for Gammastep {
+    fn update(&self, temp: u16) -> Result<()> {
+        Command::new("sh")
+            .args(&[
+                "-c",
+                &format!("killall gammastep; gammastep -O {} -P &", temp),
+            ])
+            .spawn()
+            .block_error(
+                "hueshift",
+                "Failed to set new color temperature using gammastep.",
+            )?;
+        Ok(())
+    }
+    fn reset(&self) -> Result<()> {
+        Command::new("sh")
+            .args(&["-c", "gammastep -x >/dev/null 2>&1"])
+            .spawn()
+            .block_error(
+                "hueshift",
+                "Failed to set new color temperature using gammastep.",
+            )?;
+        Ok(())
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum HueShifter {
     Redshift,
     Sct,
+    Gammastep,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -103,6 +178,8 @@ impl HueshiftConfig {
             Some(HueShifter::Redshift)
         } else if has_command("hueshift", "sct").unwrap_or(false) {
             Some(HueShifter::Sct)
+        } else if has_command("hueshift", "gammastep").unwrap_or(false) {
+            Some(HueShifter::Gammastep)
         } else {
             None
         }
@@ -141,6 +218,16 @@ impl ConfigBlock for Hueshift {
         if block_config.min_temp < 1000 || block_config.min_temp > block_config.max_temp {
             min_temp = 1000;
         }
+
+        let hue_shift_driver: Box<dyn HueShiftDriver> = match block_config
+            .hue_shifter
+            .block_error("hueshift", "Cound not detect driver program")?
+        {
+            HueShifter::Redshift => Box::new(Redshift {}),
+            HueShifter::Sct => Box::new(Sct {}),
+            HueShifter::Gammastep => Box::new(Gammastep {}),
+        };
+
         Ok(Hueshift {
             id,
             update_interval: block_config.interval,
@@ -150,7 +237,7 @@ impl ConfigBlock for Hueshift {
             max_temp,
             min_temp,
             current_temp,
-            hue_shifter: block_config.hue_shifter,
+            hue_shift_driver,
             click_temp: block_config.click_temp,
             config,
         })
@@ -172,15 +259,15 @@ impl Block for Hueshift {
             match event.button {
                 MouseButton::Left => {
                     self.current_temp = self.click_temp;
-                    update_hue(&self.hue_shifter, self.current_temp);
+                    self.hue_shift_driver.update(self.current_temp)?;
                 }
                 MouseButton::Right => {
                     if self.max_temp > 6500 {
                         self.current_temp = 6500;
-                        reset_hue(&self.hue_shifter);
+                        self.hue_shift_driver.reset()?;
                     } else {
                         self.current_temp = self.max_temp;
-                        update_hue(&self.hue_shifter, self.current_temp);
+                        self.hue_shift_driver.update(self.current_temp)?;
                     }
                 }
                 mb => {
@@ -190,14 +277,14 @@ impl Block for Hueshift {
                         Some(Up) => {
                             new_temp = self.current_temp + self.step;
                             if new_temp <= self.max_temp {
-                                update_hue(&self.hue_shifter, new_temp);
+                                self.hue_shift_driver.update(new_temp)?;
                                 self.current_temp = new_temp;
                             }
                         }
                         Some(Down) => {
                             new_temp = self.current_temp - self.step;
                             if new_temp >= self.min_temp {
-                                update_hue(&self.hue_shifter, new_temp);
+                                self.hue_shift_driver.update(new_temp)?;
                                 self.current_temp = new_temp;
                             }
                         }
@@ -211,46 +298,5 @@ impl Block for Hueshift {
 
     fn id(&self) -> u64 {
         self.id
-    }
-}
-
-#[inline]
-fn update_hue(hue_shifter: &Option<HueShifter>, new_temp: u16) {
-    match hue_shifter {
-        Some(HueShifter::Redshift) => {
-            Command::new("sh")
-                .args(&[
-                    "-c",
-                    format!("redshift -O {} -P >/dev/null 2>&1", new_temp).as_str(),
-                ])
-                .spawn()
-                .expect("Failed to set new color temperature using redshift.");
-        }
-        Some(HueShifter::Sct) => {
-            Command::new("sh")
-                .args(&["-c", format!("sct {} >/dev/null 2>&1", new_temp).as_str()])
-                .spawn()
-                .expect("Failed to set new color temperature using sct.");
-        }
-        None => {}
-    }
-}
-
-#[inline]
-fn reset_hue(hue_shifter: &Option<HueShifter>) {
-    match hue_shifter {
-        Some(HueShifter::Redshift) => {
-            Command::new("sh")
-                .args(&["-c", "redshift -x >/dev/null 2>&1"])
-                .spawn()
-                .expect("Failed to set new color temperature using redshift.");
-        }
-        Some(HueShifter::Sct) => {
-            Command::new("sh")
-                .args(&["-c", "sct >/dev/null 2>&1"])
-                .spawn()
-                .expect("Failed to set new color temperature using sct.");
-        }
-        None => {}
     }
 }

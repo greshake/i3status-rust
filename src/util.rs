@@ -1,3 +1,4 @@
+// TODO: Replace with clamp() once the feature is stable? Ideally, remove num_traits altogether.
 use num_traits::{clamp, ToPrimitive};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
@@ -43,42 +44,27 @@ pub fn escape_pango_text(text: String) -> String {
         .collect()
 }
 
-pub fn format_number(raw_value: f64, total_digits: usize, min_unit: &str, suffix: &str) -> String {
-    let (min_unit_value, min_unit_level) = match min_unit {
-        "T" => (raw_value / 1_000_000_000_000.0, 4),
-        "G" => (raw_value / 1_000_000_000.0, 3),
-        "M" => (raw_value / 1_000_000.0, 2),
-        "K" => (raw_value / 1_000.0, 1),
-        "1" => (raw_value, 0),
-        "m" => (raw_value * 1_000.0, -1),
-        "u" => (raw_value * 1_000_000.0, -2),
-        "n" => (raw_value * 1_000_000_000.0, -3),
-        _ => (raw_value * 1_000_000_000_000.0, -4),
+/// Format `raw_value` to engineering notation
+pub fn format_number(raw_value: f64, total_digits: usize, min_suffix: &str, unit: &str) -> String {
+    let min_exp_level = match min_suffix {
+        "T" => 4,
+        "G" => 3,
+        "M" => 2,
+        "K" => 1,
+        "1" => 0,
+        "m" => -1,
+        "u" => -2,
+        "n" => -3,
+        _ => -4,
     };
 
-    //println!("Min Unit:  ({}, {})", min_unit_value, min_unit_level);
+    // TODO: Replace with .clamp once the feature is stable
+    let exp_level = (raw_value.log10().div_euclid(3.) as i32)
+        .max(min_exp_level)
+        .min(4);
+    let value = raw_value / (10f64).powi(exp_level * 3);
 
-    let (magnitude_value, magnitude_level) = match raw_value {
-        x if x >= 100_000_000_000.0 => (raw_value / 1_000_000_000_000.0, 4),
-        x if x >= 100_000_000.0 => (raw_value / 1_000_000_000.0, 3),
-        x if x >= 100_000.0 => (raw_value / 1_000_000.0, 2),
-        x if x >= 100.0 => (raw_value / 1_000.0, 1),
-        x if x >= 0.1 => (raw_value, 0),
-        x if x >= 0.000_1 => (raw_value * 1_000.0, -1),
-        x if x >= 0.000_000_1 => (raw_value * 1_000_000.0, -2),
-        x if x >= 0.000_000_000_1 => (raw_value * 1_000_000_000.0, -3),
-        _ => (raw_value * 1_000_000_000_000.0, -4),
-    };
-
-    //println!("Magnitude: ({}, {})", magnitude_value, magnitude_level);
-
-    let (value, level) = if magnitude_level < min_unit_level {
-        (min_unit_value, min_unit_level)
-    } else {
-        (magnitude_value, magnitude_level)
-    };
-
-    let unit = match level {
+    let suffix = match exp_level {
         4 => "T",
         3 => "G",
         2 => "M",
@@ -90,14 +76,17 @@ pub fn format_number(raw_value: f64, total_digits: usize, min_unit: &str, suffix
         _ => "p",
     };
 
-    let _decimal_precision = total_digits as i16 - if value >= 10.0 { 2 } else { 1 };
-    let decimal_precision = if _decimal_precision < 0 {
-        0
+    let total_digits = total_digits as isize;
+    let decimals = (if value >= 100. {
+        total_digits - 3
+    } else if value >= 10. {
+        total_digits - 2
     } else {
-        _decimal_precision
-    };
+        total_digits - 1
+    })
+    .max(0);
 
-    format!("{:.*}{}{}", decimal_precision as usize, value, unit, suffix)
+    format!("{:.*}{}{}", decimals as usize, value, suffix, unit)
 }
 
 pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
@@ -509,7 +498,18 @@ macro_rules! if_debug {
 
 #[cfg(test)]
 mod tests {
-    use crate::util::{color_from_rgba, has_command};
+    use crate::util::{color_from_rgba, format_number, has_command};
+
+    #[test]
+    fn test_format_number() {
+        assert_eq!(format_number(1.0, 3, "", "s"), "1.00s");
+        assert_eq!(format_number(1.007, 3, "", "s"), "1.01s");
+        assert_eq!(format_number(1.007, 4, "K", "s"), "0.001Ks");
+        assert_eq!(format_number(1007., 3, "K", "s"), "1.01Ks");
+        assert_eq!(format_number(107_000., 3, "", "s"), "107Ks");
+        assert_eq!(format_number(107., 3, "", "s"), "107s");
+        assert_eq!(format_number(0.000_123_123, 3, "", "N"), "123uN");
+    }
 
     #[test]
     // we assume sh is always available
