@@ -530,10 +530,19 @@ click_temp = 3500
 Key | Values | Required | Default
 ----|--------|----------|--------
 `step`        | The step color temperature is in/decreased in Kelvin. | No | `100`
-`hue_shifter` | Program used to control screen color, either `"redshift"` or `"sct"`. | No | `"redshift"`
+`hue_shifter` | Program used to control screen color. | No | Detect automatically. |
 `max_temp`    | Max color temperature in Kelvin. | No | `10000`
 `min_temp`    | Min color temperature in Kelvin. | No | `1000`
 `click_temp`  | Left click color temperature in Kelvin. | No | `6500`
+
+#### Available Hue Shifters
+
+Name | Supports
+-----|---------
+`"redshift"`  | X11
+`"sct"`       | X11
+`"gammastep"` | X11 and Wayland
+
 
 A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
 The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
