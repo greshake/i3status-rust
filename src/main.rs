@@ -22,8 +22,9 @@ mod widgets;
 
 #[cfg(feature = "profiling")]
 use cpuprofiler::PROFILER;
-
+#[cfg(feature = "profiling")]
 use std::ops::DerefMut;
+
 use std::time::Duration;
 
 use clap::{crate_authors, crate_description, App, Arg, ArgMatches};

@@ -332,7 +332,7 @@ impl ConfigBlock for KDEConnect {
                             // in one of the two battery signal handlers. Hopefully
                             // one day they add proper PropertiesChanged signals.
                             send.send(Task {
-                                id: id1.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -368,7 +368,7 @@ impl ConfigBlock for KDEConnect {
                             *charge = s.charge;
 
                             send.send(Task {
-                                id: id1.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -389,7 +389,7 @@ impl ConfigBlock for KDEConnect {
                             // Tell block to update now.
                             send3
                                 .send(Task {
-                                    id: id3.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap();
@@ -412,7 +412,7 @@ impl ConfigBlock for KDEConnect {
                             // Tell block to update now.
                             send4
                                 .send(Task {
-                                    id: id4.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap();
@@ -431,7 +431,7 @@ impl ConfigBlock for KDEConnect {
                             // Tell block to update now.
                             send5
                                 .send(Task {
-                                    id: id5.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap();
@@ -459,7 +459,7 @@ impl ConfigBlock for KDEConnect {
                             // Tell block to update now.
                             send3
                                 .send(Task {
-                                    id: id3.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap();
@@ -482,7 +482,7 @@ impl ConfigBlock for KDEConnect {
                             // Tell block to update now.
                             send4
                                 .send(Task {
-                                    id: id4.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap();
@@ -501,7 +501,7 @@ impl ConfigBlock for KDEConnect {
                             // Tell block to update now.
                             send5
                                 .send(Task {
-                                    id: id5.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap();
