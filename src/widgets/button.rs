@@ -7,18 +7,18 @@ use crate::widget::State;
 
 #[derive(Clone, Debug)]
 pub struct ButtonWidget {
+    id: usize,
     content: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
-    id: u64,
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
 }
 
 impl ButtonWidget {
-    pub fn new(config: Config, id: u64) -> Self {
+    pub fn new(config: Config, id: usize) -> Self {
         ButtonWidget {
             content: None,
             icon: None,

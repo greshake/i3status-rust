@@ -180,7 +180,7 @@ impl BacklitDevice {
 
 /// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
-    id: u64,
+    id: usize,
     output: ButtonWidget,
     device: BacklitDevice,
     step_width: u64,
@@ -235,7 +235,7 @@ impl ConfigBlock for Backlight {
     type Config = BacklightConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
@@ -331,7 +331,7 @@ impl Block for Backlight {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

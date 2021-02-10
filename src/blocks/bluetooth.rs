@@ -117,7 +117,7 @@ impl BluetoothDevice {
 
     /// Monitor Bluetooth property changes in a separate thread and send updates
     /// via the `update_request` channel.
-    pub fn monitor(&self, id: u64, update_request: Sender<Task>) {
+    pub fn monitor(&self, id: usize, update_request: Sender<Task>) {
         let path = self.path.clone();
         thread::Builder::new()
             .name("bluetooth".into())
@@ -154,7 +154,7 @@ impl BluetoothDevice {
 }
 
 pub struct Bluetooth {
-    id: u64,
+    id: usize,
     output: ButtonWidget,
     device: BluetoothDevice,
     hide_disconnected: bool,
@@ -185,7 +185,7 @@ impl ConfigBlock for Bluetooth {
     type Config = BluetoothConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         send: Sender<Task>,
@@ -209,7 +209,7 @@ impl ConfigBlock for Bluetooth {
 }
 
 impl Block for Bluetooth {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

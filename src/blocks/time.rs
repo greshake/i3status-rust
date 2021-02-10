@@ -20,7 +20,7 @@ use crate::widgets::button::ButtonWidget;
 
 pub struct Time {
     time: ButtonWidget,
-    id: u64,
+    id: usize,
     update_interval: Duration,
     format: String,
     timezone: Option<Tz>,
@@ -77,7 +77,7 @@ impl ConfigBlock for Time {
     type Config = TimeConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -123,7 +123,7 @@ impl Block for Time {
         vec![&self.time]
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

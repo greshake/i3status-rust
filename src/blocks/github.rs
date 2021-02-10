@@ -21,7 +21,7 @@ const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
 pub struct Github {
     text: TextWidget,
-    id: u64,
+    id: usize,
     update_interval: Duration,
     api_server: String,
     token: String,
@@ -79,7 +79,7 @@ impl GithubConfig {
 impl ConfigBlock for Github {
     type Config = GithubConfig;
 
-    fn new(id: u64, block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
+    fn new(id: usize, block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
         let token = std::env::var(GITHUB_TOKEN_ENV)
             .block_error("github", "missing I3RS_GITHUB_TOKEN environment variable")?;
 
@@ -157,7 +157,7 @@ impl Block for Github {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

@@ -52,7 +52,7 @@ pub trait KeyboardLayoutMonitor {
 
     /// Monitor layout changes and send updates via the `update_request`
     /// channel. By default, this method does nothing.
-    fn monitor(&self, _id: u64, _update_request: Sender<Task>) {}
+    fn monitor(&self, _id: usize, _update_request: Sender<Task>) {}
 }
 
 pub struct SetXkbMap;
@@ -146,7 +146,7 @@ impl KeyboardLayoutMonitor for LocaleBus {
     /// Monitor Locale property changes in a separate thread and send updates
     /// via the `update_request` channel.
     // TODO: pull the new value from the PropertiesChanged message instead of making another method call
-    fn monitor(&self, id: u64, update_request: Sender<Task>) {
+    fn monitor(&self, id: usize, update_request: Sender<Task>) {
         thread::Builder::new()
             .name("keyboard_layout".into())
             .spawn(move || {
@@ -262,7 +262,7 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
 
     // Monitor KbdDaemon 'layoutChanged' property in a separate thread and send updates
     // via the `update_request` channel.
-    fn monitor(&self, id: u64, update_request: Sender<Task>) {
+    fn monitor(&self, id: usize, update_request: Sender<Task>) {
         let arc = Arc::clone(&self.kbdd_layout_id);
         thread::Builder::new()
             .name("keyboard_layout".into())
@@ -375,7 +375,7 @@ impl KeyboardLayoutMonitor for Sway {
 
     /// Monitor layout changes in a separate thread and send updates
     /// via the `update_request` channel.
-    fn monitor(&self, id: u64, update_request: Sender<Task>) {
+    fn monitor(&self, id: usize, update_request: Sender<Task>) {
         let arc = Arc::clone(&self.sway_kb_layout);
         thread::Builder::new()
             .name("keyboard_layout".into())
@@ -455,7 +455,7 @@ impl KeyboardLayoutConfig {
 }
 
 pub struct KeyboardLayout {
-    id: u64,
+    id: usize,
     output: TextWidget,
     monitor: Box<dyn KeyboardLayoutMonitor>,
     update_interval: Option<Duration>,
@@ -466,7 +466,7 @@ impl ConfigBlock for KeyboardLayout {
     type Config = KeyboardLayoutConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         send: Sender<Task>,
@@ -509,7 +509,7 @@ impl ConfigBlock for KeyboardLayout {
 }
 
 impl Block for KeyboardLayout {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

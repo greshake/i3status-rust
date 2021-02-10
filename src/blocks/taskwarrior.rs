@@ -16,7 +16,7 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Taskwarrior {
-    id: u64,
+    id: usize,
     output: ButtonWidget,
     update_interval: Duration,
     warning_threshold: u32,
@@ -138,7 +138,7 @@ impl ConfigBlock for Taskwarrior {
     type Config = TaskwarriorConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
@@ -277,7 +277,7 @@ impl Block for Taskwarrior {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

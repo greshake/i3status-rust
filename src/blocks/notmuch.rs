@@ -15,7 +15,7 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
 pub struct Notmuch {
-    id: u64,
+    id: usize,
     text: TextWidget,
     update_interval: Duration,
     query: String,
@@ -115,7 +115,7 @@ impl ConfigBlock for Notmuch {
     type Config = NotmuchConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -187,7 +187,7 @@ impl Block for Notmuch {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

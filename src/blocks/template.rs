@@ -14,7 +14,7 @@ use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct Template {
-    id: u64,
+    id: usize,
     text: TextWidget,
     update_interval: Duration,
 
@@ -53,7 +53,7 @@ impl ConfigBlock for Template {
     type Config = TemplateConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
@@ -83,7 +83,7 @@ impl Block for Template {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

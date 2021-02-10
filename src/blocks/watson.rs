@@ -22,7 +22,7 @@ use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 pub struct Watson {
-    id: u64,
+    id: usize,
     text: ButtonWidget,
     state_path: PathBuf,
     show_time: bool,
@@ -71,7 +71,7 @@ impl ConfigBlock for Watson {
     type Config = WatsonConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
@@ -206,7 +206,7 @@ impl Block for Watson {
         vec![&self.text]
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

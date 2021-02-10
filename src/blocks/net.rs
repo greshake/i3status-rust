@@ -356,7 +356,7 @@ impl NetworkDevice {
 }
 
 pub struct Net {
-    id: u64,
+    id: usize,
     format: FormatTemplate,
     output: ButtonWidget,
     config: Config,
@@ -576,7 +576,7 @@ impl ConfigBlock for Net {
     type Config = NetConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -978,7 +978,7 @@ impl Block for Net {
         }
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

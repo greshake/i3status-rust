@@ -48,7 +48,7 @@ trait SoundDevice {
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
     fn toggle(&mut self) -> Result<()>;
-    fn monitor(&mut self, id: u64, tx_update_request: Sender<Task>) -> Result<()>;
+    fn monitor(&mut self, id: usize, tx_update_request: Sender<Task>) -> Result<()>;
 }
 
 struct AlsaSoundDevice {
@@ -161,7 +161,7 @@ impl SoundDevice for AlsaSoundDevice {
         Ok(())
     }
 
-    fn monitor(&mut self, id: u64, tx_update_request: Sender<Task>) -> Result<()> {
+    fn monitor(&mut self, id: usize, tx_update_request: Sender<Task>) -> Result<()> {
         // Monitor volume changes in a separate thread.
         thread::Builder::new()
             .name("sound_alsa".into())
@@ -272,7 +272,7 @@ enum PulseAudioClientRequest {
 #[cfg(feature = "pulseaudio")]
 lazy_static! {
     static ref PULSEAUDIO_CLIENT: Result<PulseAudioClient> = PulseAudioClient::new();
-    static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<u64, Sender<Task>>> =
+    static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<usize, Sender<Task>>> =
         Mutex::new(HashMap::new());
 
     // Default device names
@@ -666,7 +666,7 @@ impl SoundDevice for PulseAudioSoundDevice {
         Ok(())
     }
 
-    fn monitor(&mut self, id: u64, tx_update_request: Sender<Task>) -> Result<()> {
+    fn monitor(&mut self, id: usize, tx_update_request: Sender<Task>) -> Result<()> {
         PULSEAUDIO_EVENT_LISTENER
             .lock()
             .unwrap()
@@ -678,7 +678,7 @@ impl SoundDevice for PulseAudioSoundDevice {
 // TODO: Use the alsa control bindings to implement push updates
 pub struct Sound {
     text: ButtonWidget,
-    id: u64,
+    id: usize,
     device: Box<dyn SoundDevice>,
     device_kind: DeviceKind,
     step_width: u32,
@@ -889,7 +889,7 @@ impl ConfigBlock for Sound {
     type Config = SoundConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
@@ -995,7 +995,7 @@ impl Block for Sound {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

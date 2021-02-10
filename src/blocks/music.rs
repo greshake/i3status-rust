@@ -54,11 +54,11 @@ impl Default for PlaybackStatus {
 }
 
 pub struct Music {
-    id: u64,
-    play_id: u64,
-    next_id: u64,
-    prev_id: u64,
-    collapsed_id: u64,
+    id: usize,
+    play_id: usize,
+    next_id: usize,
+    prev_id: usize,
+    collapsed_id: usize,
 
     current_song_widget: RotatingTextWidget,
     prev: Option<ButtonWidget>,
@@ -286,7 +286,7 @@ impl ConfigBlock for Music {
     type Config = MusicConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         send: Sender<Task>,
@@ -577,7 +577,7 @@ impl ConfigBlock for Music {
 }
 
 impl Block for Music {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

@@ -20,7 +20,7 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Custom {
-    id: u64,
+    id: usize,
     update_interval: Update,
     output: ButtonWidget,
     command: Option<String>,
@@ -87,7 +87,12 @@ impl CustomConfig {
 impl ConfigBlock for Custom {
     type Config = CustomConfig;
 
-    fn new(id: u64, block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        tx: Sender<Task>,
+    ) -> Result<Self> {
         let mut custom = Custom {
             id,
             update_interval: block_config.interval,
@@ -229,7 +234,7 @@ impl Block for Custom {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

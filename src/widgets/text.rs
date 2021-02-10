@@ -7,24 +7,24 @@ use crate::widget::State;
 
 #[derive(Clone, Debug)]
 pub struct TextWidget {
+    id: usize,
     content: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
-    id: u64,
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
 }
 
 impl TextWidget {
-    pub fn new(config: Config, id: u64) -> Self {
+    pub fn new(config: Config, id: usize) -> Self {
         TextWidget {
+            id,
             content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
-            id,
             rendered: json!({
                 "full_text": "",
                 "separator": false,

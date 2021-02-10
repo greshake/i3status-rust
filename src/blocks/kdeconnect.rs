@@ -19,7 +19,7 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct KDEConnect {
-    id: u64,
+    id: usize,
     device_id: String,
     device_name: Arc<Mutex<String>>,
     battery_charge: Arc<Mutex<i32>>,
@@ -110,7 +110,7 @@ impl ConfigBlock for KDEConnect {
     type Config = KDEConnectConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         send: Sender<Task>,
@@ -572,7 +572,7 @@ impl ConfigBlock for KDEConnect {
 }
 
 impl Block for KDEConnect {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

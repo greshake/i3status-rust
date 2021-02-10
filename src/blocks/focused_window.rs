@@ -24,7 +24,7 @@ pub enum MarksType {
 }
 
 pub struct FocusedWindow {
-    id: u64,
+    id: usize,
     text: TextWidget,
     title: Arc<Mutex<String>>,
     marks: Arc<Mutex<String>>,
@@ -64,7 +64,12 @@ impl FocusedWindowConfig {
 impl ConfigBlock for FocusedWindow {
     type Config = FocusedWindowConfig;
 
-    fn new(id: u64, block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        tx: Sender<Task>,
+    ) -> Result<Self> {
         let title = Arc::new(Mutex::new(String::from("")));
         let marks = Arc::new(Mutex::new(String::from("")));
         let marks_type = block_config.show_marks;
@@ -236,7 +241,7 @@ impl Block for FocusedWindow {
         }
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

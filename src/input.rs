@@ -33,12 +33,12 @@ struct I3BarEventInternal {
 
 #[derive(Debug, Clone)]
 pub struct I3BarEvent {
-    pub id: Option<u64>,
+    pub id: Option<usize>,
     pub button: MouseButton,
 }
 
 impl I3BarEvent {
-    pub fn matches_id(&self, other: u64) -> bool {
+    pub fn matches_id(&self, other: usize) -> bool {
         match self.id {
             Some(id) => id == other,
             _ => false,
@@ -61,7 +61,7 @@ pub fn process_events(sender: Sender<I3BarEvent>) {
                 let e: I3BarEventInternal = serde_json::from_str(slice).unwrap();
                 sender
                     .send(I3BarEvent {
-                        id: e.name.map(|x| x.parse::<u64>().unwrap()),
+                        id: e.name.map(|x| x.parse::<usize>().unwrap()),
                         button: e.button,
                     })
                     .unwrap();

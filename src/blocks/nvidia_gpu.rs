@@ -17,9 +17,9 @@ use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct NvidiaGpu {
-    id: u64,
-    id_fans: u64,
-    id_memory: u64,
+    id: usize,
+    id_fans: usize,
+    id_memory: usize,
     update_interval: Duration,
 
     gpu_enabled: bool,
@@ -173,7 +173,7 @@ impl ConfigBlock for NvidiaGpu {
     type Config = NvidiaGpuConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -487,7 +487,7 @@ impl Block for NvidiaGpu {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

@@ -16,7 +16,7 @@ use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
 pub struct Hueshift {
-    id: u64,
+    id: usize,
     text: ButtonWidget,
     update_interval: Duration,
     step: u16,
@@ -198,7 +198,7 @@ impl ConfigBlock for Hueshift {
     type Config = HueshiftConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
@@ -295,7 +295,7 @@ impl Block for Hueshift {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

@@ -19,7 +19,7 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct SpeedTest {
-    id: u64,
+    id: usize,
     vals: Arc<Mutex<(bool, Vec<f32>)>>,
     text: Vec<ButtonWidget>,
     config: SpeedTestConfig,
@@ -131,7 +131,7 @@ fn make_thread(
     done: Sender<Task>,
     values: Arc<Mutex<(bool, Vec<f32>)>>,
     config: SpeedTestConfig,
-    id: u64,
+    id: usize,
 ) {
     thread::Builder::new()
         .name("speedtest".into())
@@ -164,7 +164,7 @@ impl ConfigBlock for SpeedTest {
     type Config = SpeedTestConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         done: Sender<Task>,
@@ -258,7 +258,7 @@ impl Block for SpeedTest {
         new
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

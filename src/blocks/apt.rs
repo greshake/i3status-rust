@@ -20,7 +20,7 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Apt {
-    id: u64,
+    id: usize,
     output: ButtonWidget,
     update_interval: Duration,
     format: FormatTemplate,
@@ -94,7 +94,7 @@ impl ConfigBlock for Apt {
     type Config = AptConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -201,7 +201,7 @@ fn get_update_count(updates: &str) -> usize {
 }
 
 impl Block for Apt {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

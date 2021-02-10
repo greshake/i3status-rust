@@ -10,7 +10,7 @@ use crate::errors::*;
 
 #[derive(Debug, Clone)]
 pub struct Task {
-    pub id: u64,
+    pub id: usize,
     pub update_time: Instant,
 }
 

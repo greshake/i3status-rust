@@ -160,7 +160,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
     for &(ref block_name, ref block_config) in &config.blocks {
         blocks.push(create_block(
-            blocks.len() as u64,
+            blocks.len(),
             block_name,
             block_config.clone(),
             config.clone(),
@@ -198,7 +198,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
                 // Process immediately and forget
-                blocks.get_mut(req.id as usize)
+                blocks.get_mut(req.id)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
                 util::print_blocks(&blocks, &config)?;

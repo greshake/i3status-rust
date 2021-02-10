@@ -156,7 +156,7 @@ impl Memstate {
 
 #[derive(Clone, Debug)]
 pub struct Memory {
-    id: u64,
+    id: usize,
     memtype: Memtype,
     output: (ButtonWidget, ButtonWidget),
     clickable: bool,
@@ -355,7 +355,12 @@ impl Memory {
 impl ConfigBlock for Memory {
     type Config = MemoryConfig;
 
-    fn new(id: u64, block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        tx: Sender<Task>,
+    ) -> Result<Self> {
         let icons: bool = block_config.icons;
         let widget = ButtonWidget::new(config, id).with_text("");
         Ok(Memory {
@@ -383,7 +388,7 @@ impl ConfigBlock for Memory {
 }
 
 impl Block for Memory {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

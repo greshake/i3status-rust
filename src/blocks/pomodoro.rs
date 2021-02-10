@@ -59,7 +59,7 @@ impl fmt::Display for State {
 }
 
 pub struct Pomodoro {
-    id: u64,
+    id: usize,
     time: ButtonWidget,
     state: State,
     length: Duration,
@@ -140,7 +140,7 @@ impl ConfigBlock for Pomodoro {
     type Config = PomodoroConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _send: Sender<Task>,
@@ -162,7 +162,7 @@ impl ConfigBlock for Pomodoro {
 }
 
 impl Block for Pomodoro {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

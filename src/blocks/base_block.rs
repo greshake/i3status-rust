@@ -18,7 +18,7 @@ pub(super) struct BaseBlock<T: Block> {
 }
 
 impl<T: Block> Block for BaseBlock<T> {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.inner.id()
     }
 

@@ -110,7 +110,7 @@ impl Into<Update> for Duration {
 
 pub trait Block {
     /// A unique id for the block.
-    fn id(&self) -> u64;
+    fn id(&self) -> usize;
 
     /// The current "view" of the block, comprised of widgets.
     fn view(&self) -> Vec<&dyn I3BarWidget>;
@@ -138,7 +138,7 @@ pub trait ConfigBlock: Block {
 
     /// Creates a new block from the relevant configuration.
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         update_request: Sender<Task>,
@@ -199,7 +199,7 @@ macro_rules! block {
 }
 
 pub fn create_block(
-    id: u64,
+    id: usize,
     name: &str,
     mut block_config: Value,
     config: Config,

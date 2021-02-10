@@ -50,7 +50,7 @@ pub enum InfoType {
 }
 
 pub struct DiskSpace {
-    id: u64,
+    id: usize,
     disk_space: TextWidget,
     update_interval: Duration,
     alias: String,
@@ -210,7 +210,7 @@ impl ConfigBlock for DiskSpace {
     type Config = DiskSpaceConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -312,7 +312,7 @@ impl Block for DiskSpace {
         vec![&self.disk_space]
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

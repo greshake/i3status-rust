@@ -26,7 +26,7 @@ struct CustomDBusStatus {
 }
 
 pub struct CustomDBus {
-    id: u64,
+    id: usize,
     text: TextWidget,
     status: Arc<Mutex<CustomDBusStatus>>,
 }
@@ -50,7 +50,7 @@ impl ConfigBlock for CustomDBus {
     type Config = CustomDBusConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         send: Sender<Task>,
@@ -136,7 +136,7 @@ impl ConfigBlock for CustomDBus {
 }
 
 impl Block for CustomDBus {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

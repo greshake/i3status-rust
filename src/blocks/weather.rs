@@ -55,7 +55,7 @@ pub enum OpenWeatherMapUnits {
 }
 
 pub struct Weather {
-    id: u64,
+    id: usize,
     weather: ButtonWidget,
     format: String,
     weather_keys: HashMap<String, String>,
@@ -324,7 +324,7 @@ impl ConfigBlock for Weather {
     type Config = WeatherConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -377,7 +377,7 @@ impl Block for Weather {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

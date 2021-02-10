@@ -16,7 +16,7 @@ use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Toggle {
-    id: u64,
+    id: usize,
     text: ButtonWidget,
     command_on: String,
     command_off: String,
@@ -74,7 +74,7 @@ impl ConfigBlock for Toggle {
     type Config = ToggleConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -150,7 +150,7 @@ impl Block for Toggle {
         Ok(())
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

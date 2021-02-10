@@ -28,7 +28,7 @@ use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct IBus {
-    id: u64,
+    id: usize,
     text: TextWidget,
     engine: Arc<Mutex<String>>,
     mappings: Option<BTreeMap<String, String>>,
@@ -67,7 +67,7 @@ impl ConfigBlock for IBus {
 
     #[allow(clippy::many_single_char_names)]
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         send: Sender<Task>,
@@ -228,7 +228,7 @@ impl ConfigBlock for IBus {
 }
 
 impl Block for IBus {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

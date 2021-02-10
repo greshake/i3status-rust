@@ -22,8 +22,8 @@ use crate::widgets::button::ButtonWidget;
 // Add driver option so can choose between dunst, mako, etc.
 
 pub struct Notify {
-    id: u64,
-    notify_id: u64,
+    id: usize,
+    notify_id: usize,
     paused: Arc<Mutex<i64>>,
     format: FormatTemplate,
     output: ButtonWidget,
@@ -55,7 +55,7 @@ impl ConfigBlock for Notify {
     type Config = NotifyConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         send: Sender<Task>,
@@ -126,7 +126,7 @@ impl ConfigBlock for Notify {
 }
 
 impl Block for Notify {
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 

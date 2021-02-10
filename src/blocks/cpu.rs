@@ -20,7 +20,7 @@ use crate::widgets::button::ButtonWidget;
 const MAX_CPUS: usize = 32;
 
 pub struct Cpu {
-    id: u64,
+    id: usize,
     output: ButtonWidget,
     prev_idles: [u64; MAX_CPUS],
     prev_non_idles: [u64; MAX_CPUS],
@@ -106,7 +106,7 @@ impl ConfigBlock for Cpu {
     type Config = CpuConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
@@ -247,7 +247,7 @@ impl Block for Cpu {
         vec![&self.output]
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

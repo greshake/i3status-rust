@@ -367,7 +367,7 @@ impl UpowerDevice {
 
     /// Monitor UPower property changes in a separate thread and send updates
     /// via the `update_request` channel.
-    pub fn monitor(&self, id: u64, update_request: Sender<Task>) {
+    pub fn monitor(&self, id: usize, update_request: Sender<Task>) {
         let path = self.device_path.clone();
         thread::Builder::new()
             .name("battery".into())
@@ -478,7 +478,7 @@ impl BatteryDevice for UpowerDevice {
 
 /// A block for displaying information about an internal power supply.
 pub struct Battery {
-    id: u64,
+    id: usize,
     output: TextWidget,
     update_interval: Duration,
     device: Box<dyn BatteryDevice>,
@@ -635,7 +635,7 @@ impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
     fn new(
-        id: u64,
+        id: usize,
         block_config: Self::Config,
         config: Config,
         update_request: Sender<Task>,
@@ -810,7 +810,7 @@ impl Block for Battery {
         vec![&self.output]
     }
 
-    fn id(&self) -> u64 {
+    fn id(&self) -> usize {
         self.id
     }
 }

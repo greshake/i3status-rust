@@ -8,7 +8,7 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use regex::Regex;
 use serde::de::DeserializeOwned;
@@ -19,8 +19,8 @@ use crate::errors::*;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 
-pub fn pseudo_uuid() -> u64 {
-    static ID: AtomicU64 = AtomicU64::new(u64::MAX);
+pub fn pseudo_uuid() -> usize {
+    static ID: AtomicUsize = AtomicUsize::new(usize::MAX);
     ID.fetch_sub(1, Ordering::SeqCst)
 }
 
