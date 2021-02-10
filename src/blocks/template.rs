@@ -10,13 +10,12 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct Template {
+    id: usize,
     text: TextWidget,
-    id: String,
     update_interval: Duration,
 
     //useful, but optional
@@ -54,12 +53,12 @@ impl ConfigBlock for Template {
     type Config = TemplateConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-        let text = TextWidget::new(config.clone(), &id).with_text("Template");
+        let text = TextWidget::new(config.clone(), id).with_text("Template");
 
         Ok(Template {
             id,
@@ -84,7 +83,7 @@ impl Block for Template {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

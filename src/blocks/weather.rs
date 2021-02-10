@@ -12,7 +12,7 @@ use crate::errors::*;
 use crate::http;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -55,7 +55,7 @@ pub enum OpenWeatherMapUnits {
 }
 
 pub struct Weather {
-    id: String,
+    id: usize,
     weather: ButtonWidget,
     format: String,
     weather_keys: HashMap<String, String>,
@@ -324,14 +324,14 @@ impl ConfigBlock for Weather {
     type Config = WeatherConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
         Ok(Weather {
-            id: id.clone(),
-            weather: ButtonWidget::new(config, &id),
+            id,
+            weather: ButtonWidget::new(config, id),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,
@@ -369,7 +369,7 @@ impl Block for Weather {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_name(self.id()) {
+        if event.matches_id(self.id()) {
             if let MouseButton::Left = event.button {
                 self.update()?;
             }
@@ -377,7 +377,7 @@ impl Block for Weather {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

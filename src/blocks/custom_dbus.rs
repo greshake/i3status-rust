@@ -15,7 +15,6 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -27,7 +26,7 @@ struct CustomDBusStatus {
 }
 
 pub struct CustomDBus {
-    id: String,
+    id: usize,
     text: TextWidget,
     status: Arc<Mutex<CustomDBusStatus>>,
 }
@@ -50,10 +49,12 @@ impl CustomDBusConfig {
 impl ConfigBlock for CustomDBus {
     type Config = CustomDBusConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id_copy = id.clone();
-
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
             content: String::from("??"),
             icon: String::from(""),
@@ -101,7 +102,7 @@ impl ConfigBlock for CustomDBus {
 
                                         // Tell block to update now.
                                         send.send(Task {
-                                            id: id.clone(),
+                                            id,
                                             update_time: Instant::now(),
                                         })
                                         .unwrap();
@@ -129,18 +130,14 @@ impl ConfigBlock for CustomDBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(config, &id_copy).with_text("CustomDBus");
-        Ok(CustomDBus {
-            id: id_copy,
-            text,
-            status,
-        })
+        let text = TextWidget::new(config, id).with_text("CustomDBus");
+        Ok(CustomDBus { id, text, status })
     }
 }
 
 impl Block for CustomDBus {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     // Updates the internal state of the block.

@@ -16,12 +16,11 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
-use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Custom {
-    id: String,
+    id: usize,
     update_interval: Update,
     output: ButtonWidget,
     command: Option<String>,
@@ -88,11 +87,16 @@ impl CustomConfig {
 impl ConfigBlock for Custom {
     type Config = CustomConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        tx: Sender<Task>,
+    ) -> Result<Self> {
         let mut custom = Custom {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(config.clone(), ""),
+            output: ButtonWidget::new(config, id),
             command: None,
             on_click: None,
             cycle: None,
@@ -107,7 +111,6 @@ impl ConfigBlock for Custom {
                 env::var("SHELL").unwrap_or_else(|_| "sh".to_owned())
             },
         };
-        custom.output = ButtonWidget::new(config, &custom.id);
 
         if let Some(signal) = block_config.signal {
             // If the signal is not in the valid range we return an error
@@ -198,7 +201,7 @@ impl Block for Custom {
         if let Some(sig) = self.signal {
             if sig == signal {
                 self.tx_update_request.send(Task {
-                    id: self.id.clone(),
+                    id: self.id,
                     update_time: Instant::now(),
                 })?;
             }
@@ -207,37 +210,31 @@ impl Block for Custom {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            if name != &self.id {
-                return Ok(());
+        if event.matches_id(self.id) {
+            let mut update = false;
+
+            if let Some(ref on_click) = self.on_click {
+                spawn_child_async(&self.shell, &["-c", on_click]).ok();
+                update = true;
             }
-        } else {
-            return Ok(());
-        }
 
-        let mut update = false;
+            if let Some(ref mut cycle) = self.cycle {
+                cycle.next();
+                update = true;
+            }
 
-        if let Some(ref on_click) = self.on_click {
-            spawn_child_async(&self.shell, &["-c", on_click]).ok();
-            update = true;
-        }
-
-        if let Some(ref mut cycle) = self.cycle {
-            cycle.next();
-            update = true;
-        }
-
-        if update {
-            self.tx_update_request.send(Task {
-                id: self.id.clone(),
-                update_time: Instant::now(),
-            })?;
+            if update {
+                self.tx_update_request.send(Task {
+                    id: self.id,
+                    update_time: Instant::now(),
+                })?;
+            }
         }
 
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

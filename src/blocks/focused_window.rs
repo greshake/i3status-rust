@@ -12,7 +12,6 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
@@ -25,12 +24,12 @@ pub enum MarksType {
 }
 
 pub struct FocusedWindow {
+    id: usize,
     text: TextWidget,
     title: Arc<Mutex<String>>,
     marks: Arc<Mutex<String>>,
     show_marks: MarksType,
     max_width: usize,
-    id: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -65,10 +64,12 @@ impl FocusedWindowConfig {
 impl ConfigBlock for FocusedWindow {
     type Config = FocusedWindowConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-        let id_clone = id.clone();
-
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        tx: Sender<Task>,
+    ) -> Result<Self> {
         let title = Arc::new(Mutex::new(String::from("")));
         let marks = Arc::new(Mutex::new(String::from("")));
         let marks_type = block_config.show_marks;
@@ -177,7 +178,7 @@ impl ConfigBlock for FocusedWindow {
 
                     if updated {
                         tx.send(Task {
-                            id: id_clone.clone(),
+                            id,
                             update_time: Instant::now(),
                         })
                         .expect("could not communicate with channel in `window` block");
@@ -186,7 +187,7 @@ impl ConfigBlock for FocusedWindow {
             })
             .expect("failed to start watching thread for `window` block");
 
-        let text = TextWidget::new(config, &id);
+        let text = TextWidget::new(config, id);
         Ok(FocusedWindow {
             id,
             text,
@@ -240,7 +241,7 @@ impl Block for FocusedWindow {
         }
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

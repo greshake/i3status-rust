@@ -23,12 +23,12 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, xdg_config_home, FormatTemplate};
+use crate::util::{xdg_config_home, FormatTemplate};
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct IBus {
-    id: String,
+    id: usize,
     text: TextWidget,
     engine: Arc<Mutex<String>>,
     mappings: Option<BTreeMap<String, String>>,
@@ -66,10 +66,12 @@ impl ConfigBlock for IBus {
     type Config = IBusConfig;
 
     #[allow(clippy::many_single_char_names)]
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id_copy = id.clone();
-        let id_copy2 = id.clone();
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let send2 = send.clone();
 
         let engine_original = Arc::new(Mutex::new(String::from("??")));
@@ -117,7 +119,7 @@ impl ConfigBlock for IBus {
                             // see comment on L167
                             *engine = "Reload the bar!".to_string();
 							send2.send(Task {
-								id: id_copy2.clone(),
+								id,
 								update_time: Instant::now(),
 							}).unwrap();
 						} else if name.contains("IBus") && old_owner.is_empty() && !new_owner.is_empty() {
@@ -127,7 +129,7 @@ impl ConfigBlock for IBus {
 							cvar.notify_one();
 
 							send2.send(Task {
-						   		id: id_copy2.clone(),
+						   		id,
 						   		update_time: Instant::now(),
 							}).unwrap();
 						}
@@ -204,7 +206,7 @@ impl ConfigBlock for IBus {
                             *engine = engine_name.to_string();
                             // Tell block to update now.
                             send.send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -214,9 +216,9 @@ impl ConfigBlock for IBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(config, &id_copy).with_text("IBus");
+        let text = TextWidget::new(config, id).with_text("IBus");
         Ok(IBus {
-            id: id_copy,
+            id,
             text,
             engine: engine_original,
             mappings: block_config.mappings,
@@ -226,8 +228,8 @@ impl ConfigBlock for IBus {
 }
 
 impl Block for IBus {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     // Updates the internal state of the block.

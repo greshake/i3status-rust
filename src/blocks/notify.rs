@@ -22,7 +22,8 @@ use crate::widgets::button::ButtonWidget;
 // Add driver option so can choose between dunst, mako, etc.
 
 pub struct Notify {
-    id: String,
+    id: usize,
+    notify_id: usize,
     paused: Arc<Mutex<i64>>,
     format: FormatTemplate,
     output: ButtonWidget,
@@ -53,9 +54,13 @@ impl NotifyConfig {
 impl ConfigBlock for Notify {
     type Config = NotifyConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id1 = id.clone();
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
+        let notify_id = pseudo_uuid();
 
         let c = Connection::get_private(BusType::Session).block_error(
             "notify",
@@ -100,7 +105,7 @@ impl ConfigBlock for Notify {
 
                             // Tell block to update now.
                             send.send(Task {
-                                id: id1.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -112,16 +117,17 @@ impl ConfigBlock for Notify {
 
         Ok(Notify {
             id,
+            notify_id,
             paused: state,
             format: FormatTemplate::from_string(&block_config.format)?,
-            output: ButtonWidget::new(config, "notify").with_icon(icon),
+            output: ButtonWidget::new(config, notify_id).with_icon(icon),
         })
     }
 }
 
 impl Block for Notify {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -149,33 +155,34 @@ impl Block for Notify {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.name.as_ref().map(|s| s == "notify").unwrap_or(false) && e.button == MouseButton::Left
-        {
-            let c = Connection::get_private(BusType::Session).block_error(
-                "notify",
-                &"Failed to establish D-Bus connection".to_string(),
-            )?;
+        if e.matches_id(self.notify_id) {
+            if let MouseButton::Left = e.button {
+                let c = Connection::get_private(BusType::Session).block_error(
+                    "notify",
+                    &"Failed to establish D-Bus connection".to_string(),
+                )?;
 
-            let p = c.with_path(
-                "org.freedesktop.Notifications",
-                "/org/freedesktop/Notifications",
-                5000,
-            );
+                let p = c.with_path(
+                    "org.freedesktop.Notifications",
+                    "/org/freedesktop/Notifications",
+                    5000,
+                );
 
-            let paused = *self
-                .paused
-                .lock()
-                .block_error("notify", "failed to acquire lock")?;
+                let paused = *self
+                    .paused
+                    .lock()
+                    .block_error("notify", "failed to acquire lock")?;
 
-            if paused == 1 {
-                p.set("org.dunstproject.cmd0", "paused", false)
-                    .block_error("notify", &"Failed to query D-Bus".to_string())?;
-            } else {
-                p.set("org.dunstproject.cmd0", "paused", true)
-                    .block_error("notify", &"Failed to query D-Bus".to_string())?;
+                if paused == 1 {
+                    p.set("org.dunstproject.cmd0", "paused", false)
+                        .block_error("notify", &"Failed to query D-Bus".to_string())?;
+                } else {
+                    p.set("org.dunstproject.cmd0", "paused", true)
+                        .block_error("notify", &"Failed to query D-Bus".to_string())?;
+                }
+
+                // block will auto-update due to monitoring the bus
             }
-
-            // block will auto-update due to monitoring the bus
         }
         Ok(())
     }

@@ -11,15 +11,15 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
 pub struct Load {
+    id: usize,
     text: TextWidget,
     logical_cores: u32,
     format: FormatTemplate,
-    id: String,
     update_interval: Duration,
     minimum_info: f32,
     minimum_warning: f32,
@@ -83,12 +83,12 @@ impl ConfigBlock for Load {
     type Config = LoadConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-        let text = TextWidget::new(config, &id)
+        let text = TextWidget::new(config, id)
             .with_icon("cogs")
             .with_state(State::Info);
 
@@ -154,7 +154,7 @@ impl Block for Load {
         vec![&self.text]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

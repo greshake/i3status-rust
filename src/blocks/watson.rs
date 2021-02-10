@@ -12,7 +12,7 @@ use crate::de::deserialize_local_timestamp;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, xdg_config_home};
+use crate::util::xdg_config_home;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 use chrono::offset::Local;
@@ -22,7 +22,7 @@ use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 pub struct Watson {
-    id: String,
+    id: usize,
     text: ButtonWidget,
     state_path: PathBuf,
     show_time: bool,
@@ -71,15 +71,14 @@ impl ConfigBlock for Watson {
     type Config = WatsonConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-
         let watson = Watson {
-            id: id.clone(),
-            text: ButtonWidget::new(config, &id),
+            id,
+            text: ButtonWidget::new(config, id),
             state_path: block_config.state_path.clone(),
             show_time: block_config.show_time,
             update_interval: block_config.interval,
@@ -122,7 +121,7 @@ impl ConfigBlock for Watson {
                         EventMask::CREATE if event.name == Some(&file_name) => {
                             tx_update_request
                                 .send(Task {
-                                    id: id.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .expect("unable to send task from watson watcher");
@@ -196,11 +195,9 @@ impl Block for Watson {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                self.show_time = !self.show_time;
-                self.update()?;
-            }
+        if e.matches_id(self.id) {
+            self.show_time = !self.show_time;
+            self.update()?;
         }
         Ok(())
     }
@@ -209,8 +206,8 @@ impl Block for Watson {
         vec![&self.text]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }
 

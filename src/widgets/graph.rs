@@ -8,24 +8,24 @@ use crate::widget::State;
 
 #[derive(Clone, Debug)]
 pub struct GraphWidget {
+    id: usize,
     content: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
-    id: String,
     rendered: Value,
     cached_output: Option<String>,
     config: Config,
 }
 #[allow(dead_code)]
 impl GraphWidget {
-    pub fn new(config: Config, id: &str) -> Self {
+    pub fn new(config: Config, id: usize) -> Self {
         GraphWidget {
+            id,
             content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
-            id: id.to_string(),
             rendered: json!({
                 "full_text": "",
                 "separator": false,

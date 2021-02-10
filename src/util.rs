@@ -8,6 +8,7 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 use std::process::Command;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use regex::Regex;
 use serde::de::DeserializeOwned;
@@ -18,11 +19,9 @@ use crate::errors::*;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 
-pub fn pseudo_uuid() -> String {
-    let mut bytes = [0u8; 16];
-    getrandom::getrandom(&mut bytes).unwrap();
-    let uuid: String = bytes.iter().map(|&x| format!("{:02x?}", x)).collect();
-    uuid
+pub fn pseudo_uuid() -> usize {
+    static ID: AtomicUsize = AtomicUsize::new(usize::MAX);
+    ID.fetch_sub(1, Ordering::SeqCst)
 }
 
 pub fn escape_pango_text(text: String) -> String {
@@ -168,11 +167,7 @@ macro_rules! map_to_owned (
      };
 );
 
-pub fn print_blocks(
-    order: &[String],
-    block_map: &HashMap<String, &mut dyn Block>,
-    config: &Config,
-) -> Result<()> {
+pub fn print_blocks(blocks: &[Box<dyn Block>], config: &Config) -> Result<()> {
     let mut last_bg: Option<String> = None;
 
     let mut rendered_blocks = vec![];
@@ -182,20 +177,14 @@ pub fn print_blocks(
      * flip the starting tint if an even number of blocks is visible. This way,
      * the last block should always be untinted.
      */
-    let visible_count = order
+    let visible_count = blocks
         .iter()
-        .filter(|block_id| {
-            let block = block_map.get(block_id.as_str()).unwrap();
-            !block.view().is_empty()
-        })
+        .filter(|block| !block.view().is_empty())
         .count();
 
     let mut alternator = visible_count % 2 == 0;
 
-    for block_id in order {
-        let block = &(*(block_map
-            .get(block_id)
-            .internal_error("util", "couldn't get block by id")?));
+    for block in blocks.iter() {
         let widgets = block.view();
         if widgets.is_empty() {
             continue;

@@ -11,13 +11,13 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
 pub struct Taskwarrior {
+    id: usize,
     output: ButtonWidget,
-    id: String,
     update_interval: Duration,
     warning_threshold: u32,
     critical_threshold: u32,
@@ -138,12 +138,12 @@ impl ConfigBlock for Taskwarrior {
     type Config = TaskwarriorConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-        let output = ButtonWidget::new(config.clone(), &id)
+        let output = ButtonWidget::new(config.clone(), id)
             .with_icon("tasks")
             .with_text("-");
         // If the deprecated `filter_tags` option has been set,
@@ -158,7 +158,7 @@ impl ConfigBlock for Taskwarrior {
         };
 
         Ok(Taskwarrior {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
             warning_threshold: block_config.warning_threshold,
             critical_threshold: block_config.critical_threshold,
@@ -260,7 +260,7 @@ impl Block for Taskwarrior {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == &self.id).unwrap_or(false) {
+        if event.matches_id(self.id) {
             match event.button {
                 MouseButton::Left => {
                     self.update()?;
@@ -277,7 +277,7 @@ impl Block for Taskwarrior {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

@@ -23,7 +23,6 @@ use crate::config::{Config, LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -181,7 +180,7 @@ impl BacklitDevice {
 
 /// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
-    id: String,
+    id: usize,
     output: ButtonWidget,
     device: BacklitDevice,
     step_width: u64,
@@ -236,6 +235,7 @@ impl ConfigBlock for Backlight {
     type Config = BacklightConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
@@ -245,13 +245,12 @@ impl ConfigBlock for Backlight {
             None => BacklitDevice::default(block_config.root_scaling),
         }?;
 
-        let id = pseudo_uuid();
         let brightness_file = device.brightness_file();
 
         let scrolling = config.scrolling;
         let backlight = Backlight {
-            output: ButtonWidget::new(config, &id),
-            id: id.clone(),
+            output: ButtonWidget::new(config, id),
+            id,
             device,
             step_width: block_config.step_width,
             scrolling,
@@ -276,7 +275,7 @@ impl ConfigBlock for Backlight {
                     if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
                         tx_update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -311,30 +310,28 @@ impl Block for Backlight {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            if name.as_str() == self.id {
-                let brightness = self.device.brightness()?;
-                use LogicalDirection::*;
-                match self.scrolling.to_logical_direction(event.button) {
-                    Some(Up) => {
-                        if brightness < 100 {
-                            self.device.set_brightness(brightness + self.step_width)?;
-                        }
+        if event.matches_id(self.id) {
+            let brightness = self.device.brightness()?;
+            use LogicalDirection::*;
+            match self.scrolling.to_logical_direction(event.button) {
+                Some(Up) => {
+                    if brightness < 100 {
+                        self.device.set_brightness(brightness + self.step_width)?;
                     }
-                    Some(Down) => {
-                        if brightness > self.step_width {
-                            self.device.set_brightness(brightness - self.step_width)?;
-                        }
-                    }
-                    None => {}
                 }
+                Some(Down) => {
+                    if brightness > self.step_width {
+                        self.device.set_brightness(brightness - self.step_width)?;
+                    }
+                }
+                None => {}
             }
         }
 
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

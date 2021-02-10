@@ -11,7 +11,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
+use crate::util::{format_percent_bar, FormatTemplate};
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -50,8 +50,8 @@ pub enum InfoType {
 }
 
 pub struct DiskSpace {
+    id: usize,
     disk_space: TextWidget,
-    id: String,
     update_interval: Duration,
     alias: String,
     path: String,
@@ -210,18 +210,14 @@ impl ConfigBlock for DiskSpace {
     type Config = DiskSpaceConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let icon = config
-            .icons
-            .get("disk_drive")
-            .cloned()
-            .unwrap_or_else(|| "".to_string());
+        let icon = config.icons.get("disk_drive").cloned().unwrap_or_default();
 
-        let id = pseudo_uuid();
-        let disk_space = TextWidget::new(config, &id);
+        let disk_space = TextWidget::new(config, id);
         Ok(DiskSpace {
             id,
             update_interval: block_config.interval,
@@ -316,7 +312,7 @@ impl Block for DiskSpace {
         vec![&self.disk_space]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

@@ -11,13 +11,13 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{has_command, pseudo_uuid};
+use crate::util::has_command;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
 pub struct Hueshift {
+    id: usize,
     text: ButtonWidget,
-    id: String,
     update_interval: Duration,
     step: u16,
     current_temp: u16,
@@ -198,13 +198,13 @@ impl ConfigBlock for Hueshift {
     type Config = HueshiftConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let current_temp = block_config.current_temp;
         let mut step = block_config.step;
-        let id = pseudo_uuid();
         let mut max_temp = block_config.max_temp;
         let mut min_temp = block_config.min_temp;
         // limit too big steps at 500K to avoid too brutal changes
@@ -228,9 +228,9 @@ impl ConfigBlock for Hueshift {
         };
 
         Ok(Hueshift {
-            id: id.clone(),
+            id,
             update_interval: block_config.interval,
-            text: ButtonWidget::new(config.clone(), &id).with_text(&current_temp.to_string()),
+            text: ButtonWidget::new(config.clone(), id).with_text(&current_temp.to_string()),
             tx_update_request,
             step,
             max_temp,
@@ -254,42 +254,40 @@ impl Block for Hueshift {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            if name.as_str() == self.id {
-                match event.button {
-                    MouseButton::Left => {
-                        self.current_temp = self.click_temp;
+        if event.matches_id(self.id) {
+            match event.button {
+                MouseButton::Left => {
+                    self.current_temp = self.click_temp;
+                    self.hue_shift_driver.update(self.current_temp)?;
+                }
+                MouseButton::Right => {
+                    if self.max_temp > 6500 {
+                        self.current_temp = 6500;
+                        self.hue_shift_driver.reset()?;
+                    } else {
+                        self.current_temp = self.max_temp;
                         self.hue_shift_driver.update(self.current_temp)?;
                     }
-                    MouseButton::Right => {
-                        if self.max_temp > 6500 {
-                            self.current_temp = 6500;
-                            self.hue_shift_driver.reset()?;
-                        } else {
-                            self.current_temp = self.max_temp;
-                            self.hue_shift_driver.update(self.current_temp)?;
-                        }
-                    }
-                    mb => {
-                        use LogicalDirection::*;
-                        let new_temp: u16;
-                        match self.config.scrolling.to_logical_direction(mb) {
-                            Some(Up) => {
-                                new_temp = self.current_temp + self.step;
-                                if new_temp <= self.max_temp {
-                                    self.hue_shift_driver.update(new_temp)?;
-                                    self.current_temp = new_temp;
-                                }
+                }
+                mb => {
+                    use LogicalDirection::*;
+                    let new_temp: u16;
+                    match self.config.scrolling.to_logical_direction(mb) {
+                        Some(Up) => {
+                            new_temp = self.current_temp + self.step;
+                            if new_temp <= self.max_temp {
+                                self.hue_shift_driver.update(new_temp)?;
+                                self.current_temp = new_temp;
                             }
-                            Some(Down) => {
-                                new_temp = self.current_temp - self.step;
-                                if new_temp >= self.min_temp {
-                                    self.hue_shift_driver.update(new_temp)?;
-                                    self.current_temp = new_temp;
-                                }
-                            }
-                            None => {}
                         }
+                        Some(Down) => {
+                            new_temp = self.current_temp - self.step;
+                            if new_temp >= self.min_temp {
+                                self.hue_shift_driver.update(new_temp)?;
+                                self.current_temp = new_temp;
+                            }
+                        }
+                        None => {}
                     }
                 }
             }
@@ -297,7 +295,7 @@ impl Block for Hueshift {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

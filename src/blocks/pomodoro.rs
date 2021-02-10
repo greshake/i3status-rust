@@ -11,7 +11,6 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::pseudo_uuid;
 use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
 
@@ -60,7 +59,7 @@ impl fmt::Display for State {
 }
 
 pub struct Pomodoro {
-    id: String,
+    id: usize,
     time: ButtonWidget,
     state: State,
     length: Duration,
@@ -140,12 +139,15 @@ impl PomodoroConfig {
 impl ConfigBlock for Pomodoro {
     type Config = PomodoroConfig;
 
-    fn new(block_config: Self::Config, config: Config, _send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        _send: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Pomodoro {
-            id: id.clone(),
-            time: ButtonWidget::new(config, &id).with_icon("pomodoro"),
+            id,
+            time: ButtonWidget::new(config, id).with_icon("pomodoro"),
             state: State::Stopped,
             length: Duration::from_secs(block_config.length * 60), // convert to minutes
             break_length: Duration::from_secs(block_config.break_length * 60), // convert to minutes
@@ -160,8 +162,8 @@ impl ConfigBlock for Pomodoro {
 }
 
 impl Block for Pomodoro {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -192,34 +194,32 @@ impl Block for Pomodoro {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            if name.as_str() == self.id {
-                match event.button {
-                    MouseButton::Right => {
-                        self.state = State::Stopped;
-                        self.count = 0;
-                    }
-                    _ => match &self.state {
-                        State::Stopped => {
-                            self.state = State::Started(Instant::now());
-                        }
-                        State::Started(_) => {
-                            self.state = State::Paused(self.state.elapsed());
-                        }
-                        State::Paused(duration) => {
-                            self.state = State::Started(
-                                Instant::now().checked_sub(duration.to_owned()).unwrap(),
-                            );
-                        }
-                        State::OnBreak(_) => {
-                            self.state = State::Started(Instant::now());
-                        }
-                    },
+        if event.matches_id(self.id) {
+            match event.button {
+                MouseButton::Right => {
+                    self.state = State::Stopped;
+                    self.count = 0;
                 }
+                _ => match &self.state {
+                    State::Stopped => {
+                        self.state = State::Started(Instant::now());
+                    }
+                    State::Started(_) => {
+                        self.state = State::Paused(self.state.elapsed());
+                    }
+                    State::Paused(duration) => {
+                        self.state = State::Started(
+                            Instant::now().checked_sub(duration.to_owned()).unwrap(),
+                        );
+                    }
+                    State::OnBreak(_) => {
+                        self.state = State::Started(Instant::now());
+                    }
+                },
             }
+            self.set_text();
         }
 
-        self.set_text();
         Ok(())
     }
 

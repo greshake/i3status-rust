@@ -19,9 +19,7 @@ use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{
-    battery_level_to_icon, format_percent_bar, pseudo_uuid, read_file, FormatTemplate,
-};
+use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::text::TextWidget;
 
@@ -369,7 +367,7 @@ impl UpowerDevice {
 
     /// Monitor UPower property changes in a separate thread and send updates
     /// via the `update_request` channel.
-    pub fn monitor(&self, id: String, update_request: Sender<Task>) {
+    pub fn monitor(&self, id: usize, update_request: Sender<Task>) {
         let path = self.device_path.clone();
         thread::Builder::new()
             .name("battery".into())
@@ -394,7 +392,7 @@ impl UpowerDevice {
                     if con.incoming(10_000).next().is_some() {
                         update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -480,8 +478,8 @@ impl BatteryDevice for UpowerDevice {
 
 /// A block for displaying information about an internal power supply.
 pub struct Battery {
+    id: usize,
     output: TextWidget,
-    id: String,
     update_interval: Duration,
     device: Box<dyn BatteryDevice>,
     format: FormatTemplate,
@@ -637,6 +635,7 @@ impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         update_request: Sender<Task>,
@@ -661,11 +660,10 @@ impl ConfigBlock for Battery {
             _ => BatteryDriver::Sysfs,
         };
 
-        let id = pseudo_uuid();
         let device: Box<dyn BatteryDevice> = match driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
-                out.monitor(id.clone(), update_request);
+                out.monitor(id, update_request);
                 Box::new(out)
             }
             BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(
@@ -674,7 +672,7 @@ impl ConfigBlock for Battery {
             )?),
         };
 
-        let output = TextWidget::new(config, &id);
+        let output = TextWidget::new(config, id);
         Ok(Battery {
             id,
             update_interval: block_config.interval,
@@ -812,7 +810,7 @@ impl Block for Battery {
         vec![&self.output]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

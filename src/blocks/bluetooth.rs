@@ -11,7 +11,6 @@ use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -118,7 +117,7 @@ impl BluetoothDevice {
 
     /// Monitor Bluetooth property changes in a separate thread and send updates
     /// via the `update_request` channel.
-    pub fn monitor(&self, id: String, update_request: Sender<Task>) {
+    pub fn monitor(&self, id: usize, update_request: Sender<Task>) {
         let path = self.path.clone();
         thread::Builder::new()
             .name("bluetooth".into())
@@ -143,7 +142,7 @@ impl BluetoothDevice {
                     if con.incoming(10_000).next().is_some() {
                         update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -155,7 +154,7 @@ impl BluetoothDevice {
 }
 
 pub struct Bluetooth {
-    id: String,
+    id: usize,
     output: ButtonWidget,
     device: BluetoothDevice,
     hide_disconnected: bool,
@@ -185,14 +184,18 @@ impl BluetoothConfig {
 impl ConfigBlock for Bluetooth {
     type Config = BluetoothConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
-        device.monitor(id.clone(), send);
+        device.monitor(id, send);
 
         Ok(Bluetooth {
-            id: id.clone(),
-            output: ButtonWidget::new(config, &id).with_icon(match device.icon {
+            id,
+            output: ButtonWidget::new(config, id).with_icon(match device.icon {
                 Some(ref icon) if icon == "audio-card" => "headphones",
                 Some(ref icon) if icon == "input-gaming" => "joystick",
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",
@@ -206,8 +209,8 @@ impl ConfigBlock for Bluetooth {
 }
 
 impl Block for Bluetooth {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -233,11 +236,9 @@ impl Block for Bluetooth {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            if name.as_str() == self.id {
-                if let MouseButton::Right = event.button {
-                    self.device.toggle()?;
-                }
+        if event.matches_id(self.id) {
+            if let MouseButton::Right = event.button {
+                self.device.toggle()?;
             }
         }
         Ok(())

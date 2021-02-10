@@ -19,7 +19,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -442,7 +442,7 @@ impl<'a> NmIp4Config<'a> {
 }
 
 pub struct NetworkManager {
-    id: String,
+    id: usize,
     indicator: ButtonWidget,
     output: Vec<ButtonWidget>,
     dbus_conn: Connection,
@@ -529,9 +529,12 @@ impl NetworkManagerConfig {
 impl ConfigBlock for NetworkManager {
     type Config = NetworkManagerConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id_copy = id.clone();
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        config: Config,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let dbus_conn = Connection::get_private(BusType::System)
             .block_error("networkmanager", "failed to establish D-Bus connection")?;
         let manager = ConnectionManager::new();
@@ -555,7 +558,7 @@ impl ConfigBlock for NetworkManager {
                             ConnectionItem::Nothing => (),
                             _ => send
                                 .send(Task {
-                                    id: id_copy.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap(),
@@ -570,9 +573,9 @@ impl ConfigBlock for NetworkManager {
         }
 
         Ok(NetworkManager {
-            id: id.clone(),
+            id,
             config: config.clone(),
-            indicator: ButtonWidget::new(config, &id),
+            indicator: ButtonWidget::new(config, id),
             output: Vec::new(),
             dbus_conn,
             manager,
@@ -590,8 +593,8 @@ impl ConfigBlock for NetworkManager {
 }
 
 impl Block for NetworkManager {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -649,7 +652,7 @@ impl Block for NetworkManager {
                     .into_iter()
                     .filter_map(|conn| {
                         // inline spacing for no leading space, because the icon is set in the string
-                        let mut widget = ButtonWidget::new(self.config.clone(), &self.id)
+                        let mut widget = ButtonWidget::new(self.config.clone(), self.id)
                             .with_spacing(Spacing::Inline);
 
                         // Set the state for this connection

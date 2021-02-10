@@ -11,7 +11,6 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -40,8 +39,8 @@ impl Default for MailType {
 }
 
 pub struct Maildir {
+    id: usize,
     text: TextWidget,
-    id: String,
     update_interval: Duration,
     inboxes: Vec<String>,
     threshold_warning: usize,
@@ -93,12 +92,12 @@ impl ConfigBlock for Maildir {
     type Config = MaildirConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
         config: Config,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
-        let widget = TextWidget::new(config, &id).with_text("");
+        let widget = TextWidget::new(config, id).with_text("");
         Ok(Maildir {
             id,
             update_interval: block_config.interval,
@@ -142,7 +141,7 @@ impl Block for Maildir {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

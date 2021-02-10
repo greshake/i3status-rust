@@ -11,13 +11,13 @@ use crate::errors::*;
 use crate::http;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::FormatTemplate;
 use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
 
 pub struct Docker {
+    id: usize,
     text: TextWidget,
-    id: String,
     format: FormatTemplate,
     update_interval: Duration,
 }
@@ -75,9 +75,8 @@ impl DockerConfig {
 impl ConfigBlock for Docker {
     type Config = DockerConfig;
 
-    fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-        let text = TextWidget::new(config, &id)
+    fn new(id: usize, block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
+        let text = TextWidget::new(config, id)
             .with_text("N/A")
             .with_icon("docker");
         Ok(Docker {
@@ -124,7 +123,7 @@ impl Block for Docker {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }
