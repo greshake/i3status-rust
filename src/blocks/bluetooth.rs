@@ -1,18 +1,17 @@
 use serde_derive::Deserialize;
-use std::collections::BTreeMap;
 use std::thread;
 use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct BluetoothDevice {
     pub path: String,
@@ -167,17 +166,11 @@ pub struct BluetoothConfig {
     pub label: Option<String>,
     #[serde(default = "BluetoothConfig::default_hide_disconnected")]
     pub hide_disconnected: bool,
-    #[serde(default = "BluetoothConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl BluetoothConfig {
     fn default_hide_disconnected() -> bool {
         false
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
     }
 }
 
@@ -187,7 +180,7 @@ impl ConfigBlock for Bluetooth {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         send: Sender<Task>,
     ) -> Result<Self> {
         let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
@@ -195,7 +188,7 @@ impl ConfigBlock for Bluetooth {
 
         Ok(Bluetooth {
             id,
-            output: ButtonWidget::new(config, id).with_icon(match device.icon {
+            output: ButtonWidget::new(id, appearance).with_icon(match device.icon {
                 Some(ref icon) if icon == "audio-card" => "headphones",
                 Some(ref icon) if icon == "input-gaming" => "joystick",
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",

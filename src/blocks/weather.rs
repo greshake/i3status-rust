@@ -1,20 +1,20 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::env;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::http;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::{I3BarWidget, State};
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
@@ -298,8 +298,6 @@ pub struct WeatherConfig {
     pub service: WeatherService,
     #[serde(default = "WeatherConfig::default_autolocate")]
     pub autolocate: bool,
-    #[serde(default = "WeatherConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl WeatherConfig {
@@ -314,10 +312,6 @@ impl WeatherConfig {
     fn default_autolocate() -> bool {
         false
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Weather {
@@ -326,12 +320,12 @@ impl ConfigBlock for Weather {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Weather {
             id,
-            weather: ButtonWidget::new(config, id),
+            weather: ButtonWidget::new(id, appearance),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,

@@ -1,5 +1,4 @@
 use std::boxed::Box;
-use std::collections::BTreeMap;
 use std::result;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -16,17 +15,18 @@ use dbus::{
 use regex::Regex;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection};
+use crate::config::{LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
+use crate::widgets::{I3BarWidget, Spacing, State};
 
 #[derive(Debug, Clone)]
 struct Player {
@@ -74,11 +74,11 @@ pub struct Music {
     max_width: usize,
     separator: String,
     seek_step: i64,
-    config: Config,
     players: Arc<Mutex<Vec<Player>>>,
     hide_when_empty: bool,
     send: Sender<Task>,
     format: FormatTemplate,
+    scrolling: Scrolling,
 }
 
 impl Music {
@@ -220,8 +220,8 @@ pub struct MusicConfig {
     #[serde(default = "MusicConfig::default_format")]
     pub format: String,
 
-    #[serde(default = "MusicConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    #[serde(default = "Scrolling::default")]
+    pub scrolling: Scrolling,
 }
 
 impl MusicConfig {
@@ -276,10 +276,6 @@ impl MusicConfig {
     fn default_format() -> String {
         "{combo}".to_string()
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Music {
@@ -288,7 +284,7 @@ impl ConfigBlock for Music {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         send: Sender<Task>,
     ) -> Result<Self> {
         let play_id = pseudo_uuid();
@@ -495,7 +491,7 @@ impl ConfigBlock for Music {
             match &*button {
                 "play" => {
                     play = Some(
-                        ButtonWidget::new(config.clone(), play_id)
+                        ButtonWidget::new(play_id, appearance.clone())
                             .with_icon("music_play")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
@@ -503,15 +499,14 @@ impl ConfigBlock for Music {
                 }
                 "next" => {
                     next = Some(
-                        ButtonWidget::new(config.clone(), next_id)
+                        ButtonWidget::new(next_id, appearance.clone())
                             .with_icon("music_next")
-                            .with_state(State::Info)
-                            .with_spacing(Spacing::Inline),
+                            .with_state(State::Info),
                     )
                 }
                 "prev" => {
                     prev = Some(
-                        ButtonWidget::new(config.clone(), prev_id)
+                        ButtonWidget::new(prev_id, appearance.clone())
                             .with_icon("music_prev")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
@@ -537,12 +532,12 @@ impl ConfigBlock for Music {
             next_id,
             collapsed_id,
             current_song_widget: RotatingTextWidget::new(
+                id,
                 Duration::new(block_config.marquee_interval.as_secs(), 0),
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
                 block_config.dynamic_width,
-                config.clone(),
-                id,
+                appearance.clone(),
             )
             .with_icon("music")
             .with_state(State::Info),
@@ -550,7 +545,7 @@ impl ConfigBlock for Music {
             play,
             next,
             on_click: None,
-            on_collapsed_click_widget: ButtonWidget::new(config.clone(), collapsed_id)
+            on_collapsed_click_widget: ButtonWidget::new(collapsed_id, appearance)
                 .with_icon("music")
                 .with_state(State::Info)
                 .with_spacing(Spacing::Hidden),
@@ -563,11 +558,11 @@ impl ConfigBlock for Music {
             max_width: block_config.max_width,
             separator: block_config.separator,
             seek_step: block_config.seek_step,
-            config,
             players: players_copy,
             hide_when_empty: block_config.hide_when_empty,
             send: send3,
             format: FormatTemplate::from_string(&block_config.format)?,
+            scrolling: block_config.scrolling,
         })
     }
 
@@ -726,7 +721,7 @@ impl Block for Music {
                         .block_error("music", "failed to create D-Bus method call")?;
 
                         use LogicalDirection::*;
-                        match self.config.scrolling.to_logical_direction(event.button) {
+                        match self.scrolling.to_logical_direction(event.button) {
                             Some(Up) => {
                                 self.dbus_conn
                                     .send(m.append1(self.seek_step * 1000))

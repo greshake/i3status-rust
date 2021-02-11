@@ -84,11 +84,11 @@ use crossbeam_channel::Sender;
 use serde::de::Deserialize;
 use toml::value::Value;
 
-use crate::config::Config;
+use crate::appearance::Appearance;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
+use crate::widgets::I3BarWidget;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Update {
@@ -140,7 +140,7 @@ pub trait ConfigBlock: Block {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        config: Appearance,
         update_request: Sender<Task>,
     ) -> Result<Self>
     where
@@ -152,40 +152,22 @@ pub trait ConfigBlock: Block {
 }
 
 macro_rules! block {
-    ($block_type:ident, $id:expr, $block_config:expr, $config:expr, $update_request:expr) => {{
+    ($block_type:ident, $id:expr, $block_config:expr, $appearance:expr, $update_request:expr) => {{
+        // Extract base(common) config
         let common_config = BaseBlockConfig::extract(&mut $block_config);
         let mut common_config = BaseBlockConfig::deserialize(common_config)
             .configuration_error("Failed to deserialize common block config.")?;
 
-        let block_config: <$block_type as ConfigBlock>::Config =
-            <$block_type as ConfigBlock>::Config::deserialize($block_config)
-                .configuration_error("Failed to deserialize block config.")?;
-
-        let mut main_config = $config;
-        if let Some(ref overrides) = block_config.color_overrides {
-            for entry in overrides {
-                match entry.0.as_str() {
-                    "idle_fg" => main_config.theme.idle_fg = Some(entry.1.to_string()),
-                    "idle_bg" => main_config.theme.idle_bg = Some(entry.1.to_string()),
-                    "info_fg" => main_config.theme.info_fg = Some(entry.1.to_string()),
-                    "info_bg" => main_config.theme.info_bg = Some(entry.1.to_string()),
-                    "good_fg" => main_config.theme.good_fg = Some(entry.1.to_string()),
-                    "good_bg" => main_config.theme.good_bg = Some(entry.1.to_string()),
-                    "warning_fg" => main_config.theme.warning_fg = Some(entry.1.to_string()),
-                    "warning_bg" => main_config.theme.warning_bg = Some(entry.1.to_string()),
-                    "critical_fg" => main_config.theme.critical_fg = Some(entry.1.to_string()),
-                    "critical_bg" => main_config.theme.critical_bg = Some(entry.1.to_string()),
-                    // TODO the below as well?
-                    // "separator"
-                    // "separator_bg"
-                    // "separator_fg"
-                    // "alternating_tint_bg"
-                    _ => (),
-                }
-            }
+        // Apply theme overrides if presented
+        if let Some(ref overrides) = common_config.color_overrides {
+            $appearance.theme_override(overrides);
         }
 
-        let mut block = $block_type::new($id, block_config, main_config, $update_request)?;
+        // Extract block-specific config
+        let block_config = <$block_type as ConfigBlock>::Config::deserialize($block_config)
+            .configuration_error("Failed to deserialize block config.")?;
+
+        let mut block = $block_type::new($id, block_config, $appearance, $update_request)?;
         if let Some(overrided) = block.override_on_click() {
             *overrided = common_config.on_click.take();
         }
@@ -202,49 +184,49 @@ pub fn create_block(
     id: usize,
     name: &str,
     mut block_config: Value,
-    config: Config,
+    mut appearance: Appearance,
     update_request: Sender<Task>,
 ) -> Result<Box<dyn Block>> {
     match name {
         // Please keep these in alphabetical order.
-        "apt" => block!(Apt, id, block_config, config, update_request),
-        "backlight" => block!(Backlight, id, block_config, config, update_request),
-        "battery" => block!(Battery, id, block_config, config, update_request),
-        "bluetooth" => block!(Bluetooth, id, block_config, config, update_request),
-        "cpu" => block!(Cpu, id, block_config, config, update_request),
-        "custom" => block!(Custom, id, block_config, config, update_request),
-        "custom_dbus" => block!(CustomDBus, id, block_config, config, update_request),
-        "disk_space" => block!(DiskSpace, id, block_config, config, update_request),
-        "docker" => block!(Docker, id, block_config, config, update_request),
-        "focused_window" => block!(FocusedWindow, id, block_config, config, update_request),
-        "github" => block!(Github, id, block_config, config, update_request),
-        "hueshift" => block!(Hueshift, id, block_config, config, update_request),
-        "ibus" => block!(IBus, id, block_config, config, update_request),
-        "kdeconnect" => block!(KDEConnect, id, block_config, config, update_request),
-        "keyboard_layout" => block!(KeyboardLayout, id, block_config, config, update_request),
-        "load" => block!(Load, id, block_config, config, update_request),
-        "maildir" => block!(Maildir, id, block_config, config, update_request),
-        "memory" => block!(Memory, id, block_config, config, update_request),
-        "music" => block!(Music, id, block_config, config, update_request),
-        "net" => block!(Net, id, block_config, config, update_request),
-        "networkmanager" => block!(NetworkManager, id, block_config, config, update_request),
-        "notify" => block!(Notify, id, block_config, config, update_request),
+        "apt" => block!(Apt, id, block_config, appearance, update_request),
+        "backlight" => block!(Backlight, id, block_config, appearance, update_request),
+        "battery" => block!(Battery, id, block_config, appearance, update_request),
+        "bluetooth" => block!(Bluetooth, id, block_config, appearance, update_request),
+        "cpu" => block!(Cpu, id, block_config, appearance, update_request),
+        "custom" => block!(Custom, id, block_config, appearance, update_request),
+        "custom_dbus" => block!(CustomDBus, id, block_config, appearance, update_request),
+        "disk_space" => block!(DiskSpace, id, block_config, appearance, update_request),
+        "docker" => block!(Docker, id, block_config, appearance, update_request),
+        "focused_window" => block!(FocusedWindow, id, block_config, appearance, update_request),
+        "github" => block!(Github, id, block_config, appearance, update_request),
+        "hueshift" => block!(Hueshift, id, block_config, appearance, update_request),
+        "ibus" => block!(IBus, id, block_config, appearance, update_request),
+        "kdeconnect" => block!(KDEConnect, id, block_config, appearance, update_request),
+        "keyboard_layout" => block!(KeyboardLayout, id, block_config, appearance, update_request),
+        "load" => block!(Load, id, block_config, appearance, update_request),
+        "maildir" => block!(Maildir, id, block_config, appearance, update_request),
+        "memory" => block!(Memory, id, block_config, appearance, update_request),
+        "music" => block!(Music, id, block_config, appearance, update_request),
+        "net" => block!(Net, id, block_config, appearance, update_request),
+        "networkmanager" => block!(NetworkManager, id, block_config, appearance, update_request),
+        "notify" => block!(Notify, id, block_config, appearance, update_request),
         #[cfg(feature = "notmuch")]
-        "notmuch" => block!(Notmuch, id, block_config, config, update_request),
-        "nvidia_gpu" => block!(NvidiaGpu, id, block_config, config, update_request),
-        "pacman" => block!(Pacman, id, block_config, config, update_request),
-        "pomodoro" => block!(Pomodoro, id, block_config, config, update_request),
-        "sound" => block!(Sound, id, block_config, config, update_request),
-        "speedtest" => block!(SpeedTest, id, block_config, config, update_request),
-        "taskwarrior" => block!(Taskwarrior, id, block_config, config, update_request),
-        "temperature" => block!(Temperature, id, block_config, config, update_request),
-        "template" => block!(Template, id, block_config, config, update_request),
-        "time" => block!(Time, id, block_config, config, update_request),
-        "toggle" => block!(Toggle, id, block_config, config, update_request),
-        "uptime" => block!(Uptime, id, block_config, config, update_request),
-        "watson" => block!(Watson, id, block_config, config, update_request),
-        "weather" => block!(Weather, id, block_config, config, update_request),
-        "xrandr" => block!(Xrandr, id, block_config, config, update_request),
+        "notmuch" => block!(Notmuch, id, block_config, appearance, update_request),
+        "nvidia_gpu" => block!(NvidiaGpu, id, block_config, appearance, update_request),
+        "pacman" => block!(Pacman, id, block_config, appearance, update_request),
+        "pomodoro" => block!(Pomodoro, id, block_config, appearance, update_request),
+        "sound" => block!(Sound, id, block_config, appearance, update_request),
+        "speedtest" => block!(SpeedTest, id, block_config, appearance, update_request),
+        "taskwarrior" => block!(Taskwarrior, id, block_config, appearance, update_request),
+        "temperature" => block!(Temperature, id, block_config, appearance, update_request),
+        "template" => block!(Template, id, block_config, appearance, update_request),
+        "time" => block!(Time, id, block_config, appearance, update_request),
+        "toggle" => block!(Toggle, id, block_config, appearance, update_request),
+        "uptime" => block!(Uptime, id, block_config, appearance, update_request),
+        "watson" => block!(Watson, id, block_config, appearance, update_request),
+        "weather" => block!(Weather, id, block_config, appearance, update_request),
+        "xrandr" => block!(Xrandr, id, block_config, appearance, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
     }
 }

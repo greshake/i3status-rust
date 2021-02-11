@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::process::Command;
 use std::str::FromStr;
 use std::time::Duration;
@@ -7,16 +6,17 @@ use crossbeam_channel::Sender;
 use regex::RegexSet;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection};
+use crate::config::{LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::FormatTemplate;
-use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::I3BarWidget;
 
 struct Monitor {
     name: String,
@@ -57,9 +57,8 @@ pub struct Xrandr {
     resolution: bool,
     step_width: u32,
     current_idx: usize,
-
-    #[allow(dead_code)]
-    config: Config,
+    scrolling: Scrolling,
+    appearance: Appearance,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -84,8 +83,8 @@ pub struct XrandrConfig {
     #[serde(default = "XrandrConfig::default_step_width")]
     pub step_width: u32,
 
-    #[serde(default = "XrandrConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    #[serde(default = "Scrolling::default")]
+    pub scrolling: Scrolling,
 }
 
 impl XrandrConfig {
@@ -103,10 +102,6 @@ impl XrandrConfig {
 
     fn default_step_width() -> u32 {
         5
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
     }
 }
 
@@ -206,9 +201,9 @@ impl Xrandr {
         if let Some(m) = self.monitors.get(self.current_idx) {
             let values = map!("{display}" => m.name.clone(),
                               "{brightness}" => m.brightness.to_string(),
-                              "{brightness_icon}" => self.config.icons.get("backlight_full").cloned().unwrap_or_else(|| "".to_string()).trim().to_string(),
+                              "{brightness_icon}" => self.appearance.get_icon("backlight_full").unwrap_or_default().trim().to_string(),
                               "{resolution}" => m.resolution.clone(),
-                              "{res_icon}" => self.config.icons.get("resolution").cloned().unwrap_or_else(|| "".to_string()).trim().to_string());
+                              "{res_icon}" => self.appearance.get_icon("resolution").unwrap_or_default().trim().to_string());
 
             self.text.set_icon("xrandr");
             let format_str = if self.resolution {
@@ -238,7 +233,7 @@ impl ConfigBlock for Xrandr {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let mut step_width = block_config.step_width;
@@ -246,7 +241,7 @@ impl ConfigBlock for Xrandr {
             step_width = 50;
         }
         Ok(Xrandr {
-            text: ButtonWidget::new(config.clone(), id).with_icon("xrandr"),
+            text: ButtonWidget::new(id, appearance.clone()).with_icon("xrandr"),
             id,
             update_interval: block_config.interval,
             current_idx: 0,
@@ -254,7 +249,8 @@ impl ConfigBlock for Xrandr {
             resolution: block_config.resolution,
             step_width,
             monitors: Vec::new(),
-            config,
+            scrolling: block_config.scrolling,
+            appearance,
         })
     }
 }
@@ -287,7 +283,7 @@ impl Block for Xrandr {
                 }
                 mb => {
                     use LogicalDirection::*;
-                    match self.config.scrolling.to_logical_direction(mb) {
+                    match self.scrolling.to_logical_direction(mb) {
                         Some(Up) => {
                             if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
                                 if monitor.brightness <= (100 - self.step_width) {

@@ -4,7 +4,6 @@
 //! display the status, capacity, and time remaining for (dis)charge for an
 //! internal power supply.
 
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -14,14 +13,14 @@ use dbus::arg::Array;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
-use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, Spacing, State};
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {
@@ -572,9 +571,6 @@ pub struct BatteryConfig {
     /// If the battery device cannot be found, completely hide this block.
     #[serde(default = "BatteryConfig::default_hide_missing")]
     pub hide_missing: bool,
-
-    #[serde(default = "BatteryConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl BatteryConfig {
@@ -625,10 +621,6 @@ impl BatteryConfig {
     fn default_hide_missing() -> bool {
         false
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Battery {
@@ -637,7 +629,7 @@ impl ConfigBlock for Battery {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         update_request: Sender<Task>,
     ) -> Result<Self> {
         // TODO: remove deprecated show types eventually
@@ -672,7 +664,7 @@ impl ConfigBlock for Battery {
             )?),
         };
 
-        let output = TextWidget::new(config, id);
+        let output = TextWidget::new(id, appearance);
         Ok(Battery {
             id,
             update_interval: block_config.interval,

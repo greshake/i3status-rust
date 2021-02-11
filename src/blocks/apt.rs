@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::io::Write;
@@ -9,15 +8,15 @@ use crossbeam_channel::Sender;
 use regex::Regex;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Apt {
     id: usize,
@@ -63,9 +62,6 @@ pub struct AptConfig {
     /// Default behaviour is that no package updates are deemed critical
     #[serde(default = "AptConfig::default_critical_updates_regex")]
     pub critical_updates_regex: Option<String>,
-
-    #[serde(default = "AptConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl AptConfig {
@@ -84,10 +80,6 @@ impl AptConfig {
     fn default_critical_updates_regex() -> Option<String> {
         None
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Apt {
@@ -96,7 +88,7 @@ impl ConfigBlock for Apt {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let mut cache_dir = env::temp_dir();
@@ -119,7 +111,7 @@ impl ConfigBlock for Apt {
             .block_error("apt", "Failed to create config file")?;
         write!(config_file, "{}", apt_conf).block_error("apt", "Failed to write to config file")?;
 
-        let output = ButtonWidget::new(config, id).with_icon("update");
+        let output = ButtonWidget::new(id, appearance).with_icon("update");
 
         Ok(Apt {
             id,

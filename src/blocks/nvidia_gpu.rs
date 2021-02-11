@@ -1,20 +1,20 @@
-use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection, Scrolling};
+use crate::config::{LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::pseudo_uuid;
-use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, Spacing, State};
 
 pub struct NvidiaGpu {
     id: usize,
@@ -111,8 +111,8 @@ pub struct NvidiaGpuConfig {
     #[serde(default = "NvidiaGpuConfig::default_warning")]
     pub warning: u64,
 
-    #[serde(default = "NvidiaGpuConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    #[serde(default = "Scrolling::default")]
+    pub scrolling: Scrolling,
 }
 
 impl NvidiaGpuConfig {
@@ -163,10 +163,6 @@ impl NvidiaGpuConfig {
     fn default_warning() -> u64 {
         80
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for NvidiaGpu {
@@ -175,7 +171,7 @@ impl ConfigBlock for NvidiaGpu {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id_memory = pseudo_uuid();
@@ -189,7 +185,7 @@ impl ConfigBlock for NvidiaGpu {
             gpu_enabled: false,
             gpu_id: block_config.gpu_id,
 
-            name_widget: ButtonWidget::new(config.clone(), id)
+            name_widget: ButtonWidget::new(id, appearance.clone())
                 .with_icon("gpu")
                 .with_spacing(Spacing::Inline),
             name_widget_mode: if block_config.label.is_some() {
@@ -197,42 +193,38 @@ impl ConfigBlock for NvidiaGpu {
             } else {
                 NameWidgetMode::ShowDefaultName
             },
-            label: if block_config.label.is_some() {
-                block_config.label.unwrap()
-            } else {
-                "".to_string()
-            },
+            label: block_config.label.unwrap_or_default(),
 
             show_memory: if block_config.show_memory {
-                Some(ButtonWidget::new(config.clone(), id_memory).with_spacing(Spacing::Inline))
+                Some(ButtonWidget::new(id_memory, appearance.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
             memory_widget_mode: MemoryWidgetMode::ShowUsedMemory,
 
             show_utilization: if block_config.show_utilization {
-                Some(TextWidget::new(config.clone(), id).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, appearance.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_temperature: if block_config.show_temperature {
-                Some(TextWidget::new(config.clone(), id).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, appearance.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_fan: if block_config.show_fan_speed {
-                Some(ButtonWidget::new(config.clone(), id_fans).with_spacing(Spacing::Inline))
+                Some(ButtonWidget::new(id_fans, appearance.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
             fan_speed: 0,
             fan_speed_controlled: false,
-            scrolling: config.scrolling,
+            scrolling: block_config.scrolling,
 
             show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(config, id).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, appearance).with_spacing(Spacing::Inline))
             } else {
                 None
             },

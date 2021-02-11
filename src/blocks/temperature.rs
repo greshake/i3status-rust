@@ -1,19 +1,19 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::{I3BarWidget, Spacing, State};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -89,9 +89,6 @@ pub struct TemperatureConfig {
     /// Inputs whitelist
     #[serde(default = "TemperatureConfig::default_inputs")]
     pub inputs: Option<Vec<String>>,
-
-    #[serde(default = "TemperatureConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl TemperatureConfig {
@@ -114,10 +111,6 @@ impl TemperatureConfig {
     fn default_inputs() -> Option<Vec<String>> {
         None
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Temperature {
@@ -126,13 +119,13 @@ impl ConfigBlock for Temperature {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Temperature {
             id,
             update_interval: block_config.interval,
-            text: ButtonWidget::new(config, id)
+            text: ButtonWidget::new(id, appearance)
                 .with_icon("thermometer")
                 .with_spacing(if block_config.collapsed {
                     Spacing::Hidden

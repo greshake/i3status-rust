@@ -1,19 +1,18 @@
-use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Taskwarrior {
     id: usize,
@@ -26,12 +25,6 @@ pub struct Taskwarrior {
     format: FormatTemplate,
     format_singular: FormatTemplate,
     format_everything_done: FormatTemplate,
-
-    //useful, but optional
-    #[allow(dead_code)]
-    config: Config,
-    #[allow(dead_code)]
-    tx_update_request: Sender<Task>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -96,9 +89,6 @@ pub struct TaskwarriorConfig {
     /// Format override if the count is zero
     #[serde(default = "TaskwarriorConfig::default_format")]
     pub format_everything_done: String,
-
-    #[serde(default = "TaskwarriorConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl TaskwarriorConfig {
@@ -128,10 +118,6 @@ impl TaskwarriorConfig {
     fn default_format() -> String {
         "{count}".to_owned()
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Taskwarrior {
@@ -140,10 +126,10 @@ impl ConfigBlock for Taskwarrior {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
-        tx_update_request: Sender<Task>,
+        appearance: Appearance,
+        _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let output = ButtonWidget::new(config.clone(), id)
+        let output = ButtonWidget::new(id, appearance)
             .with_icon("tasks")
             .with_text("-");
         // If the deprecated `filter_tags` option has been set,
@@ -178,9 +164,7 @@ impl ConfigBlock for Taskwarrior {
                 "taskwarrior",
                 "Invalid format specified for taskwarrior::format_everything_done",
             )?,
-            tx_update_request,
             filter_index: 0,
-            config,
             filters,
             output,
         })

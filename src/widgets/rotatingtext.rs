@@ -2,9 +2,9 @@ use std::time::{Duration, Instant};
 
 use serde_json::value::Value;
 
-use crate::config::Config;
+use super::{I3BarWidget, Spacing, State};
+use crate::appearance::Appearance;
 use crate::errors::*;
-use crate::widget::{I3BarWidget, Spacing, State};
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {
@@ -21,19 +21,19 @@ pub struct RotatingTextWidget {
     spacing: Spacing,
     rendered: Value,
     cached_output: Option<String>,
-    config: Config,
+    appearance: Appearance,
     pub rotating: bool,
 }
 
 #[allow(dead_code)]
 impl RotatingTextWidget {
     pub fn new(
+        id: usize,
         interval: Duration,
         speed: Duration,
         max_width: usize,
         dynamic_width: bool,
-        config: Config,
-        id: usize,
+        appearance: Appearance,
     ) -> RotatingTextWidget {
         RotatingTextWidget {
             id,
@@ -55,13 +55,13 @@ impl RotatingTextWidget {
                 "color": "#000000"
             }),
             cached_output: None,
-            config,
+            appearance,
             rotating: false,
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = self.config.icons.get(name).cloned();
+        self.icon = self.appearance.get_icon(name);
         self.update();
         self
     }
@@ -96,7 +96,7 @@ impl RotatingTextWidget {
     }
 
     pub fn set_icon(&mut self, name: &str) {
-        self.icon = self.config.icons.get(name).cloned();
+        self.icon = self.appearance.get_icon(name);
         self.update();
     }
 
@@ -144,7 +144,7 @@ impl RotatingTextWidget {
     }
 
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
+        let (key_bg, key_fg) = self.state.theme_keys(&self.appearance.theme);
 
         let icon = self.icon.clone().unwrap_or_else(|| match self.spacing {
             Spacing::Normal => String::from(" "),

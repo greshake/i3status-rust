@@ -30,15 +30,16 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection};
+use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{format_percent_bar, FormatTemplate};
-use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::{I3BarWidget, Spacing, State};
 
 trait SoundDevice {
     fn volume(&self) -> u32;
@@ -683,12 +684,12 @@ pub struct Sound {
     device_kind: DeviceKind,
     step_width: u32,
     format: FormatTemplate,
-    config: Config,
     on_click: Option<String>,
     show_volume_when_muted: bool,
     bar: bool,
     mappings: Option<BTreeMap<String, String>>,
     max_vol: Option<u32>,
+    scrolling: Scrolling,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
@@ -760,8 +761,8 @@ pub struct SoundConfig {
     #[serde(default = "SoundConfig::default_max_vol")]
     pub max_vol: Option<u32>,
 
-    #[serde(default = "SoundConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    #[serde(default = "Scrolling::default")]
+    pub scrolling: Scrolling,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -813,10 +814,6 @@ impl SoundConfig {
     }
 
     fn default_max_vol() -> Option<u32> {
-        None
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
 }
@@ -891,7 +888,7 @@ impl ConfigBlock for Sound {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let mut step_width = block_config.step_width;
@@ -930,18 +927,18 @@ impl ConfigBlock for Sound {
         };
 
         let mut sound = Self {
-            text: ButtonWidget::new(config.clone(), id).with_icon("volume_empty"),
+            text: ButtonWidget::new(id, appearance).with_icon("volume_empty"),
             id,
             device,
             device_kind: block_config.device_kind,
             format: FormatTemplate::from_string(&block_config.format)?,
             step_width,
-            config,
             on_click: None,
             show_volume_when_muted: block_config.show_volume_when_muted,
             bar: block_config.bar,
             mappings: block_config.mappings,
             max_vol: block_config.max_vol,
+            scrolling: block_config.scrolling,
         };
 
         sound.device.monitor(id, tx_update_request)?;
@@ -979,7 +976,7 @@ impl Block for Sound {
                 }
                 _ => {
                     use LogicalDirection::*;
-                    match self.config.scrolling.to_logical_direction(e.button) {
+                    match self.scrolling.to_logical_direction(e.button) {
                         Some(Up) => self
                             .device
                             .set_volume(self.step_width as i32, self.max_vol)?,

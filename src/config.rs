@@ -23,8 +23,6 @@ pub struct Config {
     /// Configuring natural scrolling on input devices changes the way i3status-rust
     /// processes mouse wheel events: pushing the wheen away now is interpreted as downward
     /// motion which is undesired for sliders. Use "natural" to invert this.
-    #[serde(default = "Scrolling::default", rename = "scrolling")]
-    pub scrolling: Scrolling,
     #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
     pub blocks: Vec<(String, value::Value)>,
 }
@@ -34,7 +32,6 @@ impl Default for Config {
         Config {
             icons: icons::default(),
             theme: Theme::default(),
-            scrolling: Scrolling::default(),
             blocks: Vec::new(),
         }
     }

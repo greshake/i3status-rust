@@ -1,9 +1,9 @@
 use serde_json::value::Value;
 
-use super::super::widget::I3BarWidget;
-use crate::config::Config;
-use crate::widget::Spacing;
-use crate::widget::State;
+use super::I3BarWidget;
+use super::Spacing;
+use super::State;
+use crate::appearance::Appearance;
 
 #[derive(Clone, Debug)]
 pub struct ButtonWidget {
@@ -14,17 +14,17 @@ pub struct ButtonWidget {
     spacing: Spacing,
     rendered: Value,
     cached_output: Option<String>,
-    config: Config,
+    appearance: Appearance,
 }
 
 impl ButtonWidget {
-    pub fn new(config: Config, id: usize) -> Self {
+    pub fn new(id: usize, appearance: Appearance) -> Self {
         ButtonWidget {
+            id,
             content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
-            id,
             rendered: json!({
                 "full_text": "",
                 "separator": false,
@@ -33,13 +33,13 @@ impl ButtonWidget {
                 "color": "#000000",
                 "markup": "pango"
             }),
-            config,
             cached_output: None,
+            appearance,
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = self.config.icons.get(name).cloned();
+        self.icon = self.appearance.get_icon(name);
         self.update();
         self
     }
@@ -74,7 +74,7 @@ impl ButtonWidget {
     }
 
     pub fn set_icon(&mut self, name: &str) {
-        self.icon = self.config.icons.get(name).cloned();
+        self.icon = self.appearance.get_icon(name);
         self.update();
     }
 
@@ -89,7 +89,7 @@ impl ButtonWidget {
     }
 
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
+        let (key_bg, key_fg) = self.state.theme_keys(&self.appearance.theme);
 
         // When rendered inline, remove the leading space
         self.rendered = json!({
@@ -100,14 +100,14 @@ impl ButtonWidget {
                                         _ => String::from("")
                                     }
                                 }),
-                                self.content.clone().unwrap_or_else(|| String::from("")),
+                                self.content.clone().unwrap_or_default(),
                                 match self.spacing {
                                     Spacing::Hidden => String::from(""),
                                     _ => String::from(" ")
                                 }
                             ),
             "separator": false,
-            "name": self.id.clone(),
+            "name": self.id,
             "separator_block_width": 0,
             "background": key_bg,
             "color": key_fg,

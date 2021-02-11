@@ -1,9 +1,9 @@
 use serde_json::value::Value;
 
-use super::super::widget::I3BarWidget;
-use crate::config::Config;
-use crate::widget::Spacing;
-use crate::widget::State;
+use super::I3BarWidget;
+use crate::appearance::Appearance;
+use crate::widgets::Spacing;
+use crate::widgets::State;
 
 #[derive(Clone, Debug)]
 pub struct TextWidget {
@@ -14,11 +14,11 @@ pub struct TextWidget {
     spacing: Spacing,
     rendered: Value,
     cached_output: Option<String>,
-    config: Config,
+    appearance: Appearance,
 }
 
 impl TextWidget {
-    pub fn new(config: Config, id: usize) -> Self {
+    pub fn new(id: usize, appearance: Appearance) -> Self {
         TextWidget {
             id,
             content: None,
@@ -32,13 +32,13 @@ impl TextWidget {
                 "background": "#000000",
                 "color": "#000000"
             }),
-            config,
             cached_output: None,
+            appearance,
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = self.config.icons.get(name).cloned();
+        self.icon = self.appearance.get_icon(name);
         self.update();
         self
     }
@@ -67,7 +67,7 @@ impl TextWidget {
     }
 
     pub fn set_icon(&mut self, name: &str) {
-        self.icon = self.config.icons.get(name).cloned();
+        self.icon = self.appearance.get_icon(name);
         self.update();
     }
 
@@ -82,7 +82,7 @@ impl TextWidget {
     }
 
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
+        let (key_bg, key_fg) = self.state.theme_keys(&self.appearance.theme);
 
         self.rendered = json!({
             "full_text": format!("{}{}{}",

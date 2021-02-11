@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fmt;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
@@ -8,15 +7,15 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::format_number;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct SpeedTest {
     id: usize,
@@ -68,9 +67,6 @@ pub struct SpeedTestConfig {
     /// Minimum unit to display for throughput indicators.
     #[serde(default = "SpeedTestConfig::default_speed_min_unit")]
     pub speed_min_unit: Unit,
-
-    #[serde(default = "SpeedTestConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl SpeedTestConfig {
@@ -88,10 +84,6 @@ impl SpeedTestConfig {
 
     fn default_speed_digits() -> usize {
         3
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
     }
 }
 
@@ -166,7 +158,7 @@ impl ConfigBlock for SpeedTest {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         done: Sender<Task>,
     ) -> Result<Self> {
         // Create all the things we are going to send and take for ourselves.
@@ -180,13 +172,13 @@ impl ConfigBlock for SpeedTest {
         Ok(SpeedTest {
             vals,
             text: vec![
-                ButtonWidget::new(config.clone(), id)
+                ButtonWidget::new(id, appearance.clone())
                     .with_icon("ping")
                     .with_text("0ms"),
-                ButtonWidget::new(config.clone(), id)
+                ButtonWidget::new(id, appearance.clone())
                     .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
-                ButtonWidget::new(config, id)
+                ButtonWidget::new(id, appearance)
                     .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
             ],

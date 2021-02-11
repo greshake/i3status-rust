@@ -1,19 +1,19 @@
-use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection};
+use crate::config::{LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::has_command;
-use crate::widget::I3BarWidget;
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::I3BarWidget;
 
 pub struct Hueshift {
     id: usize,
@@ -25,12 +25,7 @@ pub struct Hueshift {
     min_temp: u16,
     hue_shift_driver: Box<dyn HueShiftDriver>,
     click_temp: u16,
-
-    //useful, but optional
-    #[allow(dead_code)]
-    config: Config,
-    #[allow(dead_code)]
-    tx_update_request: Sender<Task>,
+    scrolling: Scrolling,
 }
 
 trait HueShiftDriver {
@@ -145,8 +140,8 @@ pub struct HueshiftConfig {
     #[serde(default = "HueshiftConfig::default_click_temp")]
     pub click_temp: u16,
 
-    #[serde(default = "HueshiftConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    #[serde(default = "Scrolling::default")]
+    pub scrolling: Scrolling,
 }
 
 impl HueshiftConfig {
@@ -188,10 +183,6 @@ impl HueshiftConfig {
     fn default_click_temp() -> u16 {
         6500
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Hueshift {
@@ -200,8 +191,8 @@ impl ConfigBlock for Hueshift {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
-        tx_update_request: Sender<Task>,
+        appearance: Appearance,
+        _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let current_temp = block_config.current_temp;
         let mut step = block_config.step;
@@ -230,15 +221,14 @@ impl ConfigBlock for Hueshift {
         Ok(Hueshift {
             id,
             update_interval: block_config.interval,
-            text: ButtonWidget::new(config.clone(), id).with_text(&current_temp.to_string()),
-            tx_update_request,
+            text: ButtonWidget::new(id, appearance).with_text(&current_temp.to_string()),
             step,
             max_temp,
             min_temp,
             current_temp,
             hue_shift_driver,
             click_temp: block_config.click_temp,
-            config,
+            scrolling: block_config.scrolling,
         })
     }
 }
@@ -272,7 +262,7 @@ impl Block for Hueshift {
                 mb => {
                     use LogicalDirection::*;
                     let new_temp: u16;
-                    match self.config.scrolling.to_logical_direction(mb) {
+                    match self.scrolling.to_logical_direction(mb) {
                         Some(Up) => {
                             new_temp = self.current_temp + self.step;
                             if new_temp <= self.max_temp {

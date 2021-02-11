@@ -18,14 +18,14 @@ use dbus::{
 use regex::Regex;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::{xdg_config_home, FormatTemplate};
-use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 pub struct IBus {
     id: usize,
@@ -43,9 +43,6 @@ pub struct IBusConfig {
 
     #[serde(default = "IBusConfig::default_format")]
     pub format: String,
-
-    #[serde(default = "IBusConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl IBusConfig {
@@ -56,10 +53,6 @@ impl IBusConfig {
     fn default_format() -> String {
         "{engine}".into()
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for IBus {
@@ -69,7 +62,7 @@ impl ConfigBlock for IBus {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         send: Sender<Task>,
     ) -> Result<Self> {
         let send2 = send.clone();
@@ -216,7 +209,7 @@ impl ConfigBlock for IBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(config, id).with_text("IBus");
+        let text = TextWidget::new(id, appearance).with_text("IBus");
         Ok(IBus {
             id,
             text,

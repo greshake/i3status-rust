@@ -1,18 +1,17 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Notmuch {
     id: usize,
@@ -52,9 +51,6 @@ pub struct NotmuchConfig {
     pub name: Option<String>,
     #[serde(default = "NotmuchConfig::default_no_icon")]
     pub no_icon: bool,
-
-    #[serde(default = "NotmuchConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NotmuchConfig {
@@ -99,10 +95,6 @@ impl NotmuchConfig {
     fn default_no_icon() -> bool {
         false
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 fn run_query(db_path: &str, query_string: &str) -> std::result::Result<u32, notmuch::Error> {
@@ -117,10 +109,10 @@ impl ConfigBlock for Notmuch {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut widget = TextWidget::new(config, id);
+        let mut widget = TextWidget::new(id, appearance);
         if !block_config.no_icon {
             widget.set_icon("mail");
         }

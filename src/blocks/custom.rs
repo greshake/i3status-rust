@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
@@ -8,16 +7,16 @@ use std::vec;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
+use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
 use crate::de::deserialize_update;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Custom {
     id: usize,
@@ -61,9 +60,6 @@ pub struct CustomConfig {
     pub hide_when_empty: bool,
 
     pub shell: Option<String>,
-
-    #[serde(default = "CustomConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl CustomConfig {
@@ -78,10 +74,6 @@ impl CustomConfig {
     fn hide_when_empty() -> bool {
         false
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Custom {
@@ -90,13 +82,13 @@ impl ConfigBlock for Custom {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        appearance: Appearance,
         tx: Sender<Task>,
     ) -> Result<Self> {
         let mut custom = Custom {
             id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(config, id),
+            output: ButtonWidget::new(id, appearance),
             command: None,
             on_click: None,
             cycle: None,
