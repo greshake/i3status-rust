@@ -101,10 +101,11 @@ pub fn xdg_config_home() -> PathBuf {
     PathBuf::from(&config_path)
 }
 
-pub fn deserialize_file<T>(file: &str) -> Result<T>
+pub fn deserialize_file<T>(path: &Path) -> Result<T>
 where
     T: DeserializeOwned,
 {
+    let file = path.to_str().unwrap();
     let mut contents = String::new();
     let mut file = BufReader::new(
         File::open(file).internal_error("util", &format!("failed to open file: {}", file))?,

@@ -32,11 +32,12 @@ use crossbeam_channel::{select, Receiver, Sender};
 
 use crate::blocks::create_block;
 use crate::blocks::Block;
-use crate::config::{load_config, Config};
+use crate::config::Config;
 use crate::errors::*;
 use crate::input::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
 use crate::signals::process_signals;
+use crate::util::deserialize_file;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
 
@@ -140,7 +141,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         Some(config_path) => std::path::PathBuf::from(config_path),
         None => util::xdg_config_home().join("i3status-rust/config.toml"),
     };
-    let config = load_config(&config_path)?;
+    let config = deserialize_file(&config_path)?;
 
     // Update request channel
     let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =
