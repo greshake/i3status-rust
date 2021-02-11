@@ -755,8 +755,6 @@ Key | Values | Required | Default
 
 Creates a block displaying memory and swap usage.
 
-By default, the format of this module is "<Icon>: {MFm}MB/{MTm}MB({Mp}%)" (Swap values accordingly). That behaviour can be changed within your config.
-
 This module keeps track of both Swap and Memory. By default, a click switches between them.
 
 #### Examples
