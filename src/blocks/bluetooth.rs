@@ -1,16 +1,22 @@
 use serde_derive::Deserialize;
 use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
-use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
+use dbus::{
+    arg::RefArg,
+    ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties},
+    message::SignalArgs,
+};
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::Config;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::util::FormatTemplate;
 use crate::widget::{I3BarWidget, State};
 use crate::widgets::button::ButtonWidget;
 
@@ -19,6 +25,7 @@ pub struct BluetoothDevice {
     pub icon: Option<String>,
     pub label: String,
     con: dbus::ffidisp::Connection,
+    available: Arc<Mutex<bool>>,
 }
 
 impl BluetoothDevice {
@@ -26,9 +33,8 @@ impl BluetoothDevice {
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("bluetooth", "Failed to establish D-Bus connection.")?;
 
-        // Bluez does not provide a convenient way to, say, list devices, so we
+        // Bluez does not provide a convenient way to list devices, so we
         // have to employ a rather verbose workaround.
-
         let objects = con
             .with_path("org.bluez", "/", 1000)
             .get_managed_objects()
@@ -39,7 +45,7 @@ impl BluetoothDevice {
             .filter(|(_, interfaces)| interfaces.contains_key("org.bluez.Device1"))
             .map(|(path, interfaces)| {
                 let props = interfaces.get("org.bluez.Device1").unwrap();
-                // This could be made safer; however, this is the documented
+                // This could be made safer; however this is the documented
                 // D-Bus API format, so it's not a terrible idea to panic if it
                 // is violated.
                 let address: String = props
@@ -56,17 +62,21 @@ impl BluetoothDevice {
         // If we need to suppress errors from missing devices, this is the place
         // to do it. We could also pick the "default" device here, although that
         // does not make much sense to me in the context of Bluetooth.
-
-        let path = devices
+        let mut initial_available = false;
+        let auto_path = devices
             .into_iter()
             .filter(|(_, address)| address == &mac)
             .map(|(path, _)| path)
-            .next()
-            .block_error(
-                "bluetooth",
-                "Failed find a device with matching MAC address.",
-            )?
-            .to_string();
+            .next();
+        let path = if auto_path.is_some() {
+            initial_available = true;
+            auto_path.unwrap()
+        } else {
+            // TODO: do not hardcode device
+            dbus::strings::Path::new(format!("/org/bluez/hci0/dev_{}", mac.replace(":", "_")))
+                .unwrap()
+        }
+        .to_string();
 
         // Swallow errors, since this is optional.
         let icon: Option<String> = con
@@ -79,6 +89,7 @@ impl BluetoothDevice {
             icon,
             label: label.unwrap_or_else(|| "".to_string()),
             con,
+            available: Arc::new(Mutex::new(initial_available)),
         })
     }
 
@@ -88,6 +99,21 @@ impl BluetoothDevice {
             .with_path("org.bluez", &self.path, 1000)
             .get("org.bluez.Battery1", "Percentage")
             .ok()
+    }
+
+    pub fn icon(&self) -> Option<String> {
+        self.con
+            .with_path("org.bluez", &self.path, 1000)
+            .get("org.bluez.Device1", "Icon")
+            .ok()
+    }
+
+    pub fn available(&self) -> Result<bool> {
+        let available = *self
+            .available
+            .lock()
+            .block_error("bluetooth", "failed to acquire lock for `available`")?;
+        Ok(available)
     }
 
     pub fn connected(&self) -> bool {
@@ -101,6 +127,8 @@ impl BluetoothDevice {
     }
 
     pub fn toggle(&self) -> Result<()> {
+        // TODO: power on adapter if it's off
+        // i.e. busctl --system set-property org.bluez /org/bluez/hci0 org.bluez.Adapter1 Powered b true
         let method = if self.connected() {
             "Disconnect"
         } else {
@@ -118,38 +146,68 @@ impl BluetoothDevice {
     /// Monitor Bluetooth property changes in a separate thread and send updates
     /// via the `update_request` channel.
     pub fn monitor(&self, id: usize, update_request: Sender<Task>) {
-        let path = self.path.clone();
-        thread::Builder::new()
-            .name("bluetooth".into())
-            .spawn(move || {
-                let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-                    .expect("Failed to establish D-Bus connection.");
-                let rule = format!(
-                    "type='signal',\
-                 path='{}',\
-                 interface='org.freedesktop.DBus.Properties',\
-                 member='PropertiesChanged'",
-                    path
-                );
+        let path_copy1 = self.path.clone();
+        let path_copy2 = self.path.clone();
+        let avail_copy1 = self.available.clone();
+        let avail_copy2 = self.available.clone();
+        let update_request_copy1 = update_request.clone();
+        let update_request_copy2 = update_request.clone();
+        let update_request_copy3 = update_request.clone();
 
-                // Skip the NameAcquired event.
-                con.incoming(10_000).next();
-
-                con.add_match(&rule)
-                    .expect("Failed to add D-Bus match rule.");
-
-                loop {
-                    if con.incoming(10_000).next().is_some() {
-                        update_request
-                            .send(Task {
-                                id,
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
-                    }
+        thread::Builder::new().name("bluetooth".into()).spawn(move || {
+            let c = dbus::blocking::Connection::new_system().unwrap();
+            use dbus::ffidisp::stdintf::org_freedesktop_dbus::ObjectManagerInterfacesAdded as IA;
+            let ma = IA::match_rule(Some(&"org.bluez".into()), None).static_clone();
+            c.add_match(ma, move |ia: IA, _, _| {
+                if ia.object == path_copy1.clone().into() {
+                    let mut avail = avail_copy1.lock().unwrap();
+                    *avail = true;
+                    update_request_copy1
+                        .send(Task {
+                            id,
+                            update_time: Instant::now(),
+                        })
+                        .unwrap();
                 }
+                true
             })
             .unwrap();
+
+            use dbus::ffidisp::stdintf::org_freedesktop_dbus::ObjectManagerInterfacesRemoved as IR;
+            let mr = IR::match_rule(Some(&"org.bluez".into()), None).static_clone();
+            c.add_match(mr, move |ir: IR, _, _| {
+                if ir.object == path_copy2.clone().into() {
+                    let mut avail = avail_copy2.lock().unwrap();
+                    *avail = false;
+                    update_request_copy2
+                        .send(Task {
+                            id,
+                            update_time: Instant::now(),
+                        })
+                        .unwrap();
+                }
+                true
+            })
+            .unwrap();
+
+            use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged as PPC;
+            let mr = PPC::match_rule(Some(&"org.bluez".into()), None).static_clone();
+            // TODO: get updated values from the signal message
+            c.add_match(mr, move |_ppc: PPC, _, _| {
+                update_request_copy3
+                    .send(Task {
+                        id,
+                        update_time: Instant::now(),
+                    })
+                    .unwrap();
+                true
+            })
+            .unwrap();
+
+            loop {
+                c.process(Duration::from_millis(1000)).unwrap();
+            }
+        }).unwrap();
     }
 }
 
@@ -158,6 +216,7 @@ pub struct Bluetooth {
     output: ButtonWidget,
     device: BluetoothDevice,
     hide_disconnected: bool,
+    format_unavailable: FormatTemplate,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -169,6 +228,8 @@ pub struct BluetoothConfig {
     pub hide_disconnected: bool,
     #[serde(default = "BluetoothConfig::default_color_overrides")]
     pub color_overrides: Option<BTreeMap<String, String>>,
+    #[serde(default = "BluetoothConfig::default_format_unavailable")]
+    pub format_unavailable: String,
 }
 
 impl BluetoothConfig {
@@ -178,6 +239,10 @@ impl BluetoothConfig {
 
     fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
+    }
+
+    fn default_format_unavailable() -> String {
+        "{label} x".into()
     }
 }
 
@@ -204,6 +269,7 @@ impl ConfigBlock for Bluetooth {
             }),
             device,
             hide_disconnected: block_config.hide_disconnected,
+            format_unavailable: FormatTemplate::from_string(&block_config.format_unavailable)?,
         })
     }
 }
@@ -214,22 +280,40 @@ impl Block for Bluetooth {
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
-        let connected = self.device.connected();
-        self.output.set_text(self.device.label.to_string());
-        self.output
-            .set_state(if connected { State::Good } else { State::Idle });
+        let values = map!(
+            "{label}" => self.device.label.clone()
+        );
 
-        // Use battery info, when available.
-        if let Some(value) = self.device.battery() {
-            self.output.set_state(match value {
-                0..=15 => State::Critical,
-                16..=30 => State::Warning,
-                31..=60 => State::Info,
-                61..=100 => State::Good,
-                _ => State::Warning,
-            });
+        if self.device.available().unwrap() {
+            let connected = self.device.connected();
+            self.output.set_text(self.device.label.to_string());
             self.output
-                .set_text(format!("{} {}%", self.device.label, value));
+                .set_state(if connected { State::Good } else { State::Idle });
+
+            self.output.set_icon(match self.device.icon() {
+                Some(ref icon) if icon == "audio-card" => "headphones",
+                Some(ref icon) if icon == "input-gaming" => "joystick",
+                Some(ref icon) if icon == "input-keyboard" => "keyboard",
+                Some(ref icon) if icon == "input-mouse" => "mouse",
+                _ => "bluetooth",
+            });
+
+            // Use battery info, when available.
+            if let Some(value) = self.device.battery() {
+                self.output.set_state(match value {
+                    0..=15 => State::Critical,
+                    16..=30 => State::Warning,
+                    31..=60 => State::Info,
+                    61..=100 => State::Good,
+                    _ => State::Warning,
+                });
+                self.output
+                    .set_text(format!("{} {}%", self.device.label, value));
+            }
+        } else {
+            self.output.set_state(State::Idle);
+            self.output
+                .set_text(self.format_unavailable.render_static_str(&values)?);
         }
 
         Ok(None)
