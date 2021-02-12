@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::cmp;
 use std::ffi::OsStr;
 use std::fmt;
 use std::fs::{read_to_string, OpenOptions};
@@ -20,7 +21,7 @@ use crate::scheduler::Task;
 use crate::util::{
     escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, FormatTemplate,
 };
-use crate::widget::{I3BarWidget, Spacing};
+use crate::widget::{I3BarWidget, Spacing, State};
 use crate::widgets::button::ButtonWidget;
 
 lazy_static! {
@@ -379,6 +380,8 @@ pub struct Net {
     rx_buff: Vec<u64>,
     tx_bytes: u64,
     rx_bytes: u64,
+    tx_bytespersec: u64,
+    rx_bytespersec: u64,
     use_bits: bool,
     speed_min_unit: Unit,
     speed_digits: usize,
@@ -676,6 +679,8 @@ impl ConfigBlock for Net {
             tx_buff: vec![0; 10],
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
+            tx_bytespersec: 0,
+            rx_bytespersec: 0,
             active: true,
             exists: true,
             hide_inactive: block_config.hide_inactive,
@@ -825,6 +830,7 @@ impl Net {
                 _ => 0,
             };
             let tx_bytes = (diff as f64 / update_interval) as u64;
+            self.tx_bytespersec = tx_bytes;
             self.tx_bytes = current_tx;
 
             if let Some(ref mut tx) = self.output_tx {
@@ -853,6 +859,7 @@ impl Net {
                 _ => 0,
             };
             let rx_bytes = (diff as f64 / update_interval) as u64;
+            self.rx_bytespersec = rx_bytes;
             self.rx_bytes = current_rx;
 
             if let Some(ref mut rx) = self.output_rx {
@@ -961,6 +968,16 @@ impl Block for Net {
             "{graph_up}" =>  self.graph_tx.as_ref().unwrap_or(&empty_string),
             "{graph_down}" =>  self.graph_rx.as_ref().unwrap_or(&empty_string)
         );
+
+        // TODO make these limits configurable
+        let state = match cmp::max(self.tx_bytespersec, self.rx_bytespersec) {
+            x if x > 5000000 => State::Critical,
+            x if x > 500000 => State::Warning,
+            x if x > 10000 => State::Info,
+            _ => State::Idle,
+        };
+        self.output.set_state(state);
+        self.network.set_state(state);
 
         self.output
             .set_text(self.format.render_static_str(&values)?);
