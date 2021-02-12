@@ -1,8 +1,11 @@
 use std::default::Default;
+use std::fmt;
 use std::path::Path;
 
 use lazy_static::lazy_static;
 use serde_derive::Deserialize;
+
+use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 
 use crate::util;
 
@@ -218,8 +221,7 @@ lazy_static! {
 
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone)]
 pub struct Theme {
     pub native_separators: Option<bool>,
     pub idle_bg: Option<String>,
@@ -271,11 +273,11 @@ impl Theme {
         let share_path = Path::new(util::USR_SHARE_PATH).join("themes").join(file);
 
         if full_path.exists() {
-            util::deserialize_file(full_path.to_str().unwrap()).ok()
+            util::deserialize_file(&full_path).ok()
         } else if xdg_path.exists() {
-            util::deserialize_file(xdg_path.to_str().unwrap()).ok()
+            util::deserialize_file(&xdg_path).ok()
         } else if share_path.exists() {
-            util::deserialize_file(share_path.to_str().unwrap()).ok()
+            util::deserialize_file(&share_path).ok()
         } else {
             None
         }
@@ -302,40 +304,108 @@ pub struct ThemeOverrides {
     alternating_tint_fg: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct ThemeConfig {
-    name: Option<String>,
-    file: Option<String>,
-    overrides: Option<ThemeOverrides>,
-}
-
-impl ThemeConfig {
-    pub fn into_theme(self) -> Option<Theme> {
-        let mut theme = if let Some(name) = self.name {
-            Theme::from_name(&name)
-        } else if let Some(file) = self.file {
-            Theme::from_file(&file)
-        } else {
-            None
-        }?;
-        if let Some(overrides) = self.overrides {
-            theme.idle_bg = overrides.idle_bg.or(theme.idle_bg);
-            theme.idle_fg = overrides.idle_fg.or(theme.idle_fg);
-            theme.info_bg = overrides.info_bg.or(theme.info_bg);
-            theme.info_fg = overrides.info_fg.or(theme.info_fg);
-            theme.good_bg = overrides.good_bg.or(theme.good_bg);
-            theme.good_fg = overrides.good_fg.or(theme.good_fg);
-            theme.warning_bg = overrides.warning_bg.or(theme.warning_bg);
-            theme.warning_fg = overrides.warning_fg.or(theme.warning_fg);
-            theme.critical_bg = overrides.critical_bg.or(theme.critical_bg);
-            theme.critical_fg = overrides.critical_fg.or(theme.critical_fg);
-            theme.separator = overrides.separator.unwrap_or(theme.separator);
-            theme.separator_bg = overrides.separator_bg.or(theme.separator_bg);
-            theme.separator_fg = overrides.separator_fg.or(theme.separator_fg);
-            theme.alternating_tint_bg = overrides.alternating_tint_bg.or(theme.alternating_tint_bg);
-            theme.alternating_tint_fg = overrides.alternating_tint_fg.or(theme.alternating_tint_fg);
+impl<'de> Deserialize<'de> for Theme {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Name,
+            File,
+            Overrides,
         }
-        Some(theme)
+
+        struct ThemeVisitor;
+
+        impl<'de> Visitor<'de> for ThemeVisitor {
+            type Value = Theme;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Theme")
+            }
+
+            /// Handle configs like:
+            ///
+            /// ```toml
+            /// theme = "slick"
+            /// ```
+            fn visit_str<E>(self, name: &str) -> Result<Theme, E>
+            where
+                E: de::Error,
+            {
+                Theme::from_name(name)
+                    .ok_or_else(|| de::Error::custom(format!("Theme \"{}\" not found.", name)))
+            }
+
+            /// Handle configs like:
+            ///
+            /// ```toml
+            /// [theme]
+            /// name = "modern"
+            /// ```
+            fn visit_map<V>(self, mut map: V) -> Result<Theme, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut theme = None;
+                let mut overrides: Option<ThemeOverrides> = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Name => {
+                            if theme.is_some() {
+                                return Err(de::Error::duplicate_field("name or file"));
+                            }
+                            let name = map.next_value()?;
+                            theme = Some(Theme::from_name(name).ok_or_else(|| {
+                                de::Error::custom(format!("Theme \"{}\" not found.", name))
+                            })?);
+                        }
+                        Field::File => {
+                            if theme.is_some() {
+                                return Err(de::Error::duplicate_field("name or file"));
+                            }
+                            let file = map.next_value()?;
+                            theme = Some(Theme::from_file(file).ok_or_else(|| {
+                                de::Error::custom(format!(
+                                    "Failed to load theme from file {}.",
+                                    file
+                                ))
+                            })?);
+                        }
+                        Field::Overrides => {
+                            if overrides.is_some() {
+                                return Err(de::Error::duplicate_field("overrides"));
+                            }
+                            overrides = Some(map.next_value()?);
+                        }
+                    }
+                }
+                let mut theme = theme.unwrap_or_default();
+                if let Some(overrides) = overrides {
+                    theme.idle_bg = overrides.idle_bg.or(theme.idle_bg);
+                    theme.idle_fg = overrides.idle_fg.or(theme.idle_fg);
+                    theme.info_bg = overrides.info_bg.or(theme.info_bg);
+                    theme.info_fg = overrides.info_fg.or(theme.info_fg);
+                    theme.good_bg = overrides.good_bg.or(theme.good_bg);
+                    theme.good_fg = overrides.good_fg.or(theme.good_fg);
+                    theme.warning_bg = overrides.warning_bg.or(theme.warning_bg);
+                    theme.warning_fg = overrides.warning_fg.or(theme.warning_fg);
+                    theme.critical_bg = overrides.critical_bg.or(theme.critical_bg);
+                    theme.critical_fg = overrides.critical_fg.or(theme.critical_fg);
+                    theme.separator = overrides.separator.unwrap_or(theme.separator);
+                    theme.separator_bg = overrides.separator_bg.or(theme.separator_bg);
+                    theme.separator_fg = overrides.separator_fg.or(theme.separator_fg);
+                    theme.alternating_tint_bg =
+                        overrides.alternating_tint_bg.or(theme.alternating_tint_bg);
+                    theme.alternating_tint_fg =
+                        overrides.alternating_tint_fg.or(theme.alternating_tint_fg);
+                }
+                Ok(theme)
+            }
+        }
+
+        deserializer.deserialize_any(ThemeVisitor)
     }
 }

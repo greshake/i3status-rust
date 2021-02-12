@@ -1,24 +1,22 @@
 use std::collections::HashMap as Map;
 use std::marker::PhantomData;
 use std::ops::Deref;
-use std::path::Path;
 use std::str::FromStr;
 
-use serde::de::{Deserialize, Deserializer, Error};
+use serde::de::{Deserialize, Deserializer};
 use serde_derive::Deserialize;
 use toml::value;
 
 use crate::de::*;
+use crate::icons;
 use crate::input::MouseButton;
-use crate::themes::{Theme, ThemeConfig};
-use crate::util::deserialize_file;
-use crate::{errors, icons};
+use crate::themes::Theme;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     #[serde(default = "icons::default", deserialize_with = "deserialize_icons")]
     pub icons: Map<String, String>,
-    #[serde(deserialize_with = "deserialize_themes")]
+    #[serde(default = "Theme::default")]
     pub theme: Theme,
     /// Direction of scrolling, "natural" or "reverse".
     ///
@@ -36,48 +34,6 @@ impl Default for Config {
         Config {
             icons: icons::default(),
             theme: Theme::default(),
-            scrolling: Scrolling::default(),
-            blocks: Vec::new(),
-        }
-    }
-}
-
-impl From<LegacyConfig> for Config {
-    fn from(legacy_config: LegacyConfig) -> Self {
-        Config {
-            icons: legacy_config.icons,
-            theme: legacy_config
-                .theme
-                .and_then(|s| Theme::from_name(s.as_str()))
-                .unwrap_or_default(),
-            scrolling: legacy_config.scrolling,
-            blocks: legacy_config.blocks,
-        }
-    }
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct LegacyConfig {
-    #[serde(default = "icons::default", deserialize_with = "deserialize_icons")]
-    pub icons: Map<String, String>,
-    #[serde(default)]
-    pub theme: Option<String>,
-    /// Direction of scrolling, "natural" or "reverse".
-    ///
-    /// Configuring natural scrolling on input devices changes the way i3status-rust
-    /// processes mouse wheel events: pushing the wheen away now is interpreted as downward
-    /// motion which is undesired for sliders. Use "natural" to invert this.
-    #[serde(default = "Scrolling::default", rename = "scrolling")]
-    pub scrolling: Scrolling,
-    #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
-    pub blocks: Vec<(String, value::Value)>,
-}
-
-impl Default for LegacyConfig {
-    fn default() -> Self {
-        LegacyConfig {
-            icons: icons::default(),
-            theme: None,
             scrolling: Scrolling::default(),
             blocks: Vec::new(),
         }
@@ -143,27 +99,10 @@ where
     deserializer.deserialize_any(MapType::<Icons, String>(PhantomData, PhantomData))
 }
 
-fn deserialize_themes<'de, D>(deserializer: D) -> Result<Theme, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    ThemeConfig::deserialize(deserializer)?
-        .into_theme()
-        .ok_or_else(|| D::Error::custom("Unrecognized theme name."))
-}
-
-// this function may belong somewhere else...
-pub fn load_config(config_path: &Path) -> errors::Result<Config> {
-    let config: errors::Result<Config> = deserialize_file(config_path.to_str().unwrap());
-    config.or_else(|_| {
-        let legacy_config: errors::Result<LegacyConfig> =
-            deserialize_file(config_path.to_str().unwrap());
-        legacy_config.map(|legacy| legacy.into())
-    })
-}
 #[cfg(test)]
 mod tests {
-    use crate::config::load_config;
+    use crate::config::Config;
+    use crate::util::deserialize_file;
     use assert_fs::prelude::{FileWriteStr, PathChild};
     use assert_fs::TempDir;
 
@@ -184,7 +123,7 @@ mod tests {
                 .as_ref(),
             )
             .unwrap();
-        let config = load_config(config_file_path.path());
+        let config: Result<Config, _> = deserialize_file(config_file_path.path());
         config.unwrap();
     }
 
@@ -206,7 +145,7 @@ mod tests {
                 .as_ref(),
             )
             .unwrap();
-        let config = load_config(config_file_path.path());
+        let config: Result<Config, _> = deserialize_file(config_file_path.path());
         config.unwrap();
     }
 }
