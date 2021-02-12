@@ -8,8 +8,8 @@ use dbus::ffidisp::{BusType, Connection};
 use dbus::message::SignalArgs;
 use serde_derive::Deserialize;
 
-use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;

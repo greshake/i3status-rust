@@ -6,8 +6,8 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde_derive::Deserialize;
 
-use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::http;

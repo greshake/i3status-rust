@@ -4,8 +4,8 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;

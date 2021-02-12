@@ -18,8 +18,8 @@ use dbus::{
 use regex::Regex;
 use serde_derive::Deserialize;
 
-use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;

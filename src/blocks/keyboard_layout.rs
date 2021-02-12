@@ -14,8 +14,8 @@ use swayipc::reply::Event;
 use swayipc::reply::InputChange;
 use swayipc::{Connection, EventType};
 
-use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;

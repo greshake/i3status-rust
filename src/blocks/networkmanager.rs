@@ -14,8 +14,8 @@ use dbus::{
 use regex::Regex;
 use serde_derive::Deserialize;
 
-use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
@@ -683,26 +683,27 @@ impl Block for NetworkManager {
                                     continue 'devices;
                                 }
 
-                                let (icon, type_name) = if let Ok(dev_type) =
-                                    device.device_type(&self.dbus_conn)
-                                {
-                                    match dev_type.to_icon_name() {
-                                        Some(icon_name) => {
-                                            let i = self
-                                                .shared_config
-                                                .get_icon(&icon_name)
-                                                .unwrap_or_default();
-                                            (i, format!("{:?}", dev_type).to_string())
+                                let (icon, type_name) =
+                                    if let Ok(dev_type) = device.device_type(&self.dbus_conn) {
+                                        match dev_type.to_icon_name() {
+                                            Some(icon_name) => {
+                                                let i = self
+                                                    .shared_config
+                                                    .get_icon(&icon_name)
+                                                    .unwrap_or_default();
+                                                (i, format!("{:?}", dev_type).to_string())
+                                            }
+                                            None => (
+                                                self.shared_config
+                                                    .get_icon("unknown")
+                                                    .unwrap_or_default(),
+                                                format!("{:?}", dev_type).to_string(),
+                                            ),
                                         }
-                                        None => (
-                                            self.shared_config.get_icon("unknown").unwrap_or_default(),
-                                            format!("{:?}", dev_type).to_string(),
-                                        ),
-                                    }
-                                } else {
-                                    // TODO: Communicate the error to the user?
-                                    ("".to_string(), "".to_string())
-                                };
+                                    } else {
+                                        // TODO: Communicate the error to the user?
+                                        ("".to_string(), "".to_string())
+                                    };
 
                                 let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn)
                                 {
