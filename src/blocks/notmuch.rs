@@ -4,7 +4,7 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -109,10 +109,10 @@ impl ConfigBlock for Notmuch {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut widget = TextWidget::new(id, appearance);
+        let mut widget = TextWidget::new(id, shared_config);
         if !block_config.no_icon {
             widget.set_icon("mail");
         }

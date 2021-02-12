@@ -14,7 +14,7 @@ use dbus::{
 use regex::Regex;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::errors::*;
 use crate::scheduler::Task;
@@ -453,7 +453,7 @@ pub struct NetworkManager {
     connection_format: FormatTemplate,
     interface_name_exclude_regexps: Vec<Regex>,
     interface_name_include_regexps: Vec<Regex>,
-    appearance: Appearance,
+    shared_config: SharedConfig,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -524,7 +524,7 @@ impl ConfigBlock for NetworkManager {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let dbus_conn = Connection::get_private(BusType::System)
@@ -566,7 +566,7 @@ impl ConfigBlock for NetworkManager {
 
         Ok(NetworkManager {
             id,
-            indicator: ButtonWidget::new(id, appearance.clone()),
+            indicator: ButtonWidget::new(id, shared_config.clone()),
             output: Vec::new(),
             dbus_conn,
             manager,
@@ -579,7 +579,7 @@ impl ConfigBlock for NetworkManager {
                 .block_error("networkmanager", "failed to parse exclude patterns")?,
             interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
                 .block_error("networkmanager", "failed to parse include patterns")?,
-            appearance,
+            shared_config,
         })
     }
 }
@@ -644,7 +644,7 @@ impl Block for NetworkManager {
                     .into_iter()
                     .filter_map(|conn| {
                         // inline spacing for no leading space, because the icon is set in the string
-                        let mut widget = ButtonWidget::new(self.id, self.appearance.clone())
+                        let mut widget = ButtonWidget::new(self.id, self.shared_config.clone())
                             .with_spacing(Spacing::Inline);
 
                         // Set the state for this connection
@@ -689,13 +689,13 @@ impl Block for NetworkManager {
                                     match dev_type.to_icon_name() {
                                         Some(icon_name) => {
                                             let i = self
-                                                .appearance
+                                                .shared_config
                                                 .get_icon(&icon_name)
                                                 .unwrap_or_default();
                                             (i, format!("{:?}", dev_type).to_string())
                                         }
                                         None => (
-                                            self.appearance.get_icon("unknown").unwrap_or_default(),
+                                            self.shared_config.get_icon("unknown").unwrap_or_default(),
                                             format!("{:?}", dev_type).to_string(),
                                         ),
                                     }

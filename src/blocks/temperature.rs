@@ -5,7 +5,7 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -119,13 +119,13 @@ impl ConfigBlock for Temperature {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Temperature {
             id,
             update_interval: block_config.interval,
-            text: ButtonWidget::new(id, appearance)
+            text: ButtonWidget::new(id, shared_config)
                 .with_icon("thermometer")
                 .with_spacing(if block_config.collapsed {
                     Spacing::Hidden

@@ -30,8 +30,8 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
@@ -760,9 +760,6 @@ pub struct SoundConfig {
 
     #[serde(default = "SoundConfig::default_max_vol")]
     pub max_vol: Option<u32>,
-
-    #[serde(default = "Scrolling::default")]
-    pub scrolling: Scrolling,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -888,7 +885,7 @@ impl ConfigBlock for Sound {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let mut step_width = block_config.step_width;
@@ -927,7 +924,6 @@ impl ConfigBlock for Sound {
         };
 
         let mut sound = Self {
-            text: ButtonWidget::new(id, appearance).with_icon("volume_empty"),
             id,
             device,
             device_kind: block_config.device_kind,
@@ -938,7 +934,8 @@ impl ConfigBlock for Sound {
             bar: block_config.bar,
             mappings: block_config.mappings,
             max_vol: block_config.max_vol,
-            scrolling: block_config.scrolling,
+            scrolling: shared_config.scrolling,
+            text: ButtonWidget::new(id, shared_config).with_icon("volume_empty"),
         };
 
         sound.device.monitor(id, tx_update_request)?;

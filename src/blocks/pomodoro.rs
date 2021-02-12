@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
@@ -135,12 +135,12 @@ impl ConfigBlock for Pomodoro {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _send: Sender<Task>,
     ) -> Result<Self> {
         Ok(Pomodoro {
             id,
-            time: ButtonWidget::new(id, appearance).with_icon("pomodoro"),
+            time: ButtonWidget::new(id, shared_config).with_icon("pomodoro"),
             state: State::Stopped,
             length: Duration::from_secs(block_config.length * 60), // convert to minutes
             break_length: Duration::from_secs(block_config.break_length * 60), // convert to minutes

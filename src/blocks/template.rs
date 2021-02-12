@@ -3,7 +3,7 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -19,7 +19,7 @@ pub struct Template {
 
     //useful, but optional
     #[allow(dead_code)]
-    appearance: Appearance,
+    shared_config: SharedConfig,
     #[allow(dead_code)]
     tx_update_request: Sender<Task>,
 }
@@ -47,17 +47,17 @@ impl ConfigBlock for Template {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(id, appearance.clone()).with_text("Template");
+        let text = TextWidget::new(id, shared_config.clone()).with_text("Template");
 
         Ok(Template {
             id,
             update_interval: block_config.interval,
             text,
             tx_update_request,
-            appearance,
+            shared_config,
         })
     }
 }

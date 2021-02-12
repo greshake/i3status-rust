@@ -15,8 +15,8 @@ use dbus::{
 use regex::Regex;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -219,9 +219,6 @@ pub struct MusicConfig {
     /// Format string for displaying music player info.
     #[serde(default = "MusicConfig::default_format")]
     pub format: String,
-
-    #[serde(default = "Scrolling::default")]
-    pub scrolling: Scrolling,
 }
 
 impl MusicConfig {
@@ -284,7 +281,7 @@ impl ConfigBlock for Music {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let play_id = pseudo_uuid();
@@ -491,7 +488,7 @@ impl ConfigBlock for Music {
             match &*button {
                 "play" => {
                     play = Some(
-                        ButtonWidget::new(play_id, appearance.clone())
+                        ButtonWidget::new(play_id, shared_config.clone())
                             .with_icon("music_play")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
@@ -499,14 +496,14 @@ impl ConfigBlock for Music {
                 }
                 "next" => {
                     next = Some(
-                        ButtonWidget::new(next_id, appearance.clone())
+                        ButtonWidget::new(next_id, shared_config.clone())
                             .with_icon("music_next")
                             .with_state(State::Info),
                     )
                 }
                 "prev" => {
                     prev = Some(
-                        ButtonWidget::new(prev_id, appearance.clone())
+                        ButtonWidget::new(prev_id, shared_config.clone())
                             .with_icon("music_prev")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
@@ -537,7 +534,7 @@ impl ConfigBlock for Music {
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
                 block_config.dynamic_width,
-                appearance.clone(),
+                shared_config.clone(),
             )
             .with_icon("music")
             .with_state(State::Info),
@@ -545,7 +542,7 @@ impl ConfigBlock for Music {
             play,
             next,
             on_click: None,
-            on_collapsed_click_widget: ButtonWidget::new(collapsed_id, appearance)
+            on_collapsed_click_widget: ButtonWidget::new(collapsed_id, shared_config.clone())
                 .with_icon("music")
                 .with_state(State::Info)
                 .with_spacing(Spacing::Hidden),
@@ -562,7 +559,7 @@ impl ConfigBlock for Music {
             hide_when_empty: block_config.hide_when_empty,
             send: send3,
             format: FormatTemplate::from_string(&block_config.format)?,
-            scrolling: block_config.scrolling,
+            scrolling: shared_config.scrolling,
         })
     }
 

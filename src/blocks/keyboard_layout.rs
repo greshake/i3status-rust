@@ -14,7 +14,7 @@ use swayipc::reply::Event;
 use swayipc::reply::InputChange;
 use swayipc::{Connection, EventType};
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -460,7 +460,7 @@ impl ConfigBlock for KeyboardLayout {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let monitor: Box<dyn KeyboardLayoutMonitor> = match block_config.driver {
@@ -486,7 +486,7 @@ impl ConfigBlock for KeyboardLayout {
         } else {
             None
         };
-        let output = TextWidget::new(id, appearance);
+        let output = TextWidget::new(id, shared_config);
         Ok(KeyboardLayout {
             id,
             output,

@@ -3,7 +3,7 @@ use serde_json::value::Value;
 use super::I3BarWidget;
 use super::Spacing;
 use super::State;
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 
 #[derive(Clone, Debug)]
 pub struct ButtonWidget {
@@ -14,11 +14,11 @@ pub struct ButtonWidget {
     spacing: Spacing,
     rendered: Value,
     cached_output: Option<String>,
-    appearance: Appearance,
+    shared_config: SharedConfig,
 }
 
 impl ButtonWidget {
-    pub fn new(id: usize, appearance: Appearance) -> Self {
+    pub fn new(id: usize, shared_config: SharedConfig) -> Self {
         ButtonWidget {
             id,
             content: None,
@@ -34,12 +34,12 @@ impl ButtonWidget {
                 "markup": "pango"
             }),
             cached_output: None,
-            appearance,
+            shared_config,
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = self.appearance.get_icon(name);
+        self.icon = self.shared_config.get_icon(name);
         self.update();
         self
     }
@@ -74,7 +74,7 @@ impl ButtonWidget {
     }
 
     pub fn set_icon(&mut self, name: &str) {
-        self.icon = self.appearance.get_icon(name);
+        self.icon = self.shared_config.get_icon(name);
         self.update();
     }
 
@@ -89,7 +89,7 @@ impl ButtonWidget {
     }
 
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys(&self.appearance.theme);
+        let (key_bg, key_fg) = self.state.theme_keys(&self.shared_config.theme);
 
         // When rendered inline, remove the leading space
         self.rendered = json!({

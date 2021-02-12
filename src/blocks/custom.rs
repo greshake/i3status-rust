@@ -7,8 +7,8 @@ use std::vec;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::de::deserialize_update;
 use crate::errors::*;
 use crate::input::I3BarEvent;
@@ -82,13 +82,13 @@ impl ConfigBlock for Custom {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         tx: Sender<Task>,
     ) -> Result<Self> {
         let mut custom = Custom {
             id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(id, appearance),
+            output: ButtonWidget::new(id, shared_config),
             command: None,
             on_click: None,
             cycle: None,

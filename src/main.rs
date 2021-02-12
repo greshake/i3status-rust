@@ -7,7 +7,6 @@ use libpulse_binding as pulse;
 mod de;
 #[macro_use]
 mod util;
-mod appearance;
 pub mod blocks;
 mod config;
 mod errors;
@@ -30,10 +29,10 @@ use std::time::Duration;
 use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
 
-use crate::appearance::Appearance;
 use crate::blocks::create_block;
 use crate::blocks::Block;
 use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
@@ -158,7 +157,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         );
     }
 
-    let appearance = Appearance::new(config.theme, config.icons);
+    let shared_config = SharedConfig::new(&config);
 
     // Initialize the blocks
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
@@ -167,7 +166,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             blocks.len(),
             block_name,
             block_config.clone(),
-            appearance.clone(),
+            shared_config.clone(),
             tx_update_requests.clone(),
         )?);
     }
@@ -197,7 +196,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     for block in blocks.iter_mut() {
                         block.click(&event)?;
                     }
-                    util::print_blocks(&blocks, &appearance)?;
+                    util::print_blocks(&blocks, &shared_config)?;
             },
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
@@ -205,13 +204,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 blocks.get_mut(req.id)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
-                util::print_blocks(&blocks, &appearance)?;
+                util::print_blocks(&blocks, &shared_config)?;
             },
             // Receive update timer events
             recv(ttnu) -> _ => {
                 scheduler.do_scheduled_updates(&mut blocks)?;
                 // redraw the blocks, state changed
-                util::print_blocks(&blocks, &appearance)?;
+                util::print_blocks(&blocks, &shared_config)?;
             },
             // Receive signal events
             recv(rx_signals) -> res => if let Ok(sig) = res {
@@ -221,7 +220,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         for block in blocks.iter_mut() {
                             block.update()?;
                         }
-                        util::print_blocks(&blocks, &appearance)?;
+                        util::print_blocks(&blocks, &shared_config)?;
                     },
                     signal_hook::SIGUSR2 => {
                         //USR2 signal that should reload the config
@@ -279,14 +278,14 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
     let profile_runs = runs
         .parse::<i32>()
         .configuration_error("failed to parse --profile-runs as an integer")?;
-    let appearance = Appearance::new(config.theme.clone(), config.icons.clone());
+    let shared_config = SharedConfig::new(&config);
     for &(ref block_name, ref block_config) in &config.blocks {
         if block_name == name {
             let mut block = create_block(
                 0,
                 &block_name,
                 block_config.clone(),
-                appearance.clone(),
+                shared_config.clone(),
                 update,
             )?;
             profile(profile_runs, &block_name, block.deref_mut());

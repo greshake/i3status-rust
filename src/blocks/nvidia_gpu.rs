@@ -4,8 +4,8 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -110,9 +110,6 @@ pub struct NvidiaGpuConfig {
     /// Maximum temperature, below which state is set to warning
     #[serde(default = "NvidiaGpuConfig::default_warning")]
     pub warning: u64,
-
-    #[serde(default = "Scrolling::default")]
-    pub scrolling: Scrolling,
 }
 
 impl NvidiaGpuConfig {
@@ -171,7 +168,7 @@ impl ConfigBlock for NvidiaGpu {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let id_memory = pseudo_uuid();
@@ -185,7 +182,7 @@ impl ConfigBlock for NvidiaGpu {
             gpu_enabled: false,
             gpu_id: block_config.gpu_id,
 
-            name_widget: ButtonWidget::new(id, appearance.clone())
+            name_widget: ButtonWidget::new(id, shared_config.clone())
                 .with_icon("gpu")
                 .with_spacing(Spacing::Inline),
             name_widget_mode: if block_config.label.is_some() {
@@ -196,35 +193,40 @@ impl ConfigBlock for NvidiaGpu {
             label: block_config.label.unwrap_or_default(),
 
             show_memory: if block_config.show_memory {
-                Some(ButtonWidget::new(id_memory, appearance.clone()).with_spacing(Spacing::Inline))
+                Some(
+                    ButtonWidget::new(id_memory, shared_config.clone())
+                        .with_spacing(Spacing::Inline),
+                )
             } else {
                 None
             },
             memory_widget_mode: MemoryWidgetMode::ShowUsedMemory,
 
             show_utilization: if block_config.show_utilization {
-                Some(TextWidget::new(id, appearance.clone()).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, shared_config.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_temperature: if block_config.show_temperature {
-                Some(TextWidget::new(id, appearance.clone()).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, shared_config.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_fan: if block_config.show_fan_speed {
-                Some(ButtonWidget::new(id_fans, appearance.clone()).with_spacing(Spacing::Inline))
+                Some(
+                    ButtonWidget::new(id_fans, shared_config.clone()).with_spacing(Spacing::Inline),
+                )
             } else {
                 None
             },
             fan_speed: 0,
             fan_speed_controlled: false,
-            scrolling: block_config.scrolling,
+            scrolling: shared_config.scrolling,
 
             show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(id, appearance).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, shared_config).with_spacing(Spacing::Inline))
             } else {
                 None
             },

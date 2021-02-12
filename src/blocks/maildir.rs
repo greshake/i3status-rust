@@ -4,7 +4,7 @@ use crossbeam_channel::Sender;
 use maildir::Maildir as ExtMaildir;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -88,10 +88,10 @@ impl ConfigBlock for Maildir {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let widget = TextWidget::new(id, appearance).with_text("");
+        let widget = TextWidget::new(id, shared_config).with_text("");
         Ok(Maildir {
             id,
             update_interval: block_config.interval,

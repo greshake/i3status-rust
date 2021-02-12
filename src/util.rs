@@ -13,8 +13,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use regex::Regex;
 use serde::de::DeserializeOwned;
 
-use crate::appearance::Appearance;
 use crate::blocks::Block;
+use crate::config::SharedConfig;
 use crate::errors::*;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
@@ -168,7 +168,7 @@ macro_rules! map_to_owned (
      };
 );
 
-pub fn print_blocks(blocks: &[Box<dyn Block>], appearance: &Appearance) -> Result<()> {
+pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<()> {
     let mut last_bg: Option<String> = None;
 
     let mut rendered_blocks = vec![];
@@ -200,12 +200,12 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], appearance: &Appearance) -> Resul
                     // Apply tint for all widgets of every second block
                     *w_json.get_mut("background").unwrap() = json!(add_colors(
                         w_json["background"].as_str(),
-                        appearance.theme.alternating_tint_bg.as_deref()
+                        config.theme.alternating_tint_bg.as_deref()
                     )
                     .unwrap());
                     *w_json.get_mut("color").unwrap() = json!(add_colors(
                         w_json["color"].as_str(),
-                        appearance.theme.alternating_tint_fg.as_deref()
+                        config.theme.alternating_tint_fg.as_deref()
                     )
                     .unwrap());
                 }
@@ -215,7 +215,7 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], appearance: &Appearance) -> Resul
 
         alternator = !alternator;
 
-        if appearance.theme.native_separators == Some(true) {
+        if config.theme.native_separators == Some(true) {
             // Re-add native separator on last widget for native theme
             *rendered_widgets
                 .last_mut()
@@ -236,7 +236,7 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], appearance: &Appearance) -> Resul
             .collect::<Vec<String>>()
             .join(",");
 
-        if appearance.theme.native_separators == Some(true) {
+        if config.theme.native_separators == Some(true) {
             // Skip separator block for native theme
             rendered_blocks.push(block_str.to_string());
             continue;
@@ -247,21 +247,21 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], appearance: &Appearance) -> Resul
             .as_str()
             .internal_error("util", "couldn't get background color")?;
 
-        let sep_fg = if appearance.theme.separator_fg == Some("auto".to_string()) {
+        let sep_fg = if config.theme.separator_fg == Some("auto".to_string()) {
             Some(first_bg.to_string())
         } else {
-            appearance.theme.separator_fg.clone()
+            config.theme.separator_fg.clone()
         };
 
         // The separator's BG is the last block's last widget's BG
-        let sep_bg = if appearance.theme.separator_bg == Some("auto".to_string()) {
+        let sep_bg = if config.theme.separator_bg == Some("auto".to_string()) {
             last_bg
         } else {
-            appearance.theme.separator_bg.clone()
+            config.theme.separator_bg.clone()
         };
 
         let separator = json!({
-            "full_text": appearance.theme.separator,
+            "full_text": config.theme.separator,
             "separator": false,
             "separator_block_width": 0,
             "background": sep_bg,

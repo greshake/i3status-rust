@@ -8,7 +8,7 @@ use dbus::blocking::{stdintf::org_freedesktop_dbus::Properties, Connection};
 use dbus::Message;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::errors::*;
 use crate::input::I3BarEvent;
@@ -34,7 +34,7 @@ pub struct KDEConnect {
     format: FormatTemplate,
     format_disconnected: FormatTemplate,
     output: ButtonWidget,
-    appearance: Appearance,
+    shared_config: SharedConfig,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -104,7 +104,7 @@ impl ConfigBlock for KDEConnect {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let send2 = send.clone();
@@ -557,8 +557,8 @@ impl ConfigBlock for KDEConnect {
             bat_critical: block_config.bat_critical,
             format: FormatTemplate::from_string(&block_config.format)?,
             format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
-            output: ButtonWidget::new(id, appearance.clone()).with_icon("phone"),
-            appearance,
+            output: ButtonWidget::new(id, shared_config.clone()).with_icon("phone"),
+            shared_config,
         })
     }
 }
@@ -604,7 +604,7 @@ impl Block for KDEConnect {
         .clone();
 
         let bat_icon = self
-            .appearance
+            .shared_config
             .get_icon(if charging {
                 "bat_charging"
             } else if charge < 0 {
@@ -619,7 +619,7 @@ impl Block for KDEConnect {
             "{bat_icon}" => bat_icon.trim().to_string(),
             "{bat_charge}" => if charge < 0 { "x".to_string() } else { charge.to_string() },
             "{bat_state}" => charging.to_string(),
-            "{notif_icon}" => self.appearance.get_icon("notification").unwrap_or_default().trim().to_string(),
+            "{notif_icon}" => self.shared_config.get_icon("notification").unwrap_or_default().trim().to_string(),
             "{notif_count}" => notif_count.to_string(),
             // TODO
             //"{notif_text}" => notif_text,

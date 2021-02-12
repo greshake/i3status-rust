@@ -5,8 +5,8 @@ use std::time::Instant;
 use crossbeam_channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::{ObjectManager, Properties};
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
@@ -180,7 +180,7 @@ impl ConfigBlock for Bluetooth {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
@@ -188,7 +188,7 @@ impl ConfigBlock for Bluetooth {
 
         Ok(Bluetooth {
             id,
-            output: ButtonWidget::new(id, appearance).with_icon(match device.icon {
+            output: ButtonWidget::new(id, shared_config).with_icon(match device.icon {
                 Some(ref icon) if icon == "audio-card" => "headphones",
                 Some(ref icon) if icon == "input-gaming" => "joystick",
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",

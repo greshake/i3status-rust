@@ -4,8 +4,8 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -139,9 +139,6 @@ pub struct HueshiftConfig {
     pub step: u16,
     #[serde(default = "HueshiftConfig::default_click_temp")]
     pub click_temp: u16,
-
-    #[serde(default = "Scrolling::default")]
-    pub scrolling: Scrolling,
 }
 
 impl HueshiftConfig {
@@ -191,7 +188,7 @@ impl ConfigBlock for Hueshift {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let current_temp = block_config.current_temp;
@@ -221,14 +218,14 @@ impl ConfigBlock for Hueshift {
         Ok(Hueshift {
             id,
             update_interval: block_config.interval,
-            text: ButtonWidget::new(id, appearance).with_text(&current_temp.to_string()),
             step,
             max_temp,
             min_temp,
             current_temp,
             hue_shift_driver,
             click_temp: block_config.click_temp,
-            scrolling: block_config.scrolling,
+            scrolling: shared_config.scrolling,
+            text: ButtonWidget::new(id, shared_config).with_text(&current_temp.to_string()),
         })
     }
 }

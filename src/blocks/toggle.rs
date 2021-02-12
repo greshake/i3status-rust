@@ -5,8 +5,8 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::de::deserialize_opt_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
@@ -70,12 +70,12 @@ impl ConfigBlock for Toggle {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Toggle {
             id,
-            text: ButtonWidget::new(id, appearance).with_content(block_config.text),
+            text: ButtonWidget::new(id, shared_config).with_content(block_config.text),
             command_on: block_config.command_on,
             command_off: block_config.command_off,
             command_state: block_config.command_state,

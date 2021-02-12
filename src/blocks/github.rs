@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -75,13 +75,13 @@ impl ConfigBlock for Github {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _: Sender<Task>,
     ) -> Result<Self> {
         let token = std::env::var(GITHUB_TOKEN_ENV)
             .block_error("github", "missing I3RS_GITHUB_TOKEN environment variable")?;
 
-        let text = TextWidget::new(id, appearance)
+        let text = TextWidget::new(id, shared_config)
             .with_text("x")
             .with_icon("github");
         Ok(Github {

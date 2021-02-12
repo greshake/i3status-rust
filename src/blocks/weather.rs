@@ -5,8 +5,8 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::http;
@@ -320,12 +320,12 @@ impl ConfigBlock for Weather {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Weather {
             id,
-            weather: ButtonWidget::new(id, appearance),
+            weather: ButtonWidget::new(id, shared_config),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,

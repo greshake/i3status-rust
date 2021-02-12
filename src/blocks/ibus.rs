@@ -18,7 +18,7 @@ use dbus::{
 use regex::Regex;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::errors::*;
 use crate::input::I3BarEvent;
@@ -62,7 +62,7 @@ impl ConfigBlock for IBus {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let send2 = send.clone();
@@ -209,7 +209,7 @@ impl ConfigBlock for IBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(id, appearance).with_text("IBus");
+        let text = TextWidget::new(id, shared_config).with_text("IBus");
         Ok(IBus {
             id,
             text,

@@ -6,9 +6,8 @@ use crossbeam_channel::Sender;
 use regex::RegexSet;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{LogicalDirection, Scrolling};
+use crate::config::{LogicalDirection, SharedConfig};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
@@ -57,8 +56,7 @@ pub struct Xrandr {
     resolution: bool,
     step_width: u32,
     current_idx: usize,
-    scrolling: Scrolling,
-    appearance: Appearance,
+    shared_config: SharedConfig,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -82,9 +80,6 @@ pub struct XrandrConfig {
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
     #[serde(default = "XrandrConfig::default_step_width")]
     pub step_width: u32,
-
-    #[serde(default = "Scrolling::default")]
-    pub scrolling: Scrolling,
 }
 
 impl XrandrConfig {
@@ -201,9 +196,9 @@ impl Xrandr {
         if let Some(m) = self.monitors.get(self.current_idx) {
             let values = map!("{display}" => m.name.clone(),
                               "{brightness}" => m.brightness.to_string(),
-                              "{brightness_icon}" => self.appearance.get_icon("backlight_full").unwrap_or_default().trim().to_string(),
+                              "{brightness_icon}" => self.shared_config.get_icon("backlight_full").unwrap_or_default().trim().to_string(),
                               "{resolution}" => m.resolution.clone(),
-                              "{res_icon}" => self.appearance.get_icon("resolution").unwrap_or_default().trim().to_string());
+                              "{res_icon}" => self.shared_config.get_icon("resolution").unwrap_or_default().trim().to_string());
 
             self.text.set_icon("xrandr");
             let format_str = if self.resolution {
@@ -233,7 +228,7 @@ impl ConfigBlock for Xrandr {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let mut step_width = block_config.step_width;
@@ -241,7 +236,7 @@ impl ConfigBlock for Xrandr {
             step_width = 50;
         }
         Ok(Xrandr {
-            text: ButtonWidget::new(id, appearance.clone()).with_icon("xrandr"),
+            text: ButtonWidget::new(id, shared_config.clone()).with_icon("xrandr"),
             id,
             update_interval: block_config.interval,
             current_idx: 0,
@@ -249,8 +244,7 @@ impl ConfigBlock for Xrandr {
             resolution: block_config.resolution,
             step_width,
             monitors: Vec::new(),
-            scrolling: block_config.scrolling,
-            appearance,
+            shared_config,
         })
     }
 }
@@ -283,7 +277,7 @@ impl Block for Xrandr {
                 }
                 mb => {
                     use LogicalDirection::*;
-                    match self.scrolling.to_logical_direction(mb) {
+                    match self.shared_config.scrolling.to_logical_direction(mb) {
                         Some(Up) => {
                             if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
                                 if monitor.brightness <= (100 - self.step_width) {

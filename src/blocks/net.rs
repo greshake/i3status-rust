@@ -11,7 +11,7 @@ use lazy_static::lazy_static;
 use regex::bytes::Regex;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -385,7 +385,7 @@ pub struct Net {
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
-    appearance: Appearance,
+    shared_config: SharedConfig,
 }
 
 #[derive(Copy, Clone, Debug, Deserialize)]
@@ -570,7 +570,7 @@ impl ConfigBlock for Net {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let default_device = match NetworkDevice::default_device() {
@@ -591,13 +591,13 @@ impl ConfigBlock for Net {
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
-            output: ButtonWidget::new(0, appearance.clone())
+            output: ButtonWidget::new(0, shared_config.clone())
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
-            network: ButtonWidget::new(id, appearance.clone()).with_icon(if wireless {
+            network: ButtonWidget::new(id, shared_config.clone()).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
                 "net_vpn"
@@ -657,7 +657,7 @@ impl ConfigBlock for Net {
             hide_inactive: block_config.hide_inactive,
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
-            appearance,
+            shared_config,
         })
     }
 }
@@ -874,12 +874,12 @@ impl Block for Net {
         let empty_string = "".to_string();
         let s_up = format!(
             "{} {}",
-            self.appearance.get_icon("net_up").unwrap_or_default(),
+            self.shared_config.get_icon("net_up").unwrap_or_default(),
             self.output_tx.clone().unwrap_or_default()
         );
         let s_dn = format!(
             "{} {}",
-            self.appearance.get_icon("net_down").unwrap_or_default(),
+            self.shared_config.get_icon("net_down").unwrap_or_default(),
             self.output_tx.clone().unwrap_or_default()
         );
 

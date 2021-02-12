@@ -17,8 +17,8 @@ use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::I3BarEvent;
@@ -208,9 +208,6 @@ pub struct BacklightConfig {
     /// For devices with few discrete steps this should be 1.0 (linear).
     #[serde(default = "BacklightConfig::default_root_scaling")]
     pub root_scaling: f64,
-
-    #[serde(default = "Scrolling::default")]
-    pub scrolling: Scrolling,
 }
 
 impl BacklightConfig {
@@ -233,7 +230,7 @@ impl ConfigBlock for Backlight {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let device = match block_config.device {
@@ -245,10 +242,10 @@ impl ConfigBlock for Backlight {
 
         let backlight = Backlight {
             id,
-            output: ButtonWidget::new(id, appearance),
             device,
             step_width: block_config.step_width,
-            scrolling: block_config.scrolling,
+            scrolling: shared_config.scrolling,
+            output: ButtonWidget::new(id, shared_config),
         };
 
         // Spin up a thread to watch for changes to the brightness file for the

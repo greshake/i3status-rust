@@ -7,8 +7,8 @@ use serde_derive::Deserialize;
 use swayipc::reply::{Event, Node, WindowChange, WorkspaceChange};
 use swayipc::{Connection, EventType};
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
@@ -59,7 +59,7 @@ impl ConfigBlock for FocusedWindow {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         tx: Sender<Task>,
     ) -> Result<Self> {
         let title = Arc::new(Mutex::new(String::from("")));
@@ -179,7 +179,7 @@ impl ConfigBlock for FocusedWindow {
             })
             .expect("failed to start watching thread for `window` block");
 
-        let text = TextWidget::new(id, appearance);
+        let text = TextWidget::new(id, shared_config);
         Ok(FocusedWindow {
             id,
             text,

@@ -5,8 +5,8 @@ use crossbeam_channel::Sender;
 use nix::sys::statvfs::statvfs;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
@@ -204,12 +204,12 @@ impl ConfigBlock for DiskSpace {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let icon = appearance.get_icon("disk_drive").unwrap_or_default();
+        let icon = shared_config.get_icon("disk_drive").unwrap_or_default();
 
-        let disk_space = TextWidget::new(id, appearance);
+        let disk_space = TextWidget::new(id, shared_config);
         Ok(DiskSpace {
             id,
             update_interval: block_config.interval,

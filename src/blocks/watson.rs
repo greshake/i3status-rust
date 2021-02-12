@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::de::deserialize_local_timestamp;
 use crate::errors::*;
@@ -66,12 +66,12 @@ impl ConfigBlock for Watson {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let watson = Watson {
             id,
-            text: ButtonWidget::new(id, appearance),
+            text: ButtonWidget::new(id, shared_config),
             state_path: block_config.state_path.clone(),
             show_time: block_config.show_time,
             update_interval: block_config.interval,

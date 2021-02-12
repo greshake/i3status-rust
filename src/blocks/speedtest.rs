@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -158,7 +158,7 @@ impl ConfigBlock for SpeedTest {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         done: Sender<Task>,
     ) -> Result<Self> {
         // Create all the things we are going to send and take for ourselves.
@@ -172,13 +172,13 @@ impl ConfigBlock for SpeedTest {
         Ok(SpeedTest {
             vals,
             text: vec![
-                ButtonWidget::new(id, appearance.clone())
+                ButtonWidget::new(id, shared_config.clone())
                     .with_icon("ping")
                     .with_text("0ms"),
-                ButtonWidget::new(id, appearance.clone())
+                ButtonWidget::new(id, shared_config.clone())
                     .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
-                ButtonWidget::new(id, appearance)
+                ButtonWidget::new(id, shared_config)
                     .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
             ],

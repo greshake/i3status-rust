@@ -8,8 +8,8 @@ use crossbeam_channel::Sender;
 use regex::Regex;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
 use crate::blocks::{Block, ConfigBlock, Update};
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
@@ -88,7 +88,7 @@ impl ConfigBlock for Apt {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let mut cache_dir = env::temp_dir();
@@ -111,7 +111,7 @@ impl ConfigBlock for Apt {
             .block_error("apt", "Failed to create config file")?;
         write!(config_file, "{}", apt_conf).block_error("apt", "Failed to write to config file")?;
 
-        let output = ButtonWidget::new(id, appearance).with_icon("update");
+        let output = ButtonWidget::new(id, shared_config).with_icon("update");
 
         Ok(Apt {
             id,

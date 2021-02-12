@@ -8,7 +8,7 @@ use dbus::ffidisp::{BusType, Connection};
 use dbus::message::SignalArgs;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
@@ -49,7 +49,7 @@ impl ConfigBlock for Notify {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let notify_id = pseudo_uuid();
@@ -112,7 +112,7 @@ impl ConfigBlock for Notify {
             notify_id,
             paused: state,
             format: FormatTemplate::from_string(&block_config.format)?,
-            output: ButtonWidget::new(notify_id, appearance).with_icon(icon),
+            output: ButtonWidget::new(notify_id, shared_config).with_icon(icon),
         })
     }
 }

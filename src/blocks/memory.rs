@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::de::deserialize_duration;
 use crate::errors::*;
@@ -350,11 +350,11 @@ impl ConfigBlock for Memory {
     fn new(
         id: usize,
         block_config: Self::Config,
-        appearance: Appearance,
+        shared_config: SharedConfig,
         tx: Sender<Task>,
     ) -> Result<Self> {
         let icons: bool = block_config.icons;
-        let widget = ButtonWidget::new(id, appearance).with_text("");
+        let widget = ButtonWidget::new(id, shared_config).with_text("");
         Ok(Memory {
             id,
             memtype: block_config.display_type,

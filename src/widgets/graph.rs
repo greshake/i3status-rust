@@ -2,7 +2,7 @@ use num_traits::{clamp, ToPrimitive};
 use serde_json::value::Value;
 
 use super::I3BarWidget;
-use crate::appearance::Appearance;
+use crate::config::SharedConfig;
 use crate::widgets::Spacing;
 use crate::widgets::State;
 
@@ -15,11 +15,11 @@ pub struct GraphWidget {
     spacing: Spacing,
     rendered: Value,
     cached_output: Option<String>,
-    appearance: Appearance,
+    shared_config: SharedConfig,
 }
 #[allow(dead_code)]
 impl GraphWidget {
-    pub fn new(id: usize, appearance: Appearance) -> Self {
+    pub fn new(id: usize, shared_config: SharedConfig) -> Self {
         GraphWidget {
             id,
             content: None,
@@ -34,12 +34,12 @@ impl GraphWidget {
                 "color": "#000000"
             }),
             cached_output: None,
-            appearance,
+            shared_config,
         }
     }
 
     pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = self.appearance.get_icon(name);
+        self.icon = self.shared_config.get_icon(name);
         self.update();
         self
     }
@@ -91,7 +91,7 @@ impl GraphWidget {
     }
 
     pub fn set_icon(&mut self, name: &str) {
-        self.icon = self.appearance.get_icon(name);
+        self.icon = self.shared_config.get_icon(name);
         self.update();
     }
 
@@ -101,7 +101,7 @@ impl GraphWidget {
     }
 
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys(&self.appearance.theme);
+        let (key_bg, key_fg) = self.state.theme_keys(&self.shared_config.theme);
 
         self.rendered = json!({
             "full_text": format!("{}{}{}",
