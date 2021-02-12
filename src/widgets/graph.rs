@@ -1,4 +1,4 @@
-use num_traits::ToPrimitive;
+use num_traits::{clamp, ToPrimitive};
 use serde_json::value::Value;
 
 use super::I3BarWidget;
@@ -75,7 +75,7 @@ impl GraphWidget {
             let bar = content
                 .iter()
                 .map(|x| {
-                    bars[((x.to_f64().unwrap().clamp(min, max) - min) / extant * length) as usize]
+                    bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
                 })
                 .collect::<Vec<&'static str>>()
                 .concat();
