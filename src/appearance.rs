@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use crate::errors::*;
 use crate::icons;
 use crate::themes::Theme;
 
@@ -18,7 +19,7 @@ impl Appearance {
         }
     }
 
-    pub fn theme_override(&mut self, overrides: &HashMap<String, String>) {
+    pub fn theme_override(&mut self, overrides: &HashMap<String, String>) -> Result<()> {
         let mut theme = self.theme.as_ref().clone();
         for entry in overrides {
             match entry.0.as_str() {
@@ -32,15 +33,16 @@ impl Appearance {
                 "warning_bg" => theme.warning_bg = Some(entry.1.to_string()),
                 "critical_fg" => theme.critical_fg = Some(entry.1.to_string()),
                 "critical_bg" => theme.critical_bg = Some(entry.1.to_string()),
-                // TODO the below as well?
-                // "separator"
-                // "separator_bg"
-                // "separator_fg"
-                // "alternating_tint_bg"
-                _ => (),
+                x => {
+                    return Err(ConfigurationError(
+                        format!("Theme element \"{}\" cannot be overriden", x),
+                        (String::new(), String::new()),
+                    ))
+                }
             }
         }
         self.theme = Rc::new(theme);
+        Ok(())
     }
 
     pub fn get_icon(&self, icon: &str) -> Option<String> {

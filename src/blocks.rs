@@ -160,7 +160,7 @@ macro_rules! block {
 
         // Apply theme overrides if presented
         if let Some(ref overrides) = common_config.color_overrides {
-            $appearance.theme_override(overrides);
+            $appearance.theme_override(overrides)?;
         }
 
         // Extract block-specific config
