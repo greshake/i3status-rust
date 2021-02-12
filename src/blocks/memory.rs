@@ -482,7 +482,7 @@ impl Block for Memory {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) {
+        if event.matches_id(self.id) && self.clickable {
             if let MouseButton::Left = event.button {
                 self.switch();
                 self.update()?;
