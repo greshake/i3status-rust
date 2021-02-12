@@ -957,20 +957,6 @@ Placeholder | Description
 `graph_up` | Display a bar graph for upload speed
 `graph_down` | Display a bar graph for download speed
 
-#### Deprecated Options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`ssid` | Deprecated in favor of `format`. Display network SSID (wireless only). | No | `false`
-`signal_strength` | Deprecated in favor of `format`. Display WiFi signal strength (wireless only). | No | `false`
-`bitrate` | Deprecated in favor of `format`. Display connection bitrate. | No | `false`
-`ip` | Deprecated in favor of `format`. Display connection IP address. | No | `false`
-`ipv6` | Deprecated in favor of `format`. Display connection IPv6 address. | No | `false`
-`speed_up` | Deprecated in favor of `format`. Display upload speed. | No | `true`
-`speed_down` | Deprecated in favor of `format`. Display download speed. | No | `true`
-`graph_up` | Deprecated in favor of `format`. Display a bar graph for upload speed. | No | `false`
-`graph_down` | Deprecated in favor of `format`. Display a bar graph for download speed. | No | `false`
-
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## NetworkManager
