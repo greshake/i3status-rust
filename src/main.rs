@@ -279,7 +279,7 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
     let profile_runs = runs
         .parse::<i32>()
         .configuration_error("failed to parse --profile-runs as an integer")?;
-    let appearance = Appearance::new(config.theme, config.icons);
+    let appearance = Appearance::new(config.theme.clone(), config.icons.clone());
     for &(ref block_name, ref block_config) in &config.blocks {
         if block_name == name {
             let mut block = create_block(
