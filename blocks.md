@@ -216,6 +216,13 @@ Key | Values | Required | Default
 `mac` | MAC address of the Bluetooth device. | Yes | None
 `label` | Text label to display next to the icon. | No | None
 `hide_disconnected` | Hides the block when the device is disconnected. | No | `false`
+`format_unavailable` | A string to customise the output of this block when the bluetooth controller is unavailable. See below for placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{label} x"`
+
+#### Available Format Keys
+
+Key | Value
+----|-------
+`{label}` | Device label as set in the block config
 
 ###### [↥ back to top](#list-of-available-blocks)
 
