@@ -17,7 +17,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct BluetoothDevice {
@@ -217,7 +217,7 @@ impl BluetoothDevice {
 
 pub struct Bluetooth {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     device: BluetoothDevice,
     hide_disconnected: bool,
     format_unavailable: FormatTemplate,
@@ -258,7 +258,7 @@ impl ConfigBlock for Bluetooth {
 
         Ok(Bluetooth {
             id,
-            output: ButtonWidget::new(id, shared_config).with_icon(match device.icon {
+            output: TextWidget::new(id, shared_config).with_icon(match device.icon {
                 Some(ref icon) if icon == "audio-card" => "headphones",
                 Some(ref icon) if icon == "input-gaming" => "joystick",
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",

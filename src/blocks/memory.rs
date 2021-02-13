@@ -14,7 +14,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::*;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
@@ -157,7 +157,7 @@ impl Memstate {
 pub struct Memory {
     id: usize,
     memtype: Memtype,
-    output: (ButtonWidget, ButtonWidget),
+    output: (TextWidget, TextWidget),
     clickable: bool,
     format: (FormatTemplate, FormatTemplate),
     update_interval: Duration,
@@ -354,7 +354,7 @@ impl ConfigBlock for Memory {
         tx: Sender<Task>,
     ) -> Result<Self> {
         let icons: bool = block_config.icons;
-        let widget = ButtonWidget::new(id, shared_config).with_text("");
+        let widget = TextWidget::new(id, shared_config).with_text("");
         Ok(Memory {
             id,
             memtype: block_config.display_type,

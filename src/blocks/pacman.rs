@@ -17,12 +17,12 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::{has_command, FormatTemplate};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Pacman {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
     format_singular: FormatTemplate,
@@ -157,7 +157,7 @@ impl ConfigBlock for Pacman {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let output = ButtonWidget::new(id, shared_config).with_icon("update");
+        let output = TextWidget::new(id, shared_config).with_icon("update");
 
         Ok(Pacman {
             id,

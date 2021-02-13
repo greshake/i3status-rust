@@ -14,13 +14,13 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::format_number;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct SpeedTest {
     id: usize,
     vals: Arc<Mutex<(bool, Vec<f32>)>>,
-    text: Vec<ButtonWidget>,
+    text: Vec<TextWidget>,
     config: SpeedTestConfig,
     send: Sender<()>,
 }
@@ -172,13 +172,13 @@ impl ConfigBlock for SpeedTest {
         Ok(SpeedTest {
             vals,
             text: vec![
-                ButtonWidget::new(id, shared_config.clone())
+                TextWidget::new(id, shared_config.clone())
                     .with_icon("ping")
                     .with_text("0ms"),
-                ButtonWidget::new(id, shared_config.clone())
+                TextWidget::new(id, shared_config.clone())
                     .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
-                ButtonWidget::new(id, shared_config)
+                TextWidget::new(id, shared_config)
                     .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
             ],

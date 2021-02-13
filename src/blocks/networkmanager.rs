@@ -19,7 +19,7 @@ use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
 enum NetworkState {
@@ -442,8 +442,8 @@ impl<'a> NmIp4Config<'a> {
 
 pub struct NetworkManager {
     id: usize,
-    indicator: ButtonWidget,
-    output: Vec<ButtonWidget>,
+    indicator: TextWidget,
+    output: Vec<TextWidget>,
     dbus_conn: Connection,
     manager: ConnectionManager,
     primary_only: bool,
@@ -566,7 +566,7 @@ impl ConfigBlock for NetworkManager {
 
         Ok(NetworkManager {
             id,
-            indicator: ButtonWidget::new(id, shared_config.clone()),
+            indicator: TextWidget::new(id, shared_config.clone()),
             output: Vec::new(),
             dbus_conn,
             manager,
@@ -601,10 +601,10 @@ impl Block for NetworkManager {
             _ => State::Critical,
         });
         self.indicator.set_text(match state {
-            Ok(NetworkState::Disconnected) => "×",
-            Ok(NetworkState::Asleep) => "×",
-            Ok(NetworkState::Unknown) => "E",
-            _ => "",
+            Ok(NetworkState::Disconnected) => "×".to_string(),
+            Ok(NetworkState::Asleep) => "×".to_string(),
+            Ok(NetworkState::Unknown) => "E".to_string(),
+            _ => String::new(),
         });
 
         self.output = match state {
@@ -644,7 +644,7 @@ impl Block for NetworkManager {
                     .into_iter()
                     .filter_map(|conn| {
                         // inline spacing for no leading space, because the icon is set in the string
-                        let mut widget = ButtonWidget::new(self.id, self.shared_config.clone())
+                        let mut widget = TextWidget::new(self.id, self.shared_config.clone())
                             .with_spacing(Spacing::Inline);
 
                         // Set the state for this connection
@@ -774,7 +774,7 @@ impl Block for NetworkManager {
                         if let Ok(s) = self.connection_format.render_static_str(&values) {
                             widget.set_text(s);
                         } else {
-                            widget.set_text("[invalid connection format string]");
+                            widget.set_text("[invalid connection format string]".to_string());
                         }
 
                         if !devicevec.is_empty() {

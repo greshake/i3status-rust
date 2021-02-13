@@ -12,7 +12,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::{format_percent_bar, FormatTemplate};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 /// Maximum number of CPUs we support.
@@ -20,7 +20,7 @@ const MAX_CPUS: usize = 32;
 
 pub struct Cpu {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     prev_idles: [u64; MAX_CPUS],
     prev_non_idles: [u64; MAX_CPUS],
     update_interval: Duration,
@@ -112,7 +112,7 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(id, shared_config).with_icon("cpu"),
+            output: TextWidget::new(id, shared_config).with_icon("cpu"),
             prev_idles: [0; MAX_CPUS],
             prev_non_idles: [0; MAX_CPUS],
             minimum_info: block_config.info,

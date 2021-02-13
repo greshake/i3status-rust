@@ -11,12 +11,12 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Taskwarrior {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     update_interval: Duration,
     warning_threshold: u32,
     critical_threshold: u32,
@@ -129,7 +129,7 @@ impl ConfigBlock for Taskwarrior {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let output = ButtonWidget::new(id, shared_config)
+        let output = TextWidget::new(id, shared_config)
             .with_icon("tasks")
             .with_text("-");
         // If the deprecated `filter_tags` option has been set,
@@ -210,7 +210,7 @@ fn get_number_of_tasks(filter: &str) -> Result<u32> {
 impl Block for Taskwarrior {
     fn update(&mut self) -> Result<Option<Update>> {
         if !has_taskwarrior()? {
-            self.output.set_text("?")
+            self.output.set_text("?".to_string())
         } else {
             let filter = self.filters.get(self.filter_index).block_error(
                 "taskwarrior",

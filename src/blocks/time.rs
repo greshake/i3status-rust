@@ -14,12 +14,12 @@ use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 pub struct Time {
     id: usize,
-    time: ButtonWidget,
+    time: TextWidget,
     update_interval: Duration,
     format: String,
     timezone: Option<Tz>,
@@ -76,7 +76,7 @@ impl ConfigBlock for Time {
     ) -> Result<Self> {
         Ok(Time {
             id,
-            time: ButtonWidget::new(id, shared_config)
+            time: TextWidget::new(id, shared_config)
                 .with_text("")
                 .with_icon("time"),
             update_interval: block_config.interval,

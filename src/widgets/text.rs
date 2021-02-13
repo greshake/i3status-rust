@@ -1,9 +1,9 @@
 use serde_json::value::Value;
 
 use super::I3BarWidget;
+use super::Spacing;
+use super::State;
 use crate::config::SharedConfig;
-use crate::widgets::Spacing;
-use crate::widgets::State;
 
 #[derive(Clone, Debug)]
 pub struct TextWidget {
@@ -30,7 +30,8 @@ impl TextWidget {
                 "separator": false,
                 "separator_block_width": 0,
                 "background": "#000000",
-                "color": "#000000"
+                "color": "#000000",
+                "markup": "pango"
             }),
             cached_output: None,
             shared_config,
@@ -61,13 +62,13 @@ impl TextWidget {
         self
     }
 
-    pub fn set_text(&mut self, content: String) {
-        self.content = Some(content);
+    pub fn set_icon(&mut self, name: &str) {
+        self.icon = self.shared_config.get_icon(name);
         self.update();
     }
 
-    pub fn set_icon(&mut self, name: &str) {
-        self.icon = self.shared_config.get_icon(name);
+    pub fn set_text(&mut self, content: String) {
+        self.content = Some(content);
         self.update();
     }
 
@@ -84,6 +85,7 @@ impl TextWidget {
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.shared_config.theme);
 
+        // When rendered inline, remove the leading space
         self.rendered = json!({
             "full_text": format!("{}{}{}",
                                 self.icon.clone().unwrap_or_else(|| {
@@ -92,17 +94,18 @@ impl TextWidget {
                                         _ => String::from("")
                                     }
                                 }),
-                                self.content.clone().unwrap_or_else(|| String::from("")),
+                                self.content.clone().unwrap_or_default(),
                                 match self.spacing {
                                     Spacing::Hidden => String::from(""),
                                     _ => String::from(" ")
                                 }
                             ),
             "separator": false,
-            "separator_block_width": 0,
             "name": self.id.to_string(),
-            "background": key_bg.to_owned(),
-            "color": key_fg.to_owned()
+            "separator_block_width": 0,
+            "background": key_bg,
+            "color": key_fg,
+            "markup": "pango"
         });
 
         self.cached_output = Some(self.rendered.to_string());

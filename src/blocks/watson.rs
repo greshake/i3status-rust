@@ -12,7 +12,7 @@ use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::xdg_config_home;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 use chrono::offset::Local;
 use chrono::DateTime;
@@ -22,7 +22,7 @@ use serde_derive::Deserialize;
 
 pub struct Watson {
     id: usize,
-    text: ButtonWidget,
+    text: TextWidget,
     state_path: PathBuf,
     show_time: bool,
     prev_state: Option<WatsonState>,
@@ -71,7 +71,7 @@ impl ConfigBlock for Watson {
     ) -> Result<Self> {
         let watson = Watson {
             id,
-            text: ButtonWidget::new(id, shared_config),
+            text: TextWidget::new(id, shared_config),
             state_path: block_config.state_path.clone(),
             show_time: block_config.show_time,
             update_interval: block_config.interval,

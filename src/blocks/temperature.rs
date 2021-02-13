@@ -12,7 +12,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
@@ -30,7 +30,7 @@ impl Default for TemperatureScale {
 
 pub struct Temperature {
     id: usize,
-    text: ButtonWidget,
+    text: TextWidget,
     output: String,
     collapsed: bool,
     update_interval: Duration,
@@ -125,7 +125,7 @@ impl ConfigBlock for Temperature {
         Ok(Temperature {
             id,
             update_interval: block_config.interval,
-            text: ButtonWidget::new(id, shared_config)
+            text: TextWidget::new(id, shared_config)
                 .with_icon("thermometer")
                 .with_spacing(if block_config.collapsed {
                     Spacing::Hidden

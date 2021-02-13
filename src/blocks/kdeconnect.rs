@@ -14,7 +14,7 @@ use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::{battery_level_to_icon, FormatTemplate};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct KDEConnect {
@@ -33,7 +33,7 @@ pub struct KDEConnect {
     bat_critical: i32,
     format: FormatTemplate,
     format_disconnected: FormatTemplate,
-    output: ButtonWidget,
+    output: TextWidget,
     shared_config: SharedConfig,
 }
 
@@ -557,7 +557,7 @@ impl ConfigBlock for KDEConnect {
             bat_critical: block_config.bat_critical,
             format: FormatTemplate::from_string(&block_config.format)?,
             format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
-            output: ButtonWidget::new(id, shared_config.clone()).with_icon("phone"),
+            output: TextWidget::new(id, shared_config.clone()).with_icon("phone"),
             shared_config,
         })
     }

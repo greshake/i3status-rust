@@ -10,7 +10,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 enum State {
@@ -59,7 +59,7 @@ impl fmt::Display for State {
 
 pub struct Pomodoro {
     id: usize,
-    time: ButtonWidget,
+    time: TextWidget,
     state: State,
     length: Duration,
     break_length: Duration,
@@ -140,7 +140,7 @@ impl ConfigBlock for Pomodoro {
     ) -> Result<Self> {
         Ok(Pomodoro {
             id,
-            time: ButtonWidget::new(id, shared_config).with_icon("pomodoro"),
+            time: TextWidget::new(id, shared_config).with_icon("pomodoro"),
             state: State::Stopped,
             length: Duration::from_secs(block_config.length * 60), // convert to minutes
             break_length: Duration::from_secs(block_config.break_length * 60), // convert to minutes

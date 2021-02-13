@@ -13,7 +13,7 @@ use crate::http;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
@@ -56,7 +56,7 @@ pub enum OpenWeatherMapUnits {
 
 pub struct Weather {
     id: usize,
-    weather: ButtonWidget,
+    weather: TextWidget,
     format: String,
     weather_keys: HashMap<String, String>,
     service: WeatherService,
@@ -325,7 +325,7 @@ impl ConfigBlock for Weather {
     ) -> Result<Self> {
         Ok(Weather {
             id,
-            weather: ButtonWidget::new(id, shared_config),
+            weather: TextWidget::new(id, shared_config),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,

@@ -15,13 +15,13 @@ use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Custom {
     id: usize,
     update_interval: Update,
-    output: ButtonWidget,
+    output: TextWidget,
     command: Option<String>,
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
@@ -88,7 +88,7 @@ impl ConfigBlock for Custom {
         let mut custom = Custom {
             id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(id, shared_config),
+            output: TextWidget::new(id, shared_config),
             command: None,
             on_click: None,
             cycle: None,

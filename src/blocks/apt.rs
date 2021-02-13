@@ -15,12 +15,12 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Apt {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
     format_singular: FormatTemplate,
@@ -111,7 +111,7 @@ impl ConfigBlock for Apt {
             .block_error("apt", "Failed to create config file")?;
         write!(config_file, "{}", apt_conf).block_error("apt", "Failed to write to config file")?;
 
-        let output = ButtonWidget::new(id, shared_config).with_icon("update");
+        let output = TextWidget::new(id, shared_config).with_icon("update");
 
         Ok(Apt {
             id,

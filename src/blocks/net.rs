@@ -19,7 +19,7 @@ use crate::scheduler::Task;
 use crate::util::{
     escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, FormatTemplate,
 };
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing};
 
 lazy_static! {
@@ -357,8 +357,8 @@ impl NetworkDevice {
 pub struct Net {
     id: usize,
     format: FormatTemplate,
-    output: ButtonWidget,
-    network: ButtonWidget,
+    output: TextWidget,
+    network: TextWidget,
     ssid: Option<String>,
     max_ssid_width: usize,
     signal_strength: Option<String>,
@@ -591,13 +591,13 @@ impl ConfigBlock for Net {
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
-            output: ButtonWidget::new(0, shared_config.clone())
+            output: TextWidget::new(0, shared_config.clone())
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
-            network: ButtonWidget::new(id, shared_config.clone()).with_icon(if wireless {
+            network: TextWidget::new(id, shared_config.clone()).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
                 "net_vpn"

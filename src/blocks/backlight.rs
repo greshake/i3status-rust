@@ -23,7 +23,7 @@ use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 /// Read a brightness value from the given path.
@@ -181,7 +181,7 @@ impl BacklitDevice {
 /// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     device: BacklitDevice,
     step_width: u64,
     scrolling: Scrolling,
@@ -245,7 +245,7 @@ impl ConfigBlock for Backlight {
             device,
             step_width: block_config.step_width,
             scrolling: shared_config.scrolling,
-            output: ButtonWidget::new(id, shared_config),
+            output: TextWidget::new(id, shared_config),
         };
 
         // Spin up a thread to watch for changes to the brightness file for the

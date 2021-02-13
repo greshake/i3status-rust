@@ -38,7 +38,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{format_percent_bar, FormatTemplate};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
 trait SoundDevice {
@@ -676,7 +676,7 @@ impl SoundDevice for PulseAudioSoundDevice {
 
 // TODO: Use the alsa control bindings to implement push updates
 pub struct Sound {
-    text: ButtonWidget,
+    text: TextWidget,
     id: usize,
     device: Box<dyn SoundDevice>,
     device_kind: DeviceKind,
@@ -858,7 +858,7 @@ impl Sound {
                 }
                 self.text.set_spacing(Spacing::Normal);
             } else {
-                self.text.set_text("");
+                self.text.set_text(String::new());
                 self.text.set_spacing(Spacing::Hidden);
             }
             self.text.set_state(State::Warning);
@@ -933,7 +933,7 @@ impl ConfigBlock for Sound {
             mappings: block_config.mappings,
             max_vol: block_config.max_vol,
             scrolling: shared_config.scrolling,
-            text: ButtonWidget::new(id, shared_config).with_icon("volume_empty"),
+            text: TextWidget::new(id, shared_config).with_icon("volume_empty"),
         };
 
         sound.device.monitor(id, tx_update_request)?;

@@ -12,12 +12,12 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::has_command;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 pub struct Hueshift {
     id: usize,
-    text: ButtonWidget,
+    text: TextWidget,
     update_interval: Duration,
     step: u16,
     current_temp: u16,
@@ -225,14 +225,14 @@ impl ConfigBlock for Hueshift {
             hue_shift_driver,
             click_temp: block_config.click_temp,
             scrolling: shared_config.scrolling,
-            text: ButtonWidget::new(id, shared_config).with_text(&current_temp.to_string()),
+            text: TextWidget::new(id, shared_config).with_text(&current_temp.to_string()),
         })
     }
 }
 
 impl Block for Hueshift {
     fn update(&mut self) -> Result<Option<Update>> {
-        self.text.set_text(&self.current_temp.to_string());
+        self.text.set_text(self.current_temp.to_string());
         Ok(Some(self.update_interval.into()))
     }
 

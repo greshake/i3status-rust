@@ -24,8 +24,8 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widgets::button::ButtonWidget;
 use crate::widgets::rotatingtext::RotatingTextWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
 #[derive(Debug, Clone)]
@@ -61,10 +61,10 @@ pub struct Music {
     collapsed_id: usize,
 
     current_song_widget: RotatingTextWidget,
-    prev: Option<ButtonWidget>,
-    play: Option<ButtonWidget>,
-    next: Option<ButtonWidget>,
-    on_collapsed_click_widget: ButtonWidget,
+    prev: Option<TextWidget>,
+    play: Option<TextWidget>,
+    next: Option<TextWidget>,
+    on_collapsed_click_widget: TextWidget,
     on_collapsed_click: Option<String>,
     on_click: Option<String>,
     dbus_conn: Connection,
@@ -481,14 +481,14 @@ impl ConfigBlock for Music {
             }
         }).unwrap();
 
-        let mut play: Option<ButtonWidget> = None;
-        let mut prev: Option<ButtonWidget> = None;
-        let mut next: Option<ButtonWidget> = None;
+        let mut play: Option<TextWidget> = None;
+        let mut prev: Option<TextWidget> = None;
+        let mut next: Option<TextWidget> = None;
         for button in block_config.buttons {
             match &*button {
                 "play" => {
                     play = Some(
-                        ButtonWidget::new(play_id, shared_config.clone())
+                        TextWidget::new(play_id, shared_config.clone())
                             .with_icon("music_play")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
@@ -496,14 +496,14 @@ impl ConfigBlock for Music {
                 }
                 "next" => {
                     next = Some(
-                        ButtonWidget::new(next_id, shared_config.clone())
+                        TextWidget::new(next_id, shared_config.clone())
                             .with_icon("music_next")
                             .with_state(State::Info),
                     )
                 }
                 "prev" => {
                     prev = Some(
-                        ButtonWidget::new(prev_id, shared_config.clone())
+                        TextWidget::new(prev_id, shared_config.clone())
                             .with_icon("music_prev")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Inline),
@@ -542,7 +542,7 @@ impl ConfigBlock for Music {
             play,
             next,
             on_click: None,
-            on_collapsed_click_widget: ButtonWidget::new(collapsed_id, shared_config.clone())
+            on_collapsed_click_widget: TextWidget::new(collapsed_id, shared_config.clone())
                 .with_icon("music")
                 .with_state(State::Info)
                 .with_spacing(Spacing::Hidden),

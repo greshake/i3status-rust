@@ -12,7 +12,6 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::pseudo_uuid;
-use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
@@ -25,17 +24,17 @@ pub struct NvidiaGpu {
     gpu_enabled: bool,
     gpu_id: u64,
 
-    name_widget: ButtonWidget,
+    name_widget: TextWidget,
     name_widget_mode: NameWidgetMode,
     label: String,
 
-    show_memory: Option<ButtonWidget>,
+    show_memory: Option<TextWidget>,
     memory_widget_mode: MemoryWidgetMode,
 
     show_utilization: Option<TextWidget>,
     show_temperature: Option<TextWidget>,
 
-    show_fan: Option<ButtonWidget>,
+    show_fan: Option<TextWidget>,
     fan_speed: u64,
     fan_speed_controlled: bool,
     scrolling: Scrolling,
@@ -182,7 +181,7 @@ impl ConfigBlock for NvidiaGpu {
             gpu_enabled: false,
             gpu_id: block_config.gpu_id,
 
-            name_widget: ButtonWidget::new(id, shared_config.clone())
+            name_widget: TextWidget::new(id, shared_config.clone())
                 .with_icon("gpu")
                 .with_spacing(Spacing::Inline),
             name_widget_mode: if block_config.label.is_some() {
@@ -194,8 +193,7 @@ impl ConfigBlock for NvidiaGpu {
 
             show_memory: if block_config.show_memory {
                 Some(
-                    ButtonWidget::new(id_memory, shared_config.clone())
-                        .with_spacing(Spacing::Inline),
+                    TextWidget::new(id_memory, shared_config.clone()).with_spacing(Spacing::Inline),
                 )
             } else {
                 None
@@ -215,9 +213,7 @@ impl ConfigBlock for NvidiaGpu {
             },
 
             show_fan: if block_config.show_fan_speed {
-                Some(
-                    ButtonWidget::new(id_fans, shared_config.clone()).with_spacing(Spacing::Inline),
-                )
+                Some(TextWidget::new(id_fans, shared_config.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },

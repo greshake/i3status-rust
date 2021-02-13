@@ -14,7 +14,7 @@ use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::FormatTemplate;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 struct Monitor {
@@ -49,7 +49,7 @@ impl Monitor {
 
 pub struct Xrandr {
     id: usize,
-    text: ButtonWidget,
+    text: TextWidget,
     update_interval: Duration,
     monitors: Vec<Monitor>,
     icons: bool,
@@ -236,7 +236,7 @@ impl ConfigBlock for Xrandr {
             step_width = 50;
         }
         Ok(Xrandr {
-            text: ButtonWidget::new(id, shared_config.clone()).with_icon("xrandr"),
+            text: TextWidget::new(id, shared_config.clone()).with_icon("xrandr"),
             id,
             update_interval: block_config.interval,
             current_idx: 0,

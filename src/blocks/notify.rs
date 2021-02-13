@@ -14,7 +14,7 @@ use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 // TODO
@@ -25,7 +25,7 @@ pub struct Notify {
     notify_id: usize,
     paused: Arc<Mutex<i64>>,
     format: FormatTemplate,
-    output: ButtonWidget,
+    output: TextWidget,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -112,7 +112,7 @@ impl ConfigBlock for Notify {
             notify_id,
             paused: state,
             format: FormatTemplate::from_string(&block_config.format)?,
-            output: ButtonWidget::new(notify_id, shared_config).with_icon(icon),
+            output: TextWidget::new(notify_id, shared_config).with_icon(icon),
         })
     }
 }
