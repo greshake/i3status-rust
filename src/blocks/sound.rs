@@ -2,14 +2,14 @@
 use {
     crate::pulse::callbacks::ListResult,
     crate::pulse::context::{
-        flags, introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo,
-        subscribe::subscription_masks, subscribe::Facility,
-        subscribe::Operation as SubscribeOperation, Context, State as PulseState,
+        introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo, subscribe::Facility,
+        subscribe::InterestMaskSet, subscribe::Operation as SubscribeOperation, Context, FlagSet,
+        State as PulseState,
     },
     crate::pulse::mainloop::standard::IterateResult,
     crate::pulse::mainloop::standard::Mainloop,
     crate::pulse::proplist::{properties, Proplist},
-    crate::pulse::volume::{ChannelVolumes, VOLUME_MAX, VOLUME_NORM},
+    crate::pulse::volume::{ChannelVolumes, Volume},
     crossbeam_channel::unbounded,
     lazy_static::lazy_static,
     std::cell::RefCell,
@@ -307,7 +307,7 @@ impl PulseAudioConnection {
 
         context
             .borrow_mut()
-            .connect(None, flags::NOFLAGS, None)
+            .connect(None, FlagSet::NOFLAGS, None)
             .block_error("sound", "failed to connect to pulseaudio context")?;
 
         let mut connection = PulseAudioConnection { mainloop, context };
@@ -451,9 +451,7 @@ impl PulseAudioClient {
                     .borrow_mut()
                     .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
                 connection.context.borrow_mut().subscribe(
-                    subscription_masks::SERVER
-                        | subscription_masks::SINK
-                        | subscription_masks::SOURCE,
+                    InterestMaskSet::SERVER | InterestMaskSet::SINK | InterestMaskSet::SOURCE,
                     |_| {},
                 );
 
@@ -597,7 +595,7 @@ impl PulseAudioSoundDevice {
 
     fn volume(&mut self, volume: ChannelVolumes) {
         self.volume = Some(volume);
-        self.volume_avg = (volume.avg().0 as f32 / VOLUME_NORM.0 as f32 * 100.0).round() as u32;
+        self.volume_avg = (volume.avg().0 as f32 / Volume::NORMAL.0 as f32 * 100.0).round() as u32;
     }
 }
 
@@ -630,18 +628,18 @@ impl SoundDevice for PulseAudioSoundDevice {
         let mut volume = self.volume.block_error("sound", "volume unknown")?;
 
         // apply step to volumes
-        let step = (step as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as i32;
+        let step = (step as f32 * Volume::NORMAL.0 as f32 / 100.0).round() as i32;
         for vol in volume.get_mut().iter_mut() {
             let uncapped_vol = max(0, vol.0 as i32 + step) as u32;
             let capped_vol = if let Some(vol_cap) = max_vol {
                 min(
                     uncapped_vol,
-                    (vol_cap as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as u32,
+                    (vol_cap as f32 * Volume::NORMAL.0 as f32 / 100.0).round() as u32,
                 )
             } else {
                 uncapped_vol
             };
-            vol.0 = min(capped_vol, VOLUME_MAX.0);
+            vol.0 = min(capped_vol, Volume::MAX.0);
         }
 
         // update volumes

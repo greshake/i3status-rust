@@ -215,14 +215,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
             // Receive signal events
             recv(rx_signals) -> res => if let Ok(sig) = res {
                 match sig {
-                    signal_hook::SIGUSR1 => {
+                    signal_hook::consts::SIGUSR1 => {
                         //USR1 signal that updates every block in the bar
                         for block in blocks.iter_mut() {
                             block.update()?;
                         }
                         util::print_blocks(&blocks, &shared_config)?;
                     },
-                    signal_hook::SIGUSR2 => {
+                    signal_hook::consts::SIGUSR2 => {
                         //USR2 signal that should reload the config
                         //TODO not implemented
                         //unimplemented!("SIGUSR2 is meant to be used to reload the config toml, but this feature is yet not implemented");

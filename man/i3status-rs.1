@@ -401,7 +401,7 @@ T}
 T{
 \f[C]missing_format\f[R]
 T}@T{
-The format string that\[cq]s used when a battery is missing.
+Same as \f[C]format\f[R] but for when the specified battery is missing.
 T}@T{
 No
 T}@T{
@@ -568,7 +568,7 @@ label = \[dq] Rowkin\[dq]
 .PP
 .TS
 tab(@);
-l l l l.
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
 T{
 Key
 T}@T{
@@ -606,6 +606,35 @@ No
 T}@T{
 \f[C]false\f[R]
 T}
+T{
+\f[C]format_unavailable\f[R]
+T}@T{
+A string to customise the output of this block when the bluetooth
+controller is unavailable.
+See below for placeholders.
+Text may need to be escaped, refer to Escaping Text.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{label} x\[dq]\f[R]
+T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l.
+T{
+Key
+T}@T{
+Value
+T}
+_
+T{
+\f[C]{label}\f[R]
+T}@T{
+Device label as set in the block config
+T}
 .TE
 .SS \[u21A5] back to top
 .SS CPU Utilization
@@ -621,7 +650,7 @@ Update CPU usage every second:
 [[block]]
 block = \[dq]cpu\[dq]
 interval = 1
-format = \[dq]{barchart} {utilization}% {frequency}GHz\[dq]
+format = \[dq]{barchart} {utilization} {frequency}\[dq]
 \f[R]
 .fi
 .SS Options
@@ -684,7 +713,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{utilization}%\[dq]\f[R]
+\f[C]\[dq]{utilization}\[dq]\f[R]
 T}
 T{
 \f[C]per_core\f[R]
@@ -726,7 +755,7 @@ T{
 \f[C]frequency\f[R]
 T}@T{
 Deprecated in favour of \f[C]format\f[R].
-Sets format to \f[C]{utilization}% {frequency}GHz\f[R].
+Sets format to \f[C]{utilization} {frequency}\f[R].
 T}@T{
 No
 T}@T{
@@ -757,7 +786,7 @@ T}
 T{
 \f[C]{frequency}\f[R]
 T}@T{
-CPU frequency in Hz
+CPU frequency in GHz
 T}
 .TE
 .SS \[u21A5] back to top
@@ -940,13 +969,25 @@ T}
 .PP
 Creates a block that can be updated asynchronously using DBus.
 .PP
-For example, updating the block using the command line tool
-\f[C]qdbus\f[R]:
+For example, updating the block using command line tools:
+.PD 0
+.P
+.PD
+\f[C]busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good\f[R]
+.PD 0
+.P
+.PD
+\f[C]busctl --user call i3.status.rs /test i3.status.rs SetStatus s just-some-text\f[R]
+.PD 0
+.P
+.PD
+or
 \f[C]qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus Headphones music Good\f[R].
+.PP
 The first argument is the text content of the block, the second
 (optional) argument is the icon to use (as found in \f[C]icons.rs\f[R];
-default \[dq]\[dq]), and the third (optional) argument is the state (one
-of Idle, Info, Good, Warning, or Critical; default Idle).
+default \f[C]\[dq]\[dq]\f[R]), and the third (optional) argument is the
+state (one of Idle, Info, Good, Warning, or Critical; default Idle).
 .PP
 Note that the text you set may need to be escaped, refer to Escaping
 Text.
@@ -1373,6 +1414,15 @@ No
 T}@T{
 \f[C]https://api.github.com\f[R]
 T}
+T{
+\f[C]hide_if_total_is_zero\f[R]
+T}@T{
+Hide this block if the total count of notifications is zero
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
 .TE
 .SS Available Format Keys
 .PP
@@ -1478,7 +1528,7 @@ click_temp = 3500
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+l l l l.
 T{
 Key
 T}@T{
@@ -1501,12 +1551,11 @@ T}
 T{
 \f[C]hue_shifter\f[R]
 T}@T{
-Program used to control screen color, either
-\f[C]\[dq]redshift\[dq]\f[R] or \f[C]\[dq]sct\[dq]\f[R].
+Program used to control screen color.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]redshift\[dq]\f[R]
+Detect automatically.
 T}
 T{
 \f[C]max_temp\f[R]
@@ -1534,6 +1583,33 @@ T}@T{
 No
 T}@T{
 \f[C]6500\f[R]
+T}
+.TE
+.SS Available Hue Shifters
+.PP
+.TS
+tab(@);
+l l.
+T{
+Name
+T}@T{
+Supports
+T}
+_
+T{
+\f[C]\[dq]redshift\[dq]\f[R]
+T}@T{
+X11
+T}
+T{
+\f[C]\[dq]sct\[dq]\f[R]
+T}@T{
+X11
+T}
+T{
+\f[C]\[dq]gammastep\[dq]\f[R]
+T}@T{
+X11 and Wayland
 T}
 .TE
 .PP
@@ -1894,7 +1970,8 @@ T}
 T{
 \f[C]{variant}\f[R]
 T}@T{
-Keyboard variant (only \f[C]localebus\f[R] is supported so far)
+Keyboard variant (only \f[C]localebus\f[R] and \f[C]sway\f[R] are
+supported so far)
 T}
 .TE
 .SS \[u21A5] back to top
@@ -2097,10 +2174,6 @@ T}
 .SS Memory
 .PP
 Creates a block displaying memory and swap usage.
-.PP
-By default, the format of this module is \[lq]:
-{MFm}MB/{MTm}MB({Mp}%)\[rq] (Swap values accordingly).
-That behaviour can be changed within your config.
 .PP
 This module keeps track of both Swap and Memory.
 By default, a click switches between them.
@@ -2454,8 +2527,10 @@ mpd (via mpDris2 (https://github.com/eonpatapon/mpDris2))
 .PP
 and many others.
 .PP
-The block discovers all active players.
-Right click on the widget to switch to the next active player.
+By default the block tracks all players available on the MPRIS bus.
+Right clicking on the block will cycle it to the next player (if the
+next player has no song playing then the block will collapse, however
+you can continue to right click to the next player.).
 You can pin the widget to a given player via the \[lq]player\[rq]
 setting.
 .SS Examples
@@ -2759,9 +2834,9 @@ T{
 T}@T{
 Network interface to monitor (name from /sys/class/net).
 T}@T{
-Yes
+No
 T}@T{
-\f[C]lo\f[R] (loopback interface)
+Automatically chosen from the output of \f[C]ip route show default\f[R]
 T}
 T{
 \f[C]format\f[R]
@@ -3643,6 +3718,14 @@ if \f[C]{both}\f[R] or \f[C]{aur}\f[R] are used.
 T}@T{
 \f[C]None\f[R]
 T}
+T{
+\f[C]hide_when_uptodate\f[R]
+T}@T{
+Hides the block when there are no updates available
+T}@T{
+\f[C]false\f[R]
+T}@T{
+T}
 .TE
 .SS Available Format Keys
 .PP
@@ -4007,7 +4090,7 @@ T}
 T{
 \f[C]speed_digits\f[R]
 T}@T{
-Number of digits to use when displaying speeds.
+Number of digits to use when displaying speeds and latencies.
 T}@T{
 No
 T}@T{
@@ -4028,16 +4111,14 @@ T}
 .SS \[u21A5] back to top
 .SS Taskwarrior
 .PP
-Creates a block which displays number of pending and started tasks of
-the current users taskwarrior list.
+Creates a block which displays the number of tasks matching user-defined
+filters from the current user\[cq]s taskwarrior list.
 .PP
-Clicking the left mouse button on the icon updates the number of pending
-tasks immediately.
+Clicking the left mouse button on the icon updates the number of tasks
+immediately.
 .PP
-Clicking the right mouse button on the icon toggles the view of the
-block between filtered (default) and non-filtered tasks.
-If there are no filters configured, the number of tasks stays the same
-and both modes are behaving equally.
+Clicking the right mouse button on the icon cycles the view of the block
+through the user\[cq]s filters.
 .SS Examples
 .IP
 .nf
@@ -4045,12 +4126,17 @@ and both modes are behaving equally.
 [[block]]
 block = \[dq]taskwarrior\[dq]
 interval = 60
-format = \[dq]{count} open tasks\[dq]
-format_singular = \[dq]{count} open task\[dq]
+format = \[dq]{count} open tasks ({filter_name})\[dq]
+format_singular = \[dq]{count} open task ({filter_name})\[dq]
 format_everything_done = \[dq]nothing to do!\[dq]
 warning_threshold = 10
 critical_threshold = 20
-filter_tags = [\[dq]work\[dq], \[dq]important\[dq]]
+[[block.filters]]
+name = \[dq]today\[dq]
+filter = \[dq]+PENDING +OVERDUE or +DUETODAY\[dq]
+[[block.filters]]
+name = \[dq]some-project\[dq]
+filter = \[dq]project:some-project +PENDING\[dq]
 \f[R]
 .fi
 .SS Options
@@ -4100,11 +4186,25 @@ T}
 T{
 \f[C]filter_tags\f[R]
 T}@T{
+Deprecated in favour of \f[C]filters\f[R].
 A list of tags a task has to have before its counted as a pending task.
+The list of tags will be appended to the base filter
+\f[C]-COMPLETED -DELETED\f[R].
 T}@T{
 No
 T}@T{
 \f[C]<empty>\f[R]
+T}
+T{
+\f[C]filters\f[R]
+T}@T{
+A list of tables with the keys \f[C]name\f[R] and \f[C]filter\f[R].
+\f[C]filter\f[R] specifies the criteria that must be met for a task to
+be counted towards this filter.
+T}@T{
+No
+T}@T{
+\f[C][{name = \[dq]pending\[dq], filter = \[dq]-COMPLETED -DELETED\[dq]}]\f[R]
 T}
 T{
 \f[C]format\f[R]
@@ -4151,6 +4251,11 @@ T{
 \f[C]{count}\f[R]
 T}@T{
 The number of pending tasks
+T}
+T{
+\f[C]{filter_name}\f[R]
+T}@T{
+The name of the current filter
 T}
 .TE
 .SS \[u21A5] back to top
@@ -4358,7 +4463,7 @@ T{
 T}@T{
 A string to customise the output of this block.
 See the chrono
-docs (https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers)
+docs (https://docs.rs/chrono/0.4/chrono/format/strftime/index.html#specifiers)
 for all options.
 Text may need to be escaped, refer to Escaping Text.
 T}@T{
@@ -4706,7 +4811,7 @@ To use the service you will need a (free) API key.
 .PP
 .TS
 tab(@);
-l l l l.
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
 T{
 Key
 T}@T{
@@ -4755,6 +4860,14 @@ T}@T{
 None
 T}
 T{
+\f[C]coordinates\f[R]
+T}@T{
+GPS latitude longitude coordinates as a tuple, example:
+\f[C][\[dq]39.236229089090216\[dq],\[dq]9.331730718685696\[dq]]\f[R]
+T}@T{
+T}@T{
+T}
+T{
 \f[C]units\f[R]
 T}@T{
 Either \f[C]metric\f[R] or \f[C]imperial\f[R].
@@ -4765,8 +4878,10 @@ T}@T{
 T}
 .TE
 .PP
-Either one of \f[C]city_id\f[R] or \f[C]place\f[R] is required.
-If both are supplied, \f[C]city_id\f[R] takes precedence.
+One of \f[C]city_id\f[R], \f[C]place\f[R] or \f[C]coordinates\f[R] is
+required.
+If more than one are supplied, \f[C]city_id\f[R] takes precedence over
+\f[C]place\f[R] which takes place over \f[C]coordinates\f[R].
 .PP
 The options \f[C]api_key\f[R], \f[C]city_id\f[R], \f[C]place\f[R] can be
 omitted from configuration, in which case they must be provided in the
@@ -4812,6 +4927,12 @@ T{
 \f[C]{wind}\f[R]
 T}@T{
 Wind speed
+T}
+T{
+\f[C]{wind_kmh}\f[R]
+T}@T{
+Wind speed.
+The wind speed in km/h.
 T}
 T{
 \f[C]{direction}\f[R]
