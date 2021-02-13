@@ -2,9 +2,9 @@
 use {
     crate::pulse::callbacks::ListResult,
     crate::pulse::context::{
-        FlagSet, introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo,
-        subscribe::Facility, subscribe::InterestMaskSet,
-        subscribe::Operation as SubscribeOperation, Context, State as PulseState,
+        introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo, subscribe::Facility,
+        subscribe::InterestMaskSet, subscribe::Operation as SubscribeOperation, Context, FlagSet,
+        State as PulseState,
     },
     crate::pulse::mainloop::standard::IterateResult,
     crate::pulse::mainloop::standard::Mainloop,
@@ -450,9 +450,7 @@ impl PulseAudioClient {
                     .borrow_mut()
                     .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
                 connection.context.borrow_mut().subscribe(
-                    InterestMaskSet::SERVER
-                        | InterestMaskSet::SINK
-                        | InterestMaskSet::SOURCE,
+                    InterestMaskSet::SERVER | InterestMaskSet::SINK | InterestMaskSet::SOURCE,
                     |_| {},
                 );
 

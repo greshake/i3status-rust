@@ -68,9 +68,9 @@ impl BluetoothDevice {
             .filter(|(_, address)| address == &mac)
             .map(|(path, _)| path)
             .next();
-        let path = if auto_path.is_some() {
+        let path = if let Some(p) = auto_path {
             initial_available = true;
-            auto_path.unwrap()
+            p
         } else {
             // TODO: do not hardcode device
             dbus::strings::Path::new(format!("/org/bluez/hci0/dev_{}", mac.replace(":", "_")))
@@ -84,12 +84,16 @@ impl BluetoothDevice {
             .get("org.bluez.Device1", "Icon")
             .ok();
 
+        // TODO: revisit this lint
+        #[allow(clippy::mutex_atomic)]
+        let available = Arc::new(Mutex::new(initial_available));
+
         Ok(BluetoothDevice {
             path,
             icon,
             label: label.unwrap_or_else(|| "".to_string()),
             con,
-            available: Arc::new(Mutex::new(initial_available)),
+            available,
         })
     }
 
@@ -152,7 +156,7 @@ impl BluetoothDevice {
         let avail_copy2 = self.available.clone();
         let update_request_copy1 = update_request.clone();
         let update_request_copy2 = update_request.clone();
-        let update_request_copy3 = update_request.clone();
+        let update_request_copy3 = update_request;
 
         thread::Builder::new().name("bluetooth".into()).spawn(move || {
             let c = dbus::blocking::Connection::new_system().unwrap();
