@@ -100,7 +100,7 @@ impl TextWidget {
                             ),
             "separator": false,
             "separator_block_width": 0,
-            "name": self.id.clone(),
+            "name": self.id.to_string(),
             "background": key_bg.to_owned(),
             "color": key_fg.to_owned()
         });
