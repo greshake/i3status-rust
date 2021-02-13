@@ -410,9 +410,9 @@ dependencies = [
 
 [[package]]
 name = "inotify"
-version = "0.8.3"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46dd0a94b393c730779ccfd2a872b67b1eb67be3fc33082e733bdb38b5fde4d4"
+checksum = "d19f57db1baad9d09e43a3cd76dcf82ebdafd37d75c9498b87762dba77c93f15"
 dependencies = [
  "bitflags",
  "inotify-sys",
@@ -527,9 +527,9 @@ dependencies = [
 
 [[package]]
 name = "maildir"
-version = "0.4.4"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e235fc33e17173c74e954925dde2c68892329a8a7d6c09dc01f554228b478a05"
+checksum = "6adcf4693a3c725b9c69ccf24f8ed9c6d3e7168c1a45632570d65529adc13b5e"
 dependencies = [
  "gethostname",
  "mailparse",
