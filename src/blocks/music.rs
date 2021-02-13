@@ -35,6 +35,7 @@ struct Player {
     playback_status: PlaybackStatus,
     artist: Option<String>,
     title: Option<String>,
+    position: i64,
     //TODO
     //volume: u32,
 }
@@ -351,6 +352,19 @@ impl ConfigBlock for Music {
                     }
                 };
 
+                let data = p.get("org.mpris.MediaPlayer2.Player", "Position");
+                let position = match data {
+                    Err(e) => {
+                        // std::fs::write("/home/kefin/pos", format!("{:?}", e)).unwrap();
+                        0
+                    }
+                    Ok(data) => {
+                        let data: Box<dyn RefArg> = data;
+                        extract_position(&data)
+                    }
+                };
+
+                // std::fs::write("/home/kefin/pos", format!("{:?}", data)).unwrap();
                 // Get current playback status
                 let data = p.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
                 let status = match data {
@@ -367,6 +381,7 @@ impl ConfigBlock for Music {
                     playback_status: status,
                     artist: Some(artist),
                     title: Some(title),
+                    position,
                 });
             }
         }
@@ -412,6 +427,14 @@ impl ConfigBlock for Music {
                                 let new_status = extract_playback_status(&data.0);
                                 if p.playback_status != new_status {
                                     p.playback_status = new_status;
+                                    updated = true;
+                                }
+                            };
+                            let raw_metadata = signal.changed_properties.get("Position");
+                            if let Some(data) = raw_metadata {
+                                let position = extract_position(&data.0);
+                                if p.position != position {
+                                    p.position = position;
                                     updated = true;
                                 }
                             };
@@ -476,6 +499,7 @@ impl ConfigBlock for Music {
                              playback_status: PlaybackStatus::Unknown,
                              artist: None,
                              title: None,
+                             position: 0,
                          });
                          send2.send(Task {
                              id,
@@ -605,6 +629,7 @@ impl Block for Music {
         let player_name = split[3].to_string();
         let artist = metadata.clone().artist.unwrap_or_else(|| String::from(""));
         let title = metadata.clone().title.unwrap_or_else(|| String::from(""));
+        let position = metadata.clone().position / 1_000_000;
         let combo =
             if (title.chars().count() + self.separator.chars().count() + artist.chars().count())
                 < self.max_width
@@ -620,6 +645,7 @@ impl Block for Music {
             "{title}" => title.clone(),
             "{combo}" => combo,
             //TODO
+            "{position}" => format!("{:02}:{:02}", position / 60, position % 60),
             //"{vol}" => volume,
             "{player}" => player_name,
             "{avail}" => players.len().to_string()
@@ -775,6 +801,7 @@ impl Block for Music {
 }
 
 fn extract_playback_status(value: &dyn RefArg) -> PlaybackStatus {
+
     if let Some(status) = value.as_str() {
         match status {
             "Playing" => PlaybackStatus::Playing,
@@ -784,6 +811,14 @@ fn extract_playback_status(value: &dyn RefArg) -> PlaybackStatus {
         }
     } else {
         PlaybackStatus::Unknown
+    }
+}
+
+fn extract_position(value: &dyn RefArg) -> i64 {
+    if let Some(status) = value.as_i64() {
+        status
+    } else {
+        0
     }
 }
 
