@@ -107,7 +107,7 @@ impl ButtonWidget {
                                 }
                             ),
             "separator": false,
-            "name": self.id.clone(),
+            "name": self.id.to_string(),
             "separator_block_width": 0,
             "background": key_bg,
             "color": key_fg,
