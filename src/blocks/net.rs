@@ -784,7 +784,7 @@ impl Net {
             let value = self.device.relative_signal_strength()?;
             if let Some(ref mut signal_strength_string) = self.signal_strength {
                 if let Some(v) = value {
-                    *signal_strength_string = format!("{}%", v);
+                    *signal_strength_string = format!("{:3}%", v);
                 };
             }
 
