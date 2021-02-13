@@ -78,7 +78,11 @@ pub fn format_number(raw_value: f64, total_digits: usize, min_suffix: &str, unit
     })
     .max(0);
 
-    format!("{:.*}{}{}", decimals as usize, value, suffix, unit)
+    if decimals > 0 {
+        format!("{:.*}{}{}", decimals as usize, value, suffix, unit)
+    } else {
+        format!(" {:.*}{}{}", decimals as usize, value, suffix, unit)
+    }
 }
 
 pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
@@ -499,9 +503,9 @@ mod tests {
         assert_eq!(format_number(1.007, 3, "", "s"), "1.01s");
         assert_eq!(format_number(1.007, 4, "K", "s"), "0.001Ks");
         assert_eq!(format_number(1007., 3, "K", "s"), "1.01Ks");
-        assert_eq!(format_number(107_000., 3, "", "s"), "107Ks");
-        assert_eq!(format_number(107., 3, "", "s"), "107s");
-        assert_eq!(format_number(0.000_123_123, 3, "", "N"), "123uN");
+        assert_eq!(format_number(107_000., 3, "", "s"), " 107Ks");
+        assert_eq!(format_number(107., 3, "", "s"), " 107s");
+        assert_eq!(format_number(0.000_123_123, 3, "", "N"), " 123uN");
     }
 
     #[test]
@@ -544,5 +548,11 @@ mod tests {
         let invalid = "AABBCC"; // invalid rgba (missing #)
         let rgba = color_from_rgba(invalid);
         assert!(rgba.is_err());
+    }
+
+    #[test]
+    fn formatting_speed_with_without_decimals() {
+        assert_eq!(" 918KB", format_number(918_000.0, 3, "K", "B"));
+        assert_eq!("2.16MB", format_number(2_160_000.0, 3, "K", "B"));
     }
 }
