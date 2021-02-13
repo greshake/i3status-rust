@@ -288,7 +288,7 @@ impl Memory {
             "{MUp}" => format!("{:.2}", mem_total_used.percent(mem_total)),
             "{MUpi}" => format!("{:02}", mem_total_used.percent(mem_total) as i32),
             "{MUpb}" => format_percent_bar(mem_total_used.percent(mem_total)),
-            "{Mug}" => format!("{:.1}", mem_used.gib()),
+            "{Mug}" => format!("{:4.1}", mem_used.gib()),
             "{Mum}" => format!("{}", mem_used.mib()),
             "{Mup}" => format!("{:.2}", mem_used.percent(mem_total)),
             "{Mupi}" => format!("{:02}", mem_used.percent(mem_total) as i32),
