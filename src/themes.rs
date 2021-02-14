@@ -247,6 +247,49 @@ impl Default for Theme {
     }
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct ThemeFromFile {
+    pub native_separators: Option<bool>,
+    pub idle_bg: Option<String>,
+    pub idle_fg: Option<String>,
+    pub info_bg: Option<String>,
+    pub info_fg: Option<String>,
+    pub good_bg: Option<String>,
+    pub good_fg: Option<String>,
+    pub warning_bg: Option<String>,
+    pub warning_fg: Option<String>,
+    pub critical_bg: Option<String>,
+    pub critical_fg: Option<String>,
+    pub separator: String,
+    pub separator_bg: Option<String>,
+    pub separator_fg: Option<String>,
+    pub alternating_tint_bg: Option<String>,
+    pub alternating_tint_fg: Option<String>,
+}
+
+impl Into<Theme> for ThemeFromFile {
+    fn into(self) -> Theme {
+        Theme {
+            native_separators: self.native_separators,
+            idle_bg: self.idle_bg,
+            idle_fg: self.idle_fg,
+            info_bg: self.info_bg,
+            info_fg: self.info_fg,
+            good_bg: self.good_bg,
+            good_fg: self.good_fg,
+            warning_bg: self.warning_bg,
+            warning_fg: self.warning_fg,
+            critical_bg: self.critical_bg,
+            critical_fg: self.critical_fg,
+            separator: self.separator,
+            separator_bg: self.separator_bg,
+            separator_fg: self.separator_fg,
+            alternating_tint_bg: self.alternating_tint_bg,
+            alternating_tint_fg: self.alternating_tint_fg,
+        }
+    }
+}
+
 impl Theme {
     pub fn from_name(name: &str) -> Option<Theme> {
         match name {
@@ -272,7 +315,7 @@ impl Theme {
             .join(file);
         let share_path = Path::new(util::USR_SHARE_PATH).join("themes").join(file);
 
-        if full_path.exists() {
+        let theme: Option<ThemeFromFile> = if full_path.exists() {
             util::deserialize_file(&full_path).ok()
         } else if xdg_path.exists() {
             util::deserialize_file(&xdg_path).ok()
@@ -280,7 +323,9 @@ impl Theme {
             util::deserialize_file(&share_path).ok()
         } else {
             None
-        }
+        };
+
+        theme.map(|theme| theme.into())
     }
 }
 
