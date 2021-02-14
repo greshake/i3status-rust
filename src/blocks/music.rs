@@ -656,6 +656,7 @@ impl Block for Music {
                 id if id == self.next_id => "Next",
                 id if id == self.prev_id => "Previous",
                 id if id == self.id => "",
+                id if id == self.collapsed_id => "",
                 _ => return Ok(()),
             };
 
