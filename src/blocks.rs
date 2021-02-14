@@ -159,7 +159,7 @@ macro_rules! block {
             .configuration_error("Failed to deserialize common block config.")?;
 
         // Apply theme overrides if presented
-        if let Some(ref overrides) = common_config.color_overrides {
+        if let Some(ref overrides) = common_config.theme_overrides {
             $shared_config.theme_override(overrides)?;
         }
 
