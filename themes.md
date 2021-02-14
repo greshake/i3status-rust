@@ -89,7 +89,9 @@ For example:
 ```toml
 [[block]]
 block = "cpu"
-color_overrides = {idle_bg = "#123456", idle_fg = "#abcdef"}
+[block.theme_overrides]
+idle_bg = "#123456"
+idle_fg = "#abcdef"
 ```
 
 # Available theme overrides
