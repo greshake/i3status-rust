@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -16,13 +15,13 @@ use swayipc::reply::InputChange;
 use swayipc::{Connection, EventType};
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -435,9 +434,6 @@ pub struct KeyboardLayoutConfig {
     interval: Duration,
 
     sway_kb_identifier: String,
-
-    #[serde(default = "KeyboardLayoutConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl KeyboardLayoutConfig {
@@ -447,10 +443,6 @@ impl KeyboardLayoutConfig {
 
     fn default_interval() -> Duration {
         Duration::from_secs(60)
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
     }
 }
 
@@ -468,7 +460,7 @@ impl ConfigBlock for KeyboardLayout {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let monitor: Box<dyn KeyboardLayoutMonitor> = match block_config.driver {
@@ -494,7 +486,7 @@ impl ConfigBlock for KeyboardLayout {
         } else {
             None
         };
-        let output = TextWidget::new(config, id);
+        let output = TextWidget::new(id, shared_config);
         Ok(KeyboardLayout {
             id,
             output,

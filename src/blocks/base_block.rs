@@ -1,13 +1,16 @@
 //! A Base block for common behavior for all blocks
 
+use std::collections::HashMap;
+
 use crate::errors::*;
 use crate::{
     blocks::Update,
     input::{I3BarEvent, MouseButton},
     subprocess::spawn_child_async,
-    widget::I3BarWidget,
+    widgets::I3BarWidget,
     Block,
 };
+
 use serde_derive::Deserialize;
 use toml::{value::Table, Value};
 
@@ -54,10 +57,12 @@ impl<T: Block> Block for BaseBlock<T> {
 pub(super) struct BaseBlockConfig {
     /// Command to execute when the button is clicked
     pub on_click: Option<String>,
+
+    pub theme_overrides: Option<HashMap<String, String>>,
 }
 
 impl BaseBlockConfig {
-    const FIELDS: &'static [&'static str] = &["on_click"];
+    const FIELDS: &'static [&'static str] = &["on_click", "theme_overrides"];
 
     // FIXME: this function is to paper over https://github.com/serde-rs/serde/issues/1957
     pub(super) fn extract(config: &mut Value) -> Value {

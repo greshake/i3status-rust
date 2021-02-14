@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -12,18 +11,18 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::{has_command, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Pacman {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
     format_singular: FormatTemplate,
@@ -81,9 +80,6 @@ pub struct PacmanConfig {
     #[serde()]
     pub aur_command: Option<String>,
 
-    #[serde(default = "PacmanConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
-
     #[serde(default = "PacmanConfig::default_hide_when_uptodate")]
     pub hide_when_uptodate: bool,
 }
@@ -102,10 +98,6 @@ impl PacmanConfig {
     }
 
     fn default_critical_updates_regex() -> Option<String> {
-        None
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
         None
     }
 
@@ -162,10 +154,10 @@ impl ConfigBlock for Pacman {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let output = ButtonWidget::new(config, id).with_icon("update");
+        let output = TextWidget::new(id, shared_config).with_icon("update");
 
         Ok(Pacman {
             id,

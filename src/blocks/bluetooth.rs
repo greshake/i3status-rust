@@ -1,5 +1,5 @@
 use serde_derive::Deserialize;
-use std::collections::BTreeMap;
+
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -12,13 +12,13 @@ use dbus::{
 };
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct BluetoothDevice {
     pub path: String,
@@ -217,7 +217,7 @@ impl BluetoothDevice {
 
 pub struct Bluetooth {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     device: BluetoothDevice,
     hide_disconnected: bool,
     format_unavailable: FormatTemplate,
@@ -230,8 +230,6 @@ pub struct BluetoothConfig {
     pub label: Option<String>,
     #[serde(default = "BluetoothConfig::default_hide_disconnected")]
     pub hide_disconnected: bool,
-    #[serde(default = "BluetoothConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
     #[serde(default = "BluetoothConfig::default_format_unavailable")]
     pub format_unavailable: String,
 }
@@ -239,10 +237,6 @@ pub struct BluetoothConfig {
 impl BluetoothConfig {
     fn default_hide_disconnected() -> bool {
         false
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
     }
 
     fn default_format_unavailable() -> String {
@@ -256,7 +250,7 @@ impl ConfigBlock for Bluetooth {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
@@ -264,7 +258,7 @@ impl ConfigBlock for Bluetooth {
 
         Ok(Bluetooth {
             id,
-            output: ButtonWidget::new(config, id).with_icon(match device.icon {
+            output: TextWidget::new(id, shared_config).with_icon(match device.icon {
                 Some(ref icon) if icon == "audio-card" => "headphones",
                 Some(ref icon) if icon == "input-gaming" => "joystick",
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",

@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::time::Duration;
 
@@ -11,16 +10,16 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 pub struct Time {
-    time: ButtonWidget,
     id: usize,
+    time: TextWidget,
     update_interval: Duration,
     format: String,
     timezone: Option<Tz>,
@@ -46,9 +45,6 @@ pub struct TimeConfig {
 
     #[serde(default = "TimeConfig::default_locale")]
     pub locale: Option<String>,
-
-    #[serde(default = "TimeConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl TimeConfig {
@@ -67,10 +63,6 @@ impl TimeConfig {
     fn default_locale() -> Option<String> {
         None
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Time {
@@ -79,16 +71,16 @@ impl ConfigBlock for Time {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Time {
             id,
-            format: block_config.format,
-            time: ButtonWidget::new(config, id)
+            time: TextWidget::new(id, shared_config)
                 .with_text("")
                 .with_icon("time"),
             update_interval: block_config.interval,
+            format: block_config.format,
             timezone: block_config.timezone,
             locale: block_config.locale,
         })

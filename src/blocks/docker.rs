@@ -1,19 +1,18 @@
-use std::collections::BTreeMap;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::http;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 pub struct Docker {
     id: usize,
@@ -53,9 +52,6 @@ pub struct DockerConfig {
     /// Format override
     #[serde(default = "DockerConfig::default_format")]
     pub format: String,
-
-    #[serde(default = "DockerConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl DockerConfig {
@@ -66,17 +62,18 @@ impl DockerConfig {
     fn default_format() -> String {
         "{running}%".to_owned()
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Docker {
     type Config = DockerConfig;
 
-    fn new(id: usize, block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
-        let text = TextWidget::new(config, id)
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        _: Sender<Task>,
+    ) -> Result<Self> {
+        let text = TextWidget::new(id, shared_config)
             .with_text("N/A")
             .with_icon("docker");
         Ok(Docker {

@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -6,13 +5,13 @@ use maildir::Maildir as ExtMaildir;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -66,8 +65,6 @@ pub struct MaildirConfig {
     pub display_type: MailType,
     #[serde(default = "MaildirConfig::default_icon")]
     pub icon: bool,
-    #[serde(default = "MaildirConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl MaildirConfig {
@@ -83,9 +80,6 @@ impl MaildirConfig {
     fn default_icon() -> bool {
         true
     }
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Maildir {
@@ -94,10 +88,10 @@ impl ConfigBlock for Maildir {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let widget = TextWidget::new(config, id).with_text("");
+        let widget = TextWidget::new(id, shared_config).with_text("");
         Ok(Maildir {
             id,
             update_interval: block_config.interval,

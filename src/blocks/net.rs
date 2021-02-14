@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fmt;
 use std::fs::{read_to_string, OpenOptions};
@@ -13,15 +12,15 @@ use regex::bytes::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::{
     escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, FormatTemplate,
 };
-use crate::widget::{I3BarWidget, Spacing};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, Spacing};
 
 lazy_static! {
     static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
@@ -358,9 +357,8 @@ impl NetworkDevice {
 pub struct Net {
     id: usize,
     format: FormatTemplate,
-    output: ButtonWidget,
-    config: Config,
-    network: ButtonWidget,
+    output: TextWidget,
+    network: TextWidget,
     ssid: Option<String>,
     max_ssid_width: usize,
     signal_strength: Option<String>,
@@ -387,6 +385,7 @@ pub struct Net {
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
+    shared_config: SharedConfig,
 }
 
 #[derive(Copy, Clone, Debug, Deserialize)]
@@ -489,9 +488,6 @@ pub struct NetConfig {
     /// Whether to show the download throughput graph of active networks.
     #[serde(default = "NetConfig::default_graph_down")]
     pub graph_down: bool,
-
-    #[serde(default = "NetConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NetConfig {
@@ -566,10 +562,6 @@ impl NetConfig {
     fn default_speed_digits() -> usize {
         3
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Net {
@@ -578,7 +570,7 @@ impl ConfigBlock for Net {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let default_device = match NetworkDevice::default_device() {
@@ -594,36 +586,18 @@ impl ConfigBlock for Net {
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
 
-        let (_, net_config) = config
-            .blocks
-            .iter()
-            .find(|(block_name, _)| block_name == "net")
-            .internal_error("net", "unexpected")?;
-
-        let format = if net_config.get("format").is_some() {
-            // if "format" option is present it will be preferred
-            block_config.format
-        } else if let Some(format) = old_format(&net_config) {
-            // Only choose those deprecated options which are true
-            format
-        } else {
-            // Default format
-            block_config.format
-        };
-
         Ok(Net {
             id,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&format)
+            format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
-            output: ButtonWidget::new(config.clone(), 0)
+            output: TextWidget::new(0, shared_config.clone())
                 .with_text("")
                 .with_spacing(Spacing::Inline),
-            config: config.clone(),
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
-            network: ButtonWidget::new(config, id).with_icon(if wireless {
+            network: TextWidget::new(id, shared_config.clone()).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
                 "net_vpn"
@@ -634,34 +608,36 @@ impl ConfigBlock for Net {
             }),
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: if wireless && format.contains("{ssid}") {
+            ssid: if wireless && block_config.format.contains("{ssid}") {
                 Some(" ".to_string())
             } else {
                 None
             },
             max_ssid_width: block_config.max_ssid_width,
-            signal_strength: if wireless && format.contains("{signal_strength}") {
+            signal_strength: if wireless && block_config.format.contains("{signal_strength}") {
                 Some(0.to_string())
             } else {
                 None
             },
-            signal_strength_bar: if wireless && format.contains("{signal_strength_bar}") {
+            signal_strength_bar: if wireless
+                && block_config.format.contains("{signal_strength_bar}")
+            {
                 Some("".to_string())
             } else {
                 None
             },
             // TODO: a better way to deal with this?
-            bitrate: if format.contains("{bitrate}") {
+            bitrate: if block_config.format.contains("{bitrate}") {
                 Some("".to_string())
             } else {
                 None
             },
-            ip_addr: if format.contains("{ip}") {
+            ip_addr: if block_config.format.contains("{ip}") {
                 Some("".to_string())
             } else {
                 None
             },
-            ipv6_addr: if format.contains("{ipv6}") {
+            ipv6_addr: if block_config.format.contains("{ipv6}") {
                 Some("".to_string())
             } else {
                 None
@@ -681,43 +657,9 @@ impl ConfigBlock for Net {
             hide_inactive: block_config.hide_inactive,
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
+            shared_config,
         })
     }
-}
-
-fn old_format(net_config: &toml::Value) -> Option<String> {
-    // List of decprecated options
-    let mut old_options = vec![
-        ("ssid", false),
-        ("signal_strength", false),
-        ("signal_strength_bar", false),
-        ("bitrate", false),
-        ("ip", false),
-        ("ipv6", false),
-        ("speed_up", true),
-        ("speed_down", true),
-        ("graph_up", false),
-        ("graph_down", false),
-    ];
-
-    let mut use_old_format = false;
-    for (key, value) in old_options.iter_mut() {
-        if let Some(toml::Value::Boolean(enabled)) = net_config.get(&*key) {
-            use_old_format = true;
-            *value = *enabled;
-        }
-    }
-    if !use_old_format {
-        return None;
-    }
-
-    let result = old_options
-        .into_iter()
-        .filter(|x| x.1)
-        .map(|x| format!("{{{}}}", x.0))
-        .collect::<Vec<_>>()
-        .join(" ");
-    Some(result)
 }
 
 fn read_file(path: &Path) -> Result<String> {
@@ -932,21 +874,13 @@ impl Block for Net {
         let empty_string = "".to_string();
         let s_up = format!(
             "{} {}",
-            self.config
-                .icons
-                .get("net_up")
-                .cloned()
-                .unwrap_or_else(|| "".to_string()),
-            self.output_tx.as_ref().unwrap_or(&empty_string)
+            self.shared_config.get_icon("net_up").unwrap_or_default(),
+            self.output_tx.clone().unwrap_or_default()
         );
         let s_dn = format!(
             "{} {}",
-            self.config
-                .icons
-                .get("net_down")
-                .cloned()
-                .unwrap_or_else(|| "".to_string()),
-            self.output_rx.as_ref().unwrap_or(&empty_string)
+            self.shared_config.get_icon("net_down").unwrap_or_default(),
+            self.output_tx.clone().unwrap_or_default()
         );
 
         let values = map!(

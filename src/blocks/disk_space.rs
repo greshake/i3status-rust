@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::path::Path;
 use std::time::Duration;
 
@@ -7,13 +6,13 @@ use nix::sys::statvfs::statvfs;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::{format_percent_bar, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 #[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq)]
 pub enum Unit {
@@ -119,9 +118,6 @@ pub struct DiskSpaceConfig {
     /// use absolute (unit) values for disk space alerts
     #[serde(default = "DiskSpaceConfig::default_alert_absolute")]
     pub alert_absolute: bool,
-
-    #[serde(default = "DiskSpaceConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl DiskSpaceConfig {
@@ -170,10 +166,6 @@ impl DiskSpaceConfig {
     fn default_alert_absolute() -> bool {
         false
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 enum AlertType {
@@ -212,12 +204,12 @@ impl ConfigBlock for DiskSpace {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let icon = config.icons.get("disk_drive").cloned().unwrap_or_default();
+        let icon = shared_config.get_icon("disk_drive").unwrap_or_default();
 
-        let disk_space = TextWidget::new(config, id);
+        let disk_space = TextWidget::new(id, shared_config);
         Ok(DiskSpace {
             id,
             update_interval: block_config.interval,

@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -9,14 +8,14 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::*;
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
@@ -158,7 +157,7 @@ impl Memstate {
 pub struct Memory {
     id: usize,
     memtype: Memtype,
-    output: (ButtonWidget, ButtonWidget),
+    output: (TextWidget, TextWidget),
     clickable: bool,
     format: (FormatTemplate, FormatTemplate),
     update_interval: Duration,
@@ -211,9 +210,6 @@ pub struct MemoryConfig {
     /// Percentage of swap usage, where state is set to critical
     #[serde(default = "MemoryConfig::default_critical_swap")]
     pub critical_swap: f64,
-
-    #[serde(default = "MemoryConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl MemoryConfig {
@@ -255,10 +251,6 @@ impl MemoryConfig {
 
     fn default_critical_swap() -> f64 {
         95.0
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
     }
 }
 
@@ -358,11 +350,11 @@ impl ConfigBlock for Memory {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         tx: Sender<Task>,
     ) -> Result<Self> {
         let icons: bool = block_config.icons;
-        let widget = ButtonWidget::new(config, id).with_text("");
+        let widget = TextWidget::new(id, shared_config).with_text("");
         Ok(Memory {
             id,
             memtype: block_config.display_type,

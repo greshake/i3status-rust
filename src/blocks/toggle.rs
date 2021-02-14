@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::process::Command;
 use std::time::Duration;
@@ -7,17 +6,17 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_opt_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Toggle {
     id: usize,
-    text: ButtonWidget,
+    text: TextWidget,
     command_on: String,
     command_off: String,
     command_state: String,
@@ -53,8 +52,6 @@ pub struct ToggleConfig {
 
     /// Text to display in i3bar for this block
     pub text: Option<String>,
-    #[serde(default = "ToggleConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl ToggleConfig {
@@ -65,9 +62,6 @@ impl ToggleConfig {
     fn default_icon_off() -> String {
         "toggle_off".to_owned()
     }
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Toggle {
@@ -76,12 +70,13 @@ impl ConfigBlock for Toggle {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Toggle {
             id,
-            text: ButtonWidget::new(config, id).with_content(block_config.text),
+            text: TextWidget::new(id, shared_config)
+                .with_text(&block_config.text.unwrap_or_default()),
             command_on: block_config.command_on,
             command_off: block_config.command_off,
             command_state: block_config.command_state,

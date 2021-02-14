@@ -1,6 +1,7 @@
-use std::collections::HashMap as Map;
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ops::Deref;
+use std::rc::Rc;
 use std::str::FromStr;
 
 use serde::de::{Deserialize, Deserializer};
@@ -8,23 +9,97 @@ use serde_derive::Deserialize;
 use toml::value;
 
 use crate::de::*;
+use crate::errors;
 use crate::icons;
 use crate::input::MouseButton;
 use crate::themes::Theme;
 
+////////////////
+
+#[derive(Debug)]
+pub struct SharedConfig {
+    pub theme: Rc<Theme>,
+    pub icons: Rc<HashMap<String, String>>,
+    pub scrolling: Scrolling,
+}
+
+impl SharedConfig {
+    pub fn new(config: &Config) -> Self {
+        Self {
+            theme: Rc::new(config.theme.clone()),
+            icons: Rc::new(config.icons.clone()),
+            scrolling: config.scrolling,
+        }
+    }
+
+    pub fn theme_override(&mut self, overrides: &HashMap<String, String>) -> errors::Result<()> {
+        let mut theme = self.theme.as_ref().clone();
+        for entry in overrides {
+            match entry.0.as_str() {
+                "idle_fg" => theme.idle_fg = Some(entry.1.to_string()),
+                "idle_bg" => theme.idle_bg = Some(entry.1.to_string()),
+                "info_fg" => theme.info_fg = Some(entry.1.to_string()),
+                "info_bg" => theme.info_bg = Some(entry.1.to_string()),
+                "good_fg" => theme.good_fg = Some(entry.1.to_string()),
+                "good_bg" => theme.good_bg = Some(entry.1.to_string()),
+                "warning_fg" => theme.warning_fg = Some(entry.1.to_string()),
+                "warning_bg" => theme.warning_bg = Some(entry.1.to_string()),
+                "critical_fg" => theme.critical_fg = Some(entry.1.to_string()),
+                "critical_bg" => theme.critical_bg = Some(entry.1.to_string()),
+                x => {
+                    return Err(errors::ConfigurationError(
+                        format!("Theme element \"{}\" cannot be overriden", x),
+                        (String::new(), String::new()),
+                    ))
+                }
+            }
+        }
+        self.theme = Rc::new(theme);
+        Ok(())
+    }
+
+    pub fn get_icon(&self, icon: &str) -> Option<String> {
+        self.icons.get(icon).map(|s| s.to_string())
+    }
+}
+
+impl Default for SharedConfig {
+    fn default() -> Self {
+        Self {
+            theme: Rc::new(Theme::default()),
+            icons: Rc::new(icons::default()),
+            scrolling: Scrolling::default(),
+        }
+    }
+}
+
+impl Clone for SharedConfig {
+    fn clone(&self) -> Self {
+        Self {
+            theme: Rc::clone(&self.theme),
+            icons: Rc::clone(&self.icons),
+            scrolling: self.scrolling,
+        }
+    }
+}
+
+///////////////////
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     #[serde(default = "icons::default", deserialize_with = "deserialize_icons")]
-    pub icons: Map<String, String>,
+    pub icons: HashMap<String, String>,
+
     #[serde(default = "Theme::default")]
     pub theme: Theme,
+
+    #[serde(default = "Scrolling::default")]
+    pub scrolling: Scrolling,
     /// Direction of scrolling, "natural" or "reverse".
     ///
     /// Configuring natural scrolling on input devices changes the way i3status-rust
     /// processes mouse wheel events: pushing the wheen away now is interpreted as downward
     /// motion which is undesired for sliders. Use "natural" to invert this.
-    #[serde(default = "Scrolling::default", rename = "scrolling")]
-    pub scrolling: Scrolling,
     #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
     pub blocks: Vec<(String, value::Value)>,
 }
@@ -89,7 +164,7 @@ where
     Ok(blocks)
 }
 
-fn deserialize_icons<'de, D>(deserializer: D) -> Result<Map<String, String>, D::Error>
+fn deserialize_icons<'de, D>(deserializer: D) -> Result<HashMap<String, String>, D::Error>
 where
     D: Deserializer<'de>,
 {

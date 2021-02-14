@@ -17,7 +17,6 @@ mod scheduler;
 mod signals;
 mod subprocess;
 mod themes;
-mod widget;
 mod widgets;
 
 #[cfg(feature = "profiling")]
@@ -33,13 +32,14 @@ use crossbeam_channel::{select, Receiver, Sender};
 use crate::blocks::create_block;
 use crate::blocks::Block;
 use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
 use crate::signals::process_signals;
 use crate::util::deserialize_file;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 fn main() {
     let ver = if env!("GIT_COMMIT_HASH").is_empty() || env!("GIT_COMMIT_DATE").is_empty() {
@@ -110,7 +110,7 @@ fn main() {
             ::std::process::exit(1);
         }
 
-        let error_widget = TextWidget::new(Default::default(), 9999999999)
+        let error_widget = TextWidget::new(0, Default::default())
             .with_state(State::Critical)
             .with_text(&format!("{:?}", error));
         let error_rendered = error_widget.get_rendered();
@@ -141,7 +141,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         Some(config_path) => std::path::PathBuf::from(config_path),
         None => util::xdg_config_home().join("i3status-rust/config.toml"),
     };
-    let config = deserialize_file(&config_path)?;
+    let config: Config = deserialize_file(&config_path)?;
 
     // Update request channel
     let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =
@@ -157,6 +157,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         );
     }
 
+    let shared_config = SharedConfig::new(&config);
+
     // Initialize the blocks
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
     for &(ref block_name, ref block_config) in &config.blocks {
@@ -164,7 +166,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             blocks.len(),
             block_name,
             block_config.clone(),
-            config.clone(),
+            shared_config.clone(),
             tx_update_requests.clone(),
         )?);
     }
@@ -194,7 +196,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     for block in blocks.iter_mut() {
                         block.click(&event)?;
                     }
-                    util::print_blocks(&blocks, &config)?;
+                    util::print_blocks(&blocks, &shared_config)?;
             },
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
@@ -202,13 +204,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 blocks.get_mut(req.id)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
-                util::print_blocks(&blocks, &config)?;
+                util::print_blocks(&blocks, &shared_config)?;
             },
             // Receive update timer events
             recv(ttnu) -> _ => {
                 scheduler.do_scheduled_updates(&mut blocks)?;
                 // redraw the blocks, state changed
-                util::print_blocks(&blocks, &config)?;
+                util::print_blocks(&blocks, &shared_config)?;
             },
             // Receive signal events
             recv(rx_signals) -> res => if let Ok(sig) = res {
@@ -218,7 +220,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         for block in blocks.iter_mut() {
                             block.update()?;
                         }
-                        util::print_blocks(&blocks, &config)?;
+                        util::print_blocks(&blocks, &shared_config)?;
                     },
                     signal_hook::consts::SIGUSR2 => {
                         //USR2 signal that should reload the config
@@ -276,10 +278,16 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
     let profile_runs = runs
         .parse::<i32>()
         .configuration_error("failed to parse --profile-runs as an integer")?;
+    let shared_config = SharedConfig::new(&config);
     for &(ref block_name, ref block_config) in &config.blocks {
         if block_name == name {
-            let mut block =
-                create_block(0, &block_name, block_config.clone(), config.clone(), update)?;
+            let mut block = create_block(
+                0,
+                &block_name,
+                block_config.clone(),
+                shared_config.clone(),
+                update,
+            )?;
             profile(profile_runs, &block_name, block.deref_mut());
             break;
         }

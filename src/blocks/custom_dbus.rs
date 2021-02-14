@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -11,12 +10,12 @@ use dbus::tree::Factory;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 #[derive(Clone)]
 struct CustomDBusStatus {
@@ -35,15 +34,6 @@ pub struct CustomDBus {
 #[serde(deny_unknown_fields)]
 pub struct CustomDBusConfig {
     pub name: String,
-
-    #[serde(default = "CustomDBusConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
-}
-
-impl CustomDBusConfig {
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for CustomDBus {
@@ -52,7 +42,7 @@ impl ConfigBlock for CustomDBus {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
@@ -130,7 +120,7 @@ impl ConfigBlock for CustomDBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(config, id).with_text("CustomDBus");
+        let text = TextWidget::new(id, shared_config).with_text("CustomDBus");
         Ok(CustomDBus { id, text, status })
     }
 }

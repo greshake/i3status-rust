@@ -14,7 +14,7 @@ use regex::Regex;
 use serde::de::DeserializeOwned;
 
 use crate::blocks::Block;
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
@@ -168,7 +168,7 @@ macro_rules! map_to_owned (
      };
 );
 
-pub fn print_blocks(blocks: &[Box<dyn Block>], config: &Config) -> Result<()> {
+pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<()> {
     let mut last_bg: Option<String> = None;
 
     let mut rendered_blocks = vec![];

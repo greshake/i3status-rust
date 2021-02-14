@@ -1,17 +1,16 @@
-use std::collections::BTreeMap;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 pub struct Template {
     id: usize,
@@ -20,7 +19,7 @@ pub struct Template {
 
     //useful, but optional
     #[allow(dead_code)]
-    config: Config,
+    shared_config: SharedConfig,
     #[allow(dead_code)]
     tx_update_request: Sender<Task>,
 }
@@ -34,18 +33,11 @@ pub struct TemplateConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
-
-    #[serde(default = "TemplateConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl TemplateConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(5)
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
     }
 }
 
@@ -55,17 +47,17 @@ impl ConfigBlock for Template {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(config.clone(), id).with_text("Template");
+        let text = TextWidget::new(id, shared_config.clone()).with_text("Template");
 
         Ok(Template {
             id,
             update_interval: block_config.interval,
             text,
             tx_update_request,
-            config,
+            shared_config,
         })
     }
 }

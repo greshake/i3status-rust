@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -10,13 +9,13 @@ use dbus::Message;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::{battery_level_to_icon, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct KDEConnect {
     id: usize,
@@ -34,8 +33,8 @@ pub struct KDEConnect {
     bat_critical: i32,
     format: FormatTemplate,
     format_disconnected: FormatTemplate,
-    output: ButtonWidget,
-    config: Config,
+    output: TextWidget,
+    shared_config: SharedConfig,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -67,9 +66,6 @@ pub struct KDEConnectConfig {
     /// Format string for displaying phone information when it is disconnected.
     #[serde(default = "KDEConnectConfig::default_format_disconnected")]
     pub format_disconnected: String,
-
-    #[serde(default = "KDEConnectConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl KDEConnectConfig {
@@ -100,10 +96,6 @@ impl KDEConnectConfig {
     fn default_format_disconnected() -> String {
         "{name}".into()
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for KDEConnect {
@@ -112,7 +104,7 @@ impl ConfigBlock for KDEConnect {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let send2 = send.clone();
@@ -565,8 +557,8 @@ impl ConfigBlock for KDEConnect {
             bat_critical: block_config.bat_critical,
             format: FormatTemplate::from_string(&block_config.format)?,
             format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
-            output: ButtonWidget::new(config.clone(), id).with_icon("phone"),
-            config,
+            output: TextWidget::new(id, shared_config.clone()).with_icon("phone"),
+            shared_config,
         })
     }
 }
@@ -612,9 +604,8 @@ impl Block for KDEConnect {
         .clone();
 
         let bat_icon = self
-            .config
-            .icons
-            .get(if charging {
+            .shared_config
+            .get_icon(if charging {
                 "bat_charging"
             } else if charge < 0 {
                 // better than nothing I guess?
@@ -622,14 +613,13 @@ impl Block for KDEConnect {
             } else {
                 battery_level_to_icon(Ok(charge as u64))
             })
-            .cloned()
-            .unwrap_or_else(|| "".to_string());
+            .unwrap_or_default();
 
         let values = map!(
             "{bat_icon}" => bat_icon.trim().to_string(),
             "{bat_charge}" => if charge < 0 { "x".to_string() } else { charge.to_string() },
             "{bat_state}" => charging.to_string(),
-            "{notif_icon}" => self.config.icons.get("notification").cloned().unwrap_or_else(|| "".to_string()).trim().to_string(),
+            "{notif_icon}" => self.shared_config.get_icon("notification").unwrap_or_default().trim().to_string(),
             "{notif_count}" => notif_count.to_string(),
             // TODO
             //"{notif_text}" => notif_text,

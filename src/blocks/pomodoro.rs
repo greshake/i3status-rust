@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fmt;
 use std::time::{Duration, Instant};
 
@@ -6,13 +5,13 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::widget::I3BarWidget;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 enum State {
     Started(Instant),
@@ -60,7 +59,7 @@ impl fmt::Display for State {
 
 pub struct Pomodoro {
     id: usize,
-    time: ButtonWidget,
+    time: TextWidget,
     state: State,
     length: Duration,
     break_length: Duration,
@@ -102,8 +101,6 @@ pub struct PomodoroConfig {
     pub use_nag: bool,
     #[serde(default = "PomodoroConfig::default_nag_path")]
     pub nag_path: std::path::PathBuf,
-    #[serde(default = "PomodoroConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl PomodoroConfig {
@@ -130,10 +127,6 @@ impl PomodoroConfig {
     fn default_nag_path() -> std::path::PathBuf {
         std::path::PathBuf::from("i3-nagbar")
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Pomodoro {
@@ -142,12 +135,12 @@ impl ConfigBlock for Pomodoro {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _send: Sender<Task>,
     ) -> Result<Self> {
         Ok(Pomodoro {
             id,
-            time: ButtonWidget::new(config, id).with_icon("pomodoro"),
+            time: TextWidget::new(id, shared_config).with_icon("pomodoro"),
             state: State::Stopped,
             length: Duration::from_secs(block_config.length * 60), // convert to minutes
             break_length: Duration::from_secs(block_config.break_length * 60), // convert to minutes

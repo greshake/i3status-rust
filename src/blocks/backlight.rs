@@ -7,7 +7,6 @@
 //! brightness levels using `xrandr`, see the
 //! [`Xrandr`](../xrandr/struct.Xrandr.html) block.
 
-use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -19,12 +18,13 @@ use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection, Scrolling};
+use crate::config::SharedConfig;
+use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
@@ -181,7 +181,7 @@ impl BacklitDevice {
 /// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     device: BacklitDevice,
     step_width: u64,
     scrolling: Scrolling,
@@ -208,9 +208,6 @@ pub struct BacklightConfig {
     /// For devices with few discrete steps this should be 1.0 (linear).
     #[serde(default = "BacklightConfig::default_root_scaling")]
     pub root_scaling: f64,
-
-    #[serde(default = "BacklightConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl BacklightConfig {
@@ -225,10 +222,6 @@ impl BacklightConfig {
     fn default_root_scaling() -> f64 {
         1f64
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Backlight {
@@ -237,7 +230,7 @@ impl ConfigBlock for Backlight {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let device = match block_config.device {
@@ -247,13 +240,12 @@ impl ConfigBlock for Backlight {
 
         let brightness_file = device.brightness_file();
 
-        let scrolling = config.scrolling;
         let backlight = Backlight {
-            output: ButtonWidget::new(config, id),
             id,
             device,
             step_width: block_config.step_width,
-            scrolling,
+            scrolling: shared_config.scrolling,
+            output: TextWidget::new(id, shared_config),
         };
 
         // Spin up a thread to watch for changes to the brightness file for the

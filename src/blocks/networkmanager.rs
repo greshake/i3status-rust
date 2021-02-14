@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fmt;
 use std::net::Ipv4Addr;
 use std::result;
@@ -16,12 +15,12 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, Spacing, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, Spacing, State};
 
 enum NetworkState {
     Unknown,
@@ -443,11 +442,10 @@ impl<'a> NmIp4Config<'a> {
 
 pub struct NetworkManager {
     id: usize,
-    indicator: ButtonWidget,
-    output: Vec<ButtonWidget>,
+    indicator: TextWidget,
+    output: Vec<TextWidget>,
     dbus_conn: Connection,
     manager: ConnectionManager,
-    config: Config,
     primary_only: bool,
     max_ssid_width: usize,
     ap_format: FormatTemplate,
@@ -455,6 +453,7 @@ pub struct NetworkManager {
     connection_format: FormatTemplate,
     interface_name_exclude_regexps: Vec<Regex>,
     interface_name_include_regexps: Vec<Regex>,
+    shared_config: SharedConfig,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -487,9 +486,6 @@ pub struct NetworkManagerConfig {
     /// Interface name regex patterns to ignore.
     #[serde(default = "NetworkManagerConfig::default_interface_name_exclude_patterns")]
     pub interface_name_include: Vec<String>,
-
-    #[serde(default = "NetworkManagerConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NetworkManagerConfig {
@@ -520,10 +516,6 @@ impl NetworkManagerConfig {
     fn default_interface_name_exclude_patterns() -> Vec<String> {
         vec![]
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for NetworkManager {
@@ -532,7 +524,7 @@ impl ConfigBlock for NetworkManager {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let dbus_conn = Connection::get_private(BusType::System)
@@ -574,8 +566,7 @@ impl ConfigBlock for NetworkManager {
 
         Ok(NetworkManager {
             id,
-            config: config.clone(),
-            indicator: ButtonWidget::new(config, id),
+            indicator: TextWidget::new(id, shared_config.clone()),
             output: Vec::new(),
             dbus_conn,
             manager,
@@ -588,6 +579,7 @@ impl ConfigBlock for NetworkManager {
                 .block_error("networkmanager", "failed to parse exclude patterns")?,
             interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
                 .block_error("networkmanager", "failed to parse include patterns")?,
+            shared_config,
         })
     }
 }
@@ -609,10 +601,10 @@ impl Block for NetworkManager {
             _ => State::Critical,
         });
         self.indicator.set_text(match state {
-            Ok(NetworkState::Disconnected) => "×",
-            Ok(NetworkState::Asleep) => "×",
-            Ok(NetworkState::Unknown) => "E",
-            _ => "",
+            Ok(NetworkState::Disconnected) => "×".to_string(),
+            Ok(NetworkState::Asleep) => "×".to_string(),
+            Ok(NetworkState::Unknown) => "E".to_string(),
+            _ => String::new(),
         });
 
         self.output = match state {
@@ -652,7 +644,7 @@ impl Block for NetworkManager {
                     .into_iter()
                     .filter_map(|conn| {
                         // inline spacing for no leading space, because the icon is set in the string
-                        let mut widget = ButtonWidget::new(self.config.clone(), self.id)
+                        let mut widget = TextWidget::new(self.id, self.shared_config.clone())
                             .with_spacing(Spacing::Inline);
 
                         // Set the state for this connection
@@ -691,32 +683,27 @@ impl Block for NetworkManager {
                                     continue 'devices;
                                 }
 
-                                let (icon, type_name) = if let Ok(dev_type) =
-                                    device.device_type(&self.dbus_conn)
-                                {
-                                    match dev_type.to_icon_name() {
-                                        Some(icon_name) => {
-                                            let i = self
-                                                .config
-                                                .icons
-                                                .get(&icon_name)
-                                                .cloned()
-                                                .unwrap_or_else(|| "".to_string());
-                                            (i.to_string(), format!("{:?}", dev_type).to_string())
+                                let (icon, type_name) =
+                                    if let Ok(dev_type) = device.device_type(&self.dbus_conn) {
+                                        match dev_type.to_icon_name() {
+                                            Some(icon_name) => {
+                                                let i = self
+                                                    .shared_config
+                                                    .get_icon(&icon_name)
+                                                    .unwrap_or_default();
+                                                (i, format!("{:?}", dev_type).to_string())
+                                            }
+                                            None => (
+                                                self.shared_config
+                                                    .get_icon("unknown")
+                                                    .unwrap_or_default(),
+                                                format!("{:?}", dev_type).to_string(),
+                                            ),
                                         }
-                                        None => (
-                                            self.config
-                                                .icons
-                                                .get("unknown")
-                                                .cloned()
-                                                .unwrap_or_else(|| "".to_string()),
-                                            format!("{:?}", dev_type).to_string(),
-                                        ),
-                                    }
-                                } else {
-                                    // TODO: Communicate the error to the user?
-                                    ("".to_string(), "".to_string())
-                                };
+                                    } else {
+                                        // TODO: Communicate the error to the user?
+                                        ("".to_string(), "".to_string())
+                                    };
 
                                 let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn)
                                 {
@@ -787,7 +774,7 @@ impl Block for NetworkManager {
                         if let Ok(s) = self.connection_format.render_static_str(&values) {
                             widget.set_text(s);
                         } else {
-                            widget.set_text("[invalid connection format string]");
+                            widget.set_text("[invalid connection format string]".to_string());
                         }
 
                         if !devicevec.is_empty() {

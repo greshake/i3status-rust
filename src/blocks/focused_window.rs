@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -9,11 +8,11 @@ use swayipc::reply::{Event, Node, WindowChange, WorkspaceChange};
 use swayipc::{Connection, EventType};
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -42,9 +41,6 @@ pub struct FocusedWindowConfig {
     /// Show marks in place of title (if exist)
     #[serde(default = "FocusedWindowConfig::default_show_marks")]
     pub show_marks: MarksType,
-
-    #[serde(default = "FocusedWindowConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl FocusedWindowConfig {
@@ -55,10 +51,6 @@ impl FocusedWindowConfig {
     fn default_show_marks() -> MarksType {
         MarksType::None
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for FocusedWindow {
@@ -67,7 +59,7 @@ impl ConfigBlock for FocusedWindow {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         tx: Sender<Task>,
     ) -> Result<Self> {
         let title = Arc::new(Mutex::new(String::from("")));
@@ -187,7 +179,7 @@ impl ConfigBlock for FocusedWindow {
             })
             .expect("failed to start watching thread for `window` block");
 
-        let text = TextWidget::new(config, id);
+        let text = TextWidget::new(id, shared_config);
         Ok(FocusedWindow {
             id,
             text,

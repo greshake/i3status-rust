@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -10,13 +9,13 @@ use dbus::message::SignalArgs;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::I3BarWidget;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 // TODO
 // Add driver option so can choose between dunst, mako, etc.
@@ -26,7 +25,7 @@ pub struct Notify {
     notify_id: usize,
     paused: Arc<Mutex<i64>>,
     format: FormatTemplate,
-    output: ButtonWidget,
+    output: TextWidget,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -35,19 +34,12 @@ pub struct NotifyConfig {
     /// Format string for displaying phone information.
     #[serde(default = "NotifyConfig::default_format")]
     pub format: String,
-
-    #[serde(default = "NotifyConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl NotifyConfig {
     fn default_format() -> String {
         // display just the bell icon
         "".into()
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
     }
 }
 
@@ -57,7 +49,7 @@ impl ConfigBlock for Notify {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
         let notify_id = pseudo_uuid();
@@ -120,7 +112,7 @@ impl ConfigBlock for Notify {
             notify_id,
             paused: state,
             format: FormatTemplate::from_string(&block_config.format)?,
-            output: ButtonWidget::new(config, notify_id).with_icon(icon),
+            output: TextWidget::new(notify_id, shared_config).with_icon(icon),
         })
     }
 }

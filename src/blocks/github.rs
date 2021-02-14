@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -7,21 +7,21 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::http;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
 pub struct Github {
-    text: TextWidget,
     id: usize,
+    text: TextWidget,
     update_interval: Duration,
     api_server: String,
     token: String,
@@ -47,9 +47,6 @@ pub struct GithubConfig {
     #[serde(default = "GithubConfig::default_format")]
     pub format: String,
 
-    #[serde(default = "GithubConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
-
     #[serde(default = "GithubConfig::default_hide_if_total_is_zero")]
     pub hide_if_total_is_zero: bool,
 }
@@ -67,10 +64,6 @@ impl GithubConfig {
         "{total}".to_owned()
     }
 
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
-
     fn default_hide_if_total_is_zero() -> bool {
         false
     }
@@ -79,11 +72,16 @@ impl GithubConfig {
 impl ConfigBlock for Github {
     type Config = GithubConfig;
 
-    fn new(id: usize, block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        _: Sender<Task>,
+    ) -> Result<Self> {
         let token = std::env::var(GITHUB_TOKEN_ENV)
             .block_error("github", "missing I3RS_GITHUB_TOKEN environment variable")?;
 
-        let text = TextWidget::new(config, id)
+        let text = TextWidget::new(id, shared_config)
             .with_text("x")
             .with_icon("github");
         Ok(Github {

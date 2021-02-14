@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -8,20 +7,20 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::{format_percent_bar, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 /// Maximum number of CPUs we support.
 const MAX_CPUS: usize = 32;
 
 pub struct Cpu {
     id: usize,
-    output: ButtonWidget,
+    output: TextWidget,
     prev_idles: [u64; MAX_CPUS],
     prev_non_idles: [u64; MAX_CPUS],
     update_interval: Duration,
@@ -67,9 +66,6 @@ pub struct CpuConfig {
     /// Compute the metrics (utilization and frequency) per core.
     #[serde(default)]
     pub per_core: bool,
-
-    #[serde(default = "CpuConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl CpuConfig {
@@ -96,10 +92,6 @@ impl CpuConfig {
     fn default_frequency() -> bool {
         false
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Cpu {
@@ -108,7 +100,7 @@ impl ConfigBlock for Cpu {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let format = if block_config.frequency {
@@ -120,7 +112,7 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(config, id).with_icon("cpu"),
+            output: TextWidget::new(id, shared_config).with_icon("cpu"),
             prev_idles: [0; MAX_CPUS],
             prev_non_idles: [0; MAX_CPUS],
             minimum_info: block_config.info,

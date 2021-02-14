@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
 use std::time::Duration;
@@ -7,13 +6,13 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Load {
     id: usize,
@@ -48,9 +47,6 @@ pub struct LoadConfig {
     /// Minimum load, where state is set to critical
     #[serde(default = "LoadConfig::default_critical")]
     pub critical: f32,
-
-    #[serde(default = "LoadConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
 impl LoadConfig {
@@ -73,10 +69,6 @@ impl LoadConfig {
     fn default_critical() -> f32 {
         0.9
     }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
 }
 
 impl ConfigBlock for Load {
@@ -85,10 +77,10 @@ impl ConfigBlock for Load {
     fn new(
         id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(config, id)
+        let text = TextWidget::new(id, shared_config)
             .with_icon("cogs")
             .with_state(State::Info);
 
