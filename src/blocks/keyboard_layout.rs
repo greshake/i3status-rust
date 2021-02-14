@@ -509,6 +509,7 @@ impl Block for KeyboardLayout {
         let layout = self.monitor.keyboard_layout()?;
         let variant = self.monitor.keyboard_variant()?;
         let values = map!(
+            "{layout_short}" => layout.clone().chars().take(2).collect::<String>().to_uppercase(),
             "{layout}" => layout,
             "{variant}" => variant
         );

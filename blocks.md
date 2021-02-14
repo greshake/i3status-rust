@@ -690,6 +690,7 @@ Key | Values | Required | Default
   Key    | Value
 ---------|-------
 `{layout}` | Keyboard layout name
+`{layout_short}` | Uppercase keyboard layout name limited to two characters.
 `{variant}` | Keyboard variant (only `localebus` and `sway` are supported so far)
 
 ###### [↥ back to top](#list-of-available-blocks)
