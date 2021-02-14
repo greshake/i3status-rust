@@ -15,6 +15,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::{
     escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, FormatTemplate,
@@ -165,6 +166,8 @@ impl NetworkDevice {
             return Ok(None);
         }
 
+        // TODO: print N/A instead?
+        //
         // TODO: probably best to move this to where the block is
         // first instantiated
         if !self.wireless {
@@ -183,6 +186,8 @@ impl NetworkDevice {
             return Ok(None);
         }
 
+        // TODO: print N/A instead?
+        //
         // TODO: probably best to move this to where the block is
         // first instantiated
         if !self.wireless {
@@ -357,6 +362,8 @@ impl NetworkDevice {
 pub struct Net {
     id: usize,
     format: FormatTemplate,
+    format_alt: FormatTemplate,
+    is_clicked: bool,
     output: TextWidget,
     network: TextWidget,
     ssid: Option<String>,
@@ -385,6 +392,7 @@ pub struct Net {
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
+    clickable: bool,
     shared_config: SharedConfig,
 }
 
@@ -421,6 +429,9 @@ pub struct NetConfig {
 
     #[serde(default = "NetConfig::default_format")]
     pub format: String,
+
+    #[serde(default = "NetConfig::default_format_alt")]
+    pub format_alt: String,
 
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
@@ -488,6 +499,9 @@ pub struct NetConfig {
     /// Whether to show the download throughput graph of active networks.
     #[serde(default = "NetConfig::default_graph_down")]
     pub graph_down: bool,
+
+    #[serde(default = "NetConfig::default_clickable")]
+    pub clickable: bool,
 }
 
 impl NetConfig {
@@ -497,6 +511,10 @@ impl NetConfig {
 
     fn default_format() -> String {
         "{speed_up} {speed_down}".to_owned()
+    }
+
+    fn default_format_alt() -> String {
+        "{ssid}".to_owned()
     }
 
     fn default_hide_inactive() -> bool {
@@ -562,6 +580,10 @@ impl NetConfig {
     fn default_speed_digits() -> usize {
         3
     }
+
+    fn default_clickable() -> bool {
+        false
+    }
 }
 
 impl ConfigBlock for Net {
@@ -591,7 +613,10 @@ impl ConfigBlock for Net {
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
-            output: TextWidget::new(0, shared_config.clone())
+            format_alt: FormatTemplate::from_string(&block_config.format_alt)
+                .block_error("net", "Invalid format_alt specified")?,
+            is_clicked: false,
+            output: TextWidget::new(id, shared_config.clone())
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             use_bits: block_config.use_bits,
@@ -606,9 +631,14 @@ impl ConfigBlock for Net {
             } else {
                 "net_wired"
             }),
+            // TODO: remove that?
+            //
             // Might want to signal an error if the user wants the SSID of a
             // wired connection instead.
-            ssid: if wireless && block_config.format.contains("{ssid}") {
+            ssid: if wireless
+                && (block_config.format.contains("{ssid}")
+                    || (block_config.format_alt.contains("{ssid}")) && block_config.clickable)
+            {
                 Some(" ".to_string())
             } else {
                 None
@@ -657,6 +687,7 @@ impl ConfigBlock for Net {
             hide_inactive: block_config.hide_inactive,
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
+            clickable: block_config.clickable,
             shared_config,
         })
     }
@@ -896,8 +927,13 @@ impl Block for Net {
             "{graph_down}" =>  self.graph_rx.as_ref().unwrap_or(&empty_string)
         );
 
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
+        let format = if self.is_clicked {
+            &self.format_alt
+        } else {
+            &self.format
+        };
+
+        self.output.set_text(format.render_static_str(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }
@@ -910,6 +946,14 @@ impl Block for Net {
         } else {
             vec![&self.network]
         }
+    }
+
+    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+        if event.matches_id(self.id) && event.button == MouseButton::Left && self.clickable {
+            self.is_clicked = !self.is_clicked;
+            self.update()?;
+        }
+        Ok(())
     }
 
     fn id(&self) -> usize {
