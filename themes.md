@@ -84,6 +84,16 @@ bat_discharging = " |v| "
 
 Example configurations can be found as `example_theme.toml` and `example_icon.toml`.
 
+Besides global overrides you may also use per-block overrides using the `color_overrides` option available for all blocks.
+For example:
+```toml
+[[block]]
+block = "cpu"
+[block.theme_overrides]
+idle_bg = "#123456"
+idle_fg = "#abcdef"
+```
+
 # Available theme overrides
 
 * `alternating_tint_bg`
