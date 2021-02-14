@@ -190,7 +190,8 @@ impl Block for Cpu {
                         (1, 1)
                     };
 
-                cpu_utilizations[cpu_i] = (total_delta - idle_delta) as f64 / total_delta as f64;
+                cpu_utilizations[cpu_i] =
+                    ((total_delta - idle_delta) as f64 / total_delta as f64).clamp(0., 1.);
 
                 self.prev_idles[cpu_i] = idle;
                 self.prev_non_idles[cpu_i] = non_idle;
@@ -216,12 +217,7 @@ impl Block for Cpu {
             const BOXCHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
             for i in 1..cpu_i {
-                barchart.push(
-                    BOXCHARS[((7.5 * cpu_utilizations[i]) as usize)
-                        // TODO: Replace with .clamp once the feature is stable
-                        // upper bound just in case the value is negative, e.g. USIZE MAX after conversion
-                        .min(BOXCHARS.len() - 1)],
-                );
+                barchart.push(BOXCHARS[(7.5 * cpu_utilizations[i]) as usize]);
             }
         }
         let values = map!("{frequency}" => format_frequency(&cpu_freqs[..n_cpu], self.per_core),

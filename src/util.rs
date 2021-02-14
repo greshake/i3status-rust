@@ -1,5 +1,5 @@
-// TODO: Replace with clamp() once the feature is stable? Ideally, remove num_traits altogether.
-use num_traits::{clamp, ToPrimitive};
+// TODO: Ideally, remove num_traits altogether.
+use num_traits::ToPrimitive;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs::{File, OpenOptions};
@@ -50,10 +50,7 @@ pub fn format_number(raw_value: f64, total_digits: usize, min_suffix: &str, unit
         _ => -4,
     };
 
-    // TODO: Replace with .clamp once the feature is stable
-    let exp_level = (raw_value.log10().div_euclid(3.) as i32)
-        .max(min_exp_level)
-        .min(4);
+    let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
     let value = raw_value / (10f64).powi(exp_level * 3);
 
     let suffix = match exp_level {
@@ -377,9 +374,7 @@ where
         let length = bars.len() as f64 - 1.0;
         content
             .iter()
-            .map(|x| {
-                bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
-            })
+            .map(|x| bars[((x.to_f64().unwrap().clamp(min, max) - min) / extant * length) as usize])
             .collect::<_>()
     } else {
         (0..content.len() - 1).map(|_| bars[0]).collect::<_>()
