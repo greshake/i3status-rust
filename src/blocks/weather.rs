@@ -13,8 +13,7 @@ use crate::http;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, State};
+use crate::widgets::{text::TextWidget, I3BarWidget, State};
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 const OPENWEATHERMAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
