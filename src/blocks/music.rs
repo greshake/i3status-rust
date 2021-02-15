@@ -16,17 +16,16 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::config::{LogicalDirection, Scrolling};
+use crate::config::{LogicalDirection, Scrolling, SharedConfig};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widgets::rotatingtext::RotatingTextWidget;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, Spacing, State};
+use crate::widgets::{
+    rotatingtext::RotatingTextWidget, text::TextWidget, I3BarWidget, Spacing, State,
+};
 
 #[derive(Debug, Clone)]
 struct Player {
