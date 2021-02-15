@@ -438,6 +438,7 @@ impl ConfigBlock for Music {
             }
         }).unwrap();
 
+        // TODO: combine this thread with the one above
         // Some players do not seem to update their Metadata on close which leads to the block showing old info.
         // To fix this we will the bus to see when players have disappeared so that we can schedule a block update.
         let preferred_player = block_config.clone().player;
