@@ -18,6 +18,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::iso_codes::lang_to_code;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
@@ -509,7 +510,7 @@ impl Block for KeyboardLayout {
         let layout = self.monitor.keyboard_layout()?;
         let variant = self.monitor.keyboard_variant()?;
         let values = map!(
-            "{layout_short}" => layout.clone().chars().take(2).collect::<String>().to_uppercase(),
+            "{layout_short}" => lang_to_code(&layout).unwrap_or("N/A").to_string(),
             "{layout}" => layout,
             "{variant}" => variant
         );
