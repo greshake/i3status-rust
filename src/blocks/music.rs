@@ -154,7 +154,7 @@ impl Music {
 pub struct MusicConfig {
     /// Name of the music player. Must be the same name the player is
     /// registered with the MediaPlayer2 Interface. If not specified then
-    /// auto-discovery of currently active player.
+    /// the block will track all players found.
     pub player: Option<String>,
 
     /// Max width of the block in characters, not including the buttons.
@@ -408,7 +408,7 @@ impl ConfigBlock for Music {
                                 }
                             };
                             // workaround for `playerctld`
-                            // This block keeps track of players currently activeon the MPRIS bus, 
+                            // This block keeps track of players currently active on the MPRIS bus, 
                             // and only clears the metadata when a player has disappeared from the bus.
                             // However `playerctl` is essentially doing the same thing as this block by
                             // keeping track of players by itself, and when the last player is closed
