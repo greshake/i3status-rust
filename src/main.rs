@@ -13,7 +13,6 @@ mod errors;
 mod http;
 mod icons;
 mod input;
-mod iso_codes;
 mod scheduler;
 mod signals;
 mod subprocess;

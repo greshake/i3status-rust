@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -18,7 +19,6 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::iso_codes::lang_to_code;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
@@ -130,13 +130,10 @@ impl KeyboardLayoutMonitor for LocaleBus {
     }
 
     fn keyboard_variant(&self) -> Result<String> {
-        let layout: String = self
-            .con
+        self.con
             .with_path("org.freedesktop.locale1", "/org/freedesktop/locale1", 1000)
             .get("org.freedesktop.locale1", "X11Variant")
-            .block_error("locale", "Failed to get X11Variant property.")?;
-
-        Ok(layout)
+            .block_error("locale", "Failed to get X11Variant property.")
     }
 
     fn must_poll(&self) -> bool {
@@ -435,6 +432,9 @@ pub struct KeyboardLayoutConfig {
     interval: Duration,
 
     sway_kb_identifier: String,
+
+    // Used to ovrreride long layout names: "German (dead acute)" => "DE"
+    mappings: HashMap<String, String>,
 }
 
 impl KeyboardLayoutConfig {
@@ -453,6 +453,7 @@ pub struct KeyboardLayout {
     monitor: Box<dyn KeyboardLayoutMonitor>,
     update_interval: Option<Duration>,
     format: FormatTemplate,
+    mappings: HashMap<String, String>,
 }
 
 impl ConfigBlock for KeyboardLayout {
@@ -497,6 +498,7 @@ impl ConfigBlock for KeyboardLayout {
                 "keyboard_layout",
                 "Invalid format specified for keyboard_layout",
             )?,
+            mappings: block_config.mappings,
         })
     }
 }
@@ -507,10 +509,12 @@ impl Block for KeyboardLayout {
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
-        let layout = self.monitor.keyboard_layout()?;
+        let mut layout = self.monitor.keyboard_layout()?;
         let variant = self.monitor.keyboard_variant()?;
+        if let Some(mapped) = self.mappings.get(&format!("{} ({})", layout, variant)) {
+            layout = mapped.to_string();
+        }
         let values = map!(
-            "{layout_short}" => lang_to_code(&layout).unwrap_or("N/A").to_string(),
             "{layout}" => layout,
             "{variant}" => variant
         );
