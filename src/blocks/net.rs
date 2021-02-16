@@ -373,10 +373,10 @@ pub struct Net {
     ip_addr: Option<String>,
     ipv6_addr: Option<String>,
     bitrate: Option<String>,
-    output_tx: Option<String>,
-    graph_tx: Option<String>,
-    output_rx: Option<String>,
-    graph_rx: Option<String>,
+    output_tx: String,
+    output_rx: String,
+    graph_tx: String,
+    graph_rx: String,
     update_interval: Duration,
     device: NetworkDevice,
     auto_device: bool,
@@ -672,10 +672,10 @@ impl ConfigBlock for Net {
             } else {
                 None
             },
-            output_tx: Some("".to_string()),
-            output_rx: Some("".to_string()),
-            graph_tx: Some("".to_string()),
-            graph_rx: Some("".to_string()),
+            output_tx: String::new(),
+            output_rx: String::new(),
+            graph_tx: String::new(),
+            graph_rx: String::new(),
             device,
             auto_device: block_config.device.is_none(),
             rx_buff: vec![0; 10],
@@ -790,63 +790,48 @@ impl Net {
         // TODO: consider using `as_nanos`
         let update_interval = (self.update_interval.as_secs() as f64)
             + (self.update_interval.subsec_nanos() as f64 / 1_000_000_000.0);
+
         // Update the throughput/graph widgets if they are enabled
-        if self.output_tx.is_some() || self.graph_tx.is_some() {
-            let current_tx = self.device.tx_bytes()?;
-            let diff = match current_tx.checked_sub(self.tx_bytes) {
-                Some(tx) => tx,
-                _ => 0,
-            };
-            let tx_bytes = (diff as f64 / update_interval) as u64;
-            self.tx_bytes = current_tx;
+        let current_tx = self.device.tx_bytes()?;
+        let diff = current_tx.checked_sub(self.tx_bytes).unwrap_or(0);
+        let tx_bytes = (diff as f64 / update_interval) as u64;
+        self.tx_bytes = current_tx;
 
-            if let Some(ref mut tx) = self.output_tx {
-                *tx = format_number(
-                    if self.use_bits {
-                        tx_bytes * 8
-                    } else {
-                        tx_bytes
-                    } as f64,
-                    self.speed_digits,
-                    &self.speed_min_unit.to_string(),
-                    if self.use_bits { "b" } else { "B" },
-                );
-            };
+        self.output_tx = format_number(
+            if self.use_bits {
+                tx_bytes * 8
+            } else {
+                tx_bytes
+            } as f64,
+            self.speed_digits,
+            &self.speed_min_unit.to_string(),
+            if self.use_bits { "b" } else { "B" },
+        );
 
-            if let Some(ref mut graph_tx) = self.graph_tx {
-                self.tx_buff.remove(0);
-                self.tx_buff.push(tx_bytes);
-                *graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
-            }
-        }
-        if self.output_rx.is_some() || self.graph_rx.is_some() {
-            let current_rx = self.device.rx_bytes()?;
-            let diff = match current_rx.checked_sub(self.rx_bytes) {
-                Some(rx) => rx,
-                _ => 0,
-            };
-            let rx_bytes = (diff as f64 / update_interval) as u64;
-            self.rx_bytes = current_rx;
+        self.tx_buff.remove(0);
+        self.tx_buff.push(tx_bytes);
+        self.graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
 
-            if let Some(ref mut rx) = self.output_rx {
-                *rx = format_number(
-                    if self.use_bits {
-                        rx_bytes * 8
-                    } else {
-                        rx_bytes
-                    } as f64,
-                    self.speed_digits,
-                    &self.speed_min_unit.to_string(),
-                    if self.use_bits { "b" } else { "B" },
-                );
-            };
+        let current_rx = self.device.rx_bytes()?;
+        let diff = current_rx.checked_sub(self.rx_bytes).unwrap_or(0);
+        let rx_bytes = (diff as f64 / update_interval) as u64;
+        self.rx_bytes = current_rx;
 
-            if let Some(ref mut graph_rx) = self.graph_rx {
-                self.rx_buff.remove(0);
-                self.rx_buff.push(rx_bytes);
-                *graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
-            }
-        }
+        self.output_rx = format_number(
+            if self.use_bits {
+                rx_bytes * 8
+            } else {
+                rx_bytes
+            } as f64,
+            self.speed_digits,
+            &self.speed_min_unit.to_string(),
+            if self.use_bits { "b" } else { "B" },
+        );
+
+        self.rx_buff.remove(0);
+        self.rx_buff.push(rx_bytes);
+        self.graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
+
         Ok(())
     }
 }
@@ -860,12 +845,8 @@ impl Block for Net {
         self.active = self.exists && self.device.is_up()?;
         if !self.active {
             self.network.set_text("×".to_string());
-            if let Some(ref mut tx) = self.output_tx {
-                *tx = "×".to_string();
-            };
-            if let Some(ref mut rx) = self.output_rx {
-                *rx = "×".to_string();
-            };
+            self.output_tx = "×".to_string();
+            self.output_rx = "×".to_string();
 
             return Ok(Some(self.update_interval.into()));
         }
@@ -906,12 +887,12 @@ impl Block for Net {
         let s_up = format!(
             "{} {}",
             self.shared_config.get_icon("net_up").unwrap_or_default(),
-            self.output_tx.clone().unwrap_or_default()
+            self.output_tx.clone()
         );
         let s_dn = format!(
             "{} {}",
             self.shared_config.get_icon("net_down").unwrap_or_default(),
-            self.output_rx.clone().unwrap_or_default()
+            self.output_rx.clone()
         );
 
         let values = map!(
@@ -923,8 +904,8 @@ impl Block for Net {
             "{ipv6}" =>  self.ipv6_addr.as_ref().unwrap_or(&empty_string),
             "{speed_up}" =>  &s_up,
             "{speed_down}" => &s_dn,
-            "{graph_up}" =>  self.graph_tx.as_ref().unwrap_or(&empty_string),
-            "{graph_down}" =>  self.graph_rx.as_ref().unwrap_or(&empty_string)
+            "{graph_up}" =>  &self.graph_tx,
+            "{graph_down}" =>  &self.graph_rx
         );
 
         let format = if self.is_clicked {
