@@ -120,13 +120,10 @@ impl LocaleBus {
 
 impl KeyboardLayoutMonitor for LocaleBus {
     fn keyboard_layout(&self) -> Result<String> {
-        let layout: String = self
-            .con
+        self.con
             .with_path("org.freedesktop.locale1", "/org/freedesktop/locale1", 1000)
             .get("org.freedesktop.locale1", "X11Layout")
-            .block_error("locale", "Failed to get X11Layout property.")?;
-
-        Ok(layout)
+            .block_error("locale", "Failed to get X11Layout property.")
     }
 
     fn keyboard_variant(&self) -> Result<String> {
