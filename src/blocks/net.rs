@@ -911,7 +911,7 @@ impl Block for Net {
         let s_dn = format!(
             "{} {}",
             self.shared_config.get_icon("net_down").unwrap_or_default(),
-            self.output_tx.clone().unwrap_or_default()
+            self.output_rx.clone().unwrap_or_default()
         );
 
         let values = map!(
