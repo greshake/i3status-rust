@@ -676,6 +676,17 @@ driver = "sway"
 sway_kb_identifier = "1133:49706:Gaming_Keyboard_G110"
 ```
 
+Listen to sway for changes and override mappings:
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "sway"
+format = "{layout}"
+[block.mappings]
+"English (Workman)" = "EN"
+"Russian (N/A)" = "RU"
+```
+
 #### Options
 
 Key | Values | Required | Default
@@ -684,6 +695,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{layout}"`
 `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | No | Defaults to first input found
+`mappings` | Map `layout (variant)` to custom short name. | No | None
 
 #### Available Format Keys
 
