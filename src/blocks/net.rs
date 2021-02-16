@@ -373,8 +373,8 @@ pub struct Net {
     update_interval: Duration,
     device: NetworkDevice,
     auto_device: bool,
-    tx_buff: Vec<u64>,
-    rx_buff: Vec<u64>,
+    tx_buff: Vec<f64>,
+    rx_buff: Vec<f64>,
     tx_bytes: u64,
     rx_bytes: u64,
     use_bits: bool,
@@ -648,8 +648,8 @@ impl ConfigBlock for Net {
             graph_rx: Some("".to_string()),
             device,
             auto_device: block_config.device.is_none(),
-            rx_buff: vec![0; 10],
-            tx_buff: vec![0; 10],
+            rx_buff: vec![0.; 10],
+            tx_buff: vec![0.; 10],
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
             active: true,
@@ -784,7 +784,7 @@ impl Net {
 
             if let Some(ref mut graph_tx) = self.graph_tx {
                 self.tx_buff.remove(0);
-                self.tx_buff.push(tx_bytes);
+                self.tx_buff.push(tx_bytes as f64);
                 *graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
             }
         }
@@ -812,7 +812,7 @@ impl Net {
 
             if let Some(ref mut graph_rx) = self.graph_rx {
                 self.rx_buff.remove(0);
-                self.rx_buff.push(rx_bytes);
+                self.rx_buff.push(rx_bytes as f64);
                 *graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
             }
         }

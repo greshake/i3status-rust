@@ -379,7 +379,6 @@ dependencies = [
  "maildir",
  "nix",
  "notmuch",
- "num-traits",
  "progress",
  "regex",
  "serde",
