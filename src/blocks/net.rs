@@ -411,6 +411,7 @@ pub struct NetConfig {
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
 
+    // TODO: remove all deprecated options from the code
     /// Whether to show the SSID of active wireless networks.
     #[serde(default = "NetConfig::default_ssid")]
     pub ssid: bool,
@@ -597,6 +598,8 @@ impl ConfigBlock for Net {
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
+            // TODO: why are we using a separate widget for just the icon instead of
+            // setting the icon for the other widget defined above?
             network: TextWidget::new(id, shared_config.clone()).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
