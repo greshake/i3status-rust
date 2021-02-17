@@ -340,7 +340,6 @@ pub struct Net {
     format_alt: FormatTemplate,
     is_clicked: bool,
     output: TextWidget,
-    network: TextWidget,
     ssid: Option<String>,
     max_ssid_width: usize,
     signal_strength: Option<String>,
@@ -411,34 +410,9 @@ pub struct NetConfig {
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
 
-    // TODO: remove all deprecated options from the code
-    /// Whether to show the SSID of active wireless networks.
-    #[serde(default = "NetConfig::default_ssid")]
-    pub ssid: bool,
-
     /// Max SSID width, in characters.
     #[serde(default = "NetConfig::default_max_ssid_width")]
     pub max_ssid_width: usize,
-
-    /// Whether to show the signal strength of active wireless networks.
-    #[serde(default = "NetConfig::default_signal_strength")]
-    pub signal_strength: bool,
-
-    /// Whether to show the signal strength of active wireless networks as a bar.
-    #[serde(default = "NetConfig::default_signal_strength_bar")]
-    pub signal_strength_bar: bool,
-
-    /// Whether to show the bitrate of active wireless networks.
-    #[serde(default = "NetConfig::default_bitrate")]
-    pub bitrate: bool,
-
-    /// Whether to show the IP address of active networks.
-    #[serde(default = "NetConfig::default_ip")]
-    pub ip: bool,
-
-    /// Whether to show the IPv6 address of active networks.
-    #[serde(default = "NetConfig::default_ipv6")]
-    pub ipv6: bool,
 
     /// Whether to hide networks that are down/inactive completely.
     #[serde(default = "NetConfig::default_hide_inactive")]
@@ -447,10 +421,6 @@ pub struct NetConfig {
     /// Whether to hide networks that are missing.
     #[serde(default = "NetConfig::default_hide_missing")]
     pub hide_missing: bool,
-
-    /// Whether to show the upload throughput indicator of active networks.
-    #[serde(default = "NetConfig::default_speed_up")]
-    pub speed_up: bool,
 
     /// Whether to show speeds in bits or bytes per second.
     #[serde(default = "NetConfig::default_use_bits")]
@@ -463,18 +433,6 @@ pub struct NetConfig {
     /// Minimum unit to display for throughput indicators.
     #[serde(default = "NetConfig::default_speed_min_unit")]
     pub speed_min_unit: Unit,
-
-    /// Whether to show the download throughput indicator of active networks.
-    #[serde(default = "NetConfig::default_speed_down")]
-    pub speed_down: bool,
-
-    /// Whether to show the upload throughput graph of active networks.
-    #[serde(default = "NetConfig::default_graph_up")]
-    pub graph_up: bool,
-
-    /// Whether to show the download throughput graph of active networks.
-    #[serde(default = "NetConfig::default_graph_down")]
-    pub graph_down: bool,
 
     #[serde(default = "NetConfig::default_clickable")]
     pub clickable: bool,
@@ -503,46 +461,6 @@ impl NetConfig {
 
     fn default_max_ssid_width() -> usize {
         21
-    }
-
-    fn default_ssid() -> bool {
-        false
-    }
-
-    fn default_signal_strength() -> bool {
-        false
-    }
-
-    fn default_signal_strength_bar() -> bool {
-        false
-    }
-
-    fn default_bitrate() -> bool {
-        false
-    }
-
-    fn default_ip() -> bool {
-        false
-    }
-
-    fn default_ipv6() -> bool {
-        false
-    }
-
-    fn default_speed_up() -> bool {
-        true
-    }
-
-    fn default_speed_down() -> bool {
-        true
-    }
-
-    fn default_graph_up() -> bool {
-        false
-    }
-
-    fn default_graph_down() -> bool {
-        false
     }
 
     fn default_use_bits() -> bool {
@@ -593,22 +511,20 @@ impl ConfigBlock for Net {
                 .block_error("net", "Invalid format_alt specified")?,
             is_clicked: false,
             output: TextWidget::new(id, shared_config.clone())
+                .with_icon(if wireless {
+                    "net_wireless"
+                } else if vpn {
+                    "net_vpn"
+                } else if device.device == "lo" {
+                    "net_loopback"
+                } else {
+                    "net_wired"
+                })
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
-            // TODO: why are we using a separate widget for just the icon instead of
-            // setting the icon for the other widget defined above?
-            network: TextWidget::new(id, shared_config.clone()).with_icon(if wireless {
-                "net_wireless"
-            } else if vpn {
-                "net_vpn"
-            } else if device.device == "lo" {
-                "net_loopback"
-            } else {
-                "net_wired"
-            }),
             ssid: None,
             max_ssid_width: block_config.max_ssid_width,
             signal_strength: if wireless && block_config.format.contains("{signal_strength}") {
@@ -683,7 +599,7 @@ impl Net {
 
             if self.device.device() != dev {
                 self.device = NetworkDevice::from_device(dev);
-                self.network.set_icon(if self.device.is_wireless() {
+                self.output.set_icon(if self.device.is_wireless() {
                     "net_wireless"
                 } else if self.device.is_vpn() {
                     "net_vpn"
@@ -810,14 +726,9 @@ impl Block for Net {
         self.exists = self.device.exists()?;
         self.active = self.exists && self.device.is_up()?;
         if !self.active {
-            self.network.set_text("×".to_string());
-            self.output_tx = "×".to_string();
-            self.output_rx = "×".to_string();
-
+            self.output.set_text("×".to_string());
             return Ok(Some(self.update_interval.into()));
         }
-
-        self.network.set_text("".to_string());
 
         // Update SSID and IP address every 30s and the bitrate every 10s
         let now = Instant::now();
@@ -888,12 +799,10 @@ impl Block for Net {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if self.active {
-            vec![&self.network, &self.output]
-        } else if self.hide_inactive || !self.exists && self.hide_missing {
+        if (!self.active && self.hide_inactive) || (!self.exists && self.hide_missing) {
             vec![]
         } else {
-            vec![&self.network]
+            vec![&self.output]
         }
     }
 
