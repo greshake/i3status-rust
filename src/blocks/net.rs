@@ -883,29 +883,23 @@ impl Block for Net {
 
         self.update_tx_rx()?;
 
-        let empty_string = "".to_string();
-        let s_up = format!(
-            "{} {}",
-            self.shared_config.get_icon("net_up").unwrap_or_default(),
-            self.output_tx.clone()
-        );
-        let s_dn = format!(
-            "{} {}",
-            self.shared_config.get_icon("net_down").unwrap_or_default(),
-            self.output_rx.clone()
-        );
+        let mut s_up = self.shared_config.get_icon("net_up").unwrap_or_default();
+        s_up.push_str(&self.output_tx);
+        let mut s_dn = self.shared_config.get_icon("net_down").unwrap_or_default();
+        s_dn.push_str(&self.output_rx);
 
+        let empty_string = "".to_string();
         let values = map!(
             "{ssid}" => self.ssid.as_ref().unwrap_or(&empty_string),
             "{signal_strength}" => self.signal_strength.as_ref().unwrap_or(&empty_string),
             "{signal_strength_bar}" => self.signal_strength_bar.as_ref().unwrap_or(&empty_string),
-            "{bitrate}" =>  self.bitrate.as_ref().unwrap_or(&empty_string),
-            "{ip}" =>  self.ip_addr.as_ref().unwrap_or(&empty_string),
-            "{ipv6}" =>  self.ipv6_addr.as_ref().unwrap_or(&empty_string),
-            "{speed_up}" =>  &s_up,
+            "{bitrate}" => self.bitrate.as_ref().unwrap_or(&empty_string),
+            "{ip}" => self.ip_addr.as_ref().unwrap_or(&empty_string),
+            "{ipv6}" => self.ipv6_addr.as_ref().unwrap_or(&empty_string),
+            "{speed_up}" => &s_up,
             "{speed_down}" => &s_dn,
-            "{graph_up}" =>  &self.graph_tx,
-            "{graph_down}" =>  &self.graph_rx
+            "{graph_up}" => &self.graph_tx,
+            "{graph_down}" => &self.graph_rx
         );
 
         let format = if self.is_clicked {
