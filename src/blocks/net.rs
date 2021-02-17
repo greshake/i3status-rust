@@ -20,8 +20,7 @@ use crate::scheduler::Task;
 use crate::util::{
     escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, FormatTemplate,
 };
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, Spacing};
+use crate::widgets::{text::TextWidget, I3BarWidget, Spacing};
 
 lazy_static! {
     static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
