@@ -1369,11 +1369,11 @@ Key | Value
 
 ## Temperature
 
-Creates a block which displays the system temperature, based on lm_sensors' `sensors -j` output. The block has two modes: "collapsed", which uses only colour as an indicator, and "expanded", which shows the content of a `format` string.
+Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block has two modes: "collapsed", which uses only colour as an indicator, and "expanded", which shows the content of a `format` string.
 
 Requires `lm_sensors` and appropriate kernel modules for your hardware.
 
-The average, minimum, and maximum temperatures are computed using all sensors displayed by `sensors -j`, or optionally filtered by `chip` and `inputs`.
+The average, minimum, and maximum temperatures are computed using all sensors displayed by `sensors`, or optionally filtered by `chip` and `inputs`.
 
 Note that the colour of the block is always determined by the maximum temperature across all sensors, not the average. You may need to keep this in mind if you have a misbehaving sensor.
 
@@ -1401,7 +1401,7 @@ Key | Values | Required | Default
 `info` | Maximum temperature to set state to info. | No | `60` °C (`140` °F)
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
 `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
-`inputs` | Narrows the results to individual inputs reported by each chip. | No | None
+`inputs` | Narrows the results to individual inputs reported by each chip. Note this only works if you have an up-to-date `sensors` command with the `-j` JSON output flag available. | No | None
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average}° avg, {max}° max"`
 
 #### Available Format Keys
