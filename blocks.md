@@ -961,6 +961,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. Note: the update interval for SSID and IP address is fixed at 30 seconds, and bitrate fixed at 10 seconds. | No | `1`
 `hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
 `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
+`max_ssid_width` | Truncation length for SSID. | No | `21`
 
 #### Available Format Keys
 

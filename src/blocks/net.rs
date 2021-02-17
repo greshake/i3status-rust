@@ -411,34 +411,9 @@ pub struct NetConfig {
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
 
-    // TODO: remove all deprecated options from the code
-    /// Whether to show the SSID of active wireless networks.
-    #[serde(default = "NetConfig::default_ssid")]
-    pub ssid: bool,
-
     /// Max SSID width, in characters.
     #[serde(default = "NetConfig::default_max_ssid_width")]
     pub max_ssid_width: usize,
-
-    /// Whether to show the signal strength of active wireless networks.
-    #[serde(default = "NetConfig::default_signal_strength")]
-    pub signal_strength: bool,
-
-    /// Whether to show the signal strength of active wireless networks as a bar.
-    #[serde(default = "NetConfig::default_signal_strength_bar")]
-    pub signal_strength_bar: bool,
-
-    /// Whether to show the bitrate of active wireless networks.
-    #[serde(default = "NetConfig::default_bitrate")]
-    pub bitrate: bool,
-
-    /// Whether to show the IP address of active networks.
-    #[serde(default = "NetConfig::default_ip")]
-    pub ip: bool,
-
-    /// Whether to show the IPv6 address of active networks.
-    #[serde(default = "NetConfig::default_ipv6")]
-    pub ipv6: bool,
 
     /// Whether to hide networks that are down/inactive completely.
     #[serde(default = "NetConfig::default_hide_inactive")]
@@ -447,10 +422,6 @@ pub struct NetConfig {
     /// Whether to hide networks that are missing.
     #[serde(default = "NetConfig::default_hide_missing")]
     pub hide_missing: bool,
-
-    /// Whether to show the upload throughput indicator of active networks.
-    #[serde(default = "NetConfig::default_speed_up")]
-    pub speed_up: bool,
 
     /// Whether to show speeds in bits or bytes per second.
     #[serde(default = "NetConfig::default_use_bits")]
@@ -463,18 +434,6 @@ pub struct NetConfig {
     /// Minimum unit to display for throughput indicators.
     #[serde(default = "NetConfig::default_speed_min_unit")]
     pub speed_min_unit: Unit,
-
-    /// Whether to show the download throughput indicator of active networks.
-    #[serde(default = "NetConfig::default_speed_down")]
-    pub speed_down: bool,
-
-    /// Whether to show the upload throughput graph of active networks.
-    #[serde(default = "NetConfig::default_graph_up")]
-    pub graph_up: bool,
-
-    /// Whether to show the download throughput graph of active networks.
-    #[serde(default = "NetConfig::default_graph_down")]
-    pub graph_down: bool,
 
     #[serde(default = "NetConfig::default_clickable")]
     pub clickable: bool,
@@ -503,46 +462,6 @@ impl NetConfig {
 
     fn default_max_ssid_width() -> usize {
         21
-    }
-
-    fn default_ssid() -> bool {
-        false
-    }
-
-    fn default_signal_strength() -> bool {
-        false
-    }
-
-    fn default_signal_strength_bar() -> bool {
-        false
-    }
-
-    fn default_bitrate() -> bool {
-        false
-    }
-
-    fn default_ip() -> bool {
-        false
-    }
-
-    fn default_ipv6() -> bool {
-        false
-    }
-
-    fn default_speed_up() -> bool {
-        true
-    }
-
-    fn default_speed_down() -> bool {
-        true
-    }
-
-    fn default_graph_up() -> bool {
-        false
-    }
-
-    fn default_graph_down() -> bool {
-        false
     }
 
     fn default_use_bits() -> bool {
