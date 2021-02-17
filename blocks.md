@@ -676,6 +676,17 @@ driver = "sway"
 sway_kb_identifier = "1133:49706:Gaming_Keyboard_G110"
 ```
 
+Listen to sway for changes and override mappings:
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "sway"
+format = "{layout}"
+[block.mappings]
+"English (Workman)" = "EN"
+"Russian (N/A)" = "RU"
+```
+
 #### Options
 
 Key | Values | Required | Default
@@ -684,6 +695,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{layout}"`
 `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | No | Defaults to first input found
+`mappings` | Map `layout (variant)` to custom short name. | No | None
 
 #### Available Format Keys
 
@@ -940,7 +952,9 @@ use_bits = false
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | Network interface to monitor (name from /sys/class/net). | No | Automatically chosen from the output of `ip route show default`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | "{speed_up} {speed_down}" 
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{speed_up} {speed_down}"`
+`clickable` | Whether to allow clicking on the block and swithching between `format` and `format_alt` | No | `false`
+`format_alt` | The same as `format`. Shows when the block is toggled with a mouse click (if `clickable` is `true`). | No | `"{ssid}"`
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`. | No | `"K"`
 `use_bits` | Display speeds in bits instead of bytes. | No | `false`
@@ -1355,11 +1369,11 @@ Key | Value
 
 ## Temperature
 
-Creates a block which displays the system temperature, based on lm_sensors' `sensors -j` output. The block has two modes: "collapsed", which uses only colour as an indicator, and "expanded", which shows the content of a `format` string.
+Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block has two modes: "collapsed", which uses only colour as an indicator, and "expanded", which shows the content of a `format` string.
 
 Requires `lm_sensors` and appropriate kernel modules for your hardware.
 
-The average, minimum, and maximum temperatures are computed using all sensors displayed by `sensors -j`, or optionally filtered by `chip` and `inputs`.
+The average, minimum, and maximum temperatures are computed using all sensors displayed by `sensors`, or optionally filtered by `chip` and `inputs`.
 
 Note that the colour of the block is always determined by the maximum temperature across all sensors, not the average. You may need to keep this in mind if you have a misbehaving sensor.
 
@@ -1387,7 +1401,7 @@ Key | Values | Required | Default
 `info` | Maximum temperature to set state to info. | No | `60` °C (`140` °F)
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
 `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
-`inputs` | Narrows the results to individual inputs reported by each chip. | No | None
+`inputs` | Narrows the results to individual inputs reported by each chip. Note this only works if you have an up-to-date `sensors` command with the `-j` JSON output flag available. | No | None
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average}° avg, {max}° max"`
 
 #### Available Format Keys

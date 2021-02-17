@@ -16,17 +16,16 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::config::{LogicalDirection, Scrolling};
+use crate::config::{LogicalDirection, Scrolling, SharedConfig};
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widgets::rotatingtext::RotatingTextWidget;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, Spacing, State};
+use crate::widgets::{
+    rotatingtext::RotatingTextWidget, text::TextWidget, I3BarWidget, Spacing, State,
+};
 
 #[derive(Debug, Clone)]
 struct Player {
@@ -155,7 +154,7 @@ impl Music {
 pub struct MusicConfig {
     /// Name of the music player. Must be the same name the player is
     /// registered with the MediaPlayer2 Interface. If not specified then
-    /// auto-discovery of currently active player.
+    /// the block will track all players found.
     pub player: Option<String>,
 
     /// Max width of the block in characters, not including the buttons.
@@ -409,7 +408,7 @@ impl ConfigBlock for Music {
                                 }
                             };
                             // workaround for `playerctld`
-                            // This block keeps track of players currently activeon the MPRIS bus, 
+                            // This block keeps track of players currently active on the MPRIS bus, 
                             // and only clears the metadata when a player has disappeared from the bus.
                             // However `playerctl` is essentially doing the same thing as this block by
                             // keeping track of players by itself, and when the last player is closed
@@ -439,6 +438,7 @@ impl ConfigBlock for Music {
             }
         }).unwrap();
 
+        // TODO: combine this thread with the one above
         // Some players do not seem to update their Metadata on close which leads to the block showing old info.
         // To fix this we will the bus to see when players have disappeared so that we can schedule a block update.
         let preferred_player = block_config.clone().player;
@@ -656,6 +656,7 @@ impl Block for Music {
                 id if id == self.next_id => "Next",
                 id if id == self.prev_id => "Previous",
                 id if id == self.id => "",
+                id if id == self.collapsed_id => "",
                 _ => return Ok(()),
             };
 

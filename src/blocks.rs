@@ -108,31 +108,16 @@ impl Into<Update> for Duration {
     }
 }
 
-pub trait Block {
-    /// A unique id for the block.
-    fn id(&self) -> usize;
-
-    /// The current "view" of the block, comprised of widgets.
-    fn view(&self) -> Vec<&dyn I3BarWidget>;
-
-    /// Forces an update of the internal state of the block.
-    fn update(&mut self) -> Result<Option<Update>> {
-        Ok(None)
-    }
-
-    ///Sends a signal event with the provided signal, this function is called on every block
-    ///for every signal event
-    fn signal(&mut self, _signal: i32) -> Result<()> {
-        Ok(())
-    }
-
-    /// Sends click events to the block. This function is called on every block
-    /// for every click; filter events by using the `event.name` property.
-    fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
-}
-
+/// The ConfigBlock trait combines a constructor (new(...)) and an associated configuration type
+/// to form a block that can be instantiated from a piece of TOML (from the block configuration).
+/// The associated type has to be a deserializable struct, which you can then use to get your
+/// configurations from. The template shows you how to instantiate a simple Text widget.
+/// For more info on how to use widgets, just look into other Blocks. More documentation to come.
+///
+/// The sender object can be used to send asynchronous update request for any block from a separate
+/// thread, provide you know the Block's ID. This advanced feature can be used to reduce
+/// the number of system calls by asynchronously waiting for events. A usage example can be found
+/// in the Music block, which updates only when dbus signals a new song.
 pub trait ConfigBlock: Block {
     type Config;
 
@@ -146,8 +131,49 @@ pub trait ConfigBlock: Block {
     where
         Self: Sized;
 
+    /// TODO: write documentation
     fn override_on_click(&mut self) -> Option<&mut Option<String>> {
         None
+    }
+}
+
+/// The Block trait is used to interact with a block after it has been instantiated from ConfigBlock
+pub trait Block {
+    /// A unique id for the block (asigend by the constructor).
+    fn id(&self) -> usize;
+
+    /// Use this function to return the widgets that comprise the UI of your component.
+    ///
+    /// The music block may, for example, be comprised of a text widget and multiple
+    /// buttons (buttons are also TextWidgets). Use a vec to wrap the references to your view.
+    fn view(&self) -> Vec<&dyn I3BarWidget>;
+
+    /// Required if you don't want a static block.
+    ///
+    /// Use this function to update the internal state of your block, for example during
+    /// periodic updates. Return the duration until your block wants to be updated next.
+    /// For example, a clock could request only to be updated every 60 seconds by returning
+    /// Some(Update::Every(Duration::new(60, 0))) every time. If you return None,
+    /// this function will not be called again automatically.
+    fn update(&mut self) -> Result<Option<Update>> {
+        Ok(None)
+    }
+
+    /// Sends a signal event with the provided signal, this function is called on every block
+    /// for every signal event
+    fn signal(&mut self, _signal: i32) -> Result<()> {
+        Ok(())
+    }
+
+    /// Sends click events to the block. This function is called on every block for every click.
+    ///
+    /// Here you can react to the user clicking your block. The I3BarEvent instance contains all
+    /// fields to describe the click action, including mouse button and location down to the pixel.
+    /// You may also update the internal state here.
+    ///
+    /// To filter, use the event.id property and event.matches_id() function.
+    fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
+        Ok(())
     }
 }
 
