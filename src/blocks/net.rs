@@ -161,40 +161,16 @@ impl NetworkDevice {
 
     /// Queries the wireless SSID of this device, if it is connected to one.
     pub fn ssid(&self) -> Result<Option<String>> {
-        let up = self.is_up()?;
-        if !up {
-            return Ok(None);
+        if self.is_up()? && self.wireless {
+            get_ssid(self)
+        } else {
+            Ok(None)
         }
-
-        // TODO: print N/A instead?
-        //
-        // TODO: probably best to move this to where the block is
-        // first instantiated
-        if !self.wireless {
-            return Err(BlockError(
-                "net".to_string(),
-                "SSIDs are only available for connected wireless devices.".to_string(),
-            ));
-        }
-
-        get_ssid(self)
     }
 
     fn absolute_signal_strength(&self) -> Result<Option<i32>> {
-        let up = self.is_up()?;
-        if !up {
+        if !self.is_up()? || !self.wireless {
             return Ok(None);
-        }
-
-        // TODO: print N/A instead?
-        //
-        // TODO: probably best to move this to where the block is
-        // first instantiated
-        if !self.wireless {
-            return Err(BlockError(
-                "net".to_string(),
-                "Signal strength is only available for connected wireless devices.".to_string(),
-            ));
         }
 
         let iw_output = Command::new("iw")
@@ -631,18 +607,7 @@ impl ConfigBlock for Net {
             } else {
                 "net_wired"
             }),
-            // TODO: remove that?
-            //
-            // Might want to signal an error if the user wants the SSID of a
-            // wired connection instead.
-            ssid: if wireless
-                && (block_config.format.contains("{ssid}")
-                    || (block_config.format_alt.contains("{ssid}")) && block_config.clickable)
-            {
-                Some(" ".to_string())
-            } else {
-                None
-            },
+            ssid: None,
             max_ssid_width: block_config.max_ssid_width,
             signal_strength: if wireless && block_config.format.contains("{signal_strength}") {
                 Some(0.to_string())
@@ -740,14 +705,13 @@ impl Net {
     }
 
     fn update_ssid(&mut self) -> Result<()> {
-        if let Some(ref mut ssid_string) = self.ssid {
-            let ssid = self.device.ssid()?;
-            if let Some(s) = ssid {
-                let mut truncated = s;
-                truncated.truncate(self.max_ssid_width);
-                // SSID names can contain chars that need escaping
-                *ssid_string = escape_pango_text(truncated);
-            }
+        if let Some(s) = self.device.ssid()? {
+            let mut truncated = s;
+            truncated.truncate(self.max_ssid_width);
+            // SSID names can contain chars that need escaping
+            self.ssid = Some(escape_pango_text(truncated));
+        } else {
+            self.ssid = None;
         }
         Ok(())
     }
@@ -889,9 +853,11 @@ impl Block for Net {
         s_dn.push_str(&self.output_rx);
 
         let empty_string = "".to_string();
+        let na_string = "N/A".to_string();
+
         let values = map!(
-            "{ssid}" => self.ssid.as_ref().unwrap_or(&empty_string),
-            "{signal_strength}" => self.signal_strength.as_ref().unwrap_or(&empty_string),
+            "{ssid}" => self.ssid.as_ref().unwrap_or(&na_string),
+            "{signal_strength}" => self.signal_strength.as_ref().unwrap_or(&na_string),
             "{signal_strength_bar}" => self.signal_strength_bar.as_ref().unwrap_or(&empty_string),
             "{bitrate}" => self.bitrate.as_ref().unwrap_or(&empty_string),
             "{ip}" => self.ip_addr.as_ref().unwrap_or(&empty_string),
