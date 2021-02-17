@@ -41,6 +41,7 @@ pub struct Temperature {
     format: FormatTemplate,
     chip: Option<String>,
     inputs: Option<Vec<String>>,
+    fallback_required: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -162,6 +163,7 @@ impl ConfigBlock for Temperature {
                 .block_error("temperature", "Invalid format specified for temperature")?,
             chip: block_config.chip,
             inputs: block_config.inputs,
+            fallback_required: !has_command("temperature", "sensors -j").unwrap_or(false),
         })
     }
 }
@@ -171,7 +173,12 @@ type InputReadings = HashMap<String, f64>;
 
 impl Block for Temperature {
     fn update(&mut self) -> Result<Option<Update>> {
-        let mut args = vec!["-j"];
+        let mut args = if self.fallback_required {
+            vec!["-u"]
+        } else {
+            vec!["-j"]
+        };
+
         if let TemperatureScale::Fahrenheit = self.scale {
             args.push("-f");
         }
@@ -184,33 +191,64 @@ impl Block for Temperature {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.to_string());
 
-        let parsed: SensorsOutput = serde_json::from_str(&output)
-            .block_error("temperature", "sensors output is invalid")?;
-
         let mut temperatures: Vec<i64> = Vec::new();
-        for (_chip, inputs) in parsed {
-            for (input_name, input_values) in inputs {
-                if let Some(ref whitelist) = self.inputs {
-                    if !whitelist.contains(&input_name) {
-                        continue;
+
+        if self.fallback_required {
+            for line in output.lines() {
+                if line.starts_with("  temp") {
+                    let rest = &line[6..]
+                        .split('_')
+                        .flat_map(|x| x.split(' '))
+                        .flat_map(|x| x.split('.'))
+                        .collect::<Vec<_>>();
+
+                    if rest[1].starts_with("input") {
+                        match rest[2].parse::<i64>() {
+                            Ok(t) if t == 0 => Ok(()),
+                            Ok(t) if t > -101 && t < 151 => {
+                                temperatures.push(t);
+                                Ok(())
+                            }
+                            Ok(t) => {
+                                // This error is recoverable and therefore should not stop the program
+                                eprintln!("Temperature ({}) outside of range ([-100, 150])", t);
+                                Ok(())
+                            }
+                            Err(_) => Err(BlockError(
+                                "temperature".to_owned(),
+                                "failed to parse temperature as an integer".to_owned(),
+                            )),
+                        }?
                     }
                 }
-
-                let values_parsed: InputReadings = match serde_json::from_value(input_values) {
-                    Ok(values) => values,
-                    Err(_) => continue, // probably the "Adapter" key, just ignore.
-                };
-
-                for (value_name, value) in values_parsed {
-                    if !value_name.starts_with("temp") || !value_name.ends_with("input") {
-                        continue;
+            }
+        } else {
+            let parsed: SensorsOutput = serde_json::from_str(&output)
+                .block_error("temperature", "sensors output is invalid")?;
+            for (_chip, inputs) in parsed {
+                for (input_name, input_values) in inputs {
+                    if let Some(ref whitelist) = self.inputs {
+                        if !whitelist.contains(&input_name) {
+                            continue;
+                        }
                     }
 
-                    if value > -101f64 && value < 151f64 {
-                        temperatures.push(value as i64);
-                    } else {
-                        // This error is recoverable and therefore should not stop the program
-                        eprintln!("Temperature ({}) outside of range ([-100, 150])", value);
+                    let values_parsed: InputReadings = match serde_json::from_value(input_values) {
+                        Ok(values) => values,
+                        Err(_) => continue, // probably the "Adapter" key, just ignore.
+                    };
+
+                    for (value_name, value) in values_parsed {
+                        if !value_name.starts_with("temp") || !value_name.ends_with("input") {
+                            continue;
+                        }
+
+                        if value > -101f64 && value < 151f64 {
+                            temperatures.push(value as i64);
+                        } else {
+                            // This error is recoverable and therefore should not stop the program
+                            eprintln!("Temperature ({}) outside of range ([-100, 150])", value);
+                        }
                     }
                 }
             }
