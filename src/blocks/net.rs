@@ -340,7 +340,6 @@ pub struct Net {
     format_alt: FormatTemplate,
     is_clicked: bool,
     output: TextWidget,
-    network: TextWidget,
     ssid: Option<String>,
     max_ssid_width: usize,
     signal_strength: Option<String>,
@@ -512,22 +511,20 @@ impl ConfigBlock for Net {
                 .block_error("net", "Invalid format_alt specified")?,
             is_clicked: false,
             output: TextWidget::new(id, shared_config.clone())
+                .with_icon(if wireless {
+                    "net_wireless"
+                } else if vpn {
+                    "net_vpn"
+                } else if device.device == "lo" {
+                    "net_loopback"
+                } else {
+                    "net_wired"
+                })
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
-            // TODO: why are we using a separate widget for just the icon instead of
-            // setting the icon for the other widget defined above?
-            network: TextWidget::new(id, shared_config.clone()).with_icon(if wireless {
-                "net_wireless"
-            } else if vpn {
-                "net_vpn"
-            } else if device.device == "lo" {
-                "net_loopback"
-            } else {
-                "net_wired"
-            }),
             ssid: None,
             max_ssid_width: block_config.max_ssid_width,
             signal_strength: if wireless && block_config.format.contains("{signal_strength}") {
@@ -602,7 +599,7 @@ impl Net {
 
             if self.device.device() != dev {
                 self.device = NetworkDevice::from_device(dev);
-                self.network.set_icon(if self.device.is_wireless() {
+                self.output.set_icon(if self.device.is_wireless() {
                     "net_wireless"
                 } else if self.device.is_vpn() {
                     "net_vpn"
@@ -729,14 +726,9 @@ impl Block for Net {
         self.exists = self.device.exists()?;
         self.active = self.exists && self.device.is_up()?;
         if !self.active {
-            self.network.set_text("×".to_string());
-            self.output_tx = "×".to_string();
-            self.output_rx = "×".to_string();
-
+            self.output.set_text("×".to_string());
             return Ok(Some(self.update_interval.into()));
         }
-
-        self.network.set_text("".to_string());
 
         // Update SSID and IP address every 30s and the bitrate every 10s
         let now = Instant::now();
@@ -807,12 +799,10 @@ impl Block for Net {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if self.active {
-            vec![&self.network, &self.output]
-        } else if self.hide_inactive || !self.exists && self.hide_missing {
+        if (!self.active && self.hide_inactive) || (!self.exists && self.hide_missing) {
             vec![]
         } else {
-            vec![&self.network]
+            vec![&self.output]
         }
     }
 
