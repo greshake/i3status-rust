@@ -20,8 +20,7 @@ use crate::scheduler::Task;
 use crate::util::{
     escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, FormatTemplate,
 };
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, Spacing};
+use crate::widgets::{text::TextWidget, I3BarWidget, Spacing};
 
 lazy_static! {
     static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
@@ -412,6 +411,7 @@ pub struct NetConfig {
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
 
+    // TODO: remove all deprecated options from the code
     /// Whether to show the SSID of active wireless networks.
     #[serde(default = "NetConfig::default_ssid")]
     pub ssid: bool,
@@ -598,6 +598,8 @@ impl ConfigBlock for Net {
             use_bits: block_config.use_bits,
             speed_min_unit: block_config.speed_min_unit,
             speed_digits: block_config.speed_digits,
+            // TODO: why are we using a separate widget for just the icon instead of
+            // setting the icon for the other widget defined above?
             network: TextWidget::new(id, shared_config.clone()).with_icon(if wireless {
                 "net_wireless"
             } else if vpn {
@@ -874,7 +876,13 @@ impl Block for Net {
             &self.format
         };
 
-        self.output.set_text(format.render_static_str(&values)?);
+        let text = format.render_static_str(&values)?;
+        self.output.set_text(text.clone());
+        // If the format string is empty then this will lead to two spaces after the icon
+        // unless we disable the TextWidget spaces here
+        if text.is_empty() {
+            self.output.set_spacing(Spacing::Hidden);
+        }
 
         Ok(Some(self.update_interval.into()))
     }
