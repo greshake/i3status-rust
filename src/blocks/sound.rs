@@ -854,7 +854,7 @@ impl Sound {
                 if self.bar {
                     self.text.set_text(format_percent_bar(volume as f32));
                 } else {
-                    self.text.set_text(text);
+                    self.text.set_text(text.clone());
                 }
                 self.text.set_spacing(Spacing::Normal);
             } else {
@@ -867,10 +867,16 @@ impl Sound {
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
-                text
+                text.clone()
             });
             self.text.set_spacing(Spacing::Normal);
             self.text.set_state(State::Idle);
+        }
+
+        // If the format string is empty then this will lead to two spaces after the icon
+        // unless we disable the TextWidget spaces here
+        if text.is_empty() {
+            self.text.set_spacing(Spacing::Hidden);
         }
 
         Ok(())
