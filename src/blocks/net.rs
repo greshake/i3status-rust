@@ -787,13 +787,7 @@ impl Block for Net {
             &self.format
         };
 
-        let text = format.render_static_str(&values)?;
-        self.output.set_text(text.clone());
-        // If the format string is empty then this will lead to two spaces after the icon
-        // unless we disable the TextWidget spaces here
-        if text.is_empty() {
-            self.output.set_spacing(Spacing::Hidden);
-        }
+        self.output.set_text(format.render_static_str(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }
