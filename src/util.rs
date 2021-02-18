@@ -387,100 +387,51 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub enum FormatTemplate {
-    Str(String, Option<Box<FormatTemplate>>),
-    Var(String, Option<Box<FormatTemplate>>),
+pub struct FormatTemplate {
+    tokens: Vec<FormatToken>,
+}
+
+#[derive(Debug, Clone)]
+enum FormatToken {
+    Text(String),
+    Var(String),
 }
 
 impl FormatTemplate {
-    pub fn from_string(s: &str) -> Result<FormatTemplate> {
-        let s_as_bytes = s.as_bytes();
-
+    pub fn from_string(s: &str) -> Result<Self> {
         //valid var tokens: {} containing any amount of alphanumericals
         let re = Regex::new(r"\{[a-zA-Z0-9_-]+?\}").internal_error("util", "invalid regex")?;
 
-        let mut token_vec: Vec<FormatTemplate> = vec![];
+        let mut tokens = vec![];
         let mut start: usize = 0;
 
         for re_match in re.find_iter(&s) {
             if re_match.start() != start {
-                let str_vec: Vec<u8> = (&s_as_bytes)[start..re_match.start()].to_vec();
-                token_vec.push(FormatTemplate::Str(
-                    String::from_utf8(str_vec)
-                        .internal_error("util", "failed to convert string from UTF8")?,
-                    None,
-                ));
+                tokens.push(FormatToken::Text(s[start..re_match.start()].to_string()));
             }
-            token_vec.push(FormatTemplate::Var(re_match.as_str().to_string(), None));
+            tokens.push(FormatToken::Var(re_match.as_str().to_string()));
             start = re_match.end();
         }
-        let str_vec: Vec<u8> = (&s_as_bytes)[start..].to_vec();
-        token_vec.push(FormatTemplate::Str(
-            String::from_utf8(str_vec)
-                .internal_error("util", "failed to convert string from UTF8")?,
-            None,
-        ));
-        let mut template: FormatTemplate = match token_vec.pop() {
-            Some(token) => token,
-            _ => FormatTemplate::Str("".to_string(), None),
-        };
-        while let Some(token) = token_vec.pop() {
-            template = match token {
-                FormatTemplate::Str(s, _) => FormatTemplate::Str(s, Some(Box::new(template))),
-                FormatTemplate::Var(s, _) => FormatTemplate::Var(s, Some(Box::new(template))),
-            }
-        }
-        Ok(template)
-    }
 
-    // TODO: Make this function tail-recursive for compiler optimization, also only use the version below, static_str
-    pub fn render<T: Display>(&self, vars: &HashMap<String, T>) -> String {
-        use self::FormatTemplate::*;
-        let mut rendered = String::new();
-        match *self {
-            Str(ref s, ref next) => {
-                rendered.push_str(s);
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render(vars));
-                };
-            }
-            Var(ref key, ref next) => {
-                rendered.push_str(&format!(
-                    "{}",
-                    vars.get(key)
-                        .unwrap_or_else(|| panic!("Unknown placeholder in format string: {}", key))
-                ));
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render(vars));
-                };
-            }
-        };
-        rendered
+        Ok(FormatTemplate { tokens })
     }
 
     pub fn render_static_str<T: Display>(&self, vars: &HashMap<&str, T>) -> Result<String> {
-        use self::FormatTemplate::*;
         let mut rendered = String::new();
-        match *self {
-            Str(ref s, ref next) => {
-                rendered.push_str(s);
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render_static_str(vars)?);
-                };
-            }
-            Var(ref key, ref next) => {
-                rendered.push_str(&format!(
+
+        for token in &self.tokens {
+            match token {
+                FormatToken::Text(text) => rendered.push_str(&text),
+                FormatToken::Var(ref key) => rendered.push_str(&format!(
                     "{}",
                     vars.get(&**key).internal_error(
                         "util",
-                        &format!("Unknown placeholder in format string: {}", key)
+                        &format!("Unknown placeholder in format string: {}", key),
                     )?
-                ));
-                if let Some(ref next) = *next {
-                    rendered.push_str(&*next.render_static_str(vars)?);
-                };
+                )),
             }
-        };
+        }
+
         Ok(rendered)
     }
 }

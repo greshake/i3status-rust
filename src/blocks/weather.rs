@@ -57,7 +57,7 @@ pub struct Weather {
     id: usize,
     weather: TextWidget,
     format: String,
-    weather_keys: HashMap<String, String>,
+    weather_keys: HashMap<&'static str, String>,
     service: WeatherService,
     update_interval: Duration,
     autolocate: bool,
@@ -272,7 +272,7 @@ impl Weather {
                 let apparent_temp =
                     australian_apparent_temp(raw_temp, raw_humidity, raw_wind_speed, *units);
 
-                self.weather_keys = map_to_owned!("{weather}" => raw_weather,
+                self.weather_keys = map!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
                                   "{humidity}" => format!("{:.0}", raw_humidity),
                                   "{apparent}" => format!("{:.0}",apparent_temp),
@@ -341,7 +341,8 @@ impl Block for Weather {
         match self.update_weather() {
             Ok(_) => {
                 let fmt = FormatTemplate::from_string(&self.format)?;
-                self.weather.set_text(fmt.render(&self.weather_keys));
+                self.weather
+                    .set_text(fmt.render_static_str(&self.weather_keys)?);
                 self.weather.set_state(State::Idle)
             }
             Err(BlockError(block, _)) | Err(InternalError(block, _, _)) if block == "curl" => {
