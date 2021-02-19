@@ -851,12 +851,12 @@ impl Sound {
         if self.device.muted() {
             self.text.set_icon(&self.icon(0));
             if self.show_volume_when_muted {
-                if self.bar {
-                    self.text.set_text(format_percent_bar(volume as f32));
-                } else {
-                    self.text.set_text(text.clone());
-                }
                 self.text.set_spacing(Spacing::Normal);
+                self.text.set_text(if self.bar {
+                    format_percent_bar(volume as f32)
+                } else {
+                    text.clone()
+                });
             } else {
                 self.text.set_text(String::new());
                 self.text.set_spacing(Spacing::Hidden);
@@ -864,19 +864,13 @@ impl Sound {
             self.text.set_state(State::Warning);
         } else {
             self.text.set_icon(&self.icon(volume));
+            self.text.set_spacing(Spacing::Normal);
+            self.text.set_state(State::Idle);
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
                 text.clone()
             });
-            self.text.set_spacing(Spacing::Normal);
-            self.text.set_state(State::Idle);
-        }
-
-        // If the format string is empty then this will lead to two spaces after the icon
-        // unless we disable the TextWidget spaces here
-        if text.is_empty() {
-            self.text.set_spacing(Spacing::Hidden);
         }
 
         Ok(())
