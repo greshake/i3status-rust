@@ -337,7 +337,7 @@ impl NetworkDevice {
 pub struct Net {
     id: usize,
     format: FormatTemplate,
-    format_alt: FormatTemplate,
+    format_alt: Option<FormatTemplate>,
     is_clicked: bool,
     output: TextWidget,
     ssid: Option<String>,
@@ -366,7 +366,6 @@ pub struct Net {
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
-    clickable: bool,
     shared_config: SharedConfig,
 }
 
@@ -405,7 +404,7 @@ pub struct NetConfig {
     pub format: String,
 
     #[serde(default = "NetConfig::default_format_alt")]
-    pub format_alt: String,
+    pub format_alt: Option<String>,
 
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
@@ -433,9 +432,6 @@ pub struct NetConfig {
     /// Minimum unit to display for throughput indicators.
     #[serde(default = "NetConfig::default_speed_min_unit")]
     pub speed_min_unit: Unit,
-
-    #[serde(default = "NetConfig::default_clickable")]
-    pub clickable: bool,
 }
 
 impl NetConfig {
@@ -447,8 +443,8 @@ impl NetConfig {
         "{speed_up} {speed_down}".to_owned()
     }
 
-    fn default_format_alt() -> String {
-        "{ssid}".to_owned()
+    fn default_format_alt() -> Option<String> {
+        None
     }
 
     fn default_hide_inactive() -> bool {
@@ -474,10 +470,6 @@ impl NetConfig {
     fn default_speed_digits() -> usize {
         3
     }
-
-    fn default_clickable() -> bool {
-        false
-    }
 }
 
 impl ConfigBlock for Net {
@@ -502,13 +494,21 @@ impl ConfigBlock for Net {
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
 
+        let format_alt = if let Some(f) = block_config.format_alt {
+            Some(
+                FormatTemplate::from_string(&f)
+                    .block_error("net", "Invalid format_alt specified")?,
+            )
+        } else {
+            None
+        };
+
         Ok(Net {
             id,
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
-            format_alt: FormatTemplate::from_string(&block_config.format_alt)
-                .block_error("net", "Invalid format_alt specified")?,
+            format_alt,
             is_clicked: false,
             output: TextWidget::new(id, shared_config.clone())
                 .with_icon(if wireless {
@@ -570,7 +570,6 @@ impl ConfigBlock for Net {
             hide_inactive: block_config.hide_inactive,
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
-            clickable: block_config.clickable,
             shared_config,
         })
     }
@@ -782,7 +781,8 @@ impl Block for Net {
         );
 
         let format = if self.is_clicked {
-            &self.format_alt
+            // calling unwrap() here is OK, because is_clicked could be set only if format_alt is some
+            self.format_alt.as_ref().unwrap()
         } else {
             &self.format
         };
@@ -801,7 +801,10 @@ impl Block for Net {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) && event.button == MouseButton::Left && self.clickable {
+        if event.matches_id(self.id)
+            && event.button == MouseButton::Left
+            && self.format_alt.is_some()
+        {
             self.is_clicked = !self.is_clicked;
             self.update()?;
         }
