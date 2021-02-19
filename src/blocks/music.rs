@@ -491,14 +491,15 @@ impl ConfigBlock for Music {
                         TextWidget::new(play_id, shared_config.clone())
                             .with_icon("music_play")
                             .with_state(State::Info)
-                            .with_spacing(Spacing::Inline),
+                            .with_spacing(Spacing::Hidden),
                     )
                 }
                 "next" => {
                     next = Some(
                         TextWidget::new(next_id, shared_config.clone())
                             .with_icon("music_next")
-                            .with_state(State::Info),
+                            .with_state(State::Info)
+                            .with_spacing(Spacing::Hidden),
                     )
                 }
                 "prev" => {
@@ -506,7 +507,7 @@ impl ConfigBlock for Music {
                         TextWidget::new(prev_id, shared_config.clone())
                             .with_icon("music_prev")
                             .with_state(State::Info)
-                            .with_spacing(Spacing::Inline),
+                            .with_spacing(Spacing::Hidden),
                     )
                 }
                 x => {
@@ -537,7 +538,8 @@ impl ConfigBlock for Music {
                 shared_config.clone(),
             )
             .with_icon("music")
-            .with_state(State::Info),
+            .with_state(State::Info)
+            .with_spacing(Spacing::Hidden),
             prev,
             play,
             next,
