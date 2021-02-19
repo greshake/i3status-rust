@@ -953,7 +953,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | Network interface to monitor (name from /sys/class/net). | No | Automatically chosen from the output of `ip route show default`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{speed_up} {speed_down}"`
-`clickable` | Whether to allow clicking on the block and swithching between `format` and `format_alt` | No | `false`
+`clickable` | Whether to allow clicking on the block and switching between `format` and `format_alt` | No | `false`
 `format_alt` | The same as `format`. Shows when the block is toggled with a mouse click (if `clickable` is `true`). | No | `"{ssid}"`
 `speed_digits` | Number of digits to use when displaying speeds. | No | `3`
 `speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`. | No | `"K"`
