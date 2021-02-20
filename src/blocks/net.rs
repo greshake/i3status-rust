@@ -672,7 +672,7 @@ impl Net {
 
         // Update the throughput/graph widgets if they are enabled
         let current_tx = self.device.tx_bytes()?;
-        let diff = current_tx.checked_sub(self.tx_bytes).unwrap_or(0);
+        let diff = current_tx.saturating_sub(self.tx_bytes);
         let tx_bytes = (diff as f64 / update_interval) as u64;
         self.tx_bytes = current_tx;
 
@@ -692,7 +692,7 @@ impl Net {
         self.graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
 
         let current_rx = self.device.rx_bytes()?;
-        let diff = current_rx.checked_sub(self.rx_bytes).unwrap_or(0);
+        let diff = current_rx.saturating_sub(self.rx_bytes);
         let rx_bytes = (diff as f64 / update_interval) as u64;
         self.rx_bytes = current_rx;
 

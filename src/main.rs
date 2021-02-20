@@ -1,9 +1,4 @@
 #[macro_use]
-extern crate serde_json;
-#[cfg(feature = "pulseaudio")]
-use libpulse_binding as pulse;
-
-#[macro_use]
 mod de;
 #[macro_use]
 mod util;
@@ -23,6 +18,9 @@ mod widgets;
 use cpuprofiler::PROFILER;
 #[cfg(feature = "profiling")]
 use std::ops::DerefMut;
+
+#[cfg(feature = "pulseaudio")]
+use libpulse_binding as pulse;
 
 use std::time::Duration;
 
@@ -52,7 +50,9 @@ fn main() {
             env!("GIT_COMMIT_DATE")
         )
     };
-    let mut builder = App::new("i3status-rs")
+
+    let mut builder = App::new("i3status-rs");
+    builder = builder
         .version(&*ver)
         .author(crate_authors!())
         .about(crate_description!())
@@ -83,7 +83,8 @@ fn main() {
                 .hidden(true),
         );
 
-    if_debug!({
+    #[cfg(feature = "profiling")]
+    {
         builder = builder
             .arg(
                 Arg::with_name("profile")
@@ -98,7 +99,7 @@ fn main() {
                     .default_value("10000")
                     .help("Number of times to execute update when profiling"),
             );
-    });
+    }
 
     let matches = builder.get_matches();
     let exit_on_error = matches.is_present("exit-on-error");
@@ -148,13 +149,16 @@ fn run(matches: &ArgMatches) -> Result<()> {
         crossbeam_channel::unbounded();
 
     // In dev build, we might diverge into profiling blocks here
-    if let Some(name) = matches.value_of("profile") {
-        return profile_config(
-            name,
-            matches.value_of("profile-runs").unwrap(),
-            &config,
-            tx_update_requests,
-        );
+    #[cfg(feature = "profiling")]
+    {
+        if let Some(name) = matches.value_of("profile") {
+            return profile_config(
+                name,
+                matches.value_of("profile-runs").unwrap(),
+                &config,
+                tx_update_requests,
+            );
+        }
     }
 
     let shared_config = SharedConfig::new(&config);
@@ -281,26 +285,11 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
     let shared_config = SharedConfig::new(&config);
     for &(ref block_name, ref block_config) in &config.blocks {
         if block_name == name {
-            let mut block = create_block(
-                0,
-                &block_name,
-                block_config.clone(),
-                shared_config.clone(),
-                update,
-            )?;
+            let mut block =
+                create_block(0, &block_name, block_config.clone(), shared_config, update)?;
             profile(profile_runs, &block_name, block.deref_mut());
             break;
         }
     }
     Ok(())
-}
-
-#[cfg(not(feature = "profiling"))]
-fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: Sender<Task>) -> Result<()> {
-    // TODO: Maybe we should just panic! here.
-    Err(InternalError(
-        "profile".to_string(),
-        "The 'profiling' feature was not enabled at compile time.".to_string(),
-        None,
-    ))
 }
