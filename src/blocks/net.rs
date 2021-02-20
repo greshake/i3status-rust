@@ -338,7 +338,6 @@ pub struct Net {
     id: usize,
     format: FormatTemplate,
     format_alt: Option<FormatTemplate>,
-    is_clicked: bool,
     output: TextWidget,
     ssid: Option<String>,
     max_ssid_width: usize,
@@ -509,7 +508,6 @@ impl ConfigBlock for Net {
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
             format_alt,
-            is_clicked: false,
             output: TextWidget::new(id, shared_config.clone())
                 .with_icon(if wireless {
                     "net_wireless"
@@ -780,14 +778,8 @@ impl Block for Net {
             "{graph_down}" => &self.graph_rx
         );
 
-        let format = if self.is_clicked {
-            // calling unwrap() here is OK, because is_clicked could be set only if format_alt is some
-            self.format_alt.as_ref().unwrap()
-        } else {
-            &self.format
-        };
-
-        self.output.set_text(format.render_static_str(&values)?);
+        self.output
+            .set_text(self.format.render_static_str(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }
@@ -801,11 +793,10 @@ impl Block for Net {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id)
-            && event.button == MouseButton::Left
-            && self.format_alt.is_some()
-        {
-            self.is_clicked = !self.is_clicked;
+        if event.matches_id(self.id) && event.button == MouseButton::Left {
+            if let Some(ref mut format) = self.format_alt {
+                std::mem::swap(format, &mut self.format);
+            }
             self.update()?;
         }
         Ok(())
