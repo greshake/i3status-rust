@@ -1,5 +1,3 @@
-// TODO: Replace with clamp() once the feature is stable? Ideally, remove num_traits altogether.
-use num_traits::{clamp, ToPrimitive};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs::{File, OpenOptions};
@@ -51,10 +49,7 @@ pub fn format_number(raw_value: f64, total_digits: usize, min_suffix: &str, unit
         _ => -4,
     };
 
-    // TODO: Replace with .clamp once the feature is stable
-    let exp_level = (raw_value.log10().div_euclid(3.) as i32)
-        .max(min_exp_level)
-        .min(4);
+    let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
     let value = raw_value / (10f64).powi(exp_level * 3);
 
     let suffix = match exp_level {
@@ -356,34 +351,36 @@ pub fn format_percent_bar(percent: f32) -> String {
         .collect()
 }
 
-pub fn format_vec_to_bar_graph<T>(content: &[T], min: Option<T>, max: Option<T>) -> String
-where
-    T: Ord + ToPrimitive,
-{
+pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f64>) -> String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
-    let bars = [
+    static BARS: [char; 8] = [
         '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
         '\u{2588}',
     ];
-    let min: f64 = match min {
-        Some(x) => x.to_f64().unwrap(),
-        None => content.iter().min().unwrap().to_f64().unwrap(),
-    };
-    let max: f64 = match max {
-        Some(x) => x.to_f64().unwrap(),
-        None => content.iter().max().unwrap().to_f64().unwrap(),
-    };
+
+    // Find min and max
+    let mut min_v = std::f64::INFINITY;
+    let mut max_v = -std::f64::INFINITY;
+    for v in content {
+        if *v < min_v {
+            min_v = *v;
+        }
+        if *v > max_v {
+            max_v = *v;
+        }
+    }
+
+    let min = min.unwrap_or(min_v);
+    let max = max.unwrap_or(max_v);
     let extant = max - min;
     if extant.is_normal() {
-        let length = bars.len() as f64 - 1.0;
+        let length = BARS.len() as f64 - 1.0;
         content
             .iter()
-            .map(|x| {
-                bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
-            })
-            .collect::<_>()
+            .map(|x| BARS[((x.clamp(min, max) - min) / extant * length) as usize])
+            .collect()
     } else {
-        (0..content.len() - 1).map(|_| bars[0]).collect::<_>()
+        (0..content.len() - 1).map(|_| BARS[0]).collect::<_>()
     }
 }
 
