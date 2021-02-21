@@ -261,12 +261,18 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
             config.theme.separator_bg.clone()
         };
 
+        // TODO simplify (https://github.com/rust-lang/rust/issues/15701)
+        #[cfg(feature = "debug_borders")]
+        let border = "#00ff00";
+        #[cfg(not(feature = "debug_borders"))]
+        let border = "";
         let separator = json!({
             "full_text": config.theme.separator,
             "separator": false,
             "separator_block_width": 0,
             "background": sep_bg,
             "color": sep_fg,
+            "border": border,
             "markup": "pango"
         });
 

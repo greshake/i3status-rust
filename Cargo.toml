@@ -14,6 +14,8 @@ default = ["pulseaudio"]
 pulseaudio = ["libpulse-binding"]
 # Opt-in block profiling, intended for developers.
 profiling = ["cpuprofiler", "progress"]
+# Make widgets' borders visible. (for debugging purposes)
+debug_borders = []
 
 [dependencies]
 crossbeam-channel = "0.5"

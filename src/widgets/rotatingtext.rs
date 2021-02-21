@@ -152,6 +152,11 @@ impl RotatingTextWidget {
             _ => String::from(""),
         });
 
+        // TODO simplify (https://github.com/rust-lang/rust/issues/15701)
+        #[cfg(feature = "debug_borders")]
+        let border = "ff0000";
+        #[cfg(not(feature = "debug_borders"))]
+        let border = "";
         self.rendered = json!({
             "full_text": format!("{}{}{}",
                                 icon,
@@ -177,7 +182,8 @@ impl RotatingTextWidget {
                 },
             "align": "left",
             "background": key_bg,
-            "color": key_fg
+            "color": key_fg,
+            "border": border
         });
 
         self.cached_output = Some(self.rendered.to_string());

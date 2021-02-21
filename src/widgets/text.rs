@@ -89,7 +89,13 @@ impl TextWidget {
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.shared_config.theme);
 
+        // TODO simplify (https://github.com/rust-lang/rust/issues/15701)
+        //
         // When rendered inline, remove the leading space
+        #[cfg(feature = "debug_borders")]
+        let border = "ff0000";
+        #[cfg(not(feature = "debug_borders"))]
+        let border = "";
         self.rendered = json!({
             "full_text": format!("{}{}{}",
                                 self.icon.clone().unwrap_or_else(|| {
@@ -109,6 +115,7 @@ impl TextWidget {
             "separator_block_width": 0,
             "background": key_bg,
             "color": key_fg,
+            "border": border,
             "markup": "pango"
         });
 
