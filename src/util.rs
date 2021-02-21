@@ -12,6 +12,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use regex::Regex;
 use serde::de::DeserializeOwned;
+use serde_json::json;
 
 use crate::blocks::Block;
 use crate::config::SharedConfig;
@@ -483,10 +484,6 @@ impl FormatTemplate {
         };
         Ok(rendered)
     }
-}
-
-macro_rules! if_debug {
-    ($x:block) => (if cfg!(debug_assertions) $x)
 }
 
 #[cfg(test)]

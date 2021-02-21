@@ -337,8 +337,7 @@ impl NetworkDevice {
 pub struct Net {
     id: usize,
     format: FormatTemplate,
-    format_alt: FormatTemplate,
-    is_clicked: bool,
+    format_alt: Option<FormatTemplate>,
     output: TextWidget,
     ssid: Option<String>,
     max_ssid_width: usize,
@@ -366,7 +365,6 @@ pub struct Net {
     hide_inactive: bool,
     hide_missing: bool,
     last_update: Instant,
-    clickable: bool,
     shared_config: SharedConfig,
 }
 
@@ -405,7 +403,7 @@ pub struct NetConfig {
     pub format: String,
 
     #[serde(default = "NetConfig::default_format_alt")]
-    pub format_alt: String,
+    pub format_alt: Option<String>,
 
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
@@ -433,9 +431,6 @@ pub struct NetConfig {
     /// Minimum unit to display for throughput indicators.
     #[serde(default = "NetConfig::default_speed_min_unit")]
     pub speed_min_unit: Unit,
-
-    #[serde(default = "NetConfig::default_clickable")]
-    pub clickable: bool,
 }
 
 impl NetConfig {
@@ -447,8 +442,8 @@ impl NetConfig {
         "{speed_up} {speed_down}".to_owned()
     }
 
-    fn default_format_alt() -> String {
-        "{ssid}".to_owned()
+    fn default_format_alt() -> Option<String> {
+        None
     }
 
     fn default_hide_inactive() -> bool {
@@ -474,10 +469,6 @@ impl NetConfig {
     fn default_speed_digits() -> usize {
         3
     }
-
-    fn default_clickable() -> bool {
-        false
-    }
 }
 
 impl ConfigBlock for Net {
@@ -502,14 +493,21 @@ impl ConfigBlock for Net {
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
 
+        let format_alt = if let Some(f) = block_config.format_alt {
+            Some(
+                FormatTemplate::from_string(&f)
+                    .block_error("net", "Invalid format_alt specified")?,
+            )
+        } else {
+            None
+        };
+
         Ok(Net {
             id,
             update_interval: block_config.interval,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
-            format_alt: FormatTemplate::from_string(&block_config.format_alt)
-                .block_error("net", "Invalid format_alt specified")?,
-            is_clicked: false,
+            format_alt,
             output: TextWidget::new(id, shared_config.clone())
                 .with_icon(if wireless {
                     "net_wireless"
@@ -570,7 +568,6 @@ impl ConfigBlock for Net {
             hide_inactive: block_config.hide_inactive,
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
-            clickable: block_config.clickable,
             shared_config,
         })
     }
@@ -675,7 +672,7 @@ impl Net {
 
         // Update the throughput/graph widgets if they are enabled
         let current_tx = self.device.tx_bytes()?;
-        let diff = current_tx.checked_sub(self.tx_bytes).unwrap_or(0);
+        let diff = current_tx.saturating_sub(self.tx_bytes);
         let tx_bytes = (diff as f64 / update_interval) as u64;
         self.tx_bytes = current_tx;
 
@@ -695,7 +692,7 @@ impl Net {
         self.graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
 
         let current_rx = self.device.rx_bytes()?;
-        let diff = current_rx.checked_sub(self.rx_bytes).unwrap_or(0);
+        let diff = current_rx.saturating_sub(self.rx_bytes);
         let rx_bytes = (diff as f64 / update_interval) as u64;
         self.rx_bytes = current_rx;
 
@@ -781,13 +778,8 @@ impl Block for Net {
             "{graph_down}" => &self.graph_rx
         );
 
-        let format = if self.is_clicked {
-            &self.format_alt
-        } else {
-            &self.format
-        };
-
-        self.output.set_text(format.render_static_str(&values)?);
+        self.output
+            .set_text(self.format.render_static_str(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }
@@ -801,8 +793,10 @@ impl Block for Net {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) && event.button == MouseButton::Left && self.clickable {
-            self.is_clicked = !self.is_clicked;
+        if event.matches_id(self.id) && event.button == MouseButton::Left {
+            if let Some(ref mut format) = self.format_alt {
+                std::mem::swap(format, &mut self.format);
+            }
             self.update()?;
         }
         Ok(())

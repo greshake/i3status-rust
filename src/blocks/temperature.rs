@@ -195,8 +195,8 @@ impl Block for Temperature {
 
         if self.fallback_required {
             for line in output.lines() {
-                if line.starts_with("  temp") {
-                    let rest = &line[6..]
+                if let Some(rest) = line.strip_prefix("  temp") {
+                    let rest = rest
                         .split('_')
                         .flat_map(|x| x.split(' '))
                         .flat_map(|x| x.split('.'))

@@ -855,7 +855,7 @@ impl Sound {
                 self.text.set_text(if self.bar {
                     format_percent_bar(volume as f32)
                 } else {
-                    text.clone()
+                    text
                 });
             } else {
                 self.text.set_text(String::new());
@@ -869,7 +869,7 @@ impl Sound {
             self.text.set_text(if self.bar {
                 format_percent_bar(volume as f32)
             } else {
-                text.clone()
+                text
             });
         }
 
