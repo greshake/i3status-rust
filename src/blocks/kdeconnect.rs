@@ -11,7 +11,6 @@ use serde_derive::Deserialize;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::{battery_level_to_icon, FormatTemplate};
 use crate::widgets::text::TextWidget;
@@ -557,7 +556,7 @@ impl ConfigBlock for KDEConnect {
             bat_critical: block_config.bat_critical,
             format: FormatTemplate::from_string(&block_config.format)?,
             format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
-            output: TextWidget::new(id, shared_config.clone()).with_icon("phone"),
+            output: TextWidget::new(id, 0, shared_config.clone()).with_icon("phone"),
             shared_config,
         })
     }
@@ -671,10 +670,6 @@ impl Block for KDEConnect {
     // Returns the view of the block, comprised of widgets.
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
-    }
-
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
     }
 }
 

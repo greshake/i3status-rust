@@ -111,7 +111,7 @@ impl ConfigBlock for Apt {
             .block_error("apt", "Failed to create config file")?;
         write!(config_file, "{}", apt_conf).block_error("apt", "Failed to write to config file")?;
 
-        let output = TextWidget::new(id, shared_config).with_icon("update");
+        let output = TextWidget::new(id, 0, shared_config).with_icon("update");
 
         Ok(Apt {
             id,
@@ -239,7 +239,7 @@ impl Block for Apt {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) && event.button == MouseButton::Left {
+        if event.button == MouseButton::Left {
             self.update()?;
         }
         Ok(())

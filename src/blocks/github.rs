@@ -11,7 +11,6 @@ use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::http;
-use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
@@ -81,7 +80,7 @@ impl ConfigBlock for Github {
         let token = std::env::var(GITHUB_TOKEN_ENV)
             .block_error("github", "missing I3RS_GITHUB_TOKEN environment variable")?;
 
-        let text = TextWidget::new(id, shared_config)
+        let text = TextWidget::new(id, 0, shared_config)
             .with_text("x")
             .with_icon("github");
         Ok(Github {
@@ -149,10 +148,6 @@ impl Block for Github {
         } else {
             vec![&self.text]
         }
-    }
-
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
     }
 
     fn id(&self) -> usize {

@@ -258,7 +258,7 @@ impl ConfigBlock for Bluetooth {
 
         Ok(Bluetooth {
             id,
-            output: TextWidget::new(id, shared_config).with_icon(match device.icon {
+            output: TextWidget::new(id, 0, shared_config).with_icon(match device.icon {
                 Some(ref icon) if icon == "audio-card" => "headphones",
                 Some(ref icon) if icon == "input-gaming" => "joystick",
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",
@@ -318,10 +318,8 @@ impl Block for Bluetooth {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) {
-            if let MouseButton::Right = event.button {
-                self.device.toggle()?;
-            }
+        if let MouseButton::Right = event.button {
+            self.device.toggle()?;
         }
         Ok(())
     }

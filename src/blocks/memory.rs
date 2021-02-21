@@ -354,7 +354,7 @@ impl ConfigBlock for Memory {
         tx: Sender<Task>,
     ) -> Result<Self> {
         let icons: bool = block_config.icons;
-        let widget = TextWidget::new(id, shared_config).with_text("");
+        let widget = TextWidget::new(id, 0, shared_config).with_text("");
         Ok(Memory {
             id,
             memtype: block_config.display_type,
@@ -482,15 +482,13 @@ impl Block for Memory {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) && self.clickable {
-            if let MouseButton::Left = event.button {
-                self.switch();
-                self.update()?;
-                self.tx_update_request.send(Task {
-                    id: self.id,
-                    update_time: Instant::now(),
-                })?;
-            }
+        if let MouseButton::Left = event.button {
+            self.switch();
+            self.update()?;
+            self.tx_update_request.send(Task {
+                id: self.id,
+                update_time: Instant::now(),
+            })?;
         }
 
         Ok(())

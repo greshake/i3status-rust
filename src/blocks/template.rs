@@ -50,7 +50,7 @@ impl ConfigBlock for Template {
         shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(id, shared_config.clone()).with_text("Template");
+        let text = TextWidget::new(id, 0, shared_config.clone()).with_text("Template");
 
         Ok(Template {
             id,

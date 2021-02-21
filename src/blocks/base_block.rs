@@ -40,11 +40,9 @@ impl<T: Block> Block for BaseBlock<T> {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         match &self.on_click {
             Some(cmd) => {
-                if e.matches_id(self.id()) {
-                    if let MouseButton::Left = e.button {
-                        spawn_child_async("sh", &["-c", &cmd])
-                            .block_error(&self.name, "could not spawn child")?;
-                    }
+                if let MouseButton::Left = e.button {
+                    spawn_child_async("sh", &["-c", &cmd])
+                        .block_error(&self.name, "could not spawn child")?;
                 }
                 Ok(())
             }

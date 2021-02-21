@@ -71,7 +71,7 @@ impl ConfigBlock for Watson {
     ) -> Result<Self> {
         let watson = Watson {
             id,
-            text: TextWidget::new(id, shared_config),
+            text: TextWidget::new(id, 0, shared_config),
             state_path: block_config.state_path.clone(),
             show_time: block_config.show_time,
             update_interval: block_config.interval,
@@ -187,11 +187,9 @@ impl Block for Watson {
         }
     }
 
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.matches_id(self.id) {
-            self.show_time = !self.show_time;
-            self.update()?;
-        }
+    fn click(&mut self, _e: &I3BarEvent) -> Result<()> {
+        self.show_time = !self.show_time;
+        self.update()?;
         Ok(())
     }
 

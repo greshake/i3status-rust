@@ -209,11 +209,10 @@ impl ConfigBlock for DiskSpace {
     ) -> Result<Self> {
         let icon = shared_config.get_icon("disk_drive").unwrap_or_default();
 
-        let disk_space = TextWidget::new(id, shared_config);
         Ok(DiskSpace {
             id,
             update_interval: block_config.interval,
-            disk_space,
+            disk_space: TextWidget::new(id, 0, shared_config),
             alias: block_config.alias,
             path: block_config.path,
             format: FormatTemplate::from_string(&block_config.format)?,

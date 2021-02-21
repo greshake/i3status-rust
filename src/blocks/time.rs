@@ -76,7 +76,7 @@ impl ConfigBlock for Time {
     ) -> Result<Self> {
         Ok(Time {
             id,
-            time: TextWidget::new(id, shared_config)
+            time: TextWidget::new(id, 0, shared_config)
                 .with_text("")
                 .with_icon("time"),
             update_interval: block_config.interval,

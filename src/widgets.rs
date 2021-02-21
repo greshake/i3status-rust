@@ -1,3 +1,4 @@
+pub mod i3block_data;
 pub mod rotatingtext;
 pub mod text;
 
@@ -6,9 +7,9 @@ use std::str::FromStr;
 use serde::de::value::{Error, StrDeserializer};
 use serde::de::{Deserialize, IntoDeserializer};
 use serde_derive::Deserialize;
-use serde_json::value::Value;
 
 use crate::themes::Theme;
+use i3block_data::I3BlockData;
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 pub enum Spacing {
@@ -52,6 +53,5 @@ impl FromStr for State {
 }
 
 pub trait I3BarWidget {
-    fn to_string(&self) -> String;
-    fn get_rendered(&self) -> &Value;
+    fn get_data(&self) -> I3BlockData;
 }

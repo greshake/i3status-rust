@@ -236,7 +236,7 @@ impl ConfigBlock for Xrandr {
             step_width = 50;
         }
         Ok(Xrandr {
-            text: TextWidget::new(id, shared_config.clone()).with_icon("xrandr"),
+            text: TextWidget::new(id, 0, shared_config.clone()).with_icon("xrandr"),
             id,
             update_interval: block_config.interval,
             current_idx: 0,
@@ -266,38 +266,36 @@ impl Block for Xrandr {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.matches_id(self.id) {
-            match e.button {
-                MouseButton::Left => {
-                    if self.current_idx < self.monitors.len() - 1 {
-                        self.current_idx += 1;
-                    } else {
-                        self.current_idx = 0;
-                    }
-                }
-                mb => {
-                    use LogicalDirection::*;
-                    match self.shared_config.scrolling.to_logical_direction(mb) {
-                        Some(Up) => {
-                            if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                                if monitor.brightness <= (100 - self.step_width) {
-                                    monitor.set_brightness(self.step_width as i32);
-                                }
-                            }
-                        }
-                        Some(Down) => {
-                            if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                                if monitor.brightness >= self.step_width {
-                                    monitor.set_brightness(-(self.step_width as i32));
-                                }
-                            }
-                        }
-                        None => {}
-                    }
+        match e.button {
+            MouseButton::Left => {
+                if self.current_idx < self.monitors.len() - 1 {
+                    self.current_idx += 1;
+                } else {
+                    self.current_idx = 0;
                 }
             }
-            self.display()?;
+            mb => {
+                use LogicalDirection::*;
+                match self.shared_config.scrolling.to_logical_direction(mb) {
+                    Some(Up) => {
+                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                            if monitor.brightness <= (100 - self.step_width) {
+                                monitor.set_brightness(self.step_width as i32);
+                            }
+                        }
+                    }
+                    Some(Down) => {
+                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                            if monitor.brightness >= self.step_width {
+                                monitor.set_brightness(-(self.step_width as i32));
+                            }
+                        }
+                    }
+                    None => {}
+                }
+            }
         }
+        self.display()?;
 
         Ok(())
     }
