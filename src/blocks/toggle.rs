@@ -75,7 +75,7 @@ impl ConfigBlock for Toggle {
     ) -> Result<Self> {
         Ok(Toggle {
             id,
-            text: TextWidget::new(id, shared_config)
+            text: TextWidget::new(id, 0, shared_config)
                 .with_text(&block_config.text.unwrap_or_default()),
             command_on: block_config.command_on,
             command_off: block_config.command_off,
@@ -116,31 +116,29 @@ impl Block for Toggle {
         vec![&self.text]
     }
 
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.matches_id(self.id) {
-            let cmd = if self.toggled {
-                &self.command_off
-            } else {
-                &self.command_on
-            };
+    fn click(&mut self, _e: &I3BarEvent) -> Result<()> {
+        let cmd = if self.toggled {
+            &self.command_off
+        } else {
+            &self.command_on
+        };
 
-            let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-                .args(&["-c", cmd])
-                .output()
-                .block_error("toggle", "failed to run toggle command")?;
+        let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+            .args(&["-c", cmd])
+            .output()
+            .block_error("toggle", "failed to run toggle command")?;
 
-            if output.status.success() {
-                self.text.set_state(State::Idle);
-                self.toggled = !self.toggled;
-                self.text.set_icon(if self.toggled {
-                    self.icon_on.as_str()
-                } else {
-                    self.icon_off.as_str()
-                })
+        if output.status.success() {
+            self.text.set_state(State::Idle);
+            self.toggled = !self.toggled;
+            self.text.set_icon(if self.toggled {
+                self.icon_on.as_str()
             } else {
-                self.text.set_state(State::Critical);
-            };
-        }
+                self.icon_off.as_str()
+            })
+        } else {
+            self.text.set_state(State::Critical);
+        };
 
         Ok(())
     }

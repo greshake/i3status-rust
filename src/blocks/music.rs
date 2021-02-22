@@ -488,7 +488,7 @@ impl ConfigBlock for Music {
             match &*button {
                 "play" => {
                     play = Some(
-                        TextWidget::new(play_id, shared_config.clone())
+                        TextWidget::new(id, play_id, shared_config.clone())
                             .with_icon("music_play")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Hidden),
@@ -496,7 +496,7 @@ impl ConfigBlock for Music {
                 }
                 "next" => {
                     next = Some(
-                        TextWidget::new(next_id, shared_config.clone())
+                        TextWidget::new(id, next_id, shared_config.clone())
                             .with_icon("music_next")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Hidden),
@@ -504,7 +504,7 @@ impl ConfigBlock for Music {
                 }
                 "prev" => {
                     prev = Some(
-                        TextWidget::new(prev_id, shared_config.clone())
+                        TextWidget::new(id, prev_id, shared_config.clone())
                             .with_icon("music_prev")
                             .with_state(State::Info)
                             .with_spacing(Spacing::Hidden),
@@ -531,6 +531,7 @@ impl ConfigBlock for Music {
             collapsed_id,
             current_song_widget: RotatingTextWidget::new(
                 id,
+                id,
                 Duration::new(block_config.marquee_interval.as_secs(), 0),
                 Duration::new(0, block_config.marquee_speed.subsec_nanos()),
                 block_config.max_width,
@@ -544,7 +545,7 @@ impl ConfigBlock for Music {
             play,
             next,
             on_click: None,
-            on_collapsed_click_widget: TextWidget::new(collapsed_id, shared_config.clone())
+            on_collapsed_click_widget: TextWidget::new(id, collapsed_id, shared_config.clone())
                 .with_icon("music")
                 .with_state(State::Info)
                 .with_spacing(Spacing::Hidden),
@@ -652,7 +653,7 @@ impl Block for Music {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(event_id) = event.id {
+        if let Some(event_id) = event.instance {
             let action = match event_id {
                 id if id == self.play_id => "PlayPause",
                 id if id == self.next_id => "Next",

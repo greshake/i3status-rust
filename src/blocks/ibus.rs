@@ -209,7 +209,7 @@ impl ConfigBlock for IBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(id, shared_config).with_text("IBus");
+        let text = TextWidget::new(id, 0, shared_config).with_text("IBus");
         Ok(IBus {
             id,
             text,
@@ -254,9 +254,8 @@ impl Block for IBus {
         vec![&self.text]
     }
 
-    // This function is called on every block for every click.
-    // TODO: Filter events by using the event.name property,
-    // and use to switch between input engines?
+    // TODO:
+    // switch between input engines?
     fn click(&mut self, _: &I3BarEvent) -> Result<()> {
         Ok(())
     }

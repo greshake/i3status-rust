@@ -1,15 +1,16 @@
 use std::time::{Duration, Instant};
 
-use serde_json::json;
-use serde_json::value::Value;
-
-use super::{I3BarWidget, Spacing, State};
+use super::{
+    i3block_data::{I3BlockData, I3BlockMinWidth},
+    I3BarWidget, Spacing, State,
+};
 use crate::config::SharedConfig;
 use crate::errors::*;
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {
     id: usize,
+    pub instance: usize,
     rotation_pos: usize,
     max_width: usize,
     dynamic_width: bool,
@@ -20,24 +21,32 @@ pub struct RotatingTextWidget {
     icon: Option<String>,
     state: State,
     spacing: Spacing,
-    rendered: Value,
-    cached_output: Option<String>,
     shared_config: SharedConfig,
     pub rotating: bool,
+
+    inner: I3BlockData,
 }
 
 #[allow(dead_code)]
 impl RotatingTextWidget {
     pub fn new(
         id: usize,
+        instance: usize,
         interval: Duration,
         speed: Duration,
         max_width: usize,
         dynamic_width: bool,
         shared_config: SharedConfig,
     ) -> RotatingTextWidget {
+        let inner = I3BlockData {
+            name: Some(id.to_string()),
+            instance: Some(instance.to_string()),
+            ..I3BlockData::default()
+        };
+
         RotatingTextWidget {
             id,
+            instance,
             rotation_pos: 0,
             max_width,
             dynamic_width,
@@ -48,16 +57,11 @@ impl RotatingTextWidget {
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
-            rendered: json!({
-                "full_text": "",
-                "separator": false,
-                "separator_block_width": 0,
-                "background": "#000000",
-                "color": "#000000"
-            }),
-            cached_output: None,
+            //cached_output: None,
             shared_config,
             rotating: false,
+
+            inner,
         }
     }
 
@@ -152,41 +156,28 @@ impl RotatingTextWidget {
             _ => String::from(""),
         });
 
-        // TODO simplify (https://github.com/rust-lang/rust/issues/15701)
-        #[cfg(feature = "debug_borders")]
-        let border = "ff0000";
-        #[cfg(not(feature = "debug_borders"))]
-        let border = "";
-        self.rendered = json!({
-            "full_text": format!("{}{}{}",
-                                icon,
-                                self.get_rotated_content(),
-                                match self.spacing {
-                                    Spacing::Hidden => String::from(""),
-                                    _ => String::from(" ")
-                                }),
-            "separator": false,
-            "separator_block_width": 0,
-            "name" : self.id.to_string(),
-            "min_width":
-                if self.content.is_empty() {
-                    "".to_string()
-                } else {
-                    let text_width = self.get_rotated_content().chars().count();
-                    let icon_width = icon.chars().count();
-                    if self.dynamic_width && text_width < self.max_width {
-                        "0".repeat(text_width + icon_width)
-                    } else {
-                        "0".repeat(self.max_width + icon_width + 1)
-                    }
-                },
-            "align": "left",
-            "background": key_bg,
-            "color": key_fg,
-            "border": border
+        self.inner.full_text = format!(
+            "{}{}{}",
+            icon,
+            self.get_rotated_content(),
+            match self.spacing {
+                Spacing::Hidden => String::from(""),
+                _ => String::from(" "),
+            }
+        );
+        self.inner.min_width = Some(if self.content.is_empty() {
+            I3BlockMinWidth::Text("".to_string())
+        } else {
+            let text_width = self.get_rotated_content().chars().count();
+            let icon_width = icon.chars().count();
+            if self.dynamic_width && text_width < self.max_width {
+                I3BlockMinWidth::Text("0".repeat(text_width + icon_width))
+            } else {
+                I3BlockMinWidth::Text("0".repeat(self.max_width + icon_width + 1))
+            }
         });
-
-        self.cached_output = Some(self.rendered.to_string());
+        self.inner.background = key_bg.clone();
+        self.inner.color = key_fg.clone();
     }
 
     pub fn next(&mut self) -> Result<(bool, Option<Duration>)> {
@@ -218,13 +209,7 @@ impl RotatingTextWidget {
 }
 
 impl I3BarWidget for RotatingTextWidget {
-    fn to_string(&self) -> String {
-        self.cached_output
-            .clone()
-            .unwrap_or_else(|| self.rendered.to_string())
-    }
-
-    fn get_rendered(&self) -> &Value {
-        &self.rendered
+    fn get_data(&self) -> I3BlockData {
+        self.inner.clone()
     }
 }

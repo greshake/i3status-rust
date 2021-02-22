@@ -140,7 +140,7 @@ impl ConfigBlock for Pomodoro {
     ) -> Result<Self> {
         Ok(Pomodoro {
             id,
-            time: TextWidget::new(id, shared_config).with_icon("pomodoro"),
+            time: TextWidget::new(id, 0, shared_config).with_icon("pomodoro"),
             state: State::Stopped,
             length: Duration::from_secs(block_config.length * 60), // convert to minutes
             break_length: Duration::from_secs(block_config.break_length * 60), // convert to minutes
@@ -187,31 +187,28 @@ impl Block for Pomodoro {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) {
-            match event.button {
-                MouseButton::Right => {
-                    self.state = State::Stopped;
-                    self.count = 0;
-                }
-                _ => match &self.state {
-                    State::Stopped => {
-                        self.state = State::Started(Instant::now());
-                    }
-                    State::Started(_) => {
-                        self.state = State::Paused(self.state.elapsed());
-                    }
-                    State::Paused(duration) => {
-                        self.state = State::Started(
-                            Instant::now().checked_sub(duration.to_owned()).unwrap(),
-                        );
-                    }
-                    State::OnBreak(_) => {
-                        self.state = State::Started(Instant::now());
-                    }
-                },
+        match event.button {
+            MouseButton::Right => {
+                self.state = State::Stopped;
+                self.count = 0;
             }
-            self.set_text();
+            _ => match &self.state {
+                State::Stopped => {
+                    self.state = State::Started(Instant::now());
+                }
+                State::Started(_) => {
+                    self.state = State::Paused(self.state.elapsed());
+                }
+                State::Paused(duration) => {
+                    self.state =
+                        State::Started(Instant::now().checked_sub(duration.to_owned()).unwrap());
+                }
+                State::OnBreak(_) => {
+                    self.state = State::Started(Instant::now());
+                }
+            },
         }
+        self.set_text();
 
         Ok(())
     }

@@ -34,6 +34,7 @@ struct I3BarEventInternal {
 #[derive(Debug, Clone)]
 pub struct I3BarEvent {
     pub id: Option<usize>,
+    pub instance: Option<usize>,
     pub button: MouseButton,
 }
 
@@ -62,6 +63,7 @@ pub fn process_events(sender: Sender<I3BarEvent>) {
                 sender
                     .send(I3BarEvent {
                         id: e.name.map(|x| x.parse::<usize>().unwrap()),
+                        instance: e.instance.map(|x| x.parse::<usize>().unwrap()),
                         button: e.button,
                     })
                     .unwrap();

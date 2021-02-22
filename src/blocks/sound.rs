@@ -933,7 +933,7 @@ impl ConfigBlock for Sound {
             mappings: block_config.mappings,
             max_vol: block_config.max_vol,
             scrolling: shared_config.scrolling,
-            text: TextWidget::new(id, shared_config).with_icon("volume_empty"),
+            text: TextWidget::new(id, 0, shared_config).with_icon("volume_empty"),
         };
 
         sound.device.monitor(id, tx_update_request)?;
@@ -960,30 +960,29 @@ impl Block for Sound {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.matches_id(self.id) {
-            match e.button {
-                MouseButton::Right => self.device.toggle()?,
-                MouseButton::Left => {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("sound", "could not spawn child")?;
-                    }
-                }
-                _ => {
-                    use LogicalDirection::*;
-                    match self.scrolling.to_logical_direction(e.button) {
-                        Some(Up) => self
-                            .device
-                            .set_volume(self.step_width as i32, self.max_vol)?,
-                        Some(Down) => self
-                            .device
-                            .set_volume(-(self.step_width as i32), self.max_vol)?,
-                        None => (),
-                    }
+        match e.button {
+            MouseButton::Right => self.device.toggle()?,
+            MouseButton::Left => {
+                if let Some(ref cmd) = self.on_click {
+                    spawn_child_async("sh", &["-c", cmd])
+                        .block_error("sound", "could not spawn child")?;
                 }
             }
-            self.display()?;
+            _ => {
+                use LogicalDirection::*;
+                match self.scrolling.to_logical_direction(e.button) {
+                    Some(Up) => self
+                        .device
+                        .set_volume(self.step_width as i32, self.max_vol)?,
+                    Some(Down) => self
+                        .device
+                        .set_volume(-(self.step_width as i32), self.max_vol)?,
+                    None => (),
+                }
+            }
         }
+        self.display()?;
+
         Ok(())
     }
 

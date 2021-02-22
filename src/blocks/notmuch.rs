@@ -112,7 +112,7 @@ impl ConfigBlock for Notmuch {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut widget = TextWidget::new(id, shared_config);
+        let mut widget = TextWidget::new(id, 0, shared_config);
         if !block_config.no_icon {
             widget.set_icon("mail");
         }
@@ -172,7 +172,7 @@ impl Block for Notmuch {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) && event.button == MouseButton::Left {
+        if event.button == MouseButton::Left {
             self.update()?;
         }
 

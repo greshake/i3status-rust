@@ -129,7 +129,7 @@ impl ConfigBlock for Taskwarrior {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let output = TextWidget::new(id, shared_config)
+        let output = TextWidget::new(id, 0, shared_config)
             .with_icon("tasks")
             .with_text("-");
         // If the deprecated `filter_tags` option has been set,
@@ -244,18 +244,16 @@ impl Block for Taskwarrior {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) {
-            match event.button {
-                MouseButton::Left => {
-                    self.update()?;
-                }
-                MouseButton::Right => {
-                    // Increment the filter_index, rotating at the end
-                    self.filter_index = (self.filter_index + 1) % self.filters.len();
-                    self.update()?;
-                }
-                _ => {}
+        match event.button {
+            MouseButton::Left => {
+                self.update()?;
             }
+            MouseButton::Right => {
+                // Increment the filter_index, rotating at the end
+                self.filter_index = (self.filter_index + 1) % self.filters.len();
+                self.update()?;
+            }
+            _ => {}
         }
 
         Ok(())

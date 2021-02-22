@@ -8,7 +8,6 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
@@ -91,7 +90,7 @@ impl ConfigBlock for Maildir {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let widget = TextWidget::new(id, shared_config).with_text("");
+        let widget = TextWidget::new(id, 0, shared_config).with_text("");
         Ok(Maildir {
             id,
             update_interval: block_config.interval,
@@ -129,10 +128,6 @@ impl Block for Maildir {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
     }
 
     fn id(&self) -> usize {

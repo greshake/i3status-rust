@@ -88,7 +88,7 @@ impl ConfigBlock for Custom {
         let mut custom = Custom {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, shared_config),
+            output: TextWidget::new(id, 0, shared_config),
             command: None,
             on_click: None,
             cycle: None,
@@ -201,26 +201,24 @@ impl Block for Custom {
         Ok(())
     }
 
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) {
-            let mut update = false;
+    fn click(&mut self, _e: &I3BarEvent) -> Result<()> {
+        let mut update = false;
 
-            if let Some(ref on_click) = self.on_click {
-                spawn_child_async(&self.shell, &["-c", on_click]).ok();
-                update = true;
-            }
+        if let Some(ref on_click) = self.on_click {
+            spawn_child_async(&self.shell, &["-c", on_click]).ok();
+            update = true;
+        }
 
-            if let Some(ref mut cycle) = self.cycle {
-                cycle.next();
-                update = true;
-            }
+        if let Some(ref mut cycle) = self.cycle {
+            cycle.next();
+            update = true;
+        }
 
-            if update {
-                self.tx_update_request.send(Task {
-                    id: self.id,
-                    update_time: Instant::now(),
-                })?;
-            }
+        if update {
+            self.tx_update_request.send(Task {
+                id: self.id,
+                update_time: Instant::now(),
+            })?;
         }
 
         Ok(())

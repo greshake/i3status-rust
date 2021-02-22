@@ -1035,7 +1035,7 @@ Placeholder | Description
 
 Displays the current state of your notification daemon.
 
-Note: For `dunst` this block uses DBus to get instantaneous updates. For now this requires building `dunst` from source (`dunst-git` from the AUR if you are on Arch Linux) until the next release of `dunst` comes out containing this feature: https://github.com/dunst-project/dunst/pull/766.
+Note: For `dunst` this block uses DBus to get instantaneous updates, which is only possible in dunst v1.6.0 and higher.
 
 TODO: support `mako`
 

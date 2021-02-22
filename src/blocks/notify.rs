@@ -22,7 +22,6 @@ use crate::widgets::I3BarWidget;
 
 pub struct Notify {
     id: usize,
-    notify_id: usize,
     paused: Arc<Mutex<i64>>,
     format: FormatTemplate,
     output: TextWidget,
@@ -109,10 +108,9 @@ impl ConfigBlock for Notify {
 
         Ok(Notify {
             id,
-            notify_id,
             paused: state,
             format: FormatTemplate::from_string(&block_config.format)?,
-            output: TextWidget::new(notify_id, shared_config).with_icon(icon),
+            output: TextWidget::new(notify_id, 0, shared_config).with_icon(icon),
         })
     }
 }
@@ -147,34 +145,32 @@ impl Block for Notify {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.matches_id(self.notify_id) {
-            if let MouseButton::Left = e.button {
-                let c = Connection::get_private(BusType::Session).block_error(
-                    "notify",
-                    &"Failed to establish D-Bus connection".to_string(),
-                )?;
+        if let MouseButton::Left = e.button {
+            let c = Connection::get_private(BusType::Session).block_error(
+                "notify",
+                &"Failed to establish D-Bus connection".to_string(),
+            )?;
 
-                let p = c.with_path(
-                    "org.freedesktop.Notifications",
-                    "/org/freedesktop/Notifications",
-                    5000,
-                );
+            let p = c.with_path(
+                "org.freedesktop.Notifications",
+                "/org/freedesktop/Notifications",
+                5000,
+            );
 
-                let paused = *self
-                    .paused
-                    .lock()
-                    .block_error("notify", "failed to acquire lock")?;
+            let paused = *self
+                .paused
+                .lock()
+                .block_error("notify", "failed to acquire lock")?;
 
-                if paused == 1 {
-                    p.set("org.dunstproject.cmd0", "paused", false)
-                        .block_error("notify", &"Failed to query D-Bus".to_string())?;
-                } else {
-                    p.set("org.dunstproject.cmd0", "paused", true)
-                        .block_error("notify", &"Failed to query D-Bus".to_string())?;
-                }
-
-                // block will auto-update due to monitoring the bus
+            if paused == 1 {
+                p.set("org.dunstproject.cmd0", "paused", false)
+                    .block_error("notify", &"Failed to query D-Bus".to_string())?;
+            } else {
+                p.set("org.dunstproject.cmd0", "paused", true)
+                    .block_error("notify", &"Failed to query D-Bus".to_string())?;
             }
+
+            // block will auto-update due to monitoring the bus
         }
         Ok(())
     }

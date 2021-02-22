@@ -353,8 +353,8 @@ pub struct Net {
     update_interval: Duration,
     device: NetworkDevice,
     auto_device: bool,
-    tx_buff: Vec<u64>,
-    rx_buff: Vec<u64>,
+    tx_buff: Vec<f64>,
+    rx_buff: Vec<f64>,
     tx_bytes: u64,
     rx_bytes: u64,
     use_bits: bool,
@@ -508,7 +508,7 @@ impl ConfigBlock for Net {
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
             format_alt,
-            output: TextWidget::new(id, shared_config.clone())
+            output: TextWidget::new(id, 0, shared_config.clone())
                 .with_icon(if wireless {
                     "net_wireless"
                 } else if vpn {
@@ -559,8 +559,8 @@ impl ConfigBlock for Net {
             graph_rx: String::new(),
             device,
             auto_device: block_config.device.is_none(),
-            rx_buff: vec![0; 10],
-            tx_buff: vec![0; 10],
+            rx_buff: vec![0.; 10],
+            tx_buff: vec![0.; 10],
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
             active: true,
@@ -688,7 +688,7 @@ impl Net {
         );
 
         self.tx_buff.remove(0);
-        self.tx_buff.push(tx_bytes);
+        self.tx_buff.push(tx_bytes as f64);
         self.graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
 
         let current_rx = self.device.rx_bytes()?;
@@ -708,7 +708,7 @@ impl Net {
         );
 
         self.rx_buff.remove(0);
-        self.rx_buff.push(rx_bytes);
+        self.rx_buff.push(rx_bytes as f64);
         self.graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
 
         Ok(())
@@ -793,7 +793,7 @@ impl Block for Net {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) && event.button == MouseButton::Left {
+        if event.button == MouseButton::Left {
             if let Some(ref mut format) = self.format_alt {
                 std::mem::swap(format, &mut self.format);
             }

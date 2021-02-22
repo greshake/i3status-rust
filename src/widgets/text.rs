@@ -1,41 +1,35 @@
-use serde_json::json;
-use serde_json::value::Value;
-
-use super::I3BarWidget;
-use super::Spacing;
-use super::State;
+use super::{i3block_data::I3BlockData, I3BarWidget, Spacing, State};
 use crate::config::SharedConfig;
 
 #[derive(Clone, Debug)]
 pub struct TextWidget {
     id: usize,
+    pub instance: usize,
     content: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
-    rendered: Value,
-    cached_output: Option<String>,
     shared_config: SharedConfig,
+    inner: I3BlockData,
 }
 
 impl TextWidget {
-    pub fn new(id: usize, shared_config: SharedConfig) -> Self {
+    pub fn new(id: usize, instance: usize, shared_config: SharedConfig) -> Self {
+        let inner = I3BlockData {
+            name: Some(id.to_string()),
+            instance: Some(instance.to_string()),
+            ..I3BlockData::default()
+        };
+
         TextWidget {
             id,
+            instance,
             content: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
-            rendered: json!({
-                "full_text": "",
-                "separator": false,
-                "separator_block_width": 0,
-                "background": "#000000",
-                "color": "#000000",
-                "markup": "pango"
-            }),
-            cached_output: None,
             shared_config,
+            inner,
         }
     }
 
@@ -89,48 +83,28 @@ impl TextWidget {
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.shared_config.theme);
 
-        // TODO simplify (https://github.com/rust-lang/rust/issues/15701)
-        //
         // When rendered inline, remove the leading space
-        #[cfg(feature = "debug_borders")]
-        let border = "ff0000";
-        #[cfg(not(feature = "debug_borders"))]
-        let border = "";
-        self.rendered = json!({
-            "full_text": format!("{}{}{}",
-                                self.icon.clone().unwrap_or_else(|| {
-                                    match self.spacing {
-                                        Spacing::Normal => String::from(" "),
-                                        _ => String::from("")
-                                    }
-                                }),
-                                self.content.clone().unwrap_or_default(),
-                                match self.spacing {
-                                    Spacing::Hidden => String::from(""),
-                                    _ => String::from(" ")
-                                }
-                            ),
-            "separator": false,
-            "name": self.id.to_string(),
-            "separator_block_width": 0,
-            "background": key_bg,
-            "color": key_fg,
-            "border": border,
-            "markup": "pango"
-        });
-
-        self.cached_output = Some(self.rendered.to_string());
+        self.inner.full_text = format!(
+            "{}{}{}",
+            self.icon.clone().unwrap_or_else(|| {
+                match self.spacing {
+                    Spacing::Normal => String::from(" "),
+                    _ => String::from(""),
+                }
+            }),
+            self.content.clone().unwrap_or_default(),
+            match self.spacing {
+                Spacing::Hidden => String::from(""),
+                _ => String::from(" "),
+            }
+        );
+        self.inner.background = key_bg.clone();
+        self.inner.color = key_fg.clone();
     }
 }
 
 impl I3BarWidget for TextWidget {
-    fn to_string(&self) -> String {
-        self.cached_output
-            .clone()
-            .unwrap_or_else(|| self.rendered.to_string())
-    }
-
-    fn get_rendered(&self) -> &Value {
-        &self.rendered
+    fn get_data(&self) -> I3BlockData {
+        self.inner.clone()
     }
 }

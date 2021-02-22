@@ -181,7 +181,7 @@ impl ConfigBlock for NvidiaGpu {
             gpu_enabled: false,
             gpu_id: block_config.gpu_id,
 
-            name_widget: TextWidget::new(id, shared_config.clone())
+            name_widget: TextWidget::new(id, id, shared_config.clone())
                 .with_icon("gpu")
                 .with_spacing(Spacing::Inline),
             name_widget_mode: if block_config.label.is_some() {
@@ -193,7 +193,8 @@ impl ConfigBlock for NvidiaGpu {
 
             show_memory: if block_config.show_memory {
                 Some(
-                    TextWidget::new(id_memory, shared_config.clone()).with_spacing(Spacing::Inline),
+                    TextWidget::new(id, id_memory, shared_config.clone())
+                        .with_spacing(Spacing::Inline),
                 )
             } else {
                 None
@@ -201,19 +202,22 @@ impl ConfigBlock for NvidiaGpu {
             memory_widget_mode: MemoryWidgetMode::ShowUsedMemory,
 
             show_utilization: if block_config.show_utilization {
-                Some(TextWidget::new(id, shared_config.clone()).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, id, shared_config.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_temperature: if block_config.show_temperature {
-                Some(TextWidget::new(id, shared_config.clone()).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, id, shared_config.clone()).with_spacing(Spacing::Inline))
             } else {
                 None
             },
 
             show_fan: if block_config.show_fan_speed {
-                Some(TextWidget::new(id_fans, shared_config.clone()).with_spacing(Spacing::Inline))
+                Some(
+                    TextWidget::new(id, id_fans, shared_config.clone())
+                        .with_spacing(Spacing::Inline),
+                )
             } else {
                 None
             },
@@ -222,7 +226,7 @@ impl ConfigBlock for NvidiaGpu {
             scrolling: shared_config.scrolling,
 
             show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(id, shared_config).with_spacing(Spacing::Inline))
+                Some(TextWidget::new(id, id, shared_config).with_spacing(Spacing::Inline))
             } else {
                 None
             },
@@ -374,7 +378,7 @@ impl Block for NvidiaGpu {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(event_id) = e.id {
+        if let Some(event_id) = e.instance {
             if event_id == self.id {
                 if let MouseButton::Left = e.button {
                     match self.name_widget_mode {
