@@ -1,6 +1,9 @@
 use std::time::{Duration, Instant};
 
-use super::{i3block_data::I3BlockData, I3BarWidget, Spacing, State};
+use super::{
+    i3block_data::{I3BlockData, I3BlockMinWidth},
+    I3BarWidget, Spacing, State,
+};
 use crate::config::SharedConfig;
 use crate::errors::*;
 
@@ -163,14 +166,14 @@ impl RotatingTextWidget {
             }
         );
         self.inner.min_width = Some(if self.content.is_empty() {
-            "".to_string()
+            I3BlockMinWidth::Text("".to_string())
         } else {
             let text_width = self.get_rotated_content().chars().count();
             let icon_width = icon.chars().count();
             if self.dynamic_width && text_width < self.max_width {
-                "0".repeat(text_width + icon_width)
+                I3BlockMinWidth::Text("0".repeat(text_width + icon_width))
             } else {
-                "0".repeat(self.max_width + icon_width + 1)
+                I3BlockMinWidth::Text("0".repeat(self.max_width + icon_width + 1))
             }
         });
         self.inner.background = key_bg.clone();
