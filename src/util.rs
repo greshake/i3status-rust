@@ -188,7 +188,6 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
             continue;
         }
 
-        // Get the final JSON from all the widgets for this block
         let mut rendered_widgets = widgets
             .iter()
             .map(|widget| {

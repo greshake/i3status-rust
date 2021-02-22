@@ -24,7 +24,17 @@ pub struct I3BlockData {
 macro_rules! json_add_str {
     ($retval:ident, $obj:expr, $name:expr) => {
         if let Some(ref val) = $obj {
-            $retval.push_str(&format!("\"{}\":\"{}\",", stringify!($name), val));
+            $retval.push_str(&format!(
+                "\"{}\":\"{}\",",
+                stringify!($name),
+                val.chars()
+                    .map(|c| match c {
+                        '\\' => "\\\\".to_string(),
+                        '"' => "\\\"".to_string(),
+                        x => x.to_string(),
+                    })
+                    .collect::<String>(),
+            ));
         }
     };
 }
@@ -38,8 +48,9 @@ macro_rules! json_add_val {
 
 impl I3BlockData {
     pub fn render(&self) -> String {
-        let mut retval = format!("{{\"full_text\":\"{}\",", self.full_text);
+        let mut retval = String::from("{");
 
+        json_add_str!(retval, Some(&self.full_text), full_text);
         json_add_str!(retval, self.short_text, short_text);
         json_add_str!(retval, self.color, color);
         json_add_str!(retval, self.background, background);
