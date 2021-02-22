@@ -115,7 +115,7 @@ fn main() {
             .with_state(State::Critical)
             .with_text(&format!("{:?}", error));
         let error_rendered = error_widget.get_data();
-        println!("{}", error_rendered.render());
+        println!("[{}]", error_rendered.render());
 
         eprintln!("\n\n{:?}", error);
         // Do nothing, so the error message keeps displayed
