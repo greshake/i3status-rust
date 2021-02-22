@@ -326,7 +326,7 @@ impl ConfigBlock for Weather {
     ) -> Result<Self> {
         Ok(Weather {
             id,
-            weather: TextWidget::new(id, shared_config),
+            weather: TextWidget::new(id, 0, shared_config),
             format: block_config.format,
             weather_keys: HashMap::new(),
             service: block_config.service,
@@ -365,10 +365,8 @@ impl Block for Weather {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id()) {
-            if let MouseButton::Left = event.button {
-                self.update()?;
-            }
+        if let MouseButton::Left = event.button {
+            self.update()?;
         }
         Ok(())
     }

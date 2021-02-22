@@ -10,11 +10,12 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use serde_json::json;
 
 use crate::blocks::Block;
 use crate::config::SharedConfig;
 use crate::errors::*;
+
+use crate::widgets::i3block_data::I3BlockData;
 
 pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
 
@@ -191,44 +192,36 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
         let mut rendered_widgets = widgets
             .iter()
             .map(|widget| {
-                let mut w_json: serde_json::Value = widget.get_rendered().to_owned();
+                let mut data = widget.get_data();
                 if alternator {
                     // Apply tint for all widgets of every second block
-                    *w_json.get_mut("background").unwrap() = json!(add_colors(
-                        w_json["background"].as_str(),
-                        config.theme.alternating_tint_bg.as_deref()
+                    data.background = add_colors(
+                        data.background.as_deref(),
+                        config.theme.alternating_tint_bg.as_deref(),
                     )
-                    .unwrap());
-                    *w_json.get_mut("color").unwrap() = json!(add_colors(
-                        w_json["color"].as_str(),
-                        config.theme.alternating_tint_fg.as_deref()
+                    .unwrap();
+                    data.color = add_colors(
+                        data.color.as_deref(),
+                        config.theme.alternating_tint_bg.as_deref(),
                     )
-                    .unwrap());
+                    .unwrap();
                 }
-                w_json
+                data
             })
-            .collect::<Vec<serde_json::Value>>();
+            .collect::<Vec<I3BlockData>>();
 
         alternator = !alternator;
 
         if config.theme.native_separators == Some(true) {
             // Re-add native separator on last widget for native theme
-            *rendered_widgets
-                .last_mut()
-                .unwrap()
-                .get_mut("separator")
-                .unwrap() = json!(null);
-            *rendered_widgets
-                .last_mut()
-                .unwrap()
-                .get_mut("separator_block_width")
-                .unwrap() = json!(null);
+            rendered_widgets.last_mut().unwrap().separator = None;
+            rendered_widgets.last_mut().unwrap().separator_block_width = None;
         }
 
         // Serialize and concatenate widgets
         let block_str = rendered_widgets
             .iter()
-            .map(|w| w.to_string())
+            .map(|w| w.render())
             .collect::<Vec<String>>()
             .join(",");
 
@@ -239,8 +232,11 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
         }
 
         // The first widget's BG is used to get the FG color for the current separator
-        let first_bg = rendered_widgets.first().unwrap()["background"]
-            .as_str()
+        let first_bg = rendered_widgets
+            .first()
+            .unwrap()
+            .background
+            .clone()
             .internal_error("util", "couldn't get background color")?;
 
         let sep_fg = if config.theme.separator_fg == Some("auto".to_string()) {
@@ -256,23 +252,21 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
             config.theme.separator_bg.clone()
         };
 
-        let separator = json!({
-            "full_text": config.theme.separator,
-            "separator": false,
-            "separator_block_width": 0,
-            "background": sep_bg,
-            "color": sep_fg,
-            "markup": "pango"
-        });
+        let mut separator = I3BlockData::default();
+        separator.full_text = config.theme.separator.clone();
+        separator.background = sep_bg;
+        separator.color = sep_fg;
 
-        rendered_blocks.push(format!("{},{}", separator.to_string(), block_str));
+        rendered_blocks.push(format!("{},{}", separator.render(), block_str));
 
         // The last widget's BG is used to get the BG color for the next separator
         last_bg = Some(
-            rendered_widgets.last().unwrap()["background"]
-                .as_str()
-                .internal_error("util", "couldn't get background color")?
-                .to_string(),
+            rendered_widgets
+                .last()
+                .unwrap()
+                .background
+                .clone()
+                .internal_error("util", "couldn't get background color")?,
         );
     }
 

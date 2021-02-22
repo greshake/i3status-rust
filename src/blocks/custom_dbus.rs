@@ -12,7 +12,6 @@ use serde_derive::Deserialize;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
@@ -120,7 +119,7 @@ impl ConfigBlock for CustomDBus {
             })
             .unwrap();
 
-        let text = TextWidget::new(id, shared_config).with_text("CustomDBus");
+        let text = TextWidget::new(id, 0, shared_config).with_text("CustomDBus");
         Ok(CustomDBus { id, text, status })
     }
 }
@@ -146,10 +145,5 @@ impl Block for CustomDBus {
     // Returns the view of the block, comprised of widgets.
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    // This function is called on every block for every click.
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
     }
 }

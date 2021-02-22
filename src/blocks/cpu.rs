@@ -112,7 +112,7 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, shared_config).with_icon("cpu"),
+            output: TextWidget::new(id, 0, shared_config).with_icon("cpu"),
             prev_idles: [0; MAX_CPUS],
             prev_non_idles: [0; MAX_CPUS],
             minimum_info: block_config.info,

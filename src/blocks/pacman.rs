@@ -157,7 +157,7 @@ impl ConfigBlock for Pacman {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let output = TextWidget::new(id, shared_config).with_icon("update");
+        let output = TextWidget::new(id, 0, shared_config).with_icon("update");
 
         Ok(Pacman {
             id,
@@ -417,10 +417,8 @@ impl Block for Pacman {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) {
-            if let MouseButton::Left = event.button {
-                self.update()?;
-            }
+        if let MouseButton::Left = event.button {
+            self.update()?;
         }
 
         Ok(())

@@ -165,13 +165,13 @@ pub trait Block {
         Ok(())
     }
 
-    /// Sends click events to the block. This function is called on every block for every click.
+    /// Sends click events to the block.
     ///
     /// Here you can react to the user clicking your block. The I3BarEvent instance contains all
     /// fields to describe the click action, including mouse button and location down to the pixel.
     /// You may also update the internal state here.
     ///
-    /// To filter, use the event.id property and event.matches_id() function.
+    /// If block uses more that one widget, use the event.instance property to determine which widget was clicked.
     fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
         Ok(())
     }

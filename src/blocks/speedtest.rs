@@ -172,13 +172,13 @@ impl ConfigBlock for SpeedTest {
         Ok(SpeedTest {
             vals,
             text: vec![
-                TextWidget::new(id, shared_config.clone())
+                TextWidget::new(id, 0, shared_config.clone())
                     .with_icon("ping")
                     .with_text("0ms"),
-                TextWidget::new(id, shared_config.clone())
+                TextWidget::new(id, 1, shared_config.clone())
                     .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
-                TextWidget::new(id, shared_config)
+                TextWidget::new(id, 2, shared_config)
                     .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
             ],
@@ -234,10 +234,8 @@ impl Block for SpeedTest {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.matches_id(self.id) {
-            if let MouseButton::Left = e.button {
-                self.send.send(())?;
-            }
+        if let MouseButton::Left = e.button {
+            self.send.send(())?;
         }
         Ok(())
     }

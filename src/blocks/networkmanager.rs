@@ -566,7 +566,7 @@ impl ConfigBlock for NetworkManager {
 
         Ok(NetworkManager {
             id,
-            indicator: TextWidget::new(id, shared_config.clone()),
+            indicator: TextWidget::new(id, 0, shared_config.clone()),
             output: Vec::new(),
             dbus_conn,
             manager,
@@ -644,7 +644,7 @@ impl Block for NetworkManager {
                     .into_iter()
                     .filter_map(|conn| {
                         // inline spacing for no leading space, because the icon is set in the string
-                        let mut widget = TextWidget::new(self.id, self.shared_config.clone())
+                        let mut widget = TextWidget::new(self.id, 0, self.shared_config.clone())
                             .with_spacing(Spacing::Inline);
 
                         // Set the state for this connection

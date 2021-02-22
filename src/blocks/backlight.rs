@@ -245,7 +245,7 @@ impl ConfigBlock for Backlight {
             device,
             step_width: block_config.step_width,
             scrolling: shared_config.scrolling,
-            output: TextWidget::new(id, shared_config),
+            output: TextWidget::new(id, 0, shared_config),
         };
 
         // Spin up a thread to watch for changes to the brightness file for the
@@ -302,22 +302,20 @@ impl Block for Backlight {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) {
-            let brightness = self.device.brightness()?;
-            use LogicalDirection::*;
-            match self.scrolling.to_logical_direction(event.button) {
-                Some(Up) => {
-                    if brightness < 100 {
-                        self.device.set_brightness(brightness + self.step_width)?;
-                    }
+        let brightness = self.device.brightness()?;
+        use LogicalDirection::*;
+        match self.scrolling.to_logical_direction(event.button) {
+            Some(Up) => {
+                if brightness < 100 {
+                    self.device.set_brightness(brightness + self.step_width)?;
                 }
-                Some(Down) => {
-                    if brightness > self.step_width {
-                        self.device.set_brightness(brightness - self.step_width)?;
-                    }
-                }
-                None => {}
             }
+            Some(Down) => {
+                if brightness > self.step_width {
+                    self.device.set_brightness(brightness - self.step_width)?;
+                }
+            }
+            None => {}
         }
 
         Ok(())

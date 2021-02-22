@@ -485,7 +485,7 @@ impl ConfigBlock for KeyboardLayout {
         } else {
             None
         };
-        let output = TextWidget::new(id, shared_config);
+        let output = TextWidget::new(id, 0, shared_config);
         Ok(KeyboardLayout {
             id,
             output,

@@ -508,7 +508,7 @@ impl ConfigBlock for Net {
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("net", "Invalid format specified")?,
             format_alt,
-            output: TextWidget::new(id, shared_config.clone())
+            output: TextWidget::new(id, 0, shared_config.clone())
                 .with_icon(if wireless {
                     "net_wireless"
                 } else if vpn {
@@ -793,7 +793,7 @@ impl Block for Net {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) && event.button == MouseButton::Left {
+        if event.button == MouseButton::Left {
             if let Some(ref mut format) = self.format_alt {
                 std::mem::swap(format, &mut self.format);
             }

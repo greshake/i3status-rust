@@ -225,7 +225,7 @@ impl ConfigBlock for Hueshift {
             hue_shift_driver,
             click_temp: block_config.click_temp,
             scrolling: shared_config.scrolling,
-            text: TextWidget::new(id, shared_config).with_text(&current_temp.to_string()),
+            text: TextWidget::new(id, 0, shared_config).with_text(&current_temp.to_string()),
         })
     }
 }
@@ -241,41 +241,39 @@ impl Block for Hueshift {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.matches_id(self.id) {
-            match event.button {
-                MouseButton::Left => {
-                    self.current_temp = self.click_temp;
+        match event.button {
+            MouseButton::Left => {
+                self.current_temp = self.click_temp;
+                self.hue_shift_driver.update(self.current_temp)?;
+            }
+            MouseButton::Right => {
+                if self.max_temp > 6500 {
+                    self.current_temp = 6500;
+                    self.hue_shift_driver.reset()?;
+                } else {
+                    self.current_temp = self.max_temp;
                     self.hue_shift_driver.update(self.current_temp)?;
                 }
-                MouseButton::Right => {
-                    if self.max_temp > 6500 {
-                        self.current_temp = 6500;
-                        self.hue_shift_driver.reset()?;
-                    } else {
-                        self.current_temp = self.max_temp;
-                        self.hue_shift_driver.update(self.current_temp)?;
-                    }
-                }
-                mb => {
-                    use LogicalDirection::*;
-                    let new_temp: u16;
-                    match self.scrolling.to_logical_direction(mb) {
-                        Some(Up) => {
-                            new_temp = self.current_temp + self.step;
-                            if new_temp <= self.max_temp {
-                                self.hue_shift_driver.update(new_temp)?;
-                                self.current_temp = new_temp;
-                            }
+            }
+            mb => {
+                use LogicalDirection::*;
+                let new_temp: u16;
+                match self.scrolling.to_logical_direction(mb) {
+                    Some(Up) => {
+                        new_temp = self.current_temp + self.step;
+                        if new_temp <= self.max_temp {
+                            self.hue_shift_driver.update(new_temp)?;
+                            self.current_temp = new_temp;
                         }
-                        Some(Down) => {
-                            new_temp = self.current_temp - self.step;
-                            if new_temp >= self.min_temp {
-                                self.hue_shift_driver.update(new_temp)?;
-                                self.current_temp = new_temp;
-                            }
-                        }
-                        None => {}
                     }
+                    Some(Down) => {
+                        new_temp = self.current_temp - self.step;
+                        if new_temp >= self.min_temp {
+                            self.hue_shift_driver.update(new_temp)?;
+                            self.current_temp = new_temp;
+                        }
+                    }
+                    None => {}
                 }
             }
         }

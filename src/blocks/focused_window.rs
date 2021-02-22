@@ -179,7 +179,7 @@ impl ConfigBlock for FocusedWindow {
             })
             .expect("failed to start watching thread for `window` block");
 
-        let text = TextWidget::new(id, shared_config);
+        let text = TextWidget::new(id, 0, shared_config);
         Ok(FocusedWindow {
             id,
             text,

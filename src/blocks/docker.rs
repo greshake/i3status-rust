@@ -8,7 +8,6 @@ use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::http;
-use crate::input::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
@@ -73,7 +72,7 @@ impl ConfigBlock for Docker {
         shared_config: SharedConfig,
         _: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(id, shared_config)
+        let text = TextWidget::new(id, 0, shared_config)
             .with_text("N/A")
             .with_icon("docker");
         Ok(Docker {
@@ -114,10 +113,6 @@ impl Block for Docker {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
     }
 
     fn id(&self) -> usize {

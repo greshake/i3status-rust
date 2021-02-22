@@ -111,14 +111,11 @@ fn main() {
             ::std::process::exit(1);
         }
 
-        let error_widget = TextWidget::new(0, Default::default())
+        let error_widget = TextWidget::new(0, 0, Default::default())
             .with_state(State::Critical)
             .with_text(&format!("{:?}", error));
-        let error_rendered = error_widget.get_rendered();
-        println!(
-            "{}",
-            serde_json::to_string(&[error_rendered]).expect("failed to serialize error message")
-        );
+        let error_rendered = error_widget.get_data();
+        println!("{}", error_rendered.render());
 
         eprintln!("\n\n{:?}", error);
         // Do nothing, so the error message keeps displayed
@@ -197,10 +194,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
         select! {
             // Receive click events
             recv(rx_clicks) -> res => if let Ok(event) = res {
-                    for block in blocks.iter_mut() {
-                        block.click(&event)?;
-                    }
+                if let Some(id) = event.id {
+                        blocks.get_mut(id)
+                    .internal_error("click handler", "could not get required block")?
+                            .click(&event)?;
                     util::print_blocks(&blocks, &shared_config)?;
+                }
             },
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
