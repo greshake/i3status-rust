@@ -15,9 +15,11 @@ pub struct TextWidget {
 
 impl TextWidget {
     pub fn new(id: usize, instance: usize, shared_config: SharedConfig) -> Self {
-        let mut inner = I3BlockData::default();
-        inner.name = Some(id.to_string());
-        inner.instance = Some(instance.to_string());
+        let inner = I3BlockData {
+            name: Some(id.to_string()),
+            instance: Some(instance.to_string()),
+            ..I3BlockData::default()
+        };
 
         TextWidget {
             id,

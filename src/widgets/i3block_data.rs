@@ -37,7 +37,7 @@ macro_rules! json_add_val {
 }
 
 impl I3BlockData {
-    pub fn to_string(&self) -> String {
+    pub fn render(&self) -> String {
         let mut retval = format!("{{\"full_text\":\"{}\",", self.full_text);
 
         json_add_str!(retval, self.short_text, short_text);
@@ -62,7 +62,7 @@ impl I3BlockData {
         json_add_val!(retval, self.separator_block_width, separator_block_width);
         json_add_str!(retval, self.markup, markup);
 
-        retval.push_str("}");
+        retval.push('}');
         retval
     }
 }

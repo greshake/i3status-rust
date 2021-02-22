@@ -10,7 +10,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use serde_json::json;
 
 use crate::blocks::Block;
 use crate::config::SharedConfig;
@@ -222,7 +221,7 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
         // Serialize and concatenate widgets
         let block_str = rendered_widgets
             .iter()
-            .map(|w| w.to_string())
+            .map(|w| w.render())
             .collect::<Vec<String>>()
             .join(",");
 
@@ -258,7 +257,7 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
         separator.background = sep_bg;
         separator.color = sep_fg;
 
-        rendered_blocks.push(format!("{},{}", separator.to_string(), block_str));
+        rendered_blocks.push(format!("{},{}", separator.render(), block_str));
 
         // The last widget's BG is used to get the BG color for the next separator
         last_bg = Some(
