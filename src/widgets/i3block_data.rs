@@ -11,7 +11,7 @@ pub struct I3BlockData {
     pub border_right: Option<usize>,
     pub border_bottom: Option<usize>,
     pub border_left: Option<usize>,
-    pub min_width: Option<String>,
+    pub min_width: Option<I3BlockMinWidth>,
     pub align: Option<I3BlockAlign>,
     pub name: Option<String>,
     pub instance: Option<String>,
@@ -48,11 +48,15 @@ impl I3BlockData {
         json_add_val!(retval, self.border_right, border_right);
         json_add_val!(retval, self.border_bottom, border_bottom);
         json_add_val!(retval, self.border_left, border_left);
-        json_add_str!(retval, self.min_width, min_width);
+        match self.min_width {
+            Some(I3BlockMinWidth::Pixels(x)) => json_add_val!(retval, Some(x), min_width),
+            Some(I3BlockMinWidth::Text(ref x)) => json_add_str!(retval, Some(x), min_width),
+            None => {}
+        }
         match self.align {
-            Some(I3BlockAlign::Center) => retval.push_str("align:\"center\","),
-            Some(I3BlockAlign::Right) => retval.push_str("align:\"right\","),
-            Some(I3BlockAlign::Left) => retval.push_str("align:\"left\","),
+            Some(I3BlockAlign::Center) => retval.push_str("\"align\":\"center\","),
+            Some(I3BlockAlign::Right) => retval.push_str("\"align\":\"right\","),
+            Some(I3BlockAlign::Left) => retval.push_str("\"align\":\"left\","),
             None => {}
         }
         json_add_str!(retval, self.name, name);
@@ -96,4 +100,10 @@ pub enum I3BlockAlign {
     Center,
     Right,
     Left,
+}
+
+#[derive(Debug, Clone)]
+pub enum I3BlockMinWidth {
+    Pixels(usize),
+    Text(String),
 }
