@@ -151,7 +151,7 @@ impl RotatingTextWidget {
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.shared_config.theme);
 
-        let icon = self.icon.clone().unwrap_or_else(|| match self.spacing {
+        let mut icon = self.icon.clone().unwrap_or_else(|| match self.spacing {
             Spacing::Normal => String::from(" "),
             _ => String::from(""),
         });
@@ -165,17 +165,17 @@ impl RotatingTextWidget {
                 _ => String::from(" "),
             }
         );
-        self.inner.min_width = Some(if self.content.is_empty() {
-            I3BlockMinWidth::Text("".to_string())
+        self.inner.min_width = if self.content.is_empty() {
+            None
         } else {
             let text_width = self.get_rotated_content().chars().count();
-            let icon_width = icon.chars().count();
             if self.dynamic_width && text_width < self.max_width {
-                I3BlockMinWidth::Text("0".repeat(text_width + icon_width))
+                None
             } else {
-                I3BlockMinWidth::Text("0".repeat(self.max_width + icon_width + 1))
+                icon.push_str(&"0".repeat(self.max_width + 1));
+                Some(I3BlockMinWidth::Text(icon))
             }
-        });
+        };
         self.inner.background = key_bg.clone();
         self.inner.color = key_fg.clone();
     }
