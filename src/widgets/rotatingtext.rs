@@ -178,8 +178,6 @@ impl RotatingTextWidget {
         });
         self.inner.background = key_bg.clone();
         self.inner.color = key_fg.clone();
-
-        //self.cached_output = Some(self.rendered.to_string());
     }
 
     pub fn next(&mut self) -> Result<(bool, Option<Duration>)> {

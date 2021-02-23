@@ -100,8 +100,6 @@ impl TextWidget {
         );
         self.inner.background = key_bg.clone();
         self.inner.color = key_fg.clone();
-
-        //self.cached_output = Some(self.inner.to_string());
     }
 }
 

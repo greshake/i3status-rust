@@ -85,12 +85,16 @@ impl I3BlockData {
 
 impl Default for I3BlockData {
     fn default() -> Self {
+        #[cfg(not(feature = "debug_borders"))]
+        let border = None;
+        #[cfg(feature = "debug_borders")]
+        let border = Some("#ff0000".to_string());
         Self {
             full_text: String::new(),
             short_text: None,
             color: None,
             background: None,
-            border: None,
+            border,
             border_top: None,
             border_right: None,
             border_bottom: None,
