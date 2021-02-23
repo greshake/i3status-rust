@@ -77,6 +77,7 @@ impl I3BlockData {
         json_add_val!(retval, self.separator_block_width, separator_block_width);
         json_add_str!(retval, self.markup, markup);
 
+        retval.pop();
         retval.push('}');
         retval
     }
