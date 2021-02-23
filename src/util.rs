@@ -404,6 +404,10 @@ impl FormatTemplate {
             start = re_match.end();
         }
 
+        if start != s.len() {
+            tokens.push(FormatToken::Text(s[start..].to_string()));
+        }
+
         Ok(FormatTemplate { tokens })
     }
 
