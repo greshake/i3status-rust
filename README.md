@@ -19,6 +19,7 @@ Most blocks assume you are running Linux, and some have their own system require
 Optional:
 
 * Font Awesome 4.x is required when using the icons config `name = "awesome"`. For version 5, use `name = "awesome5"`. On Arch Linux version 4 is available in the [`AUR`](https://aur.archlinux.org/packages/ttf-font-awesome-4/), and version 5 is available [`here`](https://www.archlinux.org/packages/community/any/ttf-font-awesome/).
+* For icons config `name = material`, a patched version of Google's MaterialIcons-Regular.ttf is required which includes \u{0020} (space), sets a descent ands lower all glyphs to properly align. It can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf).
 * Powerline Fonts are required for all themes using the powerline arrow char.
 * `gperftools` is required for building with the `"profiling"` feature flag (disabled by default).
 
