@@ -77,7 +77,10 @@ lazy_static! {
         "xrandr" => " SCREEN "
     };
 
-    // FontAwesome 4: https://fontawesome.com/v4.7.0/icons/
+    // FontAwesome 4
+    // Lookup icons using either https://fontawesome.com/v4.7.0/icons/
+    // or https://fontawesome.com/v4.7.0/cheatsheet/
+    // Some icons seem to only show up on one or the other
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
         "" => "",
         "backlight_empty" => " \u{1f315} ",
