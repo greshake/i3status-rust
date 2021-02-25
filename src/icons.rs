@@ -77,7 +77,7 @@ lazy_static! {
         "xrandr" => " SCREEN "
     };
 
-    // FontAwesome 4: https://fontawesome.com/icons?d=gallery&p=2&m=free
+    // FontAwesome 4: https://fontawesome.com/v4.7.0/icons/
     pub static ref AWESOME: Map<String, String> = map_to_owned! {
         "" => "",
         "backlight_empty" => " \u{1f315} ",
