@@ -281,7 +281,8 @@ lazy_static! {
         "xrandr" => "\u{e31e}"
     };
 
-    // Material an in NerdFont
+    // Material from NerdFont
+    // https://www.nerdfonts.com/cheat-sheet
     pub static ref MATERIAL_NF: Map<String, String> = map_to_owned! {
         "" => "",
         "backlight_empty" => "\u{e38d}",
