@@ -85,11 +85,12 @@ bat_discharging = " |v| "
 
 Example configurations can be found as `example_theme.toml` and `example_icon.toml`.
 
-Besides global overrides you may also use per-block overrides using the `color_overrides` option available for all blocks.
+Besides global overrides you may also use per-block overrides using the `color_overrides` and `icons_format` options available for all blocks.
 For example:
 ```toml
 [[block]]
 block = "cpu"
+icons_format = "{icon}" # Remove spaces aroud icons for this block.
 [block.theme_overrides]
 idle_bg = "#123456"
 idle_fg = "#abcdef"
