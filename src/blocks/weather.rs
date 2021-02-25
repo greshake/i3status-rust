@@ -190,6 +190,8 @@ impl Weather {
                         OPENWEATHERMAP_PLACE_ENV.to_string()));
                 };
 
+                // This uses the "Current Weather Data" API endpoint
+                // Refer to https://openweathermap.org/current
                 let openweather_url = &format!(
                     "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}",
                     location_query = location_query,
