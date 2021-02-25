@@ -262,6 +262,21 @@ impl<'a> NmConnection<'a> {
         Ok(ActiveConnectionState::from(state.0))
     }
 
+    fn vpn(&self, c: &Connection) -> Result<bool> {
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.Connection.Active",
+            "Vpn",
+        )
+        .block_error("networkmanager", "Failed to retrieve connection vpn flag")?;
+
+        let vpn: Variant<bool> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read connection vpn flag")?;
+        Ok(vpn.0)
+    }
+
     fn id(&self, c: &Connection) -> Result<String> {
         let m = ConnectionManager::get(
             c,
@@ -643,6 +658,11 @@ impl Block for NetworkManager {
                 connections
                     .into_iter()
                     .filter_map(|conn| {
+                        // Hide vpn connections since it's devices are the devices of it's parent connection
+                        if let Ok(true) = conn.vpn(&self.dbus_conn) {
+                            return None;
+                        };
+
                         // inline spacing for no leading space, because the icon is set in the string
                         let mut widget = TextWidget::new(self.id, 0, self.shared_config.clone())
                             .with_spacing(Spacing::Inline);
