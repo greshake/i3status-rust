@@ -108,6 +108,7 @@ Key | Values | Required | Default
 `device` | The `/sys/class/backlight` device to read brightness information from. | No | Default device
 `step_width` | The brightness increment to use when scrolling, in percent. | No | `5`
 `root_scaling` | Scaling exponent reciprocal (ie. root). | No | `1.0`
+`invert_icons` | Invert icons' ordering, useful if you have colorful emoji. | No | `false`
 
 Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for `root_scaling` between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear). More information: <https://en.wikipedia.org/wiki/Lightness>
 
