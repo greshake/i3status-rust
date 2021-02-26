@@ -118,9 +118,19 @@ idle_fg = "#abcdef"
 
 * `backlight_empty`
 * `backlight_full`
-* `backlight_partial1`
-* `backlight_partial2`
-* `backlight_partial3`
+* `backlight_1`
+* `backlight_2`
+* `backlight_3`
+* `backlight_4`
+* `backlight_5`
+* `backlight_6`
+* `backlight_7`
+* `backlight_8`
+* `backlight_9`
+* `backlight_10`
+* `backlight_11`
+* `backlight_12`
+* `backlight_13`
 * `bat_charging`
 * `bat_discharging`
 * `bat_full`
