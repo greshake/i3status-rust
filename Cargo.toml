@@ -22,7 +22,6 @@ crossbeam-channel = "0.5"
 curl = "0.4"
 dbus = "0.8"
 lazy_static = "1.0"
-maildir = "0.5"
 nix = "0.19.0"
 serde = "1.0"
 serde_derive = "1.0"
@@ -34,6 +33,7 @@ signal-hook = "0.3"
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.15.0", default-features = false }
 notmuch = { optional = true, version = "0.6.0" }
+maildir = { optional = true, version = "0.5" }
 # Used only in debug build for profiling blocks
 cpuprofiler = { version = "0.0.4", optional = true }
 progress = { version = "0.2", optional = true }
