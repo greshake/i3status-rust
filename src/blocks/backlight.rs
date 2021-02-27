@@ -299,13 +299,24 @@ impl Block for Backlight {
         if self.invert_icons {
             brightness = 100 - brightness;
         }
-        match brightness {
-            0..=19 => self.output.set_icon("backlight_empty"),
-            20..=39 => self.output.set_icon("backlight_partial1"),
-            40..=59 => self.output.set_icon("backlight_partial2"),
-            60..=79 => self.output.set_icon("backlight_partial3"),
-            _ => self.output.set_icon("backlight_full"),
-        }
+        self.output.set_icon(match brightness {
+            0..=6 => "backlight_empty",
+            7..=13 => "backlight_1",
+            14..=20 => "backlight_2",
+            21..=26 => "backlight_3",
+            27..=33 => "backlight_4",
+            34..=40 => "backlight_5",
+            41..=46 => "backlight_6",
+            47..=53 => "backlight_7",
+            54..=60 => "backlight_8",
+            61..=67 => "backlight_9",
+            68..=73 => "backlight_10",
+            74..=80 => "backlight_11",
+            81..=87 => "backlight_12",
+            88..=93 => "backlight_13",
+            _ => "backlight_full",
+        });
+
         Ok(None)
     }
 

@@ -14,12 +14,11 @@ use crate::icons;
 use crate::input::MouseButton;
 use crate::themes::Theme;
 
-////////////////
-
 #[derive(Debug)]
 pub struct SharedConfig {
     pub theme: Rc<Theme>,
-    pub icons: Rc<HashMap<String, String>>,
+    icons: Rc<HashMap<String, String>>,
+    icons_format: String,
     pub scrolling: Scrolling,
 }
 
@@ -28,8 +27,13 @@ impl SharedConfig {
         Self {
             theme: Rc::new(config.theme.clone()),
             icons: Rc::new(config.icons.clone()),
+            icons_format: config.icons_format.clone(),
             scrolling: config.scrolling,
         }
+    }
+
+    pub fn icons_format_override(&mut self, icons_format: String) {
+        self.icons_format = icons_format;
     }
 
     pub fn theme_override(&mut self, overrides: &HashMap<String, String>) -> errors::Result<()> {
@@ -59,7 +63,11 @@ impl SharedConfig {
     }
 
     pub fn get_icon(&self, icon: &str) -> Option<String> {
-        self.icons.get(icon).map(|s| s.to_string())
+        Some(
+            self.icons_format
+                .clone()
+                .replace("{icon}", self.icons.get(icon)?),
+        )
     }
 }
 
@@ -68,6 +76,7 @@ impl Default for SharedConfig {
         Self {
             theme: Rc::new(Theme::default()),
             icons: Rc::new(icons::default()),
+            icons_format: " {icon} ".to_string(),
             scrolling: Scrolling::default(),
         }
     }
@@ -78,12 +87,11 @@ impl Clone for SharedConfig {
         Self {
             theme: Rc::clone(&self.theme),
             icons: Rc::clone(&self.icons),
+            icons_format: self.icons_format.clone(),
             scrolling: self.scrolling,
         }
     }
 }
-
-///////////////////
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
@@ -92,6 +100,9 @@ pub struct Config {
 
     #[serde(default = "Theme::default")]
     pub theme: Theme,
+
+    #[serde(default = "Config::default_icons_format")]
+    pub icons_format: String,
 
     #[serde(default = "Scrolling::default")]
     pub scrolling: Scrolling,
@@ -104,11 +115,18 @@ pub struct Config {
     pub blocks: Vec<(String, value::Value)>,
 }
 
+impl Config {
+    fn default_icons_format() -> String {
+        " {icon} ".to_string()
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Config {
             icons: icons::default(),
             theme: Theme::default(),
+            icons_format: Config::default_icons_format(),
             scrolling: Scrolling::default(),
             blocks: Vec::new(),
         }

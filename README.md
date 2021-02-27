@@ -64,7 +64,8 @@ There are some top-level configuration variables:
 
 Key | Description | Required | Default
 ----|-------------|----------|--------
-`icons` | The icon set that should be used. Possible values are `none`, `awesome`, `awesome5` and `material`. Check [themes.md](https://github.com/greshake/i3status-rust/blob/master/themes.md) for more information | No | `none`
+`icons` | The icon set that should be used. Possible values are `none`, `awesome`, `awesome5`, `material` and `material-nf`. Check [themes.md](https://github.com/greshake/i3status-rust/blob/master/themes.md) for more information | No | `none`
+`icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, set it to `" <span font_family='NotoSans Nerd Font'>{icon}</span> "` to set font of the icons to be 'NotoSans Nerd Font' | No | `" {icon} "`
 `theme` | The predefined theme that should be used. You can also add your own overrides. Check [themes.md](https://github.com/greshake/i3status-rust/blob/master/themes.md) for all available themes. | No | `plain`
 `scrolling` | The direction of scrolling, either `natural` or `reverse` | No | `reverse`
 `block` | All blocks that will exist in your i3bar. Check [blocks.md](https://github.com/greshake/i3status-rust/blob/master/blocks.md) for all blocks and their parameters. | No | none

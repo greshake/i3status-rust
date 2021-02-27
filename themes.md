@@ -59,6 +59,7 @@ Example theme file can be found in `example/theme/solarized-dark.toml`.
 * `awesome` (Font Awesome 4.x)
 * `awesome5` (Font Awesome 5.x)
 * `material`
+* `material-nf` (Any font from Nerd Fonts collection)
 
 > **Note**: In order to use the material icon set, you need a patched material icons font which can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf). Make sure to pass it in your i3 configuration bar block.
 
@@ -84,11 +85,12 @@ bat_discharging = " |v| "
 
 Example configurations can be found as `example_theme.toml` and `example_icon.toml`.
 
-Besides global overrides you may also use per-block overrides using the `color_overrides` option available for all blocks.
+Besides global overrides you may also use per-block overrides using the `color_overrides` and `icons_format` options available for all blocks.
 For example:
 ```toml
 [[block]]
 block = "cpu"
+icons_format = "{icon}" # Remove spaces aroud icons for this block.
 [block.theme_overrides]
 idle_bg = "#123456"
 idle_fg = "#abcdef"
@@ -116,9 +118,19 @@ idle_fg = "#abcdef"
 
 * `backlight_empty`
 * `backlight_full`
-* `backlight_partial1`
-* `backlight_partial2`
-* `backlight_partial3`
+* `backlight_1`
+* `backlight_2`
+* `backlight_3`
+* `backlight_4`
+* `backlight_5`
+* `backlight_6`
+* `backlight_7`
+* `backlight_8`
+* `backlight_9`
+* `backlight_10`
+* `backlight_11`
+* `backlight_12`
+* `backlight_13`
 * `bat_charging`
 * `bat_discharging`
 * `bat_full`
