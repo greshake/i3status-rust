@@ -1,6 +1,5 @@
 use std::default::Default;
 use std::fmt;
-use std::path::Path;
 
 use lazy_static::lazy_static;
 use serde_derive::Deserialize;
@@ -309,23 +308,9 @@ impl Theme {
     }
 
     pub fn from_file(file: &str) -> Option<Theme> {
-        let full_path = Path::new(file);
-        let xdg_path = util::xdg_config_home()
-            .join("i3status-rust/themes")
-            .join(file);
-        let share_path = Path::new(util::USR_SHARE_PATH).join("themes").join(file);
-
-        let theme: Option<ThemeFromFile> = if full_path.exists() {
-            util::deserialize_file(&full_path).ok()
-        } else if xdg_path.exists() {
-            util::deserialize_file(&xdg_path).ok()
-        } else if share_path.exists() {
-            util::deserialize_file(&share_path).ok()
-        } else {
-            None
-        };
-
-        theme.map(|theme| theme.into())
+        let file = util::find_file(file, Some("themes"), Some(".toml"))?;
+        let theme: ThemeFromFile = util::deserialize_file(&file).ok()?;
+        Some(theme.into())
     }
 }
 
