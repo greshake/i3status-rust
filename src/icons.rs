@@ -266,54 +266,65 @@ lazy_static! {
         "xrandr" => "\u{f26c}"
     };
 
+    // Material Design icons by Google
+    // https://github.com/google/material-design-icons/blob/master/font/MaterialIcons-Regular.codepoints
     pub static ref MATERIAL: HashMap<String, String> = map_to_owned! {
         "" => "",
-        "bat_charging" => "\u{e1a3}",
-        "bat_discharging" => "\u{e19c}",
-        "bat_empty" => "\u{e19c}",
-        "bat_full" => "\u{e1a4}",
-        "bat_half" => "\u{e1a5}",
+        "bat_charging" => "\u{e1a3}", // battery_charging_full
+        "bat_discharging" => "\u{e19c}", // battery_alert
+        "bat_empty" => "\u{e19c}", // battery_alert
+        "bat_full" => "\u{e1a4}", // battery_full
+        "bat_half" => "\u{e1a5}", // battery_std
         "bat_quarter" => "\u{e1a5}",
         "bat_three_quarters" => "\u{e1a5}",
-        "bell" => "\u{e7f4}",
-        "bell-slash" => "\u{e7f8}",
-        "bluetooth" => "\u{e1a7}",
-        "calendar" => "\u{e935}",
-        "cogs" => "\u{e8b8}",
-        "cpu" => "\u{e640}",
-        "disk_drive" => "\u{e1db}",
-        "docker" => "\u{e532}",
-        "github" => "\u{e86f}",
-        "gpu" => "\u{e333}",
-        "headphones" => "\u{e60f}",
-        "joystick" => "\u{e30f}",
-        "keyboard" => "\u{e312}",
-        "mail" => "\u{e0be}",
-        "memory_mem" => "\u{e322}",
-        "memory_swap" => "\u{e8d4}",
-        "mouse" => "\u{e323}",
-        "music" => "\u{e405}",
-        "music_next" => "\u{e044}",
-        "music_pause" => "\u{e034}",
-        "music_play" => "\u{e037}",
-        "music_prev" => "\u{e045}",
+        "bat_not_available" => "\u{e1a6}", // battery_unknown
+        "bell" => "\u{e7f4}", // notifications
+        "bell-slash" => "\u{e7f8}", // notifications_paused
+        "bluetooth" => "\u{e1a7}", // bluetooth
+        "calendar" => "\u{e935}", // calendar_today
+        "cogs" => "\u{e8b8}", // settings
+        "cpu" => "\u{e640}", // network_check
+        "disk_drive" => "\u{e1db}", // storage
+        "docker" => "\u{e532}", // directions_boat
+        "github" => "\u{e86f}", // code
+        "gpu" => "\u{e333}", // tv
+        "headphones" => "\u{e60f}", // bluetooth_audio
+        "joystick" => "\u{e30f}", // gamepad
+        "keyboard" => "\u{e312}", // keyboard
+        "mail" => "\u{e0be}", // email
+        "memory_mem" => "\u{e322}", // memory
+        "memory_swap" => "\u{e8d4}", // swap_horiz
+        "mouse" => "\u{e323}", // mouse
+        "music" => "\u{e405}", // music_note
+        "music_next" => "\u{e044}", // skip_next
+        "music_pause" => "\u{e034}", // skip_next
+        "music_play" => "\u{e037}", // play_arrow
+        "music_prev" => "\u{e045}", // skip_previous
         "net_loopback" => "LO",
-        "notification" => "\u{e7f7}",
-        "phone" => "\u{e324}",
-        "phone_disconnected" => "\u{1f4f5}",
+        "notification" => "\u{e7f7}", // notifications_active
+        "phone" => "\u{e324}", // phone_android
+        "phone_disconnected" => "\u{e339}", // device_unknown
+        "ping" => "\u{e62a}", // system_update
         "pomodoro" => "\u{1f345}",
         "resolution" => "\u{f152}", // crop-square-rounded
         "tasks" => "\u{e8f9}",
-        "thermometer" => "\u{f2c8}", // TODO
-        "time" => "\u{e192}",
-        "toggle_off" => "\u{e836}",
-        "toggle_on" => "\u{e837}",
-        "update" => "\u{e8d7}",
-        "uptime" => "\u{e192}", // Same as time symbol.
-        "volume_empty" => "\u{e04e}",
-        "volume_full" => "\u{e050}",
-        "volume_half" => "\u{e04d}",
-        "volume_muted" => "\u{e04e} \u{e04f}",
+        "thermometer" => "\u{e1ff}", // device_thermostat
+        "time" => "\u{e192}", // access_time
+        "toggle_off" => "\u{e836}", // radio_button_on
+        "toggle_on" => "\u{e837}", // radio_button_on
+        "update" => "\u{e8d7}", // system_update_alt
+        "uptime" => "\u{e425}", // timer
+        "volume_empty" => "\u{e04e}", // volume_mute
+        "volume_full" => "\u{e050}", // volume_up
+        "volume_half" => "\u{e04d}", // volume_down
+        "volume_muted" => "\u{e04f}", // volume_off
+        "microphone_full" => "\u{e029}", // mic
+        "microphone_half" => "\u{e029}", // mic
+        "microphone_empty" => "\u{e02a}", // mic_none
+        "microphone_muted" => "\u{e02b}", // mic_off
+        "weather_clouds" => "\u{e42d}", // wb_cloudy
+        "weather_default" => "\u{e42d}", // wb_cloudy
+        "weather_sun" => "\u{e430}", // wb_sunny
         "xrandr" => "\u{e31e}"
     };
 
@@ -418,9 +429,9 @@ impl Icons {
     pub fn from_name(name: &str) -> Option<Self> {
         match name {
             "material" => Some(Icons(MATERIAL.clone())),
+            "material-nf" => Some(Icons(MATERIAL_NF.clone())),
             "awesome" => Some(Icons(AWESOME.clone())),
             "awesome5" => Some(Icons(AWESOME5.clone())),
-            "material-nf" => Some(Icons(MATERIAL_NF.clone())),
             "none" => Some(Icons(NONE.clone())),
             _ => None,
         }
