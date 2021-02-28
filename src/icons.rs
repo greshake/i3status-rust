@@ -321,7 +321,7 @@ lazy_static! {
         "weather_sun" => "\u{e430}", // wb_sunny
         "xrandr" => "\u{e31e}"
     };
-    
+
     // Material from NerdFont
     // https://www.nerdfonts.com/cheat-sheet
     pub static ref MATERIAL_NF: Map<String, String> = map_to_owned! {
