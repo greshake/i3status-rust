@@ -1,3 +1,4 @@
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -158,17 +159,22 @@ impl ConfigBlock for KDEConnect {
         // Test whether we are dealing with kdeconnect v20.08.03 or older,
         // or kdeconnect v20.11.80 or newer, so we can adapt to the differences.
         //
-        // Possible caveat: even with the new version this could return true if
-        // the battery plugin hasn't been enabled on the phone, or if there is
-        // some other issue with it.
-        let old_kdeconnect: bool = c
-            .with_proxy(
-                "org.kde.kdeconnect",
-                format!("/modules/kdeconnect/devices/{}/battery", device_id),
-                Duration::from_millis(5000),
+        // Starting with kdeconnect v20.11.80, the version output by the cli
+        // matches the versioning scheme used by Ubuntu, where as before that it
+        // was  1.3.x or 1.4.x.
+        let old_kdeconnect = Command::new("kdeconnect-cli")
+            .args(&["--version"])
+            .output()
+            .block_error(
+                "kdeconnect",
+                "Failed to check kdeconnect version. Is it installed?",
             )
-            .get::<i32>("org.kde.kdeconnect.device.battery", "charge")
-            .is_err();
+            .and_then(|raw_output| {
+                String::from_utf8(raw_output.stdout)
+                    .block_error("kdeconnect", "Failed to check kdeconnect version.")
+            })
+            .unwrap()
+            .contains("kdeconnect-cli 1.");
 
         let initial_charge = if old_kdeconnect {
             let (charge,): (i32,) = p2
