@@ -24,6 +24,40 @@ pub fn pseudo_uuid() -> usize {
     ID.fetch_sub(1, Ordering::SeqCst)
 }
 
+pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
+    // Append an extension if `file` does not have it
+    let mut file = String::from(file);
+    if let Some(extension) = extension {
+        if !file.ends_with(extension) {
+            file.push_str(extension);
+        }
+    }
+
+    let full_path = PathBuf::from(&file);
+
+    let mut xdg_path = xdg_config_home().join("i3status-rust");
+    if let Some(subdir) = subdir {
+        xdg_path = xdg_path.join(subdir);
+    }
+    xdg_path = xdg_path.join(&file);
+
+    let mut share_path = PathBuf::from(USR_SHARE_PATH);
+    if let Some(subdir) = subdir {
+        share_path = share_path.join(subdir);
+    }
+    share_path = share_path.join(&file);
+
+    if full_path.exists() {
+        Some(full_path)
+    } else if xdg_path.exists() {
+        Some(xdg_path)
+    } else if share_path.exists() {
+        Some(share_path)
+    } else {
+        None
+    }
+}
+
 pub fn escape_pango_text(text: String) -> String {
     text.chars()
         .map(|x| match x {

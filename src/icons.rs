@@ -1,9 +1,15 @@
-use std::collections::HashMap as Map;
+use std::collections::HashMap;
+use std::fmt;
 
 use lazy_static::lazy_static;
 
+use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
+use serde_derive::Deserialize;
+
+use crate::util;
+
 lazy_static! {
-    pub static ref NONE: Map<String, String> = map_to_owned! {
+    pub static ref NONE: HashMap<String, String> = map_to_owned! {
         "" => "",
         "backlight_empty" => "BRIGHT",
         "backlight_full" => "BRIGHT",
@@ -88,7 +94,7 @@ lazy_static! {
     };
 
     // FontAwesome 4: https://fontawesome.com/v4.7.0/cheatsheet/
-    pub static ref AWESOME: Map<String, String> = map_to_owned! {
+    pub static ref AWESOME: HashMap<String, String> = map_to_owned! {
         "" => "",
         "backlight_empty" => "\u{1f315}",
         "backlight_full" => "\u{1f311}",
@@ -175,7 +181,7 @@ lazy_static! {
     };
 
     // FontAwesome 5: https://fontawesome.com/icons?d=gallery&p=2&m=free
-    pub static ref AWESOME5: Map<String, String> = map_to_owned! {
+    pub static ref AWESOME5: HashMap<String, String> = map_to_owned! {
         "" => "",
         "backlight_empty" => "\u{1f315}",
         "backlight_full" => "\u{1f311}",
@@ -262,7 +268,7 @@ lazy_static! {
 
     // Material Design icons by Google
     // https://github.com/google/material-design-icons/blob/master/font/MaterialIcons-Regular.codepoints
-    pub static ref MATERIAL: Map<String, String> = map_to_owned! {
+    pub static ref MATERIAL: HashMap<String, String> = map_to_owned! {
         "" => "",
         "bat_charging" => "\u{e1a3}", // battery_charging_full
         "bat_discharging" => "\u{e19c}", // battery_alert
@@ -324,7 +330,7 @@ lazy_static! {
 
     // Material from NerdFont
     // https://www.nerdfonts.com/cheat-sheet
-    pub static ref MATERIAL_NF: Map<String, String> = map_to_owned! {
+    pub static ref MATERIAL_NF: HashMap<String, String> = map_to_owned! {
         "" => "",
         "backlight_empty" => "\u{e38d}", // nf-weather-moon_new
         "backlight_full" => "\u{e39b}", // nf-weather-moon_full
@@ -410,17 +416,122 @@ lazy_static! {
     };
 }
 
-pub fn get_icons(name: &str) -> Option<Map<String, String>> {
-    match name {
-        "material" => Some(MATERIAL.clone()),
-        "material-nf" => Some(MATERIAL_NF.clone()),
-        "awesome" => Some(AWESOME.clone()),
-        "awesome5" => Some(AWESOME5.clone()),
-        "none" => Some(NONE.clone()),
-        _ => None,
+#[derive(Debug, Clone)]
+pub struct Icons(pub HashMap<String, String>);
+
+impl Default for Icons {
+    fn default() -> Self {
+        Self(NONE.clone())
     }
 }
 
-pub fn default() -> Map<String, String> {
-    NONE.clone()
+impl Icons {
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "material" => Some(Icons(MATERIAL.clone())),
+            "material-nf" => Some(Icons(MATERIAL_NF.clone())),
+            "awesome" => Some(Icons(AWESOME.clone())),
+            "awesome5" => Some(Icons(AWESOME5.clone())),
+            "none" => Some(Icons(NONE.clone())),
+            _ => None,
+        }
+    }
+
+    pub fn from_file(file: &str) -> Option<Self> {
+        let file = util::find_file(file, Some("icons"), Some(".toml"))?;
+        let icons: HashMap<String, String> = util::deserialize_file(&file).ok()?;
+        Some(Icons(icons))
+    }
+}
+
+impl<'de> Deserialize<'de> for Icons {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Name,
+            File,
+            Overrides,
+        }
+
+        struct IconsVisitor;
+
+        impl<'de> Visitor<'de> for IconsVisitor {
+            type Value = Icons;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Icons")
+            }
+
+            /// Handle configs like:
+            ///
+            /// ```toml
+            /// icons = "awesome"
+            /// ```
+            fn visit_str<E>(self, name: &str) -> Result<Icons, E>
+            where
+                E: de::Error,
+            {
+                Icons::from_name(name)
+                    .ok_or_else(|| de::Error::custom(format!("Icon set \"{}\" not found.", name)))
+            }
+
+            /// Handle configs like:
+            ///
+            /// ```toml
+            /// [icons]
+            /// name = "awesome"
+            /// ```
+            fn visit_map<V>(self, mut map: V) -> Result<Icons, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut icons = None;
+                let mut overrides: Option<HashMap<String, String>> = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Name => {
+                            if icons.is_some() {
+                                return Err(de::Error::duplicate_field("name or file"));
+                            }
+                            let name = map.next_value()?;
+                            icons = Some(Icons::from_name(name).ok_or_else(|| {
+                                de::Error::custom(format!("Icon set \"{}\" not found.", name))
+                            })?);
+                        }
+                        Field::File => {
+                            if icons.is_some() {
+                                return Err(de::Error::duplicate_field("name or file"));
+                            }
+                            let file = map.next_value()?;
+                            icons = Some(Icons::from_file(file).ok_or_else(|| {
+                                de::Error::custom(format!(
+                                    "Failed to load icon set from file {}.",
+                                    file
+                                ))
+                            })?);
+                        }
+                        Field::Overrides => {
+                            if overrides.is_some() {
+                                return Err(de::Error::duplicate_field("overrides"));
+                            }
+                            overrides = Some(map.next_value()?);
+                        }
+                    }
+                }
+                let mut icons = icons.unwrap_or_default();
+                if let Some(overrides) = overrides {
+                    for icon in overrides {
+                        icons.0.insert(icon.0, icon.1);
+                    }
+                }
+                Ok(icons)
+            }
+        }
+
+        deserializer.deserialize_any(IconsVisitor)
+    }
 }

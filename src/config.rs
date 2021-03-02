@@ -1,23 +1,19 @@
 use std::collections::HashMap;
-use std::marker::PhantomData;
-use std::ops::Deref;
 use std::rc::Rc;
-use std::str::FromStr;
 
 use serde::de::{Deserialize, Deserializer};
 use serde_derive::Deserialize;
 use toml::value;
 
-use crate::de::*;
 use crate::errors;
-use crate::icons;
+use crate::icons::Icons;
 use crate::input::MouseButton;
 use crate::themes::Theme;
 
 #[derive(Debug)]
 pub struct SharedConfig {
     pub theme: Rc<Theme>,
-    icons: Rc<HashMap<String, String>>,
+    icons: Rc<Icons>,
     icons_format: String,
     pub scrolling: Scrolling,
 }
@@ -66,7 +62,7 @@ impl SharedConfig {
         Some(
             self.icons_format
                 .clone()
-                .replace("{icon}", self.icons.get(icon)?),
+                .replace("{icon}", self.icons.0.get(icon)?),
         )
     }
 }
@@ -75,7 +71,7 @@ impl Default for SharedConfig {
     fn default() -> Self {
         Self {
             theme: Rc::new(Theme::default()),
-            icons: Rc::new(icons::default()),
+            icons: Rc::new(Icons::default()),
             icons_format: " {icon} ".to_string(),
             scrolling: Scrolling::default(),
         }
@@ -95,22 +91,23 @@ impl Clone for SharedConfig {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
-    #[serde(default = "icons::default", deserialize_with = "deserialize_icons")]
-    pub icons: HashMap<String, String>,
+    #[serde(default)]
+    pub icons: Icons,
 
-    #[serde(default = "Theme::default")]
+    #[serde(default)]
     pub theme: Theme,
 
     #[serde(default = "Config::default_icons_format")]
     pub icons_format: String,
 
-    #[serde(default = "Scrolling::default")]
-    pub scrolling: Scrolling,
     /// Direction of scrolling, "natural" or "reverse".
     ///
     /// Configuring natural scrolling on input devices changes the way i3status-rust
     /// processes mouse wheel events: pushing the wheen away now is interpreted as downward
     /// motion which is undesired for sliders. Use "natural" to invert this.
+    #[serde(default)]
+    pub scrolling: Scrolling,
+
     #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
     pub blocks: Vec<(String, value::Value)>,
 }
@@ -124,7 +121,7 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            icons: icons::default(),
+            icons: Icons::default(),
             theme: Theme::default(),
             icons_format: Config::default_icons_format(),
             scrolling: Scrolling::default(),
@@ -180,16 +177,6 @@ where
     }
 
     Ok(blocks)
-}
-
-fn deserialize_icons<'de, D>(deserializer: D) -> Result<HashMap<String, String>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    map_type!(Icons, String;
-              s => Ok(Icons(icons::get_icons(s).ok_or(format!("cannot find icon set called '{}'", s))?)));
-
-    deserializer.deserialize_any(MapType::<Icons, String>(PhantomData, PhantomData))
 }
 
 #[cfg(test)]
