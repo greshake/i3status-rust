@@ -49,7 +49,7 @@ impl SharedConfig {
                 x => {
                     return Err(errors::ConfigurationError(
                         format!("Theme element \"{}\" cannot be overriden", x),
-                        (String::new(), String::new()),
+                        String::new(),
                     ))
                 }
             }
@@ -58,12 +58,15 @@ impl SharedConfig {
         Ok(())
     }
 
-    pub fn get_icon(&self, icon: &str) -> Option<String> {
-        Some(
-            self.icons_format
-                .clone()
-                .replace("{icon}", self.icons.0.get(icon)?),
-        )
+    pub fn get_icon(&self, icon: &str) -> crate::errors::Result<String> {
+        use crate::errors::OptionExt;
+        Ok(self.icons_format.clone().replace(
+            "{icon}",
+            self.icons
+                .0
+                .get(icon)
+                .internal_error("get_icon()", &format!("icon '{}' not found", icon))?,
+        ))
     }
 }
 

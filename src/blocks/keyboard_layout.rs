@@ -19,8 +19,9 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -512,12 +513,11 @@ impl Block for KeyboardLayout {
             layout = mapped.to_string();
         }
         let values = map!(
-            "{layout}" => layout,
-            "{variant}" => variant
+            "layout" => Value::from_string(layout),
+            "variant" => Value::from_string(variant)
         );
 
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
+        self.output.set_text(self.format.render(&values)?);
         Ok(self.update_interval.map(|d| d.into()))
     }
 

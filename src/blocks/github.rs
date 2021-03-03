@@ -10,9 +10,10 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::http;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -82,7 +83,7 @@ impl ConfigBlock for Github {
 
         let text = TextWidget::new(id, 0, shared_config)
             .with_text("x")
-            .with_icon("github");
+            .with_icon("github")?;
         Ok(Github {
             id,
             update_interval: block_config.interval,
@@ -121,23 +122,23 @@ impl Block for Github {
         let default: u64 = 0;
         self.total_notifications = *aggregations.get("total").unwrap_or(&default);
         let values = map!(
-            "{total}" => format!("{}", self.total_notifications),
+            "total" => Value::from_integer(self.total_notifications as i64),
             // As specified by:
             // https://developer.github.com/v3/activity/notifications/#notification-reasons
-            "{assign}" => format!("{}", aggregations.get("assign").unwrap_or(&default)),
-            "{author}" => format!("{}", aggregations.get("author").unwrap_or(&default)),
-            "{comment}" => format!("{}", aggregations.get("comment").unwrap_or(&default)),
-            "{invitation}" => format!("{}", aggregations.get("invitation").unwrap_or(&default)),
-            "{manual}" => format!("{}", aggregations.get("manual").unwrap_or(&default)),
-            "{mention}" => format!("{}", aggregations.get("mention").unwrap_or(&default)),
-            "{review_requested}" => format!("{}", aggregations.get("review_requested").unwrap_or(&default)),
-            "{security_alert}" => format!("{}", aggregations.get("security_alert").unwrap_or(&default)),
-            "{state_change}" => format!("{}", aggregations.get("state_change").unwrap_or(&default)),
-            "{subscribed}" => format!("{}", aggregations.get("subscribed").unwrap_or(&default)),
-            "{team_mention}" => format!("{}", aggregations.get("team_mention").unwrap_or(&default))
+            "assign" =>           Value::from_integer(*aggregations.get("assign").unwrap_or(&default) as i64),
+            "author" =>           Value::from_integer(*aggregations.get("author").unwrap_or(&default) as i64),
+            "comment" =>          Value::from_integer(*aggregations.get("comment").unwrap_or(&default) as i64),
+            "invitation" =>       Value::from_integer(*aggregations.get("invitation").unwrap_or(&default) as i64),
+            "manual" =>           Value::from_integer(*aggregations.get("manual").unwrap_or(&default) as i64),
+            "mention" =>          Value::from_integer(*aggregations.get("mention").unwrap_or(&default) as i64),
+            "review_requested" => Value::from_integer(*aggregations.get("review_requested").unwrap_or(&default) as i64),
+            "security_alert" =>   Value::from_integer(*aggregations.get("security_alert").unwrap_or(&default) as i64),
+            "state_change" =>     Value::from_integer(*aggregations.get("state_change").unwrap_or(&default) as i64),
+            "subscribed" =>       Value::from_integer(*aggregations.get("subscribed").unwrap_or(&default) as i64),
+            "team_mention" =>     Value::from_integer(*aggregations.get("team_mention").unwrap_or(&default) as i64),
         );
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_text(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

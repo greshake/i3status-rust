@@ -14,9 +14,10 @@ use dbus::{
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -264,7 +265,7 @@ impl ConfigBlock for Bluetooth {
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",
                 Some(ref icon) if icon == "input-mouse" => "mouse",
                 _ => "bluetooth",
-            }),
+            })?,
             device,
             hide_disconnected: block_config.hide_disconnected,
             format_unavailable: FormatTemplate::from_string(&block_config.format_unavailable)?,
@@ -279,7 +280,7 @@ impl Block for Bluetooth {
 
     fn update(&mut self) -> Result<Option<Update>> {
         let values = map!(
-            "{label}" => self.device.label.clone()
+            "{label}" => Value::from_string(self.device.label.clone())
         );
 
         if self.device.available().unwrap() {
@@ -294,7 +295,7 @@ impl Block for Bluetooth {
                 Some(ref icon) if icon == "input-keyboard" => "keyboard",
                 Some(ref icon) if icon == "input-mouse" => "mouse",
                 _ => "bluetooth",
-            });
+            })?;
 
             // Use battery info, when available.
             if let Some(value) = self.device.battery() {
@@ -311,7 +312,7 @@ impl Block for Bluetooth {
         } else {
             self.output.set_state(State::Idle);
             self.output
-                .set_text(self.format_unavailable.render_static_str(&values)?);
+                .set_text(self.format_unavailable.render(&values)?);
         }
 
         Ok(None)

@@ -21,9 +21,11 @@ use serde_derive::Deserialize;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::{xdg_config_home, FormatTemplate};
+use crate::util::xdg_config_home;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -242,10 +244,10 @@ impl Block for IBus {
         };
 
         let values = map!(
-            "{engine}" => display_engine
+            "engine" => Value::from_string(display_engine)
         );
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_text(self.format.render(&values)?);
         Ok(None)
     }
 

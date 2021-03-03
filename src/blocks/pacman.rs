@@ -14,9 +14,11 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{has_command, FormatTemplate};
+use crate::util::has_command;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -134,11 +136,7 @@ impl PacmanConfig {
             // most likely a mistake: {count}, {pacman}, {aur}, {both} not found in format string
             Err(ConfigurationError(
                 "pacman".to_string(),
-                (
-                    "No formatter ({count}|{pacman}|{aur}|{both}) found in format string"
-                        .to_string(),
-                    "invalid format".to_string(),
-                ),
+                "No formatter ({count}|{pacman}|{aur}|{both}) found in format string".to_string(),
             ))
         }
     }
@@ -157,7 +155,7 @@ impl ConfigBlock for Pacman {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let output = TextWidget::new(id, 0, shared_config).with_icon("update");
+        let output = TextWidget::new(id, 0, shared_config).with_icon("update")?;
 
         Ok(Pacman {
             id,
@@ -181,10 +179,7 @@ impl ConfigBlock for Pacman {
                     let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
                         ConfigurationError(
                             "pacman".to_string(),
-                            (
-                                "invalid warning updates regex".to_string(),
-                                "invalid regex".to_string(),
-                            ),
+                            "invalid warning updates regex".to_string(),
                         )
                     })?;
                     Some(regex)
@@ -196,10 +191,7 @@ impl ConfigBlock for Pacman {
                     let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
                         ConfigurationError(
                             "pacman".to_string(),
-                            (
-                                "invalid critical updates regex".to_string(),
-                                "invalid regex".to_string(),
-                            ),
+                            "invalid critical updates regex".to_string(),
                         )
                     })?;
                     Some(regex)
@@ -350,7 +342,10 @@ impl Block for Pacman {
                 check_fakeroot_command_exists()?;
                 let pacman_available_updates = get_pacman_available_updates()?;
                 let pacman_count = get_update_count(&pacman_available_updates);
-                let formatting_map = map!("{count}" => pacman_count, "{pacman}" => pacman_count);
+                let formatting_map = map!(
+                    "count" => Value::from_integer(pacman_count as i64),
+                    "pacman" => Value::from_integer(pacman_count as i64),
+                );
 
                 let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
                     has_warning_update(&pacman_available_updates, regex)
@@ -364,7 +359,9 @@ impl Block for Pacman {
             Watched::AUR(aur_command) => {
                 let aur_available_updates = get_aur_available_updates(&aur_command)?;
                 let aur_count = get_update_count(&aur_available_updates);
-                let formatting_map = map!("{aur}" => aur_count);
+                let formatting_map = map!(
+                    "aur" => Value::from_integer(aur_count as i64)
+                );
 
                 let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
                     has_warning_update(&aur_available_updates, regex)
@@ -381,7 +378,12 @@ impl Block for Pacman {
                 let aur_available_updates = get_aur_available_updates(&aur_command)?;
                 let pacman_count = get_update_count(&pacman_available_updates);
                 let aur_count = get_update_count(&aur_available_updates);
-                let formatting_map = map!("{count}" => pacman_count, "{pacman}" => pacman_count, "{aur}" => aur_count, "{both}" => pacman_count + aur_count);
+                let formatting_map = map!(
+                    "count" =>  Value::from_integer(pacman_count as i64),
+                    "pacman" => Value::from_integer(pacman_count as i64),
+                    "aur" =>    Value::from_integer(aur_count as i64),
+                    "both" =>   Value::from_integer((pacman_count + aur_count) as i64),
+                );
 
                 let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
                     has_warning_update(&aur_available_updates, regex)
@@ -396,9 +398,9 @@ impl Block for Pacman {
             }
         };
         self.output.set_text(match cum_count {
-            0 => self.format_up_to_date.render_static_str(&formatting_map)?,
-            1 => self.format_singular.render_static_str(&formatting_map)?,
-            _ => self.format.render_static_str(&formatting_map)?,
+            0 => self.format_up_to_date.render(&formatting_map)?,
+            1 => self.format_singular.render(&formatting_map)?,
+            _ => self.format.render(&formatting_map)?,
         });
         self.output.set_state(match cum_count {
             0 => State::Idle,

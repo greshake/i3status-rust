@@ -11,8 +11,10 @@ use serde_derive::Deserialize;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, FormatTemplate};
+use crate::util::battery_level_to_icon;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -556,7 +558,7 @@ impl ConfigBlock for KDEConnect {
             bat_critical: block_config.bat_critical,
             format: FormatTemplate::from_string(&block_config.format)?,
             format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
-            output: TextWidget::new(id, 0, shared_config.clone()).with_icon("phone"),
+            output: TextWidget::new(id, 0, shared_config.clone()).with_icon("phone")?,
             shared_config,
         })
     }
@@ -605,6 +607,7 @@ impl Block for KDEConnect {
         let bat_icon = self
             .shared_config
             .get_icon(if charging {
+                // TODO: there are icons for different states of charging
                 "bat_charging"
             } else if charge < 0 {
                 // better than nothing I guess?
@@ -615,15 +618,15 @@ impl Block for KDEConnect {
             .unwrap_or_default();
 
         let values = map!(
-            "{bat_icon}" => bat_icon.trim().to_string(),
-            "{bat_charge}" => if charge < 0 { "x".to_string() } else { charge.to_string() },
-            "{bat_state}" => charging.to_string(),
-            "{notif_icon}" => self.shared_config.get_icon("notification").unwrap_or_default().trim().to_string(),
-            "{notif_count}" => notif_count.to_string(),
+            "bat_icon" => Value::from_string(bat_icon.trim().to_string()),
+            "bat_charge" => Value::from_integer(charge.clamp(0,100) as i64),
+            "bat_state" => Value::from_string(charging.to_string()),
+            "notif_icon" => Value::from_string(self.shared_config.get_icon("notification").unwrap_or_default().trim().to_string()),
+            "notif_count" => Value::from_integer(notif_count as i64),
             // TODO
-            //"{notif_text}" => notif_text,
-            "{name}" => name,
-            "{id}" => self.device_id.to_string()
+            //"notif_text" => notif_text,
+            "name" => Value::from_string(name),
+            "id" => Value::from_string(self.device_id.to_string()) // Not a String?
         );
 
         if (
@@ -655,13 +658,12 @@ impl Block for KDEConnect {
 
         if !phone_reachable {
             self.output.set_state(State::Critical);
-            self.output.set_icon("phone_disconnected");
+            self.output.set_icon("phone_disconnected")?;
             self.output
-                .set_text(self.format_disconnected.render_static_str(&values)?);
+                .set_text(self.format_disconnected.render(&values)?);
         } else {
-            self.output.set_icon("phone");
-            self.output
-                .set_text(self.format.render_static_str(&values)?);
+            self.output.set_icon("phone")?;
+            self.output.set_text(self.format.render(&values)?);
         }
 
         Ok(None)

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::fmt::Display;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -8,7 +6,6 @@ use std::prelude::v1::String;
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use regex::Regex;
 use serde::de::DeserializeOwned;
 
 use crate::blocks::Block;
@@ -68,48 +65,6 @@ pub fn escape_pango_text(text: String) -> String {
             _ => x.to_string(),
         })
         .collect()
-}
-
-/// Format `raw_value` to engineering notation
-pub fn format_number(raw_value: f64, total_digits: usize, min_suffix: &str, unit: &str) -> String {
-    let min_exp_level = match min_suffix {
-        "T" => 4,
-        "G" => 3,
-        "M" => 2,
-        "K" => 1,
-        "1" => 0,
-        "m" => -1,
-        "u" => -2,
-        "n" => -3,
-        _ => -4,
-    };
-
-    let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
-    let value = raw_value / (10f64).powi(exp_level * 3);
-
-    let suffix = match exp_level {
-        4 => "T",
-        3 => "G",
-        2 => "M",
-        1 => "K",
-        0 => "",
-        -1 => "m",
-        -2 => "u",
-        -3 => "n",
-        _ => "p",
-    };
-
-    let total_digits = total_digits as isize;
-    let decimals = (if value >= 100. {
-        total_digits - 3
-    } else if value >= 10. {
-        total_digits - 2
-    } else {
-        total_digits - 1
-    })
-    .max(0);
-
-    format!("{:.*}{}{}", decimals as usize, value, suffix, unit)
 }
 
 pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
@@ -175,19 +130,15 @@ pub fn has_command(block_name: &str, command: &str) -> Result<bool> {
     Ok(exit_status.success())
 }
 
-macro_rules! map (
-    { $($key:expr => $value:expr),+ } => {
-        {
-            let mut m = ::std::collections::HashMap::new();
-            $(
-                m.insert($key, $value);
-            )+
-            m
-        }
-     };
-);
+macro_rules! map {
+    ($($key:expr => $value:expr),+ $(,)*) => {{
+        let mut m = ::std::collections::HashMap::new();
+        $(m.insert($key, $value);)+
+        m
+    }};
+}
 
-macro_rules! map_to_owned (
+macro_rules! map_to_owned {
     { $($key:expr => $value:expr),+ } => {
         {
             let mut m = ::std::collections::HashMap::new();
@@ -197,7 +148,7 @@ macro_rules! map_to_owned (
             m
         }
      };
-);
+}
 
 pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<()> {
     let mut last_bg: Option<String> = None;
@@ -411,74 +362,9 @@ pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f6
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct FormatTemplate {
-    tokens: Vec<FormatToken>,
-}
-
-#[derive(Debug, Clone)]
-enum FormatToken {
-    Text(String),
-    Var(String),
-}
-
-impl FormatTemplate {
-    pub fn from_string(s: &str) -> Result<Self> {
-        //valid var tokens: {} containing any amount of alphanumericals
-        let re = Regex::new(r"\{[a-zA-Z0-9_-]+?\}").internal_error("util", "invalid regex")?;
-
-        let mut tokens = vec![];
-        let mut start: usize = 0;
-
-        for re_match in re.find_iter(&s) {
-            if re_match.start() != start {
-                tokens.push(FormatToken::Text(s[start..re_match.start()].to_string()));
-            }
-            tokens.push(FormatToken::Var(re_match.as_str().to_string()));
-            start = re_match.end();
-        }
-
-        if start != s.len() {
-            tokens.push(FormatToken::Text(s[start..].to_string()));
-        }
-
-        Ok(FormatTemplate { tokens })
-    }
-
-    pub fn render_static_str<T: Display>(&self, vars: &HashMap<&str, T>) -> Result<String> {
-        let mut rendered = String::new();
-
-        for token in &self.tokens {
-            match token {
-                FormatToken::Text(text) => rendered.push_str(&text),
-                FormatToken::Var(ref key) => rendered.push_str(&format!(
-                    "{}",
-                    vars.get(&**key).internal_error(
-                        "util",
-                        &format!("Unknown placeholder in format string: {}", key),
-                    )?
-                )),
-            }
-        }
-
-        Ok(rendered)
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::util::{color_from_rgba, format_number, has_command};
-
-    #[test]
-    fn test_format_number() {
-        assert_eq!(format_number(1.0, 3, "", "s"), "1.00s");
-        assert_eq!(format_number(1.007, 3, "", "s"), "1.01s");
-        assert_eq!(format_number(1.007, 4, "K", "s"), "0.001Ks");
-        assert_eq!(format_number(1007., 3, "K", "s"), "1.01Ks");
-        assert_eq!(format_number(107_000., 3, "", "s"), "107Ks");
-        assert_eq!(format_number(107., 3, "", "s"), "107s");
-        assert_eq!(format_number(0.000_123_123, 3, "", "N"), "123uN");
-    }
+    use crate::util::{color_from_rgba, has_command};
 
     #[test]
     // we assume sh is always available

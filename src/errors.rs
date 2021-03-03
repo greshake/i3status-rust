@@ -26,9 +26,7 @@ where
     E: fmt::Display + fmt::Debug,
 {
     fn configuration_error(self, message: &str) -> Result<T> {
-        self.map_err(|e| {
-            ConfigurationError(message.to_owned(), (format!("{}", e), format!("{:?}", e)))
-        })
+        self.map_err(|e| ConfigurationError(message.to_owned(), format!("{}", e)))
     }
 
     fn internal_error(self, context: &str, message: &str) -> Result<T> {
@@ -60,7 +58,7 @@ impl<T> OptionExt<T> for ::std::option::Option<T> {
 /// A set of errors that can occur during the runtime of i3status-rs.
 pub enum Error {
     BlockError(String, String),
-    ConfigurationError(String, (String, String)),
+    ConfigurationError(String, String),
     InternalError(String, String, Option<(String, String)>),
 }
 
@@ -87,7 +85,7 @@ impl fmt::Debug for Error {
             BlockError(ref block, ref message) => {
                 f.write_str(&format!("Error in block '{}': {}", block, message))
             }
-            ConfigurationError(ref message, (ref cause, _)) => f.write_str(&format!(
+            ConfigurationError(ref message, ref cause) => f.write_str(&format!(
                 "Configuration error: {}.\nCause: {}",
                 message, cause
             )),

@@ -17,8 +17,10 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
+use crate::util::{battery_level_to_icon, format_percent_bar, read_file};
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
@@ -694,15 +696,14 @@ impl Block for Battery {
             // cannot be found right now.
             let empty_percent_bar = format_percent_bar(0.0);
             let values = map!(
-                "{percentage}" => "X",
-                "{bar}" => &empty_percent_bar,
-                "{time}" => "xx:xx",
-                "{power}" => "N/A"
+                "percentage" => Value::from_string("X".to_string()),
+                "bar" => Value::from_string(empty_percent_bar.clone()),
+                "time" => Value::from_string("xx:xx".to_string()),
+                "power" => Value::from_string("N/A".to_string()),
             );
 
-            self.output.set_icon("bat_not_available");
-            self.output
-                .set_text(self.missing_format.render_static_str(&values)?);
+            self.output.set_icon("bat_not_available")?;
+            self.output.set_text(self.missing_format.render(&values)?);
             self.output.set_state(State::Warning);
 
             return match self.driver {
@@ -717,40 +718,34 @@ impl Block for Battery {
 
         let status = self.device.status()?;
         let capacity = self.device.capacity();
-        let percentage = match capacity {
-            Ok(capacity) => format!("{}", capacity),
-            Err(_) => "×".into(),
-        };
-        let bar = match capacity {
-            Ok(capacity) => format_percent_bar(capacity as f32),
-            Err(_) => "×".into(),
-        };
-        let time = match self.device.time_remaining() {
-            Ok(time) => match time {
-                0 => "".into(),
-                _ => format!("{}:{:02}", std::cmp::min(time / 60, 99), time % 60),
+        let values = map!(
+            "percentage" => match capacity {
+                Ok(capacity) => Value::from_integer(capacity as i64).percents(),
+                _ => Value::from_string("×".into()),
             },
-            Err(_) => "×".into(),
-        };
-        // convert µW to W for display
-        let power = match self.device.power_consumption() {
-            Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
-            Err(_) => "×".into(),
-        };
-        let values = map!("{percentage}" => percentage,
-                            "{bar}" => bar,
-                            "{time}" => time,
-                            "{power}" => power);
+            "bar" => match capacity {
+                Ok(capacity) => Value::from_string(format_percent_bar(capacity as f32)),
+                _ => Value::from_string("×".into()),
+            },
+            "time" => match self.device.time_remaining() {
+                Ok(0) => Value::from_string("".into()),
+                Ok(time) => Value::from_string(format!("{}:{:02}", std::cmp::min(time / 60, 99), time % 60)),
+                _ => Value::from_string("×".into()),
+            },
+            // convert µW to W for display
+            "power" => match self.device.power_consumption() {
+                Ok(power) => Value::from_float(power as f64 * 1e-6).watts(),
+                _ => Value::from_string("×".into()),
+            },
+        );
 
         if status == "Full" || status == "Not charging" {
-            self.output.set_icon("bat_full");
-            self.output
-                .set_text(self.full_format.render_static_str(&values)?);
+            self.output.set_icon("bat_full")?;
+            self.output.set_text(self.full_format.render(&values)?);
             self.output.set_state(State::Good);
             self.output.set_spacing(Spacing::Hidden);
         } else {
-            self.output
-                .set_text(self.format.render_static_str(&values)?);
+            self.output.set_text(self.format.render(&values)?);
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.
@@ -782,7 +777,7 @@ impl Block for Battery {
                 "Discharging" => battery_level_to_icon(capacity),
                 "Charging" => "bat_charging",
                 _ => battery_level_to_icon(capacity),
-            });
+            })?;
             self.output.set_spacing(Spacing::Normal);
         }
 

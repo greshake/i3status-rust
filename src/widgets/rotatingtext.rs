@@ -65,10 +65,10 @@ impl RotatingTextWidget {
         }
     }
 
-    pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = self.shared_config.get_icon(name);
+    pub fn with_icon(mut self, name: &str) -> Result<Self> {
+        self.icon = Some(self.shared_config.get_icon(name)?);
         self.update();
-        self
+        Ok(self)
     }
 
     pub fn with_state(mut self, state: State) -> Self {
@@ -100,9 +100,10 @@ impl RotatingTextWidget {
         self.update();
     }
 
-    pub fn set_icon(&mut self, name: &str) {
-        self.icon = self.shared_config.get_icon(name);
+    pub fn set_icon(&mut self, name: &str) -> Result<()> {
+        self.icon = Some(self.shared_config.get_icon(name)?);
         self.update();
+        Ok(())
     }
 
     pub fn set_text(&mut self, content: String) {

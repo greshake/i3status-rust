@@ -10,10 +10,10 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{LogicalDirection, SharedConfig};
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -194,13 +194,15 @@ impl Xrandr {
 
     fn display(&mut self) -> Result<()> {
         if let Some(m) = self.monitors.get(self.current_idx) {
-            let values = map!("{display}" => m.name.clone(),
-                              "{brightness}" => m.brightness.to_string(),
-                              "{brightness_icon}" => self.shared_config.get_icon("backlight_full").unwrap_or_default().trim().to_string(),
-                              "{resolution}" => m.resolution.clone(),
-                              "{res_icon}" => self.shared_config.get_icon("resolution").unwrap_or_default().trim().to_string());
+            let values = map!(
+                "display" => m.name.clone(),
+                "brightness" => m.brightness.to_string(),
+                "brightness_icon" => self.shared_config.get_icon("backlight_full")?,
+                "resolution" => m.resolution.clone(),
+                "res_icon" => self.shared_config.get_icon("resolution")?,
+            );
 
-            self.text.set_icon("xrandr");
+            self.text.set_icon("xrandr")?;
             let format_str = if self.resolution {
                 if self.icons {
                     "{display} {brightness_icon} {brightness} {res_icon} {resolution}"
@@ -236,8 +238,8 @@ impl ConfigBlock for Xrandr {
             step_width = 50;
         }
         Ok(Xrandr {
-            text: TextWidget::new(id, 0, shared_config.clone()).with_icon("xrandr"),
             id,
+            text: TextWidget::new(id, 0, shared_config.clone()).with_icon("xrandr")?,
             update_interval: block_config.interval,
             current_idx: 0,
             icons: block_config.icons,

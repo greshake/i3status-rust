@@ -9,8 +9,9 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, FormatTemplate};
+use crate::util::format_percent_bar;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 

@@ -9,9 +9,11 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{has_command, FormatTemplate};
+use crate::util::has_command;
 use crate::widgets::{text::TextWidget, I3BarWidget, Spacing, State};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
@@ -93,7 +95,7 @@ pub struct TemperatureConfig {
 
 impl TemperatureConfig {
     fn default_format() -> String {
-        "{average}° avg, {max}° max".to_owned()
+        "{average} avg, {max} max".to_owned()
     }
 
     fn default_interval() -> Duration {
@@ -126,7 +128,7 @@ impl ConfigBlock for Temperature {
             id,
             update_interval: block_config.interval,
             text: TextWidget::new(id, 0, shared_config)
-                .with_icon("thermometer")
+                .with_icon("thermometer")?
                 .with_spacing(if block_config.collapsed {
                     Spacing::Hidden
                 } else {
@@ -266,11 +268,13 @@ impl Block for Temperature {
             let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
                 .round() as i64;
 
-            let values = map!("{average}" => avg,
-                              "{min}" => min,
-                              "{max}" => max);
+            let values = map!(
+                "average" => Value::from_integer(avg).degrees(),
+                "min" => Value::from_integer(min).degrees(),
+                "max" => Value::from_integer(max).degrees()
+            );
 
-            self.output = self.format.render_static_str(&values)?;
+            self.output = self.format.render(&values)?;
             if !self.collapsed {
                 self.text.set_text(self.output.clone());
             }

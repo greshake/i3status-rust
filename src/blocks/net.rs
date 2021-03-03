@@ -15,11 +15,11 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{
-    escape_pango_text, format_number, format_percent_bar, format_vec_to_bar_graph, FormatTemplate,
-};
+use crate::util::{escape_pango_text, format_percent_bar, format_vec_to_bar_graph};
 use crate::widgets::{text::TextWidget, I3BarWidget, Spacing};
 
 lazy_static! {
@@ -34,6 +34,7 @@ lazy_static! {
     static ref IW_SIGNAL_REGEX: Regex = Regex::new("signal: (-?\\d+) dBm").unwrap();
 }
 
+#[derive(Debug)]
 pub struct NetworkDevice {
     device: String,
     device_path: PathBuf,
@@ -341,13 +342,13 @@ pub struct Net {
     output: TextWidget,
     ssid: Option<String>,
     max_ssid_width: usize,
-    signal_strength: Option<String>,
+    signal_strength: u32,
     signal_strength_bar: Option<String>,
     ip_addr: Option<String>,
     ipv6_addr: Option<String>,
     bitrate: Option<String>,
-    output_tx: String,
-    output_rx: String,
+    speed_up: f64,
+    speed_down: f64,
     graph_tx: String,
     graph_rx: String,
     update_interval: Duration,
@@ -357,9 +358,6 @@ pub struct Net {
     rx_buff: Vec<f64>,
     tx_bytes: u64,
     rx_bytes: u64,
-    use_bits: bool,
-    speed_min_unit: Unit,
-    speed_digits: usize,
     active: bool,
     exists: bool,
     hide_inactive: bool,
@@ -419,18 +417,6 @@ pub struct NetConfig {
     /// Whether to hide networks that are missing.
     #[serde(default = "NetConfig::default_hide_missing")]
     pub hide_missing: bool,
-
-    /// Whether to show speeds in bits or bytes per second.
-    #[serde(default = "NetConfig::default_use_bits")]
-    pub use_bits: bool,
-
-    /// Number of digits to show for throughput indiciators.
-    #[serde(default = "NetConfig::default_speed_digits")]
-    pub speed_digits: usize,
-
-    /// Minimum unit to display for throughput indicators.
-    #[serde(default = "NetConfig::default_speed_min_unit")]
-    pub speed_min_unit: Unit,
 }
 
 impl NetConfig {
@@ -456,18 +442,6 @@ impl NetConfig {
 
     fn default_max_ssid_width() -> usize {
         21
-    }
-
-    fn default_use_bits() -> bool {
-        false
-    }
-
-    fn default_speed_min_unit() -> Unit {
-        Unit::K
-    }
-
-    fn default_speed_digits() -> usize {
-        3
     }
 }
 
@@ -517,44 +491,36 @@ impl ConfigBlock for Net {
                     "net_loopback"
                 } else {
                     "net_wired"
-                })
+                })?
                 .with_text("")
                 .with_spacing(Spacing::Inline),
-            use_bits: block_config.use_bits,
-            speed_min_unit: block_config.speed_min_unit,
-            speed_digits: block_config.speed_digits,
             ssid: None,
             max_ssid_width: block_config.max_ssid_width,
-            signal_strength: if wireless && block_config.format.contains("{signal_strength}") {
-                Some(0.to_string())
-            } else {
-                None
-            },
-            signal_strength_bar: if wireless
-                && block_config.format.contains("{signal_strength_bar}")
+            signal_strength: 0,
+            signal_strength_bar: if wireless && block_config.format.contains("signal_strength_bar")
             {
                 Some("".to_string())
             } else {
                 None
             },
             // TODO: a better way to deal with this?
-            bitrate: if block_config.format.contains("{bitrate}") {
+            bitrate: if block_config.format.contains("bitrate") {
                 Some("".to_string())
             } else {
                 None
             },
-            ip_addr: if block_config.format.contains("{ip}") {
+            ip_addr: if block_config.format.contains("ip") {
                 Some("".to_string())
             } else {
                 None
             },
-            ipv6_addr: if block_config.format.contains("{ipv6}") {
+            ipv6_addr: if block_config.format.contains("ipv6") {
                 Some("".to_string())
             } else {
                 None
             },
-            output_tx: String::new(),
-            output_rx: String::new(),
+            speed_up: 0.0,
+            speed_down: 0.0,
             graph_tx: String::new(),
             graph_rx: String::new(),
             device,
@@ -587,28 +553,6 @@ fn read_file(path: &Path) -> Result<String> {
 }
 
 impl Net {
-    fn update_device(&mut self) {
-        if self.auto_device {
-            let dev = match NetworkDevice::default_device() {
-                Some(ref s) if !s.is_empty() => s.to_string(),
-                _ => "lo".to_string(),
-            };
-
-            if self.device.device() != dev {
-                self.device = NetworkDevice::from_device(dev);
-                self.output.set_icon(if self.device.is_wireless() {
-                    "net_wireless"
-                } else if self.device.is_vpn() {
-                    "net_vpn"
-                } else if self.device.device == "lo" {
-                    "net_loopback"
-                } else {
-                    "net_wired"
-                });
-            }
-        }
-    }
-
     fn update_bitrate(&mut self) -> Result<()> {
         if let Some(ref mut bitrate_string) = self.bitrate {
             let bitrate = self.device.bitrate()?;
@@ -632,18 +576,11 @@ impl Net {
     }
 
     fn update_signal_strength(&mut self) -> Result<()> {
-        if self.signal_strength.is_some() || self.signal_strength_bar.is_some() {
-            let value = self.device.relative_signal_strength()?;
-            if let Some(ref mut signal_strength_string) = self.signal_strength {
-                if let Some(v) = value {
-                    *signal_strength_string = format!("{}%", v);
-                };
-            }
+        if self.device.wireless {
+            self.signal_strength = self.device.relative_signal_strength()?.unwrap_or(0);
 
             if let Some(ref mut signal_strength_bar_string) = self.signal_strength_bar {
-                if let Some(v) = value {
-                    *signal_strength_bar_string = format_percent_bar(v as f32);
-                };
+                *signal_strength_bar_string = format_percent_bar(self.signal_strength as f32);
             }
         }
         Ok(())
@@ -676,16 +613,7 @@ impl Net {
         let tx_bytes = (diff as f64 / update_interval) as u64;
         self.tx_bytes = current_tx;
 
-        self.output_tx = format_number(
-            if self.use_bits {
-                tx_bytes * 8
-            } else {
-                tx_bytes
-            } as f64,
-            self.speed_digits,
-            &self.speed_min_unit.to_string(),
-            if self.use_bits { "b" } else { "B" },
-        );
+        self.speed_up = tx_bytes as f64;
 
         self.tx_buff.remove(0);
         self.tx_buff.push(tx_bytes as f64);
@@ -696,16 +624,7 @@ impl Net {
         let rx_bytes = (diff as f64 / update_interval) as u64;
         self.rx_bytes = current_rx;
 
-        self.output_rx = format_number(
-            if self.use_bits {
-                rx_bytes * 8
-            } else {
-                rx_bytes
-            } as f64,
-            self.speed_digits,
-            &self.speed_min_unit.to_string(),
-            if self.use_bits { "b" } else { "B" },
-        );
+        self.speed_down = rx_bytes as f64;
 
         self.rx_buff.remove(0);
         self.rx_buff.push(rx_bytes as f64);
@@ -717,7 +636,26 @@ impl Net {
 
 impl Block for Net {
     fn update(&mut self) -> Result<Option<Update>> {
-        self.update_device();
+        // Update device
+        if self.auto_device {
+            let dev = match NetworkDevice::default_device() {
+                Some(ref s) if !s.is_empty() => s.to_string(),
+                _ => "lo".to_string(),
+            };
+
+            if self.device.device() != dev {
+                self.device = NetworkDevice::from_device(dev);
+                self.output.set_icon(if self.device.is_wireless() {
+                    "net_wireless"
+                } else if self.device.is_vpn() {
+                    "net_vpn"
+                } else if self.device.device == "lo" {
+                    "net_loopback"
+                } else {
+                    "net_wired"
+                })?;
+            }
+        }
 
         // skip updating if device is not up.
         self.exists = self.device.exists()?;
@@ -757,29 +695,23 @@ impl Block for Net {
 
         self.update_tx_rx()?;
 
-        let mut s_up = self.shared_config.get_icon("net_up").unwrap_or_default();
-        s_up.push_str(&self.output_tx);
-        let mut s_dn = self.shared_config.get_icon("net_down").unwrap_or_default();
-        s_dn.push_str(&self.output_rx);
-
         let empty_string = "".to_string();
         let na_string = "N/A".to_string();
 
         let values = map!(
-            "{ssid}" => self.ssid.as_ref().unwrap_or(&na_string),
-            "{signal_strength}" => self.signal_strength.as_ref().unwrap_or(&na_string),
-            "{signal_strength_bar}" => self.signal_strength_bar.as_ref().unwrap_or(&empty_string),
-            "{bitrate}" => self.bitrate.as_ref().unwrap_or(&empty_string),
-            "{ip}" => self.ip_addr.as_ref().unwrap_or(&empty_string),
-            "{ipv6}" => self.ipv6_addr.as_ref().unwrap_or(&empty_string),
-            "{speed_up}" => &s_up,
-            "{speed_down}" => &s_dn,
-            "{graph_up}" => &self.graph_tx,
-            "{graph_down}" => &self.graph_rx
+            "ssid" => Value::from_string(self.ssid.clone().unwrap_or(na_string.clone())),
+            "signal_strength" => Value::from_integer(self.signal_strength as i64).percents(),
+            "signal_strength_bar" => Value::from_string(self.signal_strength_bar.clone().unwrap_or(empty_string.clone())),
+            "bitrate" => Value::from_string(self.bitrate.clone().unwrap_or(empty_string.clone())),
+            "ip" => Value::from_string(self.ip_addr.clone().unwrap_or(empty_string.clone())),
+            "ipv6" => Value::from_string(self.ipv6_addr.clone().unwrap_or(empty_string.clone())),
+            "speed_up" => Value::from_float(self.speed_up).bytes_per_second().icon(self.shared_config.get_icon("net_up")?),
+            "speed_down" => Value::from_float(self.speed_down).bytes_per_second().icon(self.shared_config.get_icon("net_down")?),
+            "graph_up" => Value::from_string(self.graph_tx.clone()),
+            "graph_down" => Value::from_string(self.graph_rx.clone()),
         );
 
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
+        self.output.set_text(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

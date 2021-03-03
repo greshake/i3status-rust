@@ -10,27 +10,22 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, FormatTemplate};
+use crate::util::format_percent_bar;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
-
-/// Maximum number of CPUs we support.
-const MAX_CPUS: usize = 32;
 
 pub struct Cpu {
     id: usize,
     output: TextWidget,
-    prev_idles: [u64; MAX_CPUS],
-    prev_non_idles: [u64; MAX_CPUS],
+    prev_util: Vec<(u64, u64)>,
     update_interval: Duration,
     minimum_info: u64,
     minimum_warning: u64,
     minimum_critical: u64,
     format: FormatTemplate,
-    has_barchart: bool,
-    has_frequency: bool,
-    per_core: bool,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -55,17 +50,9 @@ pub struct CpuConfig {
     #[serde(default = "CpuConfig::default_critical")]
     pub critical: u64,
 
-    /// Display frequency
-    #[serde(default = "CpuConfig::default_frequency")]
-    pub frequency: bool,
-
     /// Format override
     #[serde(default = "CpuConfig::default_format")]
     pub format: String,
-
-    /// Compute the metrics (utilization and frequency) per core.
-    #[serde(default)]
-    pub per_core: bool,
 }
 
 impl CpuConfig {
@@ -88,10 +75,6 @@ impl CpuConfig {
     fn default_critical() -> u64 {
         90
     }
-
-    fn default_frequency() -> bool {
-        false
-    }
 }
 
 impl ConfigBlock for Cpu {
@@ -103,70 +86,57 @@ impl ConfigBlock for Cpu {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let format = if block_config.frequency {
-            "{utilization} {frequency}".into()
-        } else {
-            block_config.format
-        };
-
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, 0, shared_config).with_icon("cpu"),
-            prev_idles: [0; MAX_CPUS],
-            prev_non_idles: [0; MAX_CPUS],
+            output: TextWidget::new(id, 0, shared_config).with_icon("cpu")?,
+            prev_util: Vec::with_capacity(32),
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            format: FormatTemplate::from_string(&format)
+            format: FormatTemplate::from_string(&block_config.format)
                 .block_error("cpu", "Invalid format specified for cpu")?,
-            has_frequency: format.contains("{frequency}"),
-            has_barchart: format.contains("{barchart}"),
-            per_core: block_config.per_core,
         })
     }
 }
 
 impl Block for Cpu {
     fn update(&mut self) -> Result<Option<Update>> {
-        let f = File::open("/proc/stat")
-            .block_error("cpu", "Your system doesn't support /proc/stat")?;
-        let f = BufReader::new(f);
-
-        let mut cpu_freqs: [f32; MAX_CPUS] = [0.0; MAX_CPUS];
-        let mut n_cpu = 0;
-        if self.has_frequency {
-            let freq_file =
-                File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
-            let freq_file_content = BufReader::new(freq_file);
-            // read frequency of each cpu and calculate the average which we will display
-            for line in freq_file_content.lines().scan((), |_, x| x.ok()) {
-                if line.starts_with("cpu MHz") {
-                    let words = line.split(' ');
-                    let last = words
-                        .last()
-                        .expect("failed to get last word of line while getting cpu frequency");
-                    let numb = last
-                        .parse::<f32>()
-                        .expect("failed to parse String to f32 while getting cpu frequency");
-                    cpu_freqs[n_cpu] = numb;
-                    n_cpu += 1;
-                    if n_cpu >= MAX_CPUS {
-                        break;
-                    };
-                }
+        // Read frequencies (read in MHz, store in Hz)
+        let mut freqs = Vec::with_capacity(32);
+        let mut freqs_avg = 0.0;
+        let freqs_f =
+            File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
+        for line in BufReader::new(freqs_f).lines().scan((), |_, x| x.ok()) {
+            if line.starts_with("cpu MHz") {
+                let words = line.split(' ');
+                let last = words
+                    .last()
+                    .expect("failed to get last word of line while getting cpu frequency");
+                let numb = last
+                    .parse::<f64>()
+                    .expect("failed to parse String to f64 while getting cpu frequency")
+                    * 1e6; // convert to Hz
+                freqs.push(numb);
+                freqs_avg += numb;
             }
         }
+        freqs_avg /= freqs.len() as f64;
 
-        let mut cpu_utilizations: [f64; MAX_CPUS] = [0.0; MAX_CPUS];
-        let mut cpu_i = 0;
-        for line in f.lines().scan((), |_, x| x.ok()) {
+        // Read utilizations
+        let mut utilizations = Vec::with_capacity(32);
+        let utilizations_f = File::open("/proc/stat")
+            .block_error("cpu", "Your system doesn't support /proc/stat")?;
+        for (i, line) in BufReader::new(utilizations_f)
+            .lines()
+            .scan((), |_, x| x.ok())
+            .enumerate()
+        {
             if line.starts_with("cpu") {
-                let data: Vec<u64> = (&line)
-                    .split(' ')
-                    .skip(if cpu_i == 0 { 2 } else { 1 })
+                let data: Vec<u64> = line
+                    .split_whitespace()
                     .filter_map(|x| x.parse::<u64>().ok())
-                    .collect::<Vec<_>>();
+                    .collect();
 
                 // idle = idle + iowait
                 let idle = data[3] + data[4];
@@ -177,34 +147,35 @@ impl Block for Cpu {
                                 data[6] + // softirq
                                 data[7]; // steal
 
-                let prev_total = self.prev_idles[cpu_i] + self.prev_non_idles[cpu_i];
+                let (prev_idles, prev_non_idles) = if self.prev_util.len() <= i {
+                    self.prev_util.push((0, 0));
+                    (0, 0)
+                } else {
+                    self.prev_util[i]
+                };
+
+                let prev_total = prev_idles + prev_non_idles;
                 let total = idle + non_idle;
 
                 // This check is needed because the new values may be reset, for
                 // example after hibernation.
-
-                let (total_delta, idle_delta) =
-                    if prev_total < total && self.prev_idles[cpu_i] <= idle {
-                        (total - prev_total, idle - self.prev_idles[cpu_i])
-                    } else {
-                        (1, 1)
-                    };
-
-                cpu_utilizations[cpu_i] =
-                    ((total_delta - idle_delta) as f64 / total_delta as f64).clamp(0., 1.);
-
-                self.prev_idles[cpu_i] = idle;
-                self.prev_non_idles[cpu_i] = non_idle;
-                cpu_i += 1;
-                if cpu_i >= MAX_CPUS {
-                    break;
+                let (total_delta, idle_delta) = if prev_total < total && prev_idles <= idle {
+                    (total - prev_total, idle - prev_idles)
+                } else {
+                    (1, 1)
                 };
+
+                utilizations
+                    .push(((total_delta - idle_delta) as f64 / total_delta as f64).clamp(0., 1.));
+
+                self.prev_util[i] = (idle, non_idle);
             }
         }
 
-        let avg_utilization = (100.0 * cpu_utilizations[0]) as u64;
+        let (avg, utilizations) = utilizations.split_first().unwrap();
+        let avg_utilization = avg * 100.;
 
-        self.output.set_state(match avg_utilization {
+        self.output.set_state(match avg_utilization as u64 {
             x if x > self.minimum_critical => State::Critical,
             x if x > self.minimum_warning => State::Warning,
             x if x > self.minimum_info => State::Info,
@@ -212,21 +183,36 @@ impl Block for Cpu {
         });
 
         let mut barchart = String::new();
-
-        if self.has_barchart {
-            const BOXCHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-
-            for i in 1..cpu_i {
-                barchart.push(BOXCHARS[(7.5 * cpu_utilizations[i]) as usize]);
-            }
+        const BOXCHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+        for utilization in utilizations {
+            barchart.push(BOXCHARS[(7.5 * utilization) as usize]);
         }
-        let values = map!("{frequency}" => format_frequency(&cpu_freqs[..n_cpu], self.per_core),
-                          "{barchart}" => barchart,
-                          "{utilization}" => format_utilization(&cpu_utilizations[..cpu_i], self.per_core),
-                          "{utilizationbar}" => format_percent_bar(avg_utilization as f32));
 
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
+        let mut values = map!(
+            "frequency" => Value::from_float(freqs_avg).hertz(),
+            "barchart" => Value::from_string(barchart),
+            "utilization" => Value::from_integer(avg_utilization as i64).percents(),
+            "utilizationbar" => Value::from_string(format_percent_bar(avg_utilization as f32)),
+        );
+        let mut frequency_keys = vec![]; // There should be a better way to dynamically crate keys?
+        for i in 0..freqs.len() {
+            frequency_keys.push(format!("frequency{}", i + 1));
+        }
+        for (i, freq) in freqs.iter().enumerate() {
+            values.insert(&frequency_keys[i], Value::from_float(*freq).hertz());
+        }
+        let mut utilization_keys = vec![]; // There should be a better way to dynamically crate keys?
+        for i in 0..utilizations.len() {
+            utilization_keys.push(format!("utilization{}", i + 1));
+        }
+        for (i, utilization) in utilizations.iter().enumerate() {
+            values.insert(
+                &utilization_keys[i],
+                Value::from_integer((utilization * 100.) as i64).percents(),
+            );
+        }
+
+        self.output.set_text(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }
@@ -237,33 +223,5 @@ impl Block for Cpu {
 
     fn id(&self) -> usize {
         self.id
-    }
-}
-
-#[inline]
-fn format_utilization(values: &[f64], per_core: bool) -> String {
-    if per_core {
-        values
-            .iter()
-            .skip(1) // The first value is a global one.
-            .map(|v| format!("{:02.0}%", 100.0 * v))
-            .collect::<Vec<String>>()
-            .join(" ")
-    } else {
-        format!("{:02.0}%", 100.0 * values[0])
-    }
-}
-
-#[inline]
-fn format_frequency(cpu_freqs: &[f32], per_core: bool) -> String {
-    if per_core {
-        cpu_freqs
-            .iter()
-            .map(|v| format!("{0:.1}GHz", v / 1000.0))
-            .collect::<Vec<String>>()
-            .join(" ")
-    } else {
-        let avg = cpu_freqs.iter().sum::<f32>() / (cpu_freqs.len() as f32) / 1000.0;
-        format!("{:.1}GHz", avg)
     }
 }

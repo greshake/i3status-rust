@@ -9,10 +9,11 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::http;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widgets::{text::TextWidget, I3BarWidget, State};
 
 const OPENWEATHERMAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
@@ -57,7 +58,7 @@ pub struct Weather {
     id: usize,
     weather: TextWidget,
     format: String,
-    weather_keys: HashMap<&'static str, String>,
+    weather_keys: HashMap<&'static str, Value>,
     service: WeatherService,
     update_interval: Duration,
     autolocate: bool,
@@ -141,10 +142,7 @@ fn convert_wind_direction(direction_opt: Option<f64>) -> String {
 }
 
 fn configuration_error(msg: &str) -> Result<()> {
-    Err(ConfigurationError(
-        "weather".to_owned(),
-        (msg.to_owned(), msg.to_owned()),
-    ))
+    Err(ConfigurationError("weather".to_owned(), msg.to_owned()))
 }
 
 impl Weather {
@@ -262,7 +260,7 @@ impl Weather {
                     "Thunderstorm" => "weather_thunder",
                     "Snow" => "weather_snow",
                     _ => "weather_default",
-                });
+                })?;
 
                 let kmh_wind_speed = if *units == OpenWeatherMapUnits::Metric {
                     raw_wind_speed * 3600.0 / 1000.0
@@ -274,14 +272,16 @@ impl Weather {
                 let apparent_temp =
                     australian_apparent_temp(raw_temp, raw_humidity, raw_wind_speed, *units);
 
-                self.weather_keys = map!("{weather}" => raw_weather,
-                                  "{temp}" => format!("{:.0}", raw_temp),
-                                  "{humidity}" => format!("{:.0}", raw_humidity),
-                                  "{apparent}" => format!("{:.0}",apparent_temp),
-                                  "{wind}" => format!("{:.1}", raw_wind_speed),
-                                  "{wind_kmh}" => format!("{:.1}", kmh_wind_speed),
-                                  "{direction}" => convert_wind_direction(raw_wind_direction),
-                                  "{location}" => raw_location);
+                self.weather_keys = map!(
+                    "weather" => Value::from_string(raw_weather),
+                    "temp" => Value::from_integer(raw_temp as i64),
+                    "humidity" => Value::from_integer(raw_humidity as i64),
+                    "apparent" => Value::from_integer(apparent_temp as i64),
+                    "wind" => Value::from_float(raw_wind_speed),
+                    "wind_kmh" => Value::from_float(kmh_wind_speed),
+                    "direction" => Value::from_string(convert_wind_direction(raw_wind_direction)),
+                    "location" => Value::from_string(raw_location),
+                );
                 Ok(())
             }
         }
@@ -343,13 +343,12 @@ impl Block for Weather {
         match self.update_weather() {
             Ok(_) => {
                 let fmt = FormatTemplate::from_string(&self.format)?;
-                self.weather
-                    .set_text(fmt.render_static_str(&self.weather_keys)?);
+                self.weather.set_text(fmt.render(&self.weather_keys)?);
                 self.weather.set_state(State::Idle)
             }
             Err(BlockError(block, _)) | Err(InternalError(block, _, _)) if block == "curl" => {
                 // Ignore curl/api errors
-                self.weather.set_icon("weather_default");
+                self.weather.set_icon("weather_default")?;
                 self.weather.set_text("×".to_string());
                 self.weather.set_state(State::Warning)
             }

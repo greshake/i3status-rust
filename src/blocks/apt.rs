@@ -12,9 +12,10 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -111,7 +112,7 @@ impl ConfigBlock for Apt {
             .block_error("apt", "Failed to create config file")?;
         write!(config_file, "{}", apt_conf).block_error("apt", "Failed to write to config file")?;
 
-        let output = TextWidget::new(id, 0, shared_config).with_icon("update");
+        let output = TextWidget::new(id, 0, shared_config).with_icon("update")?;
 
         Ok(Apt {
             id,
@@ -129,10 +130,7 @@ impl ConfigBlock for Apt {
                     let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
                         ConfigurationError(
                             "apt".to_string(),
-                            (
-                                "invalid warning updates regex".to_string(),
-                                "invalid regex".to_string(),
-                            ),
+                            "invalid warning updates regex".to_string(),
                         )
                     })?;
                     Some(regex)
@@ -144,10 +142,7 @@ impl ConfigBlock for Apt {
                     let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
                         ConfigurationError(
                             "apt".to_string(),
-                            (
-                                "invalid critical updates regex".to_string(),
-                                "invalid regex".to_string(),
-                            ),
+                            "invalid critical updates regex".to_string(),
                         )
                     })?;
                     Some(regex)
@@ -205,7 +200,9 @@ impl Block for Apt {
         let (formatting_map, warning, critical, cum_count) = {
             let updates_list = get_updates_list(&self.config_path)?;
             let count = get_update_count(&updates_list);
-            let formatting_map = map!("{count}" => count);
+            let formatting_map = map!(
+                "{count}" => Value::from_integer(count as i64)
+            );
 
             let warning = self
                 .warning_updates_regex
@@ -219,9 +216,9 @@ impl Block for Apt {
             (formatting_map, warning, critical, count)
         };
         self.output.set_text(match cum_count {
-            0 => self.format_up_to_date.render_static_str(&formatting_map)?,
-            1 => self.format_singular.render_static_str(&formatting_map)?,
-            _ => self.format.render_static_str(&formatting_map)?,
+            0 => self.format_up_to_date.render(&formatting_map)?,
+            1 => self.format_singular.render(&formatting_map)?,
+            _ => self.format.render(&formatting_map)?,
         });
         self.output.set_state(match cum_count {
             0 => State::Idle,

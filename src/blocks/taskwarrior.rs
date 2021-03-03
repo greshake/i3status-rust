@@ -8,9 +8,10 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -130,7 +131,7 @@ impl ConfigBlock for Taskwarrior {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let output = TextWidget::new(id, 0, shared_config)
-            .with_icon("tasks")
+            .with_icon("tasks")?
             .with_text("-");
         // If the deprecated `filter_tags` option has been set,
         // convert it to the new `filter` format.
@@ -218,13 +219,13 @@ impl Block for Taskwarrior {
             )?;
             let number_of_tasks = get_number_of_tasks(&filter.filter)?;
             let values = map!(
-                "{count}" => number_of_tasks.to_string(),
-                "{filter_name}" => filter.name.clone()
+                "count" => Value::from_integer(number_of_tasks as i64),
+                "filter_name" => Value::from_string(filter.name.clone()),
             );
             self.output.set_text(match number_of_tasks {
-                0 => self.format_everything_done.render_static_str(&values)?,
-                1 => self.format_singular.render_static_str(&values)?,
-                _ => self.format.render_static_str(&values)?,
+                0 => self.format_everything_done.render(&values)?,
+                1 => self.format_singular.render(&values)?,
+                _ => self.format.render(&values)?,
             });
             if number_of_tasks >= self.critical_threshold {
                 self.output.set_state(State::Critical);

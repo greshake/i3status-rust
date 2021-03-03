@@ -45,12 +45,10 @@ impl ConfigBlock for Uptime {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(id, 0, shared_config).with_icon("uptime");
-
         Ok(Uptime {
             id,
             update_interval: block_config.interval,
-            text,
+            text: TextWidget::new(id, 0, shared_config).with_icon("uptime")?,
         })
     }
 }

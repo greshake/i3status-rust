@@ -95,7 +95,7 @@ impl ConfigBlock for Maildir {
             id,
             update_interval: block_config.interval,
             text: if block_config.icon {
-                widget.with_icon("mail")
+                widget.with_icon("mail")?
             } else {
                 widget
             },
