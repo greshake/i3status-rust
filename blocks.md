@@ -1284,6 +1284,8 @@ Key | Values | Required | Default
 `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | No | `None`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
+`max_width` | Max width of output\_name | No | `None`
+`use_description` | Pulseaudio provides some more human friendly names called description, it will replace the value of output\_name (mapping will still use the name) | No | `true`
 
 #### Available Format Keys
 
