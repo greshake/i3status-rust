@@ -249,7 +249,7 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
                 description: source_info
                     .description
                     .clone()
-                    .map(|description| description.into_owned().to_string()),
+                    .map(|description| description.into_owned()),
             }),
         }
     }
@@ -269,7 +269,7 @@ impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
                 description: sink_info
                     .description
                     .clone()
-                    .map(|description| description.into_owned().to_string()),
+                    .map(|description| description.into_owned()),
             }),
         }
     }
