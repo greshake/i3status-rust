@@ -19,6 +19,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{LogicalDirection, Scrolling, SharedConfig};
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
@@ -612,13 +613,13 @@ impl Block for Music {
             };
 
         let values = map!(
-            "artist" => artist.clone(),
-            "title" => title.clone(),
-            "combo" => combo,
+            "artist" => Value::from_string(artist.clone()),
+            "title" => Value::from_string(title.clone()),
+            "combo" => Value::from_string(combo),
             //TODO
-            //"{vol}" => volume,
-            "player" => player_name,
-            "avail" => players.len().to_string()
+            //"vol" => volume,
+            "player" => Value::from_string(player_name),
+            "avail" => Value::from_string(players.len().to_string()),
         );
 
         if !(rotation_in_progress) {
@@ -626,7 +627,7 @@ impl Block for Music {
                 self.current_song_widget.set_text(String::new());
             } else {
                 self.current_song_widget
-                    .set_text(self.format.render_static_str(&values)?);
+                    .set_text(self.format.render(&values)?);
             }
         }
 
