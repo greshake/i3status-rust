@@ -23,9 +23,31 @@ pub struct Bitcoin {
     #[allow(dead_code)]
     tx_update_request: Sender<Task>,
 
-    // for some currency
+    /// use this for a list of supported currencies: https://blockchain.info/ticker
     currency: String,
+    currency_list: Vec<String>,
+    list_index: usize,
+}
 
+impl Bitcoin {
+    fn compute_index(&mut self) {
+        for (i, cur) in self.currency_list.iter().enumerate() {
+            if cur == &self.currency {
+                self.list_index = i
+            }
+        }
+    }
+
+    fn next_currency(&mut self) {
+        let mut index = self.list_index + 1;
+        let len = self.currency_list.len();
+        if index >= len {
+            index = 0;
+        }
+
+        self.list_index = index;
+        self.currency = self.currency_list[self.list_index].clone();
+    }
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
@@ -39,6 +61,8 @@ pub struct BitcoinConfig {
     pub interval: Duration,
     #[serde(default = "BitcoinConfig::default_currency")]
     pub currency: String,
+    #[serde(default = "BitcoinConfig::default_currency_list")]
+    pub currency_list: Vec<String>,
 }
 
 impl BitcoinConfig {
@@ -48,6 +72,10 @@ impl BitcoinConfig {
 
     fn default_currency() -> String {
         String::from("USD")
+    }
+
+    fn default_currency_list() -> Vec<String> {
+        vec![String::from("USD")]
     }
 }
 
@@ -68,43 +96,47 @@ impl ConfigBlock for Bitcoin {
             text,
             tx_update_request,
             shared_config,
-            
             currency: block_config.currency,
+            currency_list: block_config.currency_list,
+            list_index: 0,
         })
     }
 }
 
 impl Block for Bitcoin {
     fn update(&mut self) -> Result<Option<Update>> {
+        self.compute_index();
         let mut handle = curl::easy::Easy::new();
         let mut buf = Vec::new();
 
+        // perform a request
         handle.url("https://blockchain.info/ticker")?;
         {
             let mut handle = handle.transfer();
             handle.write_function(|data| {
-                    buf.extend_from_slice(data);
-                    Ok(data.len())
-                }
-            )?;
+                buf.extend_from_slice(data);
+                Ok(data.len())
+            })?;
             handle.perform()?;
         }
 
+        // parse the data
         let string = String::from_utf8(buf).unwrap_or("None".to_string());
         let mut parsed = BTCParser::default();
-        for mut each in string.lines() { 
+
+        for mut each in string.lines() {
             each = each.trim_start();
             each = each.trim_end();
             if each[1..].starts_with(&format!("{}", self.currency)) {
                 parsed = BTCParser::new(&each[8..each.len() - 1]);
             }
-            if each.len() > 1 {
-                //println!("{}", &each[8..each.len() - 1])
-            }
         }
 
-        let text = TextWidget::new(self.id, 0, self.shared_config.clone());
-        self.text = text.with_text(&format!("1 BTC to {}: {} {}", self.currency, parsed.last, parsed.symbol)); 
+        // set block text
+        self.text.set_text(format!(
+            "1 BTC to {}: {} {}",
+            self.currency, parsed.last, parsed.symbol
+        ));
 
         Ok(Some(self.update_interval.into()))
     }
@@ -113,7 +145,20 @@ impl Block for Bitcoin {
         vec![&self.text]
     }
 
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
+    fn click(&mut self, ev: &I3BarEvent) -> Result<()> {
+        // scroll down to change currencies
+        if let Some(instance) = ev.instance {
+            if instance == self.text.instance {
+                match ev.button {
+                    crate::input::MouseButton::WheelDown => {
+                        self.next_currency();
+                        self.update()?;
+                    }
+                    _ => (),
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -125,29 +170,30 @@ impl Block for Bitcoin {
 #[derive(serde_derive::Deserialize, Clone, Debug)]
 struct BTCParser {
     #[serde(rename(deserialize = "15m"))]
-    m15: f32,
+    _m15: f32,
     last: f32,
-    buy: f32,
-    sell: f32,
+    #[serde(rename(deserialize = "buy"))]
+    _buy: f32,
+    #[serde(rename(deserialize = "sell"))]
+    _sell: f32,
     symbol: String,
 }
 
 impl BTCParser {
     fn new(json: &str) -> Self {
         let s = serde_json::from_str(json).unwrap_or(BTCParser::default());
-        return s
+        return s;
     }
 }
 
 impl Default for BTCParser {
     fn default() -> Self {
         Self {
-            m15: 0f32,
+            _m15: 0f32,
             last: 0f32,
-            buy: 0f32,
-            sell: 0f32,
-            symbol: "None".to_string()
+            _buy: 0f32,
+            _sell: 0f32,
+            symbol: "None".to_string(),
         }
-        
-    } 
+    }
 }
