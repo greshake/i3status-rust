@@ -16,19 +16,15 @@ enum Token {
     Var(Variable),
 }
 
+//TODO document
 #[derive(Debug, Clone)]
 pub struct Variable {
     pub name: String,
     pub min_width: Option<usize>,
+    pub max_width: Option<usize>,
     pub pad_with: Option<char>,
     pub min_suffix: Option<Suffix>,
     pub unit: Option<Unit>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Padding {
-    pub min_width: usize,
-    pub pad_with: char,
 }
 
 impl FormatTemplate {
@@ -38,6 +34,7 @@ impl FormatTemplate {
         let mut text_buf = String::new();
         let mut var_buf = String::new();
         let mut min_width_buf = String::new();
+        let mut max_width_buf = String::new();
         let mut min_suffix_buf = String::new();
         let mut unit_buf = String::new();
         let mut inside_var = false;
@@ -63,6 +60,12 @@ impl FormatTemplate {
                         //TODO return error
                     }
                     current_buf = &mut min_width_buf;
+                }
+                '.' if inside_var => {
+                    if !min_width_buf.is_empty() {
+                        //TODO return error
+                    }
+                    current_buf = &mut max_width_buf;
                 }
                 ';' if inside_var => {
                     if !min_suffix_buf.is_empty() {
@@ -99,6 +102,12 @@ impl FormatTemplate {
                             )
                         }
                     };
+                    // Parse max_width
+                    let max_width = if max_width_buf.is_empty() {
+                        None
+                    } else {
+                        Some(max_width_buf.parse::<usize>().unwrap()) // Might return error
+                    };
                     // Parse min_suffix
                     let min_suffix = if min_suffix_buf.is_empty() {
                         None
@@ -114,6 +123,7 @@ impl FormatTemplate {
                     tokens.push(Token::Var(Variable {
                         name: var_buf.clone(),
                         min_width,
+                        max_width,
                         pad_with,
                         min_suffix,
                         unit,
@@ -121,6 +131,7 @@ impl FormatTemplate {
                     // Clear all buffers
                     var_buf.clear();
                     min_width_buf.clear();
+                    max_width_buf.clear();
                     min_suffix_buf.clear();
                     unit_buf.clear();
                     current_buf = &mut text_buf;

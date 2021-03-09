@@ -463,7 +463,6 @@ pub struct NetworkManager {
     dbus_conn: Connection,
     manager: ConnectionManager,
     primary_only: bool,
-    max_ssid_width: usize,
     ap_format: FormatTemplate,
     device_format: FormatTemplate,
     connection_format: FormatTemplate,
@@ -478,10 +477,6 @@ pub struct NetworkManagerConfig {
     /// Whether to only show the primary connection, or all active connections.
     #[serde(default = "NetworkManagerConfig::default_primary_only")]
     pub primary_only: bool,
-
-    /// Max SSID width, in characters.
-    #[serde(default = "NetworkManagerConfig::default_max_ssid_width")]
-    pub max_ssid_width: usize,
 
     /// AP formatter
     #[serde(default = "NetworkManagerConfig::default_ap_format")]
@@ -507,10 +502,6 @@ pub struct NetworkManagerConfig {
 impl NetworkManagerConfig {
     fn default_primary_only() -> bool {
         false
-    }
-
-    fn default_max_ssid_width() -> usize {
-        21
     }
 
     fn default_ap_format() -> String {
@@ -587,7 +578,6 @@ impl ConfigBlock for NetworkManager {
             dbus_conn,
             manager,
             primary_only: block_config.primary_only,
-            max_ssid_width: block_config.max_ssid_width,
             ap_format: FormatTemplate::from_string(&block_config.ap_format)?,
             device_format: FormatTemplate::from_string(&block_config.device_format)?,
             connection_format: FormatTemplate::from_string(&block_config.connection_format)?,
@@ -728,14 +718,7 @@ impl Block for NetworkManager {
 
                                 let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn)
                                 {
-                                    let ssid = match ap.ssid(&self.dbus_conn) {
-                                        Ok(ssid) => {
-                                            let mut truncated = ssid.to_string();
-                                            truncated.truncate(self.max_ssid_width);
-                                            truncated
-                                        }
-                                        Err(_) => "".to_string(),
-                                    };
+                                    let ssid = ap.ssid(&self.dbus_conn).unwrap_or_else(|_| "N/A".to_string());
                                     let strength = ap.strength(&self.dbus_conn).unwrap_or(0);
                                     let freq = match ap.frequency(&self.dbus_conn) {
                                         Ok(v) => v.to_string(),

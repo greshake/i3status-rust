@@ -232,6 +232,9 @@ impl Value {
                         text.push(pad_with);
                     }
                 }
+                if let Some(max_width) = var.max_width {
+                    text.truncate(max_width);
+                }
                 text
             }
             InternalValue::Integer(value) => {

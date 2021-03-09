@@ -341,7 +341,6 @@ pub struct Net {
     format_alt: Option<FormatTemplate>,
     output: TextWidget,
     ssid: Option<String>,
-    max_ssid_width: usize,
     signal_strength: u32,
     ip_addr: Option<String>,
     ipv6_addr: Option<String>,
@@ -405,10 +404,6 @@ pub struct NetConfig {
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
 
-    /// Max SSID width, in characters.
-    #[serde(default = "NetConfig::default_max_ssid_width")]
-    pub max_ssid_width: usize,
-
     /// Whether to hide networks that are down/inactive completely.
     #[serde(default = "NetConfig::default_hide_inactive")]
     pub hide_inactive: bool,
@@ -437,10 +432,6 @@ impl NetConfig {
 
     fn default_hide_missing() -> bool {
         false
-    }
-
-    fn default_max_ssid_width() -> usize {
-        21
     }
 }
 
@@ -494,7 +485,6 @@ impl ConfigBlock for Net {
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             ssid: None,
-            max_ssid_width: block_config.max_ssid_width,
             signal_strength: 0,
             // TODO: a better way to deal with this?
             bitrate: if block_config.format.contains("bitrate") {
@@ -558,10 +548,8 @@ impl Net {
 
     fn update_ssid(&mut self) -> Result<()> {
         if let Some(s) = self.device.ssid()? {
-            let mut truncated = s;
-            truncated.truncate(self.max_ssid_width);
             // SSID names can contain chars that need escaping
-            self.ssid = Some(escape_pango_text(truncated));
+            self.ssid = Some(escape_pango_text(s));
         } else {
             self.ssid = None;
         }
