@@ -19,7 +19,7 @@ use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{escape_pango_text, format_percent_bar, format_vec_to_bar_graph};
+use crate::util::{escape_pango_text, format_vec_to_bar_graph};
 use crate::widgets::{text::TextWidget, I3BarWidget, Spacing};
 
 lazy_static! {
@@ -343,7 +343,6 @@ pub struct Net {
     ssid: Option<String>,
     max_ssid_width: usize,
     signal_strength: u32,
-    signal_strength_bar: Option<String>,
     ip_addr: Option<String>,
     ipv6_addr: Option<String>,
     bitrate: Option<String>,
@@ -497,12 +496,6 @@ impl ConfigBlock for Net {
             ssid: None,
             max_ssid_width: block_config.max_ssid_width,
             signal_strength: 0,
-            signal_strength_bar: if wireless && block_config.format.contains("signal_strength_bar")
-            {
-                Some("".to_string())
-            } else {
-                None
-            },
             // TODO: a better way to deal with this?
             bitrate: if block_config.format.contains("bitrate") {
                 Some("".to_string())
@@ -578,11 +571,8 @@ impl Net {
     fn update_signal_strength(&mut self) -> Result<()> {
         if self.device.wireless {
             self.signal_strength = self.device.relative_signal_strength()?.unwrap_or(0);
-
-            if let Some(ref mut signal_strength_bar_string) = self.signal_strength_bar {
-                *signal_strength_bar_string = format_percent_bar(self.signal_strength as f32);
-            }
         }
+
         Ok(())
     }
 
@@ -701,8 +691,7 @@ impl Block for Net {
         let values = map!(
             "ssid" => Value::from_string(self.ssid.clone().unwrap_or(na_string.clone())),
             "signal_strength" => Value::from_integer(self.signal_strength as i64).percents(),
-            "signal_strength_bar" => Value::from_string(self.signal_strength_bar.clone().unwrap_or(empty_string.clone())),
-            "bitrate" => Value::from_string(self.bitrate.clone().unwrap_or(empty_string.clone())),
+            "bitrate" => Value::from_string(self.bitrate.clone().unwrap_or(empty_string.clone())), // TODO: not a String?
             "ip" => Value::from_string(self.ip_addr.clone().unwrap_or(empty_string.clone())),
             "ipv6" => Value::from_string(self.ipv6_addr.clone().unwrap_or(empty_string.clone())),
             "speed_up" => Value::from_float(self.speed_up).bytes_per_second().icon(self.shared_config.get_icon("net_up")?),
