@@ -147,6 +147,28 @@ fn format_number(raw_value: f64, min_width: usize, min_suffix: &Suffix) -> Strin
     }
 }
 
+fn format_bar(value: f64, length: usize) -> String {
+    let value = value.clamp(0., 1.);
+    let chars_to_fill = value * length as f64;
+    (0..length)
+        .map(|i| {
+            let printed_chars = i as f64;
+            let val = (chars_to_fill - printed_chars).clamp(0., 1.) * 8.;
+            match val as usize {
+                0 => ' ',
+                1 => '\u{258f}',
+                2 => '\u{258e}',
+                3 => '\u{258d}',
+                4 => '\u{258c}',
+                5 => '\u{258b}',
+                6 => '\u{258a}',
+                7 => '\u{2589}',
+                _ => '\u{2588}',
+            }
+        })
+        .collect()
+}
+
 impl Value {
     // Constuctors
     pub fn from_string(text: String) -> Self {
@@ -222,6 +244,18 @@ impl Value {
         let min_width = var.min_width.unwrap_or(self.min_width);
         let pad_with = var.pad_with.unwrap_or(' ');
         let unit = var.unit.as_ref().unwrap_or(&self.unit);
+
+        // Draw the bar instead of usual formatting if `bar_max_value` is set
+        // (olny for integers and floats)
+        if let Some(bar_max_value) = var.bar_max_value {
+            match self.value {
+                InternalValue::Integer(i) => {
+                    return format_bar(i as f64 / bar_max_value, min_width)
+                }
+                InternalValue::Float(f) => return format_bar(f / bar_max_value, min_width),
+                _ => (),
+            }
+        }
 
         let value = match self.value {
             InternalValue::Text(ref text) => {

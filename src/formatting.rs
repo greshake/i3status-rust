@@ -5,6 +5,12 @@ use std::collections::HashMap;
 use crate::errors::*;
 use value::{Suffix, Unit, Value};
 
+const MIN_WIDTH_TOKEN: char = ':';
+const MAX_WIDTH_TOKEN: char = '^';
+const MIN_SUFFIX_TOKEN: char = ';';
+const UNIT_TOKEN: char = ';';
+const BAR_MAX_VAL_TOKEN: char = '#';
+
 #[derive(Debug, Clone)]
 pub struct FormatTemplate {
     tokens: Vec<Token>,
@@ -25,6 +31,7 @@ pub struct Variable {
     pub pad_with: Option<char>,
     pub min_suffix: Option<Suffix>,
     pub unit: Option<Unit>,
+    pub bar_max_value: Option<f64>,
 }
 
 impl FormatTemplate {
@@ -37,6 +44,7 @@ impl FormatTemplate {
         let mut max_width_buf = String::new();
         let mut min_suffix_buf = String::new();
         let mut unit_buf = String::new();
+        let mut bar_max_value_buf = String::new();
         let mut inside_var = false;
 
         let mut current_buf = &mut text_buf;
@@ -55,29 +63,35 @@ impl FormatTemplate {
                     current_buf = &mut var_buf;
                     inside_var = true;
                 }
-                ':' if inside_var => {
+                MIN_WIDTH_TOKEN if inside_var => {
                     if !min_width_buf.is_empty() {
                         //TODO return error
                     }
                     current_buf = &mut min_width_buf;
                 }
-                '.' if inside_var => {
+                MAX_WIDTH_TOKEN if inside_var => {
                     if !min_width_buf.is_empty() {
                         //TODO return error
                     }
                     current_buf = &mut max_width_buf;
                 }
-                ';' if inside_var => {
+                MIN_SUFFIX_TOKEN if inside_var => {
                     if !min_suffix_buf.is_empty() {
                         //TODO return error
                     }
                     current_buf = &mut min_suffix_buf;
                 }
-                '*' if inside_var => {
+                UNIT_TOKEN if inside_var => {
                     if !unit_buf.is_empty() {
                         //TODO return error
                     }
                     current_buf = &mut unit_buf;
+                }
+                BAR_MAX_VAL_TOKEN if inside_var => {
+                    if !bar_max_value_buf.is_empty() {
+                        //TODO return error
+                    }
+                    current_buf = &mut bar_max_value_buf;
                 }
                 '}' => {
                     if !inside_var {
@@ -120,6 +134,12 @@ impl FormatTemplate {
                     } else {
                         Some(Unit::from_string(&unit_buf))
                     };
+                    // Parse bar_max_value
+                    let bar_max_value = if bar_max_value_buf.is_empty() {
+                        None
+                    } else {
+                        Some(bar_max_value_buf.parse::<f64>().unwrap()) // Might return error
+                    };
                     tokens.push(Token::Var(Variable {
                         name: var_buf.clone(),
                         min_width,
@@ -127,6 +147,7 @@ impl FormatTemplate {
                         pad_with,
                         min_suffix,
                         unit,
+                        bar_max_value,
                     }));
                     // Clear all buffers
                     var_buf.clear();
@@ -134,6 +155,7 @@ impl FormatTemplate {
                     max_width_buf.clear();
                     min_suffix_buf.clear();
                     unit_buf.clear();
+                    bar_max_value_buf.clear();
                     current_buf = &mut text_buf;
                     inside_var = false;
                 }
