@@ -142,25 +142,6 @@ impl FormatTemplate {
         Ok(FormatTemplate { tokens })
     }
 
-    pub fn render_static_str<T: Display>(&self, vars: &HashMap<&str, T>) -> Result<String> {
-        let mut rendered = String::new();
-
-        for token in &self.tokens {
-            match token {
-                Token::Text(text) => rendered.push_str(&text),
-                Token::Var(var) => rendered.push_str(&format!(
-                    "{}",
-                    vars.get(&*var.name).internal_error(
-                        "util",
-                        &format!("Unknown placeholder in format string: {}", var.name),
-                    )?
-                )),
-            }
-        }
-
-        Ok(rendered)
-    }
-
     pub fn render(&self, vars: &HashMap<&str, Value>) -> Result<String> {
         let mut rendered = String::new();
 
