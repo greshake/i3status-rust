@@ -20,7 +20,7 @@ use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, format_percent_bar, read_file};
+use crate::util::{battery_level_to_icon, read_file};
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
@@ -694,10 +694,8 @@ impl Block for Battery {
         if !self.device.is_available() && self.allow_missing {
             // Respect the original format string, even if the battery
             // cannot be found right now.
-            let empty_percent_bar = format_percent_bar(0.0);
             let values = map!(
                 "percentage" => Value::from_string("X".to_string()),
-                "bar" => Value::from_string(empty_percent_bar.clone()),
                 "time" => Value::from_string("xx:xx".to_string()),
                 "power" => Value::from_string("N/A".to_string()),
             );
@@ -721,10 +719,6 @@ impl Block for Battery {
         let values = map!(
             "percentage" => match capacity {
                 Ok(capacity) => Value::from_integer(capacity as i64).percents(),
-                _ => Value::from_string("×".into()),
-            },
-            "bar" => match capacity {
-                Ok(capacity) => Value::from_string(format_percent_bar(capacity as f32)),
                 _ => Value::from_string("×".into()),
             },
             "time" => match self.device.time_remaining() {

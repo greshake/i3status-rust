@@ -299,36 +299,6 @@ pub fn add_colors(
     }
 }
 
-pub fn format_percent_bar(percent: f32) -> String {
-    let percent = percent.min(100.0);
-    let percent = percent.max(0.0);
-
-    (0..10)
-        .map(|index| {
-            let bucket_min = (index * 10) as f32;
-            let fraction = percent - bucket_min;
-            //println!("Fraction: {}", fraction);
-            if fraction < 1.25 {
-                '\u{2581}' // 1/8 block for empty so the whole bar is always visible
-            } else if fraction < 2.5 {
-                '\u{2582}' // 2/8 block
-            } else if fraction < 3.75 {
-                '\u{2583}' // 3/8 block
-            } else if fraction < 5.0 {
-                '\u{2584}' // 4/8 block
-            } else if fraction < 6.25 {
-                '\u{2585}' // 5/8 block
-            } else if fraction < 7.5 {
-                '\u{2586}' // 6/8 block
-            } else if fraction < 8.75 {
-                '\u{2587}' // 7/8 block
-            } else {
-                '\u{2588}' // Full block
-            }
-        })
-        .collect()
-}
-
 pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f64>) -> String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     static BARS: [char; 8] = [

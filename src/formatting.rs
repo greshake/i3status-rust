@@ -1,7 +1,6 @@
 pub mod value;
 
 use std::collections::HashMap;
-use std::fmt::Display;
 
 use crate::errors::*;
 use value::{Suffix, Unit, Value};

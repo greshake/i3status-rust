@@ -13,7 +13,6 @@ use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::format_percent_bar;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -192,7 +191,6 @@ impl Block for Cpu {
             "frequency" => Value::from_float(freqs_avg).hertz(),
             "barchart" => Value::from_string(barchart),
             "utilization" => Value::from_integer(avg_utilization as i64).percents(),
-            "utilizationbar" => Value::from_string(format_percent_bar(avg_utilization as f32)),
         );
         let mut frequency_keys = vec![]; // There should be a better way to dynamically crate keys?
         for i in 0..freqs.len() {
