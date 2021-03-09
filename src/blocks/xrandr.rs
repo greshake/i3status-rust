@@ -10,6 +10,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{LogicalDirection, SharedConfig};
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
@@ -195,14 +196,15 @@ impl Xrandr {
     fn display(&mut self) -> Result<()> {
         if let Some(m) = self.monitors.get(self.current_idx) {
             let values = map!(
-                "display" => m.name.clone(),
-                "brightness" => m.brightness.to_string(),
-                "brightness_icon" => self.shared_config.get_icon("backlight_full")?,
-                "resolution" => m.resolution.clone(),
-                "res_icon" => self.shared_config.get_icon("resolution")?,
+                "display" => Value::from_string(m.name.clone()),
+                "brightness" => Value::from_integer(m.brightness as i64).percents(),
+                "brightness_icon" => Value::from_string(self.shared_config.get_icon("backlight_full")?), //FIXME?
+                "resolution" => Value::from_string(m.resolution.clone()),
+                "res_icon" => Value::from_string(self.shared_config.get_icon("resolution")?),
             );
 
             self.text.set_icon("xrandr")?;
+            //FIXME: allow user to set those strings
             let format_str = if self.resolution {
                 if self.icons {
                     "{display} {brightness_icon} {brightness} {res_icon} {resolution}"
@@ -216,7 +218,7 @@ impl Xrandr {
             };
 
             if let Ok(fmt_template) = FormatTemplate::from_string(format_str) {
-                self.text.set_text(fmt_template.render_static_str(&values)?);
+                self.text.set_text(fmt_template.render(&values)?);
             }
         }
 
