@@ -1,73 +1,8 @@
 use std::fmt;
 
+use super::suffix::Suffix;
+use super::unit::Unit;
 use super::Variable;
-use crate::errors::*;
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Unit {
-    BitsPerSecond,
-    BytesPerSecond,
-    Percents,
-    Degrees,
-    Seconds,
-    Watts,
-    Hertz,
-    Bytes,
-    None,
-    Other(String), //TODO: do not allow custom units?
-}
-
-impl fmt::Display for Unit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::BitsPerSecond => "Bi/s",
-                Self::BytesPerSecond => "B/s",
-                Self::Percents => "%",
-                Self::Degrees => "°",
-                Self::Seconds => "s",
-                Self::Watts => "W",
-                Self::Hertz => "Hz",
-                Self::Bytes => "B",
-                Self::None => "",
-                Self::Other(unit) => unit.as_str(),
-            }
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Suffix {
-    Nano,
-    Micro,
-    Milli,
-    One,
-    Kilo,
-    Mega,
-    Giga,
-    Tera,
-}
-
-impl fmt::Display for Suffix {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Nano => "n",
-                Self::Micro => "u",
-                Self::Milli => "m",
-                Self::One => "",
-                Self::Kilo => "K",
-                Self::Mega => "M",
-                Self::Giga => "G",
-                Self::Tera => "T",
-            }
-        )
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct Value {
@@ -82,42 +17,6 @@ enum InternalValue {
     Text(String),
     Integer(i64),
     Float(f64),
-}
-
-impl Unit {
-    pub fn from_string(s: &str) -> Self {
-        match s {
-            "Bi/s" => Self::BitsPerSecond,
-            "B/s" => Self::BytesPerSecond,
-            "%" => Self::Percents,
-            "°" => Self::Degrees,
-            "s" => Self::Seconds,
-            "W" => Self::Watts,
-            "Hz" => Self::Hertz,
-            "B" => Self::Bytes,
-            "" => Self::None,
-            x => Self::Other(x.to_string()),
-        }
-    }
-}
-
-impl Suffix {
-    pub fn from_string(s: &str) -> Result<Self> {
-        match s {
-            "n" => Ok(Self::Nano),
-            "u" => Ok(Self::Micro),
-            "m" => Ok(Self::Milli),
-            "1" => Ok(Self::One),
-            "K" => Ok(Self::Kilo),
-            "M" => Ok(Self::Mega),
-            "G" => Ok(Self::Giga),
-            "T" => Ok(Self::Tera),
-            x => Err(ConfigurationError(
-                "Can not parse suffix".to_string(),
-                format!("unknown suffix: '{}'", x.to_string()),
-            )),
-        }
-    }
 }
 
 //FIXME: fix confvertation of bytes (2^10 != 10^3)
@@ -254,6 +153,7 @@ impl Value {
         self
     }
 
+    //TODO impl Display
     pub fn format(&self, var: &Variable) -> String {
         let min_width = var.min_width.unwrap_or(self.min_width);
         let pad_with = var.pad_with.unwrap_or(' ');

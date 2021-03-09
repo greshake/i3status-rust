@@ -1,9 +1,13 @@
+pub mod suffix;
+pub mod unit;
 pub mod value;
 
 use std::collections::HashMap;
 
 use crate::errors::*;
-use value::{Suffix, Unit, Value};
+use suffix::Suffix;
+use unit::Unit;
+use value::Value;
 
 const MIN_WIDTH_TOKEN: char = ':';
 const MAX_WIDTH_TOKEN: char = '^';
@@ -172,6 +176,7 @@ impl FormatTemplate {
         Ok(FormatTemplate { tokens })
     }
 
+    //TODO impl Display
     pub fn render(&self, vars: &HashMap<&str, Value>) -> Result<String> {
         let mut rendered = String::new();
 
