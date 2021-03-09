@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::Variable;
 use crate::errors::*;
 
@@ -15,6 +17,27 @@ pub enum Unit {
     Other(String), //TODO: do not allow custom units?
 }
 
+impl fmt::Display for Unit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::BitsPerSecond => "Bi/s",
+                Self::BytesPerSecond => "B/s",
+                Self::Percents => "%",
+                Self::Degrees => "°",
+                Self::Seconds => "s",
+                Self::Watts => "W",
+                Self::Hertz => "Hz",
+                Self::Bytes => "B",
+                Self::None => "",
+                Self::Other(unit) => unit.as_str(),
+            }
+        )
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Suffix {
     Nano,
@@ -25,6 +48,25 @@ pub enum Suffix {
     Mega,
     Giga,
     Tera,
+}
+
+impl fmt::Display for Suffix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Nano => "n",
+                Self::Micro => "u",
+                Self::Milli => "m",
+                Self::One => "",
+                Self::Kilo => "K",
+                Self::Mega => "M",
+                Self::Giga => "G",
+                Self::Tera => "T",
+            }
+        )
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -57,21 +99,6 @@ impl Unit {
             x => Self::Other(x.to_string()),
         }
     }
-
-    pub fn to_string(&self) -> String {
-        String::from(match self {
-            Self::BitsPerSecond => "Bi/s",
-            Self::BytesPerSecond => "B/s",
-            Self::Percents => "%",
-            Self::Degrees => "°",
-            Self::Seconds => "s",
-            Self::Watts => "W",
-            Self::Hertz => "Hz",
-            Self::Bytes => "B",
-            Self::None => "",
-            Self::Other(unit) => unit.as_str(),
-        })
-    }
 }
 
 impl Suffix {
@@ -89,19 +116,6 @@ impl Suffix {
                 "Can not parse suffix".to_string(),
                 format!("unknown suffix: '{}'", x.to_string()),
             )),
-        }
-    }
-
-    pub fn to_string(&self) -> String {
-        match self {
-            Self::Nano => "n".to_string(),
-            Self::Micro => "u".to_string(),
-            Self::Milli => "m".to_string(),
-            Self::One => "".to_string(),
-            Self::Kilo => "K".to_string(),
-            Self::Mega => "M".to_string(),
-            Self::Giga => "G".to_string(),
-            Self::Tera => "T".to_string(),
         }
     }
 }
@@ -139,11 +153,11 @@ fn format_number(raw_value: f64, min_width: usize, min_suffix: &Suffix) -> Strin
     // How many characters is left for "." and the fractional part?
     match min_width as isize - digits {
         // No characters left
-        x if x <= 0 => format!("{:.0}{}", value, suffix.to_string()),
+        x if x <= 0 => format!("{:.0}{}", value, suffix),
         // Only one character -> print a trailing dot
-        x if x == 1 => format!("{:.0}{}.", value, suffix.to_string()),
+        x if x == 1 => format!("{:.0}{}.", value, suffix),
         // There is space for fractional part
-        rest => format!("{:.*}{}", (rest as usize) - 1, value, suffix.to_string()),
+        rest => format!("{:.*}{}", (rest as usize) - 1, value, suffix),
     }
 }
 
@@ -310,9 +324,9 @@ impl Value {
             }
         };
         if let Some(ref icon) = self.icon {
-            format!("{}{}{}", icon, value, unit.to_string())
+            format!("{}{}{}", icon, value, unit)
         } else {
-            format!("{}{}", value, unit.to_string())
+            format!("{}{}", value, unit)
         }
     }
 }

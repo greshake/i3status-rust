@@ -103,18 +103,16 @@ impl FormatTemplate {
                     // Parse padding
                     let (min_width, pad_with) = if min_width_buf.is_empty() {
                         (None, None)
+                    } else if let ("0", min_width) = min_width_buf.split_at(1) {
+                        (
+                            Some(min_width.parse().unwrap()), // Might return error
+                            Some('0'),
+                        )
                     } else {
-                        if min_width_buf.chars().next().unwrap() == '0' {
-                            (
-                                Some(min_width_buf[1..].parse().unwrap()), // Might return error
-                                Some('0'),
-                            )
-                        } else {
-                            (
-                                Some(min_width_buf.parse().unwrap()), // Might return error
-                                None,
-                            )
-                        }
+                        (
+                            Some(min_width_buf.parse().unwrap()), // Might return error
+                            None,
+                        )
                     };
                     // Parse max_width
                     let max_width = if max_width_buf.is_empty() {
