@@ -17,6 +17,7 @@ use serde_derive::Deserialize;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
@@ -735,19 +736,18 @@ impl Block for NetworkManager {
                                         }
                                         Err(_) => "".to_string(),
                                     };
-                                    let strength = match ap.strength(&self.dbus_conn) {
-                                        Ok(v) => format!("{}", v).to_string(),
-                                        Err(_) => "0".to_string(),
-                                    };
+                                    let strength = ap.strength(&self.dbus_conn).unwrap_or(0);
                                     let freq = match ap.frequency(&self.dbus_conn) {
-                                        Ok(v) => format!("{}", v).to_string(),
+                                        Ok(v) => v.to_string(),
                                         Err(_) => "0".to_string(),
                                     };
 
-                                    let values = map!("{ssid}" => ssid,
-                                                      "{strength}" => strength,
-                                                      "{freq}" => freq);
-                                    if let Ok(s) = self.ap_format.render_static_str(&values) {
+                                    let values = map!(
+                                        "ssid" => Value::from_string(ssid),
+                                        "strength" => Value::from_integer(strength as i64).percents(),
+                                        "freq" => Value::from_string(freq).percents(),
+                                    );
+                                    if let Ok(s) = self.ap_format.render(&values) {
                                         s
                                     } else {
                                         "[invalid device format string]".to_string()
@@ -769,13 +769,15 @@ impl Block for NetworkManager {
                                     }
                                 }
 
-                                let values = map!("{icon}" => icon,
-                                                  "{typename}" => type_name,
-                                                  "{ap}" => ap,
-                                                  "{name}" => name.to_string(), 
-                                                  "{ips}" => ips);
+                                let values = map!(
+                                    "icon" => Value::from_string(icon),
+                                    "typename" => Value::from_string(type_name),
+                                    "ap" => Value::from_string(ap),
+                                    "name" => Value::from_string(name.to_string()),
+                                    "ips" => Value::from_string(ips),
+                                );
 
-                                if let Ok(s) = self.device_format.render_static_str(&values) {
+                                if let Ok(s) = self.device_format.render(&values) {
                                     devicevec.push(s);
                                 } else {
                                     devicevec.push("[invalid device format string]".to_string())
@@ -788,10 +790,12 @@ impl Block for NetworkManager {
                             Err(v) => format!("{:?}", v),
                         };
 
-                        let values = map!("{devices}" => devicevec.join(" "),
-                                          "{id}" => id);
+                        let values = map!(
+                            "devices" => Value::from_string(devicevec.join(" ")),
+                            "id" => Value::from_string(id),
+                        );
 
-                        if let Ok(s) = self.connection_format.render_static_str(&values) {
+                        if let Ok(s) = self.connection_format.render(&values) {
                             widget.set_text(s);
                         } else {
                             widget.set_text("[invalid connection format string]".to_string());
