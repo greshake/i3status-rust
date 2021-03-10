@@ -151,7 +151,7 @@ impl ConfigBlock for DiskSpace {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let icon = shared_config.get_icon("disk_drive").unwrap_or_default();
+        let icon = shared_config.get_icon("disk_drive")?;
 
         Ok(DiskSpace {
             id,
@@ -176,7 +176,7 @@ impl ConfigBlock for DiskSpace {
             warning: block_config.warning,
             alert: block_config.alert,
             alert_absolute: block_config.alert_absolute,
-            icon,
+            icon: icon.trim().to_string(),
         })
     }
 }
