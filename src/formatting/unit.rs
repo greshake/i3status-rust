@@ -21,7 +21,7 @@ impl fmt::Display for Unit {
             f,
             "{}",
             match self {
-                Self::BitsPerSecond => "Bi/s",
+                Self::BitsPerSecond => "b/s",
                 Self::BytesPerSecond => "B/s",
                 Self::Percents => "%",
                 Self::Degrees => "°",
@@ -38,7 +38,7 @@ impl fmt::Display for Unit {
 impl Unit {
     pub fn from_string(s: &str) -> Result<Self> {
         match s {
-            "Bi/s" => Ok(Self::BitsPerSecond),
+            "b/s" => Ok(Self::BitsPerSecond),
             "B/s" => Ok(Self::BytesPerSecond),
             "%" => Ok(Self::Percents),
             "°" => Ok(Self::Degrees),

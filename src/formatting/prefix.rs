@@ -5,7 +5,7 @@ use crate::errors::*;
 #[derive(Debug, Clone, Copy)]
 pub enum Prefix {
     One,
-    // SI
+    // SI prefixes
     Nano,
     Micro,
     Milli,
@@ -13,11 +13,6 @@ pub enum Prefix {
     Mega,
     Giga,
     Tera,
-    // Bytes
-    Ki,
-    Mi,
-    Gi,
-    Ti,
 }
 
 impl fmt::Display for Prefix {
@@ -27,7 +22,7 @@ impl fmt::Display for Prefix {
             "{}",
             match self {
                 Self::One => "",
-                // SI
+                // SI prefixes
                 Self::Nano => "n",
                 Self::Micro => "u",
                 Self::Milli => "m",
@@ -35,11 +30,6 @@ impl fmt::Display for Prefix {
                 Self::Mega => "M",
                 Self::Giga => "G",
                 Self::Tera => "T",
-                // Bytes
-                Self::Ki => "Ki",
-                Self::Mi => "Mi",
-                Self::Gi => "Gi",
-                Self::Ti => "Ti",
             }
         )
     }
@@ -49,7 +39,7 @@ impl Prefix {
     pub fn from_string(s: &str) -> Result<Self> {
         match s {
             "1" => Ok(Self::One),
-            // SI
+            // SI prefixes
             "n" => Ok(Self::Nano),
             "u" => Ok(Self::Micro),
             "m" => Ok(Self::Milli),
@@ -57,11 +47,6 @@ impl Prefix {
             "M" => Ok(Self::Mega),
             "G" => Ok(Self::Giga),
             "T" => Ok(Self::Tera),
-            // Bytes
-            "Ki" => Ok(Self::Ki),
-            "Mi" => Ok(Self::Mi),
-            "Gi" => Ok(Self::Gi),
-            "Ti" => Ok(Self::Ti),
             x => Err(ConfigurationError(
                 "Can not parse prefix".to_string(),
                 format!("unknown prefix: '{}'", x.to_string()),

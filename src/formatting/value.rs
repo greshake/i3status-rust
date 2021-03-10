@@ -34,12 +34,6 @@ fn format_number(
         Prefix::Milli => -1,
         Prefix::Micro => -2,
         Prefix::Nano => -3,
-        x => {
-            return Err(ConfigurationError(
-                "incorrect `min_prefix`".to_string(),
-                format!("prefix '{}' cannot be used to format a number", x),
-            ))
-        }
     };
 
     let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
@@ -77,10 +71,10 @@ fn format_bytes(
     pad_with: char,
 ) -> Result<String> {
     let min_exp_level = match min_prefix {
-        Prefix::Ti => 4,
-        Prefix::Gi => 3,
-        Prefix::Mi => 3,
-        Prefix::Ki => 1,
+        Prefix::Tera => 4,
+        Prefix::Giga => 3,
+        Prefix::Mega => 3,
+        Prefix::Kilo => 1,
         Prefix::One => 0,
         x => {
             return Err(ConfigurationError(
@@ -94,10 +88,10 @@ fn format_bytes(
     let value = raw_value / (2f64).powi(exp_level * 10);
 
     let prefix = match exp_level {
-        4 => Prefix::Ti,
-        3 => Prefix::Gi,
-        2 => Prefix::Mi,
-        1 => Prefix::Ki,
+        4 => Prefix::Tera,
+        3 => Prefix::Giga,
+        2 => Prefix::Mega,
+        1 => Prefix::Kilo,
         _ => Prefix::One,
     };
 

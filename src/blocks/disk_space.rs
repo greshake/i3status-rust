@@ -92,7 +92,7 @@ impl DiskSpaceConfig {
     }
 
     fn default_unit() -> String {
-        "GiB".to_string()
+        "GB".to_string()
     }
 
     fn default_interval() -> Duration {
@@ -161,10 +161,10 @@ impl ConfigBlock for DiskSpace {
             format: FormatTemplate::from_string(&block_config.format)?,
             info_type: block_config.info_type,
             unit: match block_config.unit.as_str() {
-                "TiB" => Prefix::Ti,
-                "GiB" => Prefix::Gi,
-                "MiB" => Prefix::Mi,
-                "KiB" => Prefix::Ki,
+                "TB" => Prefix::Tera,
+                "GB" => Prefix::Giga,
+                "MB" => Prefix::Mega,
+                "KB" => Prefix::Kilo,
                 "B" => Prefix::One,
                 x => {
                     return Err(BlockError(
@@ -224,10 +224,10 @@ impl Block for DiskSpace {
         // Send percentage to alert check if we don't want absolute alerts
         let alert_val = if self.alert_absolute {
             (match self.unit {
-                Prefix::Ti => result << 40,
-                Prefix::Gi => result << 30,
-                Prefix::Mi => result << 20,
-                Prefix::Ki => result << 10,
+                Prefix::Tera => result << 40,
+                Prefix::Giga => result << 30,
+                Prefix::Mega => result << 20,
+                Prefix::Kilo => result << 10,
                 Prefix::One => result,
                 _ => unreachable!(),
             }) as f64
