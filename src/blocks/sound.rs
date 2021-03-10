@@ -709,7 +709,6 @@ pub struct Sound {
     mappings: Option<BTreeMap<String, String>>,
     max_vol: Option<u32>,
     scrolling: Scrolling,
-    max_width: Option<usize>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
@@ -780,10 +779,6 @@ pub struct SoundConfig {
 
     #[serde(default = "SoundConfig::default_max_vol")]
     pub max_vol: Option<u32>,
-
-    /// max_width only gets applied to the output names
-    #[serde(default = "SoundConfig::default_max_width")]
-    pub max_width: Option<usize>,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -837,10 +832,6 @@ impl SoundConfig {
     fn default_max_vol() -> Option<u32> {
         None
     }
-
-    fn default_max_width() -> Option<usize> {
-        None
-    }
 }
 
 impl Sound {
@@ -879,11 +870,6 @@ impl Sound {
             } {
                 output_name = mapped_name.clone();
                 output_description = mapped_name;
-            }
-
-            if let Some(max_width) = self.max_width {
-                output_name.truncate(max_width);
-                output_description.truncate(max_width);
             }
 
             (output_name, output_description)
@@ -980,7 +966,6 @@ impl ConfigBlock for Sound {
             max_vol: block_config.max_vol,
             scrolling: shared_config.scrolling,
             text: TextWidget::new(id, 0, shared_config).with_icon("volume_empty"),
-            max_width: block_config.max_width,
         };
 
         sound.device.monitor(id, tx_update_request)?;
