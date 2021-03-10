@@ -12,7 +12,7 @@ use value::Value;
 const MIN_WIDTH_TOKEN: char = ':';
 const MAX_WIDTH_TOKEN: char = '^';
 const MIN_SUFFIX_TOKEN: char = ';';
-const UNIT_TOKEN: char = ';';
+const UNIT_TOKEN: char = '*';
 const BAR_MAX_VAL_TOKEN: char = '#';
 
 #[derive(Debug, Clone)]
