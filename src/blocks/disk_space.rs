@@ -9,8 +9,8 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
+use crate::formatting::{suffix::Suffix, value::Value};
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
@@ -28,9 +28,11 @@ pub struct DiskSpace {
     disk_space: TextWidget,
     update_interval: Duration,
     path: String,
+    unit: Suffix,
     info_type: InfoType,
     warning: f64,
     alert: f64,
+    alert_absolute: bool,
     format: FormatTemplate,
     icon: String,
 }
@@ -52,6 +54,10 @@ pub struct DiskSpaceConfig {
     #[serde(default = "DiskSpaceConfig::default_format")]
     pub format: String,
 
+    /// Unit that is used to display disk space. Options are MB, MiB, GB, GiB, TB and TiB
+    #[serde(default = "DiskSpaceConfig::default_unit")]
+    pub unit: String,
+
     /// Update interval in seconds
     #[serde(
         default = "DiskSpaceConfig::default_interval",
@@ -66,6 +72,10 @@ pub struct DiskSpaceConfig {
     /// Diskspace alert in GiB (red)
     #[serde(default = "DiskSpaceConfig::default_alert")]
     pub alert: f64,
+
+    /// use absolute (unit) values for disk space alerts
+    #[serde(default = "DiskSpaceConfig::default_alert_absolute")]
+    pub alert_absolute: bool,
 }
 
 impl DiskSpaceConfig {
@@ -81,6 +91,10 @@ impl DiskSpaceConfig {
         String::from("{alias} {available} {unit}")
     }
 
+    fn default_unit() -> String {
+        "GiB".to_string()
+    }
+
     fn default_interval() -> Duration {
         Duration::from_secs(20)
     }
@@ -91,6 +105,10 @@ impl DiskSpaceConfig {
 
     fn default_alert() -> f64 {
         10.
+    }
+
+    fn default_alert_absolute() -> bool {
+        false
     }
 }
 
@@ -142,8 +160,22 @@ impl ConfigBlock for DiskSpace {
             path: block_config.path,
             format: FormatTemplate::from_string(&block_config.format)?,
             info_type: block_config.info_type,
+            unit: match block_config.unit.as_str() {
+                "TiB" => Suffix::Ti,
+                "GiB" => Suffix::Gi,
+                "MiB" => Suffix::Mi,
+                "KiB" => Suffix::Ki,
+                "B" => Suffix::One,
+                x => {
+                    return Err(BlockError(
+                        "disk_space".to_string(),
+                        format!("cannot set unit to '{}'", x),
+                    ))
+                }
+            },
             warning: block_config.warning,
             alert: block_config.alert,
+            alert_absolute: block_config.alert_absolute,
             icon,
         })
     }
@@ -189,7 +221,21 @@ impl Block for DiskSpace {
         );
         self.disk_space.set_text(self.format.render(&values)?);
 
-        let state = self.compute_state(percentage, self.warning, self.alert, alert_type);
+        // Send percentage to alert check if we don't want absolute alerts
+        let alert_val = if self.alert_absolute {
+            (match self.unit {
+                Suffix::Ti => result << 40,
+                Suffix::Gi => result << 30,
+                Suffix::Mi => result << 20,
+                Suffix::Ki => result << 10,
+                Suffix::One => result,
+                _ => unreachable!(),
+            }) as f64
+        } else {
+            percentage
+        };
+
+        let state = self.compute_state(alert_val, self.warning, self.alert, alert_type);
         self.disk_space.set_state(state);
 
         Ok(Some(self.update_interval.into()))
