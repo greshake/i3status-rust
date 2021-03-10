@@ -10,7 +10,7 @@ use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::formatting::FormatTemplate;
-use crate::formatting::{suffix::Suffix, value::Value};
+use crate::formatting::{prefix::Prefix, value::Value};
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
@@ -28,7 +28,7 @@ pub struct DiskSpace {
     disk_space: TextWidget,
     update_interval: Duration,
     path: String,
-    unit: Suffix,
+    unit: Prefix,
     info_type: InfoType,
     warning: f64,
     alert: f64,
@@ -161,11 +161,11 @@ impl ConfigBlock for DiskSpace {
             format: FormatTemplate::from_string(&block_config.format)?,
             info_type: block_config.info_type,
             unit: match block_config.unit.as_str() {
-                "TiB" => Suffix::Ti,
-                "GiB" => Suffix::Gi,
-                "MiB" => Suffix::Mi,
-                "KiB" => Suffix::Ki,
-                "B" => Suffix::One,
+                "TiB" => Prefix::Ti,
+                "GiB" => Prefix::Gi,
+                "MiB" => Prefix::Mi,
+                "KiB" => Prefix::Ki,
+                "B" => Prefix::One,
                 x => {
                     return Err(BlockError(
                         "disk_space".to_string(),
@@ -224,11 +224,11 @@ impl Block for DiskSpace {
         // Send percentage to alert check if we don't want absolute alerts
         let alert_val = if self.alert_absolute {
             (match self.unit {
-                Suffix::Ti => result << 40,
-                Suffix::Gi => result << 30,
-                Suffix::Mi => result << 20,
-                Suffix::Ki => result << 10,
-                Suffix::One => result,
+                Prefix::Ti => result << 40,
+                Prefix::Gi => result << 30,
+                Prefix::Mi => result << 20,
+                Prefix::Ki => result << 10,
+                Prefix::One => result,
                 _ => unreachable!(),
             }) as f64
         } else {

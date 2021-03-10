@@ -1,6 +1,6 @@
 use crate::errors::*;
 
-use super::suffix::Suffix;
+use super::prefix::Prefix;
 use super::unit::Unit;
 use super::Variable;
 
@@ -22,22 +22,22 @@ enum InternalValue {
 fn format_number(
     raw_value: f64,
     min_width: usize,
-    min_suffix: Suffix,
+    min_prefix: Prefix,
     pad_with: char,
 ) -> Result<String> {
-    let min_exp_level = match min_suffix {
-        Suffix::Tera => 4,
-        Suffix::Giga => 3,
-        Suffix::Mega => 2,
-        Suffix::Kilo => 1,
-        Suffix::One => 0,
-        Suffix::Milli => -1,
-        Suffix::Micro => -2,
-        Suffix::Nano => -3,
+    let min_exp_level = match min_prefix {
+        Prefix::Tera => 4,
+        Prefix::Giga => 3,
+        Prefix::Mega => 2,
+        Prefix::Kilo => 1,
+        Prefix::One => 0,
+        Prefix::Milli => -1,
+        Prefix::Micro => -2,
+        Prefix::Nano => -3,
         x => {
             return Err(ConfigurationError(
-                "incorrect `min_suffix`".to_string(),
-                format!("suffix '{}' cannot be used to format a number", x),
+                "incorrect `min_prefix`".to_string(),
+                format!("prefix '{}' cannot be used to format a number", x),
             ))
         }
     };
@@ -45,15 +45,15 @@ fn format_number(
     let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
     let value = raw_value / (10f64).powi(exp_level * 3);
 
-    let suffix = match exp_level {
-        4 => Suffix::Tera,
-        3 => Suffix::Giga,
-        2 => Suffix::Mega,
-        1 => Suffix::Kilo,
-        0 => Suffix::One,
-        -1 => Suffix::Milli,
-        -2 => Suffix::Micro,
-        _ => Suffix::Nano,
+    let prefix = match exp_level {
+        4 => Prefix::Tera,
+        3 => Prefix::Giga,
+        2 => Prefix::Mega,
+        1 => Prefix::Kilo,
+        0 => Prefix::One,
+        -1 => Prefix::Milli,
+        -2 => Prefix::Micro,
+        _ => Prefix::Nano,
     };
 
     // The length of the integer part of a number
@@ -61,11 +61,11 @@ fn format_number(
     // How many characters is left for "." and the fractional part?
     Ok(match min_width as isize - digits {
         // No characters left
-        x if x <= 0 => format!("{:.0}{}", value, suffix),
+        x if x <= 0 => format!("{:.0}{}", value, prefix),
         // Only one character -> pad text to the right
-        x if x == 1 => format!("{}{:.0}{}", pad_with, value, suffix),
+        x if x == 1 => format!("{}{:.0}{}", pad_with, value, prefix),
         // There is space for fractional part
-        rest => format!("{:.*}{}", (rest as usize) - 1, value, suffix),
+        rest => format!("{:.*}{}", (rest as usize) - 1, value, prefix),
     })
 }
 
@@ -73,19 +73,19 @@ fn format_number(
 fn format_bytes(
     raw_value: f64,
     min_width: usize,
-    min_suffix: Suffix,
+    min_prefix: Prefix,
     pad_with: char,
 ) -> Result<String> {
-    let min_exp_level = match min_suffix {
-        Suffix::Ti => 4,
-        Suffix::Gi => 3,
-        Suffix::Mi => 3,
-        Suffix::Ki => 1,
-        Suffix::One => 0,
+    let min_exp_level = match min_prefix {
+        Prefix::Ti => 4,
+        Prefix::Gi => 3,
+        Prefix::Mi => 3,
+        Prefix::Ki => 1,
+        Prefix::One => 0,
         x => {
             return Err(ConfigurationError(
-                "incorrect `min_suffix`".to_string(),
-                format!("suffix '{}' cannot be used to format byte value", x),
+                "incorrect `min_prefix`".to_string(),
+                format!("prefix '{}' cannot be used to format byte value", x),
             ))
         }
     };
@@ -93,12 +93,12 @@ fn format_bytes(
     let exp_level = (raw_value.log2().div_euclid(10.) as i32).clamp(min_exp_level, 4);
     let value = raw_value / (2f64).powi(exp_level * 10);
 
-    let suffix = match exp_level {
-        4 => Suffix::Ti,
-        3 => Suffix::Gi,
-        2 => Suffix::Mi,
-        1 => Suffix::Ki,
-        _ => Suffix::One,
+    let prefix = match exp_level {
+        4 => Prefix::Ti,
+        3 => Prefix::Gi,
+        2 => Prefix::Mi,
+        1 => Prefix::Ki,
+        _ => Prefix::One,
     };
 
     // The length of the integer part of a number
@@ -106,11 +106,11 @@ fn format_bytes(
     // How many characters is left for "." and the fractional part?
     Ok(match min_width as isize - digits {
         // No characters left
-        x if x <= 0 => format!("{:.0}{}", value, suffix),
+        x if x <= 0 => format!("{:.0}{}", value, prefix),
         // Only one character -> pad text to the right
-        x if x == 1 => format!("{}{:.0}{}", pad_with, value, suffix),
+        x if x == 1 => format!("{}{:.0}{}", pad_with, value, prefix),
         // There is space for fractional part
-        rest => format!("{:.*}{}", (rest as usize) - 1, value, suffix),
+        rest => format!("{:.*}{}", (rest as usize) - 1, value, prefix),
     })
 }
 
@@ -259,14 +259,14 @@ impl Value {
                     format_bytes(
                         value,
                         min_width,
-                        var.min_suffix.unwrap_or(Suffix::One),
+                        var.min_prefix.unwrap_or(Prefix::One),
                         pad_with,
                     )?
                 } else {
                     format_number(
                         value,
                         min_width,
-                        var.min_suffix.unwrap_or(Suffix::Nano),
+                        var.min_prefix.unwrap_or(Prefix::Nano),
                         pad_with,
                     )?
                 }

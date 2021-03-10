@@ -1,11 +1,11 @@
-pub mod suffix;
+pub mod prefix;
 pub mod unit;
 pub mod value;
 
 use std::collections::HashMap;
 
 use crate::errors::*;
-use suffix::Suffix;
+use prefix::Prefix;
 use unit::Unit;
 use value::Value;
 
@@ -33,7 +33,7 @@ pub struct Variable {
     pub min_width: Option<usize>,
     pub max_width: Option<usize>,
     pub pad_with: Option<char>,
-    pub min_suffix: Option<Suffix>,
+    pub min_prefix: Option<Prefix>,
     pub unit: Option<Unit>,
     pub bar_max_value: Option<f64>,
 }
@@ -46,7 +46,7 @@ impl FormatTemplate {
         let mut var_buf = String::new();
         let mut min_width_buf = String::new();
         let mut max_width_buf = String::new();
-        let mut min_suffix_buf = String::new();
+        let mut min_prefix_buf = String::new();
         let mut unit_buf = String::new();
         let mut bar_max_value_buf = String::new();
         let mut inside_var = false;
@@ -80,10 +80,10 @@ impl FormatTemplate {
                     current_buf = &mut max_width_buf;
                 }
                 MIN_SUFFIX_TOKEN if inside_var => {
-                    if !min_suffix_buf.is_empty() {
+                    if !min_prefix_buf.is_empty() {
                         //TODO return error
                     }
-                    current_buf = &mut min_suffix_buf;
+                    current_buf = &mut min_prefix_buf;
                 }
                 UNIT_TOKEN if inside_var => {
                     if !unit_buf.is_empty() {
@@ -124,11 +124,11 @@ impl FormatTemplate {
                     } else {
                         Some(max_width_buf.parse::<usize>().unwrap()) // Might return error
                     };
-                    // Parse min_suffix
-                    let min_suffix = if min_suffix_buf.is_empty() {
+                    // Parse min_prefix
+                    let min_prefix = if min_prefix_buf.is_empty() {
                         None
                     } else {
-                        Some(Suffix::from_string(&min_suffix_buf)?)
+                        Some(Prefix::from_string(&min_prefix_buf)?)
                     };
                     // Parse unit
                     let unit = if unit_buf.is_empty() {
@@ -147,7 +147,7 @@ impl FormatTemplate {
                         min_width,
                         max_width,
                         pad_with,
-                        min_suffix,
+                        min_prefix,
                         unit,
                         bar_max_value,
                     }));
@@ -155,7 +155,7 @@ impl FormatTemplate {
                     var_buf.clear();
                     min_width_buf.clear();
                     max_width_buf.clear();
-                    min_suffix_buf.clear();
+                    min_prefix_buf.clear();
                     unit_buf.clear();
                     bar_max_value_buf.clear();
                     current_buf = &mut text_buf;

@@ -3,7 +3,7 @@ use std::fmt;
 use crate::errors::*;
 
 #[derive(Debug, Clone, Copy)]
-pub enum Suffix {
+pub enum Prefix {
     One,
     // SI
     Nano,
@@ -20,7 +20,7 @@ pub enum Suffix {
     Ti,
 }
 
-impl fmt::Display for Suffix {
+impl fmt::Display for Prefix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -45,7 +45,7 @@ impl fmt::Display for Suffix {
     }
 }
 
-impl Suffix {
+impl Prefix {
     pub fn from_string(s: &str) -> Result<Self> {
         match s {
             "1" => Ok(Self::One),
@@ -63,8 +63,8 @@ impl Suffix {
             "Gi" => Ok(Self::Gi),
             "Ti" => Ok(Self::Ti),
             x => Err(ConfigurationError(
-                "Can not parse suffix".to_string(),
-                format!("unknown suffix: '{}'", x.to_string()),
+                "Can not parse prefix".to_string(),
+                format!("unknown prefix: '{}'", x.to_string()),
             )),
         }
     }
