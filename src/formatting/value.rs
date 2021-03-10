@@ -19,7 +19,12 @@ enum InternalValue {
     Float(f64),
 }
 
-fn format_number(raw_value: f64, min_width: usize, min_suffix: Suffix) -> Result<String> {
+fn format_number(
+    raw_value: f64,
+    min_width: usize,
+    min_suffix: Suffix,
+    pad_with: char,
+) -> Result<String> {
     let min_exp_level = match min_suffix {
         Suffix::Tera => 4,
         Suffix::Giga => 3,
@@ -57,15 +62,20 @@ fn format_number(raw_value: f64, min_width: usize, min_suffix: Suffix) -> Result
     Ok(match min_width as isize - digits {
         // No characters left
         x if x <= 0 => format!("{:.0}{}", value, suffix),
-        // Only one character -> print a trailing dot
-        x if x == 1 => format!("{:.0}.{}", value, suffix),
+        // Only one character -> pad text to the right
+        x if x == 1 => format!("{}{:.0}{}", pad_with, value, suffix),
         // There is space for fractional part
         rest => format!("{:.*}{}", (rest as usize) - 1, value, suffix),
     })
 }
 
 // Like format_number, but for bytes
-fn format_bytes(raw_value: f64, min_width: usize, min_suffix: Suffix) -> Result<String> {
+fn format_bytes(
+    raw_value: f64,
+    min_width: usize,
+    min_suffix: Suffix,
+    pad_with: char,
+) -> Result<String> {
     let min_exp_level = match min_suffix {
         Suffix::Ti => 4,
         Suffix::Gi => 3,
@@ -97,8 +107,8 @@ fn format_bytes(raw_value: f64, min_width: usize, min_suffix: Suffix) -> Result<
     Ok(match min_width as isize - digits {
         // No characters left
         x if x <= 0 => format!("{:.0}{}", value, suffix),
-        // Only one character -> print a trailing dot
-        x if x == 1 => format!("{:.0}.{}", value, suffix),
+        // Only one character -> pad text to the right
+        x if x == 1 => format!("{}{:.0}{}", pad_with, value, suffix),
         // There is space for fractional part
         rest => format!("{:.*}{}", (rest as usize) - 1, value, suffix),
     })
@@ -246,9 +256,19 @@ impl Value {
                     || unit == Unit::BytesPerSecond
                     || unit == Unit::BitsPerSecond
                 {
-                    format_bytes(value, min_width, var.min_suffix.unwrap_or(Suffix::One))?
+                    format_bytes(
+                        value,
+                        min_width,
+                        var.min_suffix.unwrap_or(Suffix::One),
+                        pad_with,
+                    )?
                 } else {
-                    format_number(value, min_width, var.min_suffix.unwrap_or(Suffix::Nano))?
+                    format_number(
+                        value,
+                        min_width,
+                        var.min_suffix.unwrap_or(Suffix::Nano),
+                        pad_with,
+                    )?
                 }
             }
         };
