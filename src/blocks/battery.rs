@@ -585,7 +585,7 @@ impl BatteryConfig {
     }
 
     fn default_format() -> String {
-        "{percentage}%".into()
+        "{percentage}".into()
     }
 
     fn default_full_format() -> String {
