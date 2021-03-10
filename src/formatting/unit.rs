@@ -1,6 +1,8 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq, Clone)]
+use crate::errors::*;
+
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Unit {
     BitsPerSecond,
     BytesPerSecond,
@@ -11,7 +13,6 @@ pub enum Unit {
     Hertz,
     Bytes,
     None,
-    Other(String), //TODO: do not allow custom units?
 }
 
 impl fmt::Display for Unit {
@@ -29,25 +30,39 @@ impl fmt::Display for Unit {
                 Self::Hertz => "Hz",
                 Self::Bytes => "B",
                 Self::None => "",
-                Self::Other(unit) => unit.as_str(),
             }
         )
     }
 }
 
 impl Unit {
-    pub fn from_string(s: &str) -> Self {
+    pub fn from_string(s: &str) -> Result<Self> {
         match s {
-            "Bi/s" => Self::BitsPerSecond,
-            "B/s" => Self::BytesPerSecond,
-            "%" => Self::Percents,
-            "°" => Self::Degrees,
-            "s" => Self::Seconds,
-            "W" => Self::Watts,
-            "Hz" => Self::Hertz,
-            "B" => Self::Bytes,
-            "" => Self::None,
-            x => Self::Other(x.to_string()),
+            "Bi/s" => Ok(Self::BitsPerSecond),
+            "B/s" => Ok(Self::BytesPerSecond),
+            "%" => Ok(Self::Percents),
+            "°" => Ok(Self::Degrees),
+            "s" => Ok(Self::Seconds),
+            "W" => Ok(Self::Watts),
+            "Hz" => Ok(Self::Hertz),
+            "B" => Ok(Self::Bytes),
+            "" => Ok(Self::None),
+            x => Err(ConfigurationError(
+                "Can not parse unit".to_string(),
+                format!("unknown unit: '{}'", x.to_string()),
+            )),
+        }
+    }
+
+    pub fn convert(&self, into: Self) -> Result<f64> {
+        match self {
+            Unit::BitsPerSecond if into == Unit::BytesPerSecond => Ok(1. / 8.),
+            Unit::BytesPerSecond if into == Unit::BytesPerSecond => Ok(8.),
+            x if *x == into => Ok(1.),
+            x => Err(ConfigurationError(
+                "Can not convert unit".to_string(),
+                format!("it is not possible to convert '{:?}' to '{:?}'", x, into),
+            )),
         }
     }
 }

@@ -134,7 +134,7 @@ impl FormatTemplate {
                     let unit = if unit_buf.is_empty() {
                         None
                     } else {
-                        Some(Unit::from_string(&unit_buf))
+                        Some(Unit::from_string(&unit_buf)?)
                     };
                     // Parse bar_max_value
                     let bar_max_value = if bar_max_value_buf.is_empty() {
@@ -190,7 +190,7 @@ impl FormatTemplate {
                             "util",
                             &format!("Unknown placeholder in format string: {}", var.name),
                         )?
-                        .format(&var),
+                        .format(&var)?,
                 ),
             }
         }

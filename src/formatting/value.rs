@@ -1,4 +1,4 @@
-use std::fmt;
+use crate::errors::*;
 
 use super::suffix::Suffix;
 use super::unit::Unit;
@@ -19,9 +19,7 @@ enum InternalValue {
     Float(f64),
 }
 
-//FIXME: fix confvertation of bytes (2^10 != 10^3)
-//FIXME: do not use suffixes smaller than `One` for bytes
-fn format_number(raw_value: f64, min_width: usize, min_suffix: &Suffix) -> String {
+fn format_number(raw_value: f64, min_width: usize, min_suffix: Suffix) -> Result<String> {
     let min_exp_level = match min_suffix {
         Suffix::Tera => 4,
         Suffix::Giga => 3,
@@ -31,6 +29,12 @@ fn format_number(raw_value: f64, min_width: usize, min_suffix: &Suffix) -> Strin
         Suffix::Milli => -1,
         Suffix::Micro => -2,
         Suffix::Nano => -3,
+        x => {
+            return Err(ConfigurationError(
+                "incorrect `min_suffix`".to_string(),
+                format!("suffix '{}' cannot be used to format a number", x),
+            ))
+        }
     };
 
     let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
@@ -50,14 +54,54 @@ fn format_number(raw_value: f64, min_width: usize, min_suffix: &Suffix) -> Strin
     // The length of the integer part of a number
     let digits = (value.log10().floor() + 1.0).max(1.0) as isize;
     // How many characters is left for "." and the fractional part?
-    match min_width as isize - digits {
+    Ok(match min_width as isize - digits {
         // No characters left
         x if x <= 0 => format!("{:.0}{}", value, suffix),
         // Only one character -> print a trailing dot
-        x if x == 1 => format!("{:.0}{}.", value, suffix),
+        x if x == 1 => format!("{:.0}.{}", value, suffix),
         // There is space for fractional part
         rest => format!("{:.*}{}", (rest as usize) - 1, value, suffix),
-    }
+    })
+}
+
+// Like format_number, but for bytes
+fn format_bytes(raw_value: f64, min_width: usize, min_suffix: Suffix) -> Result<String> {
+    let min_exp_level = match min_suffix {
+        Suffix::Ti => 4,
+        Suffix::Gi => 3,
+        Suffix::Mi => 3,
+        Suffix::Ki => 1,
+        Suffix::One => 0,
+        x => {
+            return Err(ConfigurationError(
+                "incorrect `min_suffix`".to_string(),
+                format!("suffix '{}' cannot be used to format byte value", x),
+            ))
+        }
+    };
+
+    let exp_level = (raw_value.log2().div_euclid(10.) as i32).clamp(min_exp_level, 4);
+    let value = raw_value / (2f64).powi(exp_level * 10);
+
+    let suffix = match exp_level {
+        4 => Suffix::Ti,
+        3 => Suffix::Gi,
+        2 => Suffix::Mi,
+        1 => Suffix::Ki,
+        _ => Suffix::One,
+    };
+
+    // The length of the integer part of a number
+    let digits = (value.log10().floor() + 1.0).max(1.0) as isize;
+    // How many characters is left for "." and the fractional part?
+    Ok(match min_width as isize - digits {
+        // No characters left
+        x if x <= 0 => format!("{:.0}{}", value, suffix),
+        // Only one character -> print a trailing dot
+        x if x == 1 => format!("{:.0}.{}", value, suffix),
+        // There is space for fractional part
+        rest => format!("{:.*}{}", (rest as usize) - 1, value, suffix),
+    })
 }
 
 fn format_bar(value: f64, length: usize) -> String {
@@ -154,19 +198,19 @@ impl Value {
     }
 
     //TODO impl Display
-    pub fn format(&self, var: &Variable) -> String {
+    pub fn format(&self, var: &Variable) -> Result<String> {
         let min_width = var.min_width.unwrap_or(self.min_width);
         let pad_with = var.pad_with.unwrap_or(' ');
-        let unit = var.unit.as_ref().unwrap_or(&self.unit);
+        let unit = var.unit.unwrap_or(self.unit);
 
         // Draw the bar instead of usual formatting if `bar_max_value` is set
         // (olny for integers and floats)
         if let Some(bar_max_value) = var.bar_max_value {
             match self.value {
                 InternalValue::Integer(i) => {
-                    return format_bar(i as f64 / bar_max_value, min_width)
+                    return Ok(format_bar(i as f64 / bar_max_value, min_width))
                 }
-                InternalValue::Float(f) => return format_bar(f / bar_max_value, min_width),
+                InternalValue::Float(f) => return Ok(format_bar(f / bar_max_value, min_width)),
                 _ => (),
             }
         }
@@ -175,10 +219,8 @@ impl Value {
             InternalValue::Text(ref text) => {
                 let mut text = text.clone();
                 let text_len = text.len();
-                if text_len < min_width {
-                    for _ in text_len..min_width {
-                        text.push(pad_with);
-                    }
+                for _ in text_len..min_width {
+                    text.push(pad_with);
                 }
                 if let Some(max_width) = var.max_width {
                     text.truncate(max_width);
@@ -186,47 +228,34 @@ impl Value {
                 text
             }
             InternalValue::Integer(value) => {
-                //TODO better way to do it?
-                let value = if self.unit == Unit::BytesPerSecond && *unit == Unit::BitsPerSecond {
-                    value * 8
-                } else if self.unit == Unit::BitsPerSecond && *unit == Unit::BytesPerSecond {
-                    value / 8
-                } else {
-                    value
-                };
+                let value = (value as f64 * self.unit.convert(unit)?) as i64;
 
                 let text = value.to_string();
                 let mut retval = String::new();
                 let text_len = text.len();
-                if text_len < min_width {
-                    for _ in text_len..min_width {
-                        retval.push(pad_with);
-                    }
+                for _ in text_len..min_width {
+                    retval.push(pad_with);
                 }
                 retval.push_str(&text);
                 retval
             }
             InternalValue::Float(value) => {
-                //TODO better way to do it?
-                let value = if self.unit == Unit::BytesPerSecond && *unit == Unit::BitsPerSecond {
-                    value * 8.
-                } else if self.unit == Unit::BitsPerSecond && *unit == Unit::BytesPerSecond {
-                    value / 8.
-                } else {
-                    value
-                };
+                let value = value * self.unit.convert(unit)?;
 
-                format_number(
-                    value,
-                    min_width,
-                    var.min_suffix.as_ref().unwrap_or(&Suffix::Nano),
-                )
+                if unit == Unit::Bytes
+                    || unit == Unit::BytesPerSecond
+                    || unit == Unit::BitsPerSecond
+                {
+                    format_bytes(value, min_width, var.min_suffix.unwrap_or(Suffix::One))?
+                } else {
+                    format_number(value, min_width, var.min_suffix.unwrap_or(Suffix::Nano))?
+                }
             }
         };
-        if let Some(ref icon) = self.icon {
+        Ok(if let Some(ref icon) = self.icon {
             format!("{}{}{}", icon, value, unit)
         } else {
             format!("{}{}", value, unit)
-        }
+        })
     }
 }

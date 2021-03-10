@@ -2,16 +2,22 @@ use std::fmt;
 
 use crate::errors::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Suffix {
+    One,
+    // SI
     Nano,
     Micro,
     Milli,
-    One,
     Kilo,
     Mega,
     Giga,
     Tera,
+    // Bytes
+    Ki,
+    Mi,
+    Gi,
+    Ti,
 }
 
 impl fmt::Display for Suffix {
@@ -20,14 +26,20 @@ impl fmt::Display for Suffix {
             f,
             "{}",
             match self {
+                Self::One => "",
+                // SI
                 Self::Nano => "n",
                 Self::Micro => "u",
                 Self::Milli => "m",
-                Self::One => "",
                 Self::Kilo => "K",
                 Self::Mega => "M",
                 Self::Giga => "G",
                 Self::Tera => "T",
+                // Bytes
+                Self::Ki => "Ki",
+                Self::Mi => "Mi",
+                Self::Gi => "Gi",
+                Self::Ti => "Ti",
             }
         )
     }
@@ -36,14 +48,20 @@ impl fmt::Display for Suffix {
 impl Suffix {
     pub fn from_string(s: &str) -> Result<Self> {
         match s {
+            "1" => Ok(Self::One),
+            // SI
             "n" => Ok(Self::Nano),
             "u" => Ok(Self::Micro),
             "m" => Ok(Self::Milli),
-            "1" => Ok(Self::One),
             "K" => Ok(Self::Kilo),
             "M" => Ok(Self::Mega),
             "G" => Ok(Self::Giga),
             "T" => Ok(Self::Tera),
+            // Bytes
+            "Ki" => Ok(Self::Ki),
+            "Mi" => Ok(Self::Mi),
+            "Gi" => Ok(Self::Gi),
+            "Ti" => Ok(Self::Ti),
             x => Err(ConfigurationError(
                 "Can not parse suffix".to_string(),
                 format!("unknown suffix: '{}'", x.to_string()),
