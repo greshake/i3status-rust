@@ -1264,6 +1264,12 @@ step_width = 3
 ```toml
 [[block]]
 block = "sound"
+format = "{output_description} {volume}%"
+```
+
+```toml
+[[block]]
+block = "sound"
 format = "{output_name} {volume}"
 [block.mappings]
 "alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "🔈"
@@ -1285,7 +1291,7 @@ Key | Values | Required | Default
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
 `max_width` | Max width of output\_name | No | `None`
-`use_description` | Pulseaudio provides some more human friendly names called description, it will replace the value of output\_name (mapping will still use the name) | No | `true`
+
 
 #### Available Format Keys
 
@@ -1293,6 +1299,7 @@ Key | Values | Required | Default
 ---------|-------
 `{volume}` | Current volume in percent
 `{output_name}` | PulseAudio or ALSA device name
+`{output_description}` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`)
 
 ###### [↥ back to top](#list-of-available-blocks)
 

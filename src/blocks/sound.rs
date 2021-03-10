@@ -710,7 +710,6 @@ pub struct Sound {
     max_vol: Option<u32>,
     scrolling: Scrolling,
     max_width: Option<usize>,
-    use_description: bool,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
@@ -785,11 +784,6 @@ pub struct SoundConfig {
     /// max_width only gets applied to the output names
     #[serde(default = "SoundConfig::default_max_width")]
     pub max_width: Option<usize>,
-
-    /// Pulseaudio provides some more human friendly names called description
-    /// (mapping will still use the name)
-    #[serde(default = "SoundConfig::default_use_description")]
-    pub use_description: bool,
 }
 
 #[derive(Deserialize, Copy, Clone, Debug)]
@@ -847,10 +841,6 @@ impl SoundConfig {
     fn default_max_width() -> Option<usize> {
         None
     }
-
-    fn default_use_description() -> bool {
-        true
-    }
 }
 
 impl Sound {
@@ -874,37 +864,34 @@ impl Sound {
         self.device.get_info()?;
 
         let volume = self.device.volume();
-        let output_name = {
-            let output_name = self.device.output_name();
+        let (output_name, output_description) = {
+            let mut output_name = self.device.output_name();
+            let mut output_description = self
+                .device
+                .output_description()
+                .unwrap_or_else(|| output_name.clone());
 
-            if let Some(output_name) = if let Some(m) = &self.mappings {
+            if let Some(mapped_name) = if let Some(m) = &self.mappings {
                 m.get(&output_name)
                     .map(|output_name| output_name.to_string())
             } else {
                 None
             } {
-                output_name
-            } else {
-                let mut output_name = if self.use_description {
-                    if let Some(description) = self.device.output_description() {
-                        description
-                    } else {
-                        output_name
-                    }
-                } else {
-                    output_name
-                };
-
-                if let Some(max_width) = self.max_width {
-                    output_name.truncate(max_width);
-                }
-
-                output_name
+                output_name = mapped_name.clone();
+                output_description = mapped_name;
             }
+
+            if let Some(max_width) = self.max_width {
+                output_name.truncate(max_width);
+                output_description.truncate(max_width);
+            }
+
+            (output_name, output_description)
         };
 
         let values = map!("{volume}" => format!("{:02}", volume),
-                          "{output_name}" => output_name);
+                          "{output_name}" => output_name,
+                          "{output_description}" => output_description);
         let text = self.format.render_static_str(&values)?;
 
         if self.device.muted() {
@@ -994,7 +981,6 @@ impl ConfigBlock for Sound {
             scrolling: shared_config.scrolling,
             text: TextWidget::new(id, 0, shared_config).with_icon("volume_empty"),
             max_width: block_config.max_width,
-            use_description: block_config.use_description,
         };
 
         sound.device.monitor(id, tx_update_request)?;
