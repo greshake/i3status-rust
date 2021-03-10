@@ -88,7 +88,7 @@ impl DiskSpaceConfig {
     }
 
     fn default_format() -> String {
-        String::from("{alias} {available} {unit}")
+        String::from("{available}")
     }
 
     fn default_unit() -> String {

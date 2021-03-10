@@ -156,11 +156,11 @@ pub struct MemoryConfig {
 
 impl MemoryConfig {
     fn default_format_mem() -> String {
-        "{mem_free;M}/{mem_total;M}({mem_total_used_percents})".to_owned()
+        "{mem_free;Mi}/{mem_total;Mi}({mem_total_used_percents})".to_owned()
     }
 
     fn default_format_swap() -> String {
-        "{swap_free;M}/{swap_total;M}({swap_used_percents})".to_owned()
+        "{swap_free;Mi}/{swap_total;Mi}({swap_used_percents})".to_owned()
     }
 
     fn default_display_type() -> Memtype {

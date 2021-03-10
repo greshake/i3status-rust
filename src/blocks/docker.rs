@@ -60,7 +60,7 @@ impl DockerConfig {
     }
 
     fn default_format() -> String {
-        "{running}%".to_owned()
+        "{running}".to_owned()
     }
 }
 

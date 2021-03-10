@@ -91,7 +91,7 @@ impl KDEConnectConfig {
     }
 
     fn default_format() -> String {
-        "{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}".into()
+        "{name} {bat_icon}{bat_charge} {notif_icon}{notif_count}".into()
     }
 
     fn default_format_disconnected() -> String {
@@ -619,7 +619,7 @@ impl Block for KDEConnect {
 
         let values = map!(
             "bat_icon" => Value::from_string(bat_icon.trim().to_string()),
-            "bat_charge" => Value::from_integer(charge.clamp(0,100) as i64),
+            "bat_charge" => Value::from_integer(charge.clamp(0,100) as i64).percents(),
             "bat_state" => Value::from_string(charging.to_string()),
             "notif_icon" => Value::from_string(self.shared_config.get_icon("notification").unwrap_or_default().trim().to_string()),
             "notif_count" => Value::from_integer(notif_count as i64),

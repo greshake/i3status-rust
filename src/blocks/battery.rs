@@ -593,7 +593,7 @@ impl BatteryConfig {
     }
 
     fn default_missing_format() -> String {
-        "{percentage}%".into()
+        "{percentage}".into()
     }
 
     fn default_upower() -> bool {
