@@ -419,7 +419,7 @@ impl NetConfig {
     }
 
     fn default_format() -> String {
-        "{speed_up;Ki} {speed_down;Ki}".to_owned()
+        "{speed_up;K} {speed_down;K}".to_owned()
     }
 
     fn default_format_alt() -> Option<String> {

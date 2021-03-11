@@ -51,8 +51,8 @@ Update the list of pending updates every thirty minutes (1800 seconds):
 [[block]]
 block = "apt"
 interval = 1800
-format = "{count} updates available"
-format_singular = "{count} update available"
+format = "{count:1} updates available"
+format_singular = "{count:1} update available"
 format_up_to_date = "system up to date"
 critical_updates_regex = "(linux |linux-lts|linux-zen)"
 ```
@@ -62,17 +62,21 @@ critical_updates_regex = "(linux |linux-lts|linux-zen)"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval in seconds. | No | `600`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{count}"`
-`format_singular` | Same as `format`, but for when exactly one update is available. | No | `"{count}"`
-`format_up_to_date` | Same as `format`, but for when no updates are available. | No | `"{count}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{count:1}"`
+`format_singular` | Same as `format`, but for when exactly one update is available. | No | `"{count:1}"`
+`format_up_to_date` | Same as `format`, but for when no updates are available. | No | `"{count:1}"`
 `warning_updates_regex` | Display block as warning if updates matching regex are available. | No | `None`
 `critical_updates_regex` | Display block as critical if updates matching regex are available. | No | `None`
 
 #### Available Format Keys
 
-Key | Value
-----|-------
-`{count}` | Number of updates available
+Key | Value | Type
+----|-------|-----
+`{count}` | Number of updates available | Integer
+
+#### Notes
+
+The number one in `{count:1}` sets the minimal width to one character.
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -142,7 +146,16 @@ Update the battery state every ten seconds, and show the time remaining until (d
 [[block]]
 block = "battery"
 interval = 10
-format = "{percentage}% {time}"
+format = "{percentage} {time}"
+```
+
+Same as previous, but also prints a six character bar.
+
+```toml
+[[block]]
+block = "battery"
+interval = 10
+format = "{percentage:6#100} {percentage} {time}"
 ```
 
 Rely on Upower for battery updates and information:
@@ -151,7 +164,7 @@ Rely on Upower for battery updates and information:
 [[block]]
 block = "battery"
 driver = "upower"
-format = "{percentage}% {time}"
+format = "{percentage} {time}"
 ```
 
 #### Options
@@ -161,9 +174,9 @@ Key | Values | Required | Default
 `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | `"BAT0"`
 `driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}%"`
-`full_format` | Same as `format` but for when the battery is full. | No | `"{percentage}%"`
-`missing_format` | Same as `format` but for when the specified battery is missing. | No | `"{percentage}%"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}"`
+`full_format` | Same as `format` but for when the battery is full. | No | `"{percentage}"`
+`missing_format` | Same as `format` but for when the specified battery is missing. | No | `"{percentage}"`
 `allow_missing` | Don't display errors when the battery cannot be found. Only works with the `sysfs` driver. | No | `false`
 `hide_missing` | Completely hide this block if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
 `info` | Minimum battery level, where state is set to info. | No | `60`
@@ -171,23 +184,13 @@ Key | Values | Required | Default
 `warning` | Minimum battery level, where state is set to warning. | No | `30`
 `critical` | Minimum battery level, where state is set to critical. | No | `15`
 
-#### Deprecated Options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`show` | Deprecated in favour of `format`. Show remaining `"time"`, `"percentage"` or `"both"`. | No | `"percentage"`
-`upower` | Deprecated in favour of `device`. When `true`, use the Upower D-Bus driver. | No | `false`
-
-The `show` option is deprecated, and will be removed in future versions. In the meantime, it will override the `format` option when present.
-
 #### Available Format Keys
 
-Placeholder | Description
-------------|-------------
-`{percentage}` | Battery level, in percent
-`{bar}` | The current battery level in a bar chart
-`{time}` | Time remaining until (dis)charge is complete
-`{power}` | Power consumption (in watts) by the battery or from the power supply when charging
+Placeholder | Description | Type
+------------|-------------|-----
+`{percentage}` | Battery level, in percent | String or Integer
+`{time}` | Time remaining until (dis)charge is complete | String
+`{power}` | Power consumption by the battery or from the power supply when charging | String or Float
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -207,7 +210,8 @@ A block for a Bluetooth device with the given MAC address:
 [[block]]
 block = "bluetooth"
 mac = "A0:8A:F5:B8:01:FD"
-label = " Rowkin"
+format = "Rowkin {percentage}"
+format_unavailable = "Rowkin x"
 ```
 
 #### Options
@@ -215,11 +219,23 @@ label = " Rowkin"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `mac` | MAC address of the Bluetooth device. | Yes | None
-`label` | Text label to display next to the icon. | No | None
 `hide_disconnected` | Hides the block when the device is disconnected. | No | `false`
+`format` | A string to customise the output of this block. See below for placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{label} {percentage}"`
 `format_unavailable` | A string to customise the output of this block when the bluetooth controller is unavailable. See below for placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{label} x"`
 
+#### Deprecated Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`label` | Text label to display next to the icon. | No | None
+
 #### Available Format Keys
+
+Key | Value | Type
+----|-------|------
+`{percentage}` | Device's charge in percents | Integer or an empty String
+
+#### Deprecated Format Keys
 
 Key | Value
 ----|-------
@@ -251,22 +267,16 @@ Key | Values | Required | Default
 `critical` | Minimum usage, where state is set to critical. | No | `90`
 `interval` | Update interval, in seconds. | No | `1`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{utilization}"`
-`per_core` | Display CPU frequencies and utilization per core. | No | `false`
-`on_click` | Command to execute when the button is clicked. The command will be passed to whatever is specified in your `$SHELL` variable and - if not set - fallback to `sh`. | No | None
-
-#### Deprecated Options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`frequency` | Deprecated in favour of `format`. Sets format to `{utilization} {frequency}`. | No | `false`
 
 #### Available Format Keys
 
-Placeholder | Description
-------------|-------------
-`{barchart}` | Bar chart of each CPU's core utilization
-`{utilization}` | Average CPU utilization in percent
-`{frequency}` | CPU frequency in GHz
+Placeholder | Description | Type
+------------|-------------|------
+`{barchart}` | Bar chart of each CPU's core utilization | String
+`{utilization}` | Average CPU utilization in percent | Integer
+`{utilization<n>}` | CPU utilization in percent for core `n` | Integer
+`{frequency}` | CPU frequency | Float
+`{frequency<n>}` | CPU frequency in GHz for core `n` | Float
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -384,10 +394,9 @@ Creates a block which displays disk space information.
 [[block]]
 block = "disk_space"
 path = "/"
-alias = "/"
 info_type = "used"
 unit = "GiB"
-format = "{icon}{used}/{total} {unit} ({available}{unit} free)"
+format = "{icon} {used}/{total} ({available} free)"
 ```
 
 #### Options
@@ -395,29 +404,25 @@ format = "{icon}{used}/{total} {unit} ({available}{unit} free)"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `alert` | Available disk space critical level as a percentage or Unit. | No | `10.0`
-`alias` | Alias that is displayed for path. | No | `"/"`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{alias} {available} {unit}"`
+`warning` | Available disk space warning level as a percentage or Unit. | No | `20.0`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{available}"`
 `info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation). | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
 `path` | Path to collect information from. | No | `"/"`
-`unit` | Unit that is used to display disk space. Options are `"MB"`, `"MiB"`, `"GB"`, `"GiB"`, `"TB"`, `"TiB"` and `"Percent"`. | No | `"GB"`
-`warning` | Available disk space warning level as a percentage or Unit. | No | `20.0`
+`unit` | Unit that is used when `alert_absolute` is set for `warning` and `alert`. Options are `"B"`, `"KB"` `"MB"`, `"GB"`, `"TB"`. | No | `"GB"`
 `alert_absolute` | Use Unit values for warning and alert instead of percentages. | No | `false`
 
 #### Available Format Keys
 
-Key | Value
-----|-------
-`{alias}` | Alias for disk path
-`{available}` | Available disk space (free disk space minus reserved system space)
-`{bar}` | Display bar representing percentage
-`{free}` | Free disk space
-`{icon}` | Disk drive icon
-`{path}` | Path used for capacity check
-`{percentage}` | Percentage of disk used or free (depends on info_type setting)
-`{total}` | Total disk space
-`{unit}` | Unit used for disk space (see above)
-`{used}` | Used disk space
+Key | Value | Type
+----|-------|-------
+`{available}` | Available disk space (free disk space minus reserved system space) | Float
+`{free}` | Free disk space | Float
+`{icon}` | Disk drive icon | String
+`{path}` | Path used for capacity check | String
+`{percentage}` | Percentage of disk used or free (depends on info_type setting) | Float
+`{total}` | Total disk space | Float
+`{used}` | Used disk space | Float
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -443,13 +448,13 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-Key | Value
-----|-------
-`{total}` | Total containers on the host
-`{running}` | Containers running on the host
-`{stopped}` | Containers stopped on the host
-`{paused}` | Containers paused on the host
-`{images}` | Total images on the host
+Key | Value | Type
+----|-------|-----
+`{total}`   | Total containers on the host | Integer
+`{running}` | Containers running on the host | Integer
+`{stopped}` | Containers stopped on the host | Integer
+`{paused}`  | Containers paused on the host | Integer
+`{images}`  | Total images on the host | Integer
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -498,20 +503,20 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
- Key | Value
------|-------
-`{total}` | Total number of notifications
-`{assign}` | Total number of notifications related to issues you're assigned on
-`{author}` | Total number of notifications related to threads you are the author of
-`{comment}` | Total number of notifications related to threads you commented on
-`{invitation}` | Total number of notifications related to invitations
-`{manual}` | Total number of notifications related to threads you manually subscribed on
-`{mention}` | Total number of notifications related to content you were specifically mentioned on
-`{review_requested}` | Total number of notifications related to PR you were requested to review
-`{security_alert}` | Total number of notifications related to security vulnerabilities found on your repositories
-`{state_change}` | Total number of notifications related to thread state change
-`{subscribed}` | Total number of notifications related to repositories you're watching
-`{team_mention}` | Total number of notification related to thread where your team was mentioned
+ Key | Value | Type
+-----|-------|-----
+`{total}` | Total number of notifications | Integer
+`{assign}` | Total number of notifications related to issues you're assigned on | Integer
+`{author}` | Total number of notifications related to threads you are the author of | Integer
+`{comment}` | Total number of notifications related to threads you commented on | Integer
+`{invitation}` | Total number of notifications related to invitations | Integer
+`{manual}` | Total number of notifications related to threads you manually subscribed on | Integer
+`{mention}` | Total number of notifications related to content you were specifically mentioned on | Integer
+`{review_requested}` | Total number of notifications related to PR you were requested to review | Integer
+`{security_alert}` | Total number of notifications related to security vulnerabilities found on your repositories | Integer
+`{state_change}` | Total number of notifications related to thread state change | Integer
+`{subscribed}` | Total number of notifications related to repositories you're watching | Integer
+`{team_mention}` | Total number of notification related to thread where your team was mentioned | Integer
 
 For more information about notifications, refer to the [GitHub API documentation](https://developer.github.com/v3/activity/notifications/#notification-reasons).
 
@@ -586,9 +591,9 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-Placeholder | Description
-------------|-------------
-`{engine}` | Engine name as provided by IBus
+ Key | Value | Type
+-----|-------|-----
+`{engine}` | Engine name as provided by IBus | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -608,7 +613,7 @@ block = "kdeconnect"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | No | Chooses the first found device, if any.
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{name} {bat_icon}{bat_charge} {notif_icon}{notif_count}"`
 `format_disconnected` | Same as `format` but for when the phone is disconnected/unreachable. Same placeholders can be used as above, however they will be fixed at the last known value until the phone comes back online. | No | `"{name}"`
 `bat_info` | Min battery level below which state is set to info. | No | `60`
 `bat_good` | Min battery level below which state is set to good. | No | `60`
@@ -617,15 +622,15 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-Placeholder | Description
-------------|-------------
-`{bat_icon}` | Battery icon which will automatically change between the various battery icons depending on the current charge state
-`{bat_charge}` | Battery charge level in percent
-`{bat_state}` | Battery charging state, "true" or "false"
-`{notif_icon}` | Will display an icon when you have a notification, otherwise an empty string
-`{notif_count}` | Number of unread notifications on your phone
-`{name}` | Name of your device as reported by KDEConnect
-`{id}` | KDEConnect device ID
+ Key | Value | Type
+-----|-------|-----
+`{bat_icon}` | Battery icon which will automatically change between the various battery icons depending on the current charge state | String
+`{bat_charge}` | Battery charge level in percent | Integer
+`{bat_state}` | Battery charging state, "true" or "false" | String
+`{notif_icon}` | Will display an icon when you have a notification, otherwise an empty string | String
+`{notif_count}` | Number of unread notifications on your phone | Integer
+`{name}` | Name of your device as reported by KDEConnect | String
+`{id}` | KDEConnect device ID | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -700,10 +705,10 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-  Key    | Value
----------|-------
-`{layout}` | Keyboard layout name
-`{variant}` | Keyboard variant (only `localebus` and `sway` are supported so far)
+ Key | Value | Type
+-----|-------|-----
+`{layout}` | Keyboard layout name | String
+`{variant}` | Keyboard variant (only `localebus` and `sway` are supported so far) | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -734,11 +739,11 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-Placeholder | Description
-------------|-------------
-`{1m}` | 1 minute load average
-`{5m}` | 5minute load average
-`{15m}` | 15minute load average
+ Key | Value | Type
+-----|-------|-----
+`{1m}` | 1 minute load average | Float
+`{5m}` | 5minute load average | Float
+`{15m}` | 15minute load average | Float
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -798,8 +803,8 @@ critical_swap = 95
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{MFm}MB/{MTm}MB({Mp}%)"`
-`format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{SFm}MB/{STm}MB({Sp}%)"`
+`format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{mem_free;M}/{mem_total;M}({mem_total_used_percents})"`
+`format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{swap_free;M}/{swap_total;M}({swap_used_percents})"`
 `display_type` | Default view displayed on startup: "`memory`" or "`swap`". | No | `"memory"`
 `icons` | Whether the format string should be prepended with icons. | No | `true`
 `clickable` | Whether the view should switch between memory and swap on click. | No | `true`
@@ -811,44 +816,26 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-  Key    | Value
----------|-------
-`{MTg}`  | Memory total (GiB)
-`{MTm}`  | Memory total (MiB)
-`{MAg}`  | Available memory, including cached memory and buffers (GiB)
-`{MAm}`  | Available memory, including cached memory and buffers (MiB)
-`{MAp}`  | Available memory, including cached memory and buffers (%)
-`{MApi}` | Available memory, including cached memory and buffers (%) as integer
-`{MFg}`  | Memory free (GiB)
-`{MFm}`  | Memory free (MiB)
-`{MFp}`  | Memory free (%)
-`{MFpi}` | Memory free (%) as integer
-`{Mug}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (GiB)
-`{Mum}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (MiB)
-`{Mup}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (%)
-`{Mupi}` | Memory used, excluding cached memory and buffers; similar to htop's green bar (%) as integer
-`{MUg}`  | Total memory used (GiB)
-`{MUm}`  | Total memory used (MiB)
-`{MUp}`  | Total memory used (%)
-`{MUpi}` | Total memory used (%) as integer
-`{Cg}`   | Cached memory, similar to htop's yellow bar (GiB)
-`{Cm}`   | Cached memory, similar to htop's yellow bar (MiB)
-`{Cp}`   | Cached memory, similar to htop's yellow bar (%)
-`{Cpi}`  | Cached memory, similar to htop's yellow bar (%) as integer
-`{Bg}`   | Buffers, similar to htop's blue bar (GiB)
-`{Bm}`   | Buffers, similar to htop's blue bar (MiB)
-`{Bp}`   | Buffers, similar to htop's blue bar (%)
-`{Bpi}`  | Buffers, similar to htop's blue bar (%) as integer
-`{STg}`  | Swap total (GiB)
-`{STm}`  | Swap total (MiB)
-`{SFg}`  | Swap free (GiB)
-`{SFm}`  | Swap free (MiB)
-`{SFp}`  | Swap free (%)
-`{SFpi}` | Swap free (%) as integer
-`{SUg}`  | Swap used (GiB)
-`{SUm}`  | Swap used (MiB)
-`{SUp}`  | Swap used (%)
-`{SUpi}` | Swap used (%) as integer
+ Key | Value | Type
+-----|-------|-----
+`{mem_total}` | Memory total | Float
+`{mem_free}` | Memory free | Float
+`{mem_free_percents}`| Memory free % | Float
+`{mem_total_used}`  | Total memory used | Float
+`{mem_total_used_percents}`  | Total memory used % | Float
+`{mem_used}` | Memory used, excluding cached memory and buffers; similar to htop's green bar | Float
+`{mem_used_percents}`  | Memory used, excluding cached memory and buffers; similar to htop's green bar (in %) | Float
+`{mem_avail}` | Available memory, including cached memory and buffers | Float
+`{mem_avail_percents}` | Available memory, including cached memory and buffers (in %) | Float
+`{swap_total}` | Swap total | Float
+`{swap_free}` | Swap free | Float
+`{swap_free_percents}` | Swap free % | Float
+`{swap_used}` | Swap used | Float
+`{swap_used_percents}` | Swap used | Float
+`{buffers}` | Buffers, similar to htop's blue bar | Float
+`{buffers_percent}` | Buffers, similar to htop's blue bar (in %) | Float
+`{cached}` | Cached memory, similar to htop's yellow bar | Float
+`{cached_percent}` | Cached memory, similar to htop's yellow bar (in %) | Float
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -917,13 +904,13 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-  Key    | Value
----------|-------
-`{artist}`  | Current artist (may be an empty string)
-`{title}`  | Current title (may be an empty string)
-`{combo}`  | Resolves to "`{artist}[sep]{title}"`, `"{artist}"`, or `"{title}"` depending on what information is available. `[sep]` is set by `separator` option. The `smart_trim` option affects the output.
-`{player}`  | Name of the current player (taken from the last part of its MPRIS bus name)
-`{avail}`  | Total number of players available to switch between
+ Key | Value | Type
+-----|-------|-----
+`{artist}` | Current artist (may be an empty string) | String
+`{title}`  | Current title (may be an empty string) | String
+`{combo}`  | Resolves to "`{artist}[sep]{title}"`, `"{artist}"`, or `"{title}"` depending on what information is available. `[sep]` is set by `separator` option. The `smart_trim` option affects the output. | String
+`{player}` | Name of the current player (taken from the last part of its MPRIS bus name) | String
+`{avail}`  | Total number of players available to switch between | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -939,11 +926,13 @@ but the 'use_bits' flag can be set to `true` to convert the units to bps (little
 
 #### Examples
 
+Displays ssid, signal_strength, ip, down speed and up speed as bits per second
+
 ```toml
 [[block]]
 block = "net"
 device = "wlp2s0"
-format = "{ssid} {signal_strength} {ip} {speed_down} {graph_down}"
+format = "{ssid} {signal_strength} {ip} {speed_down;K*b/s} {graph_down;K*b/s}"
 interval = 5
 use_bits = false
 ```
@@ -953,29 +942,25 @@ use_bits = false
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | Network interface to monitor (name from /sys/class/net). | No | Automatically chosen from the output of `ip route show default`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{speed_up} {speed_down}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{speed_up;K} {speed_down;K}"`
 `format_alt` | If set, block will switch its formatting between `format` and `format_alt` on every click. | No | None
-`speed_digits` | Number of digits to use when displaying speeds. | No | `3`
-`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`. | No | `"K"`
-`use_bits` | Display speeds in bits instead of bytes. | No | `false`
 `interval` | Update interval, in seconds. Note: the update interval for SSID and IP address is fixed at 30 seconds, and bitrate fixed at 10 seconds. | No | `1`
 `hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
 `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
-`max_ssid_width` | Truncation length for SSID. | No | `21`
 
 #### Available Format Keys
 
-Placeholder | Description
-------------|------------
-`ssid` | Display network SSID (wireless only)
-`signal_strength` | Display WiFi signal strength (wireless only)
-`bitrate` | Display connection bitrate
-`ip` | Display connection IP address
-`ipv6` | Display connection IPv6 address
-`speed_up` | Display upload speed
-`speed_down` | Display download speed
-`graph_up` | Display a bar graph for upload speed
-`graph_down` | Display a bar graph for download speed
+ Key | Value | Type
+-----|-------|-----
+`ssid` | Display network SSID (wireless only) | String
+`signal_strength` | Display WiFi signal strength (wireless only) | Integer
+`bitrate` | Display connection bitrate | String
+`ip` | Display connection IP address | String
+`ipv6` | Display connection IPv6 address | String
+`speed_up` | Display upload speed | Float
+`speed_down` | Display download speed | Float
+`graph_up` | Display a bar graph for upload speed | String
+`graph_down` | Display a bar graph for download speed | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -998,37 +983,36 @@ interface_name_include = []
 Key | Values | Required | Default
 ----|--------|----------|---------
 `primary_only` | Whether to show only the primary active connection or all active connections. | No | `false`
-`max_ssid_width` | Truncation length for SSID. | No | `21`
 `ap_format` | Acces point string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{ssid}"`
 `device_format` | Device string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{icon}{ap} {ips}"`
 `connection_format` | Connection string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{devices}"`
-`on_click` | On-click handler. Commands are executed in a shell. | No | `""`
 `interface_name_exclude` | A list of regex patterns for device interface names to ignore. | No | ""
 `interface_name_include` | A list of regex patterns for device interface names to include (only interfaces that match at least one are shown). | No | ""
 
 #### AP format string
 
-Placeholder | Description
-------------|-------------
-`{ssid}` | The SSID for this AP
-`{strength}` | The signal strength in percent for this AP
-`{freq}` | The frequency of this AP in MHz
+ Key | Value | Type
+-----|-------|-----
+`{ssid}` | The SSID for this AP | String
+`{strength}` | The signal strength in percent for this AP | Integer
+`{freq}` | The frequency of this AP in MHz | String
 
 #### Device format string
 
-Placeholder | Description
-------------|-------------
-`{icon}` | The icon matching the device type
-`{typename}` | The name of the device type
-`{name}` | The name of the device interface
-`{ap}` | The connected AP if available, formatted with the AP format string
-`{ips}` | The list of IPs for this device
+ Key | Value | Type
+-----|-------|-----
+`{icon}` | The icon matching the device type | String
+`{typename}` | The name of the device type | String
+`{name}` | The name of the device interface | String
+`{ap}` | The connected AP if available, formatted with the AP format string | String
+`{ips}` | The list of IPs for this device | String
 
 #### Connection format string
 
-Placeholder | Description
-------------|-------------
-`{devices}` | The list of devices, each formatted with the device format string
+ Key | Value | Type
+-----|-------|-----
+`{devices}` | The list of devices, each formatted with the device format string | String
+`{id}` | ??? | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1044,14 +1028,13 @@ TODO: support `mako`
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`driver` | Notification daemon to monitor. | No | `"dunst"`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{state}"`
 
 #### Available Format Keys
 
-Key | Value
-----|-------
-`{state}` | Current state of the notification daemon in icon form
+ Key | Value | Type
+-----|-------|-----
+`{state}` | Current state of the notification daemon in icon form | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1198,12 +1181,12 @@ Key | Values | Required | Default
 
 ### Available Format Keys
 
-Key | Value
-----|-------
-`{count}` | Number of pacman updates available (**deprecated**: use `{pacman}` instead)
-`{pacman}`| Number of updates available according to `pacman`
-`{aur}` | Number of updates available according to `<aur_command>`
-`{both}` | Cumulative number of updates available according to `pacman` and `<aur_command>` 
+ Key | Value | Type
+-----|-------|-----
+`{count}` | Number of pacman updates available (**deprecated**: use `{pacman}` instead) | Integer
+`{pacman}`| Number of updates available according to `pacman` | Integer
+`{aur}` | Number of updates available according to `<aur_command>` | Integer
+`{both}` | Cumulative number of updates available according to `pacman` and `<aur_command>` | Integer
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1281,7 +1264,7 @@ format = "{output_name} {volume}"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | No | `"auto"` (Pulseaudio with ALSA fallback)
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `{volume}%`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `{volume}`
 `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | No | `default`
 `device_kind` | PulseAudio device kind: `source` or `sink`. | No | `sink`
@@ -1292,13 +1275,13 @@ Key | Values | Required | Default
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
 
 
-#### Available Format Keys
+### Available Format Keys
 
-  Key    | Value
----------|-------
-`{volume}` | Current volume in percent
-`{output_name}` | PulseAudio or ALSA device name
-`{output_description}` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`)
+ Key | Value | Type
+-----|-------|-----
+`{volume}` | Current volume in percent | Integer
+`{output_name}` | PulseAudio or ALSA device name | String
+`{output_description}` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1319,10 +1302,17 @@ interval = 1800
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`bytes` | Whether to use bytes or bits in the display (true for bytes, false for bits). | No | `false`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{ping}{speed_down}{speed_up}"`
 `interval` | Update interval in seconds. | No | `1800`
-`speed_digits` | Number of digits to use when displaying speeds and latencies. | No | `3`
-`speed_min_unit` | Smallest unit to use when displaying speeds. Possible choices: `"B"`, `"K"`, `"M"`, `"G"`, `"T"`. | No | `"K"`
+
+
+### Available Format Keys
+
+ Key | Value | Type
+-----|-------|-----
+'{ping}` | Ping delady | Float
+`{speed_down}` | Download speed | Float
+`{speed_up}` | Upload speed | Float
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1369,10 +1359,10 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-Key | Value
-----|-------
-`{count}` | The number of pending tasks
-`{filter_name}` | The name of the current filter
+ Key | Value | Type
+-----|-------|-----
+`{count}` | The number of pending tasks | Integer
+`{filter_name}` | The name of the current filter | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1415,11 +1405,11 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
-Key | Value
-----|-------
-`{min}` | Minimum temperature among all sensors
-`{average}` | Average temperature among all sensors
-`{max}` | Maximum temperature among all sensors
+ Key | Value | Type
+-----|-------|-----
+`{min}` | Minimum temperature among all sensors | Integer
+`{average}` | Average temperature among all sensors | Integer
+`{max}` | Maximum temperature among all sensors | Integer
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1573,16 +1563,16 @@ in which case they must be provided in the environment variables
 
 #### Available Format Keys
 
-Key | Value
-----|-------
-`{location}` | Location name (exact format depends on the service)
-`{temp}` | Temperature
-`{apparent}` | Australian Apparent Temperature
-`{humidity}` | Humidity
-`{weather}` | Textual description of the weather, e.g. "Raining"
-`{wind}` | Wind speed
-`{wind_kmh}` | Wind speed. The wind speed in km/h.
-`{direction}` | Wind direction, e.g. "NE"
+ Key | Value | Type
+-----|-------|-----
+`{location}` | Location name (exact format depends on the service) | String
+`{temp}` | Temperature | Integer
+`{apparent}` | Australian Apparent Temperature | Integer
+`{humidity}` | Humidity | Integer
+`{weather}` | Textual description of the weather, e.g. "Raining" | String
+`{wind}` | Wind speed | Float
+`{wind_kmh}` | Wind speed. The wind speed in km/h. | Float
+`{direction}` | Wind direction, e.g. "NE" | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 

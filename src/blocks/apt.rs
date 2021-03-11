@@ -71,7 +71,7 @@ impl AptConfig {
     }
 
     fn default_format() -> String {
-        "{count}".to_owned()
+        "{count:1}".to_owned()
     }
 
     fn default_warning_updates_regex() -> Option<String> {

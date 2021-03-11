@@ -519,14 +519,9 @@ pub struct BatteryConfig {
     )]
     pub interval: Duration,
 
-    /// The internal power supply device in `/sys/class/power_supply/` to read
-    /// from.
+    /// The internal power supply device in `/sys/class/power_supply/` to read from.
     #[serde(default = "BatteryConfig::default_device")]
     pub device: String,
-
-    /// (DEPRECATED) Options for displaying battery information.
-    #[serde()]
-    pub show: Option<String>,
 
     /// Format string for displaying battery information.
     /// placeholders: {percentage}, {bar}, {time} and {power}
@@ -543,12 +538,9 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_missing_format")]
     pub missing_format: String,
 
-    /// (DEPRECATED) Use UPower to monitor battery status and events.
-    #[serde(default = "BatteryConfig::default_upower")]
-    pub upower: bool,
-
     /// The "driver" to use for powering the block. One of "sysfs" or "upower".
-    pub driver: Option<BatteryDriver>,
+    #[serde(default = "BatteryConfig::default_driver")]
+    pub driver: BatteryDriver,
 
     /// The threshold above which the remaining capacity is shown as good
     #[serde(default = "BatteryConfig::default_good")]
@@ -596,8 +588,8 @@ impl BatteryConfig {
         "{percentage}".into()
     }
 
-    fn default_upower() -> bool {
-        false
+    fn default_driver() -> BatteryDriver {
+        BatteryDriver::Sysfs
     }
 
     fn default_critical() -> u64 {
@@ -634,27 +626,7 @@ impl ConfigBlock for Battery {
         shared_config: SharedConfig,
         update_request: Sender<Task>,
     ) -> Result<Self> {
-        // TODO: remove deprecated show types eventually
-        let format = match block_config.show {
-            Some(show) => match show.as_ref() {
-                "time" => "{time}".into(),
-                "percentage" => "{percentage}%".into(),
-                "both" => "{percentage}% {time}".into(),
-                _ => {
-                    return Err(BlockError("battery".into(), "Unknown show option".into()));
-                }
-            },
-            None => block_config.format,
-        };
-
-        // TODO: Remove the deprecated upower config eventually.
-        let driver = match block_config.driver {
-            Some(val) => val,
-            None if block_config.upower => BatteryDriver::Upower,
-            _ => BatteryDriver::Sysfs,
-        };
-
-        let device: Box<dyn BatteryDevice> = match driver {
+        let device: Box<dyn BatteryDevice> = match block_config.driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
                 out.monitor(id, update_request);
@@ -671,12 +643,12 @@ impl ConfigBlock for Battery {
             update_interval: block_config.interval,
             output: TextWidget::new(id, 0, shared_config),
             device,
-            format: FormatTemplate::from_string(&format)?,
+            format: FormatTemplate::from_string(&block_config.format)?,
             full_format: FormatTemplate::from_string(&block_config.full_format)?,
             missing_format: FormatTemplate::from_string(&block_config.missing_format)?,
             allow_missing: block_config.allow_missing,
             hide_missing: block_config.hide_missing,
-            driver,
+            driver: block_config.driver,
             good: block_config.good,
             info: block_config.info,
             warning: block_config.warning,

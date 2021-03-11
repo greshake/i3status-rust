@@ -33,6 +33,7 @@ pub struct Notify {
 #[serde(deny_unknown_fields)]
 pub struct NotifyConfig {
     /// Format string for displaying phone information.
+    /// "phone"?
     #[serde(default = "NotifyConfig::default_format")]
     pub format: String,
 }
