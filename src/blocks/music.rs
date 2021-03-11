@@ -34,6 +34,8 @@ struct Player {
     playback_status: PlaybackStatus,
     artist: Option<String>,
     title: Option<String>,
+    position: i64,
+    duration: i64,
     //TODO
     //volume: u32,
 }
@@ -338,11 +340,33 @@ impl ConfigBlock for Music {
                 let data = p.get("org.mpris.MediaPlayer2.Player", "Metadata");
                 let (title, artist) = match data {
                     Err(_) => (String::new(), String::new()),
-                    Ok(data) => {
+                    Ok(ref data) => {
                         extract_from_metadata(&data).unwrap_or((String::new(), String::new()))
                     }
                 };
 
+                let duration = match data {
+                    Err(_) => {
+                        0
+                    }
+                    Ok(data) => {
+                        let data: Box<dyn RefArg> = data;
+                        extract_duration_from_metadata(&data).unwrap_or(0)
+                    }
+                };
+
+                let data = p.get("org.mpris.MediaPlayer2.Player", "Position");
+                let position = match data {
+                    Err(_) => {
+                        0
+                    }
+                    Ok(data) => {
+                        let data: Box<dyn RefArg> = data;
+                        extract_position(&data)
+                    }
+                };
+
+                // std::fs::write("/home/kefin/pos", format!("{:?}", data)).unwrap();
                 // Get current playback status
                 let data = p.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
                 let status = match data {
@@ -359,6 +383,8 @@ impl ConfigBlock for Music {
                     playback_status: status,
                     artist: Some(artist),
                     title: Some(title),
+                    position,
+                    duration,
                 });
             }
         }
@@ -398,12 +424,26 @@ impl ConfigBlock for Music {
                                     p.title = Some(title);
                                     updated = true;
                                 }
+
+                                // let duration = extract_duration_from_metadata(&data.0).unwrap_or(0);
+                                // if p.duration != duration {
+                                //     p.duration = duration;
+                                //     updated = true;
+                                // }
                             };
                             let raw_metadata = signal.changed_properties.get("PlaybackStatus");
                             if let Some(data) = raw_metadata {
                                 let new_status = extract_playback_status(&data.0);
                                 if p.playback_status != new_status {
                                     p.playback_status = new_status;
+                                    updated = true;
+                                }
+                            };
+                            let raw_metadata = signal.changed_properties.get("Position");
+                            if let Some(data) = raw_metadata {
+                                let position = extract_position(&data.0);
+                                if p.position != position {
+                                    p.position = position;
                                     updated = true;
                                 }
                             };
@@ -469,6 +509,8 @@ impl ConfigBlock for Music {
                              playback_status: PlaybackStatus::Unknown,
                              artist: None,
                              title: None,
+                             position: 0,
+                             duration: 0,
                          });
                          send2.send(Task {
                              id,
@@ -600,6 +642,8 @@ impl Block for Music {
         let player_name = split[3].to_string();
         let artist = metadata.clone().artist.unwrap_or_else(|| String::from(""));
         let title = metadata.clone().title.unwrap_or_else(|| String::from(""));
+        let position = metadata.clone().position / 1_000_000;
+        let duration = metadata.clone().duration / 1_000_000;
         let combo =
             if (title.chars().count() + self.separator.chars().count() + artist.chars().count())
                 < self.max_width
@@ -615,6 +659,8 @@ impl Block for Music {
             "{title}" => title.clone(),
             "{combo}" => combo,
             //TODO
+            "{position}" => format!("{:02}:{:02}", position / 60, position % 60),
+            "{duration}" => format!("{:02}:{:02}", duration / 60, duration % 60),
             //"{vol}" => volume,
             "{player}" => player_name,
             "{avail}" => players.len().to_string()
@@ -771,6 +817,7 @@ impl Block for Music {
 }
 
 fn extract_playback_status(value: &dyn RefArg) -> PlaybackStatus {
+
     if let Some(status) = value.as_str() {
         match status {
             "Playing" => PlaybackStatus::Playing,
@@ -780,6 +827,14 @@ fn extract_playback_status(value: &dyn RefArg) -> PlaybackStatus {
         }
     } else {
         PlaybackStatus::Unknown
+    }
+}
+
+fn extract_position(value: &dyn RefArg) -> i64 {
+    if let Some(status) = value.as_i64() {
+        status
+    } else {
+        0
     }
 }
 
@@ -795,6 +850,26 @@ fn extract_artist_from_value(value: &dyn RefArg) -> Result<&str> {
                 .block_error("music", "failed to extract artist")?,
         )
     }
+}
+
+fn extract_duration_from_metadata(metadata: &Box<dyn RefArg>) -> Result<i64> {
+    let mut iter = metadata
+        .as_iter()
+        .block_error("music", "failed to extract metadata")?;
+
+    while let Some(key) = iter.next() {
+        let value = iter
+            .next()
+            .block_error("music", "failed to extract metadata")?;
+        match key
+            .as_str()
+            .block_error("music", "failed to extract metadata")?
+        {
+            "mpris:length" => return Ok(extract_position(value)),
+            _ => {}
+        };
+    }
+    Ok(0)
 }
 
 #[allow(clippy::borrowed_box)] // TODO: remove clippy workaround
