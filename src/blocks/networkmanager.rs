@@ -550,12 +550,21 @@ impl ConfigBlock for NetworkManager {
             .name("networkmanager".into())
             .spawn(move || {
                 let c = Connection::get_private(BusType::System).unwrap();
-                let rule = "type='signal',\
-                        path='/org/freedesktop/NetworkManager',\
-                        interface='org.freedesktop.NetworkManager',\
-                        member='PropertiesChanged'";
 
-                c.add_match(&rule).unwrap();
+                c.add_match(
+                    "type='signal',\
+                    path='/org/freedesktop/NetworkManager',\
+                    interface='org.freedesktop.NetworkManager',\
+                    member='PropertiesChanged'",
+                )
+                .unwrap();
+                c.add_match(
+                    "type='signal',\
+                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
+                    interface='org.freedesktop.NetworkManager.Connection.Active',\
+                    member='PropertiesChanged'",
+                )
+                .unwrap();
 
                 loop {
                     let timeout = 300_000;
