@@ -38,6 +38,16 @@ pub struct Variable {
     pub bar_max_value: Option<f64>,
 }
 
+fn unexpected_token<T>(token: char) -> Result<T> {
+    Err(ConfigurationError(
+        format!(
+            "failed to parse formatting string: unexpected token '{}'",
+            token
+        ),
+        String::new(),
+    ))
+}
+
 impl FormatTemplate {
     pub fn from_string(s: &str) -> Result<Self> {
         let mut tokens = vec![];
@@ -54,11 +64,10 @@ impl FormatTemplate {
         let mut current_buf = &mut text_buf;
 
         for c in s.chars() {
-            //TODO allow icon overrideing: `{var~icon}`
             match c {
                 '{' => {
                     if inside_var {
-                        // TODO return error
+                        return unexpected_token(c);
                     }
                     if !text_buf.is_empty() {
                         tokens.push(Token::Text(text_buf.clone()));
@@ -69,52 +78,66 @@ impl FormatTemplate {
                 }
                 MIN_WIDTH_TOKEN if inside_var => {
                     if !min_width_buf.is_empty() {
-                        //TODO return error
+                        return unexpected_token(c);
                     }
                     current_buf = &mut min_width_buf;
                 }
                 MAX_WIDTH_TOKEN if inside_var => {
                     if !min_width_buf.is_empty() {
-                        //TODO return error
+                        return unexpected_token(c);
                     }
                     current_buf = &mut max_width_buf;
                 }
                 MIN_SUFFIX_TOKEN if inside_var => {
                     if !min_prefix_buf.is_empty() {
-                        //TODO return error
+                        return unexpected_token(c);
                     }
                     current_buf = &mut min_prefix_buf;
                 }
                 UNIT_TOKEN if inside_var => {
                     if !unit_buf.is_empty() {
-                        //TODO return error
+                        return unexpected_token(c);
                     }
                     current_buf = &mut unit_buf;
                 }
                 BAR_MAX_VAL_TOKEN if inside_var => {
                     if !bar_max_value_buf.is_empty() {
-                        //TODO return error
+                        return unexpected_token(c);
                     }
                     current_buf = &mut bar_max_value_buf;
                 }
                 '}' => {
                     if !inside_var {
-                        //TODO return error
+                        return unexpected_token(c);
                     }
                     if var_buf.is_empty() {
-                        //TODO return error
+                        return Err(ConfigurationError(
+                            "failed to parse formatting string: placeholder's name cannot be empty"
+                                .to_string(),
+                            String::new(),
+                        ));
                     }
                     // Parse padding
                     let (min_width, pad_with) = if min_width_buf.is_empty() {
                         (None, None)
                     } else if let ("0", min_width) = min_width_buf.split_at(1) {
                         (
-                            Some(min_width.parse().unwrap()), // Might return error
+                            Some(min_width.parse().map_err(|_| {
+                                ConfigurationError(
+                                    format!("failed to parse min_width '{}'", min_width),
+                                    String::new(),
+                                )
+                            })?),
                             Some('0'),
                         )
                     } else {
                         (
-                            Some(min_width_buf.parse().unwrap()), // Might return error
+                            Some(min_width_buf.parse().map_err(|_| {
+                                ConfigurationError(
+                                    format!("failed to parse min_width '{}'", min_width_buf),
+                                    String::new(),
+                                )
+                            })?),
                             None,
                         )
                     };
@@ -122,7 +145,12 @@ impl FormatTemplate {
                     let max_width = if max_width_buf.is_empty() {
                         None
                     } else {
-                        Some(max_width_buf.parse::<usize>().unwrap()) // Might return error
+                        Some(max_width_buf.parse().map_err(|_| {
+                            ConfigurationError(
+                                format!("failed to parse max_width '{}'", max_width_buf),
+                                String::new(),
+                            )
+                        })?)
                     };
                     // Parse min_prefix
                     let min_prefix = if min_prefix_buf.is_empty() {
@@ -140,7 +168,12 @@ impl FormatTemplate {
                     let bar_max_value = if bar_max_value_buf.is_empty() {
                         None
                     } else {
-                        Some(bar_max_value_buf.parse::<f64>().unwrap()) // Might return error
+                        Some(bar_max_value_buf.parse().map_err(|_| {
+                            ConfigurationError(
+                                format!("failed to parse bar_max_value '{}'", bar_max_value_buf),
+                                String::new(),
+                            )
+                        })?)
                     };
                     tokens.push(Token::Var(Variable {
                         name: var_buf.clone(),
@@ -165,18 +198,18 @@ impl FormatTemplate {
             }
         }
         if inside_var {
-            //TODO return error
+            return Err(ConfigurationError(
+                "failed to parse formatting string: missing '}'".to_string(),
+                "".to_string(),
+            ));
         }
         if !text_buf.is_empty() {
             tokens.push(Token::Text(text_buf.clone()));
         }
 
-        //dbg!(&tokens);
-
         Ok(FormatTemplate { tokens })
     }
 
-    //TODO impl Display
     pub fn render(&self, vars: &HashMap<&str, Value>) -> Result<String> {
         let mut rendered = String::new();
 
