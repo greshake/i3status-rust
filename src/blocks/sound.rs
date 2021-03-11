@@ -46,6 +46,7 @@ trait SoundDevice {
     fn volume(&self) -> u32;
     fn muted(&self) -> bool;
     fn output_name(&self) -> String;
+    fn output_description(&self) -> Option<String>;
 
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
@@ -85,6 +86,10 @@ impl SoundDevice for AlsaSoundDevice {
     }
     fn output_name(&self) -> String {
         self.name.clone()
+    }
+    fn output_description(&self) -> Option<String> {
+        // TODO Does Alsa has something similar like descripitons in Pulse?
+        None
     }
 
     fn get_info(&mut self) -> Result<()> {
@@ -215,6 +220,7 @@ struct PulseAudioClient {
 #[cfg(feature = "pulseaudio")]
 struct PulseAudioSoundDevice {
     name: Option<String>,
+    description: Option<String>,
     device_kind: DeviceKind,
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
@@ -227,6 +233,7 @@ struct PulseAudioVolInfo {
     volume: ChannelVolumes,
     mute: bool,
     name: String,
+    description: Option<String>,
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -240,6 +247,10 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
                 volume: source_info.volume,
                 mute: source_info.mute,
                 name: name.to_string(),
+                description: source_info
+                    .description
+                    .clone()
+                    .map(|description| description.into_owned()),
             }),
         }
     }
@@ -256,6 +267,10 @@ impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
                 volume: sink_info.volume,
                 mute: sink_info.mute,
                 name: name.to_string(),
+                description: sink_info
+                    .description
+                    .clone()
+                    .map(|description| description.into_owned()),
             }),
         }
     }
@@ -569,6 +584,7 @@ impl PulseAudioSoundDevice {
 
         let device = PulseAudioSoundDevice {
             name: None,
+            description: None,
             device_kind,
             volume: None,
             volume_avg: 0,
@@ -614,12 +630,17 @@ impl SoundDevice for PulseAudioSoundDevice {
         self.name()
     }
 
+    fn output_description(&self) -> Option<String> {
+        self.description.clone()
+    }
+
     fn get_info(&mut self) -> Result<()> {
         let devices = PULSEAUDIO_DEVICES.lock().unwrap();
 
         if let Some(info) = devices.get(&(self.device_kind, self.name())) {
             self.volume(info.volume);
             self.muted = info.mute;
+            self.description = info.description.clone();
         }
 
         Ok(())
@@ -899,18 +920,30 @@ impl Block for Sound {
         self.device.get_info()?;
 
         let volume = self.device.volume();
-        let output_name = self.device.output_name();
-        let mapped_output_name = if let Some(m) = &self.mappings {
-            match m.get(&output_name) {
-                Some(mapping) => mapping.to_string(),
-                None => output_name,
+        let (output_name, output_description) = {
+            let mut output_name = self.device.output_name();
+            let mut output_description = self
+                .device
+                .output_description()
+                .unwrap_or_else(|| output_name.clone());
+
+            if let Some(mapped_name) = if let Some(m) = &self.mappings {
+                m.get(&output_name)
+                    .map(|output_name| output_name.to_string())
+            } else {
+                None
+            } {
+                output_name = mapped_name.clone();
+                output_description = mapped_name;
             }
-        } else {
-            output_name
+
+            (output_name, output_description)
         };
+
         let values = map!(
             "volume" => Value::from_integer(volume as i64).percents(),
-            "output_name" => Value::from_string(mapped_output_name)
+            "output_name" => Value::from_string(output_name),
+            "output_description" => Value::from_string(output_description),
         );
         let text = self.format.render(&values)?;
 

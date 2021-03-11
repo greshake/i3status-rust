@@ -400,7 +400,7 @@ impl Block for Memory {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let MouseButton::Left = event.button {
+        if event.button == MouseButton::Left && self.clickable {
             self.switch();
             self.update()?;
             self.tx_update_request.send(Task {
