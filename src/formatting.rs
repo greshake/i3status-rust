@@ -120,6 +120,8 @@ impl FormatTemplate {
                     // Parse padding
                     let (min_width, pad_with) = if min_width_buf.is_empty() {
                         (None, None)
+                    } else if let ("0", "") = min_width_buf.split_at(1) {
+                        (Some(0), None)
                     } else if let ("0", min_width) = min_width_buf.split_at(1) {
                         (
                             Some(min_width.parse().map_err(|_| {
