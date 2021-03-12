@@ -65,4 +65,13 @@ impl Unit {
             )),
         }
     }
+
+    pub fn is_byte(&self) -> bool {
+        match self {
+            Self::Bytes => true,
+            Self::BytesPerSecond => true,
+            Self::BitsPerSecond => true,
+            _ => false,
+        }
+    }
 }

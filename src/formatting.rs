@@ -26,7 +26,6 @@ enum Token {
     Var(Variable),
 }
 
-//TODO document
 #[derive(Debug, Clone)]
 pub struct Variable {
     pub name: String,

@@ -23,76 +23,65 @@ fn format_number(
     raw_value: f64,
     min_width: usize,
     min_prefix: Prefix,
+    unit: Unit,
     pad_with: char,
 ) -> Result<String> {
-    let min_exp_level = match min_prefix {
-        Prefix::Tera => 4,
-        Prefix::Giga => 3,
-        Prefix::Mega => 2,
-        Prefix::Kilo => 1,
-        Prefix::One => 0,
-        Prefix::Milli => -1,
-        Prefix::Micro => -2,
-        Prefix::Nano => -3,
-    };
+    let is_byte = unit.is_byte();
 
-    let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
-    let value = raw_value / (10f64).powi(exp_level * 3);
-
-    let prefix = match exp_level {
-        4 => Prefix::Tera,
-        3 => Prefix::Giga,
-        2 => Prefix::Mega,
-        1 => Prefix::Kilo,
-        0 => Prefix::One,
-        -1 => Prefix::Milli,
-        -2 => Prefix::Micro,
-        _ => Prefix::Nano,
-    };
-
-    // The length of the integer part of a number
-    let digits = (value.log10().floor() + 1.0).max(1.0) as isize;
-    // How many characters is left for "." and the fractional part?
-    Ok(match min_width as isize - digits {
-        // No characters left
-        x if x <= 0 => format!("{:.0}{}", value, prefix),
-        // Only one character -> pad text to the right
-        x if x == 1 => format!("{}{:.0}{}", pad_with, value, prefix),
-        // There is space for fractional part
-        rest => format!("{:.*}{}", (rest as usize) - 1, value, prefix),
-    })
-}
-
-// Like format_number, but for bytes
-fn format_bytes(
-    raw_value: f64,
-    min_width: usize,
-    min_prefix: Prefix,
-    pad_with: char,
-) -> Result<String> {
-    let min_exp_level = match min_prefix {
-        Prefix::Tera => 4,
-        Prefix::Giga => 3,
-        Prefix::Mega => 3,
-        Prefix::Kilo => 1,
-        Prefix::One => 0,
-        x => {
-            return Err(ConfigurationError(
-                "incorrect `min_prefix`".to_string(),
-                format!("prefix '{}' cannot be used to format byte value", x),
-            ))
+    let min_exp_level = if is_byte {
+        match min_prefix {
+            Prefix::Tera => 4,
+            Prefix::Giga => 3,
+            Prefix::Mega => 2,
+            Prefix::Kilo => 1,
+            Prefix::One => 0,
+            Prefix::Milli => -1,
+            Prefix::Micro => -2,
+            Prefix::Nano => -3,
+        }
+    } else {
+        match min_prefix {
+            Prefix::Tera => 4,
+            Prefix::Giga => 3,
+            Prefix::Mega => 3,
+            Prefix::Kilo => 1,
+            Prefix::One => 0,
+            x => {
+                return Err(ConfigurationError(
+                    "incorrect `min_prefix`".to_string(),
+                    format!("prefix '{}' cannot be used to format byte value", x),
+                ))
+            }
         }
     };
 
-    let exp_level = (raw_value.log2().div_euclid(10.) as i32).clamp(min_exp_level, 4);
-    let value = raw_value / (2f64).powi(exp_level * 10);
+    let (value, prefix) = if is_byte {
+        let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
+        let value = raw_value / (10f64).powi(exp_level * 3);
 
-    let prefix = match exp_level {
-        4 => Prefix::Tera,
-        3 => Prefix::Giga,
-        2 => Prefix::Mega,
-        1 => Prefix::Kilo,
-        _ => Prefix::One,
+        let prefix = match exp_level {
+            4 => Prefix::Tera,
+            3 => Prefix::Giga,
+            2 => Prefix::Mega,
+            1 => Prefix::Kilo,
+            0 => Prefix::One,
+            -1 => Prefix::Milli,
+            -2 => Prefix::Micro,
+            _ => Prefix::Nano,
+        };
+        (value, prefix)
+    } else {
+        let exp_level = (raw_value.log2().div_euclid(10.) as i32).clamp(min_exp_level, 4);
+        let value = raw_value / (2f64).powi(exp_level * 10);
+
+        let prefix = match exp_level {
+            4 => Prefix::Tera,
+            3 => Prefix::Giga,
+            2 => Prefix::Mega,
+            1 => Prefix::Kilo,
+            _ => Prefix::One,
+        };
+        (value, prefix)
     };
 
     // The length of the integer part of a number
@@ -246,24 +235,13 @@ impl Value {
             InternalValue::Float(value) => {
                 let value = value * self.unit.convert(unit)?;
 
-                if unit == Unit::Bytes
-                    || unit == Unit::BytesPerSecond
-                    || unit == Unit::BitsPerSecond
-                {
-                    format_bytes(
-                        value,
-                        min_width,
-                        var.min_prefix.unwrap_or(Prefix::One),
-                        pad_with,
-                    )?
-                } else {
-                    format_number(
-                        value,
-                        min_width,
-                        var.min_prefix.unwrap_or(Prefix::Nano),
-                        pad_with,
-                    )?
-                }
+                format_number(
+                    value,
+                    min_width,
+                    var.min_prefix.unwrap_or(Prefix::One),
+                    unit,
+                    pad_with,
+                )?
             }
         };
         Ok(if let Some(ref icon) = self.icon {
