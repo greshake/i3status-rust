@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::fmt;
 
 use crate::errors::*;
@@ -35,18 +36,20 @@ impl fmt::Display for Prefix {
     }
 }
 
-impl Prefix {
-    pub fn from_string(s: &str) -> Result<Self> {
-        match s {
-            "1" => Ok(Self::One),
+impl TryInto<Prefix> for &str {
+    type Error = crate::errors::Error;
+
+    fn try_into(self) -> Result<Prefix> {
+        match self {
+            "1" => Ok(Prefix::One),
             // SI prefixes
-            "n" => Ok(Self::Nano),
-            "u" => Ok(Self::Micro),
-            "m" => Ok(Self::Milli),
-            "K" => Ok(Self::Kilo),
-            "M" => Ok(Self::Mega),
-            "G" => Ok(Self::Giga),
-            "T" => Ok(Self::Tera),
+            "n" => Ok(Prefix::Nano),
+            "u" => Ok(Prefix::Micro),
+            "m" => Ok(Prefix::Milli),
+            "K" => Ok(Prefix::Kilo),
+            "M" => Ok(Prefix::Mega),
+            "G" => Ok(Prefix::Giga),
+            "T" => Ok(Prefix::Tera),
             x => Err(ConfigurationError(
                 "Can not parse prefix".to_string(),
                 format!("unknown prefix: '{}'", x.to_string()),

@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::fmt;
 
 use crate::errors::*;
@@ -35,29 +36,34 @@ impl fmt::Display for Unit {
     }
 }
 
-impl Unit {
-    pub fn from_string(s: &str) -> Result<Self> {
-        match s {
-            "b/s" => Ok(Self::BitsPerSecond),
-            "B/s" => Ok(Self::BytesPerSecond),
-            "%" => Ok(Self::Percents),
-            "°" => Ok(Self::Degrees),
-            "s" => Ok(Self::Seconds),
-            "W" => Ok(Self::Watts),
-            "Hz" => Ok(Self::Hertz),
-            "B" => Ok(Self::Bytes),
-            "" => Ok(Self::None),
+impl TryInto<Unit> for &str {
+    type Error = crate::errors::Error;
+
+    fn try_into(self) -> Result<Unit> {
+        match self {
+            "b/s" => Ok(Unit::BitsPerSecond),
+            "B/s" => Ok(Unit::BytesPerSecond),
+            "%" => Ok(Unit::Percents),
+            "°" => Ok(Unit::Degrees),
+            "s" => Ok(Unit::Seconds),
+            "W" => Ok(Unit::Watts),
+            "Hz" => Ok(Unit::Hertz),
+            "B" => Ok(Unit::Bytes),
+            "" => Ok(Unit::None),
             x => Err(ConfigurationError(
                 "Can not parse unit".to_string(),
                 format!("unknown unit: '{}'", x.to_string()),
             )),
         }
     }
+}
 
+impl Unit {
+    //TODO support more complex conversions like Celsius -> Fahrenheit
     pub fn convert(&self, into: Self) -> Result<f64> {
         match self {
-            Unit::BitsPerSecond if into == Unit::BytesPerSecond => Ok(1. / 8.),
-            Unit::BytesPerSecond if into == Unit::BytesPerSecond => Ok(8.),
+            Self::BitsPerSecond if into == Self::BytesPerSecond => Ok(1. / 8.),
+            Self::BytesPerSecond if into == Self::BytesPerSecond => Ok(8.),
             x if *x == into => Ok(1.),
             x => Err(ConfigurationError(
                 "Can not convert unit".to_string(),
@@ -67,11 +73,9 @@ impl Unit {
     }
 
     pub fn is_byte(&self) -> bool {
-        match self {
-            Self::Bytes => true,
-            Self::BytesPerSecond => true,
-            Self::BitsPerSecond => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Self::Bytes | Self::BytesPerSecond | Self::BitsPerSecond
+        )
     }
 }

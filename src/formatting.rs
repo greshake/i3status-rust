@@ -3,6 +3,7 @@ pub mod unit;
 pub mod value;
 
 use std::collections::HashMap;
+use std::convert::TryInto;
 
 use crate::errors::*;
 use prefix::Prefix;
@@ -157,13 +158,13 @@ impl FormatTemplate {
                     let min_prefix = if min_prefix_buf.is_empty() {
                         None
                     } else {
-                        Some(Prefix::from_string(&min_prefix_buf)?)
+                        Some(min_prefix_buf.as_str().try_into()?)
                     };
                     // Parse unit
                     let unit = if unit_buf.is_empty() {
                         None
                     } else {
-                        Some(Unit::from_string(&unit_buf)?)
+                        Some(unit_buf.as_str().try_into()?)
                     };
                     // Parse bar_max_value
                     let bar_max_value = if bar_max_value_buf.is_empty() {
