@@ -70,7 +70,7 @@ Key | Description | Required | Default
 `scrolling` | The direction of scrolling, either `natural` or `reverse` | No | `reverse`
 `block` | All blocks that will exist in your i3bar. Check [blocks.md](https://github.com/greshake/i3status-rust/blob/master/blocks.md) for all blocks and their parameters. | No | none
 
-Refer to [formatting documentation](formatting.md) to customize formatting strings' placeholders.
+Refer to [formatting documentation](blocks.md#formatting) to customize formatting strings' placeholders.
 
 ## Integrate it into i3
 
