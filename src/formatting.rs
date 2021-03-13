@@ -124,22 +124,18 @@ impl FormatTemplate {
                         (Some(0), None)
                     } else if let ("0", min_width) = min_width_buf.split_at(1) {
                         (
-                            Some(min_width.parse().map_err(|_| {
-                                ConfigurationError(
-                                    format!("failed to parse min_width '{}'", min_width),
-                                    String::new(),
-                                )
-                            })?),
+                            Some(min_width.parse().configuration_error(&format!(
+                                "failed to parse min_width '{}'",
+                                min_width
+                            ))?),
                             Some('0'),
                         )
                     } else {
                         (
-                            Some(min_width_buf.parse().map_err(|_| {
-                                ConfigurationError(
-                                    format!("failed to parse min_width '{}'", min_width_buf),
-                                    String::new(),
-                                )
-                            })?),
+                            Some(min_width_buf.parse().configuration_error(&format!(
+                                "failed to parse min_width '{}'",
+                                min_width_buf
+                            ))?),
                             None,
                         )
                     };
@@ -147,12 +143,10 @@ impl FormatTemplate {
                     let max_width = if max_width_buf.is_empty() {
                         None
                     } else {
-                        Some(max_width_buf.parse().map_err(|_| {
-                            ConfigurationError(
-                                format!("failed to parse max_width '{}'", max_width_buf),
-                                String::new(),
-                            )
-                        })?)
+                        Some(max_width_buf.parse().configuration_error(&format!(
+                            "failed to parse max_width '{}'",
+                            max_width_buf
+                        ))?)
                     };
                     // Parse min_prefix
                     let min_prefix = if min_prefix_buf.is_empty() {
@@ -170,12 +164,10 @@ impl FormatTemplate {
                     let bar_max_value = if bar_max_value_buf.is_empty() {
                         None
                     } else {
-                        Some(bar_max_value_buf.parse().map_err(|_| {
-                            ConfigurationError(
-                                format!("failed to parse bar_max_value '{}'", bar_max_value_buf),
-                                String::new(),
-                            )
-                        })?)
+                        Some(bar_max_value_buf.parse().configuration_error(&format!(
+                            "failed to parse bar_max_value '{}'",
+                            bar_max_value_buf
+                        ))?)
                     };
                     tokens.push(Token::Var(Variable {
                         name: var_buf.clone(),

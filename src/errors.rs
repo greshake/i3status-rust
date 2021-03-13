@@ -6,6 +6,7 @@ pub use self::Error::{BlockError, ConfigurationError, InternalError};
 /// Result type returned from functions that can have our `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
 
+// Why `ResultExtBlock` and `ResultExtInternal` are splitted?
 pub trait ResultExtBlock<T, E> {
     fn block_error(self, block: &str, message: &str) -> Result<T>;
 }
@@ -21,7 +22,6 @@ impl<T, E> ResultExtBlock<T, E> for ::std::result::Result<T, E> {
     }
 }
 
-//TODO this *should* be public
 impl<T, E> ResultExtInternal<T, E> for ::std::result::Result<T, E>
 where
     E: fmt::Display + fmt::Debug,
@@ -46,7 +46,6 @@ pub trait OptionExt<T> {
     fn internal_error(self, context: &str, message: &str) -> Result<T>;
 }
 
-//TODO this *should* be public
 impl<T> OptionExt<T> for ::std::option::Option<T> {
     fn block_error(self, block: &str, message: &str) -> Result<T> {
         self.ok_or_else(|| BlockError(block.to_owned(), message.to_owned()))
