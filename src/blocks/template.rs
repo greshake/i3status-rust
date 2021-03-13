@@ -24,20 +24,19 @@ pub struct Template {
     tx_update_request: Sender<Task>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct TemplateConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "TemplateConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 
-impl TemplateConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
+impl Default for TemplateConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(5),
+        }
     }
 }
 

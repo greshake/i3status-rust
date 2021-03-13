@@ -86,46 +86,27 @@ impl Pomodoro {
     }
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct PomodoroConfig {
-    #[serde(default = "PomodoroConfig::default_length")]
     pub length: u64,
-    #[serde(default = "PomodoroConfig::default_break_length")]
     pub break_length: u64,
-    #[serde(default = "PomodoroConfig::default_message")]
     pub message: String,
-    #[serde(default = "PomodoroConfig::default_break_message")]
     pub break_message: String,
-    #[serde(default = "PomodoroConfig::default_use_nag")]
     pub use_nag: bool,
-    #[serde(default = "PomodoroConfig::default_nag_path")]
     pub nag_path: std::path::PathBuf,
 }
 
-impl PomodoroConfig {
-    fn default_length() -> u64 {
-        25
-    }
-
-    fn default_break_length() -> u64 {
-        5
-    }
-
-    fn default_message() -> String {
-        "Pomodoro over! Take a break!".to_owned()
-    }
-
-    fn default_break_message() -> String {
-        "Break over! Time to work!".to_owned()
-    }
-
-    fn default_use_nag() -> bool {
-        false
-    }
-
-    fn default_nag_path() -> std::path::PathBuf {
-        std::path::PathBuf::from("i3-nagbar")
+impl Default for PomodoroConfig {
+    fn default() -> Self {
+        Self {
+            length: 25,
+            break_length: 5,
+            message: "Pomodoro over! Take a break!".to_string(),
+            break_message: "Break over! Time to work!".to_string(),
+            use_nag: false,
+            nag_path: std::path::PathBuf::from("i3-nagbar"),
+        }
     }
 }
 

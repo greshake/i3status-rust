@@ -30,28 +30,23 @@ pub struct SpeedTest {
     send: Sender<()>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct SpeedTestConfig {
     /// Format override
-    #[serde(default = "SpeedTestConfig::default_format")]
     pub format: String,
 
     /// Update interval in seconds
-    #[serde(
-        default = "SpeedTestConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 
-impl SpeedTestConfig {
-    fn default_format() -> String {
-        "{ping}{speed_down}{speed_up}".to_string()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(1800)
+impl Default for SpeedTestConfig {
+    fn default() -> Self {
+        Self {
+            format: "{ping}{speed_down}{speed_up}".to_string(),
+            interval: Duration::from_secs(1800),
+        }
     }
 }
 

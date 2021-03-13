@@ -39,64 +39,41 @@ pub struct KDEConnect {
     shared_config: SharedConfig,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct KDEConnectConfig {
-    #[serde(default = "KDEConnectConfig::default_device_id")]
     pub device_id: Option<String>,
 
     /// The threshold above which the remaining capacity is shown as good
-    #[serde(default = "KDEConnectConfig::default_bat_good")]
     pub bat_good: i32,
 
     /// The threshold below which the remaining capacity is shown as info
-    #[serde(default = "KDEConnectConfig::default_bat_info")]
     pub bat_info: i32,
 
     /// The threshold below which the remaining capacity is shown as warning
-    #[serde(default = "KDEConnectConfig::default_bat_warning")]
     pub bat_warning: i32,
 
     /// The threshold below which the remaining capacity is shown as critical
-    #[serde(default = "KDEConnectConfig::default_bat_critical")]
     pub bat_critical: i32,
 
     /// Format string for displaying phone information.
-    #[serde(default = "KDEConnectConfig::default_format")]
     pub format: String,
 
     /// Format string for displaying phone information when it is disconnected.
-    #[serde(default = "KDEConnectConfig::default_format_disconnected")]
     pub format_disconnected: String,
 }
 
-impl KDEConnectConfig {
-    fn default_device_id() -> Option<String> {
-        None
-    }
-
-    fn default_bat_critical() -> i32 {
-        15
-    }
-
-    fn default_bat_warning() -> i32 {
-        30
-    }
-
-    fn default_bat_info() -> i32 {
-        60
-    }
-
-    fn default_bat_good() -> i32 {
-        60
-    }
-
-    fn default_format() -> String {
-        "{name} {bat_icon}{bat_charge} {notif_icon}{notif_count}".into()
-    }
-
-    fn default_format_disconnected() -> String {
-        "{name}".into()
+impl Default for KDEConnectConfig {
+    fn default() -> Self {
+        Self {
+            device_id: None,
+            bat_good: 60,
+            bat_info: 60,
+            bat_warning: 30,
+            bat_critical: 15,
+            format: "{name} {bat_icon}{bat_charge} {notif_icon}{notif_count}".to_string(),
+            format_disconnected: "{name}".to_string(),
+        }
     }
 }
 

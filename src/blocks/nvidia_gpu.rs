@@ -56,108 +56,64 @@ enum NameWidgetMode {
     ShowLabel,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+// TODO add `format` option
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct NvidiaGpuConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "NvidiaGpuConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Label to show instead of the default GPU name from `nvidia-smi`
-    #[serde(default = "NvidiaGpuConfig::default_label")]
     pub label: Option<String>,
 
     /// GPU id in system
-    #[serde(default = "NvidiaGpuConfig::default_gpu_id")]
     pub gpu_id: u64,
 
     /// GPU utilization. In percent.
-    #[serde(default = "NvidiaGpuConfig::default_show_utilization")]
     pub show_utilization: bool,
 
     /// VRAM utilization.
-    #[serde(default = "NvidiaGpuConfig::default_show_memory")]
     pub show_memory: bool,
 
     /// Core GPU temperature. In degrees C.
-    #[serde(default = "NvidiaGpuConfig::default_show_temperature")]
     pub show_temperature: bool,
 
     /// Fan speed. In percents.
-    #[serde(default = "NvidiaGpuConfig::default_show_fan_speed")]
     pub show_fan_speed: bool,
 
     /// GPU clocks. In percents.
-    #[serde(default = "NvidiaGpuConfig::default_show_clocks")]
     pub show_clocks: bool,
 
     /// Maximum temperature, below which state is set to idle
-    #[serde(default = "NvidiaGpuConfig::default_idle")]
     pub idle: u64,
 
     /// Maximum temperature, below which state is set to good
-    #[serde(default = "NvidiaGpuConfig::default_good")]
     pub good: u64,
 
     /// Maximum temperature, below which state is set to info
-    #[serde(default = "NvidiaGpuConfig::default_info")]
     pub info: u64,
 
     /// Maximum temperature, below which state is set to warning
-    #[serde(default = "NvidiaGpuConfig::default_warning")]
     pub warning: u64,
 }
 
-impl NvidiaGpuConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(3)
-    }
-
-    fn default_label() -> Option<String> {
-        None
-    }
-
-    fn default_gpu_id() -> u64 {
-        0
-    }
-
-    fn default_show_utilization() -> bool {
-        true
-    }
-
-    fn default_show_memory() -> bool {
-        true
-    }
-
-    fn default_show_temperature() -> bool {
-        true
-    }
-
-    fn default_show_fan_speed() -> bool {
-        false
-    }
-
-    fn default_show_clocks() -> bool {
-        false
-    }
-
-    fn default_idle() -> u64 {
-        50
-    }
-
-    fn default_good() -> u64 {
-        70
-    }
-
-    fn default_info() -> u64 {
-        75
-    }
-
-    fn default_warning() -> u64 {
-        80
+impl Default for NvidiaGpuConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(3),
+            label: None,
+            gpu_id: 0,
+            show_utilization: true,
+            show_memory: true,
+            show_temperature: true,
+            show_fan_speed: false,
+            show_clocks: false,
+            idle: 50,
+            good: 70,
+            info: 75,
+            warning: 80,
+        }
     }
 }
 

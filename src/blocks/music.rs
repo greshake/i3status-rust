@@ -151,8 +151,8 @@ impl Music {
     }
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct MusicConfig {
     /// Name of the music player. Must be the same name the player is
     /// registered with the MediaPlayer2 Interface. If not specified then
@@ -160,119 +160,69 @@ pub struct MusicConfig {
     pub player: Option<String>,
 
     /// Max width of the block in characters, not including the buttons.
-    #[serde(default = "MusicConfig::default_max_width")]
     pub max_width: usize,
 
     /// Bool to specify whether the block will change width depending on the
     /// text content or remain static always (= max_width)
-    #[serde(default = "MusicConfig::default_dynamic_width")]
     pub dynamic_width: bool,
 
     /// Bool to specify if a marquee style rotation should be used if the
     /// title + artist is longer than max-width
-    #[serde(default = "MusicConfig::default_marquee")]
     pub marquee: bool,
 
     /// Marquee interval in seconds. This is the delay between each rotation.
-    #[serde(
-        default = "MusicConfig::default_marquee_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub marquee_interval: Duration,
 
     /// Marquee speed in seconds. This is the scrolling time used per character.
-    #[serde(
-        default = "MusicConfig::default_marquee_speed",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub marquee_speed: Duration,
 
     /// Bool to specify whether smart trimming should be used when marquee
     /// rotation is disabled and the title + artist is longer than
     /// max-width. It will trim from both the artist and the title in proportion
     /// to their lengths, to try and show the most information possible.
-    #[serde(default = "MusicConfig::default_smart_trim")]
     pub smart_trim: bool,
 
     /// Separator to use between artist and title.
-    #[serde(default = "MusicConfig::default_separator")]
     pub separator: String,
 
     /// Array of control buttons to be displayed. Options are prev (previous title),
     /// play (play/pause) and next (next title).
-    #[serde(default = "MusicConfig::default_buttons")]
     pub buttons: Vec<String>,
 
-    #[serde(default = "MusicConfig::default_on_collapsed_click")]
     pub on_collapsed_click: Option<String>,
 
     // Number of microseconds to seek forward/backward when scrolling on the bar.
-    #[serde(default = "MusicConfig::default_seek_step")]
     pub seek_step: i64,
 
     /// MPRIS interface name regex patterns to ignore.
-    #[serde(default = "MusicConfig::default_interface_name_exclude_patterns")]
     pub interface_name_exclude: Vec<String>,
 
-    #[serde(default = "MusicConfig::default_hide_when_empty")]
     pub hide_when_empty: bool,
 
     /// Format string for displaying music player info.
-    #[serde(default = "MusicConfig::default_format")]
     pub format: String,
 }
 
-impl MusicConfig {
-    fn default_max_width() -> usize {
-        21
-    }
-
-    fn default_dynamic_width() -> bool {
-        false
-    }
-
-    fn default_marquee() -> bool {
-        true
-    }
-
-    fn default_marquee_interval() -> Duration {
-        Duration::from_secs(10)
-    }
-
-    fn default_marquee_speed() -> Duration {
-        Duration::from_millis(500)
-    }
-
-    fn default_smart_trim() -> bool {
-        false
-    }
-
-    fn default_separator() -> String {
-        " - ".to_string()
-    }
-
-    fn default_buttons() -> Vec<String> {
-        vec![]
-    }
-
-    fn default_on_collapsed_click() -> Option<String> {
-        None
-    }
-
-    fn default_seek_step() -> i64 {
-        1000
-    }
-
-    fn default_interface_name_exclude_patterns() -> Vec<String> {
-        vec![]
-    }
-
-    fn default_hide_when_empty() -> bool {
-        false
-    }
-
-    fn default_format() -> String {
-        "{combo}".to_string()
+impl Default for MusicConfig {
+    fn default() -> Self {
+        Self {
+            player: None,
+            max_width: 21,
+            dynamic_width: false,
+            marquee: true,
+            marquee_interval: Duration::from_secs(10),
+            marquee_speed: Duration::from_millis(500),
+            smart_trim: false,
+            separator: " - ".to_string(),
+            buttons: Vec::new(),
+            on_collapsed_click: None,
+            seek_step: 1000,
+            interface_name_exclude: Vec::new(),
+            hide_when_empty: false,
+            format: "{combo}".to_string(),
+        }
     }
 }
 

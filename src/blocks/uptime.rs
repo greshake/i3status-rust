@@ -19,20 +19,19 @@ pub struct Uptime {
     update_interval: Duration,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct UptimeConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "UptimeConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 }
 
-impl UptimeConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(60)
+impl Default for UptimeConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(60),
+        }
     }
 }
 

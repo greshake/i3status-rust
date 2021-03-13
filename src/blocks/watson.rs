@@ -29,34 +29,29 @@ pub struct Watson {
     update_interval: Duration,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct WatsonConfig {
     /// Path to state of watson
-    #[serde(default = "WatsonConfig::default_state_path")]
     pub state_path: PathBuf,
+
     /// Update interval in seconds
-    #[serde(
-        default = "WatsonConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+
     /// Show time spent
-    #[serde(default = "WatsonConfig::default_show_time")]
     pub show_time: bool,
 }
 
-impl WatsonConfig {
-    fn default_state_path() -> PathBuf {
+impl Default for WatsonConfig {
+    fn default() -> Self {
         let mut config_dir = xdg_config_home();
         config_dir.push("watson/state");
-        config_dir
-    }
-    fn default_interval() -> Duration {
-        Duration::from_secs(60)
-    }
-    fn default_show_time() -> bool {
-        false
+        Self {
+            state_path: config_dir,
+            interval: Duration::from_secs(60),
+            show_time: false,
+        }
     }
 }
 

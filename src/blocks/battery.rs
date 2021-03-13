@@ -510,110 +510,65 @@ impl Default for BatteryDriver {
 
 /// Configuration for the [`Battery`](./struct.Battery.html) block.
 #[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, default)]
 pub struct BatteryConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "BatteryConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// The internal power supply device in `/sys/class/power_supply/` to read from.
-    #[serde(default = "BatteryConfig::default_device")]
     pub device: String,
 
     /// Format string for displaying battery information.
     /// placeholders: {percentage}, {bar}, {time} and {power}
-    #[serde(default = "BatteryConfig::default_format")]
     pub format: String,
 
     /// Format string for displaying battery information when battery is full.
     /// placeholders: {percentage}, {bar}, {time} and {power}
-    #[serde(default = "BatteryConfig::default_full_format")]
     pub full_format: String,
 
     /// Format string that's displayed if a battery is missing.
     /// placeholders: {percentage}, {bar}, {time} and {power}
-    #[serde(default = "BatteryConfig::default_missing_format")]
     pub missing_format: String,
 
     /// The "driver" to use for powering the block. One of "sysfs" or "upower".
-    #[serde(default = "BatteryConfig::default_driver")]
     pub driver: BatteryDriver,
 
     /// The threshold above which the remaining capacity is shown as good
-    #[serde(default = "BatteryConfig::default_good")]
     pub good: u64,
 
     /// The threshold below which the remaining capacity is shown as info
-    #[serde(default = "BatteryConfig::default_info")]
     pub info: u64,
 
     /// The threshold below which the remaining capacity is shown as warning
-    #[serde(default = "BatteryConfig::default_warning")]
     pub warning: u64,
 
     /// The threshold below which the remaining capacity is shown as critical
-    #[serde(default = "BatteryConfig::default_critical")]
     pub critical: u64,
 
     /// If the battery device cannot be found, do not fail and show the block anyway (sysfs only).
-    #[serde(default = "BatteryConfig::default_allow_missing")]
     pub allow_missing: bool,
 
     /// If the battery device cannot be found, completely hide this block.
-    #[serde(default = "BatteryConfig::default_hide_missing")]
     pub hide_missing: bool,
 }
 
-impl BatteryConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(10)
-    }
-
-    fn default_device() -> String {
-        "BAT0".to_string()
-    }
-
-    fn default_format() -> String {
-        "{percentage}".into()
-    }
-
-    fn default_full_format() -> String {
-        "".into()
-    }
-
-    fn default_missing_format() -> String {
-        "{percentage}".into()
-    }
-
-    fn default_driver() -> BatteryDriver {
-        BatteryDriver::Sysfs
-    }
-
-    fn default_critical() -> u64 {
-        15
-    }
-
-    fn default_warning() -> u64 {
-        30
-    }
-
-    fn default_info() -> u64 {
-        60
-    }
-
-    fn default_good() -> u64 {
-        60
-    }
-
-    fn default_allow_missing() -> bool {
-        false
-    }
-
-    fn default_hide_missing() -> bool {
-        false
+impl Default for BatteryConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(10),
+            device: "BAT0".to_string(),
+            format: "{percentage}".to_string(),
+            full_format: "".to_string(),
+            missing_format: "{percentage}".to_string(),
+            driver: BatteryDriver::Sysfs,
+            good: 60,
+            info: 60,
+            warning: 30,
+            critical: 15,
+            allow_missing: false,
+            hide_missing: false,
+        }
     }
 }
 

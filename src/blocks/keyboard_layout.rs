@@ -34,12 +34,6 @@ pub enum KeyboardLayoutDriver {
     Sway,
 }
 
-impl Default for KeyboardLayoutDriver {
-    fn default() -> Self {
-        KeyboardLayoutDriver::SetXkbMap
-    }
-}
-
 pub trait KeyboardLayoutMonitor {
     /// Retrieve the current keyboard layout.
     fn keyboard_layout(&self) -> Result<String>;
@@ -319,14 +313,17 @@ pub struct Sway {
 }
 
 impl Sway {
-    pub fn new(sway_kb_identifier: String) -> Result<Self> {
+    pub fn new(sway_kb_identifier: Option<String>) -> Result<Self> {
         let layout = swayipc::Connection::new()
             .unwrap()
             .get_inputs()
             .unwrap()
             .into_iter()
             .find(|input| {
-                (sway_kb_identifier.is_empty() || input.identifier == sway_kb_identifier)
+                sway_kb_identifier
+                    .as_ref()
+                    .map(|s| s == &input.identifier)
+                    .unwrap_or(true)
                     && input.input_type == "keyboard"
             })
             .and_then(|input| input.xkb_active_layout_name)
@@ -416,32 +413,30 @@ impl KeyboardLayoutMonitor for Sway {
     }
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(default, deny_unknown_fields)]
 pub struct KeyboardLayoutConfig {
-    #[serde(default = "KeyboardLayoutConfig::default_format")]
     pub format: String,
 
     driver: KeyboardLayoutDriver,
-    #[serde(
-        default = "KeyboardLayoutConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     interval: Duration,
 
-    sway_kb_identifier: String,
+    sway_kb_identifier: Option<String>,
 
     // Used to ovrreride long layout names: "German (dead acute)" => "DE"
-    mappings: HashMap<String, String>,
+    mappings: Option<HashMap<String, String>>,
 }
 
-impl KeyboardLayoutConfig {
-    fn default_format() -> String {
-        "{layout}".to_owned()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(60)
+impl Default for KeyboardLayoutConfig {
+    fn default() -> Self {
+        Self {
+            format: "{layout}".to_string(),
+            driver: KeyboardLayoutDriver::SetXkbMap,
+            interval: Duration::from_secs(60),
+            sway_kb_identifier: None,
+            mappings: None,
+        }
     }
 }
 
@@ -451,7 +446,7 @@ pub struct KeyboardLayout {
     monitor: Box<dyn KeyboardLayoutMonitor>,
     update_interval: Option<Duration>,
     format: FormatTemplate,
-    mappings: HashMap<String, String>,
+    mappings: Option<HashMap<String, String>>,
 }
 
 impl ConfigBlock for KeyboardLayout {
@@ -509,8 +504,10 @@ impl Block for KeyboardLayout {
     fn update(&mut self) -> Result<Option<Update>> {
         let mut layout = self.monitor.keyboard_layout()?;
         let variant = self.monitor.keyboard_variant()?;
-        if let Some(mapped) = self.mappings.get(&format!("{} ({})", layout, variant)) {
-            layout = mapped.to_string();
+        if let Some(ref mappings) = self.mappings {
+            if let Some(mapped) = mappings.get(&format!("{} ({})", layout, variant)) {
+                layout = mapped.to_string();
+            }
         }
         let values = map!(
             "layout" => Value::from_string(layout),

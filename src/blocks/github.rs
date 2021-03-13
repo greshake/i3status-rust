@@ -30,42 +30,29 @@ pub struct Github {
     hide_if_total_is_zero: bool,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct GithubConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "GithubConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    #[serde(default = "GithubConfig::default_api_server")]
     pub api_server: String,
 
     /// Format override
-    #[serde(default = "GithubConfig::default_format")]
     pub format: String,
 
-    #[serde(default = "GithubConfig::default_hide_if_total_is_zero")]
     pub hide_if_total_is_zero: bool,
 }
 
-impl GithubConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(30)
-    }
-
-    fn default_api_server() -> String {
-        "https://api.github.com".to_owned()
-    }
-
-    fn default_format() -> String {
-        "{total}".to_owned()
-    }
-
-    fn default_hide_if_total_is_zero() -> bool {
-        false
+impl Default for GithubConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(30),
+            api_server: "https://api.github.com".to_string(),
+            format: "{total}".to_string(),
+            hide_if_total_is_zero: false,
+        }
     }
 }
 

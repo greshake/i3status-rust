@@ -109,90 +109,54 @@ pub struct Memory {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct MemoryConfig {
     /// Format string for Memory view. All format values are described below.
-    #[serde(default = "MemoryConfig::default_format_mem")]
     pub format_mem: String,
 
     /// Format string for Swap view.
-    #[serde(default = "MemoryConfig::default_format_swap")]
     pub format_swap: String,
 
     /// Default view displayed on startup. Options are <br/> memory, swap
-    #[serde(default = "MemoryConfig::default_display_type")]
     pub display_type: Memtype,
 
     /// Whether the format string should be prepended with Icons. Options are <br/> true, false
-    #[serde(default = "MemoryConfig::default_icons")]
     pub icons: bool,
 
     /// Whether the view should switch between memory and swap on click. Options are <br/> true, false
-    #[serde(default = "MemoryConfig::default_clickable")]
     pub clickable: bool,
 
     /// The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only.
-    #[serde(
-        default = "MemoryConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Percentage of memory usage, where state is set to warning
-    #[serde(default = "MemoryConfig::default_warning_mem")]
     pub warning_mem: f64,
 
     /// Percentage of swap usage, where state is set to warning
-    #[serde(default = "MemoryConfig::default_warning_swap")]
     pub warning_swap: f64,
 
     /// Percentage of memory usage, where state is set to critical
-    #[serde(default = "MemoryConfig::default_critical_mem")]
     pub critical_mem: f64,
 
     /// Percentage of swap usage, where state is set to critical
-    #[serde(default = "MemoryConfig::default_critical_swap")]
     pub critical_swap: f64,
 }
 
-impl MemoryConfig {
-    fn default_format_mem() -> String {
-        "{mem_free;M}/{mem_total;M}({mem_total_used_percents})".to_owned()
-    }
-
-    fn default_format_swap() -> String {
-        "{swap_free;M}/{swap_total;M}({swap_used_percents})".to_owned()
-    }
-
-    fn default_display_type() -> Memtype {
-        Memtype::Memory
-    }
-
-    fn default_icons() -> bool {
-        true
-    }
-
-    fn default_clickable() -> bool {
-        true
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_warning_mem() -> f64 {
-        80.0
-    }
-
-    fn default_warning_swap() -> f64 {
-        80.0
-    }
-
-    fn default_critical_mem() -> f64 {
-        95.0
-    }
-
-    fn default_critical_swap() -> f64 {
-        95.0
+impl Default for MemoryConfig {
+    fn default() -> Self {
+        Self {
+            format_mem: "{mem_free;M}/{mem_total;M}({mem_total_used_percents})".to_string(),
+            format_swap: "{swap_free;M}/{swap_total;M}({swap_used_percents})".to_string(),
+            display_type: Memtype::Memory,
+            icons: true,
+            clickable: true,
+            interval: Duration::from_secs(5),
+            warning_mem: 80.,
+            warning_swap: 80.,
+            critical_mem: 95.,
+            critical_swap: 95.,
+        }
     }
 }
 

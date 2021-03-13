@@ -111,74 +111,46 @@ pub enum HueShifter {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, default)]
 pub struct HueshiftConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "HueshiftConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    #[serde(default = "HueshiftConfig::default_max_temp")]
     pub max_temp: u16,
-    #[serde(default = "HueshiftConfig::default_min_temp")]
     pub min_temp: u16,
 
     // TODO: Detect currently defined temperature
     /// Currently defined temperature default to 6500K.
-    #[serde(default = "HueshiftConfig::default_current_temp")]
     pub current_temp: u16,
 
     /// Can be set by user as an option.
-    #[serde(default = "HueshiftConfig::default_hue_shifter")]
     pub hue_shifter: Option<HueShifter>,
 
     /// Default to 100K, cannot go over 500K.
-    #[serde(default = "HueshiftConfig::default_step")]
     pub step: u16,
-    #[serde(default = "HueshiftConfig::default_click_temp")]
     pub click_temp: u16,
 }
 
-impl HueshiftConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    /// Default current temp for any screens
-    fn default_current_temp() -> u16 {
-        6500
-    }
-    /// Max/Min hue temperature (min 1000K, max 10_000K)
-    // TODO: Try to detect if we're using redshift or not
-    // to set default max_temp either to 10_000K to 25_000K
-    fn default_min_temp() -> u16 {
-        1000
-    }
-    fn default_max_temp() -> u16 {
-        10_000
-    }
-
-    fn default_step() -> u16 {
-        100
-    }
-
-    /// Prefer any installed shifter, redshift is preferred though.
-    fn default_hue_shifter() -> Option<HueShifter> {
-        if has_command("hueshift", "redshift").unwrap_or(false) {
-            Some(HueShifter::Redshift)
-        } else if has_command("hueshift", "sct").unwrap_or(false) {
-            Some(HueShifter::Sct)
-        } else if has_command("hueshift", "gammastep").unwrap_or(false) {
-            Some(HueShifter::Gammastep)
-        } else {
-            None
+impl Default for HueshiftConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(5),
+            max_temp: 10_000,
+            min_temp: 1_000,
+            current_temp: 6_500,
+            hue_shifter: if has_command("hueshift", "redshift").unwrap_or(false) {
+                Some(HueShifter::Redshift)
+            } else if has_command("hueshift", "sct").unwrap_or(false) {
+                Some(HueShifter::Sct)
+            } else if has_command("hueshift", "gammastep").unwrap_or(false) {
+                Some(HueShifter::Gammastep)
+            } else {
+                None
+            },
+            step: 100,
+            click_temp: 6_500,
         }
-    }
-
-    fn default_click_temp() -> u16 {
-        6500
     }
 }
 

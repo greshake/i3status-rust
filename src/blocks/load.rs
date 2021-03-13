@@ -26,49 +26,32 @@ pub struct Load {
     minimum_critical: f64,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct LoadConfig {
-    #[serde(default = "LoadConfig::default_format")]
     pub format: String,
-    #[serde(
-        default = "LoadConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Minimum load, where state is set to info
-    #[serde(default = "LoadConfig::default_info")]
     pub info: f64,
 
     /// Minimum load, where state is set to warning
-    #[serde(default = "LoadConfig::default_warning")]
     pub warning: f64,
 
     /// Minimum load, where state is set to critical
-    #[serde(default = "LoadConfig::default_critical")]
     pub critical: f64,
 }
 
-impl LoadConfig {
-    fn default_format() -> String {
-        "{1m}".to_owned()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_info() -> f64 {
-        0.3
-    }
-
-    fn default_warning() -> f64 {
-        0.6
-    }
-
-    fn default_critical() -> f64 {
-        0.9
+impl Default for LoadConfig {
+    fn default() -> Self {
+        Self {
+            format: "{1m}".to_string(),
+            interval: Duration::from_secs(5),
+            info: 0.3,
+            warning: 0.6,
+            critical: 0.9,
+        }
     }
 }
 

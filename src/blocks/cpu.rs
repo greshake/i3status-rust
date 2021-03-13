@@ -27,52 +27,35 @@ pub struct Cpu {
     format: FormatTemplate,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct CpuConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "CpuConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Minimum usage, where state is set to info
-    #[serde(default = "CpuConfig::default_info")]
     pub info: u64,
 
     /// Minimum usage, where state is set to warning
-    #[serde(default = "CpuConfig::default_warning")]
     pub warning: u64,
 
     /// Minimum usage, where state is set to critical
-    #[serde(default = "CpuConfig::default_critical")]
     pub critical: u64,
 
     /// Format override
-    #[serde(default = "CpuConfig::default_format")]
     pub format: String,
 }
 
-impl CpuConfig {
-    fn default_format() -> String {
-        "{utilization}".to_owned()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(1)
-    }
-
-    fn default_info() -> u64 {
-        30
-    }
-
-    fn default_warning() -> u64 {
-        60
-    }
-
-    fn default_critical() -> u64 {
-        90
+impl Default for CpuConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(1),
+            info: 30,
+            warning: 60,
+            critical: 90,
+            format: "{utilization}".to_string(),
+        }
     }
 }
 

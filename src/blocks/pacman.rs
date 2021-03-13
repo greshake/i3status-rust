@@ -46,64 +46,53 @@ pub enum Watched {
     Both(String),
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct PacmanConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "PacmanConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Format override
-    #[serde(default = "PacmanConfig::default_format")]
     pub format: String,
 
     /// Alternative format override for when exactly 1 update is available
-    #[serde(default = "PacmanConfig::default_format")]
     pub format_singular: String,
 
     /// Alternative format override for when no updates are available
-    #[serde(default = "PacmanConfig::default_format")]
     pub format_up_to_date: String,
 
     /// Indicate a `warning` state for the block if any pending update match the
     /// following regex. Default behaviour is that no package updates are deemed
     /// warning
-    #[serde(default = "PacmanConfig::default_warning_updates_regex")]
     pub warning_updates_regex: Option<String>,
 
     /// Indicate a `critical` state for the block if any pending update match the following regex.
     /// Default behaviour is that no package updates are deemed critical
-    #[serde(default = "PacmanConfig::default_critical_updates_regex")]
     pub critical_updates_regex: Option<String>,
 
     /// Optional AUR command, listing available updates
-    #[serde()]
     pub aur_command: Option<String>,
 
-    #[serde(default = "PacmanConfig::default_hide_when_uptodate")]
     pub hide_when_uptodate: bool,
 }
 
+impl Default for PacmanConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(600),
+            format: "{pacman}".to_string(),
+            format_singular: "{pacman}".to_string(),
+            format_up_to_date: "{pacman}".to_string(),
+            warning_updates_regex: None,
+            critical_updates_regex: None,
+            aur_command: None,
+            hide_when_uptodate: false,
+        }
+    }
+}
+
 impl PacmanConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(60 * 10)
-    }
-
-    fn default_format() -> String {
-        "{pacman}".to_owned()
-    }
-
-    fn default_warning_updates_regex() -> Option<String> {
-        None
-    }
-
-    fn default_critical_updates_regex() -> Option<String> {
-        None
-    }
-
     fn watched(
         format: &str,
         format_singular: &str,
@@ -136,10 +125,6 @@ impl PacmanConfig {
         } else {
             Ok(Watched::None)
         }
-    }
-
-    fn default_hide_when_uptodate() -> bool {
-        false
     }
 }
 

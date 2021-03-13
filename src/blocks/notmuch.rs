@@ -26,74 +26,42 @@ pub struct Notmuch {
     name: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct NotmuchConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "NotmuchConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
-    #[serde(default = "NotmuchConfig::default_maildir")]
     pub maildir: String,
-    #[serde(default = "NotmuchConfig::default_query")]
     pub query: String,
-    #[serde(default = "NotmuchConfig::default_threshold_warning")]
     pub threshold_warning: u32,
-    #[serde(default = "NotmuchConfig::default_threshold_critical")]
     pub threshold_critical: u32,
-    #[serde(default = "NotmuchConfig::default_threshold_info")]
     pub threshold_info: u32,
-    #[serde(default = "NotmuchConfig::default_threshold_good")]
     pub threshold_good: u32,
-    #[serde(default = "NotmuchConfig::default_name")]
     pub name: Option<String>,
-    #[serde(default = "NotmuchConfig::default_no_icon")]
     pub no_icon: bool,
 }
 
-impl NotmuchConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(10)
-    }
-
-    fn default_maildir() -> String {
+impl Default for NotmuchConfig {
+    fn default() -> Self {
         #[allow(deprecated)]
         let home_dir = match env::home_dir() {
             Some(path) => path.into_os_string().into_string().unwrap(),
             None => "".to_owned(),
         };
+        let maildir = format!("{}/.mail", home_dir);
 
-        format!("{}/.mail", home_dir)
-    }
-
-    fn default_query() -> String {
-        "".to_owned()
-    }
-
-    fn default_threshold_info() -> u32 {
-        <u32>::max_value()
-    }
-
-    fn default_threshold_good() -> u32 {
-        <u32>::max_value()
-    }
-
-    fn default_threshold_warning() -> u32 {
-        <u32>::max_value()
-    }
-
-    fn default_threshold_critical() -> u32 {
-        <u32>::max_value()
-    }
-
-    fn default_name() -> Option<String> {
-        None
-    }
-
-    fn default_no_icon() -> bool {
-        false
+        Self {
+            interval: Duration::from_secs(10),
+            maildir,
+            query: "".to_string(),
+            threshold_warning: std::u32::MAX,
+            threshold_critical: std::u32::MAX,
+            threshold_info: std::u32::MAX,
+            threshold_good: std::u32::MAX,
+            name: None,
+            no_icon: false,
+        }
     }
 }
 
