@@ -1,3 +1,4 @@
+pub mod placeholder;
 pub mod prefix;
 pub mod unit;
 pub mod value;
@@ -6,15 +7,8 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 
 use crate::errors::*;
-use prefix::Prefix;
-use unit::Unit;
+use placeholder::Placeholder;
 use value::Value;
-
-const MIN_WIDTH_TOKEN: char = ':';
-const MAX_WIDTH_TOKEN: char = '^';
-const MIN_SUFFIX_TOKEN: char = ';';
-const UNIT_TOKEN: char = '*';
-const BAR_MAX_VAL_TOKEN: char = '#';
 
 #[derive(Debug, Clone)]
 pub struct FormatTemplate {
@@ -24,18 +18,7 @@ pub struct FormatTemplate {
 #[derive(Debug, Clone)]
 enum Token {
     Text(String),
-    Var(Variable),
-}
-
-#[derive(Debug, Clone)]
-pub struct Variable {
-    pub name: String,
-    pub min_width: Option<usize>,
-    pub max_width: Option<usize>,
-    pub pad_with: Option<char>,
-    pub min_prefix: Option<Prefix>,
-    pub unit: Option<Unit>,
-    pub bar_max_value: Option<f64>,
+    Var(Placeholder),
 }
 
 fn unexpected_token<T>(token: char) -> Result<T> {
@@ -54,11 +37,6 @@ impl FormatTemplate {
 
         let mut text_buf = String::new();
         let mut var_buf = String::new();
-        let mut min_width_buf = String::new();
-        let mut max_width_buf = String::new();
-        let mut min_prefix_buf = String::new();
-        let mut unit_buf = String::new();
-        let mut bar_max_value_buf = String::new();
         let mut inside_var = false;
 
         let mut current_buf = &mut text_buf;
@@ -76,115 +54,12 @@ impl FormatTemplate {
                     current_buf = &mut var_buf;
                     inside_var = true;
                 }
-                MIN_WIDTH_TOKEN if inside_var => {
-                    if !min_width_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut min_width_buf;
-                }
-                MAX_WIDTH_TOKEN if inside_var => {
-                    if !min_width_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut max_width_buf;
-                }
-                MIN_SUFFIX_TOKEN if inside_var => {
-                    if !min_prefix_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut min_prefix_buf;
-                }
-                UNIT_TOKEN if inside_var => {
-                    if !unit_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut unit_buf;
-                }
-                BAR_MAX_VAL_TOKEN if inside_var => {
-                    if !bar_max_value_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut bar_max_value_buf;
-                }
                 '}' => {
                     if !inside_var {
                         return unexpected_token(c);
                     }
-                    if var_buf.is_empty() {
-                        return Err(ConfigurationError(
-                            "failed to parse formatting string: placeholder's name cannot be empty"
-                                .to_string(),
-                            String::new(),
-                        ));
-                    }
-                    // Parse padding
-                    let (min_width, pad_with) = if min_width_buf.is_empty() {
-                        (None, None)
-                    } else if let ("0", "") = min_width_buf.split_at(1) {
-                        (Some(0), None)
-                    } else if let ("0", min_width) = min_width_buf.split_at(1) {
-                        (
-                            Some(min_width.parse().configuration_error(&format!(
-                                "failed to parse min_width '{}'",
-                                min_width
-                            ))?),
-                            Some('0'),
-                        )
-                    } else {
-                        (
-                            Some(min_width_buf.parse().configuration_error(&format!(
-                                "failed to parse min_width '{}'",
-                                min_width_buf
-                            ))?),
-                            None,
-                        )
-                    };
-                    // Parse max_width
-                    let max_width = if max_width_buf.is_empty() {
-                        None
-                    } else {
-                        Some(max_width_buf.parse().configuration_error(&format!(
-                            "failed to parse max_width '{}'",
-                            max_width_buf
-                        ))?)
-                    };
-                    // Parse min_prefix
-                    let min_prefix = if min_prefix_buf.is_empty() {
-                        None
-                    } else {
-                        Some(min_prefix_buf.as_str().try_into()?)
-                    };
-                    // Parse unit
-                    let unit = if unit_buf.is_empty() {
-                        None
-                    } else {
-                        Some(unit_buf.as_str().try_into()?)
-                    };
-                    // Parse bar_max_value
-                    let bar_max_value = if bar_max_value_buf.is_empty() {
-                        None
-                    } else {
-                        Some(bar_max_value_buf.parse().configuration_error(&format!(
-                            "failed to parse bar_max_value '{}'",
-                            bar_max_value_buf
-                        ))?)
-                    };
-                    tokens.push(Token::Var(Variable {
-                        name: var_buf.clone(),
-                        min_width,
-                        max_width,
-                        pad_with,
-                        min_prefix,
-                        unit,
-                        bar_max_value,
-                    }));
-                    // Clear all buffers
+                    tokens.push(Token::Var(var_buf.as_str().try_into()?));
                     var_buf.clear();
-                    min_width_buf.clear();
-                    max_width_buf.clear();
-                    min_prefix_buf.clear();
-                    unit_buf.clear();
-                    bar_max_value_buf.clear();
                     current_buf = &mut text_buf;
                     inside_var = false;
                 }

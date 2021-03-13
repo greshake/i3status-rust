@@ -1,8 +1,8 @@
 use crate::errors::*;
 
+use super::placeholder::Placeholder;
 use super::prefix::Prefix;
 use super::unit::Unit;
-use super::Variable;
 
 #[derive(Debug, Clone)]
 pub struct Value {
@@ -191,7 +191,7 @@ impl Value {
     }
 
     //TODO impl Display
-    pub fn format(&self, var: &Variable) -> Result<String> {
+    pub fn format(&self, var: &Placeholder) -> Result<String> {
         let min_width = var.min_width.unwrap_or(self.min_width);
         let pad_with = var.pad_with.unwrap_or(' ');
         let unit = var.unit.unwrap_or(self.unit);
