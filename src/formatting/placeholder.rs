@@ -10,7 +10,7 @@ const MIN_SUFFIX_TOKEN: char = ';';
 const UNIT_TOKEN: char = '*';
 const BAR_MAX_VAL_TOKEN: char = '#';
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Placeholder {
     pub name: String,
     pub min_width: Option<usize>,

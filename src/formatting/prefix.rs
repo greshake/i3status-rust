@@ -3,7 +3,7 @@ use std::fmt;
 
 use crate::errors::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Prefix {
     One,
     // SI prefixes
