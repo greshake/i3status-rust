@@ -1,3 +1,5 @@
+Refer to [formatting section](#formatting) to customize formatting strings' placeholders.
+
 # List of Available Blocks
 
 - [Apt](#apt)
@@ -1395,7 +1397,7 @@ Note that the colour of the block is always determined by the maximum temperatur
 block = "temperature"
 collapsed = false
 interval = 10
-format = "{min}° min, {max}° max, {average}° avg"
+format = "{min} min, {max} max, {average} avg"
 chip = "*-isa-*"
 inputs = ["CPUTIN", "SYSTIN"]
 ```
@@ -1413,7 +1415,7 @@ Key | Values | Required | Default
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
 `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
 `inputs` | Narrows the results to individual inputs reported by each chip. Note this only works if you have an up-to-date `sensors` command with the `-j` JSON output flag available. | No | None
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average}° avg, {max}° max"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average} avg, {max} max"`
 
 #### Available Format Keys
 
