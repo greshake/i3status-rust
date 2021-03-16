@@ -38,6 +38,7 @@ pub struct Pacman {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Watched {
+    None,
     Pacman,
     /// cf `Pacman::aur_command`
     AUR(String),
@@ -109,10 +110,10 @@ impl PacmanConfig {
         format_up_to_date: &str,
         aur_command: Option<String>,
     ) -> Result<Watched> {
-        let aur_format = "{aur}";
-        let pacman_format = "{pacman}";
-        let both_format = "{both}";
-        let pacman_deprecated_format = "{count}";
+        let aur_format = "{aur";
+        let pacman_format = "{pacman";
+        let both_format = "{both";
+        let pacman_deprecated_format = "{count";
         let concatenated_format_str = format!("{}{}{}", format, format_singular, format_up_to_date);
         let aur = concatenated_format_str.contains(aur_format);
         let pacman = concatenated_format_str.contains(pacman_format)
@@ -133,11 +134,7 @@ impl PacmanConfig {
             )?;
             Ok(Watched::AUR(aur_command))
         } else {
-            // most likely a mistake: {count}, {pacman}, {aur}, {both} not found in format string
-            Err(ConfigurationError(
-                "pacman".to_string(),
-                "No formatter ({count}|{pacman}|{aur}|{both}) found in format string".to_string(),
-            ))
+            Ok(Watched::None)
         }
     }
 
@@ -396,6 +393,7 @@ impl Block for Pacman {
 
                 (formatting_map, warning, critical, pacman_count + aur_count)
             }
+            Watched::None => (std::collections::HashMap::new(), false, false, 0),
         };
         self.output.set_text(match cum_count {
             0 => self.format_up_to_date.render(&formatting_map)?,

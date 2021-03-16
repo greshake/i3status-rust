@@ -32,8 +32,7 @@ pub struct Notify {
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct NotifyConfig {
-    /// Format string for displaying phone information.
-    /// "phone"?
+    /// Format string which describes the output of this block.
     #[serde(default = "NotifyConfig::default_format")]
     pub format: String,
 }

@@ -198,7 +198,8 @@ impl Xrandr {
             let values = map!(
                 "display" => Value::from_string(m.name.clone()),
                 "brightness" => Value::from_integer(m.brightness as i64).percents(),
-                "brightness_icon" => Value::from_string(self.shared_config.get_icon("backlight_full")?), //FIXME?
+                //TODO: change `brightness_icon` based on `brightness`
+                "brightness_icon" => Value::from_string(self.shared_config.get_icon("backlight_full")?),
                 "resolution" => Value::from_string(m.resolution.clone()),
                 "res_icon" => Value::from_string(self.shared_config.get_icon("resolution")?),
             );

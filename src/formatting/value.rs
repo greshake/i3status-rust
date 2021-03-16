@@ -105,6 +105,7 @@ fn format_bar(value: f64, length: usize) -> String {
             let printed_chars = i as f64;
             let val = (chars_to_fill - printed_chars).clamp(0., 1.) * 8.;
             match val as usize {
+                //TODO make those characters configurable?
                 0 => ' ',
                 1 => '\u{258f}',
                 2 => '\u{258e}',
