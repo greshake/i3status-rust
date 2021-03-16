@@ -405,12 +405,18 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `alert` | Available disk space critical level as a percentage or Unit. | No | `10.0`
 `warning` | Available disk space warning level as a percentage or Unit. | No | `20.0`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{available}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{alias} {available}"`
 `info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation). | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
 `path` | Path to collect information from. | No | `"/"`
 `unit` | Unit that is used when `alert_absolute` is set for `warning` and `alert`. Options are `"B"`, `"KB"` `"MB"`, `"GB"`, `"TB"`. | No | `"GB"`
 `alert_absolute` | Use Unit values for warning and alert instead of percentages. | No | `false`
+
+#### Deprecated Options
+Key | Values | Required | Default
+----|--------|----------|--------
+`alias` | Sets the value for `{alias}` placeholder | No | `"/"`
+
 
 #### Available Format Keys
 
@@ -423,6 +429,12 @@ Key | Value | Type
 `{percentage}` | Percentage of disk used or free (depends on info_type setting) | Float
 `{total}` | Total disk space | Float
 `{used}` | Used disk space | Float
+
+#### Deprecated Format Keys
+
+Key | Value | Type
+----|-------|-------
+`{alias}` | The value of `alias` option | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 

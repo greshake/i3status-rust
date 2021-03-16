@@ -35,6 +35,10 @@ pub struct DiskSpace {
     alert_absolute: bool,
     format: FormatTemplate,
     icon: String,
+
+    // DEPRECATED
+    // TODO remove
+    alias: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -76,6 +80,12 @@ pub struct DiskSpaceConfig {
     /// use absolute (unit) values for disk space alerts
     #[serde(default = "DiskSpaceConfig::default_alert_absolute")]
     pub alert_absolute: bool,
+
+    /// Alias that is displayed for path
+    // DEPRECATED
+    // TODO remove
+    #[serde(default = "DiskSpaceConfig::default_alias")]
+    pub alias: String,
 }
 
 impl DiskSpaceConfig {
@@ -88,7 +98,7 @@ impl DiskSpaceConfig {
     }
 
     fn default_format() -> String {
-        String::from("{available}")
+        "{alias} {available}".to_string()
     }
 
     fn default_unit() -> String {
@@ -109,6 +119,10 @@ impl DiskSpaceConfig {
 
     fn default_alert_absolute() -> bool {
         false
+    }
+
+    fn default_alias() -> String {
+        "/".to_string()
     }
 }
 
@@ -177,6 +191,7 @@ impl ConfigBlock for DiskSpace {
             alert: block_config.alert,
             alert_absolute: block_config.alert_absolute,
             icon: icon.trim().to_string(),
+            alias: block_config.alias,
         })
     }
 }
@@ -218,6 +233,8 @@ impl Block for DiskSpace {
             "available" => Value::from_float(available as f64).bytes(),
             "free" => Value::from_float(free as f64).bytes(),
             "icon" => Value::from_string(self.icon.to_string()),
+            //TODO remove
+            "alias" => Value::from_string(self.alias.clone()),
         );
         self.disk_space.set_text(self.format.render(&values)?);
 
