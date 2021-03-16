@@ -65,7 +65,7 @@ impl SharedConfig {
             self.icons
                 .0
                 .get(icon)
-                .internal_error("get_icon()", &format!("icon '{}' not found", icon))?,
+                .internal_error("get_icon()", &format!("icon '{}' not found: please check your icon file or open a new issue on GitHub if you use a precompiled icons.", icon))?,
         ))
     }
 }

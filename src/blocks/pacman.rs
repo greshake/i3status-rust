@@ -451,9 +451,9 @@ mod tests {
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Pacman);
         let watched = PacmanConfig::watched("foo bar", "foo bar", "", None);
-        assert!(watched.is_err()); // missing formatter
+        assert!(watched.is_ok()); // missing formatter should not cause an error
         let watched = PacmanConfig::watched("foo bar", "foo bar", "", Some("aur cmd".to_string()));
-        assert!(watched.is_err()); // missing formatter
+        assert!(watched.is_ok()); // missing formatter should not cause an error
         let watched = PacmanConfig::watched(
             "foo {aur} bar",
             "foo {aur} bar",

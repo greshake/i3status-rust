@@ -274,9 +274,9 @@ impl Weather {
 
                 self.weather_keys = map!(
                     "weather" => Value::from_string(raw_weather),
-                    "temp" => Value::from_integer(raw_temp as i64),
+                    "temp" => Value::from_integer(raw_temp as i64).degrees(),
                     "humidity" => Value::from_integer(raw_humidity as i64),
-                    "apparent" => Value::from_integer(apparent_temp as i64),
+                    "apparent" => Value::from_integer(apparent_temp as i64).degrees(),
                     "wind" => Value::from_float(raw_wind_speed),
                     "wind_kmh" => Value::from_float(kmh_wind_speed),
                     "direction" => Value::from_string(convert_wind_direction(raw_wind_direction)),

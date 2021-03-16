@@ -727,7 +727,7 @@ impl Block for NetworkManager {
 
                                 let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn)
                                 {
-                                    let ssid = ap.ssid(&self.dbus_conn).unwrap_or_else(|_| "N/A".to_string());
+                                    let ssid = ap.ssid(&self.dbus_conn).unwrap_or_else(|_| "".to_string());
                                     let strength = ap.strength(&self.dbus_conn).unwrap_or(0);
                                     let freq = match ap.frequency(&self.dbus_conn) {
                                         Ok(v) => v.to_string(),
