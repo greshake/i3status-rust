@@ -6,7 +6,9 @@ pub mod value;
 use std::collections::HashMap;
 use std::convert::TryInto;
 
+use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::widgets::{text::TextWidget, Spacing};
 use placeholder::Placeholder;
 use value::Value;
 
@@ -19,6 +21,12 @@ pub struct FormatTemplate {
 enum Token {
     Text(String),
     Var(Placeholder),
+}
+
+#[derive(Debug, Clone)]
+pub enum RenderedWidget {
+    Text(TextWidget),
+    Var(String, TextWidget),
 }
 
 fn unexpected_token<T>(token: char) -> Result<T> {
@@ -94,6 +102,39 @@ impl FormatTemplate {
                         )?
                         .format(&var)?,
                 ),
+            }
+        }
+
+        Ok(rendered)
+    }
+
+    pub fn render_widgets(
+        &self,
+        config: SharedConfig,
+        id: usize,
+        vars: &HashMap<&str, Value>,
+    ) -> Result<Vec<RenderedWidget>> {
+        let mut rendered = Vec::new();
+
+        for token in &self.tokens {
+            match token {
+                Token::Text(text) => rendered.push(RenderedWidget::Text(
+                    TextWidget::new(id, rendered.len(), config.clone()).with_text(text),
+                )),
+                Token::Var(var) => rendered.push(RenderedWidget::Var(
+                    var.name.clone(),
+                    TextWidget::new(id, rendered.len(), config.clone())
+                        .with_spacing(Spacing::Hidden)
+                        .with_text(
+                            &vars
+                                .get(&*var.name)
+                                .internal_error(
+                                    "util",
+                                    &format!("Unknown placeholder in format string: {}", var.name),
+                                )?
+                                .format(&var)?,
+                        ),
+                )),
             }
         }
 

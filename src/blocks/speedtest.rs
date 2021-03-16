@@ -11,7 +11,7 @@ use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
+use crate::formatting::{FormatTemplate, RenderedWidget};
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
@@ -20,12 +20,13 @@ use crate::widgets::{I3BarWidget, State};
 pub struct SpeedTest {
     id: usize,
     vals: Arc<Mutex<(bool, Vec<f32>)>>,
-    text: TextWidget,
+    widgets: Vec<TextWidget>,
     format: FormatTemplate,
     interval: Duration,
     ping_icon: String,
     down_icon: String,
     up_icon: String,
+    shared_config: SharedConfig,
     send: Sender<()>,
 }
 
@@ -134,12 +135,13 @@ impl ConfigBlock for SpeedTest {
         Ok(SpeedTest {
             id,
             vals,
-            text: TextWidget::new(id, 0, shared_config.clone()).with_text("..."),
+            widgets: Vec::new(),
             format: FormatTemplate::from_string(&block_config.format)?,
             interval: block_config.interval,
             ping_icon: shared_config.get_icon("ping")?,
             down_icon: shared_config.get_icon("net_down")?,
             up_icon: shared_config.get_icon("net_up")?,
+            shared_config,
             send,
         })
     }
@@ -156,6 +158,7 @@ impl Block for SpeedTest {
             *updated = false;
 
             if vals.len() == 3 {
+                // ping is in seconds
                 let ping = vals[0] as f64 / 1_000.0;
                 let down = vals[1] as f64 * 1_000_000.0;
                 let up = vals[2] as f64 * 1_000_000.0;
@@ -165,15 +168,27 @@ impl Block for SpeedTest {
                     "speed_down" => Value::from_float(down).bits_per_second().icon(self.down_icon.clone()),
                     "speed_up" => Value::from_float(up).bits_per_second().icon(self.up_icon.clone()),
                 );
-                self.text.set_text(self.format.render(&values)?);
 
-                // ping is in seconds
-                self.text.set_state(match (ping * 1000.) as i32 {
+                let ping_state = match (ping * 1000.) as i32 {
                     0..=25 => State::Good,
                     26..=60 => State::Info,
                     61..=100 => State::Warning,
                     _ => State::Critical,
-                });
+                };
+
+                let widgets =
+                    self.format
+                        .render_widgets(self.shared_config.clone(), self.id, &values)?;
+                self.widgets.clear();
+                for widget in widgets {
+                    self.widgets.push(match widget {
+                        RenderedWidget::Text(widget) => widget,
+                        RenderedWidget::Var(name, widget) => match name.as_str() {
+                            "ping" => widget.with_state(ping_state),
+                            _ => widget,
+                        },
+                    });
+                }
             }
 
             Ok(None)
@@ -191,7 +206,11 @@ impl Block for SpeedTest {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
+        let mut retval = Vec::new();
+        for widget in &self.widgets {
+            retval.push(widget as &dyn I3BarWidget);
+        }
+        retval
     }
 
     fn id(&self) -> usize {
