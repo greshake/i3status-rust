@@ -28,7 +28,7 @@ fn format_number(
 ) -> Result<String> {
     let is_byte = unit.is_byte();
 
-    let min_exp_level = if is_byte {
+    let min_exp_level = if !is_byte {
         match min_prefix {
             Prefix::Tera => 4,
             Prefix::Giga => 3,
@@ -45,17 +45,11 @@ fn format_number(
             Prefix::Giga => 3,
             Prefix::Mega => 3,
             Prefix::Kilo => 1,
-            Prefix::One => 0,
-            x => {
-                return Err(ConfigurationError(
-                    "incorrect `min_prefix`".to_string(),
-                    format!("prefix '{}' cannot be used to format byte value", x),
-                ))
-            }
+            _ => 0,
         }
     };
 
-    let (value, prefix) = if is_byte {
+    let (value, prefix) = if !is_byte {
         let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
         let value = raw_value / (10f64).powi(exp_level * 3);
 
@@ -239,7 +233,7 @@ impl Value {
                 format_number(
                     value,
                     min_width,
-                    var.min_prefix.unwrap_or(Prefix::One),
+                    var.min_prefix.unwrap_or(Prefix::Nano),
                     unit,
                     pad_with,
                 )?
