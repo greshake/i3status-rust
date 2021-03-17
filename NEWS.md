@@ -3,6 +3,9 @@
 ## Breaking Changes
 
 * CPU Utilization block: Due to an overhaul of our internal code, the `per_core` option has been removed. The same configuration can be achieved using the new `{utilization<n>}` format keys.
+* Battery and Disk Space blocks: The `{bar}` format key has been removed, refer to [formatting documentation](blocks.md#formatting) to get more information of new formatting options.
+* Disk Space block: The `{unit}` format key has been removed since the unit of `{free}` and similar format keys don't rely on `unit` configuration option anymore.
+* Memory block: all old format keys have been removed, refer to [Removed Format Keys](blocks.md#removed-format-keys) section of block's documentation for more details.
 
 ## Deprecation Warnings
 

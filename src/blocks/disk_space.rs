@@ -58,7 +58,7 @@ pub struct DiskSpaceConfig {
     #[serde(default = "DiskSpaceConfig::default_format")]
     pub format: String,
 
-    /// Unit that is used to display disk space. Options are MB, MiB, GB, GiB, TB and TiB
+    /// Unit that is used to display disk space. Options are B, KB, MB, GB and TB
     #[serde(default = "DiskSpaceConfig::default_unit")]
     pub unit: String,
 

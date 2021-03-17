@@ -44,7 +44,7 @@ impl TryInto<Unit> for &str {
             "b/s" => Ok(Unit::BitsPerSecond),
             "B/s" => Ok(Unit::BytesPerSecond),
             "%" => Ok(Unit::Percents),
-            "°" => Ok(Unit::Degrees),
+            "deg" => Ok(Unit::Degrees),
             "s" => Ok(Unit::Seconds),
             "W" => Ok(Unit::Watts),
             "Hz" => Ok(Unit::Hertz),

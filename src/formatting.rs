@@ -108,6 +108,8 @@ impl FormatTemplate {
         Ok(rendered)
     }
 
+    // Experimental function: avoid using this function in your block.
+    // TODO reconsider the interface
     pub fn render_widgets(
         &self,
         config: SharedConfig,

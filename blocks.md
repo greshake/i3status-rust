@@ -397,8 +397,21 @@ Creates a block which displays disk space information.
 block = "disk_space"
 path = "/"
 info_type = "used"
-unit = "GiB"
 format = "{icon} {used}/{total} ({available} free)"
+```
+
+Same as previous, but the block will change it's state to "warning" if more than 40GB of disk space is used and to "alert" if more than 50GB is used.
+
+```toml
+[[block]]
+block = "disk_space"
+path = "/"
+info_type = "used"
+format = "{icon} {used}/{total} ({available} free)"
+alert_absolute = true
+unit = "GB"
+alert = 50
+warning = 40
 ```
 
 #### Options
@@ -418,7 +431,6 @@ Key | Values | Required | Default
 Key | Values | Required | Default
 ----|--------|----------|--------
 `alias` | Sets the value for `{alias}` placeholder | No | `"/"`
-
 
 #### Available Format Keys
 
@@ -851,6 +863,46 @@ Key | Values | Required | Default
 `{cached}` | Cached memory, similar to htop's yellow bar | Float
 `{cached_percent}` | Cached memory, similar to htop's yellow bar (in %) | Float
 
+#### Removed Format Keys
+ Old key | New alternate
+---------|---------------
+`{MTg}`  | `{mem_total;G}`
+`{MTm}`  | `{mem_total;M}`
+`{MAg}`  | `{mem_avail;G}`
+`{MAm}`  | `{mem_avail;M}`
+`{MAp}`  | `{mem_avail_percents}`
+`{MApi}` | `{mem_avail_percents:1}`
+`{MFg}`  | `{mem_free;G}`
+`{MFm}`  | `{mem_free;M}`
+`{MFp}`  | `{mem_free_percents}`
+`{MFpi}` | `{mem_free_percents:1}`
+`{Mug}`  | `{mem_used;G}`
+`{Mum}`  | `{mem_used;M}`
+`{Mup}`  | `{mem_used_percents}`
+`{Mupi}` | `{mem_used_percents:1}`
+`{MUg}`  | `{mem_total_used;G}`
+`{MUm}`  | `{mem_total_used;M}`
+`{MUp}`  | `{mem_total_used_percents}`
+`{MUpi}` | `{mem_total_used_percents:1}`
+`{Cg}`   | `{cached;G}`
+`{Cm}`   | `{cached;M}`
+`{Cp}`   | `{cached_percent}`
+`{Cpi}`  | `{cached_percent:1}`
+`{Bg}`   | `{buffers;G}`
+`{Bm}`   | `{buffers;M}`
+`{Bp}`   | `{buffers_percent}`
+`{Bpi}`  | `{buffers_percent:1}`
+`{STg}`  | `{swap_total;G}`
+`{STm}`  | `{swap_total;M}`
+`{SFg}`  | `{swap_free;G}`
+`{SFm}`  | `{swap_free;M}`
+`{SFp}`  | `{swap_free_percents}`
+`{SFpi}` | `{swap_free_percents:1}`
+`{SUg}`  | `{swap_used;G}`
+`{SUm}`  | `{swap_used;M}`
+`{SUp}`  | `{swap_used_percents}`
+`{SUpi}` | `{swap_used_percents:1}`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Music
@@ -940,7 +992,7 @@ but the 'use_bits' flag can be set to `true` to convert the units to bps (little
 
 #### Examples
 
-Displays ssid, signal_strength, ip, down speed and up speed as bits per second
+Displays ssid, signal strength, ip, down speed and up speed as bits per second. Minimal prefix is set to `K` in order to prevent the block to change it's size.
 
 ```toml
 [[block]]
