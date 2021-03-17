@@ -363,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "i3status-rs"
-version = "0.15.0"
+version = "0.20.0"
 dependencies = [
  "assert_fs",
  "chrono",
