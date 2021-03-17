@@ -1,3 +1,13 @@
+# i3status-rust 0.20.0
+
+## Breaking Changes
+
+* CPU Utilization block: Due to an overhaul of our internal code, the `per_core` option has been removed. The same configuration can be achieved using the new `{utilization<n>}` format keys.
+
+## Deprecation Warnings
+
+* Disk Space block: the `alias` has been deprecated in favour of using `format` and may be removed in a future release.
+
 # i3status-rust 0.14.7
 
 Bug fix release for compile error on 32bit systems
