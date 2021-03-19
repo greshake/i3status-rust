@@ -25,7 +25,7 @@ fn format_number(
     min_prefix: Prefix,
     unit: Unit,
     pad_with: char,
-) -> Result<String> {
+) -> String {
     let is_byte = unit.is_byte();
 
     let min_exp_level = if !is_byte {
@@ -81,14 +81,14 @@ fn format_number(
     // The length of the integer part of a number
     let digits = (value.log10().floor() + 1.0).max(1.0) as isize;
     // How many characters is left for "." and the fractional part?
-    Ok(match min_width as isize - digits {
+    match min_width as isize - digits {
         // No characters left
         x if x <= 0 => format!("{:.0}{}", value, prefix),
         // Only one character -> pad text to the right
         x if x == 1 => format!("{}{:.0}{}", pad_with, value, prefix),
         // There is space for fractional part
         rest => format!("{:.*}{}", (rest as usize) - 1, value, prefix),
-    })
+    }
 }
 
 fn format_bar(value: f64, length: usize) -> String {
@@ -236,7 +236,7 @@ impl Value {
                     var.min_prefix.unwrap_or(Prefix::Nano),
                     unit,
                     pad_with,
-                )?
+                )
             }
         };
         Ok(if let Some(ref icon) = self.icon {
