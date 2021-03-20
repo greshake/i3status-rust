@@ -1595,7 +1595,7 @@ Show detailed weather in San Francisco through the OpenWeatherMap service:
 ```toml
 [[block]]
 block = "weather"
-format = "{weather} ({location}) {temp}°, {wind} m/s {direction}"
+format = "{weather} ({location}) {temp}, {wind} m/s {direction}"
 service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units = "metric" }
 ```
 
@@ -1603,7 +1603,7 @@ service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{weather} {temp}°"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{weather} {temp}"`
 `service` | The configuration of a weather service (see below). | Yes | None
 `interval` | Update interval, in seconds. | No | `600`
 `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | No | false
