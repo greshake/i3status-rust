@@ -982,8 +982,7 @@ Key | Values | Required | Default
 
 ## Net
 
-Creates a block which displays the upload and download throughput for a network interface. Units are by default in bytes per second (kB/s, MB/s, etc), 
-but the 'use_bits' flag can be set to `true` to convert the units to bps (little b).
+Creates a block which displays the upload and download throughput for a network interface.
 
 `bitrate` requires either `ethtool` for wired devices or `iw` for wireless devices.  
 `ip` and `ipv6` require `ip`.  
@@ -1000,7 +999,6 @@ block = "net"
 device = "wlp2s0"
 format = "{ssid} {signal_strength} {ip} {speed_down;K*b/s} {graph_down;K*b/s}"
 interval = 5
-use_bits = false
 ```
 
 #### Options
@@ -1016,17 +1014,17 @@ Key | Values | Required | Default
 
 #### Available Format Keys
 
- Key | Value | Type
------|-------|-----
-`ssid` | Display network SSID (wireless only) | String
-`signal_strength` | Display WiFi signal strength (wireless only) | Integer
-`bitrate` | Display connection bitrate | String
-`ip` | Display connection IP address | String
-`ipv6` | Display connection IPv6 address | String
-`speed_up` | Display upload speed | Float
-`speed_down` | Display download speed | Float
-`graph_up` | Display a bar graph for upload speed | String
-`graph_down` | Display a bar graph for download speed | String
+ Key | Value | Type | Unit
+-----|-------|------|------
+`ssid` | Display network SSID (wireless only) | String | -
+`signal_strength` | Display WiFi signal strength (wireless only) | Integer | -
+`bitrate` | Display connection bitrate | String | -
+`ip` | Display connection IP address | String | -
+`ipv6` | Display connection IPv6 address | String | -
+`speed_up` | Display upload speed | Float | Bytes per second
+`speed_down` | Display download speed | Float | Bytes per second
+`graph_up` | Display a bar graph for upload speed | String | -
+`graph_down` | Display a bar graph for download speed | String | -
 
 ###### [↥ back to top](#list-of-available-blocks)
 
