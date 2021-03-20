@@ -49,7 +49,7 @@ impl TryInto<Unit> for &str {
             "W" => Ok(Unit::Watts),
             "Hz" => Ok(Unit::Hertz),
             "B" => Ok(Unit::Bytes),
-            "none" => Ok(Unit::None),
+            "" => Ok(Unit::None),
             x => Err(ConfigurationError(
                 "Can not parse unit".to_string(),
                 format!("unknown unit: '{}'", x.to_string()),

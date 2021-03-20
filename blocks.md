@@ -1719,7 +1719,7 @@ command = "echo '<b>1 &amp;</b>'"
 The syntax for placeholders is
 
 ```
-{<name>[:[0]<min width>][^<max width>][;<min prefix>][*<unit>][#<bar max value>]}
+{<name>[:[0]<min width>][^<max width>][;<min prefix>][*[_]<unit>][#<bar max value>]}
 ```
 
 ### `<name>`
@@ -1792,9 +1792,9 @@ The value of `var` | Output
 `123.0`            | "123"
 `1234.0`           | "1.23K"
 
-### `<unit>`
+### `[_]<unit>`
 
-Some placeholders have a "unit". For example, `net` block displays speed in `B/s`. This option gives abitity to convert one units into another. Ignored for strings.
+Some placeholders have a "unit". For example, `net` block displays speed in `B/s`. This option gives ability to convert one units into another. Ignored for strings. Prepend the unit with the underscore `_` to hide the unit (i.e. don't display it).
 
 #### The list of units
 
@@ -1808,12 +1808,16 @@ Some placeholders have a "unit". For example, `net` block displays speed in `B/s
  W    | Watts                | W
  Hz   | Hertz                | Hz
  B    | Bytes                | B
- none | Do not show any unit | Nothing
-
 
 #### Example
 
 `"{speed_down*b/s}"` - show the download speed in bits per second.
+
+`"{speed_down*_b/s}"` - show the download speed in bits per second, but hide the "b/s".
+
+`"{speed_down*_}"` - show the download speed in it's default units, but hide the units.
+
+`"{speed_down*_b/s}Bi"` - show the download in bits per second, and disply the untit as "Bi" instead of "b/s".
 
 ### `<bar max value>`
 

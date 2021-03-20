@@ -148,11 +148,12 @@ impl FormatTemplate {
 mod tests {
     use super::*;
     use prefix::Prefix;
+    use unit::Unit;
 
     #[test]
     fn from_string() {
         let ft = FormatTemplate::from_string(
-            "some text {var} var again {var}{new_var:3} {bar:2#100} {freq;1}.",
+            "some text {var} var again {var*_}{new_var:3} {bar:2#100} {freq;1}.",
         );
         assert!(ft.is_ok());
 
@@ -170,6 +171,7 @@ mod tests {
                 pad_with: None,
                 min_prefix: None,
                 unit: None,
+                unit_hidden: false,
                 bar_max_value: None
             })
         );
@@ -185,7 +187,8 @@ mod tests {
                 max_width: None,
                 pad_with: None,
                 min_prefix: None,
-                unit: None,
+                unit: Some(Unit::None),
+                unit_hidden: true,
                 bar_max_value: None
             })
         );
@@ -198,6 +201,7 @@ mod tests {
                 pad_with: None,
                 min_prefix: None,
                 unit: None,
+                unit_hidden: false,
                 bar_max_value: None
             })
         );
@@ -211,6 +215,7 @@ mod tests {
                 pad_with: None,
                 min_prefix: None,
                 unit: None,
+                unit_hidden: false,
                 bar_max_value: Some(100.)
             })
         );
@@ -224,6 +229,7 @@ mod tests {
                 pad_with: None,
                 min_prefix: Some(Prefix::One),
                 unit: None,
+                unit_hidden: false,
                 bar_max_value: None
             })
         );

@@ -18,6 +18,7 @@ pub struct Placeholder {
     pub pad_with: Option<char>,
     pub min_prefix: Option<Prefix>,
     pub unit: Option<Unit>,
+    pub unit_hidden: bool,
     pub bar_max_value: Option<f64>,
 }
 
@@ -120,10 +121,12 @@ impl TryInto<Placeholder> for &str {
             Some(min_prefix_buf.as_str().try_into()?)
         };
         // Parse unit
-        let unit = if unit_buf.is_empty() {
-            None
+        let (unit, unit_hidden) = if unit_buf.is_empty() {
+            (None, false)
+        } else if let ("_", unit) = unit_buf.split_at(1) {
+            (Some(unit.try_into()?), true)
         } else {
-            Some(unit_buf.as_str().try_into()?)
+            (Some(unit_buf.as_str().try_into()?), false)
         };
         // Parse bar_max_value
         let bar_max_value = if bar_max_value_buf.is_empty() {
@@ -142,6 +145,7 @@ impl TryInto<Placeholder> for &str {
             pad_with,
             min_prefix,
             unit,
+            unit_hidden,
             bar_max_value,
         })
     }

@@ -469,8 +469,7 @@ impl ConfigBlock for Net {
         Ok(Net {
             id,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("net", "Invalid format specified")?,
+            format: FormatTemplate::from_string(&block_config.format)?,
             format_alt,
             output: TextWidget::new(id, 0, shared_config.clone())
                 .with_icon(if wireless {

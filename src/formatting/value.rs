@@ -28,28 +28,22 @@ fn format_number(
 ) -> String {
     let is_byte = unit.is_byte();
 
-    let min_exp_level = if !is_byte {
-        match min_prefix {
-            Prefix::Tera => 4,
-            Prefix::Giga => 3,
-            Prefix::Mega => 2,
-            Prefix::Kilo => 1,
-            Prefix::One => 0,
-            Prefix::Milli => -1,
-            Prefix::Micro => -2,
-            Prefix::Nano => -3,
-        }
-    } else {
-        match min_prefix {
-            Prefix::Tera => 4,
-            Prefix::Giga => 3,
-            Prefix::Mega => 2,
-            Prefix::Kilo => 1,
-            _ => 0,
-        }
+    let mut min_exp_level = match min_prefix {
+        Prefix::Tera => 4,
+        Prefix::Giga => 3,
+        Prefix::Mega => 2,
+        Prefix::Kilo => 1,
+        Prefix::One => 0,
+        Prefix::Milli => -1,
+        Prefix::Micro => -2,
+        Prefix::Nano => -3,
     };
 
-    let (value, prefix) = if !is_byte {
+    if is_byte {
+        min_exp_level = min_exp_level.max(0);
+    }
+
+    let (mut value, mut prefix) = if !is_byte {
         let exp_level = (raw_value.log10().div_euclid(3.) as i32).clamp(min_exp_level, 4);
         let value = raw_value / (10f64).powi(exp_level * 3);
 
@@ -77,6 +71,11 @@ fn format_number(
         };
         (value, prefix)
     };
+
+    if unit == Unit::Percents {
+        value = raw_value;
+        prefix = Prefix::One;
+    }
 
     // The length of the integer part of a number
     let digits = (value.log10().floor() + 1.0).max(1.0) as isize;
@@ -239,10 +238,12 @@ impl Value {
                 )
             }
         };
-        Ok(if let Some(ref icon) = self.icon {
-            format!("{}{}{}", icon, value, unit)
-        } else {
-            format!("{}{}", value, unit)
-        })
+
+        let icon_str = self.icon.as_ref().map(|s| s.as_str()).unwrap_or("");
+
+        let unit = unit.to_string();
+        let unit_str = if var.unit_hidden { "" } else { unit.as_str() };
+
+        Ok(format!("{}{}{}", icon_str, value, unit_str))
     }
 }
