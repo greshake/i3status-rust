@@ -1777,6 +1777,21 @@ The value of `var` | Output
 
 Some placeholders have a "unit". For example, `net` block displays speed in `B/s`. This option gives abitity to convert one units into another. Ignored for strings.
 
+#### The list of units
+
+ Unit |         Means        | Displays
+------|----------------------|---------
+ b/s  | Bits per second      | b/s
+ B/s  | Bytes per second     | B/s
+ %    | Percents             | %
+ deg  | Degrees              | °
+ s    | Seconds              | s
+ W    | Watts                | W
+ Hz   | Hertz                | Hz
+ B    | Bytes                | B
+ none | Do not show any unit | Nothing
+
+
 #### Example
 
 `"{speed_down*b/s}"` - show the download speed in bits per second.
