@@ -1044,6 +1044,17 @@ interface_name_exclude = ["br\\-[0-9a-f]{12}", "docker\\d+"]
 interface_name_include = []
 ```
 
+Same as previous, but also limits the length of SSID to 10 characters.
+
+```toml
+[[block]]
+block = "networkmanager"
+on_click = "alacritty -e nmtui"
+interface_name_exclude = ["br\\-[0-9a-f]{12}", "docker\\d+"]
+interface_name_include = []
+ap_format = "{ssid.10}"
+```
+
 #### Options
 
 Key | Values | Required | Default
