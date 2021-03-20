@@ -1357,11 +1357,21 @@ Creates a block which uses [`speedtest-cli`](https://github.com/sivel/speedtest-
 
 #### Examples
 
+Display speed in bits per second using 3 digits (defaults)
+
 ```toml
 [[block]]
 block = "speedtest"
-bytes = true
 interval = 1800
+```
+
+Display speed in bytes per second using 4 digits
+
+```toml
+[[block]]
+block = "speedtest"
+interval = 1800
+format = "{ping}{speed_down:4*B/s}{speed_up:4*B/s}
 ```
 
 #### Options
@@ -1374,11 +1384,11 @@ Key | Values | Required | Default
 
 ### Available Format Keys
 
- Key | Value | Type
------|-------|-----
-'{ping}` | Ping delady | Float
-`{speed_down}` | Download speed | Float
-`{speed_up}` | Upload speed | Float
+ Key | Value | Type | Unit
+-----|-------|------|------
+'{ping}` | Ping delady | Float | Seconds
+`{speed_down}` | Download speed | Float | Bits per second
+`{speed_up}` | Upload speed | Float | Bits per second
 
 ###### [↥ back to top](#list-of-available-blocks)
 
