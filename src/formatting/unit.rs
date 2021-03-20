@@ -49,7 +49,7 @@ impl TryInto<Unit> for &str {
             "W" => Ok(Unit::Watts),
             "Hz" => Ok(Unit::Hertz),
             "B" => Ok(Unit::Bytes),
-            "" => Ok(Unit::None),
+            "none" => Ok(Unit::None),
             x => Err(ConfigurationError(
                 "Can not parse unit".to_string(),
                 format!("unknown unit: '{}'", x.to_string()),
@@ -63,8 +63,8 @@ impl Unit {
     pub fn convert(&self, into: Self) -> Result<f64> {
         match self {
             Self::BitsPerSecond if into == Self::BytesPerSecond => Ok(1. / 8.),
-            Self::BytesPerSecond if into == Self::BytesPerSecond => Ok(8.),
-            x if *x == into => Ok(1.),
+            Self::BytesPerSecond if into == Self::BitsPerSecond => Ok(8.),
+            x if into == *x || into == Self::None => Ok(1.),
             x => Err(ConfigurationError(
                 "Can not convert unit".to_string(),
                 format!("it is not possible to convert '{:?}' to '{:?}'", x, into),
