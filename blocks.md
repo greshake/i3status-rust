@@ -813,8 +813,8 @@ This module keeps track of both Swap and Memory. By default, a click switches be
 ```toml
 [[block]]
 block = "memory"
-format_mem = "{Mum}MB/{MTm}MB({Mup})"
-format_swap = "{SUm}MB/{STm}MB({SUp})"
+format_mem = "{mem_used}/{mem_total}({mem_used_percents})"
+format_swap = "{swap_used}/{swap_total}({swap_used_percents})"
 display_type = "memory"
 icons = true
 clickable = true
