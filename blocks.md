@@ -813,8 +813,8 @@ This module keeps track of both Swap and Memory. By default, a click switches be
 ```toml
 [[block]]
 block = "memory"
-format_mem = "{Mum}MB/{MTm}MB({Mup}%)"
-format_swap = "{SUm}MB/{STm}MB({SUp}%)"
+format_mem = "{Mum}MB/{MTm}MB({Mup})"
+format_swap = "{SUm}MB/{STm}MB({SUp})"
 display_type = "memory"
 icons = true
 clickable = true
@@ -1313,7 +1313,7 @@ step_width = 3
 ```toml
 [[block]]
 block = "sound"
-format = "{output_description} {volume}%"
+format = "{output_description} {volume}"
 ```
 
 ```toml
