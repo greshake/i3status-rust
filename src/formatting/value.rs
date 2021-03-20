@@ -43,7 +43,7 @@ fn format_number(
         match min_prefix {
             Prefix::Tera => 4,
             Prefix::Giga => 3,
-            Prefix::Mega => 3,
+            Prefix::Mega => 2,
             Prefix::Kilo => 1,
             _ => 0,
         }
