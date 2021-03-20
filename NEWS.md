@@ -11,6 +11,14 @@
 
 * Disk Space block: the `alias` has been deprecated in favour of using `format` and may be removed in a future release.
 
+## New Blocks and Features
+
+* Net block: new `format_alt` option to set an alternative format string to switch between when the block is clicked (#1063 by @MaxVerevkin)
+
+## Bug Fixes and Improvements
+
+* Music block: fix `on_collapsed_click` which was broken in a previous release (#1061 by @MaxVerevkin)
+
 # i3status-rust 0.14.7
 
 Bug fix release for compile error on 32bit systems
