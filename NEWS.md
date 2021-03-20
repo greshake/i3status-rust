@@ -8,6 +8,7 @@
 * Memory block: all old format keys have been removed, refer to [Removed Format Keys](blocks.md#removed-format-keys) section of block's documentation for more details.
 * Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of format strings' custimization.
 * Net block: `use_bits`, `speed_min_unit`, `speed_digits` and `max_ssid_width` configuration options have been removed in favour of format strings' custimization.
+* Networkmanager block: `max_ssid_width` configuration options has been removed in favour of format strings' custimization.
 
 ## Deprecation Warnings
 
