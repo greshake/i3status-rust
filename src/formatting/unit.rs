@@ -5,14 +5,13 @@ use crate::errors::*;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Unit {
-    BitsPerSecond,
-    BytesPerSecond,
+    Bytes,
+    Bits,
     Percents,
     Degrees,
     Seconds,
     Watts,
     Hertz,
-    Bytes,
     None,
 }
 
@@ -22,14 +21,13 @@ impl fmt::Display for Unit {
             f,
             "{}",
             match self {
-                Self::BitsPerSecond => "b/s",
-                Self::BytesPerSecond => "B/s",
+                Self::Bytes => "B",
+                Self::Bits => "b",
                 Self::Percents => "%",
                 Self::Degrees => "°",
                 Self::Seconds => "s",
                 Self::Watts => "W",
                 Self::Hertz => "Hz",
-                Self::Bytes => "B",
                 Self::None => "",
             }
         )
@@ -41,14 +39,13 @@ impl TryInto<Unit> for &str {
 
     fn try_into(self) -> Result<Unit> {
         match self {
-            "b/s" => Ok(Unit::BitsPerSecond),
-            "B/s" => Ok(Unit::BytesPerSecond),
+            "B" => Ok(Unit::Bytes),
+            "b" => Ok(Unit::Bits),
             "%" => Ok(Unit::Percents),
             "deg" => Ok(Unit::Degrees),
             "s" => Ok(Unit::Seconds),
             "W" => Ok(Unit::Watts),
             "Hz" => Ok(Unit::Hertz),
-            "B" => Ok(Unit::Bytes),
             "" => Ok(Unit::None),
             x => Err(ConfigurationError(
                 "Can not parse unit".to_string(),
@@ -62,8 +59,8 @@ impl Unit {
     //TODO support more complex conversions like Celsius -> Fahrenheit
     pub fn convert(&self, into: Self) -> Result<f64> {
         match self {
-            Self::BitsPerSecond if into == Self::BytesPerSecond => Ok(1. / 8.),
-            Self::BytesPerSecond if into == Self::BitsPerSecond => Ok(8.),
+            Self::Bits if into == Self::Bytes => Ok(1. / 8.),
+            Self::Bytes if into == Self::Bits => Ok(8.),
             x if into == *x || into == Self::None => Ok(1.),
             x => Err(ConfigurationError(
                 "Can not convert unit".to_string(),
@@ -73,9 +70,6 @@ impl Unit {
     }
 
     pub fn is_byte(&self) -> bool {
-        matches!(
-            self,
-            Self::Bytes | Self::BytesPerSecond | Self::BitsPerSecond
-        )
+        matches!(self, Self::Bytes | Self::Bits)
     }
 }

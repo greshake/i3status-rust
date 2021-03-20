@@ -151,20 +151,20 @@ impl Value {
     //}
 
     // Units
+    pub fn bytes(mut self) -> Self {
+        self.unit = Unit::Bytes;
+        self
+    }
+    pub fn bits(mut self) -> Self {
+        self.unit = Unit::Bits;
+        self
+    }
     pub fn degrees(mut self) -> Self {
         self.unit = Unit::Degrees;
         self
     }
     pub fn percents(mut self) -> Self {
         self.unit = Unit::Percents;
-        self
-    }
-    pub fn bits_per_second(mut self) -> Self {
-        self.unit = Unit::BitsPerSecond;
-        self
-    }
-    pub fn bytes_per_second(mut self) -> Self {
-        self.unit = Unit::BytesPerSecond;
         self
     }
     pub fn seconds(mut self) -> Self {
@@ -177,10 +177,6 @@ impl Value {
     }
     pub fn hertz(mut self) -> Self {
         self.unit = Unit::Hertz;
-        self
-    }
-    pub fn bytes(mut self) -> Self {
-        self.unit = Unit::Bytes;
         self
     }
 
@@ -239,7 +235,7 @@ impl Value {
             }
         };
 
-        let icon_str = self.icon.as_ref().map(|s| s.as_str()).unwrap_or("");
+        let icon_str = self.icon.as_deref().unwrap_or("");
 
         let unit = unit.to_string();
         let unit_str = if var.unit_hidden { "" } else { unit.as_str() };

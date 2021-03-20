@@ -997,7 +997,7 @@ Displays ssid, signal strength, ip, down speed and up speed as bits per second. 
 [[block]]
 block = "net"
 device = "wlp2s0"
-format = "{ssid} {signal_strength} {ip} {speed_down;K*b/s} {graph_down;K*b/s}"
+format = "{ssid} {signal_strength} {ip} {speed_down;K*b} {graph_down;K*b}"
 interval = 5
 ```
 
@@ -1380,7 +1380,7 @@ Display speed in bytes per second using 4 digits
 [[block]]
 block = "speedtest"
 interval = 1800
-format = "{ping}{speed_down:4*B/s}{speed_up:4*B/s}
+format = "{ping}{speed_down:4*B}{speed_up:4*B}
 ```
 
 #### Options
@@ -1794,30 +1794,29 @@ The value of `var` | Output
 
 ### `[_]<unit>`
 
-Some placeholders have a "unit". For example, `net` block displays speed in `B/s`. This option gives ability to convert one units into another. Ignored for strings. Prepend the unit with the underscore `_` to hide the unit (i.e. don't display it).
+Some placeholders have a "unit". For example, `net` block displays speed in bytes per second by default. This option gives ability to convert one units into another. Ignored for strings. Prepend the unit with the underscore `_` to hide the unit (i.e. don't display it).
 
 #### The list of units
 
  Unit |         Means        | Displays
 ------|----------------------|---------
- b/s  | Bits per second      | b/s
- B/s  | Bytes per second     | B/s
+ B    | Bytes                | B
+ b    | Bits                 | b
  %    | Percents             | %
  deg  | Degrees              | °
  s    | Seconds              | s
  W    | Watts                | W
  Hz   | Hertz                | Hz
- B    | Bytes                | B
 
 #### Example
 
-`"{speed_down*b/s}"` - show the download speed in bits per second.
+`"{speed_down*b}"` - show the download speed in bits per second.
 
-`"{speed_down*_b/s}"` - show the download speed in bits per second, but hide the "b/s".
+`"{speed_down*_b}"` - show the download speed in bits per second, but hide the "b".
 
 `"{speed_down*_}"` - show the download speed in it's default units, but hide the units.
 
-`"{speed_down*_b/s}Bi"` - show the download in bits per second, and disply the untit as "Bi" instead of "b/s".
+`"{speed_down*_b}Bi/s"` - show the download in bits per second, and disply the untit as "Bi/s" instead of "b".
 
 ### `<bar max value>`
 

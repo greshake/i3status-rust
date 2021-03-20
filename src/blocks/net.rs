@@ -681,8 +681,8 @@ impl Block for Net {
             "bitrate" => Value::from_string(self.bitrate.clone().unwrap_or_else(|| empty_string.clone())), // TODO: not a String?
             "ip" => Value::from_string(self.ip_addr.clone().unwrap_or_else(|| empty_string.clone())),
             "ipv6" => Value::from_string(self.ipv6_addr.clone().unwrap_or(empty_string)),
-            "speed_up" => Value::from_float(self.speed_up).bytes_per_second().icon(self.shared_config.get_icon("net_up")?),
-            "speed_down" => Value::from_float(self.speed_down).bytes_per_second().icon(self.shared_config.get_icon("net_down")?),
+            "speed_up" => Value::from_float(self.speed_up).bytes().icon(self.shared_config.get_icon("net_up")?),
+            "speed_down" => Value::from_float(self.speed_down).bytes().icon(self.shared_config.get_icon("net_down")?),
             "graph_up" => Value::from_string(self.graph_tx.clone()),
             "graph_down" => Value::from_string(self.graph_rx.clone()),
         );

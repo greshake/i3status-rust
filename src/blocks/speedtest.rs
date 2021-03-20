@@ -165,8 +165,8 @@ impl Block for SpeedTest {
 
                 let values = map!(
                     "ping" => Value::from_float(ping).seconds().icon(self.ping_icon.clone()),
-                    "speed_down" => Value::from_float(down).bits_per_second().icon(self.down_icon.clone()),
-                    "speed_up" => Value::from_float(up).bits_per_second().icon(self.up_icon.clone()),
+                    "speed_down" => Value::from_float(down).bits().icon(self.down_icon.clone()),
+                    "speed_up" => Value::from_float(up).bits().icon(self.up_icon.clone()),
                 );
 
                 let ping_state = match (ping * 1000.) as i32 {
