@@ -864,7 +864,7 @@ Key | Values | Required | Default
 `{cached_percent}` | Cached memory, similar to htop's yellow bar (in %) | Float
 
 #### Removed Format Keys
- Old key | New alternate
+ Old key | New alternative
 ---------|---------------
 `{MTg}`  | `{mem_total;G}`
 `{MTm}`  | `{mem_total;M}`
