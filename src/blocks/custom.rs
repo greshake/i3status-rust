@@ -33,14 +33,11 @@ pub struct Custom {
     shell: String,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct CustomConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "CustomConfig::default_interval",
-        deserialize_with = "deserialize_update"
-    )]
+    #[serde(deserialize_with = "deserialize_update")]
     pub interval: Update,
 
     /// Shell Command to execute & display
@@ -53,26 +50,25 @@ pub struct CustomConfig {
     pub signal: Option<i32>,
 
     /// Parse command output if it contains valid bar JSON
-    #[serde(default = "CustomConfig::default_json")]
     pub json: bool,
 
-    #[serde(default = "CustomConfig::hide_when_empty")]
     pub hide_when_empty: bool,
 
-    pub shell: Option<String>,
+    // TODO make a global config option
+    pub shell: String,
 }
 
-impl CustomConfig {
-    fn default_interval() -> Update {
-        Update::Every(Duration::new(10, 0))
-    }
-
-    fn default_json() -> bool {
-        false
-    }
-
-    fn hide_when_empty() -> bool {
-        false
+impl Default for CustomConfig {
+    fn default() -> Self {
+        Self {
+            interval: Update::Every(Duration::from_secs(10)),
+            command: None,
+            cycle: None,
+            signal: None,
+            json: false,
+            hide_when_empty: false,
+            shell: env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()),
+        }
     }
 }
 
@@ -97,11 +93,7 @@ impl ConfigBlock for Custom {
             json: block_config.json,
             hide_when_empty: block_config.hide_when_empty,
             is_empty: true,
-            shell: if let Some(s) = block_config.shell {
-                s
-            } else {
-                env::var("SHELL").unwrap_or_else(|_| "sh".to_owned())
-            },
+            shell: block_config.shell,
         };
 
         if let Some(signal) = block_config.signal {

@@ -30,12 +30,6 @@ impl MailType {
     }
 }
 
-impl Default for MailType {
-    fn default() -> MailType {
-        MailType::New
-    }
-}
-
 pub struct Maildir {
     id: usize,
     text: TextWidget,
@@ -46,38 +40,30 @@ pub struct Maildir {
     display_type: MailType,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+//TODO add `format`
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct MaildirConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "MaildirConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
     pub inboxes: Vec<String>,
-    #[serde(default = "MaildirConfig::default_threshold_warning")]
     pub threshold_warning: usize,
-    #[serde(default = "MaildirConfig::default_threshold_critical")]
     pub threshold_critical: usize,
-    #[serde(default)]
     pub display_type: MailType,
-    #[serde(default = "MaildirConfig::default_icon")]
     pub icon: bool,
 }
 
-impl MaildirConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-    fn default_threshold_warning() -> usize {
-        1
-    }
-    fn default_threshold_critical() -> usize {
-        10
-    }
-    fn default_icon() -> bool {
-        true
+impl Default for MaildirConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(5),
+            inboxes: Vec::new(),
+            threshold_warning: 1,
+            threshold_critical: 10,
+            display_type: MailType::New,
+            icon: true,
+        }
     }
 }
 

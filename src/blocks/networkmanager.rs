@@ -471,57 +471,38 @@ pub struct NetworkManager {
     shared_config: SharedConfig,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct NetworkManagerConfig {
     /// Whether to only show the primary connection, or all active connections.
-    #[serde(default = "NetworkManagerConfig::default_primary_only")]
     pub primary_only: bool,
 
     /// AP formatter
-    #[serde(default = "NetworkManagerConfig::default_ap_format")]
     pub ap_format: String,
 
     /// Device formatter.
-    #[serde(default = "NetworkManagerConfig::default_device_format")]
     pub device_format: String,
 
     /// Connection formatter.
-    #[serde(default = "NetworkManagerConfig::default_connection_format")]
     pub connection_format: String,
 
     /// Interface name regex patterns to include.
-    #[serde(default = "NetworkManagerConfig::default_interface_name_include_patterns")]
     pub interface_name_exclude: Vec<String>,
 
     /// Interface name regex patterns to ignore.
-    #[serde(default = "NetworkManagerConfig::default_interface_name_exclude_patterns")]
     pub interface_name_include: Vec<String>,
 }
 
-impl NetworkManagerConfig {
-    fn default_primary_only() -> bool {
-        false
-    }
-
-    fn default_ap_format() -> String {
-        "{ssid}".to_string()
-    }
-
-    fn default_device_format() -> String {
-        "{icon}{ap} {ips}".to_string()
-    }
-
-    fn default_connection_format() -> String {
-        "{devices}".to_string()
-    }
-
-    fn default_interface_name_include_patterns() -> Vec<String> {
-        vec![]
-    }
-
-    fn default_interface_name_exclude_patterns() -> Vec<String> {
-        vec![]
+impl Default for NetworkManagerConfig {
+    fn default() -> Self {
+        Self {
+            primary_only: false,
+            ap_format: "{ssid}".to_string(),
+            device_format: "{icon}{ap} {ips}".to_string(),
+            connection_format: "{devices}".to_string(),
+            interface_name_exclude: Vec::new(),
+            interface_name_include: Vec::new(),
+        }
     }
 }
 

@@ -29,7 +29,7 @@ pub struct CustomDBus {
     status: Arc<Mutex<CustomDBusStatus>>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct CustomDBusConfig {
     pub name: String,

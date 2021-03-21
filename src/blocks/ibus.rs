@@ -37,23 +37,19 @@ pub struct IBus {
     format: FormatTemplate,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct IBusConfig {
-    #[serde(default = "IBusConfig::default_mappings")]
     pub mappings: Option<BTreeMap<String, String>>,
-
-    #[serde(default = "IBusConfig::default_format")]
     pub format: String,
 }
 
-impl IBusConfig {
-    fn default_mappings() -> Option<BTreeMap<String, String>> {
-        None
-    }
-
-    fn default_format() -> String {
-        "{engine}".into()
+impl Default for IBusConfig {
+    fn default() -> Self {
+        Self {
+            mappings: None,
+            format: "{engine}".to_string(),
+        }
     }
 }
 

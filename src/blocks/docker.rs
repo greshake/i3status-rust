@@ -39,28 +39,23 @@ struct Status {
     images: i64,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct DockerConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "DockerConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Format override
-    #[serde(default = "DockerConfig::default_format")]
     pub format: String,
 }
 
-impl DockerConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_format() -> String {
-        "{running}".to_owned()
+impl Default for DockerConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(5),
+            format: "{running}".to_string(),
+        }
     }
 }
 

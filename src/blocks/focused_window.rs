@@ -32,24 +32,21 @@ pub struct FocusedWindow {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, default)]
 pub struct FocusedWindowConfig {
     /// Truncates titles if longer than max-width
-    #[serde(default = "FocusedWindowConfig::default_max_width")]
     pub max_width: usize,
 
     /// Show marks in place of title (if exist)
-    #[serde(default = "FocusedWindowConfig::default_show_marks")]
     pub show_marks: MarksType,
 }
 
-impl FocusedWindowConfig {
-    fn default_max_width() -> usize {
-        21
-    }
-
-    fn default_show_marks() -> MarksType {
-        MarksType::None
+impl Default for FocusedWindowConfig {
+    fn default() -> Self {
+        Self {
+            max_width: 21,
+            show_marks: MarksType::None,
+        }
     }
 }
 

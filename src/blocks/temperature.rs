@@ -46,18 +46,14 @@ pub struct Temperature {
     fallback_required: bool,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct TemperatureConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "TemperatureConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Collapsed by default?
-    #[serde(default = "TemperatureConfig::default_collapsed")]
     pub collapsed: bool,
 
     /// The temperature scale to use for display and thresholds
@@ -81,37 +77,29 @@ pub struct TemperatureConfig {
     pub warning: Option<i64>,
 
     /// Format override
-    #[serde(default = "TemperatureConfig::default_format")]
     pub format: String,
 
     /// Chip override
-    #[serde(default = "TemperatureConfig::default_chip")]
     pub chip: Option<String>,
 
     /// Inputs whitelist
-    #[serde(default = "TemperatureConfig::default_inputs")]
     pub inputs: Option<Vec<String>>,
 }
 
-impl TemperatureConfig {
-    fn default_format() -> String {
-        "{average} avg, {max} max".to_owned()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_collapsed() -> bool {
-        true
-    }
-
-    fn default_chip() -> Option<String> {
-        None
-    }
-
-    fn default_inputs() -> Option<Vec<String>> {
-        None
+impl Default for TemperatureConfig {
+    fn default() -> Self {
+        Self {
+            format: "{average} avg, {max} max".to_string(),
+            interval: Duration::from_secs(5),
+            collapsed: true,
+            scale: TemperatureScale::default(),
+            good: None,
+            idle: None,
+            info: None,
+            warning: None,
+            chip: None,
+            inputs: None,
+        }
     }
 }
 

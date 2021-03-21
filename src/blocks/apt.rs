@@ -31,55 +31,42 @@ pub struct Apt {
     config_path: String,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct AptConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "AptConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Format override
-    #[serde(default = "AptConfig::default_format")]
     pub format: String,
 
     /// Alternative format override for when exactly 1 update is available
-    #[serde(default = "AptConfig::default_format")]
     pub format_singular: String,
 
     /// Alternative format override for when no updates are available
-    #[serde(default = "AptConfig::default_format")]
     pub format_up_to_date: String,
 
     /// Indicate a `warning` state for the block if any pending update match the
     /// following regex. Default behaviour is that no package updates are deemed
     /// warning
-    #[serde(default = "AptConfig::default_warning_updates_regex")]
     pub warning_updates_regex: Option<String>,
 
     /// Indicate a `critical` state for the block if any pending update match the following regex.
     /// Default behaviour is that no package updates are deemed critical
-    #[serde(default = "AptConfig::default_critical_updates_regex")]
     pub critical_updates_regex: Option<String>,
 }
 
-impl AptConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(60 * 10)
-    }
-
-    fn default_format() -> String {
-        "{count:1}".to_owned()
-    }
-
-    fn default_warning_updates_regex() -> Option<String> {
-        None
-    }
-
-    fn default_critical_updates_regex() -> Option<String> {
-        None
+impl Default for AptConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(600),
+            format: "{count:1}".to_string(),
+            format_singular: "{count:1}".to_string(),
+            format_up_to_date: "{count:1}".to_string(),
+            warning_updates_regex: None,
+            critical_updates_regex: None,
+        }
     }
 }
 

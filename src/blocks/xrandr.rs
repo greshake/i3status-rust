@@ -60,44 +60,32 @@ pub struct Xrandr {
     shared_config: SharedConfig,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+// TODO add `format`
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct XrandrConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "XrandrConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Show icons for brightness and resolution (needs awesome fonts support)
-    #[serde(default = "XrandrConfig::default_icons")]
     pub icons: bool,
 
     /// Shows the screens resolution
-    #[serde(default = "XrandrConfig::default_resolution")]
     pub resolution: bool,
 
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
-    #[serde(default = "XrandrConfig::default_step_width")]
     pub step_width: u32,
 }
 
-impl XrandrConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_icons() -> bool {
-        true
-    }
-
-    fn default_resolution() -> bool {
-        false
-    }
-
-    fn default_step_width() -> u32 {
-        5
+impl Default for XrandrConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(5),
+            icons: true,
+            resolution: false,
+            step_width: 5,
+        }
     }
 }
 

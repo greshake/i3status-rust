@@ -26,42 +26,31 @@ pub struct Time {
     locale: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct TimeConfig {
-    /// Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
-    #[serde(default = "TimeConfig::default_format")]
+    /// Format string.
+    ///
+    /// See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
     pub format: String,
 
     /// Update interval in seconds
-    #[serde(
-        default = "TimeConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    #[serde(default = "TimeConfig::default_timezone")]
     pub timezone: Option<Tz>,
 
-    #[serde(default = "TimeConfig::default_locale")]
     pub locale: Option<String>,
 }
 
-impl TimeConfig {
-    fn default_format() -> String {
-        "%a %d/%m %R".to_owned()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_timezone() -> Option<Tz> {
-        None
-    }
-
-    fn default_locale() -> Option<String> {
-        None
+impl Default for TimeConfig {
+    fn default() -> Self {
+        Self {
+            format: "%a %d/%m %R".to_string(),
+            interval: Duration::from_secs(5),
+            timezone: None,
+            locale: None,
+        }
     }
 }
 

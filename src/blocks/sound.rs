@@ -734,49 +734,6 @@ impl Default for DeviceKind {
     }
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct SoundConfig {
-    /// ALSA / PulseAudio sound device name
-    #[serde(default)]
-    pub driver: SoundDriver,
-
-    /// PulseAudio device name, or
-    /// ALSA control name as listed in the output of `amixer -D yourdevice scontrols` (default is "Master")
-    #[serde(default = "SoundConfig::default_name")]
-    pub name: Option<String>,
-
-    /// ALSA device name, usually in the form "hw:#" where # is the number of the card desired (default is "default")
-    #[serde(default = "SoundConfig::default_device")]
-    pub device: Option<String>,
-
-    /// Type of device: sink or source (default is "sink")
-    #[serde(default)]
-    pub device_kind: DeviceKind,
-
-    /// Use the mapped volume for evaluating the percentage representation like alsamixer, to be more natural for human ear
-    #[serde(default = "SoundConfig::default_natural_mapping")]
-    pub natural_mapping: bool,
-
-    /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
-    #[serde(default = "SoundConfig::default_step_width")]
-    pub step_width: u32,
-
-    /// Format string for displaying sound information.
-    /// placeholders: {volume}
-    #[serde(default = "SoundConfig::default_format")]
-    pub format: String,
-
-    #[serde(default = "SoundConfig::default_show_volume_when_muted")]
-    pub show_volume_when_muted: bool,
-
-    #[serde(default = "SoundConfig::default_mappings")]
-    pub mappings: Option<BTreeMap<String, String>>,
-
-    #[serde(default = "SoundConfig::default_max_vol")]
-    pub max_vol: Option<u32>,
-}
-
 #[derive(Deserialize, Copy, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum SoundDriver {
@@ -792,37 +749,53 @@ impl Default for SoundDriver {
     }
 }
 
-impl SoundConfig {
-    fn default_name() -> Option<String> {
-        None
-    }
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
+pub struct SoundConfig {
+    /// ALSA / PulseAudio sound device name
+    pub driver: SoundDriver,
 
-    fn default_device() -> Option<String> {
-        None
-    }
+    /// PulseAudio device name, or
+    /// ALSA control name as listed in the output of `amixer -D yourdevice scontrols` (default is "Master")
+    pub name: Option<String>,
 
-    fn default_natural_mapping() -> bool {
-        false
-    }
+    /// ALSA device name, usually in the form "hw:#" where # is the number of the card desired (default is "default")
+    pub device: Option<String>,
 
-    fn default_step_width() -> u32 {
-        5
-    }
+    /// Type of device: sink or source (default is "sink")
+    pub device_kind: DeviceKind,
 
-    fn default_format() -> String {
-        "{volume:2}".into()
-    }
+    /// Use the mapped volume for evaluating the percentage representation like alsamixer, to be more natural for human ear
+    pub natural_mapping: bool,
 
-    fn default_show_volume_when_muted() -> bool {
-        false
-    }
+    /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
+    pub step_width: u32,
 
-    fn default_mappings() -> Option<BTreeMap<String, String>> {
-        None
-    }
+    /// Format string for displaying sound information.
+    /// placeholders: {volume}
+    pub format: String,
 
-    fn default_max_vol() -> Option<u32> {
-        None
+    pub show_volume_when_muted: bool,
+
+    pub mappings: Option<BTreeMap<String, String>>,
+
+    pub max_vol: Option<u32>,
+}
+
+impl Default for SoundConfig {
+    fn default() -> Self {
+        Self {
+            driver: Default::default(),
+            name: None,
+            device: None,
+            device_kind: Default::default(),
+            natural_mapping: false,
+            step_width: 5,
+            format: "{volume}".to_string(),
+            show_volume_when_muted: false,
+            mappings: None,
+            max_vol: None,
+        }
     }
 }
 

@@ -385,53 +385,37 @@ impl fmt::Display for Unit {
     }
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct NetConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "NetConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    #[serde(default = "NetConfig::default_format")]
     pub format: String,
 
-    #[serde(default = "NetConfig::default_format_alt")]
     pub format_alt: Option<String>,
 
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
 
     /// Whether to hide networks that are down/inactive completely.
-    #[serde(default = "NetConfig::default_hide_inactive")]
     pub hide_inactive: bool,
 
     /// Whether to hide networks that are missing.
-    #[serde(default = "NetConfig::default_hide_missing")]
     pub hide_missing: bool,
 }
 
-impl NetConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(1)
-    }
-
-    fn default_format() -> String {
-        "{speed_up;K} {speed_down;K}".to_owned()
-    }
-
-    fn default_format_alt() -> Option<String> {
-        None
-    }
-
-    fn default_hide_inactive() -> bool {
-        false
-    }
-
-    fn default_hide_missing() -> bool {
-        false
+impl Default for NetConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(1),
+            format: "{speed_up;K} {speed_down;K}".to_string(),
+            format_alt: None,
+            device: None,
+            hide_inactive: false,
+            hide_missing: false,
+        }
     }
 }
 

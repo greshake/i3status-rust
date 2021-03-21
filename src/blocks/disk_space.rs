@@ -42,87 +42,54 @@ pub struct DiskSpace {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, default)]
 pub struct DiskSpaceConfig {
     /// Path to collect information from
-    #[serde(default = "DiskSpaceConfig::default_path")]
     pub path: String,
 
     /// Currently supported options are available, free, total and used
     /// Sets value used for {percentage} calculation
     /// total is the same as used, use format to set format string for output
-    #[serde(default = "DiskSpaceConfig::default_info_type")]
     pub info_type: InfoType,
 
     /// Format string for output
-    #[serde(default = "DiskSpaceConfig::default_format")]
     pub format: String,
 
     /// Unit that is used to display disk space. Options are B, KB, MB, GB and TB
-    #[serde(default = "DiskSpaceConfig::default_unit")]
     pub unit: String,
 
     /// Update interval in seconds
-    #[serde(
-        default = "DiskSpaceConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    /// Diskspace warning in GiB (yellow)
-    #[serde(default = "DiskSpaceConfig::default_warning")]
+    /// Diskspace warning (yellow)
     pub warning: f64,
 
-    /// Diskspace alert in GiB (red)
-    #[serde(default = "DiskSpaceConfig::default_alert")]
+    /// Diskspace alert (red)
     pub alert: f64,
 
     /// use absolute (unit) values for disk space alerts
-    #[serde(default = "DiskSpaceConfig::default_alert_absolute")]
     pub alert_absolute: bool,
 
     /// Alias that is displayed for path
     // DEPRECATED
     // TODO remove
-    #[serde(default = "DiskSpaceConfig::default_alias")]
     pub alias: String,
 }
 
-impl DiskSpaceConfig {
-    fn default_path() -> String {
-        "/".to_owned()
-    }
-
-    fn default_info_type() -> InfoType {
-        InfoType::Available
-    }
-
-    fn default_format() -> String {
-        "{alias} {available}".to_string()
-    }
-
-    fn default_unit() -> String {
-        "GB".to_string()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(20)
-    }
-
-    fn default_warning() -> f64 {
-        20.
-    }
-
-    fn default_alert() -> f64 {
-        10.
-    }
-
-    fn default_alert_absolute() -> bool {
-        false
-    }
-
-    fn default_alias() -> String {
-        "/".to_string()
+impl Default for DiskSpaceConfig {
+    fn default() -> Self {
+        Self {
+            path: "/".to_string(),
+            info_type: InfoType::Available,
+            format: "{available}".to_string(),
+            unit: "GB".to_string(),
+            interval: Duration::from_secs(20),
+            warning: 20.,
+            alert: 10.,
+            alert_absolute: false,
+            alias: "/".to_string(),
+        }
     }
 }
 

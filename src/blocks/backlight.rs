@@ -189,15 +189,13 @@ pub struct Backlight {
 }
 
 /// Configuration for the [`Backlight`](./struct.Backlight.html) block.
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct BacklightConfig {
     /// The backlight device in `/sys/class/backlight/` to read brightness from.
-    #[serde(default = "BacklightConfig::default_device")]
     pub device: Option<String>,
 
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
-    #[serde(default = "BacklightConfig::default_step_width")]
     pub step_width: u64,
 
     /// Scaling exponent reciprocal (ie. root). Some devices expose raw values
@@ -207,28 +205,19 @@ pub struct BacklightConfig {
     /// More information: <https://en.wikipedia.org/wiki/Lightness>
     ///
     /// For devices with few discrete steps this should be 1.0 (linear).
-    #[serde(default = "BacklightConfig::default_root_scaling")]
     pub root_scaling: f64,
 
-    #[serde(default = "BacklightConfig::default_invert_icons")]
     pub invert_icons: bool,
 }
 
-impl BacklightConfig {
-    fn default_device() -> Option<String> {
-        None
-    }
-
-    fn default_step_width() -> u64 {
-        5
-    }
-
-    fn default_root_scaling() -> f64 {
-        1f64
-    }
-
-    fn default_invert_icons() -> bool {
-        false
+impl Default for BacklightConfig {
+    fn default() -> Self {
+        Self {
+            device: None,
+            step_width: 5,
+            root_scaling: 1f64,
+            invert_icons: false,
+        }
     }
 }
 
