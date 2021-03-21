@@ -699,7 +699,7 @@ impl Block for Music {
             .players
             .lock()
             .expect("failed to acquire lock for `players`");
-        if players.len() == 1 && self.current_song_widget.is_empty() && self.hide_when_empty {
+        if players.len() <= 1 && self.current_song_widget.is_empty() && self.hide_when_empty {
             vec![]
         } else if players.len() > 0 && !self.current_song_widget.is_empty() {
             let mut elements: Vec<&dyn I3BarWidget> = Vec::new();
