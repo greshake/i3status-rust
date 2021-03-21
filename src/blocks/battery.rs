@@ -17,8 +17,10 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, format_percent_bar, read_file, FormatTemplate};
+use crate::util::{battery_level_to_icon, read_file};
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
@@ -517,14 +519,9 @@ pub struct BatteryConfig {
     )]
     pub interval: Duration,
 
-    /// The internal power supply device in `/sys/class/power_supply/` to read
-    /// from.
+    /// The internal power supply device in `/sys/class/power_supply/` to read from.
     #[serde(default = "BatteryConfig::default_device")]
     pub device: String,
-
-    /// (DEPRECATED) Options for displaying battery information.
-    #[serde()]
-    pub show: Option<String>,
 
     /// Format string for displaying battery information.
     /// placeholders: {percentage}, {bar}, {time} and {power}
@@ -541,12 +538,9 @@ pub struct BatteryConfig {
     #[serde(default = "BatteryConfig::default_missing_format")]
     pub missing_format: String,
 
-    /// (DEPRECATED) Use UPower to monitor battery status and events.
-    #[serde(default = "BatteryConfig::default_upower")]
-    pub upower: bool,
-
     /// The "driver" to use for powering the block. One of "sysfs" or "upower".
-    pub driver: Option<BatteryDriver>,
+    #[serde(default = "BatteryConfig::default_driver")]
+    pub driver: BatteryDriver,
 
     /// The threshold above which the remaining capacity is shown as good
     #[serde(default = "BatteryConfig::default_good")]
@@ -583,7 +577,7 @@ impl BatteryConfig {
     }
 
     fn default_format() -> String {
-        "{percentage}%".into()
+        "{percentage}".into()
     }
 
     fn default_full_format() -> String {
@@ -591,11 +585,11 @@ impl BatteryConfig {
     }
 
     fn default_missing_format() -> String {
-        "{percentage}%".into()
+        "{percentage}".into()
     }
 
-    fn default_upower() -> bool {
-        false
+    fn default_driver() -> BatteryDriver {
+        BatteryDriver::Sysfs
     }
 
     fn default_critical() -> u64 {
@@ -632,27 +626,7 @@ impl ConfigBlock for Battery {
         shared_config: SharedConfig,
         update_request: Sender<Task>,
     ) -> Result<Self> {
-        // TODO: remove deprecated show types eventually
-        let format = match block_config.show {
-            Some(show) => match show.as_ref() {
-                "time" => "{time}".into(),
-                "percentage" => "{percentage}%".into(),
-                "both" => "{percentage}% {time}".into(),
-                _ => {
-                    return Err(BlockError("battery".into(), "Unknown show option".into()));
-                }
-            },
-            None => block_config.format,
-        };
-
-        // TODO: Remove the deprecated upower config eventually.
-        let driver = match block_config.driver {
-            Some(val) => val,
-            None if block_config.upower => BatteryDriver::Upower,
-            _ => BatteryDriver::Sysfs,
-        };
-
-        let device: Box<dyn BatteryDevice> = match driver {
+        let device: Box<dyn BatteryDevice> = match block_config.driver {
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
                 out.monitor(id, update_request);
@@ -669,12 +643,12 @@ impl ConfigBlock for Battery {
             update_interval: block_config.interval,
             output: TextWidget::new(id, 0, shared_config),
             device,
-            format: FormatTemplate::from_string(&format)?,
+            format: FormatTemplate::from_string(&block_config.format)?,
             full_format: FormatTemplate::from_string(&block_config.full_format)?,
             missing_format: FormatTemplate::from_string(&block_config.missing_format)?,
             allow_missing: block_config.allow_missing,
             hide_missing: block_config.hide_missing,
-            driver,
+            driver: block_config.driver,
             good: block_config.good,
             info: block_config.info,
             warning: block_config.warning,
@@ -692,17 +666,14 @@ impl Block for Battery {
         if !self.device.is_available() && self.allow_missing {
             // Respect the original format string, even if the battery
             // cannot be found right now.
-            let empty_percent_bar = format_percent_bar(0.0);
             let values = map!(
-                "{percentage}" => "X",
-                "{bar}" => &empty_percent_bar,
-                "{time}" => "xx:xx",
-                "{power}" => "N/A"
+                "percentage" => Value::from_string("X".to_string()),
+                "time" => Value::from_string("xx:xx".to_string()),
+                "power" => Value::from_string("N/A".to_string()),
             );
 
-            self.output.set_icon("bat_not_available");
-            self.output
-                .set_text(self.missing_format.render_static_str(&values)?);
+            self.output.set_icon("bat_not_available")?;
+            self.output.set_text(self.missing_format.render(&values)?);
             self.output.set_state(State::Warning);
 
             return match self.driver {
@@ -717,40 +688,30 @@ impl Block for Battery {
 
         let status = self.device.status()?;
         let capacity = self.device.capacity();
-        let percentage = match capacity {
-            Ok(capacity) => format!("{}", capacity),
-            Err(_) => "×".into(),
-        };
-        let bar = match capacity {
-            Ok(capacity) => format_percent_bar(capacity as f32),
-            Err(_) => "×".into(),
-        };
-        let time = match self.device.time_remaining() {
-            Ok(time) => match time {
-                0 => "".into(),
-                _ => format!("{}:{:02}", std::cmp::min(time / 60, 99), time % 60),
+        let values = map!(
+            "percentage" => match capacity {
+                Ok(capacity) => Value::from_integer(capacity as i64).percents(),
+                _ => Value::from_string("×".into()),
             },
-            Err(_) => "×".into(),
-        };
-        // convert µW to W for display
-        let power = match self.device.power_consumption() {
-            Ok(power) => format!("{:.2}", power as f64 / 1000.0 / 1000.0),
-            Err(_) => "×".into(),
-        };
-        let values = map!("{percentage}" => percentage,
-                            "{bar}" => bar,
-                            "{time}" => time,
-                            "{power}" => power);
+            "time" => match self.device.time_remaining() {
+                Ok(0) => Value::from_string("".into()),
+                Ok(time) => Value::from_string(format!("{}:{:02}", std::cmp::min(time / 60, 99), time % 60)),
+                _ => Value::from_string("×".into()),
+            },
+            // convert µW to W for display
+            "power" => match self.device.power_consumption() {
+                Ok(power) => Value::from_float(power as f64 * 1e-6).watts(),
+                _ => Value::from_string("×".into()),
+            },
+        );
 
         if status == "Full" || status == "Not charging" {
-            self.output.set_icon("bat_full");
-            self.output
-                .set_text(self.full_format.render_static_str(&values)?);
+            self.output.set_icon("bat_full")?;
+            self.output.set_text(self.full_format.render(&values)?);
             self.output.set_state(State::Good);
             self.output.set_spacing(Spacing::Hidden);
         } else {
-            self.output
-                .set_text(self.format.render_static_str(&values)?);
+            self.output.set_text(self.format.render(&values)?);
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.
@@ -782,7 +743,7 @@ impl Block for Battery {
                 "Discharging" => battery_level_to_icon(capacity),
                 "Charging" => "bat_charging",
                 _ => battery_level_to_icon(capacity),
-            });
+            })?;
             self.output.set_spacing(Spacing::Normal);
         }
 

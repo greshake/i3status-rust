@@ -169,7 +169,7 @@ impl Block for Custom {
             let output: Output = serde_json::from_str(&*raw_output).map_err(|e| {
                 BlockError("custom".to_string(), format!("Error parsing JSON: {}", e))
             })?;
-            self.output.set_icon(&output.icon);
+            self.output.set_icon(&output.icon)?;
             self.output.set_state(output.state);
             self.is_empty = output.text.is_empty();
             self.output.set_text(output.text);

@@ -11,9 +11,11 @@ use serde_derive::Deserialize;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::pseudo_uuid;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -30,7 +32,7 @@ pub struct Notify {
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct NotifyConfig {
-    /// Format string for displaying phone information.
+    /// Format string which describes the output of this block.
     #[serde(default = "NotifyConfig::default_format")]
     pub format: String,
 }
@@ -110,7 +112,7 @@ impl ConfigBlock for Notify {
             id,
             paused: state,
             format: FormatTemplate::from_string(&block_config.format)?,
-            output: TextWidget::new(notify_id, 0, shared_config).with_icon(icon),
+            output: TextWidget::new(notify_id, 0, shared_config).with_icon(icon)?,
         })
     }
 }
@@ -127,14 +129,13 @@ impl Block for Notify {
             .block_error("notify", "failed to acquire lock for `state`")?;
 
         let values = map!(
-            "{state}" => paused.to_string()
+            "state" => Value::from_string(paused.to_string())
         );
 
-        self.output
-            .set_text(self.format.render_static_str(&values)?);
+        self.output.set_text(self.format.render(&values)?);
 
         let icon = if paused == 1 { "bell-slash" } else { "bell" };
-        self.output.set_icon(icon);
+        self.output.set_icon(icon)?;
 
         Ok(None)
     }

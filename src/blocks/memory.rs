@@ -1,4 +1,3 @@
-use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
@@ -11,9 +10,10 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::*;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -22,64 +22,6 @@ use crate::widgets::{I3BarWidget, State};
 pub enum Memtype {
     Swap,
     Memory,
-}
-
-#[derive(Clone, Copy)]
-enum Unit {
-    MiB(u64),
-    GiB(f32),
-    KiB(u64),
-}
-
-impl fmt::Display for Unit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Unit::MiB(n) => n.fmt(f),
-            Unit::KiB(n) => n.fmt(f),
-            Unit::GiB(n) => n.fmt(f),
-        }
-    }
-}
-
-impl Unit {
-    fn n(&self) -> u64 {
-        match self.kib() {
-            Unit::KiB(n) => n,
-            _ => 0,
-        }
-    }
-
-    fn gib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::GiB((n as f32) / 1024f32.powi(2)),
-            Unit::MiB(n) => Unit::GiB((n as f32) / 1024f32),
-            Unit::GiB(n) => Unit::GiB(n),
-        }
-    }
-
-    fn mib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::MiB(n / 1024),
-            Unit::MiB(n) => Unit::MiB(n),
-            Unit::GiB(n) => Unit::MiB((n * 1024f32) as u64),
-        }
-    }
-
-    fn kib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::KiB(n),
-            Unit::MiB(n) => Unit::KiB(n * 1024),
-            Unit::GiB(n) => Unit::KiB((n * 1024f32.powi(2)) as u64),
-        }
-    }
-
-    fn percent(&self, reference: Unit) -> f32 {
-        if reference.n() < 1 {
-            100f32
-        } else {
-            (self.n() as f32) / (reference.n() as f32) * 100f32
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -214,11 +156,11 @@ pub struct MemoryConfig {
 
 impl MemoryConfig {
     fn default_format_mem() -> String {
-        "{MFm}MB/{MTm}MB({MUp}%)".to_owned()
+        "{mem_free;M}/{mem_total;M}({mem_total_used_percents})".to_owned()
     }
 
     fn default_format_swap() -> String {
-        "{SFm}MB/{STm}MB({SUp}%)".to_owned()
+        "{swap_free;M}/{swap_total;M}({swap_used_percents})".to_owned()
     }
 
     fn default_display_type() -> Memtype {
@@ -256,82 +198,59 @@ impl MemoryConfig {
 
 impl Memory {
     fn format_insert_values(&mut self, mem_state: Memstate) -> Result<String> {
-        let mem_total = Unit::KiB(mem_state.mem_total());
-        let mem_free = Unit::KiB(mem_state.mem_free());
-        let swap_total = Unit::KiB(mem_state.swap_total());
-        let swap_free = Unit::KiB(mem_state.swap_free());
-        let swap_used = Unit::KiB(mem_state.swap_total() - mem_state.swap_free());
-        let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
-        let buffers = Unit::KiB(mem_state.buffers());
-        let cached = Unit::KiB(mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem());
-        let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
-        let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
+        let mem_total = mem_state.mem_total() as f64 * 1024.;
+        let mem_free = mem_state.mem_free() as f64 * 1024.;
+        let swap_total = mem_state.swap_total() as f64 * 1024.;
+        let swap_free = mem_state.swap_free() as f64 * 1024.;
+        let swap_used = swap_total - swap_free;
+        let mem_total_used = mem_total - mem_free;
+        let buffers = mem_state.buffers() as f64 * 1024.;
+        let cached =
+            // Why do we include shared memory to "cached"?
+            (mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem()) as f64 * 1024.;
+        let mem_used = mem_total_used - (buffers + cached);
+        let mem_avail = mem_total - mem_used;
 
         let values = map!(
-            "{MTg}" => format!("{:.1}", mem_total.gib()),
-            "{MTm}" => format!("{}", mem_total.mib()),
-            "{MFg}" => format!("{:.1}", mem_free.gib()),
-            "{MFm}" => format!("{}", mem_free.mib()),
-            "{MFp}" => format!("{:.2}", mem_free.percent(mem_total)),
-            "{MFpi}" => format!("{:02}", mem_free.percent(mem_total) as i32),
-            "{MFpb}" => format_percent_bar(mem_free.percent(mem_total)),
-            "{MUg}" => format!("{:.1}", mem_total_used.gib()),
-            "{MUm}" => format!("{}", mem_total_used.mib()),
-            "{MUp}" => format!("{:.2}", mem_total_used.percent(mem_total)),
-            "{MUpi}" => format!("{:02}", mem_total_used.percent(mem_total) as i32),
-            "{MUpb}" => format_percent_bar(mem_total_used.percent(mem_total)),
-            "{Mug}" => format!("{:.1}", mem_used.gib()),
-            "{Mum}" => format!("{}", mem_used.mib()),
-            "{Mup}" => format!("{:.2}", mem_used.percent(mem_total)),
-            "{Mupi}" => format!("{:02}", mem_used.percent(mem_total) as i32),
-            "{Mupb}" => format_percent_bar(mem_used.percent(mem_total)),
-            "{MAg}" => format!("{:.1}", mem_avail.gib()),
-            "{MAm}" => format!("{}", mem_avail.mib()),
-            "{MAp}" => format!("{:.2}", mem_avail.percent(mem_total)),
-            "{MApi}" => format!("{:02}", mem_avail.percent(mem_total) as i32),
-            "{MApb}" => format_percent_bar(mem_avail.percent(mem_total)),
-            "{STg}" => format!("{:.1}", swap_total.gib()),
-            "{STm}" => format!("{}", swap_total.mib()),
-            "{SFg}" => format!("{:.1}", swap_free.gib()),
-            "{SFm}" => format!("{}", swap_free.mib()),
-            "{SFp}" => format!("{:.2}", swap_free.percent(swap_total)),
-            "{SFpi}" => format!("{:02}", swap_free.percent(swap_total) as i32),
-            "{SFpb}" => format_percent_bar(swap_free.percent(swap_total)),
-            "{SUg}" => format!("{:.1}", swap_used.gib()),
-            "{SUm}" => format!("{}", swap_used.mib()),
-            "{SUp}" => format!("{:.2}", swap_used.percent(swap_total)),
-            "{SUpi}" => format!("{:02}", swap_used.percent(swap_total) as i32),
-            "{SUpb}" => format_percent_bar(swap_used.percent(swap_total)),
-            "{Bg}" => format!("{:.1}", buffers.gib()),
-            "{Bm}" => format!("{}", buffers.mib()),
-            "{Bp}" => format!("{:.2}", buffers.percent(mem_total)),
-            "{Bpi}" => format!("{:02}", buffers.percent(mem_total) as i32),
-            "{Bpb}" => format_percent_bar(buffers.percent(mem_total)),
-            "{Cg}" => format!("{:.1}", cached.gib()),
-            "{Cm}" => format!("{}", cached.mib()),
-            "{Cp}" => format!("{:.2}", cached.percent(mem_total)),
-            "{Cpi}" => format!("{:02}", cached.percent(mem_total) as i32),
-            "{Cpb}" => format_percent_bar(cached.percent(mem_total)));
+            "mem_total" => Value::from_float(mem_total).bytes(),
+            "mem_free" => Value::from_float(mem_free).bytes(),
+            "mem_free_percents" => Value::from_float(mem_free / mem_total * 100.).percents(),
+            "mem_total_used" => Value::from_float(mem_total_used).bytes(),
+            "mem_total_used_percents" => Value::from_float(mem_total_used / mem_total * 100.).percents(),
+            "mem_used" => Value::from_float(mem_used).bytes(),
+            "mem_used_percents" => Value::from_float(mem_used / mem_total * 100.).percents(),
+            "mem_avail" => Value::from_float(mem_avail).bytes(),
+            "mem_avail_percents" => Value::from_float(mem_avail / mem_total * 100.).percents(),
+            "swap_total" => Value::from_float(swap_total).bytes(),
+            "swap_free" => Value::from_float(swap_free).bytes(),
+            "swap_free_percents" => Value::from_float(swap_free / swap_total * 100.).percents(),
+            "swap_used" => Value::from_float(swap_used).bytes(),
+            "swap_used_percents" => Value::from_float(swap_used / swap_total * 100.).percents(),
+            "buffers" => Value::from_float(buffers).bytes(),
+            "buffers_percent" => Value::from_float(buffers / mem_total * 100.).percents(),
+            "cached" => Value::from_float(cached).bytes(),
+            "cached_percent" => Value::from_float(cached / mem_total * 100.).percents(),
+        );
 
         match self.memtype {
-            Memtype::Memory => self.output.0.set_state(match mem_used.percent(mem_total) {
-                x if f64::from(x) > self.critical.0 => State::Critical,
-                x if f64::from(x) > self.warning.0 => State::Warning,
+            Memtype::Memory => self.output.0.set_state(match mem_used / mem_total * 100. {
+                x if x > self.critical.0 => State::Critical,
+                x if x > self.warning.0 => State::Warning,
                 _ => State::Idle,
             }),
             Memtype::Swap => self
                 .output
                 .1
-                .set_state(match swap_used.percent(swap_total) {
-                    x if f64::from(x) > self.critical.1 => State::Critical,
-                    x if f64::from(x) > self.warning.1 => State::Warning,
+                .set_state(match swap_used / swap_total * 100. {
+                    x if x > self.critical.1 => State::Critical,
+                    x if x > self.warning.1 => State::Warning,
                     _ => State::Idle,
                 }),
         };
 
         Ok(match self.memtype {
-            Memtype::Memory => self.format.0.render_static_str(&values)?,
-            Memtype::Swap => self.format.1.render_static_str(&values)?,
+            Memtype::Memory => self.format.0.render(&values)?,
+            Memtype::Swap => self.format.1.render(&values)?,
         })
     }
 
@@ -353,15 +272,14 @@ impl ConfigBlock for Memory {
         shared_config: SharedConfig,
         tx: Sender<Task>,
     ) -> Result<Self> {
-        let icons: bool = block_config.icons;
-        let widget = TextWidget::new(id, 0, shared_config).with_text("");
+        let widget = TextWidget::new(id, 0, shared_config);
         Ok(Memory {
             id,
             memtype: block_config.display_type,
-            output: if icons {
+            output: if block_config.icons {
                 (
-                    widget.clone().with_icon("memory_mem"),
-                    widget.with_icon("memory_swap"),
+                    widget.clone().with_icon("memory_mem")?,
+                    widget.with_icon("memory_swap")?,
                 )
             } else {
                 (widget.clone(), widget)

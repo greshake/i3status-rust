@@ -19,10 +19,12 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::{LogicalDirection, Scrolling, SharedConfig};
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{pseudo_uuid, FormatTemplate};
+use crate::util::pseudo_uuid;
 use crate::widgets::{
     rotatingtext::RotatingTextWidget, text::TextWidget, I3BarWidget, Spacing, State,
 };
@@ -489,7 +491,7 @@ impl ConfigBlock for Music {
                 "play" => {
                     play = Some(
                         TextWidget::new(id, play_id, shared_config.clone())
-                            .with_icon("music_play")
+                            .with_icon("music_play")?
                             .with_state(State::Info)
                             .with_spacing(Spacing::Hidden),
                     )
@@ -497,7 +499,7 @@ impl ConfigBlock for Music {
                 "next" => {
                     next = Some(
                         TextWidget::new(id, next_id, shared_config.clone())
-                            .with_icon("music_next")
+                            .with_icon("music_next")?
                             .with_state(State::Info)
                             .with_spacing(Spacing::Hidden),
                     )
@@ -505,7 +507,7 @@ impl ConfigBlock for Music {
                 "prev" => {
                     prev = Some(
                         TextWidget::new(id, prev_id, shared_config.clone())
-                            .with_icon("music_prev")
+                            .with_icon("music_prev")?
                             .with_state(State::Info)
                             .with_spacing(Spacing::Hidden),
                     )
@@ -538,7 +540,7 @@ impl ConfigBlock for Music {
                 block_config.dynamic_width,
                 shared_config.clone(),
             )
-            .with_icon("music")
+            .with_icon("music")?
             .with_state(State::Info)
             .with_spacing(Spacing::Hidden),
             prev,
@@ -546,7 +548,7 @@ impl ConfigBlock for Music {
             next,
             on_click: None,
             on_collapsed_click_widget: TextWidget::new(id, collapsed_id, shared_config.clone())
-                .with_icon("music")
+                .with_icon("music")?
                 .with_state(State::Info)
                 .with_spacing(Spacing::Hidden),
             on_collapsed_click: block_config.on_collapsed_click,
@@ -611,13 +613,13 @@ impl Block for Music {
             };
 
         let values = map!(
-            "{artist}" => artist.clone(),
-            "{title}" => title.clone(),
-            "{combo}" => combo,
+            "artist" => Value::from_string(artist.clone()),
+            "title" => Value::from_string(title.clone()),
+            "combo" => Value::from_string(combo),
             //TODO
-            //"{vol}" => volume,
-            "{player}" => player_name,
-            "{avail}" => players.len().to_string()
+            //"vol" => volume,
+            "player" => Value::from_string(player_name),
+            "avail" => Value::from_string(players.len().to_string()),
         );
 
         if !(rotation_in_progress) {
@@ -625,7 +627,7 @@ impl Block for Music {
                 self.current_song_widget.set_text(String::new());
             } else {
                 self.current_song_widget
-                    .set_text(self.format.render_static_str(&values)?);
+                    .set_text(self.format.render(&values)?);
             }
         }
 
@@ -635,7 +637,7 @@ impl Block for Music {
                 PlaybackStatus::Paused => "music_play",
                 PlaybackStatus::Stopped => "music_play",
                 PlaybackStatus::Unknown => "music_play",
-            })
+            })?
         }
 
         // If `marquee` is enabled then we need to schedule an update for the text rotation.

@@ -105,7 +105,7 @@ impl Block for Toggle {
                 self.toggled = true;
                 self.icon_on.as_str()
             }
-        });
+        })?;
 
         self.text.set_state(State::Idle);
 
@@ -135,7 +135,7 @@ impl Block for Toggle {
                 self.icon_on.as_str()
             } else {
                 self.icon_off.as_str()
-            })
+            })?
         } else {
             self.text.set_state(State::Critical);
         };

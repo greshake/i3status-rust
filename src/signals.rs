@@ -42,14 +42,11 @@ pub fn convert_to_valid_signal(signal: i32) -> Result<i32> {
             0,
             sigmax - sigmin
         ),
-            (
-                format!(
-                    "Provided signal is {} which is not between {} and {}",
-                    signal,
-                    0,
-                    sigmax - sigmin
-                ),
-                String::new(),
+            format!(
+                "Provided signal is {} which is not between {} and {}",
+                signal,
+                0,
+                sigmax - sigmin
             ),
         ))
     } else {

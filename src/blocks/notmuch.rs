@@ -114,7 +114,7 @@ impl ConfigBlock for Notmuch {
     ) -> Result<Self> {
         let mut widget = TextWidget::new(id, 0, shared_config);
         if !block_config.no_icon {
-            widget.set_icon("mail");
+            widget.set_icon("mail")?;
         }
         Ok(Notmuch {
             id,

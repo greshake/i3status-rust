@@ -78,7 +78,7 @@ impl ConfigBlock for Time {
             id,
             time: TextWidget::new(id, 0, shared_config)
                 .with_text("")
-                .with_icon("time"),
+                .with_icon("time")?,
             update_interval: block_config.interval,
             format: block_config.format,
             timezone: block_config.timezone,

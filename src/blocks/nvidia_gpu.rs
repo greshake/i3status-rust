@@ -182,7 +182,7 @@ impl ConfigBlock for NvidiaGpu {
             gpu_id: block_config.gpu_id,
 
             name_widget: TextWidget::new(id, id, shared_config.clone())
-                .with_icon("gpu")
+                .with_icon("gpu")?
                 .with_spacing(Spacing::Inline),
             name_widget_mode: if block_config.label.is_some() {
                 NameWidgetMode::ShowLabel

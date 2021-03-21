@@ -140,7 +140,7 @@ impl ConfigBlock for Pomodoro {
     ) -> Result<Self> {
         Ok(Pomodoro {
             id,
-            time: TextWidget::new(id, 0, shared_config).with_icon("pomodoro"),
+            time: TextWidget::new(id, 0, shared_config).with_icon("pomodoro")?,
             state: State::Stopped,
             length: Duration::from_secs(block_config.length * 60), // convert to minutes
             break_length: Duration::from_secs(block_config.break_length * 60), // convert to minutes

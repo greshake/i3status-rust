@@ -34,10 +34,11 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::input::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{format_percent_bar, FormatTemplate};
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
@@ -705,7 +706,6 @@ pub struct Sound {
     format: FormatTemplate,
     on_click: Option<String>,
     show_volume_when_muted: bool,
-    bar: bool,
     mappings: Option<BTreeMap<String, String>>,
     max_vol: Option<u32>,
     scrolling: Scrolling,
@@ -770,10 +770,6 @@ pub struct SoundConfig {
     #[serde(default = "SoundConfig::default_show_volume_when_muted")]
     pub show_volume_when_muted: bool,
 
-    /// Show volume as bar instead of percent
-    #[serde(default = "SoundConfig::default_bar")]
-    pub bar: bool,
-
     #[serde(default = "SoundConfig::default_mappings")]
     pub mappings: Option<BTreeMap<String, String>>,
 
@@ -814,14 +810,10 @@ impl SoundConfig {
     }
 
     fn default_format() -> String {
-        "{volume}%".into()
+        "{volume:2}".into()
     }
 
     fn default_show_volume_when_muted() -> bool {
-        false
-    }
-
-    fn default_bar() -> bool {
         false
     }
 
@@ -849,63 +841,6 @@ impl Sound {
         };
 
         format!("{}_{}", prefix, suffix)
-    }
-
-    fn display(&mut self) -> Result<()> {
-        self.device.get_info()?;
-
-        let volume = self.device.volume();
-        let (output_name, output_description) = {
-            let mut output_name = self.device.output_name();
-            let mut output_description = self
-                .device
-                .output_description()
-                .unwrap_or_else(|| output_name.clone());
-
-            if let Some(mapped_name) = if let Some(m) = &self.mappings {
-                m.get(&output_name)
-                    .map(|output_name| output_name.to_string())
-            } else {
-                None
-            } {
-                output_name = mapped_name.clone();
-                output_description = mapped_name;
-            }
-
-            (output_name, output_description)
-        };
-
-        let values = map!("{volume}" => format!("{:02}", volume),
-                          "{output_name}" => output_name,
-                          "{output_description}" => output_description);
-        let text = self.format.render_static_str(&values)?;
-
-        if self.device.muted() {
-            self.text.set_icon(&self.icon(0));
-            if self.show_volume_when_muted {
-                self.text.set_spacing(Spacing::Normal);
-                self.text.set_text(if self.bar {
-                    format_percent_bar(volume as f32)
-                } else {
-                    text
-                });
-            } else {
-                self.text.set_text(String::new());
-                self.text.set_spacing(Spacing::Hidden);
-            }
-            self.text.set_state(State::Warning);
-        } else {
-            self.text.set_icon(&self.icon(volume));
-            self.text.set_spacing(Spacing::Normal);
-            self.text.set_state(State::Idle);
-            self.text.set_text(if self.bar {
-                format_percent_bar(volume as f32)
-            } else {
-                text
-            });
-        }
-
-        Ok(())
     }
 }
 
@@ -961,11 +896,10 @@ impl ConfigBlock for Sound {
             step_width,
             on_click: None,
             show_volume_when_muted: block_config.show_volume_when_muted,
-            bar: block_config.bar,
             mappings: block_config.mappings,
             max_vol: block_config.max_vol,
             scrolling: shared_config.scrolling,
-            text: TextWidget::new(id, 0, shared_config).with_icon("volume_empty"),
+            text: TextWidget::new(id, 0, shared_config).with_icon("volume_empty")?,
         };
 
         sound.device.monitor(id, tx_update_request)?;
@@ -983,7 +917,52 @@ const FILTER: &[char] = &['[', ']', '%'];
 
 impl Block for Sound {
     fn update(&mut self) -> Result<Option<Update>> {
-        self.display()?;
+        self.device.get_info()?;
+
+        let volume = self.device.volume();
+        let (output_name, output_description) = {
+            let mut output_name = self.device.output_name();
+            let mut output_description = self
+                .device
+                .output_description()
+                .unwrap_or_else(|| output_name.clone());
+
+            if let Some(mapped_name) = if let Some(m) = &self.mappings {
+                m.get(&output_name)
+                    .map(|output_name| output_name.to_string())
+            } else {
+                None
+            } {
+                output_name = mapped_name.clone();
+                output_description = mapped_name;
+            }
+
+            (output_name, output_description)
+        };
+
+        let values = map!(
+            "volume" => Value::from_integer(volume as i64).percents(),
+            "output_name" => Value::from_string(output_name),
+            "output_description" => Value::from_string(output_description),
+        );
+        let text = self.format.render(&values)?;
+
+        if self.device.muted() {
+            self.text.set_icon(&self.icon(0))?;
+            if self.show_volume_when_muted {
+                self.text.set_spacing(Spacing::Normal);
+                self.text.set_text(text);
+            } else {
+                self.text.set_text(String::new());
+            }
+            self.text.set_state(State::Warning);
+        } else {
+            self.text.set_icon(&self.icon(volume))?;
+            self.text.set_spacing(Spacing::Normal);
+            self.text.set_state(State::Idle);
+            self.text.set_text(text);
+        }
+
         Ok(None)
     }
 
@@ -1013,8 +992,7 @@ impl Block for Sound {
                 }
             }
         }
-        self.display()?;
-
+        self.update()?;
         Ok(())
     }
 

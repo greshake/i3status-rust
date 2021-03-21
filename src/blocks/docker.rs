@@ -7,9 +7,10 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::http;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -59,7 +60,7 @@ impl DockerConfig {
     }
 
     fn default_format() -> String {
-        "{running}%".to_owned()
+        "{running}".to_owned()
     }
 }
 
@@ -74,7 +75,7 @@ impl ConfigBlock for Docker {
     ) -> Result<Self> {
         let text = TextWidget::new(id, 0, shared_config)
             .with_text("N/A")
-            .with_icon("docker");
+            .with_icon("docker")?;
         Ok(Docker {
             id,
             text,
@@ -99,14 +100,14 @@ impl Block for Docker {
             .block_error("docker", "Failed to parse JSON response.")?;
 
         let values = map!(
-            "{total}" => format!("{}", status.total),
-            "{running}" => format!("{}", status.running),
-            "{paused}" => format!("{}", status.paused),
-            "{stopped}" => format!("{}", status.stopped),
-            "{images}" => format!("{}", status.images)
+            "total" =>   Value::from_integer(status.total),
+            "running" => Value::from_integer(status.running),
+            "paused" =>  Value::from_integer(status.paused),
+            "stopped" => Value::from_integer(status.stopped),
+            "images" =>  Value::from_integer(status.images),
         );
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_text(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

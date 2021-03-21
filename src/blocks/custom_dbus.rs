@@ -137,7 +137,7 @@ impl Block for CustomDBus {
             .block_error("custom_dbus", "failed to acquire lock")?)
         .clone();
         self.text.set_text(status.content);
-        self.text.set_icon(&status.icon);
+        self.text.set_icon(&status.icon)?;
         self.text.set_state(status.state);
         Ok(None)
     }

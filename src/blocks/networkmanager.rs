@@ -17,8 +17,9 @@ use serde_derive::Deserialize;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::FormatTemplate;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
@@ -462,7 +463,6 @@ pub struct NetworkManager {
     dbus_conn: Connection,
     manager: ConnectionManager,
     primary_only: bool,
-    max_ssid_width: usize,
     ap_format: FormatTemplate,
     device_format: FormatTemplate,
     connection_format: FormatTemplate,
@@ -477,10 +477,6 @@ pub struct NetworkManagerConfig {
     /// Whether to only show the primary connection, or all active connections.
     #[serde(default = "NetworkManagerConfig::default_primary_only")]
     pub primary_only: bool,
-
-    /// Max SSID width, in characters.
-    #[serde(default = "NetworkManagerConfig::default_max_ssid_width")]
-    pub max_ssid_width: usize,
 
     /// AP formatter
     #[serde(default = "NetworkManagerConfig::default_ap_format")]
@@ -506,10 +502,6 @@ pub struct NetworkManagerConfig {
 impl NetworkManagerConfig {
     fn default_primary_only() -> bool {
         false
-    }
-
-    fn default_max_ssid_width() -> usize {
-        21
     }
 
     fn default_ap_format() -> String {
@@ -595,7 +587,6 @@ impl ConfigBlock for NetworkManager {
             dbus_conn,
             manager,
             primary_only: block_config.primary_only,
-            max_ssid_width: block_config.max_ssid_width,
             ap_format: FormatTemplate::from_string(&block_config.ap_format)?,
             device_format: FormatTemplate::from_string(&block_config.device_format)?,
             connection_format: FormatTemplate::from_string(&block_config.connection_format)?,
@@ -736,27 +727,19 @@ impl Block for NetworkManager {
 
                                 let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn)
                                 {
-                                    let ssid = match ap.ssid(&self.dbus_conn) {
-                                        Ok(ssid) => {
-                                            let mut truncated = ssid.to_string();
-                                            truncated.truncate(self.max_ssid_width);
-                                            truncated
-                                        }
-                                        Err(_) => "".to_string(),
-                                    };
-                                    let strength = match ap.strength(&self.dbus_conn) {
-                                        Ok(v) => format!("{}", v).to_string(),
-                                        Err(_) => "0".to_string(),
-                                    };
+                                    let ssid = ap.ssid(&self.dbus_conn).unwrap_or_else(|_| "".to_string());
+                                    let strength = ap.strength(&self.dbus_conn).unwrap_or(0);
                                     let freq = match ap.frequency(&self.dbus_conn) {
-                                        Ok(v) => format!("{}", v).to_string(),
+                                        Ok(v) => v.to_string(),
                                         Err(_) => "0".to_string(),
                                     };
 
-                                    let values = map!("{ssid}" => ssid,
-                                                      "{strength}" => strength,
-                                                      "{freq}" => freq);
-                                    if let Ok(s) = self.ap_format.render_static_str(&values) {
+                                    let values = map!(
+                                        "ssid" => Value::from_string(ssid),
+                                        "strength" => Value::from_integer(strength as i64).percents(),
+                                        "freq" => Value::from_string(freq).percents(),
+                                    );
+                                    if let Ok(s) = self.ap_format.render(&values) {
                                         s
                                     } else {
                                         "[invalid device format string]".to_string()
@@ -778,13 +761,15 @@ impl Block for NetworkManager {
                                     }
                                 }
 
-                                let values = map!("{icon}" => icon,
-                                                  "{typename}" => type_name,
-                                                  "{ap}" => ap,
-                                                  "{name}" => name.to_string(), 
-                                                  "{ips}" => ips);
+                                let values = map!(
+                                    "icon" => Value::from_string(icon),
+                                    "typename" => Value::from_string(type_name),
+                                    "ap" => Value::from_string(ap),
+                                    "name" => Value::from_string(name.to_string()),
+                                    "ips" => Value::from_string(ips),
+                                );
 
-                                if let Ok(s) = self.device_format.render_static_str(&values) {
+                                if let Ok(s) = self.device_format.render(&values) {
                                     devicevec.push(s);
                                 } else {
                                     devicevec.push("[invalid device format string]".to_string())
@@ -797,10 +782,12 @@ impl Block for NetworkManager {
                             Err(v) => format!("{:?}", v),
                         };
 
-                        let values = map!("{devices}" => devicevec.join(" "),
-                                          "{id}" => id);
+                        let values = map!(
+                            "devices" => Value::from_string(devicevec.join(" ")),
+                            "id" => Value::from_string(id),
+                        );
 
-                        if let Ok(s) = self.connection_format.render_static_str(&values) {
+                        if let Ok(s) = self.connection_format.render(&values) {
                             widget.set_text(s);
                         } else {
                             widget.set_text("[invalid connection format string]".to_string());

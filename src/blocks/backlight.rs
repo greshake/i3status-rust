@@ -315,7 +315,7 @@ impl Block for Backlight {
             81..=87 => "backlight_12",
             88..=93 => "backlight_13",
             _ => "backlight_full",
-        });
+        })?;
 
         Ok(None)
     }
