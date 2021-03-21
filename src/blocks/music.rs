@@ -8,7 +8,7 @@ use crossbeam_channel::Sender;
 use dbus::{
     arg::{Array, RefArg},
     ffidisp::stdintf::org_freedesktop_dbus::{Properties, PropertiesPropertiesChanged},
-    ffidisp::{BusType, Connection, ConnectionItem},
+    ffidisp::{BusType, Connection},
     message::SignalArgs,
     Message,
 };
@@ -38,6 +38,33 @@ struct Player {
     title: Option<String>,
     //TODO
     //volume: u32,
+}
+
+impl Player {
+    pub fn new(dbus_conn: &Connection, name: &str, bus_name: &str) -> Self {
+        let path = dbus_conn.with_path(name, "/org/mpris/MediaPlayer2", 500);
+        let data = path
+            .get("org.mpris.MediaPlayer2.Player", "Metadata")
+            .map(|d: Box<dyn RefArg>| extract_from_metadata(d.as_ref()));
+        let (title, artist) = match data {
+            Ok(Ok(res)) => res,
+            _ => (None, None),
+        };
+
+        // Get current playback status
+        let status = path
+            .get("org.mpris.MediaPlayer2.Player", "PlaybackStatus")
+            .map(|d: Box<dyn RefArg>| extract_playback_status(d.as_ref()))
+            .unwrap_or_default();
+
+        Self {
+            bus_name: bus_name.to_string(),
+            interface_name: name.to_string(),
+            playback_status: status,
+            artist,
+            title,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -240,198 +267,159 @@ impl ConfigBlock for Music {
         let next_id = pseudo_uuid();
         let collapsed_id = pseudo_uuid();
 
-        let send2 = send.clone();
-        let send3 = send.clone();
-
-        let c = Connection::get_private(BusType::Session)
+        let dbus_conn = Connection::get_private(BusType::Session)
             .block_error("music", "failed to establish D-Bus connection")?;
 
         let interface_name_exclude_regexps =
             compile_regexps(block_config.clone().interface_name_exclude)
                 .block_error("music", "failed to parse exclude patterns")?;
 
-        let mut initial_players: Vec<Player> = Vec::new();
-        let m = Message::new_method_call(
-            "org.freedesktop.DBus",
-            "/",
-            "org.freedesktop.DBus",
-            "ListNames",
-        )
-        .unwrap();
-        let r = c.send_with_reply_and_block(m, 500).unwrap();
         // ListNames returns one argument, which is an array of strings.
-        let arr: Array<&str, _> = r.get1().unwrap();
-        for name in arr {
-            // TODO: prefilter arr before entering loop
+        let list_names = dbus_conn
+            .send_with_reply_and_block(
+                Message::new_method_call(
+                    "org.freedesktop.DBus",
+                    "/",
+                    "org.freedesktop.DBus",
+                    "ListNames",
+                )
+                .unwrap(),
+                500,
+            )
+            .unwrap();
+        let names = list_names.get1::<Array<&str, _>>().unwrap().filter(|name| {
             // If an interface matches an exclude pattern, ignore it
-            if ignored_player(
-                &name,
+            !ignored_player(
+                name,
                 &interface_name_exclude_regexps,
-                block_config.clone().player,
-            ) {
+                block_config.player.clone(),
+            )
+        });
+
+        let mut players = Vec::<Player>::new();
+        for name in names {
+            // Get bus connection name
+            let get_name_owner = dbus_conn
+                .send_with_reply_and_block(
+                    Message::new_method_call(
+                        "org.freedesktop.DBus",
+                        "/",
+                        "org.freedesktop.DBus",
+                        "GetNameOwner",
+                    )
+                    .unwrap()
+                    .append1(name),
+                    500,
+                )
+                .unwrap();
+            let bus_name: &str = get_name_owner.read1().unwrap();
+
+            // Skip if already added
+            if players.iter().any(|p| p.bus_name == bus_name) {
                 continue;
             }
 
-            // Get bus connection name
-            // TODO: possibly could get this info from the sender field of the Metadata call below?
-            let m = Message::new_method_call(
-                "org.freedesktop.DBus",
-                "/",
-                "org.freedesktop.DBus",
-                "GetNameOwner",
-            )
-            .unwrap();
-            let r = c.send_with_reply_and_block(m.append1(name), 500).unwrap();
-            let bn: &str = r.read1().ok().unwrap();
-
-            if !initial_players.iter().any(|p| p.bus_name == bn) {
-                // Get current media info, if any
-                let p = c.with_path(name, "/org/mpris/MediaPlayer2", 500);
-                let data = p.get("org.mpris.MediaPlayer2.Player", "Metadata");
-                let (title, artist) = match data {
-                    Err(_) => (String::new(), String::new()),
-                    Ok(data) => {
-                        extract_from_metadata(&data).unwrap_or((String::new(), String::new()))
-                    }
-                };
-
-                // Get current playback status
-                let data = p.get("org.mpris.MediaPlayer2.Player", "PlaybackStatus");
-                let status = match data {
-                    Err(_) => PlaybackStatus::Unknown,
-                    Ok(data) => {
-                        let data: Box<dyn RefArg> = data;
-                        extract_playback_status(&data)
-                    }
-                };
-
-                initial_players.push(Player {
-                    bus_name: bn.to_string(),
-                    interface_name: name.to_string(),
-                    playback_status: status,
-                    artist: Some(artist),
-                    title: Some(title),
-                });
-            }
+            // Add player
+            players.push(Player::new(&dbus_conn, name, bus_name));
         }
 
-        let players_original = Arc::new(Mutex::new(initial_players));
-        let players_copy = players_original.clone();
-        let players_copy2 = players_original.clone();
-        let players_copy3 = players_original;
-        thread::Builder::new().name("music".into()).spawn(move || {
-            let c = Connection::get_private(BusType::Session).unwrap();
-            c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'").unwrap();
-            loop {
-                for msg in c.incoming(100_000) {
-                    // We are listening to events from all players on org.mpris.MediaPlayer2,
-                    // but we only want to update for our currently selected player (either
-                    // set by the user in the config file, or autodiscovered by us).
-                    if msg.sender().is_some() {
-                        if let Some(signal) = PropertiesPropertiesChanged::from_message(&msg) {
-                            let mut players = players_copy2.lock().expect("failed to acquire lock for `players`");
-                            let player = players.iter_mut().find(|p| p.bus_name == msg.sender().unwrap().to_string());
-                            if player.is_none() {
-                                // Ignoring update since could not find player in the array.
-                                // This shouldn't actually occur as long as the other thread updates the array in time.
-                                continue;
+        let players = Arc::new(Mutex::new(players));
+        let players_clone = players.clone();
+        let send_clone = send.clone();
+        let preferred_player = block_config.player.clone();
+
+        thread::Builder::new()
+            .name("music".into())
+            .spawn(move || {
+                let dbus_conn = Connection::get_private(BusType::Session).unwrap();
+
+                // Listen to changes of players
+                dbus_conn.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'").unwrap();
+                // Add/remove players
+                dbus_conn.add_match("interface='org.freedesktop.DBus',member='NameOwnerChanged',path='/org/freedesktop/DBus',arg0namespace='org.mpris.MediaPlayer2'").unwrap();
+
+                // Skip the NameAcquired event.
+                dbus_conn.incoming(10_000).next();
+
+                loop {
+                    for ref signal in dbus_conn.incoming(60_000) {
+                        let mut players = players_clone
+                            .lock()
+                            .expect("failed to acquire lock for `players`");
+                        let mut updated = false;
+
+                        // Some property changed
+                        if let Some(prop_changed) = PropertiesPropertiesChanged::from_message(signal) {
+                            if let Some(sender) = signal.sender() {
+                                let sender = sender.to_string();
+                                if let Some(player) = players.iter_mut().find(|p| p.bus_name == sender) {
+                                    if let Some(data) = prop_changed.changed_properties.get("Metadata") {
+                                        let (title, artist) = extract_from_metadata(&data.0).unwrap_or((None,None));
+                                        if player.title != title || player.artist != artist {
+                                            player.title = title;
+                                            player.artist = artist;
+                                            updated = true;
+                                        }
+                                    }
+                                    if let Some(data) = prop_changed.changed_properties.get("PlaybackStatus") {
+                                        let new_playback = extract_playback_status(&data.0);
+                                        if player.playback_status != new_playback {
+                                            player.playback_status = extract_playback_status(&data.0);
+                                            updated = true;
+                                        }
+                                    }
+                                    // workaround for `playerctld`
+                                    // This block keeps track of players currently active on the MPRIS bus, 
+                                    // and only clears the metadata when a player has disappeared from the bus.
+                                    // However `playerctl` is essentially doing the same thing as this block by
+                                    // keeping track of players by itself, and when the last player is closed
+                                    // the playerctld bus still remains which means the block never clears the
+                                    // metadata for the last player that disappeared. We can get around this by
+                                    // listening to the PlayerNames signal sent by playerctld and then only clear 
+                                    // the metadata when there are no more players left.
+                                    if let Some(data) = prop_changed.changed_properties.get("PlayerNames") {
+                                        if data.0.as_iter().unwrap().peekable().peek().is_none() {
+                                            player.artist = None;
+                                            player.title = None;
+                                            updated = true;
+                                        }
+                                    }
+                                }
                             }
-                            let p = player.unwrap();
-                            let mut updated = false;
-                            let raw_metadata = signal.changed_properties.get("Metadata");
-                            if let Some(data) = raw_metadata {
-                                let (title, artist) =
-                                    extract_from_metadata(&data.0).unwrap_or((String::new(), String::new()));
-                                if p.artist != Some(artist.clone()) {
-                                    p.artist = Some(artist);
-                                    updated = true;
+                        }
+                        // Add/remove player
+                        else if let Ok((name, old_owner, new_owner)) = signal.read3::<&str, &str, &str>() {
+
+                            match (old_owner, new_owner) {
+                                ("", new_owner) => { // Add a new player
+                                    // Skip if already presented (or ignored)
+                                    if !players.iter().any(|p| p.bus_name == new_owner) && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) {
+                                        players.push(Player::new(&dbus_conn,name,new_owner));
+                                        updated = true;
+                                    }
                                 }
-                                if p.title != Some(title.clone()) {
-                                    p.title = Some(title);
-                                    updated = true;
+                                (old_owner, "") => { // Remove an old player
+                                    if let Some(pos) = players.iter().position(|p| p.bus_name == old_owner) {
+                                        players.remove(pos);
+                                        updated = true;
+                                    }
                                 }
-                            };
-                            let raw_metadata = signal.changed_properties.get("PlaybackStatus");
-                            if let Some(data) = raw_metadata {
-                                let new_status = extract_playback_status(&data.0);
-                                if p.playback_status != new_status {
-                                    p.playback_status = new_status;
-                                    updated = true;
-                                }
-                            };
-                            // workaround for `playerctld`
-                            // This block keeps track of players currently active on the MPRIS bus, 
-                            // and only clears the metadata when a player has disappeared from the bus.
-                            // However `playerctl` is essentially doing the same thing as this block by
-                            // keeping track of players by itself, and when the last player is closed
-                            // the playerctld bus still remains which means the block never clears the
-                            // metadata for the last player that disappeared. We can get around this by
-                            // listening to the PlayerNames signal sent by playerctld and then only clear 
-                            // the metadata when there are no more players left.
-                            let raw_metadata = signal.changed_properties.get("PlayerNames");
-                            if let Some(data) = raw_metadata {
-                                let mut playerctl_playerlist = data.0.as_iter().unwrap().peekable();
-                                if playerctl_playerlist.peek().is_none() {
-                                    p.artist = None;
-                                    p.title = None;
-                                    updated = true;
-                                }
-                            };
-                            if updated {
-                                send.send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
+                                _ => ()
                             }
+
+                        }
+
+                        // Request to update the block
+                        if updated {
+                            send_clone.send(Task {
+                                id,
+                                update_time: Instant::now(),
+                            }).unwrap();
                         }
                     }
                 }
-            }
-        }).unwrap();
-
-        // TODO: combine this thread with the one above
-        // Some players do not seem to update their Metadata on close which leads to the block showing old info.
-        // To fix this we will the bus to see when players have disappeared so that we can schedule a block update.
-        let preferred_player = block_config.clone().player;
-        thread::Builder::new().name("music".into()).spawn(move || {
-            let c = Connection::get_private(BusType::Session).unwrap();
-            c.add_match("interface='org.freedesktop.DBus',member='NameOwnerChanged',path='/org/freedesktop/DBus',arg0namespace='org.mpris.MediaPlayer2'")
-                .unwrap();
-            // Skip the NameAcquired event.
-            c.incoming(10_000).next();
-            loop {
-                for ci in c.iter(100_000) {
-                    if let ConnectionItem::Signal(x) = ci {
-                         let (name, old_owner, new_owner): (&str, &str, &str) = x.read3().unwrap();
-                         let mut players = players_copy3.lock().expect("failed to acquire lock for `players`");
-                         if !old_owner.is_empty() && new_owner.is_empty() {
-                             if let Some(pos) = players.iter().position(|p| p.bus_name == old_owner) {
-                                 players.remove(pos);
-                                 send2.send(Task {
-                                     id,
-                                     update_time: Instant::now(),
-                                 })
-                                 .unwrap();
-                             }
-                         } else if old_owner.is_empty() && !new_owner.is_empty() && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) && !players.iter().any(|p| p.bus_name == new_owner) {
-                         players.push(Player {
-                             bus_name: new_owner.to_string(),
-                             interface_name: name.to_string(),
-                             playback_status: PlaybackStatus::Unknown,
-                             artist: None,
-                             title: None,
-                         });
-                         send2.send(Task {
-                             id,
-                             update_time: Instant::now(),
-                         })
-                         .unwrap();
-                         }
-                    }
-                }
-            }
-        }).unwrap();
+            })
+            .unwrap();
 
         let mut play: Option<TextWidget> = None;
         let mut prev: Option<TextWidget> = None;
@@ -510,9 +498,9 @@ impl ConfigBlock for Music {
             max_width: block_config.max_width,
             separator: block_config.separator,
             seek_step: block_config.seek_step,
-            players: players_copy,
+            players,
             hide_when_empty: block_config.hide_when_empty,
-            send: send3,
+            send,
             format: FormatTemplate::from_string(&block_config.format)?,
             scrolling: shared_config.scrolling,
         })
@@ -749,10 +737,9 @@ fn extract_artist_from_value(value: &dyn RefArg) -> Result<&str> {
     }
 }
 
-#[allow(clippy::borrowed_box)] // TODO: remove clippy workaround
-fn extract_from_metadata(metadata: &Box<dyn RefArg>) -> Result<(String, String)> {
-    let mut title = String::new();
-    let mut artist = String::new();
+fn extract_from_metadata(metadata: &dyn RefArg) -> Result<(Option<String>, Option<String>)> {
+    let mut title = None;
+    let mut artist = None;
 
     let mut iter = metadata
         .as_iter()
@@ -766,13 +753,13 @@ fn extract_from_metadata(metadata: &Box<dyn RefArg>) -> Result<(String, String)>
             .as_str()
             .block_error("music", "failed to extract metadata")?
         {
-            "xesam:artist" => artist = String::from(extract_artist_from_value(value)?),
+            "xesam:artist" => artist = Some(String::from(extract_artist_from_value(value)?)),
             "xesam:title" => {
-                title = String::from(
+                title = Some(String::from(
                     value
                         .as_str()
                         .block_error("music", "failed to extract metadata")?,
-                )
+                ))
             }
             _ => {}
         };
