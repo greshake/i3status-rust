@@ -388,25 +388,25 @@ impl ConfigBlock for Music {
                             }
                         }
                         // Add/remove player
-                        else if let Ok((name, old_owner, new_owner)) = signal.read3::<&str, &str, &str>() {
-
-                            match (old_owner, new_owner) {
-                                ("", new_owner) => { // Add a new player
-                                    // Skip if already presented (or ignored)
-                                    if !players.iter().any(|p| p.bus_name == new_owner) && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) {
-                                        players.push(Player::new(&dbus_conn,name,new_owner));
-                                        updated = true;
+                        else if signal.member().as_deref() == Some("NameOwnerChanged") {
+                            if let Ok((name, old_owner, new_owner)) = signal.read3::<&str, &str, &str>() {
+                                match (old_owner, new_owner) {
+                                    ("", new_owner) => { // Add a new player
+                                        // Skip if already presented (or ignored)
+                                        if !players.iter().any(|p| p.bus_name == new_owner) && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) {
+                                            players.push(Player::new(&dbus_conn,name,new_owner));
+                                            updated = true;
+                                        }
                                     }
-                                }
-                                (old_owner, "") => { // Remove an old player
-                                    if let Some(pos) = players.iter().position(|p| p.bus_name == old_owner) {
-                                        players.remove(pos);
-                                        updated = true;
+                                    (old_owner, "") => { // Remove an old player
+                                        if let Some(pos) = players.iter().position(|p| p.bus_name == old_owner) {
+                                            players.remove(pos);
+                                            updated = true;
+                                        }
                                     }
+                                    _ => ()
                                 }
-                                _ => ()
                             }
-
                         }
 
                         // Request to update the block
