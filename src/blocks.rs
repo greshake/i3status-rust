@@ -88,7 +88,7 @@ use toml::value::Value;
 
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widgets::I3BarWidget;
 

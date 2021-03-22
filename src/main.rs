@@ -8,7 +8,7 @@ mod errors;
 mod formatting;
 mod http;
 mod icons;
-mod input;
+mod protocol;
 mod scheduler;
 mod signals;
 mod subprocess;
@@ -33,7 +33,7 @@ use crate::blocks::Block;
 use crate::config::Config;
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::input::{process_events, I3BarEvent};
+use crate::protocol::i3bar_event::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
 use crate::signals::process_signals;
 use crate::util::deserialize_file;
@@ -128,12 +128,7 @@ fn main() {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     // Now we can start to run the i3bar protocol
-    let initialise = if matches.is_present("never-pause") {
-        "\"version\": 1, \"click_events\": true, \"stop_signal\": 0"
-    } else {
-        "\"version\": 1, \"click_events\": true"
-    };
-    print!("{{{}}}\n[", initialise);
+    protocol::init(matches.is_present("never-pause"));
 
     // Read & parse the config file
     let config_path = match matches.value_of("config") {
@@ -199,7 +194,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         blocks.get_mut(id)
                     .internal_error("click handler", "could not get required block")?
                             .click(&event)?;
-                    util::print_blocks(&blocks, &shared_config)?;
+                    protocol::print_blocks(&blocks, &shared_config)?;
                 }
             },
             // Receive async update requests
@@ -208,13 +203,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 blocks.get_mut(req.id)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
-                util::print_blocks(&blocks, &shared_config)?;
+                protocol::print_blocks(&blocks, &shared_config)?;
             },
             // Receive update timer events
             recv(ttnu) -> _ => {
                 scheduler.do_scheduled_updates(&mut blocks)?;
                 // redraw the blocks, state changed
-                util::print_blocks(&blocks, &shared_config)?;
+                protocol::print_blocks(&blocks, &shared_config)?;
             },
             // Receive signal events
             recv(rx_signals) -> res => if let Ok(sig) = res {
@@ -224,7 +219,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         for block in blocks.iter_mut() {
                             block.update()?;
                         }
-                        util::print_blocks(&blocks, &shared_config)?;
+                        protocol::print_blocks(&blocks, &shared_config)?;
                     },
                     signal_hook::consts::SIGUSR2 => {
                         //USR2 signal that should reload the config

@@ -17,7 +17,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::{escape_pango_text, format_vec_to_bar_graph};
 use crate::widgets::{text::TextWidget, I3BarWidget, Spacing};

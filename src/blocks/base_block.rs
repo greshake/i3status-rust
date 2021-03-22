@@ -3,13 +3,8 @@
 use std::collections::HashMap;
 
 use crate::errors::*;
-use crate::{
-    blocks::Update,
-    input::{I3BarEvent, MouseButton},
-    subprocess::spawn_child_async,
-    widgets::I3BarWidget,
-    Block,
-};
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
+use crate::{blocks::Update, subprocess::spawn_child_async, widgets::I3BarWidget, Block};
 
 use serde_derive::Deserialize;
 use toml::{value::Table, Value};

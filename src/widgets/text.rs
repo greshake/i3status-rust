@@ -1,6 +1,7 @@
-use super::{i3block_data::I3BlockData, I3BarWidget, Spacing, State};
+use super::{I3BarWidget, Spacing, State};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::protocol::i3bar_block::I3BarBlock;
 
 #[derive(Clone, Debug)]
 pub struct TextWidget {
@@ -11,18 +12,18 @@ pub struct TextWidget {
     state: State,
     spacing: Spacing,
     shared_config: SharedConfig,
-    inner: I3BlockData,
+    inner: I3BarBlock,
 }
 
 impl TextWidget {
     pub fn new(id: usize, instance: usize, shared_config: SharedConfig) -> Self {
         let (key_bg, key_fg) = State::Idle.theme_keys(&shared_config.theme); // Initial colors
-        let inner = I3BlockData {
+        let inner = I3BarBlock {
             name: Some(id.to_string()),
             instance: Some(instance.to_string()),
             color: key_fg.clone(),
             background: key_bg.clone(),
-            ..I3BlockData::default()
+            ..I3BarBlock::default()
         };
 
         TextWidget {
@@ -109,7 +110,7 @@ impl TextWidget {
 }
 
 impl I3BarWidget for TextWidget {
-    fn get_data(&self) -> I3BlockData {
+    fn get_data(&self) -> I3BarBlock {
         self.inner.clone()
     }
 }
