@@ -1,16 +1,15 @@
 use std::time::{Duration, Instant};
 
-use super::{
-    i3block_data::{I3BlockData, I3BlockMinWidth},
-    I3BarWidget, Spacing, State,
-};
+use super::{I3BarWidget, Spacing, State};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::protocol::i3bar_block::{I3BarBlock, I3BarBlockMinWidth};
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {
     id: usize,
     pub instance: usize,
+    pub rotating: bool,
     rotation_pos: usize,
     max_width: usize,
     dynamic_width: bool,
@@ -22,9 +21,7 @@ pub struct RotatingTextWidget {
     state: State,
     spacing: Spacing,
     shared_config: SharedConfig,
-    pub rotating: bool,
-
-    inner: I3BlockData,
+    inner: I3BarBlock,
 }
 
 #[allow(dead_code)]
@@ -38,10 +35,10 @@ impl RotatingTextWidget {
         dynamic_width: bool,
         shared_config: SharedConfig,
     ) -> RotatingTextWidget {
-        let inner = I3BlockData {
+        let inner = I3BarBlock {
             name: Some(id.to_string()),
             instance: Some(instance.to_string()),
-            ..I3BlockData::default()
+            ..I3BarBlock::default()
         };
 
         RotatingTextWidget {
@@ -174,7 +171,7 @@ impl RotatingTextWidget {
                 None
             } else {
                 icon.push_str(&"0".repeat(self.max_width + 1));
-                Some(I3BlockMinWidth::Text(icon))
+                Some(I3BarBlockMinWidth::Text(icon))
             }
         };
         self.inner.background = key_bg.clone();
@@ -210,7 +207,7 @@ impl RotatingTextWidget {
 }
 
 impl I3BarWidget for RotatingTextWidget {
-    fn get_data(&self) -> I3BlockData {
+    fn get_data(&self) -> I3BarBlock {
         self.inner.clone()
     }
 }

@@ -1,7 +1,7 @@
 /// Represent block as described in https://i3wm.org/docs/i3bar-protocol.html
 
 #[derive(Debug, Clone)]
-pub struct I3BlockData {
+pub struct I3BarBlock {
     pub full_text: String,
     pub short_text: Option<String>,
     pub color: Option<String>,
@@ -11,8 +11,8 @@ pub struct I3BlockData {
     pub border_right: Option<usize>,
     pub border_bottom: Option<usize>,
     pub border_left: Option<usize>,
-    pub min_width: Option<I3BlockMinWidth>,
-    pub align: Option<I3BlockAlign>,
+    pub min_width: Option<I3BarBlockMinWidth>,
+    pub align: Option<I3BarBlockAlign>,
     pub name: Option<String>,
     pub instance: Option<String>,
     pub urgent: Option<bool>,
@@ -46,7 +46,7 @@ macro_rules! json_add_val {
     };
 }
 
-impl I3BlockData {
+impl I3BarBlock {
     pub fn render(&self) -> String {
         let mut retval = String::from("{");
 
@@ -60,14 +60,14 @@ impl I3BlockData {
         json_add_val!(retval, self.border_bottom, border_bottom);
         json_add_val!(retval, self.border_left, border_left);
         match self.min_width {
-            Some(I3BlockMinWidth::Pixels(x)) => json_add_val!(retval, Some(x), min_width),
-            Some(I3BlockMinWidth::Text(ref x)) => json_add_str!(retval, Some(x), min_width),
+            Some(I3BarBlockMinWidth::Pixels(x)) => json_add_val!(retval, Some(x), min_width),
+            Some(I3BarBlockMinWidth::Text(ref x)) => json_add_str!(retval, Some(x), min_width),
             None => {}
         }
         match self.align {
-            Some(I3BlockAlign::Center) => retval.push_str("\"align\":\"center\","),
-            Some(I3BlockAlign::Right) => retval.push_str("\"align\":\"right\","),
-            Some(I3BlockAlign::Left) => retval.push_str("\"align\":\"left\","),
+            Some(I3BarBlockAlign::Center) => retval.push_str("\"align\":\"center\","),
+            Some(I3BarBlockAlign::Right) => retval.push_str("\"align\":\"right\","),
+            Some(I3BarBlockAlign::Left) => retval.push_str("\"align\":\"left\","),
             None => {}
         }
         json_add_str!(retval, self.name, name);
@@ -83,7 +83,7 @@ impl I3BlockData {
     }
 }
 
-impl Default for I3BlockData {
+impl Default for I3BarBlock {
     fn default() -> Self {
         #[cfg(not(feature = "debug_borders"))]
         let border = None;
@@ -112,14 +112,14 @@ impl Default for I3BlockData {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum I3BlockAlign {
+pub enum I3BarBlockAlign {
     Center,
     Right,
     Left,
 }
 
 #[derive(Debug, Clone)]
-pub enum I3BlockMinWidth {
+pub enum I3BarBlockMinWidth {
     Pixels(usize),
     Text(String),
 }

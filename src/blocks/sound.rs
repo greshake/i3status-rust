@@ -36,7 +36,7 @@ use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;

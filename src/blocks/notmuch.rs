@@ -8,7 +8,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};

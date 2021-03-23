@@ -16,7 +16,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::has_command;
 use crate::widgets::text::TextWidget;

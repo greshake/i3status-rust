@@ -23,7 +23,7 @@ use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
-use crate::input::I3BarEvent;
+use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
 use crate::util::xdg_config_home;
 use crate::widgets::text::TextWidget;

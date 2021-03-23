@@ -7,7 +7,7 @@ use toml::value;
 
 use crate::errors;
 use crate::icons::Icons;
-use crate::input::MouseButton;
+use crate::protocol::i3bar_event::MouseButton;
 use crate::themes::Theme;
 
 #[derive(Debug)]

@@ -21,7 +21,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;

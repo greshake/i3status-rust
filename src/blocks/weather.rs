@@ -12,7 +12,7 @@ use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::http;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widgets::{text::TextWidget, I3BarWidget, State};
 
