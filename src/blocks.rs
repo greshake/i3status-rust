@@ -37,6 +37,7 @@ pub mod toggle;
 pub mod uptime;
 pub mod watson;
 pub mod weather;
+pub mod wifi;
 pub mod xrandr;
 
 use self::apt::*;
@@ -72,12 +73,13 @@ use self::sound::*;
 use self::speedtest::*;
 use self::taskwarrior::*;
 use self::temperature::*;
-use self::template::*;
+//use self::template::*;
 use self::time::*;
 use self::toggle::*;
 use self::uptime::*;
 use self::watson::*;
 use self::weather::*;
+use self::wifi::*;
 use self::xrandr::*;
 
 use std::time::Duration;
@@ -270,12 +272,13 @@ pub fn create_block(
         "speedtest" => block!(SpeedTest, id, block_config, shared_config, update_request),
         "taskwarrior" => block!(Taskwarrior, id, block_config, shared_config, update_request),
         "temperature" => block!(Temperature, id, block_config, shared_config, update_request),
-        "template" => block!(Template, id, block_config, shared_config, update_request),
-        "time" => block!(Time, id, block_config, shared_config, update_request), /////////
+        //"template" => block!(Template, id, block_config, shared_config, update_request),
+        "time" => block!(Time, id, block_config, shared_config, update_request),
         "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
         "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
         "watson" => block!(Watson, id, block_config, shared_config, update_request),
         "weather" => block!(Weather, id, block_config, shared_config, update_request),
+        "wifi" => block!(Wifi, id, block_config, shared_config, update_request),
         "xrandr" => block!(Xrandr, id, block_config, shared_config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
     }
