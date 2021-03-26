@@ -15,7 +15,7 @@ use crate::protocol::i3bar_event::I3BarEvent;
 use crate::protocol::i3bar_event::MouseButton;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
-use crate::widgets::I3BarWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Wifi {
     id: usize,
@@ -53,7 +53,7 @@ impl Default for WifiConfig {
             interval: Duration::from_secs(10),
             format: "{signal}".to_string(),
             format_alt: "{ssid}".to_string(),
-            text_unavailable: "x".to_string(),
+            text_unavailable: "".to_string(),
             clickable: true,
         }
     }
@@ -124,8 +124,17 @@ impl Block for Wifi {
             }
         }
 
-        self.output
-            .set_text(text.unwrap_or_else(|| self.text_unavailable.clone()));
+        match text {
+            Some(text) => {
+                self.output.set_text(text);
+                self.output.set_state(State::Idle);
+            }
+            None => {
+                self.output.set_text(self.text_unavailable.clone());
+                self.output.set_state(State::Critical);
+            }
+        }
+
         Ok(Some(self.update_interval.into()))
     }
 
