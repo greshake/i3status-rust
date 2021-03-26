@@ -119,17 +119,22 @@ fn main() {
             ::std::process::exit(1);
         }
 
+        // Create widget with error message
         let error_widget = TextWidget::new(0, 0, Default::default())
             .with_state(State::Critical)
             .with_text(&format!("{:?}", error));
-        let error_rendered = error_widget.get_data();
-        println!("[{}]", error_rendered.render());
 
+        // Print errors
+        println!("[{}],", error_widget.get_data().render());
         eprintln!("\n\n{:?}", error);
-        // Do nothing, so the error message keeps displayed
-        loop {
-            ::std::thread::sleep(Duration::from_secs(::std::u64::MAX));
-        }
+
+        // Wait for USR2 signal to restart
+        signal_hook::iterator::Signals::new(&[signal_hook::consts::SIGUSR2])
+            .unwrap()
+            .forever()
+            .next()
+            .unwrap();
+        restart();
     }
 }
 
@@ -228,22 +233,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         for block in blocks.iter_mut() {
                             block.update()?;
                         }
-                        protocol::print_blocks(&blocks, &shared_config)?;
                     },
                     signal_hook::consts::SIGUSR2 => {
                         //USR2 signal that should reload the config
-                        use std::ffi::CString;
-
-                        let exe = std::env::current_exe().unwrap();
-                        let exe = CString::new(exe.to_str().unwrap()).unwrap();
-
-                        let mut arg = std::env::args().map(|a| CString::new(a).unwrap()).collect::<Vec<CString>>();
-                        let no_init_arg = CString::new("--no-init").unwrap();
-                        if !arg.iter().any(|a| *a == no_init_arg) {
-                            arg.push(no_init_arg);
-                        }
-
-                        nix::unistd::execvp(&exe, &arg).unwrap();
+                        restart();
                     },
                     _ => {
                         //Real time signal that updates only the blocks listening
@@ -253,6 +246,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         }
                     },
                 };
+                protocol::print_blocks(&blocks, &shared_config)?;
             }
         }
 
@@ -264,6 +258,31 @@ fn run(matches: &ArgMatches) -> Result<()> {
             break Ok(());
         }
     }
+}
+
+/// Restart `i3status-rs` in-place
+fn restart() -> ! {
+    use std::env;
+    use std::ffi::CString;
+    use std::os::unix::ffi::OsStringExt;
+
+    // On linux this line should be OK
+    let exe = CString::new(env::current_exe().unwrap().into_os_string().into_vec()).unwrap();
+
+    // Get current arguments
+    let mut arg = env::args()
+        .map(|a| CString::new(a).unwrap())
+        .collect::<Vec<CString>>();
+
+    // Add "--no-init" argument if not already added
+    let no_init_arg = CString::new("--no-init").unwrap();
+    if !arg.iter().any(|a| *a == no_init_arg) {
+        arg.push(no_init_arg);
+    }
+
+    // Restart
+    nix::unistd::execvp(&exe, &arg).unwrap();
+    unreachable!();
 }
 
 #[cfg(feature = "profiling")]
