@@ -290,8 +290,8 @@ impl Block for Bluetooth {
     fn update(&mut self) -> Result<Option<Update>> {
         if self.device.available()? {
             let values = map!(
-                "{label}" => Value::from_string(self.device.label.clone()),
-                "{percentage}" => Value::from_integer(self.device.battery().unwrap_or(0) as i64).percents(),
+                "label" => Value::from_string(self.device.label.clone()),
+                "percentage" => Value::from_integer(self.device.battery().unwrap_or(0) as i64).percents(),
             );
             let connected = self.device.connected();
             self.output.set_text(self.device.label.to_string());
@@ -319,8 +319,8 @@ impl Block for Bluetooth {
             self.output.set_text(self.format.render(&values)?);
         } else {
             let values = map!(
-                "{label}" => Value::from_string(self.device.label.clone()),
-                "{percentage}" => Value::from_string("".into()),
+                "label" => Value::from_string(self.device.label.clone()),
+                "percentage" => Value::from_string("".into()),
             );
             self.output.set_state(State::Idle);
             self.output
