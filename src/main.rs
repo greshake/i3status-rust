@@ -82,6 +82,13 @@ fn main() {
                 .long("one-shot")
                 .takes_value(false)
                 .hidden(true),
+        )
+        .arg(
+            Arg::with_name("no-init")
+                .help("Do not send an init sequence")
+                .long("no-init")
+                .takes_value(false)
+                .hidden(true),
         );
 
     #[cfg(feature = "profiling")]
@@ -127,8 +134,10 @@ fn main() {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    // Now we can start to run the i3bar protocol
-    protocol::init(matches.is_present("never-pause"));
+    if !matches.is_present("no-init") {
+        // Now we can start to run the i3bar protocol
+        protocol::init(matches.is_present("never-pause"));
+    }
 
     // Read & parse the config file
     let config_path = match matches.value_of("config") {
@@ -223,8 +232,18 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     },
                     signal_hook::consts::SIGUSR2 => {
                         //USR2 signal that should reload the config
-                        //TODO not implemented
-                        //unimplemented!("SIGUSR2 is meant to be used to reload the config toml, but this feature is yet not implemented");
+                        use std::ffi::CString;
+
+                        let exe = std::env::current_exe().unwrap();
+                        let exe = CString::new(exe.to_str().unwrap()).unwrap();
+
+                        let mut arg = std::env::args().map(|a| CString::new(a).unwrap()).collect::<Vec<CString>>();
+                        let no_init_arg = CString::new("--no-init").unwrap();
+                        if !arg.iter().any(|a| *a == no_init_arg) {
+                            arg.push(no_init_arg);
+                        }
+
+                        nix::unistd::execvp(&exe, &arg).unwrap();
                     },
                     _ => {
                         //Real time signal that updates only the blocks listening
