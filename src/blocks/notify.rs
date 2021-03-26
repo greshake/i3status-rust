@@ -54,8 +54,6 @@ impl ConfigBlock for Notify {
         shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
-        let notify_id = pseudo_uuid();
-
         let c = Connection::get_private(BusType::Session).block_error(
             "notify",
             &"Failed to establish D-Bus connection".to_string(),
@@ -113,7 +111,7 @@ impl ConfigBlock for Notify {
             id,
             paused: state,
             format: FormatTemplate::from_string(&block_config.format)?,
-            output: TextWidget::new(notify_id, 0, shared_config).with_icon(icon)?,
+            output: TextWidget::new(id, 0, shared_config).with_icon(icon)?,
         })
     }
 }
