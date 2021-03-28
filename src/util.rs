@@ -17,6 +17,13 @@ pub fn pseudo_uuid() -> usize {
     ID.fetch_sub(1, Ordering::SeqCst)
 }
 
+/// Tries to find a file in standard locations:
+/// - Fist try to find a file by full path
+/// - Then try XDG_CONFIG_HOME
+/// - Then try `~/.local/share/`
+/// - Then try `/usr/share/`
+///
+/// Automaticaly append an extension if not presented.
 pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
     // Append an extension if `file` does not have it
     let mut file = String::from(file);
@@ -26,29 +33,45 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
         }
     }
 
+    // Try full path
     let full_path = PathBuf::from(&file);
-
-    let mut xdg_path = xdg_config_home().join("i3status-rust");
-    if let Some(subdir) = subdir {
-        xdg_path = xdg_path.join(subdir);
-    }
-    xdg_path = xdg_path.join(&file);
-
-    let mut share_path = PathBuf::from(USR_SHARE_PATH);
-    if let Some(subdir) = subdir {
-        share_path = share_path.join(subdir);
-    }
-    share_path = share_path.join(&file);
-
     if full_path.exists() {
-        Some(full_path)
-    } else if xdg_path.exists() {
-        Some(xdg_path)
-    } else if share_path.exists() {
-        Some(share_path)
-    } else {
-        None
+        return Some(full_path);
     }
+
+    // Try XDG_CONFIG_HOME
+    let mut xdg_config_path = xdg_config_home().join("i3status-rust");
+    if let Some(subdir) = subdir {
+        xdg_config_path = xdg_config_path.join(subdir);
+    }
+    xdg_config_path = xdg_config_path.join(&file);
+    if xdg_config_path.exists() {
+        return Some(xdg_config_path);
+    }
+
+    // Try `~/.local/share/`
+    if let Ok(home) = std::env::var("HOME") {
+        let mut local_share_path = PathBuf::from(home).join(".local/share/i3status-rust");
+        if let Some(subdir) = subdir {
+            local_share_path = local_share_path.join(subdir);
+        }
+        local_share_path = local_share_path.join(&file);
+        if local_share_path.exists() {
+            return Some(local_share_path);
+        }
+    }
+
+    // Try `/usr/share/`
+    let mut usr_share_path = PathBuf::from(USR_SHARE_PATH);
+    if let Some(subdir) = subdir {
+        usr_share_path = usr_share_path.join(subdir);
+    }
+    usr_share_path = usr_share_path.join(&file);
+    if usr_share_path.exists() {
+        return Some(usr_share_path);
+    }
+
+    None
 }
 
 pub fn escape_pango_text(text: String) -> String {
@@ -76,11 +99,10 @@ pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
 pub fn xdg_config_home() -> PathBuf {
     // In the unlikely event that $HOME is not set, it doesn't really matter
     // what we fall back on, so use /.config.
-    let config_path = std::env::var("XDG_CONFIG_HOME").unwrap_or(format!(
+    PathBuf::from(std::env::var("XDG_CONFIG_HOME").unwrap_or(format!(
         "{}/.config",
-        std::env::var("HOME").unwrap_or_else(|_| "".to_string())
-    ));
-    PathBuf::from(&config_path)
+        std::env::var("HOME").unwrap_or_default()
+    )))
 }
 
 pub fn deserialize_file<T>(path: &Path) -> Result<T>
