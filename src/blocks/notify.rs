@@ -15,7 +15,6 @@ use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
