@@ -57,7 +57,7 @@ $ cp target/release/i3status-rs ~/bin/i3status-rs
 ## Configuration
 
 After installing `i3status-rust`, you need to create a configuration file.
-Edit the [example configuration](https://raw.githubusercontent.com/greshake/i3status-rust/master/example_config.toml) to your liking.
+Edit the [example configuration](https://raw.githubusercontent.com/greshake/i3status-rust/master/example/config.toml) to your liking.
 The default location is `$XDG_CONFIG_HOME/i3status-rust/config.toml`.
 
 There are some top-level configuration variables:
