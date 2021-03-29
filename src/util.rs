@@ -25,18 +25,15 @@ pub fn pseudo_uuid() -> usize {
 ///
 /// Automaticaly append an extension if not presented.
 pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
-    // Append an extension if `file` does not have it
-    let mut file = String::from(file);
+    // Set (or update) the extension
+    let mut file = PathBuf::from(file);
     if let Some(extension) = extension {
-        if !file.ends_with(extension) {
-            file.push_str(extension);
-        }
+        file.set_extension(extension);
     }
 
     // Try full path
-    let full_path = PathBuf::from(&file);
-    if full_path.exists() {
-        return Some(full_path);
+    if file.exists() {
+        return Some(file);
     }
 
     // Try XDG_CONFIG_HOME

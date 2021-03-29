@@ -72,7 +72,7 @@ impl std::ops::DerefMut for Theme {
 
 impl Theme {
     pub fn from_file(file: &str) -> Option<Theme> {
-        let file = util::find_file(file, Some("themes"), Some(".toml"))?;
+        let file = util::find_file(file, Some("themes"), Some("toml"))?;
         Some(Theme(util::deserialize_file(&file).ok()?))
     }
 }
