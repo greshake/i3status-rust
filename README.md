@@ -43,15 +43,10 @@ Otherwise, you can install from source:
 $ git clone https://github.com/greshake/i3status-rust
 $ cd i3status-rust
 $ cargo install --path .
+$ ./install.sh
 ```
 
 By default, this will install the binary to `~/.cargo/bin/i3status-rs`.
-
-For functional themes and icon sets, you also have to copy files from `files/` to `~/.local/share/i3status-rust/`:
-
-```shell
-$ ./install.sh
-```
 
 ## Configuration
 
