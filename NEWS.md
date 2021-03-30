@@ -2,6 +2,12 @@
 
 ## Breaking Changes
 
+Themes/Icons:
+
+* These have been moved out into files instead of being hardcoded in the Rust source. The following folders are checked in this order: first `$XDG_CONFIG_HOME/i3status-rust/themes`, next `$HOME/.local/share/i3status-rust/themes`, finally `/usr/share/i3status-rust/themes`. If installing manually via cargo, you will need to copy the files to an appropriate location (an `install.sh` script is provided which does this). If installing via the AUR on Arch Linux, the package will install the files to `/usr/share/i3status-rust/themes` for you, so you do not need to do anythigng. 
+
+Blocks: 
+
 * CPU Utilization block: Due to an overhaul of our internal code, the `per_core` option has been removed. The same configuration can be achieved using the new `{utilization<n>}` format keys.
 * Battery and Disk Space blocks: The `{bar}` format key has been removed, refer to [formatting documentation](blocks.md#formatting) to get more information of new formatting options.
 * Disk Space block: The `{unit}` format key has been removed since the unit of `{free}` and similar format keys don't rely on `unit` configuration option anymore.
