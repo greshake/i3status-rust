@@ -4,7 +4,7 @@
 
 Themes/Icons:
 
-* These have been moved out into files instead of being hardcoded in the Rust source. The following folders are checked in this order: first `$XDG_CONFIG_HOME/i3status-rust/themes`, next `$HOME/.local/share/i3status-rust/themes`, finally `/usr/share/i3status-rust/themes`. If installing manually via cargo, you will need to copy the files to an appropriate location (an `install.sh` script is provided which does this). If installing via the AUR on Arch Linux, the package will install the files to `/usr/share/i3status-rust/themes` for you, so you do not need to do anythigng. 
+* These have been moved out into files instead of being hardcoded in the Rust source. The following folders are checked in this order: first `$XDG_CONFIG_HOME/i3status-rust/<icons|themes>`, next `$HOME/.local/share/i3status-rust/<icons|themes>`, finally `/usr/share/i3status-rust/<icons|themes>`. If installing manually via cargo, you will need to copy the files to an appropriate location (an `install.sh` script is provided which does this). If installing via the AUR on Arch Linux, the package will install the files to `/usr/share/i3status-rust/themes` for you, so you do not need to do anything (this should also be true for other distros assuming the package maintainer has packaged i3status-rust correctly). 
 
 Blocks: 
 
