@@ -15,7 +15,7 @@ name = "solarized-dark"
 name = "awesome"
 ```
 
-Both theme and an icon set can be loaded from a separate file using `file` parameter:
+Both theme and an icon set can be loaded from a separate file. 
 ```toml
 [theme]
 file = "<file>"
@@ -26,11 +26,14 @@ where `<file>` can be either a filename or a full path and will be checked in th
 
 1. If full path given, then use it as is: `/home/foo/custom_theme.toml`
 2. If filename given, e.g. "custom_theme.toml", then first check `XDG_CONFIG_HOME/i3status-rust/themes`
-3. Otherwise look for it in `/usr/share/i3status-rust/themes`
+3. Then look for it in `~/.local/share/i3status-rust/themes`
+4. Otherwise look for it in `/usr/share/i3status-rust/themes`
 
-Note: you can omit the `.toml` extension while specifying `file` parameter.
-
-Example theme file can be found in `example/theme/solarized-dark.toml`.
+Notes:
+- In case with icon sets, the file should be in `icons` subdirectory instead of `themes`.
+- You can omit the `.toml` extension while specifying `file` parameter.
+- `file` parameter is an alias to `name`, they are completely interchangeable.
+- All the standard themes are provides in files, so you can take them as examples of how to write your own themes/icon sets.
 
 # Available themes
 
@@ -54,6 +57,8 @@ Example theme file can be found in `example/theme/solarized-dark.toml`.
 ![space-villain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/space_villain.png)
 * `native` (like plain with no background and native separators)
 ![native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)
+* `semi-native` (like natime but with background)
+//TODO add an image
 
 # Available icon sets
 

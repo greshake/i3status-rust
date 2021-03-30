@@ -62,7 +62,7 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
 
         alternator = !alternator;
 
-        if config.theme.native_separators == Some(true) {
+        if config.theme.separator.is_none() {
             // Re-add native separator on last widget for native theme
             rendered_widgets.last_mut().unwrap().separator = None;
             rendered_widgets.last_mut().unwrap().separator_block_width = None;
@@ -75,22 +75,15 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
             .collect::<Vec<String>>()
             .join(",");
 
-        if config.theme.native_separators == Some(true) {
+        if config.theme.separator.is_none() {
             // Skip separator block for native theme
             rendered_blocks.push(block_str.to_string());
             continue;
         }
 
         // The first widget's BG is used to get the FG color for the current separator
-        let first_bg = rendered_widgets
-            .first()
-            .unwrap()
-            .background
-            .clone()
-            .internal_error("util", "couldn't get background color")?;
-
         let sep_fg = if config.theme.separator_fg == Some("auto".to_string()) {
-            Some(first_bg.to_string())
+            rendered_widgets.first().unwrap().background.clone()
         } else {
             config.theme.separator_fg.clone()
         };
@@ -102,24 +95,20 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
             config.theme.separator_bg.clone()
         };
 
-        let separator = I3BarBlock {
-            full_text: config.theme.separator.clone(),
-            background: sep_bg,
-            color: sep_fg,
-            ..Default::default()
-        };
-
-        rendered_blocks.push(format!("{},{}", separator.render(), block_str));
+        if let Some(ref separator) = config.theme.separator {
+            let separator = I3BarBlock {
+                full_text: separator.clone(),
+                background: sep_bg,
+                color: sep_fg,
+                ..Default::default()
+            };
+            rendered_blocks.push(format!("{},{}", separator.render(), block_str));
+        } else {
+            rendered_blocks.push(block_str);
+        }
 
         // The last widget's BG is used to get the BG color for the next separator
-        last_bg = Some(
-            rendered_widgets
-                .last()
-                .unwrap()
-                .background
-                .clone()
-                .internal_error("util", "couldn't get background color")?,
-        );
+        last_bg = rendered_widgets.last().unwrap().background.clone();
     }
 
     println!("[{}],", rendered_blocks.join(","));

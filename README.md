@@ -40,19 +40,13 @@ Stable releases are packaged on some distributions:
 Otherwise, you can install from source:
 
 ```shell
-$ cargo install --git https://github.com/greshake/i3status-rust i3status-rs
+$ git clone https://github.com/greshake/i3status-rust
+$ cd i3status-rust
+$ cargo install --path .
+$ ./install.sh
 ```
 
 By default, this will install the binary to `~/.cargo/bin/i3status-rs`.
-
-or manually:
-
-```shell
-$ git clone https://github.com/greshake/i3status-rust
-$ cd i3status-rust && cargo build --release
-# Optional:
-$ cp target/release/i3status-rs ~/bin/i3status-rs
-```
 
 ## Configuration
 
