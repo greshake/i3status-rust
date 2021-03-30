@@ -1730,7 +1730,7 @@ This is just a name of a placeholder. Each block that uses formatting will list 
 
 Sets the minimum width of the content (in characters). If starts with a zero, `0` symbol will be used to pad the content. A space is used otherwise. Floats and Integers are shifted to the right, while Strings are to the left. Defaults to `0` for Strings, `2` for Integers and `3` for Floats.
 
-#### Examples (□ is used instead of spaces)
+#### Examples (spaces are shown as '□' to make the differences more obvious)
 
 `"{var:3}"`
 
