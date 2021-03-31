@@ -1016,15 +1016,16 @@ Key | Values | Required | Default
 
  Key | Value | Type | Unit
 -----|-------|------|------
-`ssid` | Display network SSID (wireless only) | String | -
-`signal_strength` | Display WiFi signal strength (wireless only) | Integer | -
-`bitrate` | Display connection bitrate | String | -
-`ip` | Display connection IP address | String | -
-`ipv6` | Display connection IPv6 address | String | -
-`speed_up` | Display upload speed | Float | Bytes per second
-`speed_down` | Display download speed | Float | Bytes per second
-`graph_up` | Display a bar graph for upload speed | String | -
-`graph_down` | Display a bar graph for download speed | String | -
+`ssid` | Network SSID (wireless only) | String | -
+`signal_strength` | Display WiFi signal strength (wireless only) | Integer | %
+`frequency` | WiFi frequency (wireless only) | Float | Hz
+`bitrate` | Connection bitrate | String | -
+`ip` | Connection IP address | String | -
+`ipv6` | Cnnection IPv6 address | String | -
+`speed_up` | Upload speed | Float | Bytes per second
+`speed_down` | Download speed | Float | Bytes per second
+`graph_up` | A bar graph for upload speed | String | -
+`graph_down` | A bar graph for download speed | String | -
 
 ###### [↥ back to top](#list-of-available-blocks)
 

@@ -1,7 +1,6 @@
-use std::ffi::OsStr;
 use std::fmt;
 use std::fs::{read_to_string, OpenOptions};
-use std::io::{prelude::*, ErrorKind};
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -173,11 +172,12 @@ impl NetworkDevice {
                     // SSID is `None` when not connected
                     if let Some(i_ssid) = interface.ssid {
                         if let Some(device) = interface.name {
-                            let device = nl80211::parse_string(&device).trim_matches(char::from(0));
+                            let device = String::from_utf8_lossy(&device);
+                            let device = device.trim_matches(char::from(0));
                             if device != self.device {
                                 continue;
                             }
-                            ssid = Some(nl80211::parse_string(&i_ssid));
+                            ssid = Some(escape_pango_text(decode_escaped_unicode(&i_ssid)));
                             freq = Some(
                                 nl80211::parse_u32(
                                     &interface
@@ -320,8 +320,6 @@ pub struct Net {
     format: FormatTemplate,
     format_alt: Option<FormatTemplate>,
     output: TextWidget,
-    ssid: Option<String>,
-    signal_strength: u32,
     ip_addr: Option<String>,
     ipv6_addr: Option<String>,
     bitrate: Option<String>,
@@ -447,8 +445,6 @@ impl ConfigBlock for Net {
                 })?
                 .with_text("")
                 .with_spacing(Spacing::Inline),
-            ssid: None,
-            signal_strength: 0,
             // TODO: a better way to deal with this?
             bitrate: if block_config.format.contains("bitrate") {
                 Some("".to_string())
@@ -672,7 +668,7 @@ struct IpAddrInfo {
     local: Option<String>,
 }
 
-fn decode_escaped_unicode(raw: &[u8]) -> Vec<u8> {
+fn decode_escaped_unicode(raw: &[u8]) -> String {
     let mut result: Vec<u8> = Vec::new();
 
     let mut idx = 0;
@@ -689,7 +685,7 @@ fn decode_escaped_unicode(raw: &[u8]) -> Vec<u8> {
         }
     }
 
-    result
+    String::from_utf8_lossy(&result).to_string()
 }
 
 fn signal_percents(raw: i8) -> i64 {
@@ -707,37 +703,37 @@ fn signal_percents(raw: i8) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::blocks::net::maybe_ssid_convert;
+    use crate::blocks::net::decode_escaped_unicode;
 
     #[test]
     fn test_ssid_decode_escaped_unicode() {
         assert_eq!(
-            maybe_ssid_convert(Some(r"\xc4\x85\xc5\xbeuolas".as_bytes())).unwrap(),
-            Some("ąžuolas".to_string())
+            decode_escaped_unicode(r"\xc4\x85\xc5\xbeuolas".as_bytes()),
+            "ąžuolas".to_string()
         );
     }
 
     #[test]
     fn test_ssid_decode_escaped_emoji() {
         assert_eq!(
-            maybe_ssid_convert(Some(r"\xf0\x9f\x8c\xb3oak".as_bytes())).unwrap(),
-            Some("🌳oak".to_string())
+            decode_escaped_unicode(r"\xf0\x9f\x8c\xb3oak".as_bytes()),
+            "🌳oak".to_string()
         );
     }
 
     #[test]
     fn test_ssid_decode_legit_backslash() {
         assert_eq!(
-            maybe_ssid_convert(Some(r"\x5cx backslash".as_bytes())).unwrap(),
-            Some(r"\x backslash".to_string())
+            decode_escaped_unicode(r"\x5cx backslash".as_bytes()),
+            r"\x backslash".to_string()
         );
     }
 
     #[test]
     fn test_ssid_decode_surrounded_by_spaces() {
         assert_eq!(
-            maybe_ssid_convert(Some(r"\x20surrounded by spaces\x20".as_bytes())).unwrap(),
-            Some(r" surrounded by spaces ".to_string())
+            decode_escaped_unicode(r"\x20surrounded by spaces\x20".as_bytes()),
+            r" surrounded by spaces ".to_string()
         );
     }
 }
