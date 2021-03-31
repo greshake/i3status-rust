@@ -26,12 +26,8 @@ lazy_static! {
     static ref DEFAULT_DEV_REGEX: Regex = Regex::new("default.*dev (\\w*).*").unwrap();
     static ref WHITESPACE_REGEX: Regex = Regex::new("\\s+").unwrap();
     static ref ETHTOOL_SPEED_REGEX: Regex = Regex::new("Speed: (\\d+\\w\\w/s)").unwrap();
-    static ref IW_SSID_REGEX: Regex = Regex::new("SSID: (.*)").unwrap();
-    static ref WPA_SSID_REGEX: Regex = Regex::new("^ssid=(.*)").unwrap();
-    static ref IWCTL_SSID_REGEX: Regex = Regex::new("Connected network\\s+([[:alnum:]]+)").unwrap();
     static ref IW_BITRATE_REGEX: Regex =
         Regex::new("tx bitrate: (\\d+(?:\\.?\\d+) [[:alpha:]]+/s)").unwrap();
-    static ref IW_SIGNAL_REGEX: Regex = Regex::new("signal: (-?\\d+) dBm").unwrap();
 }
 
 #[derive(Debug)]
@@ -160,64 +156,48 @@ impl NetworkDevice {
     }
 
     /// Queries the wireless SSID of this device, if it is connected to one.
-    pub fn ssid(&self) -> Result<Option<String>> {
+    pub fn wifi_info(&self) -> Result<(Option<String>, Option<f64>, Option<i64>)> {
+        use nl80211::Socket;
         if self.is_up()? && self.wireless {
-            get_ssid(self)
+            let interfaces = Socket::connect()
+                .block_error("net", "nl80211: failed to connect to the socket")?
+                .get_interfaces_info()
+                .block_error("net", "nl80211: failed to get interfaces' information")?;
+
+            let mut ssid = None;
+            let mut freq = None;
+            let mut signal = None;
+
+            for interface in interfaces {
+                if let Ok(ap) = interface.get_station_info() {
+                    // SSID is `None` when not connected
+                    if let Some(i_ssid) = interface.ssid {
+                        if let Some(device) = interface.name {
+                            let device = nl80211::parse_string(&device).trim_matches(char::from(0));
+                            if device != self.device {
+                                continue;
+                            }
+                            ssid = Some(nl80211::parse_string(&i_ssid));
+                            freq = Some(
+                                nl80211::parse_u32(
+                                    &interface
+                                        .frequency
+                                        .block_error("net", "failed to get frequency")?,
+                                ) as f64
+                                    * 1_000_000.,
+                            );
+                            signal = Some(signal_percents(nl80211::parse_i8(
+                                &ap.signal.block_error("net", "failed to get signal")?,
+                            )));
+                            break;
+                        }
+                    }
+                }
+            }
+            Ok((ssid, freq, signal))
         } else {
-            Ok(None)
+            Ok((None, None, None))
         }
-    }
-
-    fn absolute_signal_strength(&self) -> Result<Option<i32>> {
-        if !self.is_up()? || !self.wireless {
-            return Ok(None);
-        }
-
-        let iw_output = Command::new("iw")
-            .args(&["dev", &self.device, "link"])
-            .output()
-            .block_error("net", "Failed to execute signal strength query.")?
-            .stdout;
-
-        if let Some(raw) = IW_SIGNAL_REGEX
-            .captures_iter(&iw_output)
-            .next()
-            .and_then(|x| x.get(1))
-        {
-            String::from_utf8(raw.as_bytes().to_vec())
-                .block_error("net", "Non-UTF8 signal strength")
-                .and_then(|s| {
-                    s.parse::<i32>()
-                        .block_error("net", "Non numerical signal strength.")
-                })
-                .map(Some)
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn relative_signal_strength(&self) -> Result<Option<u32>> {
-        let xbm = if let Some(xbm) = self.absolute_signal_strength()? {
-            xbm as f64
-        } else {
-            return Ok(None);
-        };
-
-        // Code inspired by https://github.com/NetworkManager/NetworkManager/blob/master/src/platform/wifi/nm-wifi-utils-nl80211.c
-        const NOISE_FLOOR_DBM: f64 = -90.;
-        const SIGNAL_MAX_DBM: f64 = -20.;
-
-        let xbm = if xbm < NOISE_FLOOR_DBM {
-            NOISE_FLOOR_DBM
-        } else if xbm > SIGNAL_MAX_DBM {
-            SIGNAL_MAX_DBM
-        } else {
-            xbm
-        };
-
-        let result = 100. - 70. * ((SIGNAL_MAX_DBM - xbm) / (SIGNAL_MAX_DBM - NOISE_FLOOR_DBM));
-        let result = result as u32;
-        Ok(Some(result))
     }
 
     /// Queries the inet IP of this device (using `ip`).
@@ -529,24 +509,6 @@ impl Net {
         Ok(())
     }
 
-    fn update_ssid(&mut self) -> Result<()> {
-        if let Some(s) = self.device.ssid()? {
-            // SSID names can contain chars that need escaping
-            self.ssid = Some(escape_pango_text(s));
-        } else {
-            self.ssid = None;
-        }
-        Ok(())
-    }
-
-    fn update_signal_strength(&mut self) -> Result<()> {
-        if self.device.wireless {
-            self.signal_strength = self.device.relative_signal_strength()?.unwrap_or(0);
-        }
-
-        Ok(())
-    }
-
     fn update_ip_addr(&mut self) -> Result<()> {
         if let Some(ref mut ip_addr_string) = self.ip_addr {
             let ip_addr = self.device.ip_addr()?;
@@ -648,20 +610,21 @@ impl Block for Net {
             || waiting_for_ip
             || waiting_for_ipv6
         {
-            self.update_ssid()?;
-            self.update_signal_strength()?;
             self.update_ip_addr()?;
             self.last_update = now;
         }
 
         self.update_tx_rx()?;
 
+        let (ssid, freq, signal) = self.device.wifi_info()?;
+
         let empty_string = "".to_string();
         let na_string = "N/A".to_string();
 
         let values = map!(
-            "ssid" => Value::from_string(self.ssid.clone().unwrap_or(na_string)),
-            "signal_strength" => Value::from_integer(self.signal_strength as i64).percents(),
+            "ssid" => Value::from_string(ssid.clone().unwrap_or(na_string)),
+            "signal_strength" => Value::from_integer(signal.unwrap_or(0)).percents(),
+            "frequency" => Value::from_float(freq.unwrap_or(0.)).hertz(),
             "bitrate" => Value::from_string(self.bitrate.clone().unwrap_or_else(|| empty_string.clone())), // TODO: not a String?
             "ip" => Value::from_string(self.ip_addr.clone().unwrap_or_else(|| empty_string.clone())),
             "ipv6" => Value::from_string(self.ipv6_addr.clone().unwrap_or(empty_string)),
@@ -709,159 +672,6 @@ struct IpAddrInfo {
     local: Option<String>,
 }
 
-fn get_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
-    if let Some(res) = get_iw_ssid(dev)? {
-        return Ok(Some(res));
-    }
-
-    if let Some(res) = get_wpa_ssid(dev)? {
-        return Ok(Some(res));
-    }
-
-    if let Some(res) = get_nmcli_ssid(dev)? {
-        return Ok(Some(res));
-    }
-
-    if let Some(res) = get_iwctl_ssid(dev)? {
-        return Ok(Some(res));
-    }
-
-    Ok(None)
-}
-
-#[inline]
-/// Attempt to get the SSID the given device is connected to from iw.
-/// Returns Err if:
-///     - `iw` is not a valid command
-///     - failed to spawn an `iw` command
-///     - `iw` failed to produce a valid UTF-8 SSID
-/// Returns Ok(None) if `iw` failed to produce a SSID.
-fn get_iw_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
-    let raw = exec_ssid_cmd("iw", &["dev", &dev.device, "link"])?;
-
-    if raw.is_none() {
-        return Ok(None);
-    }
-
-    let raw = raw.unwrap();
-    let result = raw
-        .stdout
-        .split(|c| *c == b'\n')
-        .filter_map(|x| IW_SSID_REGEX.captures_iter(x).next())
-        .filter_map(|x| x.get(1))
-        .next();
-
-    maybe_ssid_convert(result.map(|x| x.as_bytes()))
-}
-
-#[inline]
-/// Attempt to get the SSID the given device is connected to from wpa_cli.
-/// Returns Err if:
-///     - `wpa_cli` is not a valid command
-///     - failed to spawn a `wpa_cli` command
-///     - `wpa_cli` failed to produce a valid UTF-8 SSID
-/// Returns Ok(None) if `wpa_cli` failed to produce a SSID.
-fn get_wpa_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
-    let raw = exec_ssid_cmd("wpa_cli", &["status", "-i", &dev.device])?;
-
-    if raw.is_none() {
-        return Ok(None);
-    }
-
-    let raw = raw.unwrap();
-    let result = raw
-        .stdout
-        .split(|c| *c == b'\n')
-        .filter_map(|x| WPA_SSID_REGEX.captures_iter(x).next())
-        .filter_map(|x| x.get(1))
-        .next();
-
-    maybe_ssid_convert(result.map(|x| x.as_bytes()))
-}
-
-#[inline]
-/// Attempt to get the SSID the given device is connected to from nmcli.
-/// Returns Err if:
-///     - `nmcli` is not a valid command
-///     - failed to spawn a `nmcli` command
-///     - `nmcli` failed to produce a valid UTF-8 SSID
-/// Returns Ok(None) if `nmcli` failed to produce a SSID.
-fn get_nmcli_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
-    let raw = exec_ssid_cmd(
-        "nmcli",
-        &["-g", "general.connection", "device", "show", &dev.device],
-    )?;
-
-    if raw.is_none() {
-        return Ok(None);
-    }
-
-    let raw = raw.unwrap();
-    let result = raw.stdout.split(|c| *c == b'\n').next();
-
-    maybe_ssid_convert(result)
-}
-
-#[inline]
-/// Attempt to get the SSID the given device is connected to from iwctl.
-/// Returns Err if
-///     - `iwctl` is not a valid command
-///     - failed to spawn a `iwctl` command
-///     - `iwctl` failed to produce a valid UTF-8 SSID
-/// Returns Ok(None) if `iwctl` failed to produce a SSID.
-fn get_iwctl_ssid(dev: &NetworkDevice) -> Result<Option<String>> {
-    let raw = exec_ssid_cmd("iwctl", &["station", &dev.device, "show"])?;
-
-    if raw.is_none() {
-        return Ok(None);
-    }
-
-    let raw = raw.unwrap();
-    let result = raw
-        .stdout
-        .split(|c| *c == b'\n')
-        .filter_map(|x| IWCTL_SSID_REGEX.captures_iter(x).next())
-        .filter_map(|x| x.get(1))
-        .next();
-
-    maybe_ssid_convert(result.map(|x| x.as_bytes()))
-}
-
-#[inline]
-fn exec_ssid_cmd<S, I, L>(cmd: S, args: I) -> Result<Option<std::process::Output>>
-where
-    S: AsRef<std::ffi::OsStr>,
-    I: IntoIterator<Item = L>,
-    L: AsRef<OsStr>,
-{
-    let raw = Command::new(&cmd).args(args).output();
-
-    if let Err(ref err) = raw {
-        if err.kind() == ErrorKind::NotFound {
-            return Ok(None);
-        }
-    }
-
-    raw.map(Some).block_error(
-        "net",
-        &format!(
-            "Failed to execute SSID query using {}",
-            cmd.as_ref().to_string_lossy()
-        ),
-    )
-}
-
-#[inline]
-fn maybe_ssid_convert(raw: Option<&[u8]>) -> Result<Option<String>> {
-    if let Some(raw_ssid) = raw {
-        String::from_utf8(decode_escaped_unicode(raw_ssid))
-            .block_error("net", "Non-UTF8 SSID")
-            .map(Some)
-    } else {
-        Ok(None)
-    }
-}
-
 fn decode_escaped_unicode(raw: &[u8]) -> Vec<u8> {
     let mut result: Vec<u8> = Vec::new();
 
@@ -880,6 +690,19 @@ fn decode_escaped_unicode(raw: &[u8]) -> Vec<u8> {
     }
 
     result
+}
+
+fn signal_percents(raw: i8) -> i64 {
+    let raw = raw as f64;
+
+    let perfect = -20.;
+    let worst = -85.;
+    let d = perfect - worst;
+
+    // https://github.com/torvalds/linux/blob/9ff9b0d392ea08090cd1780fb196f36dbb586529/drivers/net/wireless/intel/ipw2x00/ipw2200.c#L4322-L4334
+    let percents = 100. - (perfect - raw) * (15. * d + 62. * (perfect - raw)) / (d * d);
+
+    (percents as i64).clamp(0, 100)
 }
 
 #[cfg(test)]
