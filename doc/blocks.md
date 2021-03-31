@@ -986,8 +986,6 @@ Creates a block which displays the upload and download throughput for a network 
 
 `bitrate` requires either `ethtool` for wired devices or `iw` for wireless devices.  
 `ip` and `ipv6` require `ip`.  
-`ssid` requires one of `iw`, `wpa_cli`, `nm-cli` or `iwctl`.  
-`signal_strength` requires `iw`.
 
 #### Examples
 
