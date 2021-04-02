@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::time::Duration;
@@ -170,10 +170,17 @@ impl Block for Cpu {
             barchart.push(BOXCHARS[(7.5 * utilization) as usize]);
         }
 
+        let boost = match boost_status()? {
+            true => "⏼",
+            false => "◌",
+        }
+        .to_string();
+
         let mut values = map!(
             "frequency" => Value::from_float(freqs_avg).hertz(),
             "barchart" => Value::from_string(barchart),
             "utilization" => Value::from_integer(avg_utilization as i64).percents(),
+            "boost" => Value::from_string(boost),
         );
         let mut frequency_keys = vec![]; // There should be a better way to dynamically crate keys?
         for i in 0..freqs.len() {
@@ -205,4 +212,19 @@ impl Block for Cpu {
     fn id(&self) -> usize {
         self.id
     }
+}
+
+/// Read the cpu turbo boost status from kernel sys interface
+/// or intel pstate interface
+fn boost_status() -> Result<bool> {
+    if let Ok(boost) = fs::read_to_string("/sys/devices/system/cpu/cpufreq/boost") {
+        return Ok(boost.starts_with("1"));
+    } else if let Ok(no_turbo) = fs::read_to_string("/sys/devices/system/cpu/intel_pstate/no_turbo")
+    {
+        return Ok(no_turbo.starts_with("0"));
+    }
+    Err(BlockError(
+        "cpu".to_owned(),
+        "failed to read turbo boost status".to_owned(),
+    ))
 }
