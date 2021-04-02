@@ -234,7 +234,7 @@ pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f6
             .map(|x| BARS[((x.clamp(min, max) - min) / extant * length) as usize])
             .collect()
     } else {
-        (0..content.len() - 1).map(|_| BARS[0]).collect::<_>()
+        (0..content.len()).map(|_| BARS[0]).collect::<_>()
     }
 }
 
