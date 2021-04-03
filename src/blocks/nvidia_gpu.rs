@@ -40,6 +40,9 @@ pub struct NvidiaGpu {
     scrolling: Scrolling,
 
     show_clocks: Option<TextWidget>,
+
+    show_power_draw: Option<TextWidget>,
+
     maximum_idle: u64,
     maximum_good: u64,
     maximum_info: u64,
@@ -85,6 +88,9 @@ pub struct NvidiaGpuConfig {
     /// GPU clocks. In percents.
     pub show_clocks: bool,
 
+    /// Last Measured Power Draw of GPU. In Watts.
+    pub show_power_draw: bool,
+
     /// Maximum temperature, below which state is set to idle
     pub idle: u64,
 
@@ -109,6 +115,7 @@ impl Default for NvidiaGpuConfig {
             show_temperature: true,
             show_fan_speed: false,
             show_clocks: false,
+            show_power_draw: false,
             idle: 50,
             good: 70,
             info: 75,
@@ -182,6 +189,12 @@ impl ConfigBlock for NvidiaGpu {
             scrolling: shared_config.scrolling,
 
             show_clocks: if block_config.show_clocks {
+                Some(TextWidget::new(id, id, shared_config.clone()).with_spacing(Spacing::Inline))
+            } else {
+                None
+            },
+
+            show_power_draw: if block_config.show_power_draw {
                 Some(TextWidget::new(id, id, shared_config).with_spacing(Spacing::Inline))
             } else {
                 None
@@ -212,6 +225,9 @@ impl Block for NvidiaGpu {
         }
         if self.show_clocks.is_some() {
             params += "clocks.current.graphics,";
+        }
+        if self.show_power_draw.is_some() {
+            params += "power.draw,";
         }
 
         let handle = Command::new("nvidia-smi")
@@ -301,6 +317,10 @@ impl Block for NvidiaGpu {
             }
             if let Some(ref mut clocks_widget) = self.show_clocks {
                 clocks_widget.set_text(format!("{}MHz", result[count]));
+                count += 1;
+            }
+            if let Some(ref mut power_draw_widget) = self.show_power_draw {
+                power_draw_widget.set_text(format!("{} W", result[count]));
             }
         } else {
             self.name_widget.set_text("DISABLED".to_string());
@@ -328,6 +348,9 @@ impl Block for NvidiaGpu {
             }
             if let Some(ref clocks_widget) = self.show_clocks {
                 widgets.push(clocks_widget);
+            }
+            if let Some(ref power_draw_widget) = self.show_power_draw {
+                widgets.push(power_draw_widget);
             }
         }
         widgets
