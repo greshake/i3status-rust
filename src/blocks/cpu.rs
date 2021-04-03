@@ -170,9 +170,10 @@ impl Block for Cpu {
             barchart.push(BOXCHARS[(7.5 * utilization) as usize]);
         }
 
-        let boost = match boost_status()? {
-            true => "⏼",
-            false => "◌",
+        let boost = match boost_status() {
+            Some(true) => "⏼",
+            Some(false) => "◌",
+            _ => "",
         }
         .to_string();
 
@@ -216,15 +217,12 @@ impl Block for Cpu {
 
 /// Read the cpu turbo boost status from kernel sys interface
 /// or intel pstate interface
-fn boost_status() -> Result<bool> {
+fn boost_status() -> Option<bool> {
     if let Ok(boost) = fs::read_to_string("/sys/devices/system/cpu/cpufreq/boost") {
-        return Ok(boost.starts_with("1"));
+        return Some(boost.starts_with("1"));
     } else if let Ok(no_turbo) = fs::read_to_string("/sys/devices/system/cpu/intel_pstate/no_turbo")
     {
-        return Ok(no_turbo.starts_with("0"));
+        return Some(no_turbo.starts_with("0"));
     }
-    Err(BlockError(
-        "cpu".to_owned(),
-        "failed to read turbo boost status".to_owned(),
-    ))
+    None
 }
