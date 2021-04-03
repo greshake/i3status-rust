@@ -72,7 +72,7 @@ fn format_number(
         (value, prefix)
     };
 
-    if unit == Unit::Percents {
+    if unit == Unit::Percents || unit == Unit::None {
         value = raw_value;
         prefix = Prefix::One;
     }
