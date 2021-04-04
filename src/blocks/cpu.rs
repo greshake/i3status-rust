@@ -25,6 +25,8 @@ pub struct Cpu {
     minimum_warning: u64,
     minimum_critical: u64,
     format: FormatTemplate,
+    boost_icon_on: String,
+    boost_icon_off: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -71,13 +73,15 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, 0, shared_config).with_icon("cpu")?,
+            output: TextWidget::new(id, 0, shared_config.clone()).with_icon("cpu")?,
             prev_util: Vec::with_capacity(32),
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("cpu", "Invalid format specified for cpu")?,
+            boost_icon_on: shared_config.get_icon("cpu_boost_on")?,
+            boost_icon_off: shared_config.get_icon("cpu_boost_off")?,
         })
     }
 }
@@ -171,11 +175,10 @@ impl Block for Cpu {
         }
 
         let boost = match boost_status() {
-            Some(true) => "⏼",
-            Some(false) => "◌",
-            _ => "",
-        }
-        .to_string();
+            Some(true) => self.boost_icon_on.clone(),
+            Some(false) => self.boost_icon_off.clone(),
+            _ => String::new(),
+        };
 
         let mut values = map!(
             "frequency" => Value::from_float(freqs_avg).hertz(),

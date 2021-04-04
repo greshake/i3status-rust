@@ -92,7 +92,9 @@ impl Default for Icons {
             "weather_snow" => "SNOW",
             "weather_sun" => "SUNNY",
             "weather_thunder" => "STORM",
-            "xrandr" => "SCREEN"
+            "xrandr" => "SCREEN",
+            "cpu_boost_on" => "ON",
+            "cpu_boost_off" => "OFF"
         })
     }
 }

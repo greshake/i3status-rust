@@ -56,3 +56,5 @@ weather_clouds = "\ue42d" # wb_cloudy
 weather_default = "\ue42d" # wb_cloudy
 weather_sun = "\ue430" # wb_sunny
 xrandr = "\ue31e"
+cpu_boost_on = "\u23fc"
+cpu_boost_off = "\u25cc"
