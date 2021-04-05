@@ -68,6 +68,11 @@ impl TextWidget {
         Ok(())
     }
 
+    pub fn unset_icon(&mut self) {
+        self.icon = None;
+        self.update();
+    }
+
     pub fn set_text(&mut self, content: String) {
         self.spacing = if content.is_empty() {
             Spacing::Hidden
