@@ -1,4 +1,4 @@
-use std::fs::{self, File};
+use std::fs::{read_to_string, File};
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::time::Duration;
@@ -73,7 +73,6 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, 0, shared_config.clone()).with_icon("cpu")?,
             prev_util: Vec::with_capacity(32),
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
@@ -82,6 +81,7 @@ impl ConfigBlock for Cpu {
                 .block_error("cpu", "Invalid format specified for cpu")?,
             boost_icon_on: shared_config.get_icon("cpu_boost_on")?,
             boost_icon_off: shared_config.get_icon("cpu_boost_off")?,
+            output: TextWidget::new(id, 0, shared_config).with_icon("cpu")?,
         })
     }
 }
@@ -221,10 +221,9 @@ impl Block for Cpu {
 /// Read the cpu turbo boost status from kernel sys interface
 /// or intel pstate interface
 fn boost_status() -> Option<bool> {
-    if let Ok(boost) = fs::read_to_string("/sys/devices/system/cpu/cpufreq/boost") {
+    if let Ok(boost) = read_to_string("/sys/devices/system/cpu/cpufreq/boost") {
         return Some(boost.starts_with("1"));
-    } else if let Ok(no_turbo) = fs::read_to_string("/sys/devices/system/cpu/intel_pstate/no_turbo")
-    {
+    } else if let Ok(no_turbo) = read_to_string("/sys/devices/system/cpu/intel_pstate/no_turbo") {
         return Some(no_turbo.starts_with("0"));
     }
     None
