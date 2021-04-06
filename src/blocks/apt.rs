@@ -188,7 +188,7 @@ impl Block for Apt {
             let updates_list = get_updates_list(&self.config_path)?;
             let count = get_update_count(&updates_list);
             let formatting_map = map!(
-                "{count}" => Value::from_integer(count as i64)
+                "count" => Value::from_integer(count as i64)
             );
 
             let warning = self
