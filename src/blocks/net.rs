@@ -420,10 +420,7 @@ impl ConfigBlock for Net {
         let vpn = device.is_vpn();
 
         let format_alt = if let Some(f) = block_config.format_alt {
-            Some(
-                FormatTemplate::from_string(&f)
-                    .block_error("net", "Invalid format_alt specified")?,
-            )
+            Some(FormatTemplate::from_string(&f)?)
         } else {
             None
         };
