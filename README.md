@@ -14,7 +14,7 @@ We also require Libdbus 1.6 or higher. On some older systems this may require in
 
 Compilation is only tested with very recent stable versions of `rustc`. If you use a distro with older Rust packages, consider using [rustup](https://rustup.rs/) to install a newer toolchain.
 
-Most blocks assume you are running Linux, and some have their own system requirements; these are mentioned in the [block documentation](blocks.md).
+Most blocks assume you are running Linux, and some have their own system requirements; these are mentioned in the [block documentation](https://github.com/greshake/i3status-rust/blob/master/doc/blocks.md).
 
 Optional:
 
