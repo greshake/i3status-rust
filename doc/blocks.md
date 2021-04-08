@@ -1182,6 +1182,7 @@ Key | Values | Required | Default
 `show_temperature` | Display GPU temperature. | No | `true`
 `show_fan_speed` | Display fan speed. | No | `false`
 `show_clocks` | Display gpu clocks. | No | `false`
+`show_power_draw` | Display GPU power draw in watts. | No | `false`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
