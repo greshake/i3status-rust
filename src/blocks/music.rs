@@ -569,6 +569,18 @@ impl Block for Music {
             }
         }
 
+        let state = match metadata.playback_status {
+            PlaybackStatus::Playing => State::Info,
+            _ => State::Idle,
+        };
+
+        [&mut self.play, &mut self.prev, &mut self.next]
+            .iter_mut()
+            .filter_map(|button| button.as_mut())
+            .for_each(|button| button.set_state(state));
+
+        self.current_song_widget.set_state(state);
+
         if let Some(ref mut play) = self.play {
             play.set_icon(match metadata.playback_status {
                 PlaybackStatus::Playing => "music_pause",
