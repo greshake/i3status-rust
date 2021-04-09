@@ -1380,7 +1380,7 @@ Display speed in bytes per second using 4 digits
 [[block]]
 block = "speedtest"
 interval = 1800
-format = "{ping}{speed_down:4*B}{speed_up:4*B}
+format = "{ping}{speed_down:4*B}{speed_up:4*B}"
 ```
 
 #### Options
@@ -1395,7 +1395,7 @@ Key | Values | Required | Default
 
  Key | Value | Type | Unit
 -----|-------|------|------
-'{ping}` | Ping delady | Float | Seconds
+`{ping}` | Ping delay | Float | Seconds
 `{speed_down}` | Download speed | Float | Bits per second
 `{speed_up}` | Upload speed | Float | Bits per second
 
