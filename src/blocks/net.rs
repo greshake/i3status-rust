@@ -419,6 +419,7 @@ impl ConfigBlock for Net {
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
 
+        let format = FormatTemplate::from_string(&block_config.format)?;
         let format_alt = if let Some(f) = block_config.format_alt {
             Some(FormatTemplate::from_string(&f)?)
         } else {
@@ -428,8 +429,6 @@ impl ConfigBlock for Net {
         Ok(Net {
             id,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)?,
-            format_alt,
             output: TextWidget::new(id, 0, shared_config.clone())
                 .with_icon(if wireless {
                     "net_wireless"
@@ -443,21 +442,24 @@ impl ConfigBlock for Net {
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             // TODO: a better way to deal with this?
-            bitrate: if block_config.format.contains("bitrate") {
-                Some("".to_string())
-            } else {
-                None
-            },
-            ip_addr: if block_config.format.contains("ip") {
-                Some("".to_string())
-            } else {
-                None
-            },
-            ipv6_addr: if block_config.format.contains("ipv6") {
-                Some("".to_string())
-            } else {
-                None
-            },
+            bitrate: (format.contains("bitrate")
+                || format_alt
+                    .as_ref()
+                    .map(|f| f.contains("bitrate"))
+                    .unwrap_or(false))
+            .then(String::new),
+            ip_addr: (format.contains("ip")
+                || format_alt
+                    .as_ref()
+                    .map(|f| f.contains("ip"))
+                    .unwrap_or(false))
+            .then(String::new),
+            ipv6_addr: (format.contains("ipv6")
+                || format_alt
+                    .as_ref()
+                    .map(|f| f.contains("ipv6"))
+                    .unwrap_or(false))
+            .then(String::new),
             speed_up: 0.0,
             speed_down: 0.0,
             graph_tx: String::new(),
@@ -474,6 +476,8 @@ impl ConfigBlock for Net {
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
             shared_config,
+            format,
+            format_alt,
         })
     }
 }

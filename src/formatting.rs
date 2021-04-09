@@ -40,6 +40,18 @@ fn unexpected_token<T>(token: char) -> Result<T> {
 }
 
 impl FormatTemplate {
+    /// Whether the format string contains given placeholder
+    pub fn contains(&self, var: &str) -> bool {
+        for token in &self.tokens {
+            if let Token::Var(ref placeholder) = token {
+                if placeholder.name == var {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     pub fn from_string(s: &str) -> Result<Self> {
         let mut tokens = vec![];
 
@@ -255,5 +267,16 @@ mod tests {
             ft.unwrap().render(&values).unwrap().as_str(),
             "some text |var value| var again |var value| 12 \u{258c}  0.0Hz."
         );
+    }
+
+    #[test]
+    fn contains() {
+        let format = FormatTemplate::from_string("some text {foo} {bar:1} foobar");
+        assert!(format.is_ok());
+        let format = format.unwrap();
+        assert!(format.contains("foo"));
+        assert!(format.contains("bar"));
+        assert!(!format.contains("foobar"));
+        assert!(!format.contains("random string"));
     }
 }
