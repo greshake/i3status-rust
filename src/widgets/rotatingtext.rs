@@ -4,6 +4,7 @@ use super::{I3BarWidget, Spacing, State};
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::protocol::i3bar_block::{I3BarBlock, I3BarBlockMinWidth};
+use crate::util::escape_pango_text;
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {
@@ -157,7 +158,7 @@ impl RotatingTextWidget {
         self.inner.full_text = format!(
             "{}{}{}",
             icon,
-            self.get_rotated_content(),
+            escape_pango_text(self.get_rotated_content()),
             match self.spacing {
                 Spacing::Hidden => String::from(""),
                 _ => String::from(" "),
