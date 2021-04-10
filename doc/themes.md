@@ -59,6 +59,8 @@ Notes:
 ![native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)
 * `semi-native` (like natime but with background)
 //TODO add an image
+* `nord-dark` (polar night)
+![nord-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)
 
 # Available icon sets
 
