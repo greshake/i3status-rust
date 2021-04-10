@@ -145,6 +145,7 @@ idle_fg = "#abcdef"
 * `cogs`
 * `cpu`
 * `gpu`
+* `disk_drive`
 * `mail`
 * `memory_mem`
 * `memory_swap`
