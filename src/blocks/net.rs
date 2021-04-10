@@ -156,48 +156,37 @@ impl NetworkDevice {
 
     /// Queries the wireless SSID of this device, if it is connected to one.
     pub fn wifi_info(&self) -> Result<(Option<String>, Option<f64>, Option<i64>)> {
-        use nl80211::Socket;
-        if self.is_up()? && self.wireless {
-            let interfaces = Socket::connect()
-                .block_error("net", "nl80211: failed to connect to the socket")?
-                .get_interfaces_info()
-                .block_error("net", "nl80211: failed to get interfaces' information")?;
+        if !self.is_up()? || !self.wireless {
+            return Ok((None, None, None));
+        }
 
-            let mut ssid = None;
-            let mut freq = None;
-            let mut signal = None;
+        let interfaces = nl80211::Socket::connect()
+            .block_error("net", "nl80211: failed to connect to the socket")?
+            .get_interfaces_info()
+            .block_error("net", "nl80211: failed to get interfaces' information")?;
 
-            for interface in interfaces {
-                if let Ok(ap) = interface.get_station_info() {
-                    // SSID is `None` when not connected
-                    if let Some(i_ssid) = interface.ssid {
-                        if let Some(device) = interface.name {
-                            let device = String::from_utf8_lossy(&device);
-                            let device = device.trim_matches(char::from(0));
-                            if device != self.device {
-                                continue;
-                            }
-                            ssid = Some(escape_pango_text(decode_escaped_unicode(&i_ssid)));
-                            freq = Some(
-                                nl80211::parse_u32(
-                                    &interface
-                                        .frequency
-                                        .block_error("net", "failed to get frequency")?,
-                                ) as f64
-                                    * 1_000_000.,
-                            );
-                            signal = Some(signal_percents(nl80211::parse_i8(
-                                &ap.signal.block_error("net", "failed to get signal")?,
-                            )));
-                            break;
-                        }
+        for interface in interfaces {
+            if let Ok(ap) = interface.get_station_info() {
+                // SSID is `None` when not connected
+                if let (Some(ssid), Some(device)) = (interface.ssid, interface.name) {
+                    let device = String::from_utf8_lossy(&device);
+                    let device = device.trim_matches(char::from(0));
+                    if device != self.device {
+                        continue;
                     }
+
+                    let ssid = Some(escape_pango_text(decode_escaped_unicode(&ssid)));
+                    let freq = interface
+                        .frequency
+                        .map(|f| nl80211::parse_u32(&f) as f64 * 1e6);
+                    let signal = ap.signal.map(|s| signal_percents(nl80211::parse_i8(&s)));
+
+                    return Ok((ssid, freq, signal));
                 }
             }
-            Ok((ssid, freq, signal))
-        } else {
-            Ok((None, None, None))
         }
+
+        Ok((None, None, None))
     }
 
     /// Queries the inet IP of this device (using `ip`).
