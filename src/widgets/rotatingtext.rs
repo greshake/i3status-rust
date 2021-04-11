@@ -164,11 +164,8 @@ impl RotatingTextWidget {
                 _ => String::from(" "),
             }
         );
-        self.inner.min_width = if self.content.is_empty() {
-            None
-        } else {
-            let text_width = self.get_rotated_content().chars().count();
-            if self.dynamic_width && text_width < self.max_width {
+        self.inner.min_width = {
+            if self.dynamic_width || self.content.is_empty() {
                 None
             } else {
                 icon.push_str(&"0".repeat(self.max_width + 1));
