@@ -5,8 +5,11 @@ use std::string::*;
 use std::thread;
 
 use crossbeam_channel::Sender;
+use futures::{Stream, StreamExt};
 use serde::{de, Deserializer};
 use serde_derive::Deserialize;
+use tokio::io::{stdin, AsyncBufRead, AsyncBufReadExt, BufReader, Lines};
+use tokio_stream::wrappers::LinesStream;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum MouseButton {
@@ -47,29 +50,27 @@ impl I3BarEvent {
     }
 }
 
-pub fn process_events(sender: Sender<I3BarEvent>) {
-    thread::Builder::new()
-        .name("input".into())
-        .spawn(move || loop {
-            let mut input = String::new();
-            io::stdin().read_line(&mut input).unwrap();
+pub fn input_events() -> impl Stream<Item = I3BarEvent> {
+    LinesStream::new(BufReader::new(stdin()).lines())
+        .map(|input| input.expect("error while reading input event"))
+        .filter_map(|input| async move {
+            let input = input
+                .trim_start_matches(|c| c != '{')
+                .trim_end_matches(|c| c != '}');
 
-            // Take only the valid JSON object betweem curly braces (cut off leading bracket, commas and whitespace)
-            let slice = input.trim_start_matches(|c| c != '{');
-            let slice = slice.trim_end_matches(|c| c != '}');
-
-            if !slice.is_empty() {
-                let e: I3BarEventInternal = serde_json::from_str(slice).unwrap();
-                sender
-                    .send(I3BarEvent {
-                        id: e.name.map(|x| x.parse::<usize>().unwrap()),
-                        instance: e.instance.map(|x| x.parse::<usize>().unwrap()),
-                        button: e.button,
-                    })
-                    .unwrap();
+            if input.is_empty() {
+                return None;
             }
+
+            let e: I3BarEventInternal =
+                serde_json::from_str(&input).expect("failed parsing input event");
+
+            Some(I3BarEvent {
+                id: e.name.map(|x| x.parse::<usize>().unwrap()),
+                instance: e.instance.map(|x| x.parse::<usize>().unwrap()),
+                button: e.button,
+            })
         })
-        .unwrap();
 }
 
 fn deserialize_mousebutton<'de, D>(deserializer: D) -> Result<MouseButton, D::Error>

@@ -30,7 +30,7 @@ signal-hook = "0.3"
 swayipc = "2.7"
 toml = "0.5"
 nl80211 = "0.0.2"
-tokio = { version = "1.4", features = ["fs", "io-util", "macros", "process", "rt", "sync", "time"] }
+tokio = { version = "1.4", features = ["fs", "io-std", "io-util", "macros", "process", "rt", "sync", "time"] }
 tokio-stream = { version = "0.1.5", features = ["io-util"] }
 futures = "0.3"
 async-trait = "0.1.48"

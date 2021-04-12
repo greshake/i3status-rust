@@ -15,7 +15,6 @@ use crate::errors::*;
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
 use crate::signals::convert_to_valid_signal;
-use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -147,7 +146,7 @@ impl Block for Custom {
         self.update_interval.clone()
     }
 
-    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+    async fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
         let mut widget = TextWidget::new(self.id(), 0, self.shared_config.clone());
 
         let command_str = self
@@ -189,23 +188,28 @@ impl Block for Custom {
         }
     }
 
-    async fn signal(&mut self, signal: i32) -> Result<()> {
+    async fn signal(&mut self, signal: i32) -> Result<bool> {
         if let Some(sig) = self.signal {
             if sig == signal {
                 self.tx_update_request.send(Task {
                     id: self.id,
                     update_time: Instant::now(),
                 })?;
+                return Ok(true);
             }
         }
-        Ok(())
+
+        Ok(false)
     }
 
-    fn click(&mut self, _e: I3BarEvent) -> Result<()> {
+    async fn click(&mut self, _e: I3BarEvent) -> Result<bool> {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
-            spawn_child_async(&self.shell, &["-c", on_click]).ok();
+            Command::new(&self.shell)
+                .args(&["-c", on_click])
+                .spawn()
+                .ok();
             update = true;
         }
 
@@ -214,14 +218,7 @@ impl Block for Custom {
             update = true;
         }
 
-        if update {
-            self.tx_update_request.send(Task {
-                id: self.id,
-                update_time: Instant::now(),
-            })?;
-        }
-
-        Ok(())
+        Ok(update)
     }
 
     fn id(&self) -> usize {

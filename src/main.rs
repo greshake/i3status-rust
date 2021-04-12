@@ -11,7 +11,6 @@ mod icons;
 mod protocol;
 mod scheduler;
 mod signals;
-mod subprocess;
 mod themes;
 mod widgets;
 
@@ -29,6 +28,7 @@ use crate::blocks::{block_into_stream, create_block, Block};
 use crate::config::Config;
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::protocol::i3bar_event::input_events;
 use crate::scheduler::Task;
 use crate::util::deserialize_file;
 use crate::widgets::text::TextWidget;
@@ -166,7 +166,7 @@ async fn run(matches: &ArgMatches<'_>) -> Result<()> {
     let shared_config = SharedConfig::new(&config);
 
     // Initialize the blocks
-    let (block_updates, _block_event_handles): (Vec<_>, Vec<_>) = config
+    let (block_updates, block_event_handles): (Vec<_>, Vec<_>) = config
         .blocks
         .iter()
         .enumerate()
@@ -195,12 +195,21 @@ async fn run(matches: &ArgMatches<'_>) -> Result<()> {
             .map(Box::pin),
     );
 
-    while let Some((id, rendered)) = block_updates.next().await {
-        blocks_rendered[id] = rendered;
-        protocol::print_blocks(&blocks_rendered, &shared_config)?;
-    }
+    // Initialize event stream
+    let mut events = Box::pin(input_events());
 
-    Ok(())
+    loop {
+        tokio::select! {
+            Some((id, rendered)) = block_updates.next() => {
+                blocks_rendered[id] = rendered;
+                protocol::print_blocks(&blocks_rendered, &shared_config)?;
+            }
+            Some(event) = events.next() => {
+                block_event_handles[event.id.unwrap()].send(blocks::Event::Clic(event)).expect("event channel is closed");
+            },
+            else => unreachable!("event loop stopped"),
+        }
+    }
 }
 
 /// Restart `i3status-rs` in-place

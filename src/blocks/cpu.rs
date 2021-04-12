@@ -90,7 +90,7 @@ impl Block for Cpu {
         self.update_interval.into()
     }
 
-    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+    async fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
         let mut widget =
             TextWidget::new(self.id, 0, self.shared_config.clone()).with_icon("cpu")?;
 
@@ -103,12 +103,9 @@ impl Block for Cpu {
             .filter_map(|res| async move { res.ok() })
             .filter(|line| future::ready(line.starts_with("cpu MHz")))
             .map(|line| {
-                let last_word = line
-                    .split(' ')
+                line.split(' ')
                     .last()
-                    .expect("failed to get last word of line while getting cpu frequency");
-
-                last_word
+                    .expect("failed to get last word of line while getting cpu frequency")
                     .parse::<f64>()
                     .expect("failed to parse String to f64 while getting cpu frequency")
                     * 1e6 // convert to Hz

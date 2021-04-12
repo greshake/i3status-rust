@@ -4,10 +4,11 @@ use std::collections::HashMap;
 
 use crate::errors::*;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
-use crate::{blocks::Update, subprocess::spawn_child_async, widgets::I3BarWidget, Block};
+use crate::{blocks::Update, widgets::I3BarWidget, Block};
 
 use async_trait::async_trait;
 use serde_derive::Deserialize;
+use tokio::process::Command;
 use toml::{value::Table, Value};
 
 pub(super) struct BaseBlock<T: Block> {
@@ -22,7 +23,7 @@ impl<T: Block> Block for BaseBlock<T> {
         self.inner.id()
     }
 
-    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+    async fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
         self.inner.render().await
     }
 
@@ -30,20 +31,24 @@ impl<T: Block> Block for BaseBlock<T> {
         self.inner.update_interval()
     }
 
-    async fn signal(&mut self, signal: i32) -> Result<()> {
+    async fn signal(&mut self, signal: i32) -> Result<bool> {
         self.inner.signal(signal).await
     }
 
-    fn click(&mut self, e: I3BarEvent) -> Result<()> {
+    async fn click(&mut self, e: I3BarEvent) -> Result<bool> {
         match &self.on_click {
             Some(cmd) => {
                 if let MouseButton::Left = e.button {
-                    spawn_child_async("sh", &["-c", &cmd])
+                    Command::new("sh")
+                        .args(&["-c", &cmd])
+                        .spawn()
                         .block_error(&self.name, "could not spawn child")?;
+                    Ok(true)
+                } else {
+                    Ok(false)
                 }
-                Ok(())
             }
-            None => self.inner.click(e),
+            None => self.inner.click(e).await,
         }
     }
 }

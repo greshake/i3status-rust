@@ -13,11 +13,12 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use async_trait::async_trait;
 use crossbeam_channel::Sender;
 use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 
-use crate::blocks::{Block, ConfigBlock, Update};
+use crate::blocks::{Block, ConfigBlock};
 use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
@@ -281,8 +282,9 @@ impl ConfigBlock for Backlight {
     }
 }
 
+#[async_trait(?Send)]
 impl Block for Backlight {
-    fn update(&mut self) -> Result<Option<Update>> {
+    async fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
         let mut brightness = self.device.brightness()?;
         self.output.set_text(format!("{}%", brightness));
         if self.invert_icons {
@@ -306,31 +308,30 @@ impl Block for Backlight {
             _ => "backlight_full",
         })?;
 
-        Ok(None)
+        Ok(vec![Box::new(self.output.clone())])
     }
 
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
-    }
-
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
+    async fn click(&mut self, event: I3BarEvent) -> Result<bool> {
         let brightness = self.device.brightness()?;
         use LogicalDirection::*;
+
         match self.scrolling.to_logical_direction(event.button) {
             Some(Up) => {
                 if brightness < 100 {
                     self.device.set_brightness(brightness + self.step_width)?;
+                    return Ok(true);
                 }
             }
             Some(Down) => {
                 if brightness > self.step_width {
                     self.device.set_brightness(brightness - self.step_width)?;
+                    return Ok(true);
                 }
             }
             None => {}
         }
 
-        Ok(())
+        Ok(false)
     }
 
     fn id(&self) -> usize {

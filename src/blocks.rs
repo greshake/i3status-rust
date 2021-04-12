@@ -1,5 +1,5 @@
 // pub mod apt;
-// pub mod backlight;
+pub mod backlight;
 pub mod base_block;
 // pub mod battery;
 // pub mod bluetooth;
@@ -125,12 +125,6 @@ pub trait Block {
     /// A unique id for the block (asigend by the constructor).
     fn id(&self) -> usize;
 
-    /// Use this function to return the widgets that comprise the UI of your component.
-    ///
-    /// The music block may, for example, be comprised of a text widget and multiple
-    /// buttons (buttons are also TextWidgets). Use a vec to wrap the references to your view.
-    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>>;
-
     /// Required if you don't want a static block.
     ///
     /// Use this function to update the internal state of your block, for example during
@@ -142,21 +136,27 @@ pub trait Block {
         Update::Once
     }
 
+    /// Use this function to return the widgets that comprise the UI of your component.
+    ///
+    /// The music block may, for example, be comprised of a text widget and multiple
+    /// buttons (buttons are also TextWidgets). Use a vec to wrap the references to your view.
+    async fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>>;
+
     /// Sends a signal event with the provided signal, this function is called on every block
-    /// for every signal event
-    async fn signal(&mut self, _signal: i32) -> Result<()> {
-        Ok(())
+    /// for every signal event. Return true if the widget must be redrawn.
+    async fn signal(&mut self, _signal: i32) -> Result<bool> {
+        Ok(false)
     }
 
-    /// Sends click events to the block.
+    /// Sends click events to the block. Return true if the widget must be redrawn.
     ///
     /// Here you can react to the user clicking your block. The I3BarEvent instance contains all
     /// fields to describe the click action, including mouse button and location down to the pixel.
     /// You may also update the internal state here.
     ///
     /// If block uses more that one widget, use the event.instance property to determine which widget was clicked.
-    fn click(&mut self, _event: I3BarEvent) -> Result<()> {
-        Ok(())
+    async fn click(&mut self, _event: I3BarEvent) -> Result<bool> {
+        Ok(false)
     }
 }
 
@@ -166,7 +166,7 @@ impl<T: Block + ?Sized> Block for Box<T> {
         self.as_ref().id()
     }
 
-    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+    async fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
         self.as_mut().render().await
     }
 
@@ -174,15 +174,16 @@ impl<T: Block + ?Sized> Block for Box<T> {
         self.as_ref().update_interval()
     }
 
-    async fn signal(&mut self, signal: i32) -> Result<()> {
+    async fn signal(&mut self, signal: i32) -> Result<bool> {
         self.as_mut().signal(signal).await
     }
 
-    fn click(&mut self, event: I3BarEvent) -> Result<()> {
-        self.as_mut().click(event)
+    async fn click(&mut self, event: I3BarEvent) -> Result<bool> {
+        self.as_mut().click(event).await
     }
 }
 
+#[derive(Debug)]
 pub enum Event {
     Update,
     Signal(i32),
@@ -216,24 +217,27 @@ pub fn block_into_stream<'a>(
                 .try_borrow_mut()
                 .expect("block update performed concurently");
 
-            match event {
-                Event::Update => Some(
+            let need_update = match event {
+                Event::Update => true,
+                Event::Signal(signal) => block_mut
+                    .signal(signal)
+                    .await
+                    .expect("failed during block update"),
+                Event::Clic(event) => block_mut
+                    .click(event)
+                    .await
+                    .expect("failed during block click"),
+            };
+
+            if need_update {
+                Some(
                     block_mut
                         .render()
                         .await
                         .expect("failed during block rendering"),
-                ),
-                Event::Signal(signal) => {
-                    block_mut
-                        .signal(signal)
-                        .await
-                        .expect("failed during block update");
-                    None
-                }
-                Event::Clic(event) => {
-                    block_mut.click(event).expect("failed during block click");
-                    None
-                }
+                )
+            } else {
+                None
             }
         }
     });
@@ -306,7 +310,7 @@ pub fn create_block(
 
         // Please keep these in alphabetical order.
         // apt::Apt;
-        // backlight::Backlight;
+        backlight::Backlight;
         // battery::Battery;
         // bluetooth::Bluetooth;
         cpu::Cpu;
