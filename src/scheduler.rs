@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 
 use crate::blocks::Block;
 use crate::errors::*;
+use crate::widgets::I3BarWidget;
 
 #[derive(Debug, Clone)]
 pub struct Task {
@@ -74,7 +75,11 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(&mut self, blocks: &mut Vec<Box<dyn Block>>) -> Result<()> {
+    pub fn do_scheduled_updates(
+        &mut self,
+        blocks: &mut Vec<Box<dyn Block>>,
+        blocks_rendered: &mut Vec<Vec<Box<dyn I3BarWidget>>>,
+    ) -> Result<()> {
         let t = self
             .schedule
             .pop()
@@ -104,18 +109,14 @@ impl UpdateScheduler {
         let now = Instant::now();
 
         for task in tasks_next {
-            if let Some(dur) = blocks
-                .get_mut(task.id as usize)
-                .internal_error("scheduler", "could not get required block")?
-                .update()?
-            {
-                match dur {
-                    Update::Every(d) => self.schedule.push(Task {
-                        id: task.id,
-                        update_time: now + d,
-                    }),
-                    Update::Once => {} // do not schedule this task again
-                }
+            blocks_rendered[task.id as usize] = blocks[task.id as usize].render()?;
+
+            match blocks[task.id as usize].update_interval() {
+                Update::Every(d) => self.schedule.push(Task {
+                    id: task.id,
+                    update_time: now + d,
+                }),
+                Update::Once => {} // do not schedule this task again
             }
         }
 

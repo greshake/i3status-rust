@@ -25,6 +25,7 @@ pub struct Cpu {
     minimum_warning: u64,
     minimum_critical: u64,
     format: FormatTemplate,
+    shared_config: SharedConfig,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -71,24 +72,33 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, 0, shared_config).with_icon("cpu")?,
+            output: TextWidget::new(id, 0, shared_config.clone()).with_icon("cpu")?,
             prev_util: Vec::with_capacity(32),
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
             format: FormatTemplate::from_string(&block_config.format)
                 .block_error("cpu", "Invalid format specified for cpu")?,
+            shared_config,
         })
     }
 }
 
 impl Block for Cpu {
-    fn update(&mut self) -> Result<Option<Update>> {
+    fn update_interval(&self) -> Update {
+        self.update_interval.into()
+    }
+
+    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+        let mut widget =
+            TextWidget::new(self.id, 0, self.shared_config.clone()).with_icon("cpu")?;
+
         // Read frequencies (read in MHz, store in Hz)
         let mut freqs = Vec::with_capacity(32);
         let mut freqs_avg = 0.0;
         let freqs_f =
             File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
+
         for line in BufReader::new(freqs_f).lines().scan((), |_, x| x.ok()) {
             if line.starts_with("cpu MHz") {
                 let words = line.split(' ');
@@ -157,7 +167,7 @@ impl Block for Cpu {
         let (avg, utilizations) = utilizations.split_first().unwrap();
         let avg_utilization = avg * 100.;
 
-        self.output.set_state(match avg_utilization as u64 {
+        widget.set_state(match avg_utilization as u64 {
             x if x > self.minimum_critical => State::Critical,
             x if x > self.minimum_warning => State::Warning,
             x if x > self.minimum_info => State::Info,
@@ -193,13 +203,8 @@ impl Block for Cpu {
             );
         }
 
-        self.output.set_text(self.format.render(&values)?);
-
-        Ok(Some(self.update_interval.into()))
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
+        widget.set_text(self.format.render(&values)?);
+        Ok(vec![Box::new(widget)])
     }
 
     fn id(&self) -> usize {

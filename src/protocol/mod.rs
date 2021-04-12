@@ -1,10 +1,10 @@
 pub mod i3bar_block;
 pub mod i3bar_event;
 
-use crate::blocks::Block;
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::util::add_colors;
+use crate::widgets::I3BarWidget;
 
 use i3bar_block::I3BarBlock;
 
@@ -16,7 +16,7 @@ pub fn init(never_pause: bool) {
     }
 }
 
-pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<()> {
+pub fn print_blocks(blocks: &[Vec<Box<dyn I3BarWidget>>], config: &SharedConfig) -> Result<()> {
     let mut last_bg: Option<String> = None;
 
     let mut rendered_blocks = vec![];
@@ -26,15 +26,11 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
      * flip the starting tint if an even number of blocks is visible. This way,
      * the last block should always be untinted.
      */
-    let visible_count = blocks
-        .iter()
-        .filter(|block| !block.view().is_empty())
-        .count();
+    let visible_count = blocks.iter().filter(|block| !block.is_empty()).count();
 
     let mut alternator = visible_count % 2 == 0;
 
-    for block in blocks.iter() {
-        let widgets = block.view();
+    for widgets in blocks {
         if widgets.is_empty() {
             continue;
         }

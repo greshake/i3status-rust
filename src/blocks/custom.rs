@@ -21,7 +21,6 @@ use crate::widgets::{I3BarWidget, State};
 pub struct Custom {
     id: usize,
     update_interval: Update,
-    output: TextWidget,
     command: Option<String>,
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
@@ -31,6 +30,7 @@ pub struct Custom {
     hide_when_empty: bool,
     is_empty: bool,
     shell: String,
+    shared_config: SharedConfig,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -84,7 +84,6 @@ impl ConfigBlock for Custom {
         let mut custom = Custom {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, 0, shared_config),
             command: None,
             on_click: None,
             cycle: None,
@@ -94,6 +93,7 @@ impl ConfigBlock for Custom {
             hide_when_empty: block_config.hide_when_empty,
             is_empty: true,
             shell: block_config.shell,
+            shared_config,
         };
 
         if let Some(signal) = block_config.signal {
@@ -143,7 +143,13 @@ struct Output {
 }
 
 impl Block for Custom {
-    fn update(&mut self) -> Result<Option<Update>> {
+    fn update_interval(&self) -> Update {
+        self.update_interval.clone()
+    }
+
+    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+        let mut widget = TextWidget::new(self.id(), 0, self.shared_config.clone());
+
         let command_str = self
             .cycle
             .as_mut()
@@ -157,31 +163,28 @@ impl Block for Custom {
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.to_string());
 
-        if self.json {
-            let output: Output = serde_json::from_str(&*raw_output).map_err(|e| {
-                BlockError("custom".to_string(), format!("Error parsing JSON: {}", e))
-            })?;
-            if output.icon.is_empty() {
-                self.output.unset_icon();
+        let text = {
+            if self.json {
+                let output: Output = serde_json::from_str(&*raw_output).map_err(|e| {
+                    BlockError("custom".to_string(), format!("Error parsing JSON: {}", e))
+                })?;
+
+                if !output.icon.is_empty() {
+                    widget.set_icon(&output.icon)?;
+                }
+
+                widget.set_state(output.state);
+                output.text
             } else {
-                self.output.set_icon(&output.icon)?;
+                raw_output
             }
-            self.output.set_state(output.state);
-            self.is_empty = output.text.is_empty();
-            self.output.set_text(output.text);
-        } else {
-            self.is_empty = raw_output.is_empty();
-            self.output.set_text(raw_output);
-        }
+        };
 
-        Ok(Some(self.update_interval.clone()))
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if self.is_empty && self.hide_when_empty {
-            vec![]
+        if text.is_empty() && self.hide_when_empty {
+            Ok(Vec::new())
         } else {
-            vec![&self.output]
+            widget.set_text(text);
+            Ok(vec![Box::new(widget)])
         }
     }
 
@@ -197,7 +200,7 @@ impl Block for Custom {
         Ok(())
     }
 
-    fn click(&mut self, _e: &I3BarEvent) -> Result<()> {
+    fn click(&mut self, _e: I3BarEvent) -> Result<()> {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {

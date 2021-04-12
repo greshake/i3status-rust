@@ -27,9 +27,9 @@ use std::time::Duration;
 
 use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
+use futures::StreamExt;
 
-use crate::blocks::create_block;
-use crate::blocks::Block;
+use crate::blocks::{block_into_stream, create_block, Block};
 use crate::config::Config;
 use crate::config::SharedConfig;
 use crate::errors::*;
@@ -40,7 +40,8 @@ use crate::util::deserialize_file;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
-fn main() {
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
     let ver = if env!("GIT_COMMIT_HASH").is_empty() || env!("GIT_COMMIT_DATE").is_empty() {
         env!("CARGO_PKG_VERSION").to_string()
     } else {
@@ -113,7 +114,7 @@ fn main() {
     let exit_on_error = matches.is_present("exit-on-error");
 
     // Run and match for potential error
-    if let Err(error) = run(&matches) {
+    if let Err(error) = run(&matches).await {
         if exit_on_error {
             eprintln!("{:?}", error);
             ::std::process::exit(1);
@@ -138,7 +139,7 @@ fn main() {
     }
 }
 
-fn run(matches: &ArgMatches) -> Result<()> {
+async fn run(matches: &ArgMatches<'_>) -> Result<()> {
     if !matches.is_present("no-init") {
         // Now we can start to run the i3bar protocol
         protocol::init(matches.is_present("never-pause"));
@@ -171,93 +172,115 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let shared_config = SharedConfig::new(&config);
 
     // Initialize the blocks
-    let mut blocks: Vec<Box<dyn Block>> = Vec::new();
-    for &(ref block_name, ref block_config) in &config.blocks {
-        blocks.push(create_block(
-            blocks.len(),
-            block_name,
-            block_config.clone(),
-            shared_config.clone(),
-            tx_update_requests.clone(),
-        )?);
+    let (block_updates, block_event_handles): (Vec<_>, Vec<_>) = config
+        .blocks
+        .iter()
+        .enumerate()
+        .map(|(id, &(ref block_name, ref block_config))| {
+            create_block(
+                id,
+                block_name,
+                block_config.clone(),
+                shared_config.clone(),
+                tx_update_requests.clone(),
+            )
+            .expect("failed to create block")
+        })
+        .map(block_into_stream)
+        .unzip();
+
+    // List of latest rendered widgets for each blocks
+    let mut blocks_rendered: Vec<Vec<Box<dyn I3BarWidget>>> =
+        (0..block_updates.len()).map(|_| Vec::new()).collect();
+
+    let mut block_updates = futures::stream::select_all(
+        block_updates
+            .into_iter()
+            .enumerate()
+            .map(|(id, stream)| stream.map(move |val| (id, val))),
+    );
+
+    while let Some((id, rendered)) = block_updates.next().await {
+        blocks_rendered[id] = rendered;
+        protocol::print_blocks(&blocks_rendered, &shared_config)?;
     }
 
-    let mut scheduler = UpdateScheduler::new(&blocks);
+    // TODO: We wait for click events in a separate thread, to avoid blocking to wait for stdin
+    //
+    // let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =
+    //     crossbeam_channel::unbounded();
+    //
+    // process_events(tx_clicks);
 
-    // We wait for click events in a separate thread, to avoid blocking to wait for stdin
-    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =
-        crossbeam_channel::unbounded();
-    process_events(tx_clicks);
+    // TODO: We wait for signals in a separate thread
+    // let (tx_signals, rx_signals): (Sender<i32>, Receiver<i32>) = crossbeam_channel::unbounded();
+    // process_signals(tx_signals);
 
-    // We wait for signals in a separate thread
-    let (tx_signals, rx_signals): (Sender<i32>, Receiver<i32>) = crossbeam_channel::unbounded();
-    process_signals(tx_signals);
+    // // Time to next update channel.
+    // // Fires immediately for first updates
+    // let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
+    //
+    // let one_shot = matches.is_present("one-shot");
+    // loop {
+    //     // We use the message passing concept of channel selection
+    //     // to avoid busy wait
+    //     select! {
+    //         // Receive click events
+    //         recv(rx_clicks) -> res => if let Ok(event) = res {
+    //             if let Some(id) = event.id {
+    //                     blocks.get_mut(id)
+    //                 .internal_error("click handler", "could not get required block")?
+    //                         .click(event)?;
+    //                 protocol::print_blocks(&blocks_rendered, &shared_config)?;
+    //             }
+    //         },
+    //         // Receive async update requests
+    //         recv(rx_update_requests) -> request => if let Ok(req) = request {
+    //             // Process immediately and forget
+    //             blocks_rendered[req.id] = blocks[req.id].render()?;
+    //             protocol::print_blocks(&blocks_rendered, &shared_config)?;
+    //         },
+    //         // Receive update timer events
+    //         recv(ttnu) -> _ => {
+    //             scheduler.do_scheduled_updates(&mut blocks, &mut blocks_rendered)?;
+    //             protocol::print_blocks(&blocks_rendered, &shared_config)?;
+    //         },
+    //         // Receive signal events
+    //         recv(rx_signals) -> res => if let Ok(sig) = res {
+    //             match sig {
+    //                 signal_hook::consts::SIGUSR1 => {
+    //                     // USR1 signal that updates every block in the bar
+    //                     // TODO: quésako?
+    //                     // for block in blocks.iter_mut() {
+    //                     //     block.update()?;
+    //                     // }
+    //                 },
+    //                 signal_hook::consts::SIGUSR2 => {
+    //                     //USR2 signal that should reload the config
+    //                     restart();
+    //                 },
+    //                 _ => {
+    //                     //Real time signal that updates only the blocks listening
+    //                     //for that signal
+    //                     for block in blocks.iter_mut() {
+    //                         block.signal(sig)?;
+    //                     }
+    //                 },
+    //             };
+    //             protocol::print_blocks(&blocks_rendered, &shared_config)?;
+    //         }
+    //     }
+    //
+    //     // Set the time-to-next-update timer
+    //     if let Some(time) = scheduler.time_to_next_update() {
+    //         ttnu = crossbeam_channel::after(time)
+    //     }
+    //     if one_shot {
+    //         break Ok(());
+    //     }
+    // }
 
-    // Time to next update channel.
-    // Fires immediately for first updates
-    let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
-
-    let one_shot = matches.is_present("one-shot");
-    loop {
-        // We use the message passing concept of channel selection
-        // to avoid busy wait
-        select! {
-            // Receive click events
-            recv(rx_clicks) -> res => if let Ok(event) = res {
-                if let Some(id) = event.id {
-                        blocks.get_mut(id)
-                    .internal_error("click handler", "could not get required block")?
-                            .click(&event)?;
-                    protocol::print_blocks(&blocks, &shared_config)?;
-                }
-            },
-            // Receive async update requests
-            recv(rx_update_requests) -> request => if let Ok(req) = request {
-                // Process immediately and forget
-                blocks.get_mut(req.id)
-                    .internal_error("scheduler", "could not get required block")?
-                    .update()?;
-                protocol::print_blocks(&blocks, &shared_config)?;
-            },
-            // Receive update timer events
-            recv(ttnu) -> _ => {
-                scheduler.do_scheduled_updates(&mut blocks)?;
-                // redraw the blocks, state changed
-                protocol::print_blocks(&blocks, &shared_config)?;
-            },
-            // Receive signal events
-            recv(rx_signals) -> res => if let Ok(sig) = res {
-                match sig {
-                    signal_hook::consts::SIGUSR1 => {
-                        //USR1 signal that updates every block in the bar
-                        for block in blocks.iter_mut() {
-                            block.update()?;
-                        }
-                    },
-                    signal_hook::consts::SIGUSR2 => {
-                        //USR2 signal that should reload the config
-                        restart();
-                    },
-                    _ => {
-                        //Real time signal that updates only the blocks listening
-                        //for that signal
-                        for block in blocks.iter_mut() {
-                            block.signal(sig)?;
-                        }
-                    },
-                };
-                protocol::print_blocks(&blocks, &shared_config)?;
-            }
-        }
-
-        // Set the time-to-next-update timer
-        if let Some(time) = scheduler.time_to_next_update() {
-            ttnu = crossbeam_channel::after(time)
-        }
-        if one_shot {
-            break Ok(());
-        }
-    }
+    todo!()
 }
 
 /// Restart `i3status-rs` in-place

@@ -30,6 +30,9 @@ signal-hook = "0.3"
 swayipc = "2.7"
 toml = "0.5"
 nl80211 = "0.0.2"
+tokio = { version = "1.4", features = ["macros", "rt", "sync", "time"] }
+tokio-stream = "0.1.5"
+futures = "0.3"
 
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.15.0", default-features = false }

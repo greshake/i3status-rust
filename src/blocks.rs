@@ -1,50 +1,55 @@
-pub mod apt;
-pub mod backlight;
+// pub mod apt;
+// pub mod backlight;
 pub mod base_block;
-pub mod battery;
-pub mod bluetooth;
+// pub mod battery;
+// pub mod bluetooth;
 pub mod cpu;
 pub mod custom;
-pub mod custom_dbus;
-pub mod disk_space;
-pub mod docker;
-pub mod focused_window;
-pub mod github;
-pub mod hueshift;
-pub mod ibus;
-pub mod kdeconnect;
-pub mod keyboard_layout;
-pub mod load;
-#[cfg(feature = "maildir")]
-pub mod maildir;
-pub mod memory;
-pub mod music;
-pub mod net;
-pub mod networkmanager;
-pub mod notify;
-#[cfg(feature = "notmuch")]
-pub mod notmuch;
-pub mod nvidia_gpu;
-pub mod pacman;
-pub mod pomodoro;
-pub mod sound;
-pub mod speedtest;
-pub mod taskwarrior;
-pub mod temperature;
-pub mod template;
-pub mod time;
-pub mod toggle;
-pub mod uptime;
-pub mod watson;
-pub mod weather;
-pub mod xrandr;
+// pub mod custom_dbus;
+// pub mod disk_space;
+// pub mod docker;
+// pub mod focused_window;
+// pub mod github;
+// pub mod hueshift;
+// pub mod ibus;
+// pub mod kdeconnect;
+// pub mod keyboard_layout;
+// pub mod load;
+// #[cfg(feature = "maildir")]
+// pub mod maildir;
+// pub mod memory;
+// pub mod music;
+// pub mod net;
+// pub mod networkmanager;
+// pub mod notify;
+// #[cfg(feature = "notmuch")]
+// pub mod notmuch;
+// pub mod nvidia_gpu;
+// pub mod pacman;
+// pub mod pomodoro;
+// pub mod sound;
+// pub mod speedtest;
+// pub mod taskwarrior;
+// pub mod temperature;
+// pub mod template;
+// pub mod time;
+// pub mod toggle;
+// pub mod uptime;
+// pub mod watson;
+// pub mod weather;
+// pub mod xrandr;
 
 use self::base_block::{BaseBlock, BaseBlockConfig};
 
+use std::pin::Pin;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
+use futures::future::FutureExt;
+use futures::stream::{self, Stream, StreamExt};
 use serde::de::Deserialize;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::{IntervalStream, UnboundedReceiverStream};
 use toml::value::Value;
 
 use crate::config::SharedConfig;
@@ -57,6 +62,19 @@ use crate::widgets::I3BarWidget;
 pub enum Update {
     Every(Duration),
     Once,
+}
+
+impl Update {
+    /// Return a stream that ticks according to what is specified.
+    fn into_stream(self) -> Pin<Box<dyn Stream<Item = ()>>> {
+        match self {
+            Update::Every(dur) => {
+                let interval = tokio::time::interval(dur);
+                Box::pin(IntervalStream::new(interval).map(|_| ()))
+            }
+            Update::Once => Box::pin(async {}.into_stream()),
+        }
+    }
 }
 
 impl Default for Update {
@@ -109,7 +127,7 @@ pub trait Block {
     ///
     /// The music block may, for example, be comprised of a text widget and multiple
     /// buttons (buttons are also TextWidgets). Use a vec to wrap the references to your view.
-    fn view(&self) -> Vec<&dyn I3BarWidget>;
+    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>>;
 
     /// Required if you don't want a static block.
     ///
@@ -118,8 +136,8 @@ pub trait Block {
     /// For example, a clock could request only to be updated every 60 seconds by returning
     /// Some(Update::Every(Duration::new(60, 0))) every time. If you return None,
     /// this function will not be called again automatically.
-    fn update(&mut self) -> Result<Option<Update>> {
-        Ok(None)
+    fn update_interval(&self) -> Update {
+        Update::Once
     }
 
     /// Sends a signal event with the provided signal, this function is called on every block
@@ -135,9 +153,82 @@ pub trait Block {
     /// You may also update the internal state here.
     ///
     /// If block uses more that one widget, use the event.instance property to determine which widget was clicked.
-    fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
+    fn click(&mut self, _event: I3BarEvent) -> Result<()> {
         Ok(())
     }
+}
+
+impl<T: Block + ?Sized> Block for Box<T> {
+    fn id(&self) -> usize {
+        self.as_ref().id()
+    }
+
+    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+        self.as_mut().render()
+    }
+
+    fn update_interval(&self) -> Update {
+        self.as_ref().update_interval()
+    }
+
+    fn signal(&mut self, signal: i32) -> Result<()> {
+        self.as_mut().signal(signal)
+    }
+
+    fn click(&mut self, event: I3BarEvent) -> Result<()> {
+        self.as_mut().click(event)
+    }
+}
+
+pub enum Event {
+    Update,
+    Signal(i32),
+    Clic(I3BarEvent),
+}
+
+#[allow(clippy::type_complexity)]
+pub fn block_into_stream<'a>(
+    mut block: impl Block + 'a,
+) -> (
+    impl Stream<Item = Vec<Box<dyn I3BarWidget>>> + 'a,
+    mpsc::UnboundedSender<Event>,
+) {
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    let update_events = block.update_interval().into_stream().map(|_| Event::Update);
+    let events = stream::select(UnboundedReceiverStream::new(rx), update_events);
+
+    let stream = events.filter_map(move |event| match event {
+        Event::Update => {
+            let rendered = block.render().expect("failed while rendering block");
+            futures::future::ready(Some(rendered))
+        }
+        Event::Signal(signal) => {
+            block.signal(signal);
+            futures::future::ready(None)
+        }
+        Event::Clic(event) => {
+            block.click(event);
+            futures::future::ready(None)
+        }
+    });
+
+    // let stream: Box<dyn Stream<Item = Vec<Box<dyn I3BarWidget>>> + 'a> =
+    //     match block.update_interval() {
+    //         Update::Every(dur) => Box::new(futures::stream::unfold(
+    //             (block, tokio::time::interval(dur)),
+    //             move |(mut block, mut clock)| async move {
+    //                 clock.tick().await;
+    //                 let rendered = block.render().unwrap();
+    //                 Some((rendered, (block, clock)))
+    //             },
+    //         )),
+    //         Update::Once => {
+    //             let rendered = block.render().unwrap();
+    //             Box::new(async move { rendered }.into_stream())
+    //         }
+    //     };
+    //
+    (stream, tx)
 }
 
 macro_rules! block {
@@ -204,42 +295,42 @@ pub fn create_block(
         id, name, block_config, shared_config, update_request;
 
         // Please keep these in alphabetical order.
-        apt::Apt;
-        backlight::Backlight;
-        battery::Battery;
-        bluetooth::Bluetooth;
+        // apt::Apt;
+        // backlight::Backlight;
+        // battery::Battery;
+        // bluetooth::Bluetooth;
         cpu::Cpu;
         custom::Custom;
-        custom_dbus::CustomDBus;
-        disk_space::DiskSpace;
-        docker::Docker;
-        focused_window::FocusedWindow;
-        github::Github;
-        hueshift::Hueshift;
-        ibus::IBus;
-        kdeconnect::KDEConnect;
-        keyboard_layout::KeyboardLayout;
-        load::Load;
-        #[cfg(feature="maildir")] maildir::Maildir;
-        memory::Memory;
-        music::Music;
-        net::Net;
-        networkmanager::NetworkManager;
-        notify::Notify;
-        #[cfg(feature="notmuch")] notmuch::Notmuch;
-        nvidia_gpu::NvidiaGpu;
-        pacman::Pacman;
-        pomodoro::Pomodoro;
-        sound::Sound;
-        speedtest::SpeedTest;
-        taskwarrior::Taskwarrior;
-        temperature::Temperature;
-        template::Template;
-        time::Time;
-        toggle::Toggle;
-        uptime::Uptime;
-        watson::Watson;
-        weather::Weather;
-        xrandr::Xrandr;
+        // custom_dbus::CustomDBus;
+        // disk_space::DiskSpace;
+        // docker::Docker;
+        // focused_window::FocusedWindow;
+        // github::Github;
+        // hueshift::Hueshift;
+        // ibus::IBus;
+        // kdeconnect::KDEConnect;
+        // keyboard_layout::KeyboardLayout;
+        // load::Load;
+        // #[cfg(feature="maildir")] maildir::Maildir;
+        // memory::Memory;
+        // music::Music;
+        // net::Net;
+        // networkmanager::NetworkManager;
+        // notify::Notify;
+        // #[cfg(feature="notmuch")] notmuch::Notmuch;
+        // nvidia_gpu::NvidiaGpu;
+        // pacman::Pacman;
+        // pomodoro::Pomodoro;
+        // sound::Sound;
+        // speedtest::SpeedTest;
+        // taskwarrior::Taskwarrior;
+        // temperature::Temperature;
+        // template::Template;
+        // time::Time;
+        // toggle::Toggle;
+        // uptime::Uptime;
+        // watson::Watson;
+        // weather::Weather;
+        // xrandr::Xrandr;
     }
 }

@@ -20,19 +20,19 @@ impl<T: Block> Block for BaseBlock<T> {
         self.inner.id()
     }
 
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        self.inner.view()
+    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+        self.inner.render()
     }
 
-    fn update(&mut self) -> Result<Option<Update>> {
-        self.inner.update()
+    fn update_interval(&self) -> Update {
+        self.inner.update_interval()
     }
 
     fn signal(&mut self, signal: i32) -> Result<()> {
         self.inner.signal(signal)
     }
 
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
+    fn click(&mut self, e: I3BarEvent) -> Result<()> {
         match &self.on_click {
             Some(cmd) => {
                 if let MouseButton::Left = e.button {
