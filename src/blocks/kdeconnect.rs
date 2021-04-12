@@ -19,6 +19,7 @@ use crate::util::battery_level_to_icon;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct KDEConnect {
     id: usize,
     device_id: String,
@@ -39,6 +40,7 @@ pub struct KDEConnect {
     shared_config: SharedConfig,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct KDEConnectConfig {

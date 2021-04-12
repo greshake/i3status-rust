@@ -39,46 +39,7 @@ pub mod watson;
 pub mod weather;
 pub mod xrandr;
 
-use self::apt::*;
-use self::backlight::*;
-use self::base_block::*;
-use self::battery::*;
-use self::bluetooth::*;
-use self::cpu::*;
-use self::custom::*;
-use self::custom_dbus::*;
-use self::disk_space::*;
-use self::docker::*;
-use self::focused_window::*;
-use self::github::*;
-use self::hueshift::*;
-use self::ibus::*;
-use self::kdeconnect::*;
-use self::keyboard_layout::*;
-use self::load::*;
-#[cfg(feature = "maildir")]
-use self::maildir::*;
-use self::memory::*;
-use self::music::*;
-use self::net::*;
-use self::networkmanager::*;
-use self::notify::*;
-#[cfg(feature = "notmuch")]
-use self::notmuch::*;
-use self::nvidia_gpu::*;
-use self::pacman::*;
-use self::pomodoro::*;
-use self::sound::*;
-use self::speedtest::*;
-use self::taskwarrior::*;
-use self::temperature::*;
-use self::template::*;
-use self::time::*;
-use self::toggle::*;
-use self::uptime::*;
-use self::watson::*;
-use self::weather::*;
-use self::xrandr::*;
+use self::base_block::{BaseBlock, BaseBlockConfig};
 
 use std::time::Duration;
 
@@ -104,9 +65,9 @@ impl Default for Update {
     }
 }
 
-impl Into<Update> for Duration {
-    fn into(self) -> Update {
-        Update::Every(self)
+impl From<Duration> for Update {
+    fn from(val: Duration) -> Self {
+        Update::Every(val)
     }
 }
 
@@ -211,6 +172,27 @@ macro_rules! block {
     }};
 }
 
+macro_rules! create_block_macro {
+    (
+        $id: expr, $name: expr, $block_config: expr, $shared_config: expr, $update_request: expr;
+        $(
+            $( #[cfg(feature = $feature: literal)] )?
+            $mod: ident :: $block: ident;
+        )*
+    ) => {
+        match $name {
+            $(
+                $( #[cfg(feature = $feature)] )?
+                stringify!($mod) => {
+                    pub use $mod::$block;
+                    block!($block, $id, $block_config, $shared_config, $update_request)
+                },
+            )*
+            other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
+        }
+    };
+}
+
 pub fn create_block(
     id: usize,
     name: &str,
@@ -218,65 +200,46 @@ pub fn create_block(
     mut shared_config: SharedConfig,
     update_request: Sender<Task>,
 ) -> Result<Box<dyn Block>> {
-    match name {
+    create_block_macro! {
+        id, name, block_config, shared_config, update_request;
+
         // Please keep these in alphabetical order.
-        "apt" => block!(Apt, id, block_config, shared_config, update_request),
-        "backlight" => block!(Backlight, id, block_config, shared_config, update_request),
-        "battery" => block!(Battery, id, block_config, shared_config, update_request),
-        "bluetooth" => block!(Bluetooth, id, block_config, shared_config, update_request),
-        "cpu" => block!(Cpu, id, block_config, shared_config, update_request),
-        "custom" => block!(Custom, id, block_config, shared_config, update_request),
-        "custom_dbus" => block!(CustomDBus, id, block_config, shared_config, update_request),
-        "disk_space" => block!(DiskSpace, id, block_config, shared_config, update_request),
-        "docker" => block!(Docker, id, block_config, shared_config, update_request), ///////
-        "focused_window" => block!(
-            FocusedWindow,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "github" => block!(Github, id, block_config, shared_config, update_request),
-        "hueshift" => block!(Hueshift, id, block_config, shared_config, update_request),
-        "ibus" => block!(IBus, id, block_config, shared_config, update_request),
-        "kdeconnect" => block!(KDEConnect, id, block_config, shared_config, update_request),
-        "keyboard_layout" => block!(
-            KeyboardLayout,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "load" => block!(Load, id, block_config, shared_config, update_request),
-        #[cfg(feature = "maildir")]
-        "maildir" => block!(Maildir, id, block_config, shared_config, update_request),
-        "memory" => block!(Memory, id, block_config, shared_config, update_request),
-        "music" => block!(Music, id, block_config, shared_config, update_request),
-        "net" => block!(Net, id, block_config, shared_config, update_request),
-        "networkmanager" => block!(
-            NetworkManager,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "notify" => block!(Notify, id, block_config, shared_config, update_request),
-        #[cfg(feature = "notmuch")]
-        "notmuch" => block!(Notmuch, id, block_config, shared_config, update_request),
-        "nvidia_gpu" => block!(NvidiaGpu, id, block_config, shared_config, update_request),
-        "pacman" => block!(Pacman, id, block_config, shared_config, update_request),
-        "pomodoro" => block!(Pomodoro, id, block_config, shared_config, update_request),
-        "sound" => block!(Sound, id, block_config, shared_config, update_request),
-        "speedtest" => block!(SpeedTest, id, block_config, shared_config, update_request),
-        "taskwarrior" => block!(Taskwarrior, id, block_config, shared_config, update_request),
-        "temperature" => block!(Temperature, id, block_config, shared_config, update_request),
-        "template" => block!(Template, id, block_config, shared_config, update_request),
-        "time" => block!(Time, id, block_config, shared_config, update_request), /////////
-        "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
-        "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
-        "watson" => block!(Watson, id, block_config, shared_config, update_request),
-        "weather" => block!(Weather, id, block_config, shared_config, update_request),
-        "xrandr" => block!(Xrandr, id, block_config, shared_config, update_request),
-        other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
+        apt::Apt;
+        backlight::Backlight;
+        battery::Battery;
+        bluetooth::Bluetooth;
+        cpu::Cpu;
+        custom::Custom;
+        custom_dbus::CustomDBus;
+        disk_space::DiskSpace;
+        docker::Docker;
+        focused_window::FocusedWindow;
+        github::Github;
+        hueshift::Hueshift;
+        ibus::IBus;
+        kdeconnect::KDEConnect;
+        keyboard_layout::KeyboardLayout;
+        load::Load;
+        #[cfg(feature="maildir")] maildir::Maildir;
+        memory::Memory;
+        music::Music;
+        net::Net;
+        networkmanager::NetworkManager;
+        notify::Notify;
+        #[cfg(feature="notmuch")] notmuch::Notmuch;
+        nvidia_gpu::NvidiaGpu;
+        pacman::Pacman;
+        pomodoro::Pomodoro;
+        sound::Sound;
+        speedtest::SpeedTest;
+        taskwarrior::Taskwarrior;
+        temperature::Temperature;
+        template::Template;
+        time::Time;
+        toggle::Toggle;
+        uptime::Uptime;
+        watson::Watson;
+        weather::Weather;
+        xrandr::Xrandr;
     }
 }

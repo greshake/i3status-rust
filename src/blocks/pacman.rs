@@ -41,7 +41,7 @@ pub enum Watched {
     None,
     Pacman,
     /// cf `Pacman::aur_command`
-    AUR(String),
+    Aur(String),
     /// cf `Pacman::aur_command`
     Both(String),
 }
@@ -121,7 +121,7 @@ impl PacmanConfig {
                 "pacman",
                 "{aur} found in format string but no aur_command supplied",
             )?;
-            Ok(Watched::AUR(aur_command))
+            Ok(Watched::Aur(aur_command))
         } else {
             Ok(Watched::None)
         }
@@ -338,7 +338,7 @@ impl Block for Pacman {
 
                 (formatting_map, warning, critical, pacman_count)
             }
-            Watched::AUR(aur_command) => {
+            Watched::Aur(aur_command) => {
                 let aur_available_updates = get_aur_available_updates(&aur_command)?;
                 let aur_count = get_update_count(&aur_available_updates);
                 let formatting_map = map!(
@@ -446,7 +446,7 @@ mod tests {
             Some("aur cmd".to_string()),
         );
         assert!(watched.is_ok());
-        assert_eq!(watched.unwrap(), Watched::AUR("aur cmd".to_string()));
+        assert_eq!(watched.unwrap(), Watched::Aur("aur cmd".to_string()));
         let watched = PacmanConfig::watched(
             "foo {pacman} {aur} bar",
             "foo {pacman} {aur} bar",

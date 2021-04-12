@@ -90,7 +90,7 @@ enum DeviceType {
     Wifi,
     Modem,
     Bridge,
-    TUN,
+    Tun,
     Wireguard,
 }
 
@@ -102,7 +102,7 @@ impl From<u32> for DeviceType {
             2 => DeviceType::Wifi,
             8 => DeviceType::Modem,
             13 => DeviceType::Bridge,
-            16 => DeviceType::TUN,
+            16 => DeviceType::Tun,
             29 => DeviceType::Wireguard,
             _ => DeviceType::Unknown,
         }
@@ -116,7 +116,7 @@ impl DeviceType {
             DeviceType::Wifi => Some("net_wireless".to_string()),
             DeviceType::Modem => Some("net_modem".to_string()),
             DeviceType::Bridge => Some("net_bridge".to_string()),
-            DeviceType::TUN => Some("net_bridge".to_string()),
+            DeviceType::Tun => Some("net_bridge".to_string()),
             DeviceType::Wireguard => Some("net_vpn".to_string()),
             _ => None,
         }
