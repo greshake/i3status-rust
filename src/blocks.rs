@@ -41,9 +41,10 @@ pub mod custom;
 
 use self::base_block::{BaseBlock, BaseBlockConfig};
 
-use std::pin::Pin;
-use std::time::Duration;
+use std::{cell::RefCell, pin::Pin};
+use std::{rc::Rc, time::Duration};
 
+use async_trait::async_trait;
 use crossbeam_channel::Sender;
 use futures::future::FutureExt;
 use futures::stream::{self, Stream, StreamExt};
@@ -119,6 +120,7 @@ pub trait ConfigBlock: Block {
 }
 
 /// The Block trait is used to interact with a block after it has been instantiated from ConfigBlock
+#[async_trait(?Send)]
 pub trait Block {
     /// A unique id for the block (asigend by the constructor).
     fn id(&self) -> usize;
@@ -127,7 +129,7 @@ pub trait Block {
     ///
     /// The music block may, for example, be comprised of a text widget and multiple
     /// buttons (buttons are also TextWidgets). Use a vec to wrap the references to your view.
-    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>>;
+    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>>;
 
     /// Required if you don't want a static block.
     ///
@@ -142,7 +144,7 @@ pub trait Block {
 
     /// Sends a signal event with the provided signal, this function is called on every block
     /// for every signal event
-    fn signal(&mut self, _signal: i32) -> Result<()> {
+    async fn signal(&mut self, _signal: i32) -> Result<()> {
         Ok(())
     }
 
@@ -158,21 +160,22 @@ pub trait Block {
     }
 }
 
+#[async_trait(?Send)]
 impl<T: Block + ?Sized> Block for Box<T> {
     fn id(&self) -> usize {
         self.as_ref().id()
     }
 
-    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
-        self.as_mut().render()
+    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+        self.as_mut().render().await
     }
 
     fn update_interval(&self) -> Update {
         self.as_ref().update_interval()
     }
 
-    fn signal(&mut self, signal: i32) -> Result<()> {
-        self.as_mut().signal(signal)
+    async fn signal(&mut self, signal: i32) -> Result<()> {
+        self.as_mut().signal(signal).await
     }
 
     fn click(&mut self, event: I3BarEvent) -> Result<()> {
@@ -188,46 +191,53 @@ pub enum Event {
 
 #[allow(clippy::type_complexity)]
 pub fn block_into_stream<'a>(
-    mut block: impl Block + 'a,
+    block: impl Block + 'a,
 ) -> (
     impl Stream<Item = Vec<Box<dyn I3BarWidget>>> + 'a,
     mpsc::UnboundedSender<Event>,
 ) {
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-    let update_events = block.update_interval().into_stream().map(|_| Event::Update);
+    let update_events = Box::pin(block.update_interval().into_stream().map(|_| Event::Update));
     let events = stream::select(UnboundedReceiverStream::new(rx), update_events);
 
-    let stream = events.filter_map(move |event| match event {
-        Event::Update => {
-            let rendered = block.render().expect("failed while rendering block");
-            futures::future::ready(Some(rendered))
-        }
-        Event::Signal(signal) => {
-            block.signal(signal);
-            futures::future::ready(None)
-        }
-        Event::Clic(event) => {
-            block.click(event);
-            futures::future::ready(None)
+    // Moving block into a Rc<RefCell<...>> has no practical interest, it just
+    // helps dealing with the borrow checker by moving some invariants checks
+    // to runtime.
+    //
+    // Any improvement would be welcome but it may be hard here as Streams
+    // could be executed in parallel, for exemple through `for_each_concurrent`.
+    let block = Rc::new(RefCell::new(block));
+
+    let stream = events.filter_map(move |event| {
+        let block = block.clone();
+
+        async move {
+            let mut block_mut = block
+                .try_borrow_mut()
+                .expect("block update performed concurently");
+
+            match event {
+                Event::Update => Some(
+                    block_mut
+                        .render()
+                        .await
+                        .expect("failed during block rendering"),
+                ),
+                Event::Signal(signal) => {
+                    block_mut
+                        .signal(signal)
+                        .await
+                        .expect("failed during block update");
+                    None
+                }
+                Event::Clic(event) => {
+                    block_mut.click(event).expect("failed during block click");
+                    None
+                }
+            }
         }
     });
 
-    // let stream: Box<dyn Stream<Item = Vec<Box<dyn I3BarWidget>>> + 'a> =
-    //     match block.update_interval() {
-    //         Update::Every(dur) => Box::new(futures::stream::unfold(
-    //             (block, tokio::time::interval(dur)),
-    //             move |(mut block, mut clock)| async move {
-    //                 clock.tick().await;
-    //                 let rendered = block.render().unwrap();
-    //                 Some((rendered, (block, clock)))
-    //             },
-    //         )),
-    //         Update::Once => {
-    //             let rendered = block.render().unwrap();
-    //             Box::new(async move { rendered }.into_stream())
-    //         }
-    //     };
-    //
     (stream, tx)
 }
 

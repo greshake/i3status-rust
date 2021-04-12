@@ -1,10 +1,12 @@
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
 use std::time::Duration;
 
+use async_trait::async_trait;
 use crossbeam_channel::Sender;
+use futures::{future, StreamExt};
 use serde_derive::Deserialize;
+use tokio::fs::File;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio_stream::wrappers::LinesStream;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
@@ -18,7 +20,6 @@ use crate::widgets::{I3BarWidget, State};
 
 pub struct Cpu {
     id: usize,
-    output: TextWidget,
     prev_util: Vec<(u64, u64)>,
     update_interval: Duration,
     minimum_info: u64,
@@ -72,7 +73,6 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, 0, shared_config.clone()).with_icon("cpu")?,
             prev_util: Vec::with_capacity(32),
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
@@ -84,85 +84,90 @@ impl ConfigBlock for Cpu {
     }
 }
 
+#[async_trait(?Send)]
 impl Block for Cpu {
     fn update_interval(&self) -> Update {
         self.update_interval.into()
     }
 
-    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
         let mut widget =
             TextWidget::new(self.id, 0, self.shared_config.clone()).with_icon("cpu")?;
 
         // Read frequencies (read in MHz, store in Hz)
-        let mut freqs = Vec::with_capacity(32);
-        let mut freqs_avg = 0.0;
-        let freqs_f =
-            File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
+        let file = File::open("/proc/cpuinfo")
+            .await
+            .block_error("cpu", "failed to read /proc/cpuinfo")?;
 
-        for line in BufReader::new(freqs_f).lines().scan((), |_, x| x.ok()) {
-            if line.starts_with("cpu MHz") {
-                let words = line.split(' ');
-                let last = words
+        let freqs: Vec<_> = LinesStream::new(BufReader::new(file).lines())
+            .filter_map(|res| async move { res.ok() })
+            .filter(|line| future::ready(line.starts_with("cpu MHz")))
+            .map(|line| {
+                let last_word = line
+                    .split(' ')
                     .last()
                     .expect("failed to get last word of line while getting cpu frequency");
-                let numb = last
+
+                last_word
                     .parse::<f64>()
                     .expect("failed to parse String to f64 while getting cpu frequency")
-                    * 1e6; // convert to Hz
-                freqs.push(numb);
-                freqs_avg += numb;
-            }
-        }
-        freqs_avg /= freqs.len() as f64;
+                    * 1e6 // convert to Hz
+            })
+            .collect()
+            .await;
+
+        let freqs_avg = freqs.iter().sum::<f64>() / freqs.len() as f64;
 
         // Read utilizations
-        let mut utilizations = Vec::with_capacity(32);
-        let utilizations_f = File::open("/proc/stat")
+        let file = File::open("/proc/stat")
+            .await
             .block_error("cpu", "Your system doesn't support /proc/stat")?;
-        for (i, line) in BufReader::new(utilizations_f)
-            .lines()
-            .scan((), |_, x| x.ok())
+
+        let utilizations: Vec<_> = LinesStream::new(BufReader::new(file).lines())
+            .filter_map(|res| async move { res.ok() })
+            .filter(|line| future::ready(line.starts_with("cpu")))
             .enumerate()
-        {
-            if line.starts_with("cpu") {
-                let data: Vec<u64> = line
+            .map(|(i, line)| {
+                let cols: Vec<u64> = line
                     .split_whitespace()
                     .filter_map(|x| x.parse::<u64>().ok())
                     .collect();
 
-                // idle = idle + iowait
-                let idle = data[3] + data[4];
-                let non_idle = data[0] + // user
-                                data[1] + // nice
-                                data[2] + // system
-                                data[5] + // irq
-                                data[6] + // softirq
-                                data[7]; // steal
+                match *cols.as_slice() {
+                    [user, nice, system, idle, iowait, irq, softirq, steal, ..] => {
+                        let idle = idle + iowait;
+                        let non_idle = user + nice + system + irq + softirq + steal;
 
-                let (prev_idles, prev_non_idles) = if self.prev_util.len() <= i {
-                    self.prev_util.push((0, 0));
-                    (0, 0)
-                } else {
-                    self.prev_util[i]
-                };
+                        let (prev_idles, prev_non_idles) = {
+                            if self.prev_util.len() <= i {
+                                self.prev_util.push((0, 0));
+                                (0, 0)
+                            } else {
+                                self.prev_util[i]
+                            }
+                        };
 
-                let prev_total = prev_idles + prev_non_idles;
-                let total = idle + non_idle;
+                        let prev_total = prev_idles + prev_non_idles;
+                        let total = idle + non_idle;
 
-                // This check is needed because the new values may be reset, for
-                // example after hibernation.
-                let (total_delta, idle_delta) = if prev_total < total && prev_idles <= idle {
-                    (total - prev_total, idle - prev_idles)
-                } else {
-                    (1, 1)
-                };
+                        // This check is needed because the new values may be reset, for
+                        // example after hibernation.
+                        let (total_delta, idle_delta) = {
+                            if prev_total < total && prev_idles <= idle {
+                                (total - prev_total, idle - prev_idles)
+                            } else {
+                                (1, 1)
+                            }
+                        };
 
-                utilizations
-                    .push(((total_delta - idle_delta) as f64 / total_delta as f64).clamp(0., 1.));
-
-                self.prev_util[i] = (idle, non_idle);
-            }
-        }
+                        self.prev_util[i] = (idle, non_idle);
+                        ((total_delta - idle_delta) as f64 / total_delta as f64).clamp(0., 1.)
+                    }
+                    _ => panic!("not enough columns in CPU block"),
+                }
+            })
+            .collect()
+            .await;
 
         let (avg, utilizations) = utilizations.split_first().unwrap();
         let avg_utilization = avg * 100.;

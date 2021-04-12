@@ -21,21 +21,15 @@ use cpuprofiler::PROFILER;
 use std::ops::DerefMut;
 
 #[cfg(feature = "pulseaudio")]
-use libpulse_binding as pulse;
-
-use std::time::Duration;
-
 use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
-use crossbeam_channel::{select, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender};
 use futures::StreamExt;
 
 use crate::blocks::{block_into_stream, create_block, Block};
 use crate::config::Config;
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::protocol::i3bar_event::{process_events, I3BarEvent};
-use crate::scheduler::{Task, UpdateScheduler};
-use crate::signals::process_signals;
+use crate::scheduler::Task;
 use crate::util::deserialize_file;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
@@ -172,7 +166,7 @@ async fn run(matches: &ArgMatches<'_>) -> Result<()> {
     let shared_config = SharedConfig::new(&config);
 
     // Initialize the blocks
-    let (block_updates, block_event_handles): (Vec<_>, Vec<_>) = config
+    let (block_updates, _block_event_handles): (Vec<_>, Vec<_>) = config
         .blocks
         .iter()
         .enumerate()
@@ -197,7 +191,8 @@ async fn run(matches: &ArgMatches<'_>) -> Result<()> {
         block_updates
             .into_iter()
             .enumerate()
-            .map(|(id, stream)| stream.map(move |val| (id, val))),
+            .map(|(id, stream)| stream.map(move |val| (id, val)))
+            .map(Box::pin),
     );
 
     while let Some((id, rendered)) = block_updates.next().await {
@@ -205,82 +200,7 @@ async fn run(matches: &ArgMatches<'_>) -> Result<()> {
         protocol::print_blocks(&blocks_rendered, &shared_config)?;
     }
 
-    // TODO: We wait for click events in a separate thread, to avoid blocking to wait for stdin
-    //
-    // let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =
-    //     crossbeam_channel::unbounded();
-    //
-    // process_events(tx_clicks);
-
-    // TODO: We wait for signals in a separate thread
-    // let (tx_signals, rx_signals): (Sender<i32>, Receiver<i32>) = crossbeam_channel::unbounded();
-    // process_signals(tx_signals);
-
-    // // Time to next update channel.
-    // // Fires immediately for first updates
-    // let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
-    //
-    // let one_shot = matches.is_present("one-shot");
-    // loop {
-    //     // We use the message passing concept of channel selection
-    //     // to avoid busy wait
-    //     select! {
-    //         // Receive click events
-    //         recv(rx_clicks) -> res => if let Ok(event) = res {
-    //             if let Some(id) = event.id {
-    //                     blocks.get_mut(id)
-    //                 .internal_error("click handler", "could not get required block")?
-    //                         .click(event)?;
-    //                 protocol::print_blocks(&blocks_rendered, &shared_config)?;
-    //             }
-    //         },
-    //         // Receive async update requests
-    //         recv(rx_update_requests) -> request => if let Ok(req) = request {
-    //             // Process immediately and forget
-    //             blocks_rendered[req.id] = blocks[req.id].render()?;
-    //             protocol::print_blocks(&blocks_rendered, &shared_config)?;
-    //         },
-    //         // Receive update timer events
-    //         recv(ttnu) -> _ => {
-    //             scheduler.do_scheduled_updates(&mut blocks, &mut blocks_rendered)?;
-    //             protocol::print_blocks(&blocks_rendered, &shared_config)?;
-    //         },
-    //         // Receive signal events
-    //         recv(rx_signals) -> res => if let Ok(sig) = res {
-    //             match sig {
-    //                 signal_hook::consts::SIGUSR1 => {
-    //                     // USR1 signal that updates every block in the bar
-    //                     // TODO: quésako?
-    //                     // for block in blocks.iter_mut() {
-    //                     //     block.update()?;
-    //                     // }
-    //                 },
-    //                 signal_hook::consts::SIGUSR2 => {
-    //                     //USR2 signal that should reload the config
-    //                     restart();
-    //                 },
-    //                 _ => {
-    //                     //Real time signal that updates only the blocks listening
-    //                     //for that signal
-    //                     for block in blocks.iter_mut() {
-    //                         block.signal(sig)?;
-    //                     }
-    //                 },
-    //             };
-    //             protocol::print_blocks(&blocks_rendered, &shared_config)?;
-    //         }
-    //     }
-    //
-    //     // Set the time-to-next-update timer
-    //     if let Some(time) = scheduler.time_to_next_update() {
-    //         ttnu = crossbeam_channel::after(time)
-    //     }
-    //     if one_shot {
-    //         break Ok(());
-    //     }
-    // }
-
-    todo!()
+    Ok(())
 }
 
 /// Restart `i3status-rs` in-place

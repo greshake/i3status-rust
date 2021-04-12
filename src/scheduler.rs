@@ -1,13 +1,9 @@
-use crate::blocks::Update;
-use std::cmp;
-use std::collections::BinaryHeap;
-use std::fmt;
-use std::thread;
-use std::time::{Duration, Instant};
+// TODO: scheduling is now handled by tokio's runtime, maybe this module
+//       should be renamed `task`.
 
-use crate::blocks::Block;
-use crate::errors::*;
-use crate::widgets::I3BarWidget;
+use std::cmp;
+use std::fmt;
+use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub struct Task {
@@ -38,88 +34,5 @@ impl cmp::PartialOrd for Task {
 impl cmp::Ord for Task {
     fn cmp(&self, other: &Task) -> cmp::Ordering {
         other.update_time.cmp(&self.update_time)
-    }
-}
-
-pub struct UpdateScheduler {
-    schedule: BinaryHeap<Task>,
-}
-
-impl UpdateScheduler {
-    pub fn new(blocks: &[Box<dyn Block>]) -> UpdateScheduler {
-        let mut schedule = BinaryHeap::new();
-
-        let now = Instant::now();
-        for block in blocks.iter() {
-            schedule.push(Task {
-                id: block.id(),
-                update_time: now,
-            });
-        }
-
-        UpdateScheduler { schedule }
-    }
-
-    pub fn time_to_next_update(&self) -> Option<Duration> {
-        if let Some(peeked) = self.schedule.peek() {
-            let next_update = peeked.update_time;
-            let now = Instant::now();
-
-            if next_update > now {
-                Some(next_update - now)
-            } else {
-                Some(Duration::new(0, 0))
-            }
-        } else {
-            None
-        }
-    }
-
-    pub fn do_scheduled_updates(
-        &mut self,
-        blocks: &mut Vec<Box<dyn Block>>,
-        blocks_rendered: &mut Vec<Vec<Box<dyn I3BarWidget>>>,
-    ) -> Result<()> {
-        let t = self
-            .schedule
-            .pop()
-            .internal_error("scheduler", "schedule is empty")?;
-        let mut tasks_next = vec![t.clone()];
-
-        while !self.schedule.is_empty()
-            && t.update_time
-                == self
-                    .schedule
-                    .peek()
-                    .internal_error("scheduler", "schedule is empty")?
-                    .update_time
-        {
-            tasks_next.push(
-                self.schedule
-                    .pop()
-                    .internal_error("scheduler", "schedule is empty")?,
-            )
-        }
-
-        let now = Instant::now();
-        if t.update_time > now {
-            thread::sleep(t.update_time - now);
-        }
-
-        let now = Instant::now();
-
-        for task in tasks_next {
-            blocks_rendered[task.id as usize] = blocks[task.id as usize].render()?;
-
-            match blocks[task.id as usize].update_interval() {
-                Update::Every(d) => self.schedule.push(Task {
-                    id: task.id,
-                    update_time: now + d,
-                }),
-                Update::Once => {} // do not schedule this task again
-            }
-        }
-
-        Ok(())
     }
 }

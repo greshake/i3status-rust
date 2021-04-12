@@ -1,11 +1,12 @@
 use std::env;
 use std::iter::{Cycle, Peekable};
-use std::process::Command;
 use std::time::{Duration, Instant};
 use std::vec;
 
+use async_trait::async_trait;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
+use tokio::process::Command;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
@@ -28,7 +29,6 @@ pub struct Custom {
     tx_update_request: Sender<Task>,
     pub json: bool,
     hide_when_empty: bool,
-    is_empty: bool,
     shell: String,
     shared_config: SharedConfig,
 }
@@ -91,7 +91,6 @@ impl ConfigBlock for Custom {
             tx_update_request: tx,
             json: block_config.json,
             hide_when_empty: block_config.hide_when_empty,
-            is_empty: true,
             shell: block_config.shell,
             shared_config,
         };
@@ -142,12 +141,13 @@ struct Output {
     text: String,
 }
 
+#[async_trait(?Send)]
 impl Block for Custom {
     fn update_interval(&self) -> Update {
         self.update_interval.clone()
     }
 
-    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
         let mut widget = TextWidget::new(self.id(), 0, self.shared_config.clone());
 
         let command_str = self
@@ -160,6 +160,7 @@ impl Block for Custom {
         let raw_output = Command::new(&self.shell)
             .args(&["-c", &command_str])
             .output()
+            .await
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
             .unwrap_or_else(|e| e.to_string());
 
@@ -188,7 +189,7 @@ impl Block for Custom {
         }
     }
 
-    fn signal(&mut self, signal: i32) -> Result<()> {
+    async fn signal(&mut self, signal: i32) -> Result<()> {
         if let Some(sig) = self.signal {
             if sig == signal {
                 self.tx_update_request.send(Task {

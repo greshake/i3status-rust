@@ -6,6 +6,7 @@ use crate::errors::*;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::{blocks::Update, subprocess::spawn_child_async, widgets::I3BarWidget, Block};
 
+use async_trait::async_trait;
 use serde_derive::Deserialize;
 use toml::{value::Table, Value};
 
@@ -15,21 +16,22 @@ pub(super) struct BaseBlock<T: Block> {
     pub on_click: Option<String>,
 }
 
+#[async_trait(?Send)]
 impl<T: Block> Block for BaseBlock<T> {
     fn id(&self) -> usize {
         self.inner.id()
     }
 
-    fn render(&mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
-        self.inner.render()
+    async fn render(&'_ mut self) -> Result<Vec<Box<dyn I3BarWidget>>> {
+        self.inner.render().await
     }
 
     fn update_interval(&self) -> Update {
         self.inner.update_interval()
     }
 
-    fn signal(&mut self, signal: i32) -> Result<()> {
-        self.inner.signal(signal)
+    async fn signal(&mut self, signal: i32) -> Result<()> {
+        self.inner.signal(signal).await
     }
 
     fn click(&mut self, e: I3BarEvent) -> Result<()> {
