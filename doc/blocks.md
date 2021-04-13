@@ -420,7 +420,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `alert` | Available disk space critical level as a percentage or Unit. | No | `10.0`
 `warning` | Available disk space warning level as a percentage or Unit. | No | `20.0`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{alias} {available}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{available}"`
 `info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation). | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
 `path` | Path to collect information from. | No | `"/"`
