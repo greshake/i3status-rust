@@ -32,6 +32,8 @@ pub enum WeatherService {
         place: Option<String>,
         coordinates: Option<(String, String)>,
         units: OpenWeatherMapUnits,
+        #[serde(default = "WeatherService::default_lang")]
+        lang: Option<String>,
     },
 }
 
@@ -44,6 +46,9 @@ impl WeatherService {
     }
     fn getenv_openweathermap_place() -> Option<String> {
         env::var(OPENWEATHERMAP_PLACE_ENV).ok()
+    }
+    fn default_lang() -> Option<String> {
+        Some("en".to_string())
     }
 }
 
@@ -154,6 +159,7 @@ impl Weather {
                 place,
                 units,
                 coordinates,
+                lang,
             } => {
                 if api_key_opt.is_none() {
                     return configuration_error(&format!(
@@ -191,13 +197,14 @@ impl Weather {
                 // This uses the "Current Weather Data" API endpoint
                 // Refer to https://openweathermap.org/current
                 let openweather_url = &format!(
-                    "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}",
+                    "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}&lang={lang}",
                     location_query = location_query,
                     api_key = api_key,
                     units = match *units {
                         OpenWeatherMapUnits::Metric => "metric",
                         OpenWeatherMapUnits::Imperial => "imperial",
                     },
+                    lang = lang.as_ref().unwrap(),
                 );
 
                 let output =
@@ -224,6 +231,11 @@ impl Weather {
 
                 let raw_weather = json
                     .pointer("/weather/0/main")
+                    .ok_or_else(malformed_json_error)?
+                    .to_string();
+
+                let raw_weather_verbose = json
+                    .pointer("/weather/0/description")
                     .ok_or_else(malformed_json_error)?
                     .to_string();
 
@@ -274,6 +286,7 @@ impl Weather {
 
                 self.weather_keys = map!(
                     "weather" => Value::from_string(raw_weather),
+                    "weather_verbose" => Value::from_string(raw_weather_verbose),
                     "temp" => Value::from_integer(raw_temp as i64).degrees(),
                     "humidity" => Value::from_integer(raw_humidity as i64),
                     "apparent" => Value::from_integer(apparent_temp as i64).degrees(),

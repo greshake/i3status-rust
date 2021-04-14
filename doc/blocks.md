@@ -1639,6 +1639,7 @@ Key | Values | Required | Default
 `place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
 `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.236229089090216","9.331730718685696"]`
 `units` | Either `metric` or `imperial`. | Yes | `metric`
+`lang` | Language code. See [here](https://openweathermap.org/current#multi). Currently only affects `weather_verbose` key. | No | `en`
 
 One of `city_id`, `place` or `coordinates` is required. If more than one are supplied, `city_id` takes precedence over `place` which takes place over `coordinates`.
 
@@ -1654,7 +1655,8 @@ in which case they must be provided in the environment variables
 `{temp}` | Temperature | Integer
 `{apparent}` | Australian Apparent Temperature | Integer
 `{humidity}` | Humidity | Integer
-`{weather}` | Textual description of the weather, e.g. "Raining" | String
+`{weather}` | Textual brief description of the weather, e.g. "Raining" | String
+`{weather_verbose}` | Textual verbose description of the weather, e.g. "overcast clouds" | String
 `{wind}` | Wind speed | Float
 `{wind_kmh}` | Wind speed. The wind speed in km/h. | Float
 `{direction}` | Wind direction, e.g. "NE" | String
