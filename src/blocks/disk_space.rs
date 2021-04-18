@@ -178,20 +178,20 @@ impl Block for DiskSpace {
         let alert_type;
         match self.info_type {
             InfoType::Available => {
-                result = available;
+                result = available as f64;
                 alert_type = AlertType::Below;
             }
             InfoType::Free => {
-                result = free;
+                result = free as f64;
                 alert_type = AlertType::Below;
             }
             InfoType::Used => {
-                result = used;
+                result = used as f64;
                 alert_type = AlertType::Above;
             }
         }
 
-        let percentage = (result as f64) / (total as f64) * 100.;
+        let percentage = result / (total as f64) * 100.;
         let values = map!(
             "percentage" => Value::from_float(percentage).percents(),
             "path" => Value::from_string(self.path.clone()),
@@ -207,14 +207,15 @@ impl Block for DiskSpace {
 
         // Send percentage to alert check if we don't want absolute alerts
         let alert_val = if self.alert_absolute {
-            (match self.unit {
-                Prefix::Tera => result << 40,
-                Prefix::Giga => result << 30,
-                Prefix::Mega => result << 20,
-                Prefix::Kilo => result << 10,
-                Prefix::One => result,
-                _ => unreachable!(),
-            }) as f64
+            result
+                / match self.unit {
+                    Prefix::Tera => 1u64 << 40,
+                    Prefix::Giga => 1u64 << 30,
+                    Prefix::Mega => 1u64 << 20,
+                    Prefix::Kilo => 1u64 << 10,
+                    Prefix::One => 1u64,
+                    _ => unreachable!(),
+                } as f64
         } else {
             percentage
         };
