@@ -634,7 +634,7 @@ impl Block for Net {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.button == MouseButton::Left {
+        if event.button == MouseButton::Right {
             if let Some(ref mut format) = self.format_alt {
                 std::mem::swap(format, &mut self.format);
             }

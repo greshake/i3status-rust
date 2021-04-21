@@ -194,7 +194,7 @@ impl Block for SpeedTest {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let MouseButton::Left = e.button {
+        if let MouseButton::Right = e.button {
             self.send.send(())?;
         }
         Ok(())

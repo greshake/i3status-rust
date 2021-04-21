@@ -379,7 +379,7 @@ impl Block for Weather {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let MouseButton::Left = event.button {
+        if let MouseButton::Right = event.button {
             self.update()?;
         }
         Ok(())

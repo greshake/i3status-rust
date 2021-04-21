@@ -140,7 +140,7 @@ impl Block for Notmuch {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.button == MouseButton::Left {
+        if event.button == MouseButton::Right {
             self.update()?;
         }
 

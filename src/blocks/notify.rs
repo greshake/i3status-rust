@@ -144,7 +144,7 @@ impl Block for Notify {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let MouseButton::Left = e.button {
+        if let MouseButton::Right = e.button {
             let c = Connection::get_private(BusType::Session).block_error(
                 "notify",
                 &"Failed to establish D-Bus connection".to_string(),

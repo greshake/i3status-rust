@@ -359,7 +359,7 @@ impl Block for NvidiaGpu {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(event_id) = e.instance {
             if event_id == self.id {
-                if let MouseButton::Left = e.button {
+                if let MouseButton::Right = e.button {
                     match self.name_widget_mode {
                         NameWidgetMode::ShowDefaultName => {
                             self.name_widget_mode = NameWidgetMode::ShowLabel
@@ -373,7 +373,7 @@ impl Block for NvidiaGpu {
             }
 
             if event_id == self.id_memory {
-                if let MouseButton::Left = e.button {
+                if let MouseButton::Right = e.button {
                     match self.memory_widget_mode {
                         MemoryWidgetMode::ShowUsedMemory => {
                             self.memory_widget_mode = MemoryWidgetMode::ShowTotalMemory
