@@ -56,7 +56,7 @@ interval = 1800
 format = "{count:1} updates available"
 format_singular = "{count:1} update available"
 format_up_to_date = "system up to date"
-critical_updates_regex = "(linux |linux-lts|linux-zen)"
+critical_updates_regex = "(linux|linux-lts|linux-zen)"
 ```
 
 #### Options
@@ -1207,7 +1207,7 @@ interval = 600
 format = "{pacman} updates available"
 format_singular = "{pacman} update available"
 format_up_to_date = "system up to date"
-critical_updates_regex = "(linux |linux-lts|linux-zen)"
+critical_updates_regex = "(linux|linux-lts|linux-zen)"
 ```
 
 pacman only config using warnings with ZFS modules:
@@ -1221,10 +1221,10 @@ format_singular = "{pacman} update available"
 format_up_to_date = "system up to date"
 # If a linux update is availble, but no ZFS package, it won't be possible to
 # actually perform a system upgrade, so we show a warning.
-warning_updates_regex = "(linux |linux-lts|linux-zen)"
+warning_updates_regex = "(linux|linux-lts|linux-zen)"
 # If ZFS is available, we know that we can and should do an upgrade, so we show 
 # the status as critical.
-critical_updates_regex = "(zfs |zfs-lts)"
+critical_updates_regex = "(zfs|zfs-lts)"
 ```
 
 pacman and AUR helper config:
@@ -1236,7 +1236,7 @@ interval = 600
 format = "{pacman} + {aur} = {both} updates available"
 format_singular = "{both} update available"
 format_up_to_date = "system up to date"
-critical_updates_regex = "(linux |linux-lts|linux-zen)"
+critical_updates_regex = "(linux|linux-lts|linux-zen)"
 # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
 aur_command = "pikaur -Qua"
 ```
