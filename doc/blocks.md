@@ -1212,6 +1212,8 @@ format = "{pacman} updates available"
 format_singular = "{pacman} update available"
 format_up_to_date = "system up to date"
 critical_updates_regex = "(linux|linux-lts|linux-zen)"
+# pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
+on_click = "fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu"
 ```
 
 pacman only config using warnings with ZFS modules:
