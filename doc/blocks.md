@@ -45,7 +45,7 @@ Creates a block which displays the pending updates available for your Debian/Ubu
 
 Behind the scenes this uses `apt`, and in order to run it without root priveleges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
 
-Tip: You can grab the list of updates using `APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable`
+Tip: You can grab the list of available updates using `APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable`
 
 #### Examples
 
@@ -1193,6 +1193,8 @@ Key | Values | Required | Default
 Creates a block which displays the pending updates available on pacman or an AUR helper.
 
 Requires fakeroot to be installed (only required for pacman).
+
+Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusename/`. If you have the CHECKUPDATES_DB env var set on your system then substitute that dir instead of /tmp/checkup-db-yourusername.
 
 #### Examples
 
