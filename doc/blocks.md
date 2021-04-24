@@ -59,6 +59,8 @@ format = "{count:1} updates available"
 format_singular = "{count:1} update available"
 format_up_to_date = "system up to date"
 critical_updates_regex = "(linux|linux-lts|linux-zen)"
+# shows dmenu with cached available updates. Any dmenu alternative should also work.
+on_click = "APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu"
 ```
 
 #### Options
