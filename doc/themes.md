@@ -58,7 +58,7 @@ Notes:
 * `native` (like plain with no background and native separators)
 ![native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)
 * `semi-native` (like native but with background)
-//TODO add an image
+![semi-native](https://user-images.githubusercontent.com/53198048/116204341-8a25e300-a6f1-11eb-9652-bbf8e432bd41.png)
 * `nord-dark` (polar night)
 ![nord-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)
 
