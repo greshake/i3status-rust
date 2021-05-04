@@ -521,15 +521,15 @@ pub struct BatteryConfig {
 
     /// Format string for displaying battery information.
     /// placeholders: {percentage}, {bar}, {time} and {power}
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Format string for displaying battery information when battery is full.
     /// placeholders: {percentage}, {bar}, {time} and {power}
-    pub full_format: String,
+    pub full_format: FormatTemplate,
 
     /// Format string that's displayed if a battery is missing.
     /// placeholders: {percentage}, {bar}, {time} and {power}
-    pub missing_format: String,
+    pub missing_format: FormatTemplate,
 
     /// The "driver" to use for powering the block. One of "sysfs" or "upower".
     pub driver: BatteryDriver,
@@ -558,9 +558,9 @@ impl Default for BatteryConfig {
         Self {
             interval: Duration::from_secs(10),
             device: "BAT0".to_string(),
-            format: "{percentage}".to_string(),
-            full_format: "".to_string(),
-            missing_format: "{percentage}".to_string(),
+            format: FormatTemplate::default(),
+            full_format: FormatTemplate::default(),
+            missing_format: FormatTemplate::default(),
             driver: BatteryDriver::Sysfs,
             good: 60,
             info: 60,
@@ -598,9 +598,9 @@ impl ConfigBlock for Battery {
             update_interval: block_config.interval,
             output: TextWidget::new(id, 0, shared_config),
             device,
-            format: FormatTemplate::from_string(&block_config.format)?,
-            full_format: FormatTemplate::from_string(&block_config.full_format)?,
-            missing_format: FormatTemplate::from_string(&block_config.missing_format)?,
+            format: block_config.format.with_default("{percentage}")?,
+            full_format: block_config.full_format.with_default("")?,
+            missing_format: block_config.missing_format.with_default("{percentage}")?,
             allow_missing: block_config.allow_missing,
             hide_missing: block_config.hide_missing,
             driver: block_config.driver,
@@ -628,7 +628,7 @@ impl Block for Battery {
             );
 
             self.output.set_icon("bat_not_available")?;
-            self.output.set_text(self.missing_format.render(&values)?);
+            self.output.set_texts(self.missing_format.render(&values)?);
             self.output.set_state(State::Warning);
 
             return match self.driver {
@@ -662,11 +662,11 @@ impl Block for Battery {
 
         if status == "Full" || status == "Not charging" {
             self.output.set_icon("bat_full")?;
-            self.output.set_text(self.full_format.render(&values)?);
+            self.output.set_texts(self.full_format.render(&values)?);
             self.output.set_state(State::Good);
             self.output.set_spacing(Spacing::Hidden);
         } else {
-            self.output.set_text(self.format.render(&values)?);
+            self.output.set_texts(self.format.render(&values)?);
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.

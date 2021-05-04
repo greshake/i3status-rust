@@ -1724,6 +1724,18 @@ command = "echo '<b>1 &amp;</b>'"
 
 # Formatting
 
+All blocks that have a `format` field can be reformatted by changing their format strings.
+
+The field can be set as a string (`format = "{my_format}"`) or as a section:
+```toml
+[[block]]
+block = "my_block"
+[block.format]
+full = "{my_full_format}"
+short = "{my_short_format}"
+```
+Your `i3` or `sway` will switch all blocks over to the `short` variant whenever there isn't enough space on your screen for the `full` status bar.
+
 ## Syntax
 
 The syntax for placeholders is

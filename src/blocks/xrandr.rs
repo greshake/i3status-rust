@@ -206,8 +206,8 @@ impl Xrandr {
                 "{display}: {brightness}"
             };
 
-            if let Ok(fmt_template) = FormatTemplate::from_string(format_str) {
-                self.text.set_text(fmt_template.render(&values)?);
+            if let Ok(fmt_template) = FormatTemplate::new(format_str, None) {
+                self.text.set_texts(fmt_template.render(&values)?);
             }
         }
 

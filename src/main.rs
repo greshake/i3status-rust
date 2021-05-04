@@ -2,10 +2,11 @@
 mod de;
 #[macro_use]
 mod util;
+#[macro_use]
+mod formatting;
 pub mod blocks;
 mod config;
 mod errors;
-mod formatting;
 mod http;
 mod icons;
 mod protocol;

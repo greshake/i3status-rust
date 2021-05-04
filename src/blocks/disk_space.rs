@@ -53,7 +53,7 @@ pub struct DiskSpaceConfig {
     pub info_type: InfoType,
 
     /// Format string for output
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Unit that is used to display disk space. Options are B, KB, MB, GB and TB
     pub unit: String,
@@ -82,7 +82,7 @@ impl Default for DiskSpaceConfig {
         Self {
             path: "/".to_string(),
             info_type: InfoType::Available,
-            format: "{available}".to_string(),
+            format: FormatTemplate::default(),
             unit: "GB".to_string(),
             interval: Duration::from_secs(20),
             warning: 20.,
@@ -139,7 +139,7 @@ impl ConfigBlock for DiskSpace {
             update_interval: block_config.interval,
             disk_space: TextWidget::new(id, 0, shared_config),
             path: block_config.path,
-            format: FormatTemplate::from_string(&block_config.format)?,
+            format: block_config.format.with_default("{available}")?,
             info_type: block_config.info_type,
             unit: match block_config.unit.as_str() {
                 "TB" => Prefix::Tera,
@@ -203,7 +203,7 @@ impl Block for DiskSpace {
             //TODO remove
             "alias" => Value::from_string(self.alias.clone()),
         );
-        self.disk_space.set_text(self.format.render(&values)?);
+        self.disk_space.set_texts(self.format.render(&values)?);
 
         // Send percentage to alert check if we don't want absolute alerts
         let alert_val = if self.alert_absolute {

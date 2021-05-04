@@ -112,10 +112,10 @@ pub struct Memory {
 #[serde(deny_unknown_fields, default)]
 pub struct MemoryConfig {
     /// Format string for Memory view. All format values are described below.
-    pub format_mem: String,
+    pub format_mem: FormatTemplate,
 
     /// Format string for Swap view.
-    pub format_swap: String,
+    pub format_swap: FormatTemplate,
 
     /// Default view displayed on startup. Options are <br/> memory, swap
     pub display_type: Memtype,
@@ -146,8 +146,8 @@ pub struct MemoryConfig {
 impl Default for MemoryConfig {
     fn default() -> Self {
         Self {
-            format_mem: "{mem_free;M}/{mem_total;M}({mem_total_used_percents})".to_string(),
-            format_swap: "{swap_free;M}/{swap_total;M}({swap_used_percents})".to_string(),
+            format_mem: FormatTemplate::default(),
+            format_swap: FormatTemplate::default(),
             display_type: Memtype::Memory,
             icons: true,
             clickable: true,
@@ -161,7 +161,7 @@ impl Default for MemoryConfig {
 }
 
 impl Memory {
-    fn format_insert_values(&mut self, mem_state: Memstate) -> Result<String> {
+    fn format_insert_values(&mut self, mem_state: Memstate) -> Result<(String, Option<String>)> {
         let mem_total = mem_state.mem_total() as f64 * 1024.;
         let mem_free = mem_state.mem_free() as f64 * 1024.;
         let swap_total = mem_state.swap_total() as f64 * 1024.;
@@ -250,8 +250,12 @@ impl ConfigBlock for Memory {
             },
             clickable: block_config.clickable,
             format: (
-                FormatTemplate::from_string(&block_config.format_mem)?,
-                FormatTemplate::from_string(&block_config.format_swap)?,
+                block_config
+                    .format_mem
+                    .with_default("{mem_free;M}/{mem_total;M}({mem_total_used_percents})")?,
+                block_config
+                    .format_swap
+                    .with_default("{swap_free;M}/{swap_total;M}({swap_used_percents})")?,
             ),
             update_interval: block_config.interval,
             tx_update_request: tx,
@@ -356,8 +360,8 @@ impl Block for Memory {
         let output_text = self.format_insert_values(mem_state)?;
 
         match self.memtype {
-            Memtype::Memory => self.output.0.set_text(output_text),
-            Memtype::Swap => self.output.1.set_text(output_text),
+            Memtype::Memory => self.output.0.set_texts(output_text),
+            Memtype::Swap => self.output.1.set_texts(output_text),
         }
 
         Ok(Some(self.update_interval.into()))

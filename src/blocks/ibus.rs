@@ -41,14 +41,14 @@ pub struct IBus {
 #[serde(deny_unknown_fields, default)]
 pub struct IBusConfig {
     pub mappings: Option<BTreeMap<String, String>>,
-    pub format: String,
+    pub format: FormatTemplate,
 }
 
 impl Default for IBusConfig {
     fn default() -> Self {
         Self {
             mappings: None,
-            format: "{engine}".to_string(),
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -213,7 +213,7 @@ impl ConfigBlock for IBus {
             text,
             engine: engine_original,
             mappings: block_config.mappings,
-            format: FormatTemplate::from_string(&block_config.format)?,
+            format: block_config.format.with_default("{engine}")?,
         })
     }
 }
@@ -243,7 +243,7 @@ impl Block for IBus {
             "engine" => Value::from_string(display_engine)
         );
 
-        self.text.set_text(self.format.render(&values)?);
+        self.text.set_texts(self.format.render(&values)?);
         Ok(None)
     }
 
