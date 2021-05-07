@@ -346,9 +346,7 @@ impl UpowerDevice {
             device_path = paths
                 .find(|entry| entry.ends_with(device))
                 .block_error("battery", "UPower device could not be found.")?
-                .as_cstr()
-                .to_string_lossy()
-                .into_owned();
+                .to_string();
         }
         let upower_type: u32 = con
             .with_path("org.freedesktop.UPower", &device_path, 1000)

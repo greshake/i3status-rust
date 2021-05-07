@@ -213,13 +213,11 @@ impl ConnectionManager {
             .get1()
             .block_error("networkmanager", "Failed to read primary connection")?;
 
-        if let Ok(conn) = primary_connection.0.as_cstr().to_str() {
-            if conn == "/" {
-                return Err(BlockError(
-                    "networkmanager".to_string(),
-                    "No primary connection".to_string(),
-                ));
-            }
+        if primary_connection.0.to_string() == "/" {
+            return Err(BlockError(
+                "networkmanager".to_string(),
+                "No primary connection".to_string(),
+            ));
         }
 
         Ok(NmConnection {

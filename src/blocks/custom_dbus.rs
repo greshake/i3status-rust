@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use dbus::blocking::LocalConnection;
 use dbus::strings::Signature;
-use dbus::tree::Factory;
+use dbus_tree::Factory;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
