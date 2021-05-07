@@ -6,6 +6,10 @@ Themes/Icons:
 
 * These have been moved out into files instead of being hardcoded in the Rust source. The following folders are checked in this order: first `$XDG_CONFIG_HOME/i3status-rust/<icons|themes>`, next `$HOME/.local/share/i3status-rust/<icons|themes>`, finally `/usr/share/i3status-rust/<icons|themes>`. If installing manually via cargo, you will need to copy the files to an appropriate location (an `install.sh` script is provided which does this). If installing via the AUR on Arch Linux, the package will install the files to `/usr/share/i3status-rust/<icons|themes>` for you, so you do not need to do anything (this should also be true for other distros assuming the package maintainer has packaged i3status-rust correctly). 
 
+Formatting:
+
+* Formatting for all blocks using `format` strings has been overhauled to allow users to customise how numbers and strings are displayed. Due to this some blocks may now display slightly differently to previous versions and have been documented below. Refer to [formatting documentation](doc/blocks.md#formatting) to get more information of new formatting options.
+
 Blocks: 
 
 * CPU Utilization block: Due to an overhaul of our internal code, the `per_core` option has been removed. The same configuration can be achieved using the new `{utilization<n>}` format keys.
