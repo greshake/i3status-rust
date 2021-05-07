@@ -18,7 +18,7 @@ Blocks:
 * Memory block: all old format keys have been removed, refer to [Removed Format Keys](doc/blocks.md#removed-format-keys) section of block's documentation for more details.
 * Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of format strings' custimization.
 * Net block: `use_bits`, `speed_min_unit`, `speed_digits` and `max_ssid_width` configuration options have been removed and require manual intervention to fix your config. `speed_min_unit` is replaced by the [min prefix](doc/blocks.md#min-prefix) formatter. `max_ssid_width` is replaced by the [min width](doc/blocks.md#0min-width) formatter.
-* Networkmanager block: `max_ssid_width` config option has been removed, but the bevaviour can be restored using the [min width](doc/blocks.md#0min-width) formatter.
+* Networkmanager block: `max_ssid_width` config option has been removed, but the bevaviour can be restored using the [min width](doc/blocks.md#0min-width) formatter. For example, `max_ssid_width = 10` is now achieved with `ap_format = "{ssid^10}"`.
 
 ## Deprecation Warnings
 
