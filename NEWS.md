@@ -8,7 +8,7 @@ Themes/Icons:
 
 Formatting:
 
-* Formatting for all blocks using `format` strings has been overhauled to allow users to customise how numbers and strings are displayed. Due to this some blocks may now display slightly differently to previous versions and have been documented below. Refer to [formatting documentation](doc/blocks.md#formatting) to get more information of new formatting options.
+* Formatting for all blocks using `format` strings has been overhauled to allow users to customise how numbers and strings are displayed, which was not possible previously. Due to this some blocks may now display slightly differently to previous versions and have been documented below. Refer to [formatting documentation](doc/blocks.md#formatting) to get more information of new formatting options.
 
 Blocks: 
 
