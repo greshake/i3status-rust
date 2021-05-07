@@ -13,7 +13,7 @@ Formatting:
 Blocks: 
 
 * CPU Utilization block: Due to an overhaul of our internal code, the `per_core` option has been removed. The same configuration can be achieved using the new `{utilization<n>}` format keys.
-* Battery and Disk Space blocks: The `{bar}` format key has been removed, refer to [formatting documentation](doc/blocks.md#formatting) to get more information of new formatting options.
+* Battery and Disk Space blocks: The `{bar}` format key has been removed in favor of the new [bar](doc/blocks.md#formatting#bar-max-value) formatter. For example, to make the Battery block display the current percentage as a 6 character bar with 100% as the max value, set the format string as so: `format = "{percentage:6#100}`. 
 * Disk Space block: The `{unit}` format key has been removed since the unit of `{free}` and similar format keys don't rely on `unit` configuration option anymore.
 * Memory block: all old format keys have been removed, refer to [Removed Format Keys](doc/blocks.md#removed-format-keys) section of block's documentation for more details.
 * Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of format strings' custimization.
