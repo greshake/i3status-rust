@@ -1196,7 +1196,7 @@ Creates a block which displays the pending updates available on pacman or an AUR
 
 Requires fakeroot to be installed (only required for pacman).
 
-Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusename/`. If you have the CHECKUPDATES_DB env var set on your system then substitute that dir instead of /tmp/checkup-db-yourusername.
+Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/`. If you have the CHECKUPDATES_DB env var set on your system then substitute that dir instead of /tmp/checkup-db-yourusername.
 
 #### Examples
 
