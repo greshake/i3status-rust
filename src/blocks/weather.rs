@@ -237,6 +237,7 @@ impl Weather {
 
                 let raw_weather_verbose = json
                     .pointer("/weather/0/description")
+                    .and_then(|v| v.as_str())
                     .ok_or_else(malformed_json_error)?
                     .to_string();
 
