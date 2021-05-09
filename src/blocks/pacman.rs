@@ -255,7 +255,7 @@ fn get_pacman_available_updates() -> Result<String> {
 
     // Update database
     run_command(&format!(
-        "pacman -Sy --dbpath \"{}\"",
+        "pacman -Sy --dbpath \"{}\" --logfile /dev/null",
         updates_db
     ))?;
 
