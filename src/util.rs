@@ -45,6 +45,7 @@ fn lookup_file(path: Option<PathBuf>, subdir: Option<&str>, file: &Path) -> Opti
 /// - Then try XDG_CONFIG_HOME
 /// - Then try `~/.local/share/`
 /// - Then try `/usr/share/`
+/// - Then try `<i3status-rs>/../share/`
 ///
 /// Automaticaly append an extension if not presented.
 pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
@@ -82,6 +83,22 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
     // Try `/usr/share/`
     if let Some(usr_share_path) = lookup_file(Some(PathBuf::from(USR_SHARE_PATH)), subdir, &file) {
         return Some(usr_share_path);
+    }
+
+    // Try `../share/i3status-rs/`
+    if let Some(relative_path) = lookup_file(
+        std::env::current_exe()
+            .map(|mut exe_path| {
+                exe_path.pop(); // remove filename from binary path
+                exe_path.pop(); // cd from binary directory
+                exe_path.push("share"); // cd to share directory
+                exe_path
+            })
+            .ok(),
+        subdir,
+        &file,
+    ) {
+        return Some(relative_path);
     }
 
     None
