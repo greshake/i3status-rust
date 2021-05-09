@@ -1,4 +1,4 @@
-.TH I3STATUS-RS 1 2020-12-03
+.TH I3STATUS-RS 1 2021-05-09
 .SH NAME
 i3status-rs \- Generates a status line for
 .BR i3bar (1)-compatible
@@ -76,6 +76,9 @@ database in \f[C]/tmp/i3rs-apt/\f[R] which may take up several MB or
 more.
 If you have a custom apt config then this block may not work as expected
 - in that case please open an issue.
+.PP
+Tip: You can grab the list of available updates using
+\f[C]APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable\f[R]
 .SS Examples
 .PP
 Update the list of pending updates every thirty minutes (1800 seconds):
@@ -88,7 +91,9 @@ interval = 1800
 format = \[dq]{count:1} updates available\[dq]
 format_singular = \[dq]{count:1} update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
-critical_updates_regex = \[dq](linux |linux-lts|linux-zen)\[dq]
+critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
+# shows dmenu with cached available updates. Any dmenu alternative should also work.
+on_click = \[dq]APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu\[dq]
 \f[R]
 .fi
 .SS Options
@@ -1114,7 +1119,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{alias} {available}\[dq]\f[R]
+\f[C]\[dq]{available}\[dq]\f[R]
 T}
 T{
 \f[C]info_type\f[R]
@@ -3325,7 +3330,7 @@ block = \[dq]networkmanager\[dq]
 on_click = \[dq]alacritty -e nmtui\[dq]
 interface_name_exclude = [\[dq]br\[rs]\[rs]-[0-9a-f]{12}\[dq], \[dq]docker\[rs]\[rs]d+\[dq]]
 interface_name_include = []
-ap_format = \[dq]{ssid.10}\[dq]
+ap_format = \[dq]{ssid\[ha]10}\[dq]
 \f[R]
 .fi
 .SS Options
@@ -3817,6 +3822,15 @@ No
 T}@T{
 \f[C]false\f[R]
 T}
+T{
+\f[C]show_power_draw\f[R]
+T}@T{
+Display GPU power draw in watts.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
 .TE
 .SS \[u21A5] back to top
 .SS Pacman
@@ -3825,6 +3839,11 @@ Creates a block which displays the pending updates available on pacman
 or an AUR helper.
 .PP
 Requires fakeroot to be installed (only required for pacman).
+.PP
+Tip: You can grab the list of available updates using
+\f[C]fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/\f[R].
+If you have the CHECKUPDATES_DB env var set on your system then
+substitute that dir instead of /tmp/checkup-db-yourusername.
 .SS Examples
 .PP
 Update the list of pending updates every ten minutes (600 seconds):
@@ -3842,7 +3861,9 @@ interval = 600
 format = \[dq]{pacman} updates available\[dq]
 format_singular = \[dq]{pacman} update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
-critical_updates_regex = \[dq](linux |linux-lts|linux-zen)\[dq]
+critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
+# pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
+on_click = \[dq]fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu\[dq]
 \f[R]
 .fi
 .PP
@@ -3858,10 +3879,10 @@ format_singular = \[dq]{pacman} update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
 # If a linux update is availble, but no ZFS package, it won\[aq]t be possible to
 # actually perform a system upgrade, so we show a warning.
-warning_updates_regex = \[dq](linux |linux-lts|linux-zen)\[dq]
+warning_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
 # If ZFS is available, we know that we can and should do an upgrade, so we show 
 # the status as critical.
-critical_updates_regex = \[dq](zfs |zfs-lts)\[dq]
+critical_updates_regex = \[dq](zfs|zfs-lts)\[dq]
 \f[R]
 .fi
 .PP
@@ -3875,7 +3896,7 @@ interval = 600
 format = \[dq]{pacman} + {aur} = {both} updates available\[dq]
 format_singular = \[dq]{both} update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
-critical_updates_regex = \[dq](linux |linux-lts|linux-zen)\[dq]
+critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
 # aur_command should output available updates to stdout (ie behave as echo -ne \[dq]update\[rs]n\[dq])
 aur_command = \[dq]pikaur -Qua\[dq]
 \f[R]
@@ -4339,7 +4360,7 @@ Display speed in bytes per second using 4 digits
 [[block]]
 block = \[dq]speedtest\[dq]
 interval = 1800
-format = \[dq]{ping}{speed_down:4*B}{speed_up:4*B}
+format = \[dq]{ping}{speed_down:4*B}{speed_up:4*B}\[dq]
 \f[R]
 .fi
 .SS Options
@@ -4382,7 +4403,7 @@ T}
 .PP
 .TS
 tab(@);
-lw(14.6n) lw(20.4n) lw(17.5n) lw(17.5n).
+l l l l.
 T{
 Key
 T}@T{
@@ -4394,7 +4415,25 @@ Unit
 T}
 _
 T{
-\[cq]{ping}\f[C]| Ping delady | Float | Seconds\f[R]{speed_down}\f[C]| Download speed | Float | Bits per second\f[R]{speed_up}\[ga]
+\f[C]{ping}\f[R]
+T}@T{
+Ping delay
+T}@T{
+Float
+T}@T{
+Seconds
+T}
+T{
+\f[C]{speed_down}\f[R]
+T}@T{
+Download speed
+T}@T{
+Float
+T}@T{
+Bits per second
+T}
+T{
+\f[C]{speed_up}\f[R]
 T}@T{
 Upload speed
 T}@T{
@@ -5187,6 +5226,17 @@ Yes
 T}@T{
 \f[C]metric\f[R]
 T}
+T{
+\f[C]lang\f[R]
+T}@T{
+Language code.
+See here (https://openweathermap.org/current#multi).
+Currently only affects \f[C]weather_verbose\f[R] key.
+T}@T{
+No
+T}@T{
+\f[C]en\f[R]
+T}
 .TE
 .PP
 One of \f[C]city_id\f[R], \f[C]place\f[R] or \f[C]coordinates\f[R] is
@@ -5202,7 +5252,7 @@ environment variables \f[C]OPENWEATHERMAP_API_KEY\f[R],
 .PP
 .TS
 tab(@);
-l l l.
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
 Key
 T}@T{
@@ -5242,7 +5292,15 @@ T}
 T{
 \f[C]{weather}\f[R]
 T}@T{
-Textual description of the weather, e.g.\ \[lq]Raining\[rq]
+Textual brief description of the weather, e.g.\ \[lq]Raining\[rq]
+T}@T{
+String
+T}
+T{
+\f[C]{weather_verbose}\f[R]
+T}@T{
+Textual verbose description of the weather, e.g.\ \[lq]overcast
+clouds\[rq]
 T}@T{
 String
 T}
@@ -5839,8 +5897,11 @@ examples of how to write your own themes/icon sets.
 \f[C]native\f[R] (like plain with no background and native separators)
 [IMAGE: native (https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)]
 .IP \[bu] 2
-\f[C]semi-native\f[R] (like natime but with background) //TODO add an
+\f[C]semi-native\f[R] (like native but with background) //TODO add an
 image
+.IP \[bu] 2
+\f[C]nord-dark\f[R] (polar night)
+[IMAGE: nord-dark (https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)]
 .SS Available icon sets
 .IP \[bu] 2
 \f[C]none\f[R] (default.
@@ -5902,6 +5963,18 @@ idle_fg = \[dq]#abcdef\[dq]
 \f[R]
 .fi
 .SS Available theme overrides
+.PP
+All \f[C]bg\f[R] and \f[C]fg\f[R] overrides are html hex color codes
+like \f[C]#000000\f[R] or \f[C]#789ABC\f[R].
+A fourth byte for alpha (like \f[C]#acbdef42\f[R]) works on some
+systems.
+\f[C]00\f[R] is transparent, \f[C]FF\f[R] is opaque.
+.PP
+The tints are added to every second block counting from the right.
+They will therefore always brighten the block and never darken it.
+The alpha channel, if it works, can also be alternated in the same way.
+.PP
+Feel free to take a look at the provided color schemes for reference.
 .IP \[bu] 2
 \f[C]alternating_tint_bg\f[R]
 .IP \[bu] 2
@@ -5933,6 +6006,16 @@ idle_fg = \[dq]#abcdef\[dq]
 .IP \[bu] 2
 \f[C]warning_fg\f[R]
 .SS Available icon overrides
+.PP
+These can be directly set to a string containing the desired unicode
+codepoint(s) or use a TOML escape sequence like
+\f[C]\[dq]\[rs]uf0f3\[dq]\f[R] for up to 4-nibble codepoints and
+\f[C]\[dq]\[rs]U0001f312\[dq]\f[R] for up to 8-nibble codepoints.
+.PP
+You can find the codepoints in the documentation of the icon font
+you\[cq]re using.
+.PP
+Feel free to take a look at the provided icon mappings for reference.
 .IP \[bu] 2
 \f[C]backlight_empty\f[R]
 .IP \[bu] 2
@@ -5977,6 +6060,8 @@ idle_fg = \[dq]#abcdef\[dq]
 \f[C]cpu\f[R]
 .IP \[bu] 2
 \f[C]gpu\f[R]
+.IP \[bu] 2
+\f[C]disk_drive\f[R]
 .IP \[bu] 2
 \f[C]mail\f[R]
 .IP \[bu] 2
