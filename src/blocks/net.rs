@@ -608,7 +608,7 @@ impl Block for Net {
         let na_string = "N/A".to_string();
 
         let values = map!(
-            "ssid" => Value::from_string(ssid.clone().unwrap_or(na_string)),
+            "ssid" => Value::from_string(ssid.unwrap_or(na_string)),
             "signal_strength" => Value::from_integer(signal.unwrap_or(0)).percents(),
             "frequency" => Value::from_float(freq.unwrap_or(0.)).hertz(),
             "bitrate" => Value::from_string(self.bitrate.clone().unwrap_or_else(|| empty_string.clone())), // TODO: not a String?
