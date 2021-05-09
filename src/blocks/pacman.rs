@@ -195,7 +195,6 @@ fn run_command(var: &str) -> Result<()> {
     Command::new("fakeroot")
         .args(&["--", var])
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
         .spawn()
         .block_error("pacman", &format!("Failed to run command '{}'", var))?
         .wait()
