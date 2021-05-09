@@ -3,7 +3,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -192,8 +192,9 @@ impl ConfigBlock for Pacman {
 }
 
 fn run_command(var: &str) -> Result<()> {
-    Command::new("sh")
-        .args(&["-c", var])
+    Command::new("fakeroot")
+        .args(&["--", var])
+        .stdout(Stdio::null())
         .spawn()
         .block_error("pacman", &format!("Failed to run command '{}'", var))?
         .wait()
@@ -254,7 +255,7 @@ fn get_pacman_available_updates() -> Result<String> {
 
     // Update database
     run_command(&format!(
-        "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null &> /dev/null",
+        "pacman -Sy --dbpath \"{}\" --logfile /dev/null",
         updates_db
     ))?;
 
@@ -262,10 +263,7 @@ fn get_pacman_available_updates() -> Result<String> {
     String::from_utf8(
         Command::new("sh")
             .env("LC_ALL", "C")
-            .args(&[
-                "-c",
-                &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db),
-            ])
+            .args(&["-c", &format!("pacman -Qu --dbpath \"{}\"", updates_db)])
             .output()
             .block_error("pacman", "There was a problem running the pacman commands")?
             .stdout,
