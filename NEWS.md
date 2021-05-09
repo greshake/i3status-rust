@@ -16,7 +16,7 @@ Blocks:
 * Battery and Disk Space blocks: The `{bar}` format key has been removed in favor of the new [bar](doc/blocks.md#formatting#bar-max-value) formatter. For example, to make the Battery block display the current percentage as a 6 character bar with 100% as the max value, set the format string as so: `format = "{percentage:6#100}`. 
 * Disk Space block: The `{unit}` format key has been removed since the unit of `{free}` and similar format keys don't rely on `unit` configuration option anymore.
 * Memory block: all old format keys have been removed, refer to [Removed Format Keys](doc/blocks.md#removed-format-keys) section of block's documentation for more details.
-* Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of format strings' custimization.
+* Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of the new `format` string formatter. For example, to replicate `bytes=true; speed_min_unit="M", speed_digits=4` use `format = "{speed_down:4*B;M}{speed_up:4*B;M}"`
 * Net block: `use_bits`, `speed_min_unit`, `speed_digits` and `max_ssid_width` configuration options have been removed and require manual intervention to fix your config. `speed_min_unit` is replaced by the [min prefix](doc/blocks.md#min-prefix) formatter. `max_ssid_width` is replaced by the [min width](doc/blocks.md#0min-width) formatter.
 * Networkmanager block: `max_ssid_width` config option has been removed, but the bevaviour can be restored using the [min width](doc/blocks.md#0min-width) formatter. For example, `max_ssid_width = 10` is now achieved with `ap_format = "{ssid^10}"`.
 
