@@ -10,11 +10,34 @@ use serde::de::DeserializeOwned;
 
 use crate::errors::*;
 
-pub const USR_SHARE_PATH: &str = "/usr/share/i3status-rust";
+pub const USR_SHARE_PATH: &str = "/usr/share/";
 
 pub fn pseudo_uuid() -> usize {
     static ID: AtomicUsize = AtomicUsize::new(usize::MAX);
     ID.fetch_sub(1, Ordering::SeqCst)
+}
+
+/// Tries to find a file in the given path.
+/// This function is shorthand for the following operations:
+/// - add the i3status-rust directory
+/// - add the directory `subdir` if necessary
+/// - add `file`
+/// - if the file exists, return it.
+fn lookup_file(path: Option<PathBuf>, subdir: Option<&str>, file: &Path) -> Option<PathBuf> {
+    let mut path = path?;
+
+    path.push("i3status-rust");
+
+    if let Some(subdir) = subdir {
+        path.push(subdir);
+    }
+
+    path.push(file);
+
+    match path.exists() {
+        true => Some(path),
+        false => None,
+    }
 }
 
 /// Tries to find a file in standard locations:
@@ -37,34 +60,27 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
     }
 
     // Try XDG_CONFIG_HOME
-    let mut xdg_config_path = xdg_config_home().join("i3status-rust");
-    if let Some(subdir) = subdir {
-        xdg_config_path = xdg_config_path.join(subdir);
-    }
-    xdg_config_path = xdg_config_path.join(&file);
-    if xdg_config_path.exists() {
+    if let Some(xdg_config_path) = lookup_file(Some(xdg_config_home()), subdir, &file) {
         return Some(xdg_config_path);
     }
 
     // Try `~/.local/share/`
-    if let Ok(home) = std::env::var("HOME") {
-        let mut local_share_path = PathBuf::from(home).join(".local/share/i3status-rust");
-        if let Some(subdir) = subdir {
-            local_share_path = local_share_path.join(subdir);
-        }
-        local_share_path = local_share_path.join(&file);
-        if local_share_path.exists() {
-            return Some(local_share_path);
-        }
+    if let Some(local_share_path) = lookup_file(
+        std::env::var("HOME")
+            .map(|home| {
+                let mut home = PathBuf::from(home);
+                home.push(".local/share/");
+                home
+            })
+            .ok(),
+        subdir,
+        &file,
+    ) {
+        return Some(local_share_path);
     }
 
     // Try `/usr/share/`
-    let mut usr_share_path = PathBuf::from(USR_SHARE_PATH);
-    if let Some(subdir) = subdir {
-        usr_share_path = usr_share_path.join(subdir);
-    }
-    usr_share_path = usr_share_path.join(&file);
-    if usr_share_path.exists() {
+    if let Some(usr_share_path) = lookup_file(Some(PathBuf::from(USR_SHARE_PATH)), subdir, &file) {
         return Some(usr_share_path);
     }
 
