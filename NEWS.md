@@ -6,6 +6,8 @@ Themes/Icons:
 
 * These have been moved out into files instead of being hardcoded in the Rust source. The following folders are checked in this order: first `$XDG_CONFIG_HOME/i3status-rust/<icons|themes>`, next `$HOME/.local/share/i3status-rust/<icons|themes>`, finally `/usr/share/i3status-rust/<icons|themes>`. If installing manually via cargo, you will need to copy the files to an appropriate location (an `install.sh` script is provided which does this). If installing via the AUR on Arch Linux, the package will install the files to `/usr/share/i3status-rust/<icons|themes>` for you, so you do not need to do anything (this should also be true for other distros assuming the package maintainer has packaged i3status-rust correctly). 
 
+* Per block theme overrides have been renamed from `color_overrides` to `theme_overrides` (this was previously undocumented but has since been mentioned in themes.md)
+
 Formatting:
 
 * Formatting for all blocks using `format` strings has been overhauled to allow users to customise how numbers and strings are displayed, which was not possible previously. Due to this some blocks may now display slightly differently to previous versions and have been documented below. Refer to the [formatting documentation](doc/blocks.md#formatting) to get more information on the new formatting options.
@@ -15,10 +17,13 @@ Blocks:
 * CPU Utilization block: Due to an overhaul of our internal code, the `per_core` option has been removed. The same configuration can be achieved using the new `{utilization<n>}` format keys.
 * Battery and Disk Space blocks: The `{bar}` format key has been removed in favor of the new [bar](doc/blocks.md#formatting#bar-max-value) formatter. For example, to make the Battery block display the current percentage as a 6 character bar with 100% as the max value, set the format string as so: `format = "{percentage:6#100}`. 
 * Disk Space block: The `{unit}` format key has been removed since the unit of `{free}` and similar format keys don't rely on `unit` configuration option anymore.
+* Maildir block: this is now optional and must be enabled at compile time (#1103 by @MaxVerevkin)
 * Memory block: all old format keys have been removed, refer to [Removed Format Keys](doc/blocks.md#removed-format-keys) section of block's documentation for more details.
+* Net block: `use_bits`, `speed_min_unit`, `speed_digits` and `max_ssid_width` configuration options have been removed and require manual intervention to fix your config. `speed_min_unit` is replaced by the [min prefix](doc/blocks.md#min-prefix) formatter. `max_ssid_width` is replaced by the [max width](doc/blocks.md#0max-width) formatter.
+* Net block: partially moved from calling external commands to using the netlink interface, which may not work on BSD systems (#1142 by @MaxVerevkin)
+* Networkmanager block: `max_ssid_width` config option has been removed, but the bevaviour can be restored using the [max width](doc/blocks.md#max-width) formatter. For example, `max_ssid_width = 10` is now achieved with `ap_format = "{ssid^10}"`.
+* Sound block: `max_width` config option has been removed, but the bevaviour can be restored using the [max width](doc/blocks.md#max-width) formatter.
 * Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of the new `format` string formatter. For example, to replicate `bytes=true; speed_min_unit="M", speed_digits=4` use `format = "{speed_down:4*B;M}{speed_up:4*B;M}"`
-* Net block: `use_bits`, `speed_min_unit`, `speed_digits` and `max_ssid_width` configuration options have been removed and require manual intervention to fix your config. `speed_min_unit` is replaced by the [min prefix](doc/blocks.md#min-prefix) formatter. `max_ssid_width` is replaced by the [min width](doc/blocks.md#0min-width) formatter.
-* Networkmanager block: `max_ssid_width` config option has been removed, but the bevaviour can be restored using the [min width](doc/blocks.md#0min-width) formatter. For example, `max_ssid_width = 10` is now achieved with `ap_format = "{ssid^10}"`.
 
 ## Deprecation Warnings
 
@@ -26,12 +31,24 @@ Blocks:
 
 ## New Blocks and Features
 
+* Backlight block: new `invert_icons` config option for people using coloured icons (#1098 by @MaxVerevkin)
 * Net block: new `format_alt` option to set an alternative format string to switch between when the block is clicked (#1063 by @MaxVerevkin)
+* Nvidia block: new "Power Draw" option (#1154 by @quintenpalmer)
+* Sound block: new `{output_description}` format key to show the PulseAudio device description
 * Speedtest block: new `format` configuration option to customize the output of the block.
-
+* Temperature block: add fallback for older systems without JSON support (#1070 by @ammgws)
+* Weather block: new config option to set display language, and new format key `{weather_verbose}` to display textual verbose description of the weather, e.g. "overcast clouds" (#1169 by @halfcrazy)
+* SIGUSR2 signal can now be used to reload i3status-rust in-place without restarting i3/swaybar (#1131 by @MaxVerevkin)
+* New compile time feature `debug_borders` for debugging spacing issues (#1083 by @MaxVerevkin)
+* New "material-nf" icon set (#1095 by @MaxVerevkin)
+* New `icons_format` config option for overriding icon formatting on a per-block basis (#1095 by @MaxVerevkin)
+ 
 ## Bug Fixes and Improvements
 
 * Music block: fix `on_collapsed_click` which was broken in a previous release (#1061 by @MaxVerevkin)
+* Net block: print "N/A" when trying to get ssid or signal strength using wired connections instead of erroring out (#1068 by @MaxVerevkin)
+* Networkmanager block: avoid duplicate device with VPN connections (#1099 by @ravomavain), fix cases where connections would not update (#1119 by TilCreator)
+* Sound block: fix spacing for empty format strings (#1071 by @ammgws)
 
 # i3status-rust 0.14.7
 
