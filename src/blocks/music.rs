@@ -364,7 +364,7 @@ impl ConfigBlock for Music {
                                     if let Some(data) = prop_changed.changed_properties.get("PlaybackStatus") {
                                         let new_playback = extract_playback_status(&data.0);
                                         if player.playback_status != new_playback {
-                                            player.playback_status = extract_playback_status(&data.0);
+                                            player.playback_status = new_playback;
                                             updated = true;
                                         }
                                     }
