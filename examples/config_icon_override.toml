@@ -1,10 +1,12 @@
-icons = "awesome"
+theme = "solarized-dark"
 
-[theme]
-name = "solarized-dark"
-[theme.overrides]
-idle_bg = "#123456"
-idle_fg = "#abcdef"
+[icons]
+name = "awesome"
+[icons.overrides]
+bat = " | | "
+bat_full = " |X| "
+bat_charging = " |^| "
+bat_discharging = " |v| "
 
 [[block]]
 block = "disk_space"
@@ -17,8 +19,8 @@ interval = 20
 [[block]]
 block = "memory"
 display_type = "memory"
-format_mem = "{Mup}%"
-format_swap = "{SUp}%"
+format_mem = "{mem_total_used_percents}"
+format_swap = "{swap_used_percents}"
 
 [[block]]
 block = "cpu"

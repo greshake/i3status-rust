@@ -1,0 +1,175 @@
+Examples
+========
+
+This is a collection of more or less useful `custom` or `custom_dbus` block configs for use with `i3status-rust`.
+
+Most of these are specifically designed for `sh` or compatible shells. Incompatible shells like `fish` might not work, in which case a `shell = "sh"` should be added to the block.
+
+Feel free to add to the list below by sending a PR. Additional scripts can be added to the `scripts` subdirectory. Using blocks with external scripts naturally requires adjusting the script paths to your system.
+
+## Custom Blocks
+
+- [Hostname](#hostname)
+- [User](#user)
+- [Kernel](#kernel)
+- [Public IP](#public-ip)
+- [HTTP Status Code](#http-status-code)
+- [Ping/RTT](#pingrtt)
+- [System (Suspend/Shutdown/Reboot)](#system-suspendshutdownreboot)
+- [XKCD](#xkcd)
+- [Screenshot](#screenshot)
+- [Monitors](#monitors)
+- [Intel GPU Usage](#intel-gpu-usage)
+- [Switch GTK Theme](#switch-gtk-theme)
+
+### Hostname
+
+Show Hostname
+
+```toml
+[[block]]
+block = "custom"
+command = "cat /etc/hostname"
+interval = "once"
+```
+
+### User
+
+Show current user
+
+```toml
+[[block]]
+block = "custom"
+command = "whoami"
+interval = "once"
+```
+
+### Kernel
+
+Show current kernel and release
+
+```toml
+[[block]]
+block = "custom"
+command = "echo `uname` `uname -r | tr - . | cut -d. -f1-2`"
+interval = "once"
+```
+
+### Public IP
+
+Show public IP. Use `curl -4` or `curl -6` to get IPv4 or IPv6 respectively.
+
+```toml
+[[block]]
+block = "custom"
+command = "echo '\uf0ac ' `curl bot.whatismyipaddress.com`" # assumes fontawesome icons
+interval = 60
+```
+
+### HTTP Status Code
+
+Periodically check http status code for a given URL and set block status depending on the HTTP status code. Requires `curl` and [`http-status-code.sh`](scripts/http-status-code.sh).
+
+```toml
+[[block]]
+block = "custom"
+json = true
+command = "~/Projects/i3status-rust/examples/scripts/http-status-code.sh https://example.com"
+interval = 60
+```
+
+### Ping/RTT
+
+Check ping periodically. `-c4` means average over 4 pings. Update on click.
+
+```toml
+[[block]]
+block = "custom"
+json = true
+command = ''' echo "{\"icon\":\"ping\",\"text\":\"`ping -c4 1.1.1.1 | tail -n1 | cut -d'/' -f5`\"}" '''
+interval = 60
+on_click = "<command>"
+```
+
+### System (Suspend/Shutdown/Reboot)
+
+Opens a `dmenu`/`rofi` menu to choose between suspend/poweroff/reboot. Uses `systemd`.
+
+```toml
+[[block]]
+block = "custom"
+command = "echo \uf011" # assumes fontawesome icons
+on_click = "systemctl `echo -e 'suspend\npoweroff\nreboot' | dmenu`"
+interval = "once"
+```
+
+### XKCD
+
+Opens a random xkcd comic in the default browser. Requires working `xdg-open`.
+
+```toml
+[[block]]
+block = "custom"
+command = "echo xkcd"
+on_click = "xdg-open 'https://c.xkcd.com/random/comic/'"
+interval = "once"
+```
+
+### Screenshot
+
+Take a screenshot from an interactively selected area (requires `scrot`), save it, fix it up (requires `imagemagick`) and copy to clipboard (requires `xclip`).
+
+Optionally upload to imgbb and copy public link (requires `curl`, `jq`, `xclip`). See [`scripts/screenshot.sh`](scripts/screenshot.sh) for details and config.
+
+```toml
+[[block]]
+block = "custom"
+command = "echo \uf030" # assumes fontawesome icons
+on_click = "~/Projects/i3status-rust/examples/scripts/screenshot.sh"
+interval = "once"
+```
+
+### Monitors
+
+List connected monitors by name, main monitor marked by `*`. Update on signal `SIGRTMIN+4`, e.g. for updating on `udev` events for monitor changes.
+
+```toml
+[[block]]
+block = "custom"
+command = "xrandr --listmonitors | tail -n+2 | tr '+' ' ' | cut -d' ' -f 4 | tr '\n' ' '"
+interval = "once"
+signal = 4
+```
+
+### Intel GPU Usage
+
+Shows usage of the Render/3D pipeline of intel GPUs in percent. Requires `intel_gpu_top` installed and added to `/etc/sudoers` with `NOPASSWD` (Instructions see [here](https://unix.stackexchange.com/questions/18830/how-to-run-a-specific-program-as-root-without-a-password-prompt)). Video decode pipeline would be `awk '{print $14 "%"}'`.
+
+```toml
+[[block]]
+block = "custom"
+command = ''' sudo intel_gpu_top -l | head -n4 | tail -n1 | awk '{print $8 "%"}' '''
+interval = 5
+```
+
+### Switch GTK Theme
+
+Switch between a dark and a light GTK theme using `gsettings`.
+
+```toml
+[[block]]
+block = "custom"
+cycle = ["gsettings set org.gnome.desktop.interface gtk-theme Adapta; echo \U0001f311", "gsettings set org.gnome.desktop.interface gtk-theme None; echo \U0001f315"]
+on_click = "<command>"
+interval = "once"
+```
+
+And if you're feeling adventurous, here's a super sketchy version that also adjusts your `i3status-rs` and `i3bar` color scheme as well. The [`theme-switch.sh`](scripts/theme-switch.sh) script will likely need a lot of adjustments for your system before this works:
+
+```toml
+[[block]]
+block = "custom"
+command = "cat ~/.config/i3status-rust/mode.txt"
+on_click = "~/Projects/i3status-rust/examples/scripts/theme-switch.sh"
+interval = "once"
+```
