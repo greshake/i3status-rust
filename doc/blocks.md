@@ -1,5 +1,7 @@
 Refer to [formatting section](#formatting) to customize formatting strings' placeholders.
 
+See [`custom` block examples](https://github.com/greshake/i3status-rust/blob/master/examples/README.md) for a list of how many additional blocks can be easily made using the `custom` block.
+
 # List of Available Blocks
 
 - [Apt](#apt)
@@ -294,6 +296,8 @@ For further customisation, use the `json` option and have the shell command outp
 `{"icon": "ICON", "state": "STATE", "text": "YOURTEXT"}`  
 `icon` is optional, it may be an icon name from `icons.rs` (default "")  
 `state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
+
+See [`examples`](https://github.com/greshake/i3status-rust/blob/master/examples/README.md) for a list of how many functionalities can be easily achieved using the `custom` block.
 
 #### Examples
 
