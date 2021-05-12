@@ -193,3 +193,15 @@ Replace `http://pi.hole` with a correct url to your Pi-hole instance. Define ico
 [icons.overrides]
 pi_hole = ""
 ```
+
+### Liquid cooling system status
+
+Displays liquid temperature (celsius), fan and pump RPM. Requires: `liquidctl`.
+
+_Example for NZXT Kraken X series:_
+```toml
+[[block]]
+block = "custom"
+command = ''' liquidctl --match 'NZXT Kraken X' status | grep -e speed -e temp | awk '{printf "%s ", substr($0, 28,4)}' | awk '{printf " %s %s /%s", substr($0,0,4), substr($0,5,5), substr($0,10,6)}' '''
+interval = 5
+```
