@@ -54,13 +54,13 @@ pub struct PacmanConfig {
     pub interval: Duration,
 
     /// Format override
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Alternative format override for when exactly 1 update is available
-    pub format_singular: String,
+    pub format_singular: FormatTemplate,
 
     /// Alternative format override for when no updates are available
-    pub format_up_to_date: String,
+    pub format_up_to_date: FormatTemplate,
 
     /// Indicate a `warning` state for the block if any pending update match the
     /// following regex. Default behaviour is that no package updates are deemed
@@ -81,9 +81,9 @@ impl Default for PacmanConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(600),
-            format: "{pacman}".to_string(),
-            format_singular: "{pacman}".to_string(),
-            format_up_to_date: "{pacman}".to_string(),
+            format: FormatTemplate::default(),
+            format_singular: FormatTemplate::default(),
+            format_up_to_date: FormatTemplate::default(),
             warning_updates_regex: None,
             critical_updates_regex: None,
             aur_command: None,
@@ -94,20 +94,21 @@ impl Default for PacmanConfig {
 
 impl PacmanConfig {
     fn watched(
-        format: &str,
-        format_singular: &str,
-        format_up_to_date: &str,
+        format: &FormatTemplate,
+        format_singular: &FormatTemplate,
+        format_up_to_date: &FormatTemplate,
         aur_command: Option<String>,
     ) -> Result<Watched> {
-        let aur_format = "{aur";
-        let pacman_format = "{pacman";
-        let both_format = "{both";
-        let pacman_deprecated_format = "{count";
-        let concatenated_format_str = format!("{}{}{}", format, format_singular, format_up_to_date);
-        let aur = concatenated_format_str.contains(aur_format);
-        let pacman = concatenated_format_str.contains(pacman_format)
-            || concatenated_format_str.contains(pacman_deprecated_format);
-        let both = concatenated_format_str.contains(both_format);
+        macro_rules! any_format_contains {
+            ($name:expr) => {
+                format.contains($name)
+                    || format_singular.contains($name)
+                    || format_up_to_date.contains($name)
+            };
+        }
+        let aur = any_format_contains!("aur");
+        let pacman = any_format_contains!("pacman") || any_format_contains!("count");
+        let both = any_format_contains!("both");
         if both || (pacman && aur) {
             let aur_command = aur_command.block_error(
                 "pacman",
@@ -142,18 +143,6 @@ impl ConfigBlock for Pacman {
         Ok(Pacman {
             id,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("pacman", "Invalid format specified for pacman::format")?,
-            format_singular: FormatTemplate::from_string(&block_config.format_singular)
-                .block_error(
-                    "pacman",
-                    "Invalid format specified for pacman::format_singular",
-                )?,
-            format_up_to_date: FormatTemplate::from_string(&block_config.format_up_to_date)
-                .block_error(
-                    "pacman",
-                    "Invalid format specified for pacman::format_up_to_date",
-                )?,
             output,
             warning_updates_regex: match block_config.warning_updates_regex {
                 None => None, // no regex configured
@@ -187,6 +176,9 @@ impl ConfigBlock for Pacman {
             )?,
             uptodate: false,
             hide_when_uptodate: block_config.hide_when_uptodate,
+            format: block_config.format.with_default("{pacman}")?,
+            format_singular: block_config.format_singular.with_default("{pacman}")?,
+            format_up_to_date: block_config.format_up_to_date.with_default("{pacman}")?,
         })
     }
 }
@@ -378,7 +370,7 @@ impl Block for Pacman {
             }
             Watched::None => (std::collections::HashMap::new(), false, false, 0),
         };
-        self.output.set_text(match cum_count {
+        self.output.set_texts(match cum_count {
             0 => self.format_up_to_date.render(&formatting_map)?,
             1 => self.format_singular.render(&formatting_map)?,
             _ => self.format.render(&formatting_map)?,
@@ -413,6 +405,7 @@ mod tests {
     use crate::blocks::pacman::{
         get_aur_available_updates, get_update_count, PacmanConfig, Watched,
     };
+    use crate::formatting::FormatTemplate;
 
     #[test]
     fn test_get_update_count() {
@@ -427,41 +420,49 @@ mod tests {
 
     #[test]
     fn test_watched() {
-        let watched = PacmanConfig::watched("foo {count} bar", "foo {count} bar", "", None);
+        let fmt_count = FormatTemplate::new("foo {count} bar", None).unwrap();
+        let fmt_pacman = FormatTemplate::new("foo {pacman} bar", None).unwrap();
+        let fmt_aur = FormatTemplate::new("foo {aur} bar", None).unwrap();
+        let fmt_pacman_aur = FormatTemplate::new("foo {pacman} {aur} bar", None).unwrap();
+        let fmt_both = FormatTemplate::new("foo {both} bar", None).unwrap();
+        let fmt_none = FormatTemplate::new("foo bar", None).unwrap();
+        let fmt_empty = FormatTemplate::new("", None).unwrap();
+
+        let watched = PacmanConfig::watched(&fmt_count, &fmt_count, &fmt_empty, None);
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Pacman);
-        let watched = PacmanConfig::watched("foo {pacman} bar", "foo {pacman} bar", "", None);
+        let watched = PacmanConfig::watched(&fmt_pacman, &fmt_pacman, &fmt_empty, None);
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Pacman);
-        let watched = PacmanConfig::watched("foo bar", "foo bar", "", None);
-        assert!(watched.is_ok()); // missing formatter should not cause an error
-        let watched = PacmanConfig::watched("foo bar", "foo bar", "", Some("aur cmd".to_string()));
+        let watched = PacmanConfig::watched(&fmt_none, &fmt_none, &fmt_empty, None);
         assert!(watched.is_ok()); // missing formatter should not cause an error
         let watched = PacmanConfig::watched(
-            "foo {aur} bar",
-            "foo {aur} bar",
-            "",
+            &fmt_none,
+            &fmt_none,
+            &fmt_empty,
             Some("aur cmd".to_string()),
         );
+        assert!(watched.is_ok()); // missing formatter should not cause an error
+        let watched =
+            PacmanConfig::watched(&fmt_aur, &fmt_aur, &fmt_empty, Some("aur cmd".to_string()));
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::AUR("aur cmd".to_string()));
         let watched = PacmanConfig::watched(
-            "foo {pacman} {aur} bar",
-            "foo {pacman} {aur} bar",
-            "",
+            &fmt_pacman_aur,
+            &fmt_pacman_aur,
+            &fmt_empty,
             Some("aur cmd".to_string()),
         );
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Both("aur cmd".to_string()));
-        let watched =
-            PacmanConfig::watched("foo {pacman} {aur} bar", "foo {pacman} {aur} bar", "", None);
+        let watched = PacmanConfig::watched(&fmt_pacman_aur, &fmt_pacman_aur, &fmt_empty, None);
         assert!(watched.is_err()); // missing aur command
-        let watched = PacmanConfig::watched("foo {both} bar", "foo {both} bar", "", None);
+        let watched = PacmanConfig::watched(&fmt_both, &fmt_both, &fmt_empty, None);
         assert!(watched.is_err()); // missing aur command
         let watched = PacmanConfig::watched(
-            "foo {both} bar",
-            "foo {both} bar",
-            "",
+            &fmt_both,
+            &fmt_both,
+            &fmt_empty,
             Some("aur cmd".to_string()),
         );
         assert!(watched.is_ok());

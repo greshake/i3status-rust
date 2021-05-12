@@ -62,7 +62,7 @@ pub enum OpenWeatherMapUnits {
 pub struct Weather {
     id: usize,
     weather: TextWidget,
-    format: String,
+    format: FormatTemplate,
     weather_keys: HashMap<&'static str, Value>,
     service: WeatherService,
     update_interval: Duration,
@@ -311,24 +311,16 @@ pub struct WeatherConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
-    #[serde(default = "WeatherConfig::default_format")]
-    pub format: String,
+    #[serde(default)]
+    pub format: FormatTemplate,
     pub service: WeatherService,
-    #[serde(default = "WeatherConfig::default_autolocate")]
+    #[serde(default)]
     pub autolocate: bool,
 }
 
 impl WeatherConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(600)
-    }
-
-    fn default_format() -> String {
-        "{weather} {temp}\u{00b0}".to_string()
-    }
-
-    fn default_autolocate() -> bool {
-        false
     }
 }
 
@@ -344,7 +336,9 @@ impl ConfigBlock for Weather {
         Ok(Weather {
             id,
             weather: TextWidget::new(id, 0, shared_config),
-            format: block_config.format,
+            format: block_config
+                .format
+                .with_default("{weather} {temp}\u{00b0}")?,
             weather_keys: HashMap::new(),
             service: block_config.service,
             update_interval: block_config.interval,
@@ -357,8 +351,8 @@ impl Block for Weather {
     fn update(&mut self) -> Result<Option<Update>> {
         match self.update_weather() {
             Ok(_) => {
-                let fmt = FormatTemplate::from_string(&self.format)?;
-                self.weather.set_text(fmt.render(&self.weather_keys)?);
+                self.weather
+                    .set_texts(self.format.render(&self.weather_keys)?);
                 self.weather.set_state(State::Idle)
             }
             Err(BlockError(block, _)) | Err(InternalError(block, _, _)) if block == "curl" => {

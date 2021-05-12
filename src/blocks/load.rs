@@ -29,7 +29,7 @@ pub struct Load {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct LoadConfig {
-    pub format: String,
+    pub format: FormatTemplate,
     #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
@@ -46,7 +46,7 @@ pub struct LoadConfig {
 impl Default for LoadConfig {
     fn default() -> Self {
         Self {
-            format: "{1m}".to_string(),
+            format: FormatTemplate::default(),
             interval: Duration::from_secs(5),
             info: 0.3,
             warning: 0.6,
@@ -83,8 +83,7 @@ impl ConfigBlock for Load {
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("load", "Invalid format specified for load")?,
+            format: block_config.format.with_default("{1m}")?,
             text,
         })
     }
@@ -124,7 +123,7 @@ impl Block for Load {
             _ => State::Idle,
         });
 
-        self.text.set_text(self.format.render(&values)?);
+        self.text.set_texts(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

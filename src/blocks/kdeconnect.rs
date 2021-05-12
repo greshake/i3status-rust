@@ -57,10 +57,10 @@ pub struct KDEConnectConfig {
     pub bat_critical: i32,
 
     /// Format string for displaying phone information.
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Format string for displaying phone information when it is disconnected.
-    pub format_disconnected: String,
+    pub format_disconnected: FormatTemplate,
 }
 
 impl Default for KDEConnectConfig {
@@ -71,8 +71,8 @@ impl Default for KDEConnectConfig {
             bat_info: 60,
             bat_warning: 30,
             bat_critical: 15,
-            format: "{name} {bat_icon}{bat_charge} {notif_icon}{notif_count}".to_string(),
-            format_disconnected: "{name}".to_string(),
+            format: FormatTemplate::default(),
+            format_disconnected: FormatTemplate::default(),
         }
     }
 }
@@ -539,8 +539,10 @@ impl ConfigBlock for KDEConnect {
             bat_info: block_config.bat_info,
             bat_warning: block_config.bat_warning,
             bat_critical: block_config.bat_critical,
-            format: FormatTemplate::from_string(&block_config.format)?,
-            format_disconnected: FormatTemplate::from_string(&block_config.format_disconnected)?,
+            format: block_config
+                .format
+                .with_default("{name} {bat_icon}{bat_charge} {notif_icon}{notif_count}")?,
+            format_disconnected: block_config.format_disconnected.with_default("{name}")?,
             output: TextWidget::new(id, 0, shared_config.clone()).with_icon("phone")?,
             shared_config,
         })
@@ -643,10 +645,10 @@ impl Block for KDEConnect {
             self.output.set_state(State::Critical);
             self.output.set_icon("phone_disconnected")?;
             self.output
-                .set_text(self.format_disconnected.render(&values)?);
+                .set_texts(self.format_disconnected.render(&values)?);
         } else {
             self.output.set_icon("phone")?;
-            self.output.set_text(self.format.render(&values)?);
+            self.output.set_texts(self.format.render(&values)?);
         }
 
         Ok(None)

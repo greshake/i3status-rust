@@ -1,5 +1,6 @@
 pub use std::error::Error as StdError;
 use std::fmt;
+pub use std::result::Result as StdResult;
 
 pub use self::Error::{BlockError, ConfigurationError, InternalError};
 

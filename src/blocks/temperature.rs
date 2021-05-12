@@ -32,7 +32,7 @@ impl Default for TemperatureScale {
 pub struct Temperature {
     id: usize,
     text: TextWidget,
-    output: String,
+    output: (String, Option<String>),
     collapsed: bool,
     update_interval: Duration,
     scale: TemperatureScale,
@@ -77,7 +77,7 @@ pub struct TemperatureConfig {
     pub warning: Option<i64>,
 
     /// Format override
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Chip override
     pub chip: Option<String>,
@@ -89,7 +89,7 @@ pub struct TemperatureConfig {
 impl Default for TemperatureConfig {
     fn default() -> Self {
         Self {
-            format: "{average} avg, {max} max".to_string(),
+            format: FormatTemplate::default(),
             interval: Duration::from_secs(5),
             collapsed: true,
             scale: TemperatureScale::default(),
@@ -122,7 +122,7 @@ impl ConfigBlock for Temperature {
                 } else {
                     Spacing::Normal
                 }),
-            output: String::new(),
+            output: (String::new(), None),
             collapsed: block_config.collapsed,
             scale: block_config.scale,
             maximum_good: block_config
@@ -149,8 +149,9 @@ impl ConfigBlock for Temperature {
                     TemperatureScale::Celsius => 80,
                     TemperatureScale::Fahrenheit => 176,
                 }),
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("temperature", "Invalid format specified for temperature")?,
+            format: block_config
+                .format
+                .with_default("{average} avg, {max} max")?,
             chip: block_config.chip,
             inputs: block_config.inputs,
             fallback_required: !has_command("temperature", "sensors -j").unwrap_or(false),
@@ -264,7 +265,7 @@ impl Block for Temperature {
 
             self.output = self.format.render(&values)?;
             if !self.collapsed {
-                self.text.set_text(self.output.clone());
+                self.text.set_texts(self.output.clone());
             }
 
             let state = match max {
@@ -292,7 +293,7 @@ impl Block for Temperature {
                 self.text.set_text(String::new());
                 self.text.set_spacing(Spacing::Hidden);
             } else {
-                self.text.set_text(self.output.clone());
+                self.text.set_texts(self.output.clone());
                 self.text.set_spacing(Spacing::Normal);
             }
         }

@@ -359,9 +359,9 @@ pub struct NetConfig {
     #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    pub format: String,
+    pub format: FormatTemplate,
 
-    pub format_alt: Option<String>,
+    pub format_alt: Option<FormatTemplate>,
 
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
@@ -377,7 +377,7 @@ impl Default for NetConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(1),
-            format: "{speed_up;K} {speed_down;K}".to_string(),
+            format: FormatTemplate::default(),
             format_alt: None,
             device: None,
             hide_inactive: false,
@@ -408,12 +408,10 @@ impl ConfigBlock for Net {
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
 
-        let format = FormatTemplate::from_string(&block_config.format)?;
-        let format_alt = if let Some(f) = block_config.format_alt {
-            Some(FormatTemplate::from_string(&f)?)
-        } else {
-            None
-        };
+        let format = block_config
+            .format
+            .with_default("{speed_down;K}{speed_up;K}")?;
+        let format_alt = block_config.format_alt;
 
         Ok(Net {
             id,
@@ -620,7 +618,7 @@ impl Block for Net {
             "graph_down" => Value::from_string(self.graph_rx.clone()),
         );
 
-        self.output.set_text(self.format.render(&values)?);
+        self.output.set_texts(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

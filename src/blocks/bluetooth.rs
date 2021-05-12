@@ -231,26 +231,12 @@ pub struct BluetoothConfig {
     //DEPRECATED
     //TODO remove
     pub label: Option<String>,
-    #[serde(default = "BluetoothConfig::default_hide_disconnected")]
+    #[serde(default)]
     pub hide_disconnected: bool,
-    #[serde(default = "BluetoothConfig::default_format")]
-    pub format: String,
-    #[serde(default = "BluetoothConfig::default_format_unavailable")]
-    pub format_unavailable: String,
-}
-
-impl BluetoothConfig {
-    fn default_hide_disconnected() -> bool {
-        false
-    }
-
-    fn default_format() -> String {
-        "{label} {percentage}".into()
-    }
-
-    fn default_format_unavailable() -> String {
-        "{label} x".into()
-    }
+    #[serde(default)]
+    pub format: FormatTemplate,
+    #[serde(default)]
+    pub format_unavailable: FormatTemplate,
 }
 
 impl ConfigBlock for Bluetooth {
@@ -276,8 +262,8 @@ impl ConfigBlock for Bluetooth {
             })?,
             device,
             hide_disconnected: block_config.hide_disconnected,
-            format: FormatTemplate::from_string(&block_config.format)?,
-            format_unavailable: FormatTemplate::from_string(&block_config.format_unavailable)?,
+            format: block_config.format.with_default("{label} {percentage}")?,
+            format_unavailable: block_config.format_unavailable.with_default("{label} x")?,
         })
     }
 }
@@ -316,7 +302,7 @@ impl Block for Bluetooth {
                     _ => State::Warning,
                 });
             }
-            self.output.set_text(self.format.render(&values)?);
+            self.output.set_texts(self.format.render(&values)?);
         } else {
             let values = map!(
                 "label" => Value::from_string(self.device.label.clone()),
@@ -324,7 +310,7 @@ impl Block for Bluetooth {
             );
             self.output.set_state(State::Idle);
             self.output
-                .set_text(self.format_unavailable.render(&values)?);
+                .set_texts(self.format_unavailable.render(&values)?);
         }
 
         Ok(None)
