@@ -173,3 +173,23 @@ command = "cat ~/.config/i3status-rust/mode.txt"
 on_click = "~/Projects/i3status-rust/examples/scripts/theme-switch.sh"
 interval = "once"
 ```
+
+### Pi-hole status
+
+Displays the status of Pi-hole server and number of ads blocked. Requires `curl`, `jq` and `xdg-open`.
+
+```toml
+[[block]]
+block = "custom"
+command = ''' curl --max-time 3 --silent 'http://pi.hole/admin/api.php?summary' | jq '{icon:"pi_hole", state: "\(.status | sub("enabled";"Good") | sub("disabled";"Warning"))", text: "\(.status | sub("enabled";"Up") | sub("disabled";"Down")) \(.ads_blocked_today)"}' '''
+json = true
+on_click = "xdg-open http://pi.hole"
+interval = 180
+```
+
+**Note:**
+Replace `http://pi.hole` with a correct url to your Pi-hole instance. Define icon override for `pi_hole`.
+```toml
+[icons.overrides]
+pi_hole = ""
+```
