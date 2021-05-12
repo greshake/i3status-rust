@@ -1,3 +1,11 @@
+# i3status-rust 0.20.1
+
+## Bug Fixes and Improvements
+
+* Fixed config error messages showing in swaybar but not in i3bar (#1224 by @jthomaschewski)
+* Fixed pacman block crash due to stderr output of pacman itself (#1220 by @mpldr)
+* Custom block example list has been created and documented (#1223 by @GladOSkar)
+
 # i3status-rust 0.20.0
 
 ## Breaking Changes
