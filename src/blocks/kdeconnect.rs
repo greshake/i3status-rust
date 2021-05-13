@@ -279,12 +279,6 @@ impl ConfigBlock for KDEConnect {
                         let mut reachable = reachable_copy1.lock().unwrap();
                         *reachable = s.reachable;
 
-                        // Tell block to update now.
-                        // KDEConnect emits both stateChanged and chargeChanged
-                        // whenever there is an update regardless of whether or
-                        // not they both changed. So we only need to send updates
-                        // in one of the two battery signal handlers. Hopefully
-                        // one day they add proper PropertiesChanged signals.
                         send6
                             .send(Task {
                                 id,
@@ -305,11 +299,10 @@ impl ConfigBlock for KDEConnect {
                             *charging = s.charging;
 
                             // Tell block to update now.
-                            // KDEConnect emits both stateChanged and chargeChanged
+                            // The older KDEConnect emits both stateChanged and chargeChanged
                             // whenever there is an update regardless of whether or
                             // not they both changed. So we only need to send updates
-                            // in one of the two battery signal handlers. Hopefully
-                            // one day they add proper PropertiesChanged signals.
+                            // in one of the two battery signal handlers. 
                             send.send(Task {
                                 id,
                                 update_time: Instant::now(),
