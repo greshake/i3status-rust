@@ -10,17 +10,17 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 ## Custom Blocks
 
 - [Hostname](#hostname)
-- [User](#user)
-- [Kernel](#kernel)
-- [Public IP](#public-ip)
 - [HTTP Status Code](#http-status-code)
-- [Ping/RTT](#pingrtt)
-- [System (Suspend/Shutdown/Reboot)](#system-suspendshutdownreboot)
-- [XKCD](#xkcd)
-- [Screenshot](#screenshot)
-- [Monitors](#monitors)
 - [Intel GPU Usage](#intel-gpu-usage)
+- [Kernel](#kernel)
+- [Monitors](#monitors)
+- [Ping/RTT](#pingrtt)
+- [Public IP](#public-ip)
+- [Screenshot](#screenshot)
 - [Switch GTK Theme](#switch-gtk-theme)
+- [System (Suspend/Shutdown/Reboot)](#system-suspendshutdownreboot)
+- [User](#user)
+- [XKCD](#xkcd)
 
 ### Hostname
 
