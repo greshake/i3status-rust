@@ -302,7 +302,7 @@ impl ConfigBlock for KDEConnect {
                             // The older KDEConnect emits both stateChanged and chargeChanged
                             // whenever there is an update regardless of whether or
                             // not they both changed. So we only need to send updates
-                            // in one of the two battery signal handlers. 
+                            // in one of the two battery signal handlers.
                             send.send(Task {
                                 id,
                                 update_time: Instant::now(),
