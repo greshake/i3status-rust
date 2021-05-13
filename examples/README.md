@@ -199,6 +199,8 @@ pi_hole = ""
 
 Displays liquid temperature (celsius), fan and pump RPM. Requires: `liquidctl`.
 
+![image](https://user-images.githubusercontent.com/20397027/118128928-7dfe8d00-b436-11eb-96b1-b40f62676933.png)
+
 _Example for NZXT Kraken X series:_
 ```toml
 [[block]]
