@@ -81,3 +81,5 @@ weather_snow = "\uf2dc" # fa-snowflake-o
 weather_sun = "\uf185" # fa-sun-o
 weather_thunder = "\uf0e7" # fa-bolt
 xrandr = "\uf26c" # fa-television
+cpu_boost_on = "\u23fc"
+cpu_boost_off = "\u25cc"

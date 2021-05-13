@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::{read_to_string, File};
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::time::Duration;
@@ -25,6 +25,8 @@ pub struct Cpu {
     minimum_warning: u64,
     minimum_critical: u64,
     format: FormatTemplate,
+    boost_icon_on: String,
+    boost_icon_off: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -71,11 +73,13 @@ impl ConfigBlock for Cpu {
         Ok(Cpu {
             id,
             update_interval: block_config.interval,
-            output: TextWidget::new(id, 0, shared_config).with_icon("cpu")?,
             prev_util: Vec::with_capacity(32),
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
+            boost_icon_on: shared_config.get_icon("cpu_boost_on")?,
+            boost_icon_off: shared_config.get_icon("cpu_boost_off")?,
+            output: TextWidget::new(id, 0, shared_config).with_icon("cpu")?,
             format: block_config.format.with_default("{utilization}")?,
         })
     }
@@ -169,10 +173,17 @@ impl Block for Cpu {
             barchart.push(BOXCHARS[(7.5 * utilization) as usize]);
         }
 
+        let boost = match boost_status() {
+            Some(true) => self.boost_icon_on.clone(),
+            Some(false) => self.boost_icon_off.clone(),
+            _ => String::new(),
+        };
+
         let mut values = map!(
             "frequency" => Value::from_float(freqs_avg).hertz(),
             "barchart" => Value::from_string(barchart),
             "utilization" => Value::from_integer(avg_utilization as i64).percents(),
+            "boost" => Value::from_string(boost),
         );
         let mut frequency_keys = vec![]; // There should be a better way to dynamically crate keys?
         for i in 0..freqs.len() {
@@ -204,4 +215,15 @@ impl Block for Cpu {
     fn id(&self) -> usize {
         self.id
     }
+}
+
+/// Read the cpu turbo boost status from kernel sys interface
+/// or intel pstate interface
+fn boost_status() -> Option<bool> {
+    if let Ok(boost) = read_to_string("/sys/devices/system/cpu/cpufreq/boost") {
+        return Some(boost.starts_with("1"));
+    } else if let Ok(no_turbo) = read_to_string("/sys/devices/system/cpu/intel_pstate/no_turbo") {
+        return Some(no_turbo.starts_with("0"));
+    }
+    None
 }

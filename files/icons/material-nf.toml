@@ -81,3 +81,5 @@ weather_snow = "\ufa97" # nf-mdi-weather_snowy
 weather_sun = "\ufa98" # nf-mdi-weather_sunny
 weather_thunder = "\ue31d" # nf-weather-thunderstorm
 xrandr = "\uf879}" # nf-mdi-monitor_multiple
+cpu_boost_on = "\u23fc"
+cpu_boost_off = "\u25cc"

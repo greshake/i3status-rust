@@ -285,6 +285,7 @@ Placeholder | Description | Type
 `{utilization<n>}` | CPU utilization in percent for core `n` | Integer
 `{frequency}` | CPU frequency | Float
 `{frequency<n>}` | CPU frequency in GHz for core `n` | Float
+`{boost}` | CPU turbo boost status | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
