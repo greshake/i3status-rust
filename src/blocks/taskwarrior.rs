@@ -51,73 +51,52 @@ impl Filter {
     }
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct TaskwarriorConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "TaskwarriorConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Threshold from which on the block is marked with a warning indicator
-    #[serde(default = "TaskwarriorConfig::default_threshold_warning")]
     pub warning_threshold: u32,
 
     /// Threshold from which on the block is marked with a critical indicator
-    #[serde(default = "TaskwarriorConfig::default_threshold_critical")]
     pub critical_threshold: u32,
 
     /// A list of tags a task has to have before it's used for counting pending tasks
     /// (DEPRECATED) use filters instead
-    #[serde(default = "TaskwarriorConfig::default_filter_tags")]
     pub filter_tags: Vec<String>,
 
     /// A list of named filter criteria which must be fulfilled to be counted towards
     /// the total, when that filter is active.
-    #[serde(default = "TaskwarriorConfig::default_filters")]
     pub filters: Vec<Filter>,
 
     /// Format override
-    #[serde(default = "TaskwarriorConfig::default_format")]
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Format override if the count is one
-    #[serde(default = "TaskwarriorConfig::default_format")]
-    pub format_singular: String,
+    pub format_singular: FormatTemplate,
 
     /// Format override if the count is zero
-    #[serde(default = "TaskwarriorConfig::default_format")]
-    pub format_everything_done: String,
+    pub format_everything_done: FormatTemplate,
 }
 
-impl TaskwarriorConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(600)
-    }
-
-    fn default_threshold_warning() -> u32 {
-        10
-    }
-
-    fn default_threshold_critical() -> u32 {
-        20
-    }
-
-    fn default_filter_tags() -> Vec<String> {
-        vec![]
-    }
-
-    fn default_filters() -> Vec<Filter> {
-        vec![Filter::new(
-            "pending".to_string(),
-            "-COMPLETED -DELETED".to_string(),
-        )]
-    }
-
-    fn default_format() -> String {
-        "{count}".to_owned()
+impl Default for TaskwarriorConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(600),
+            warning_threshold: 10,
+            critical_threshold: 20,
+            filter_tags: vec![],
+            filters: vec![Filter::new(
+                "pending".to_string(),
+                "-COMPLETED -DELETED".to_string(),
+            )],
+            format: FormatTemplate::default(),
+            format_singular: FormatTemplate::default(),
+            format_everything_done: FormatTemplate::default(),
+        }
     }
 }
 
@@ -149,22 +128,11 @@ impl ConfigBlock for Taskwarrior {
             update_interval: block_config.interval,
             warning_threshold: block_config.warning_threshold,
             critical_threshold: block_config.critical_threshold,
-            format: FormatTemplate::from_string(&block_config.format).block_error(
-                "taskwarrior",
-                "Invalid format specified for taskwarrior::format",
-            )?,
-            format_singular: FormatTemplate::from_string(&block_config.format_singular)
-                .block_error(
-                    "taskwarrior",
-                    "Invalid format specified for taskwarrior::format_singular",
-                )?,
-            format_everything_done: FormatTemplate::from_string(
-                &block_config.format_everything_done,
-            )
-            .block_error(
-                "taskwarrior",
-                "Invalid format specified for taskwarrior::format_everything_done",
-            )?,
+            format: block_config.format.with_default("{count}")?,
+            format_singular: block_config.format_singular.with_default("{count}")?,
+            format_everything_done: block_config
+                .format_everything_done
+                .with_default("{count}")?,
             filter_index: 0,
             filters,
             output,
@@ -222,7 +190,7 @@ impl Block for Taskwarrior {
                 "count" => Value::from_integer(number_of_tasks as i64),
                 "filter_name" => Value::from_string(filter.name.clone()),
             );
-            self.output.set_text(match number_of_tasks {
+            self.output.set_texts(match number_of_tasks {
                 0 => self.format_everything_done.render(&values)?,
                 1 => self.format_singular.render(&values)?,
                 _ => self.format.render(&values)?,

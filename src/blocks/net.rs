@@ -156,48 +156,37 @@ impl NetworkDevice {
 
     /// Queries the wireless SSID of this device, if it is connected to one.
     pub fn wifi_info(&self) -> Result<(Option<String>, Option<f64>, Option<i64>)> {
-        use nl80211::Socket;
-        if self.is_up()? && self.wireless {
-            let interfaces = Socket::connect()
-                .block_error("net", "nl80211: failed to connect to the socket")?
-                .get_interfaces_info()
-                .block_error("net", "nl80211: failed to get interfaces' information")?;
+        if !self.is_up()? || !self.wireless {
+            return Ok((None, None, None));
+        }
 
-            let mut ssid = None;
-            let mut freq = None;
-            let mut signal = None;
+        let interfaces = nl80211::Socket::connect()
+            .block_error("net", "nl80211: failed to connect to the socket")?
+            .get_interfaces_info()
+            .block_error("net", "nl80211: failed to get interfaces' information")?;
 
-            for interface in interfaces {
-                if let Ok(ap) = interface.get_station_info() {
-                    // SSID is `None` when not connected
-                    if let Some(i_ssid) = interface.ssid {
-                        if let Some(device) = interface.name {
-                            let device = String::from_utf8_lossy(&device);
-                            let device = device.trim_matches(char::from(0));
-                            if device != self.device {
-                                continue;
-                            }
-                            ssid = Some(escape_pango_text(decode_escaped_unicode(&i_ssid)));
-                            freq = Some(
-                                nl80211::parse_u32(
-                                    &interface
-                                        .frequency
-                                        .block_error("net", "failed to get frequency")?,
-                                ) as f64
-                                    * 1_000_000.,
-                            );
-                            signal = Some(signal_percents(nl80211::parse_i8(
-                                &ap.signal.block_error("net", "failed to get signal")?,
-                            )));
-                            break;
-                        }
+        for interface in interfaces {
+            if let Ok(ap) = interface.get_station_info() {
+                // SSID is `None` when not connected
+                if let (Some(ssid), Some(device)) = (interface.ssid, interface.name) {
+                    let device = String::from_utf8_lossy(&device);
+                    let device = device.trim_matches(char::from(0));
+                    if device != self.device {
+                        continue;
                     }
+
+                    let ssid = Some(escape_pango_text(decode_escaped_unicode(&ssid)));
+                    let freq = interface
+                        .frequency
+                        .map(|f| nl80211::parse_u32(&f) as f64 * 1e6);
+                    let signal = ap.signal.map(|s| signal_percents(nl80211::parse_i8(&s)));
+
+                    return Ok((ssid, freq, signal));
                 }
             }
-            Ok((ssid, freq, signal))
-        } else {
-            Ok((None, None, None))
         }
+
+        Ok((None, None, None))
     }
 
     /// Queries the inet IP of this device (using `ip`).
@@ -370,9 +359,9 @@ pub struct NetConfig {
     #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    pub format: String,
+    pub format: FormatTemplate,
 
-    pub format_alt: Option<String>,
+    pub format_alt: Option<FormatTemplate>,
 
     /// Which interface in /sys/class/net/ to read from.
     pub device: Option<String>,
@@ -388,7 +377,7 @@ impl Default for NetConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(1),
-            format: "{speed_up;K} {speed_down;K}".to_string(),
+            format: FormatTemplate::default(),
             format_alt: None,
             device: None,
             hide_inactive: false,
@@ -419,20 +408,14 @@ impl ConfigBlock for Net {
         let wireless = device.is_wireless();
         let vpn = device.is_vpn();
 
-        let format_alt = if let Some(f) = block_config.format_alt {
-            Some(
-                FormatTemplate::from_string(&f)
-                    .block_error("net", "Invalid format_alt specified")?,
-            )
-        } else {
-            None
-        };
+        let format = block_config
+            .format
+            .with_default("{speed_down;K}{speed_up;K}")?;
+        let format_alt = block_config.format_alt;
 
         Ok(Net {
             id,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)?,
-            format_alt,
             output: TextWidget::new(id, 0, shared_config.clone())
                 .with_icon(if wireless {
                     "net_wireless"
@@ -446,21 +429,24 @@ impl ConfigBlock for Net {
                 .with_text("")
                 .with_spacing(Spacing::Inline),
             // TODO: a better way to deal with this?
-            bitrate: if block_config.format.contains("bitrate") {
-                Some("".to_string())
-            } else {
-                None
-            },
-            ip_addr: if block_config.format.contains("ip") {
-                Some("".to_string())
-            } else {
-                None
-            },
-            ipv6_addr: if block_config.format.contains("ipv6") {
-                Some("".to_string())
-            } else {
-                None
-            },
+            bitrate: (format.contains("bitrate")
+                || format_alt
+                    .as_ref()
+                    .map(|f| f.contains("bitrate"))
+                    .unwrap_or(false))
+            .then(String::new),
+            ip_addr: (format.contains("ip")
+                || format_alt
+                    .as_ref()
+                    .map(|f| f.contains("ip"))
+                    .unwrap_or(false))
+            .then(String::new),
+            ipv6_addr: (format.contains("ipv6")
+                || format_alt
+                    .as_ref()
+                    .map(|f| f.contains("ipv6"))
+                    .unwrap_or(false))
+            .then(String::new),
             speed_up: 0.0,
             speed_down: 0.0,
             graph_tx: String::new(),
@@ -477,6 +463,8 @@ impl ConfigBlock for Net {
             hide_missing: block_config.hide_missing,
             last_update: Instant::now() - Duration::from_secs(30),
             shared_config,
+            format,
+            format_alt,
         })
     }
 }
@@ -630,7 +618,7 @@ impl Block for Net {
             "graph_down" => Value::from_string(self.graph_rx.clone()),
         );
 
-        self.output.set_text(self.format.render(&values)?);
+        self.output.set_texts(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

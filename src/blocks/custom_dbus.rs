@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use dbus::blocking::LocalConnection;
 use dbus::strings::Signature;
-use dbus::tree::Factory;
+use dbus_tree::Factory;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
@@ -137,7 +137,11 @@ impl Block for CustomDBus {
             .block_error("custom_dbus", "failed to acquire lock")?)
         .clone();
         self.text.set_text(status.content);
-        self.text.set_icon(&status.icon)?;
+        if status.icon.is_empty() {
+            self.text.unset_icon();
+        } else {
+            self.text.set_icon(&status.icon)?;
+        }
         self.text.set_state(status.state);
         Ok(None)
     }

@@ -47,14 +47,14 @@ pub struct DockerConfig {
     pub interval: Duration,
 
     /// Format override
-    pub format: String,
+    pub format: FormatTemplate,
 }
 
 impl Default for DockerConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(5),
-            format: "{running}".to_string(),
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -74,8 +74,7 @@ impl ConfigBlock for Docker {
         Ok(Docker {
             id,
             text,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("docker", "Invalid format specified")?,
+            format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
         })
     }
@@ -102,7 +101,7 @@ impl Block for Docker {
             "images" =>  Value::from_integer(status.images),
         );
 
-        self.text.set_text(self.format.render(&values)?);
+        self.text.set_texts(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

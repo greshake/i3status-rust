@@ -57,8 +57,10 @@ Notes:
 ![space-villain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/space_villain.png)
 * `native` (like plain with no background and native separators)
 ![native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)
-* `semi-native` (like natime but with background)
+* `semi-native` (like native but with background)
 //TODO add an image
+* `nord-dark` (polar night)
+![nord-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)
 
 # Available icon sets
 
@@ -105,6 +107,12 @@ idle_fg = "#abcdef"
 
 # Available theme overrides
 
+All `bg` and `fg` overrides are html hex color codes like `#000000` or `#789ABC`. A fourth byte for alpha (like `#acbdef42`) works on some systems. `00` is transparent, `FF` is opaque.
+
+The tints are added to every second block counting from the right. They will therefore always brighten the block and never darken it. The alpha channel, if it works, can also be alternated in the same way.
+
+Feel free to take a look at the provided color schemes for reference.
+
 * `alternating_tint_bg`
 * `alternating_tint_fg`
 * `critical_bg`
@@ -122,6 +130,12 @@ idle_fg = "#abcdef"
 * `warning_fg`
 
 # Available icon overrides
+
+These can be directly set to a string containing the desired unicode codepoint(s) or use a TOML escape sequence like `"\uf0f3"` for up to 4-nibble codepoints and `"\U0001f312"` for up to 8-nibble codepoints.
+
+You can find the codepoints in the documentation of the icon font you're using.
+
+Feel free to take a look at the provided icon mappings for reference.
 
 * `backlight_empty`
 * `backlight_full`
@@ -145,6 +159,7 @@ idle_fg = "#abcdef"
 * `cogs`
 * `cpu`
 * `gpu`
+* `disk_drive`
 * `mail`
 * `memory_mem`
 * `memory_swap`

@@ -20,6 +20,30 @@ pub enum Spacing {
     Hidden,
 }
 
+impl Spacing {
+    pub fn from_content(content: &str) -> Self {
+        if content.is_empty() {
+            Self::Hidden
+        } else {
+            Self::Normal
+        }
+    }
+
+    pub fn to_string_leading(self) -> String {
+        match self {
+            Self::Normal => String::from(" "),
+            _ => String::from(""),
+        }
+    }
+
+    pub fn to_string_trailing(self) -> String {
+        match self {
+            Self::Hidden => String::from(""),
+            _ => String::from(" "),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, Deserialize)]
 pub enum State {
     Idle,

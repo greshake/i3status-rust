@@ -213,13 +213,11 @@ impl ConnectionManager {
             .get1()
             .block_error("networkmanager", "Failed to read primary connection")?;
 
-        if let Ok(conn) = primary_connection.0.as_cstr().to_str() {
-            if conn == "/" {
-                return Err(BlockError(
-                    "networkmanager".to_string(),
-                    "No primary connection".to_string(),
-                ));
-            }
+        if primary_connection.0.to_string() == "/" {
+            return Err(BlockError(
+                "networkmanager".to_string(),
+                "No primary connection".to_string(),
+            ));
         }
 
         Ok(NmConnection {
@@ -478,13 +476,13 @@ pub struct NetworkManagerConfig {
     pub primary_only: bool,
 
     /// AP formatter
-    pub ap_format: String,
+    pub ap_format: FormatTemplate,
 
     /// Device formatter.
-    pub device_format: String,
+    pub device_format: FormatTemplate,
 
     /// Connection formatter.
-    pub connection_format: String,
+    pub connection_format: FormatTemplate,
 
     /// Interface name regex patterns to include.
     pub interface_name_exclude: Vec<String>,
@@ -497,9 +495,9 @@ impl Default for NetworkManagerConfig {
     fn default() -> Self {
         Self {
             primary_only: false,
-            ap_format: "{ssid}".to_string(),
-            device_format: "{icon}{ap} {ips}".to_string(),
-            connection_format: "{devices}".to_string(),
+            ap_format: FormatTemplate::default(),
+            device_format: FormatTemplate::default(),
+            connection_format: FormatTemplate::default(),
             interface_name_exclude: Vec::new(),
             interface_name_include: Vec::new(),
         }
@@ -568,9 +566,11 @@ impl ConfigBlock for NetworkManager {
             dbus_conn,
             manager,
             primary_only: block_config.primary_only,
-            ap_format: FormatTemplate::from_string(&block_config.ap_format)?,
-            device_format: FormatTemplate::from_string(&block_config.device_format)?,
-            connection_format: FormatTemplate::from_string(&block_config.connection_format)?,
+            ap_format: block_config.ap_format.with_default("{ssid}")?,
+            device_format: block_config
+                .device_format
+                .with_default("{icon}{ap} {ips}")?,
+            connection_format: block_config.connection_format.with_default("{devices}")?,
             interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
                 .block_error("networkmanager", "failed to parse exclude patterns")?,
             interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
@@ -721,7 +721,7 @@ impl Block for NetworkManager {
                                         "freq" => Value::from_string(freq).percents(),
                                     );
                                     if let Ok(s) = self.ap_format.render(&values) {
-                                        s
+                                        s.0
                                     } else {
                                         "[invalid device format string]".to_string()
                                     }
@@ -751,7 +751,7 @@ impl Block for NetworkManager {
                                 );
 
                                 if let Ok(s) = self.device_format.render(&values) {
-                                    devicevec.push(s);
+                                    devicevec.push(s.0);
                                 } else {
                                     devicevec.push("[invalid device format string]".to_string())
                                 }
@@ -769,7 +769,7 @@ impl Block for NetworkManager {
                         );
 
                         if let Ok(s) = self.connection_format.render(&values) {
-                            widget.set_text(s);
+                            widget.set_texts(s);
                         } else {
                             widget.set_text("[invalid connection format string]".to_string());
                         }

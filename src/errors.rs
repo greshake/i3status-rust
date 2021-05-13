@@ -1,5 +1,6 @@
 pub use std::error::Error as StdError;
 use std::fmt;
+pub use std::result::Result as StdResult;
 
 pub use self::Error::{BlockError, ConfigurationError, InternalError};
 
@@ -88,11 +89,11 @@ impl fmt::Debug for Error {
                 f.write_str(&format!("Error in block '{}': {}", block, message))
             }
             ConfigurationError(ref message, ref cause) => f.write_str(&format!(
-                "Configuration error: {}.\nCause: {}",
+                "Configuration error: {}. Cause: {}",
                 message, cause
             )),
             InternalError(ref context, ref message, Some((ref cause, _))) => f.write_str(&format!(
-                "Internal error in context '{}': {}.\nCause: {}",
+                "Internal error in context '{}': {}. Cause: {}",
                 context, message, cause
             )),
             InternalError(ref context, ref message, None) => f.write_str(&format!(

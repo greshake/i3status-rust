@@ -8,9 +8,11 @@ pub struct TextWidget {
     id: usize,
     pub instance: usize,
     content: Option<String>,
+    content_short: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
+    spacing_short: Spacing,
     shared_config: SharedConfig,
     inner: I3BarBlock,
 }
@@ -30,9 +32,11 @@ impl TextWidget {
             id,
             instance,
             content: None,
+            content_short: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
+            spacing_short: Spacing::Normal,
             shared_config,
             inner,
         }
@@ -58,6 +62,7 @@ impl TextWidget {
 
     pub fn with_spacing(mut self, spacing: Spacing) -> Self {
         self.spacing = spacing;
+        self.spacing_short = spacing;
         self.update();
         self
     }
@@ -68,13 +73,24 @@ impl TextWidget {
         Ok(())
     }
 
+    pub fn unset_icon(&mut self) {
+        self.icon = None;
+        self.update();
+    }
+
     pub fn set_text(&mut self, content: String) {
-        self.spacing = if content.is_empty() {
-            Spacing::Hidden
+        self.set_texts((content, None));
+    }
+
+    pub fn set_texts(&mut self, contents: (String, Option<String>)) {
+        self.spacing = Spacing::from_content(&contents.0);
+        self.spacing_short = if let Some(ref short) = contents.1 {
+            Spacing::from_content(&short)
         } else {
-            Spacing::Normal
+            self.spacing
         };
-        self.content = Some(content);
+        self.content = Some(contents.0);
+        self.content_short = contents.1;
         self.update();
     }
 
@@ -88,24 +104,26 @@ impl TextWidget {
         self.update();
     }
 
+    fn format_text(&self, content: String, spacing: Spacing) -> String {
+        format!(
+            "{}{}{}",
+            self.icon
+                .clone()
+                .unwrap_or_else(|| spacing.to_string_leading()),
+            content,
+            spacing.to_string_trailing()
+        )
+    }
+
     fn update(&mut self) {
         let (key_bg, key_fg) = self.state.theme_keys(&self.shared_config.theme);
 
-        // When rendered inline, remove the leading space
-        self.inner.full_text = format!(
-            "{}{}{}",
-            self.icon.clone().unwrap_or_else(|| {
-                match self.spacing {
-                    Spacing::Normal => String::from(" "),
-                    _ => String::from(""),
-                }
-            }),
-            self.content.clone().unwrap_or_default(),
-            match self.spacing {
-                Spacing::Hidden => String::from(""),
-                _ => String::from(" "),
-            }
-        );
+        self.inner.full_text =
+            self.format_text(self.content.clone().unwrap_or_default(), self.spacing);
+        self.inner.short_text = match &self.content_short {
+            Some(text) => Some(self.format_text(text.clone(), self.spacing_short)),
+            _ => None,
+        };
         self.inner.background = key_bg.clone();
         self.inner.color = key_fg.clone();
     }

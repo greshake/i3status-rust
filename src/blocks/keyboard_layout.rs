@@ -416,7 +416,7 @@ impl KeyboardLayoutMonitor for Sway {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(default, deny_unknown_fields)]
 pub struct KeyboardLayoutConfig {
-    pub format: String,
+    pub format: FormatTemplate,
 
     driver: KeyboardLayoutDriver,
     #[serde(deserialize_with = "deserialize_duration")]
@@ -431,7 +431,7 @@ pub struct KeyboardLayoutConfig {
 impl Default for KeyboardLayoutConfig {
     fn default() -> Self {
         Self {
-            format: "{layout}".to_string(),
+            format: FormatTemplate::default(),
             driver: KeyboardLayoutDriver::SetXkbMap,
             interval: Duration::from_secs(60),
             sway_kb_identifier: None,
@@ -487,10 +487,7 @@ impl ConfigBlock for KeyboardLayout {
             output,
             monitor,
             update_interval,
-            format: FormatTemplate::from_string(&block_config.format).block_error(
-                "keyboard_layout",
-                "Invalid format specified for keyboard_layout",
-            )?,
+            format: block_config.format.with_default("{layout}")?,
             mappings: block_config.mappings,
         })
     }
@@ -514,7 +511,7 @@ impl Block for KeyboardLayout {
             "variant" => Value::from_string(variant)
         );
 
-        self.output.set_text(self.format.render(&values)?);
+        self.output.set_texts(self.format.render(&values)?);
         Ok(self.update_interval.map(|d| d.into()))
     }
 

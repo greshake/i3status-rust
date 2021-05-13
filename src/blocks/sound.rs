@@ -773,7 +773,7 @@ pub struct SoundConfig {
 
     /// Format string for displaying sound information.
     /// placeholders: {volume}
-    pub format: String,
+    pub format: FormatTemplate,
 
     pub show_volume_when_muted: bool,
 
@@ -791,7 +791,7 @@ impl Default for SoundConfig {
             device_kind: Default::default(),
             natural_mapping: false,
             step_width: 5,
-            format: "{volume}".to_string(),
+            format: FormatTemplate::default(),
             show_volume_when_muted: false,
             mappings: None,
             max_vol: None,
@@ -865,7 +865,7 @@ impl ConfigBlock for Sound {
             id,
             device,
             device_kind: block_config.device_kind,
-            format: FormatTemplate::from_string(&block_config.format)?,
+            format: block_config.format.with_default("{volume}")?,
             step_width,
             on_click: None,
             show_volume_when_muted: block_config.show_volume_when_muted,
@@ -918,13 +918,13 @@ impl Block for Sound {
             "output_name" => Value::from_string(output_name),
             "output_description" => Value::from_string(output_description),
         );
-        let text = self.format.render(&values)?;
+        let texts = self.format.render(&values)?;
 
         if self.device.muted() {
             self.text.set_icon(&self.icon(0))?;
             if self.show_volume_when_muted {
                 self.text.set_spacing(Spacing::Normal);
-                self.text.set_text(text);
+                self.text.set_texts(texts);
             } else {
                 self.text.set_text(String::new());
             }
@@ -933,7 +933,7 @@ impl Block for Sound {
             self.text.set_icon(&self.icon(volume))?;
             self.text.set_spacing(Spacing::Normal);
             self.text.set_state(State::Idle);
-            self.text.set_text(text);
+            self.text.set_texts(texts);
         }
 
         Ok(None)

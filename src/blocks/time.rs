@@ -13,6 +13,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
@@ -21,7 +22,7 @@ pub struct Time {
     id: usize,
     time: TextWidget,
     update_interval: Duration,
-    format: String,
+    formats: (String, Option<String>),
     timezone: Option<Tz>,
     locale: Option<String>,
 }
@@ -32,7 +33,7 @@ pub struct TimeConfig {
     /// Format string.
     ///
     /// See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Update interval in seconds
     #[serde(deserialize_with = "deserialize_duration")]
@@ -46,7 +47,7 @@ pub struct TimeConfig {
 impl Default for TimeConfig {
     fn default() -> Self {
         Self {
-            format: "%a %d/%m %R".to_string(),
+            format: FormatTemplate::default(),
             interval: Duration::from_secs(5),
             timezone: None,
             locale: None,
@@ -69,15 +70,18 @@ impl ConfigBlock for Time {
                 .with_text("")
                 .with_icon("time")?,
             update_interval: block_config.interval,
-            format: block_config.format,
+            formats: block_config
+                .format
+                .with_default("%a %d/%m %R")?
+                .render(&::std::collections::HashMap::new())?,
             timezone: block_config.timezone,
             locale: block_config.locale,
         })
     }
 }
 
-impl Block for Time {
-    fn update(&mut self) -> Result<Option<Update>> {
+impl Time {
+    fn get_formatted_time(&self, format: &str) -> Result<String> {
         let time = match &self.locale {
             Some(l) => {
                 let locale: Locale = l
@@ -87,16 +91,27 @@ impl Block for Time {
                 match self.timezone {
                     Some(tz) => Utc::now()
                         .with_timezone(&tz)
-                        .format_localized(&self.format, locale),
-                    None => Local::now().format_localized(&self.format, locale),
+                        .format_localized(format, locale),
+                    None => Local::now().format_localized(format, locale),
                 }
             }
             None => match self.timezone {
-                Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
-                None => Local::now().format(&self.format),
+                Some(tz) => Utc::now().with_timezone(&tz).format(format),
+                None => Local::now().format(format),
             },
         };
-        self.time.set_text(format!("{}", time));
+        Ok(format!("{}", time))
+    }
+}
+
+impl Block for Time {
+    fn update(&mut self) -> Result<Option<Update>> {
+        let full = self.get_formatted_time(&self.formats.0)?;
+        let short = match &self.formats.1 {
+            Some(short_fmt) => Some(self.get_formatted_time(&short_fmt)?),
+            None => None,
+        };
+        self.time.set_texts((full, short));
         Ok(Some(self.update_interval.into()))
     }
 

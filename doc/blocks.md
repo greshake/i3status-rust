@@ -1,5 +1,7 @@
 Refer to [formatting section](#formatting) to customize formatting strings' placeholders.
 
+See [`custom` block examples](https://github.com/greshake/i3status-rust/blob/master/examples/README.md) for a list of how many additional blocks can be easily made using the `custom` block.
+
 # List of Available Blocks
 
 - [Apt](#apt)
@@ -45,6 +47,8 @@ Creates a block which displays the pending updates available for your Debian/Ubu
 
 Behind the scenes this uses `apt`, and in order to run it without root priveleges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
 
+Tip: You can grab the list of available updates using `APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable`
+
 #### Examples
 
 Update the list of pending updates every thirty minutes (1800 seconds):
@@ -56,7 +60,9 @@ interval = 1800
 format = "{count:1} updates available"
 format_singular = "{count:1} update available"
 format_up_to_date = "system up to date"
-critical_updates_regex = "(linux |linux-lts|linux-zen)"
+critical_updates_regex = "(linux|linux-lts|linux-zen)"
+# shows dmenu with cached available updates. Any dmenu alternative should also work.
+on_click = "APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu"
 ```
 
 #### Options
@@ -292,6 +298,8 @@ For further customisation, use the `json` option and have the shell command outp
 `icon` is optional, it may be an icon name from `icons.rs` (default "")  
 `state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
 
+See [`examples`](https://github.com/greshake/i3status-rust/blob/master/examples/README.md) for a list of how many functionalities can be easily achieved using the `custom` block.
+
 #### Examples
 
 Display temperature, update every 10 seconds:
@@ -421,7 +429,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `alert` | Available disk space critical level as a percentage or Unit. | No | `10.0`
 `warning` | Available disk space warning level as a percentage or Unit. | No | `20.0`
-`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{alias} {available}"`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{available}"`
 `info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation). | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
 `path` | Path to collect information from. | No | `"/"`
@@ -1050,7 +1058,7 @@ block = "networkmanager"
 on_click = "alacritty -e nmtui"
 interface_name_exclude = ["br\\-[0-9a-f]{12}", "docker\\d+"]
 interface_name_include = []
-ap_format = "{ssid.10}"
+ap_format = "{ssid^10}"
 ```
 
 #### Options
@@ -1183,6 +1191,7 @@ Key | Values | Required | Default
 `show_temperature` | Display GPU temperature. | No | `true`
 `show_fan_speed` | Display fan speed. | No | `false`
 `show_clocks` | Display gpu clocks. | No | `false`
+`show_power_draw` | Display GPU power draw in watts. | No | `false`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1191,6 +1200,8 @@ Key | Values | Required | Default
 Creates a block which displays the pending updates available on pacman or an AUR helper.
 
 Requires fakeroot to be installed (only required for pacman).
+
+Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/`. If you have the CHECKUPDATES_DB env var set on your system then substitute that dir instead of /tmp/checkup-db-yourusername.
 
 #### Examples
 
@@ -1207,7 +1218,9 @@ interval = 600
 format = "{pacman} updates available"
 format_singular = "{pacman} update available"
 format_up_to_date = "system up to date"
-critical_updates_regex = "(linux |linux-lts|linux-zen)"
+critical_updates_regex = "(linux|linux-lts|linux-zen)"
+# pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
+on_click = "fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu"
 ```
 
 pacman only config using warnings with ZFS modules:
@@ -1221,10 +1234,10 @@ format_singular = "{pacman} update available"
 format_up_to_date = "system up to date"
 # If a linux update is availble, but no ZFS package, it won't be possible to
 # actually perform a system upgrade, so we show a warning.
-warning_updates_regex = "(linux |linux-lts|linux-zen)"
+warning_updates_regex = "(linux|linux-lts|linux-zen)"
 # If ZFS is available, we know that we can and should do an upgrade, so we show 
 # the status as critical.
-critical_updates_regex = "(zfs |zfs-lts)"
+critical_updates_regex = "(zfs|zfs-lts)"
 ```
 
 pacman and AUR helper config:
@@ -1236,7 +1249,7 @@ interval = 600
 format = "{pacman} + {aur} = {both} updates available"
 format_singular = "{both} update available"
 format_up_to_date = "system up to date"
-critical_updates_regex = "(linux |linux-lts|linux-zen)"
+critical_updates_regex = "(linux|linux-lts|linux-zen)"
 # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
 aur_command = "pikaur -Qua"
 ```
@@ -1380,7 +1393,7 @@ Display speed in bytes per second using 4 digits
 [[block]]
 block = "speedtest"
 interval = 1800
-format = "{ping}{speed_down:4*B}{speed_up:4*B}
+format = "{ping}{speed_down:4*B}{speed_up:4*B}"
 ```
 
 #### Options
@@ -1395,7 +1408,7 @@ Key | Values | Required | Default
 
  Key | Value | Type | Unit
 -----|-------|------|------
-'{ping}` | Ping delady | Float | Seconds
+`{ping}` | Ping delay | Float | Seconds
 `{speed_down}` | Download speed | Float | Bits per second
 `{speed_up}` | Upload speed | Float | Bits per second
 
@@ -1639,6 +1652,7 @@ Key | Values | Required | Default
 `place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
 `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.236229089090216","9.331730718685696"]`
 `units` | Either `metric` or `imperial`. | Yes | `metric`
+`lang` | Language code. See [here](https://openweathermap.org/current#multi). Currently only affects `weather_verbose` key. | No | `en`
 
 One of `city_id`, `place` or `coordinates` is required. If more than one are supplied, `city_id` takes precedence over `place` which takes place over `coordinates`.
 
@@ -1654,7 +1668,8 @@ in which case they must be provided in the environment variables
 `{temp}` | Temperature | Integer
 `{apparent}` | Australian Apparent Temperature | Integer
 `{humidity}` | Humidity | Integer
-`{weather}` | Textual description of the weather, e.g. "Raining" | String
+`{weather}` | Textual brief description of the weather, e.g. "Raining" | String
+`{weather_verbose}` | Textual verbose description of the weather, e.g. "overcast clouds" | String
 `{wind}` | Wind speed | Float
 `{wind_kmh}` | Wind speed. The wind speed in km/h. | Float
 `{direction}` | Wind direction, e.g. "NE" | String
@@ -1713,6 +1728,18 @@ command = "echo '<b>1 &amp;</b>'"
 ###### [↥ back to top](#list-of-available-blocks)
 
 # Formatting
+
+All blocks that have a `format` field can be reformatted by changing their format strings.
+
+The field can be set as a string (`format = "{my_format}"`) or as a section:
+```toml
+[[block]]
+block = "my_block"
+[block.format]
+full = "{my_full_format}"
+short = "{my_short_format}"
+```
+Your `i3` or `sway` will switch all blocks over to the `short` variant whenever there isn't enough space on your screen for the `full` status bar.
 
 ## Syntax
 

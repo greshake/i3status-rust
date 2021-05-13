@@ -11,6 +11,7 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::scheduler::Task;
+use crate::util::escape_pango_text;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -212,7 +213,7 @@ impl Block for FocusedWindow {
                 }
             }
         };
-        self.text.set_text(out_str);
+        self.text.set_text(escape_pango_text(out_str));
 
         Ok(None)
     }

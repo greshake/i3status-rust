@@ -1,4 +1,4 @@
-.TH I3STATUS-RS 1 2020-12-03
+.TH I3STATUS-RS 1 2021-05-09
 .SH NAME
 i3status-rs \- Generates a status line for
 .BR i3bar (1)-compatible
@@ -76,6 +76,9 @@ database in \f[C]/tmp/i3rs-apt/\f[R] which may take up several MB or
 more.
 If you have a custom apt config then this block may not work as expected
 - in that case please open an issue.
+.PP
+Tip: You can grab the list of available updates using
+\f[C]APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable\f[R]
 .SS Examples
 .PP
 Update the list of pending updates every thirty minutes (1800 seconds):
@@ -85,10 +88,12 @@ Update the list of pending updates every thirty minutes (1800 seconds):
 [[block]]
 block = \[dq]apt\[dq]
 interval = 1800
-format = \[dq]{count} updates available\[dq]
-format_singular = \[dq]{count} update available\[dq]
+format = \[dq]{count:1} updates available\[dq]
+format_singular = \[dq]{count:1} update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
-critical_updates_regex = \[dq](linux |linux-lts|linux-zen)\[dq]
+critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
+# shows dmenu with cached available updates. Any dmenu alternative should also work.
+on_click = \[dq]APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu\[dq]
 \f[R]
 .fi
 .SS Options
@@ -124,7 +129,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{count}\[dq]\f[R]
+\f[C]\[dq]{count:1}\[dq]\f[R]
 T}
 T{
 \f[C]format_singular\f[R]
@@ -133,7 +138,7 @@ Same as \f[C]format\f[R], but for when exactly one update is available.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{count}\[dq]\f[R]
+\f[C]\[dq]{count:1}\[dq]\f[R]
 T}
 T{
 \f[C]format_up_to_date\f[R]
@@ -142,7 +147,7 @@ Same as \f[C]format\f[R], but for when no updates are available.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{count}\[dq]\f[R]
+\f[C]\[dq]{count:1}\[dq]\f[R]
 T}
 T{
 \f[C]warning_updates_regex\f[R]
@@ -167,19 +172,27 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{count}\f[R]
 T}@T{
 Number of updates available
+T}@T{
+Integer
 T}
 .TE
+.SS Notes
+.PP
+The number one in \f[C]{count:1}\f[R] sets the minimal width to one
+character.
 .SS \[u21A5] back to top
 .SS Backlight
 .PP
@@ -261,6 +274,15 @@ No
 T}@T{
 \f[C]1.0\f[R]
 T}
+T{
+\f[C]invert_icons\f[R]
+T}@T{
+Invert icons\[cq] ordering, useful if you have colorful emoji.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
 .TE
 .PP
 Some devices expose raw values that are best handled with nonlinear
@@ -320,7 +342,18 @@ until (dis)charging is complete:
 [[block]]
 block = \[dq]battery\[dq]
 interval = 10
-format = \[dq]{percentage}% {time}\[dq]
+format = \[dq]{percentage} {time}\[dq]
+\f[R]
+.fi
+.PP
+Same as previous, but also prints a six character bar.
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]battery\[dq]
+interval = 10
+format = \[dq]{percentage:6#100} {percentage} {time}\[dq]
 \f[R]
 .fi
 .PP
@@ -331,7 +364,7 @@ Rely on Upower for battery updates and information:
 [[block]]
 block = \[dq]battery\[dq]
 driver = \[dq]upower\[dq]
-format = \[dq]{percentage}% {time}\[dq]
+format = \[dq]{percentage} {time}\[dq]
 \f[R]
 .fi
 .SS Options
@@ -387,7 +420,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{percentage}%\[dq]\f[R]
+\f[C]\[dq]{percentage}\[dq]\f[R]
 T}
 T{
 \f[C]full_format\f[R]
@@ -396,7 +429,7 @@ Same as \f[C]format\f[R] but for when the battery is full.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{percentage}%\[dq]\f[R]
+\f[C]\[dq]{percentage}\[dq]\f[R]
 T}
 T{
 \f[C]missing_format\f[R]
@@ -405,7 +438,7 @@ Same as \f[C]format\f[R] but for when the specified battery is missing.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{percentage}%\[dq]\f[R]
+\f[C]\[dq]{percentage}\[dq]\f[R]
 T}
 T{
 \f[C]allow_missing\f[R]
@@ -464,79 +497,39 @@ T}@T{
 \f[C]15\f[R]
 T}
 .TE
-.SS Deprecated Options
-.PP
-.TS
-tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
-T{
-Key
-T}@T{
-Values
-T}@T{
-Required
-T}@T{
-Default
-T}
-_
-T{
-\f[C]show\f[R]
-T}@T{
-Deprecated in favour of \f[C]format\f[R].
-Show remaining \f[C]\[dq]time\[dq]\f[R], \f[C]\[dq]percentage\[dq]\f[R]
-or \f[C]\[dq]both\[dq]\f[R].
-T}@T{
-No
-T}@T{
-\f[C]\[dq]percentage\[dq]\f[R]
-T}
-T{
-\f[C]upower\f[R]
-T}@T{
-Deprecated in favour of \f[C]device\f[R].
-When \f[C]true\f[R], use the Upower D-Bus driver.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-.TE
-.PP
-The \f[C]show\f[R] option is deprecated, and will be removed in future
-versions.
-In the meantime, it will override the \f[C]format\f[R] option when
-present.
 .SS Available Format Keys
 .PP
 .TS
 tab(@);
-lw(33.6n) lw(36.4n).
+lw(28.0n) lw(30.3n) lw(11.7n).
 T{
 Placeholder
 T}@T{
 Description
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{percentage}\f[R]
 T}@T{
 Battery level, in percent
-T}
-T{
-\f[C]{bar}\f[R]
 T}@T{
-The current battery level in a bar chart
+String or Integer
 T}
 T{
 \f[C]{time}\f[R]
 T}@T{
 Time remaining until (dis)charge is complete
+T}@T{
+String
 T}
 T{
 \f[C]{power}\f[R]
 T}@T{
-Power consumption (in watts) by the battery or from the power supply
-when charging
+Power consumption by the battery or from the power supply when charging
+T}@T{
+String or Float
 T}
 .TE
 .SS \[u21A5] back to top
@@ -561,7 +554,8 @@ A block for a Bluetooth device with the given MAC address:
 [[block]]
 block = \[dq]bluetooth\[dq]
 mac = \[dq]A0:8A:F5:B8:01:FD\[dq]
-label = \[dq] Rowkin\[dq]
+format = \[dq]Rowkin {percentage}\[dq]
+format_unavailable = \[dq]Rowkin x\[dq]
 \f[R]
 .fi
 .SS Options
@@ -589,15 +583,6 @@ T}@T{
 None
 T}
 T{
-\f[C]label\f[R]
-T}@T{
-Text label to display next to the icon.
-T}@T{
-No
-T}@T{
-None
-T}
-T{
 \f[C]hide_disconnected\f[R]
 T}@T{
 Hides the block when the device is disconnected.
@@ -605,6 +590,17 @@ T}@T{
 No
 T}@T{
 \f[C]false\f[R]
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+A string to customise the output of this block.
+See below for placeholders.
+Text may need to be escaped, refer to Escaping Text.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{label} {percentage}\[dq]\f[R]
 T}
 T{
 \f[C]format_unavailable\f[R]
@@ -619,7 +615,53 @@ T}@T{
 \f[C]\[dq]{label} x\[dq]\f[R]
 T}
 .TE
+.SS Deprecated Options
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]label\f[R]
+T}@T{
+Text label to display next to the icon.
+T}@T{
+No
+T}@T{
+None
+T}
+.TE
 .SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l l.
+T{
+Key
+T}@T{
+Value
+T}@T{
+Type
+T}
+_
+T{
+\f[C]{percentage}\f[R]
+T}@T{
+Device\[cq]s charge in percents
+T}@T{
+Integer or an empty String
+T}
+.TE
+.SS Deprecated Format Keys
 .PP
 .TS
 tab(@);
@@ -715,78 +757,54 @@ No
 T}@T{
 \f[C]\[dq]{utilization}\[dq]\f[R]
 T}
-T{
-\f[C]per_core\f[R]
-T}@T{
-Display CPU frequencies and utilization per core.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]on_click\f[R]
-T}@T{
-Command to execute when the button is clicked.
-The command will be passed to whatever is specified in your
-\f[C]$SHELL\f[R] variable and - if not set - fallback to \f[C]sh\f[R].
-T}@T{
-No
-T}@T{
-None
-T}
-.TE
-.SS Deprecated Options
-.PP
-.TS
-tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
-T{
-Key
-T}@T{
-Values
-T}@T{
-Required
-T}@T{
-Default
-T}
-_
-T{
-\f[C]frequency\f[R]
-T}@T{
-Deprecated in favour of \f[C]format\f[R].
-Sets format to \f[C]{utilization} {frequency}\f[R].
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
 .TE
 .SS Available Format Keys
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
 Placeholder
 T}@T{
 Description
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{barchart}\f[R]
 T}@T{
 Bar chart of each CPU\[cq]s core utilization
+T}@T{
+String
 T}
 T{
 \f[C]{utilization}\f[R]
 T}@T{
 Average CPU utilization in percent
+T}@T{
+Integer
+T}
+T{
+\f[C]{utilization<n>}\f[R]
+T}@T{
+CPU utilization in percent for core \f[C]n\f[R]
+T}@T{
+Integer
 T}
 T{
 \f[C]{frequency}\f[R]
 T}@T{
-CPU frequency in GHz
+CPU frequency
+T}@T{
+Float
+T}
+T{
+\f[C]{frequency<n>}\f[R]
+T}@T{
+CPU frequency in GHz for core \f[C]n\f[R]
+T}@T{
+Float
 T}
 .TE
 .SS \[u21A5] back to top
@@ -1037,10 +1055,26 @@ Creates a block which displays disk space information.
 [[block]]
 block = \[dq]disk_space\[dq]
 path = \[dq]/\[dq]
-alias = \[dq]/\[dq]
 info_type = \[dq]used\[dq]
-unit = \[dq]GiB\[dq]
-format = \[dq]{icon}{used}/{total} {unit} ({available}{unit} free)\[dq]
+format = \[dq]{icon} {used}/{total} ({available} free)\[dq]
+\f[R]
+.fi
+.PP
+Same as previous, but the block will change it\[cq]s state to
+\[lq]warning\[rq] if more than 40GB of disk space is used and to
+\[lq]alert\[rq] if more than 50GB is used.
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]disk_space\[dq]
+path = \[dq]/\[dq]
+info_type = \[dq]used\[dq]
+format = \[dq]{icon} {used}/{total} ({available} free)\[dq]
+alert_absolute = true
+unit = \[dq]GB\[dq]
+alert = 50
+warning = 40
 \f[R]
 .fi
 .SS Options
@@ -1068,13 +1102,13 @@ T}@T{
 \f[C]10.0\f[R]
 T}
 T{
-\f[C]alias\f[R]
+\f[C]warning\f[R]
 T}@T{
-Alias that is displayed for path.
+Available disk space warning level as a percentage or Unit.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]/\[dq]\f[R]
+\f[C]20.0\f[R]
 T}
 T{
 \f[C]format\f[R]
@@ -1085,7 +1119,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{alias} {available} {unit}\[dq]\f[R]
+\f[C]\[dq]{available}\[dq]\f[R]
 T}
 T{
 \f[C]info_type\f[R]
@@ -1119,23 +1153,14 @@ T}
 T{
 \f[C]unit\f[R]
 T}@T{
-Unit that is used to display disk space.
-Options are \f[C]\[dq]MB\[dq]\f[R], \f[C]\[dq]MiB\[dq]\f[R],
-\f[C]\[dq]GB\[dq]\f[R], \f[C]\[dq]GiB\[dq]\f[R], \f[C]\[dq]TB\[dq]\f[R],
-\f[C]\[dq]TiB\[dq]\f[R] and \f[C]\[dq]Percent\[dq]\f[R].
+Unit that is used when \f[C]alert_absolute\f[R] is set for
+\f[C]warning\f[R] and \f[C]alert\f[R].
+Options are \f[C]\[dq]B\[dq]\f[R], \f[C]\[dq]KB\[dq]\f[R]
+\f[C]\[dq]MB\[dq]\f[R], \f[C]\[dq]GB\[dq]\f[R], \f[C]\[dq]TB\[dq]\f[R].
 T}@T{
 No
 T}@T{
 \f[C]\[dq]GB\[dq]\f[R]
-T}
-T{
-\f[C]warning\f[R]
-T}@T{
-Available disk space warning level as a percentage or Unit.
-T}@T{
-No
-T}@T{
-\f[C]20.0\f[R]
 T}
 T{
 \f[C]alert_absolute\f[R]
@@ -1147,66 +1172,113 @@ T}@T{
 \f[C]false\f[R]
 T}
 .TE
+.SS Deprecated Options
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]alias\f[R]
+T}@T{
+Sets the value for \f[C]{alias}\f[R] placeholder
+T}@T{
+No
+T}@T{
+\f[C]\[dq]/\[dq]\f[R]
+T}
+.TE
 .SS Available Format Keys
 .PP
 .TS
 tab(@);
-lw(25.5n) lw(44.5n).
+lw(15.6n) lw(27.2n) lw(27.2n).
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
-T{
-\f[C]{alias}\f[R]
-T}@T{
-Alias for disk path
-T}
 T{
 \f[C]{available}\f[R]
 T}@T{
 Available disk space (free disk space minus reserved system space)
-T}
-T{
-\f[C]{bar}\f[R]
 T}@T{
-Display bar representing percentage
+Float
 T}
 T{
 \f[C]{free}\f[R]
 T}@T{
 Free disk space
+T}@T{
+Float
 T}
 T{
 \f[C]{icon}\f[R]
 T}@T{
 Disk drive icon
+T}@T{
+String
 T}
 T{
 \f[C]{path}\f[R]
 T}@T{
 Path used for capacity check
+T}@T{
+String
 T}
 T{
 \f[C]{percentage}\f[R]
 T}@T{
 Percentage of disk used or free (depends on info_type setting)
+T}@T{
+Float
 T}
 T{
 \f[C]{total}\f[R]
 T}@T{
 Total disk space
-T}
-T{
-\f[C]{unit}\f[R]
 T}@T{
-Unit used for disk space (see above)
+Float
 T}
 T{
 \f[C]{used}\f[R]
 T}@T{
 Used disk space
+T}@T{
+Float
+T}
+.TE
+.SS Deprecated Format Keys
+.PP
+.TS
+tab(@);
+l l l.
+T{
+Key
+T}@T{
+Value
+T}@T{
+Type
+T}
+_
+T{
+\f[C]{alias}\f[R]
+T}@T{
+The value of \f[C]alias\f[R] option
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -1264,37 +1336,49 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{total}\f[R]
 T}@T{
 Total containers on the host
+T}@T{
+Integer
 T}
 T{
 \f[C]{running}\f[R]
 T}@T{
 Containers running on the host
+T}@T{
+Integer
 T}
 T{
 \f[C]{stopped}\f[R]
 T}@T{
 Containers stopped on the host
+T}@T{
+Integer
 T}
 T{
 \f[C]{paused}\f[R]
 T}@T{
 Containers paused on the host
+T}@T{
+Integer
 T}
 T{
 \f[C]{images}\f[R]
 T}@T{
 Total images on the host
+T}@T{
+Integer
 T}
 .TE
 .SS \[u21A5] back to top
@@ -1428,77 +1512,103 @@ T}
 .PP
 .TS
 tab(@);
-lw(29.2n) lw(40.8n).
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{total}\f[R]
 T}@T{
 Total number of notifications
+T}@T{
+Integer
 T}
 T{
 \f[C]{assign}\f[R]
 T}@T{
 Total number of notifications related to issues you\[cq]re assigned on
+T}@T{
+Integer
 T}
 T{
 \f[C]{author}\f[R]
 T}@T{
 Total number of notifications related to threads you are the author of
+T}@T{
+Integer
 T}
 T{
 \f[C]{comment}\f[R]
 T}@T{
 Total number of notifications related to threads you commented on
+T}@T{
+Integer
 T}
 T{
 \f[C]{invitation}\f[R]
 T}@T{
 Total number of notifications related to invitations
+T}@T{
+Integer
 T}
 T{
 \f[C]{manual}\f[R]
 T}@T{
 Total number of notifications related to threads you manually subscribed
 on
+T}@T{
+Integer
 T}
 T{
 \f[C]{mention}\f[R]
 T}@T{
 Total number of notifications related to content you were specifically
 mentioned on
+T}@T{
+Integer
 T}
 T{
 \f[C]{review_requested}\f[R]
 T}@T{
 Total number of notifications related to PR you were requested to review
+T}@T{
+Integer
 T}
 T{
 \f[C]{security_alert}\f[R]
 T}@T{
 Total number of notifications related to security vulnerabilities found
 on your repositories
+T}@T{
+Integer
 T}
 T{
 \f[C]{state_change}\f[R]
 T}@T{
 Total number of notifications related to thread state change
+T}@T{
+Integer
 T}
 T{
 \f[C]{subscribed}\f[R]
 T}@T{
 Total number of notifications related to repositories you\[cq]re
 watching
+T}@T{
+Integer
 T}
 T{
 \f[C]{team_mention}\f[R]
 T}@T{
 Total number of notification related to thread where your team was
 mentioned
+T}@T{
+Integer
 T}
 .TE
 .PP
@@ -1674,17 +1784,21 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
-Placeholder
+Key
 T}@T{
-Description
+Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{engine}\f[R]
 T}@T{
 Engine name as provided by IBus
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -1736,7 +1850,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{name} {bat_icon}{bat_charge}% {notif_icon}{notif_count}\[dq]\f[R]
+\f[C]\[dq]{name} {bat_icon}{bat_charge} {notif_icon}{notif_count}\[dq]\f[R]
 T}
 T{
 \f[C]format_disconnected\f[R]
@@ -1791,11 +1905,13 @@ T}
 .PP
 .TS
 tab(@);
-lw(33.6n) lw(36.4n).
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
-Placeholder
+Key
 T}@T{
-Description
+Value
+T}@T{
+Type
 T}
 _
 T{
@@ -1803,37 +1919,51 @@ T{
 T}@T{
 Battery icon which will automatically change between the various battery
 icons depending on the current charge state
+T}@T{
+String
 T}
 T{
 \f[C]{bat_charge}\f[R]
 T}@T{
 Battery charge level in percent
+T}@T{
+Integer
 T}
 T{
 \f[C]{bat_state}\f[R]
 T}@T{
 Battery charging state, \[lq]true\[rq] or \[lq]false\[rq]
+T}@T{
+String
 T}
 T{
 \f[C]{notif_icon}\f[R]
 T}@T{
 Will display an icon when you have a notification, otherwise an empty
 string
+T}@T{
+String
 T}
 T{
 \f[C]{notif_count}\f[R]
 T}@T{
 Number of unread notifications on your phone
+T}@T{
+Integer
 T}
 T{
 \f[C]{name}\f[R]
 T}@T{
 Name of your device as reported by KDEConnect
+T}@T{
+String
 T}
 T{
 \f[C]{id}\f[R]
 T}@T{
 KDEConnect device ID
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -1893,6 +2023,20 @@ driver = \[dq]sway\[dq]
 sway_kb_identifier = \[dq]1133:49706:Gaming_Keyboard_G110\[dq]
 \f[R]
 .fi
+.PP
+Listen to sway for changes and override mappings:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]keyboard_layout\[dq]
+driver = \[dq]sway\[dq]
+format = \[dq]{layout}\[dq]
+[block.mappings]
+\[dq]English (Workman)\[dq] = \[dq]EN\[dq]
+\[dq]Russian (N/A)\[dq] = \[dq]RU\[dq]
+\f[R]
+.fi
 .SS Options
 .PP
 .TS
@@ -1950,28 +2094,43 @@ No
 T}@T{
 Defaults to first input found
 T}
+T{
+\f[C]mappings\f[R]
+T}@T{
+Map \f[C]layout (variant)\f[R] to custom short name.
+T}@T{
+No
+T}@T{
+None
+T}
 .TE
 .SS Available Format Keys
 .PP
 .TS
 tab(@);
-l l.
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{layout}\f[R]
 T}@T{
 Keyboard layout name
+T}@T{
+String
 T}
 T{
 \f[C]{variant}\f[R]
 T}@T{
 Keyboard variant (only \f[C]localebus\f[R] and \f[C]sway\f[R] are
 supported so far)
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -2058,27 +2217,35 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
-Placeholder
+Key
 T}@T{
-Description
+Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{1m}\f[R]
 T}@T{
 1 minute load average
+T}@T{
+Float
 T}
 T{
 \f[C]{5m}\f[R]
 T}@T{
 5minute load average
+T}@T{
+Float
 T}
 T{
 \f[C]{15m}\f[R]
 T}@T{
 15minute load average
+T}@T{
+Float
 T}
 .TE
 .SS \[u21A5] back to top
@@ -2183,8 +2350,8 @@ By default, a click switches between them.
 \f[C]
 [[block]]
 block = \[dq]memory\[dq]
-format_mem = \[dq]{Mum}MB/{MTm}MB({Mup}%)\[dq]
-format_swap = \[dq]{SUm}MB/{STm}MB({SUp}%)\[dq]
+format_mem = \[dq]{mem_used}/{mem_total}({mem_used_percents})\[dq]
+format_swap = \[dq]{swap_used}/{swap_total}({swap_used_percents})\[dq]
 display_type = \[dq]memory\[dq]
 icons = true
 clickable = true
@@ -2220,7 +2387,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{MFm}MB/{MTm}MB({Mp}%)\[dq]\f[R]
+\f[C]\[dq]{mem_free;M}/{mem_total;M}({mem_total_used_percents})\[dq]\f[R]
 T}
 T{
 \f[C]format_swap\f[R]
@@ -2232,7 +2399,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{SFm}MB/{STm}MB({Sp}%)\[dq]\f[R]
+\f[C]\[dq]{swap_free;M}/{swap_total;M}({swap_used_percents})\[dq]\f[R]
 T}
 T{
 \f[C]display_type\f[R]
@@ -2314,196 +2481,334 @@ T}
 .PP
 .TS
 tab(@);
-lw(39.4n) lw(30.6n).
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
+T}
+_
+T{
+\f[C]{mem_total}\f[R]
+T}@T{
+Memory total
+T}@T{
+Float
+T}
+T{
+\f[C]{mem_free}\f[R]
+T}@T{
+Memory free
+T}@T{
+Float
+T}
+T{
+\f[C]{mem_free_percents}\f[R]
+T}@T{
+Memory free %
+T}@T{
+Float
+T}
+T{
+\f[C]{mem_total_used}\f[R]
+T}@T{
+Total memory used
+T}@T{
+Float
+T}
+T{
+\f[C]{mem_total_used_percents}\f[R]
+T}@T{
+Total memory used %
+T}@T{
+Float
+T}
+T{
+\f[C]{mem_used}\f[R]
+T}@T{
+Memory used, excluding cached memory and buffers; similar to htop\[cq]s
+green bar
+T}@T{
+Float
+T}
+T{
+\f[C]{mem_used_percents}\f[R]
+T}@T{
+Memory used, excluding cached memory and buffers; similar to htop\[cq]s
+green bar (in %)
+T}@T{
+Float
+T}
+T{
+\f[C]{mem_avail}\f[R]
+T}@T{
+Available memory, including cached memory and buffers
+T}@T{
+Float
+T}
+T{
+\f[C]{mem_avail_percents}\f[R]
+T}@T{
+Available memory, including cached memory and buffers (in %)
+T}@T{
+Float
+T}
+T{
+\f[C]{swap_total}\f[R]
+T}@T{
+Swap total
+T}@T{
+Float
+T}
+T{
+\f[C]{swap_free}\f[R]
+T}@T{
+Swap free
+T}@T{
+Float
+T}
+T{
+\f[C]{swap_free_percents}\f[R]
+T}@T{
+Swap free %
+T}@T{
+Float
+T}
+T{
+\f[C]{swap_used}\f[R]
+T}@T{
+Swap used
+T}@T{
+Float
+T}
+T{
+\f[C]{swap_used_percents}\f[R]
+T}@T{
+Swap used
+T}@T{
+Float
+T}
+T{
+\f[C]{buffers}\f[R]
+T}@T{
+Buffers, similar to htop\[cq]s blue bar
+T}@T{
+Float
+T}
+T{
+\f[C]{buffers_percent}\f[R]
+T}@T{
+Buffers, similar to htop\[cq]s blue bar (in %)
+T}@T{
+Float
+T}
+T{
+\f[C]{cached}\f[R]
+T}@T{
+Cached memory, similar to htop\[cq]s yellow bar
+T}@T{
+Float
+T}
+T{
+\f[C]{cached_percent}\f[R]
+T}@T{
+Cached memory, similar to htop\[cq]s yellow bar (in %)
+T}@T{
+Float
+T}
+.TE
+.SS Removed Format Keys
+.PP
+.TS
+tab(@);
+l l.
+T{
+Old key
+T}@T{
+New alternative
 T}
 _
 T{
 \f[C]{MTg}\f[R]
 T}@T{
-Memory total (GiB)
+\f[C]{mem_total;G}\f[R]
 T}
 T{
 \f[C]{MTm}\f[R]
 T}@T{
-Memory total (MiB)
+\f[C]{mem_total;M}\f[R]
 T}
 T{
 \f[C]{MAg}\f[R]
 T}@T{
-Available memory, including cached memory and buffers (GiB)
+\f[C]{mem_avail;G}\f[R]
 T}
 T{
 \f[C]{MAm}\f[R]
 T}@T{
-Available memory, including cached memory and buffers (MiB)
+\f[C]{mem_avail;M}\f[R]
 T}
 T{
 \f[C]{MAp}\f[R]
 T}@T{
-Available memory, including cached memory and buffers (%)
+\f[C]{mem_avail_percents}\f[R]
 T}
 T{
 \f[C]{MApi}\f[R]
 T}@T{
-Available memory, including cached memory and buffers (%) as integer
+\f[C]{mem_avail_percents:1}\f[R]
 T}
 T{
 \f[C]{MFg}\f[R]
 T}@T{
-Memory free (GiB)
+\f[C]{mem_free;G}\f[R]
 T}
 T{
 \f[C]{MFm}\f[R]
 T}@T{
-Memory free (MiB)
+\f[C]{mem_free;M}\f[R]
 T}
 T{
 \f[C]{MFp}\f[R]
 T}@T{
-Memory free (%)
+\f[C]{mem_free_percents}\f[R]
 T}
 T{
 \f[C]{MFpi}\f[R]
 T}@T{
-Memory free (%) as integer
+\f[C]{mem_free_percents:1}\f[R]
 T}
 T{
 \f[C]{Mug}\f[R]
 T}@T{
-Memory used, excluding cached memory and buffers; similar to htop\[cq]s
-green bar (GiB)
+\f[C]{mem_used;G}\f[R]
 T}
 T{
 \f[C]{Mum}\f[R]
 T}@T{
-Memory used, excluding cached memory and buffers; similar to htop\[cq]s
-green bar (MiB)
+\f[C]{mem_used;M}\f[R]
 T}
 T{
 \f[C]{Mup}\f[R]
 T}@T{
-Memory used, excluding cached memory and buffers; similar to htop\[cq]s
-green bar (%)
+\f[C]{mem_used_percents}\f[R]
 T}
 T{
 \f[C]{Mupi}\f[R]
 T}@T{
-Memory used, excluding cached memory and buffers; similar to htop\[cq]s
-green bar (%) as integer
+\f[C]{mem_used_percents:1}\f[R]
 T}
 T{
 \f[C]{MUg}\f[R]
 T}@T{
-Total memory used (GiB)
+\f[C]{mem_total_used;G}\f[R]
 T}
 T{
 \f[C]{MUm}\f[R]
 T}@T{
-Total memory used (MiB)
+\f[C]{mem_total_used;M}\f[R]
 T}
 T{
 \f[C]{MUp}\f[R]
 T}@T{
-Total memory used (%)
+\f[C]{mem_total_used_percents}\f[R]
 T}
 T{
 \f[C]{MUpi}\f[R]
 T}@T{
-Total memory used (%) as integer
+\f[C]{mem_total_used_percents:1}\f[R]
 T}
 T{
 \f[C]{Cg}\f[R]
 T}@T{
-Cached memory, similar to htop\[cq]s yellow bar (GiB)
+\f[C]{cached;G}\f[R]
 T}
 T{
 \f[C]{Cm}\f[R]
 T}@T{
-Cached memory, similar to htop\[cq]s yellow bar (MiB)
+\f[C]{cached;M}\f[R]
 T}
 T{
 \f[C]{Cp}\f[R]
 T}@T{
-Cached memory, similar to htop\[cq]s yellow bar (%)
+\f[C]{cached_percent}\f[R]
 T}
 T{
 \f[C]{Cpi}\f[R]
 T}@T{
-Cached memory, similar to htop\[cq]s yellow bar (%) as integer
+\f[C]{cached_percent:1}\f[R]
 T}
 T{
 \f[C]{Bg}\f[R]
 T}@T{
-Buffers, similar to htop\[cq]s blue bar (GiB)
+\f[C]{buffers;G}\f[R]
 T}
 T{
 \f[C]{Bm}\f[R]
 T}@T{
-Buffers, similar to htop\[cq]s blue bar (MiB)
+\f[C]{buffers;M}\f[R]
 T}
 T{
 \f[C]{Bp}\f[R]
 T}@T{
-Buffers, similar to htop\[cq]s blue bar (%)
+\f[C]{buffers_percent}\f[R]
 T}
 T{
 \f[C]{Bpi}\f[R]
 T}@T{
-Buffers, similar to htop\[cq]s blue bar (%) as integer
+\f[C]{buffers_percent:1}\f[R]
 T}
 T{
 \f[C]{STg}\f[R]
 T}@T{
-Swap total (GiB)
+\f[C]{swap_total;G}\f[R]
 T}
 T{
 \f[C]{STm}\f[R]
 T}@T{
-Swap total (MiB)
+\f[C]{swap_total;M}\f[R]
 T}
 T{
 \f[C]{SFg}\f[R]
 T}@T{
-Swap free (GiB)
+\f[C]{swap_free;G}\f[R]
 T}
 T{
 \f[C]{SFm}\f[R]
 T}@T{
-Swap free (MiB)
+\f[C]{swap_free;M}\f[R]
 T}
 T{
 \f[C]{SFp}\f[R]
 T}@T{
-Swap free (%)
+\f[C]{swap_free_percents}\f[R]
 T}
 T{
 \f[C]{SFpi}\f[R]
 T}@T{
-Swap free (%) as integer
+\f[C]{swap_free_percents:1}\f[R]
 T}
 T{
 \f[C]{SUg}\f[R]
 T}@T{
-Swap used (GiB)
+\f[C]{swap_used;G}\f[R]
 T}
 T{
 \f[C]{SUm}\f[R]
 T}@T{
-Swap used (MiB)
+\f[C]{swap_used;M}\f[R]
 T}
 T{
 \f[C]{SUp}\f[R]
 T}@T{
-Swap used (%)
+\f[C]{swap_used_percents}\f[R]
 T}
 T{
 \f[C]{SUpi}\f[R]
 T}@T{
-Swap used (%) as integer
+\f[C]{swap_used_percents:1}\f[R]
 T}
 .TE
 .SS \[u21A5] back to top
@@ -2740,22 +3045,28 @@ T}
 .PP
 .TS
 tab(@);
-lw(39.4n) lw(30.6n).
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{artist}\f[R]
 T}@T{
 Current artist (may be an empty string)
+T}@T{
+String
 T}
 T{
 \f[C]{title}\f[R]
 T}@T{
 Current title (may be an empty string)
+T}@T{
+String
 T}
 T{
 \f[C]{combo}\f[R]
@@ -2765,17 +3076,23 @@ Resolves to \[dq]\f[C]{artist}[sep]{title}\[dq]\f[R],
 on what information is available.
 \f[C][sep]\f[R] is set by \f[C]separator\f[R] option.
 The \f[C]smart_trim\f[R] option affects the output.
+T}@T{
+String
 T}
 T{
 \f[C]{player}\f[R]
 T}@T{
 Name of the current player (taken from the last part of its MPRIS bus
 name)
+T}@T{
+String
 T}
 T{
 \f[C]{avail}\f[R]
 T}@T{
 Total number of players available to switch between
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -2783,9 +3100,6 @@ T}
 .PP
 Creates a block which displays the upload and download throughput for a
 network interface.
-Units are by default in bytes per second (kB/s, MB/s, etc), but the
-`use_bits' flag can be set to \f[C]true\f[R] to convert the units to bps
-(little b).
 .PP
 \f[C]bitrate\f[R] requires either \f[C]ethtool\f[R] for wired devices or
 \f[C]iw\f[R] for wireless devices.
@@ -2793,25 +3107,20 @@ Units are by default in bytes per second (kB/s, MB/s, etc), but the
 .P
 .PD
 \f[C]ip\f[R] and \f[C]ipv6\f[R] require \f[C]ip\f[R].
-.PD 0
-.P
-.PD
-\f[C]ssid\f[R] requires one of \f[C]iw\f[R], \f[C]wpa_cli\f[R],
-\f[C]nm-cli\f[R] or \f[C]iwctl\f[R].
-.PD 0
-.P
-.PD
-\f[C]signal_strength\f[R] requires \f[C]iw\f[R].
 .SS Examples
+.PP
+Displays ssid, signal strength, ip, down speed and up speed as bits per
+second.
+Minimal prefix is set to \f[C]K\f[R] in order to prevent the block to
+change it\[cq]s size.
 .IP
 .nf
 \f[C]
 [[block]]
 block = \[dq]net\[dq]
 device = \[dq]wlp2s0\[dq]
-format = \[dq]{ssid} {signal_strength} {ip} {speed_down} {graph_down}\[dq]
+format = \[dq]{ssid} {signal_strength} {ip} {speed_down;K*b} {graph_down;K*b}\[dq]
 interval = 5
-use_bits = false
 \f[R]
 .fi
 .SS Options
@@ -2847,36 +3156,17 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\[lq]{speed_up} {speed_down}\[rq]
+\f[C]\[dq]{speed_up;K} {speed_down;K}\[dq]\f[R]
 T}
 T{
-\f[C]speed_digits\f[R]
+\f[C]format_alt\f[R]
 T}@T{
-Number of digits to use when displaying speeds.
+If set, block will switch its formatting between \f[C]format\f[R] and
+\f[C]format_alt\f[R] on every click.
 T}@T{
 No
 T}@T{
-\f[C]3\f[R]
-T}
-T{
-\f[C]speed_min_unit\f[R]
-T}@T{
-Smallest unit to use when displaying speeds.
-Possible choices: \f[C]\[dq]B\[dq]\f[R], \f[C]\[dq]K\[dq]\f[R],
-\f[C]\[dq]M\[dq]\f[R], \f[C]\[dq]G\[dq]\f[R], \f[C]\[dq]T\[dq]\f[R].
-T}@T{
-No
-T}@T{
-\f[C]\[dq]K\[dq]\f[R]
-T}
-T{
-\f[C]use_bits\f[R]
-T}@T{
-Display speeds in bits instead of bytes.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
+None
 T}
 T{
 \f[C]interval\f[R]
@@ -2912,163 +3202,106 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+l l l l.
 T{
-Placeholder
+Key
 T}@T{
-Description
+Value
+T}@T{
+Type
+T}@T{
+Unit
 T}
 _
 T{
 \f[C]ssid\f[R]
 T}@T{
-Display network SSID (wireless only)
+Network SSID (wireless only)
+T}@T{
+String
+T}@T{
+-
 T}
 T{
 \f[C]signal_strength\f[R]
 T}@T{
 Display WiFi signal strength (wireless only)
+T}@T{
+Integer
+T}@T{
+%
+T}
+T{
+\f[C]frequency\f[R]
+T}@T{
+WiFi frequency (wireless only)
+T}@T{
+Float
+T}@T{
+Hz
 T}
 T{
 \f[C]bitrate\f[R]
 T}@T{
-Display connection bitrate
+Connection bitrate
+T}@T{
+String
+T}@T{
+-
 T}
 T{
 \f[C]ip\f[R]
 T}@T{
-Display connection IP address
+Connection IP address
+T}@T{
+String
+T}@T{
+-
 T}
 T{
 \f[C]ipv6\f[R]
 T}@T{
-Display connection IPv6 address
+Cnnection IPv6 address
+T}@T{
+String
+T}@T{
+-
 T}
 T{
 \f[C]speed_up\f[R]
 T}@T{
-Display upload speed
+Upload speed
+T}@T{
+Float
+T}@T{
+Bytes per second
 T}
 T{
 \f[C]speed_down\f[R]
 T}@T{
-Display download speed
+Download speed
+T}@T{
+Float
+T}@T{
+Bytes per second
 T}
 T{
 \f[C]graph_up\f[R]
 T}@T{
-Display a bar graph for upload speed
+A bar graph for upload speed
+T}@T{
+String
+T}@T{
+-
 T}
 T{
 \f[C]graph_down\f[R]
 T}@T{
-Display a bar graph for download speed
-T}
-.TE
-.SS Deprecated Options
-.PP
-.TS
-tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
-T{
-Key
+A bar graph for download speed
 T}@T{
-Values
+String
 T}@T{
-Required
-T}@T{
-Default
-T}
-_
-T{
-\f[C]ssid\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display network SSID (wireless only).
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]signal_strength\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display WiFi signal strength (wireless only).
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]bitrate\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display connection bitrate.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]ip\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display connection IP address.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]ipv6\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display connection IPv6 address.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]speed_up\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display upload speed.
-T}@T{
-No
-T}@T{
-\f[C]true\f[R]
-T}
-T{
-\f[C]speed_down\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display download speed.
-T}@T{
-No
-T}@T{
-\f[C]true\f[R]
-T}
-T{
-\f[C]graph_up\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display a bar graph for upload speed.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]graph_down\f[R]
-T}@T{
-Deprecated in favor of \f[C]format\f[R].
-Display a bar graph for download speed.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
+-
 T}
 .TE
 .SS \[u21A5] back to top
@@ -3085,6 +3318,19 @@ block = \[dq]networkmanager\[dq]
 on_click = \[dq]alacritty -e nmtui\[dq]
 interface_name_exclude = [\[dq]br\[rs]\[rs]-[0-9a-f]{12}\[dq], \[dq]docker\[rs]\[rs]d+\[dq]]
 interface_name_include = []
+\f[R]
+.fi
+.PP
+Same as previous, but also limits the length of SSID to 10 characters.
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]networkmanager\[dq]
+on_click = \[dq]alacritty -e nmtui\[dq]
+interface_name_exclude = [\[dq]br\[rs]\[rs]-[0-9a-f]{12}\[dq], \[dq]docker\[rs]\[rs]d+\[dq]]
+interface_name_include = []
+ap_format = \[dq]{ssid\[ha]10}\[dq]
 \f[R]
 .fi
 .SS Options
@@ -3111,15 +3357,6 @@ T}@T{
 No
 T}@T{
 \f[C]false\f[R]
-T}
-T{
-\f[C]max_ssid_width\f[R]
-T}@T{
-Truncation length for SSID.
-T}@T{
-No
-T}@T{
-\f[C]21\f[R]
 T}
 T{
 \f[C]ap_format\f[R]
@@ -3155,16 +3392,6 @@ T}@T{
 \f[C]\[dq]{devices}\[dq]\f[R]
 T}
 T{
-\f[C]on_click\f[R]
-T}@T{
-On-click handler.
-Commands are executed in a shell.
-T}@T{
-No
-T}@T{
-\f[C]\[dq]\[dq]\f[R]
-T}
-T{
 \f[C]interface_name_exclude\f[R]
 T}@T{
 A list of regex patterns for device interface names to ignore.
@@ -3188,81 +3415,112 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
-Placeholder
+Key
 T}@T{
-Description
+Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{ssid}\f[R]
 T}@T{
 The SSID for this AP
+T}@T{
+String
 T}
 T{
 \f[C]{strength}\f[R]
 T}@T{
 The signal strength in percent for this AP
+T}@T{
+Integer
 T}
 T{
 \f[C]{freq}\f[R]
 T}@T{
 The frequency of this AP in MHz
+T}@T{
+String
 T}
 .TE
 .SS Device format string
 .PP
 .TS
 tab(@);
-l l.
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
-Placeholder
+Key
 T}@T{
-Description
+Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{icon}\f[R]
 T}@T{
 The icon matching the device type
+T}@T{
+String
 T}
 T{
 \f[C]{typename}\f[R]
 T}@T{
 The name of the device type
+T}@T{
+String
 T}
 T{
 \f[C]{name}\f[R]
 T}@T{
 The name of the device interface
+T}@T{
+String
 T}
 T{
 \f[C]{ap}\f[R]
 T}@T{
 The connected AP if available, formatted with the AP format string
+T}@T{
+String
 T}
 T{
 \f[C]{ips}\f[R]
 T}@T{
 The list of IPs for this device
+T}@T{
+String
 T}
 .TE
 .SS Connection format string
 .PP
 .TS
 tab(@);
-lw(33.6n) lw(36.4n).
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
-Placeholder
+Key
 T}@T{
-Description
+Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{devices}\f[R]
 T}@T{
 The list of devices, each formatted with the device format string
+T}@T{
+String
+T}
+T{
+\f[C]{id}\f[R]
+T}@T{
+???
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -3271,11 +3529,7 @@ T}
 Displays the current state of your notification daemon.
 .PP
 Note: For \f[C]dunst\f[R] this block uses DBus to get instantaneous
-updates.
-For now this requires building \f[C]dunst\f[R] from source
-(\f[C]dunst-git\f[R] from the AUR if you are on Arch Linux) until the
-next release of \f[C]dunst\f[R] comes out containing this feature:
-https://github.com/dunst-project/dunst/pull/766.
+updates, which is only possible in dunst v1.6.0 and higher.
 .PP
 TODO: support \f[C]mako\f[R]
 .SS Options
@@ -3294,15 +3548,6 @@ Default
 T}
 _
 T{
-\f[C]driver\f[R]
-T}@T{
-Notification daemon to monitor.
-T}@T{
-No
-T}@T{
-\f[C]\[dq]dunst\[dq]\f[R]
-T}
-T{
 \f[C]format\f[R]
 T}@T{
 A string to customise the output of this block.
@@ -3318,17 +3563,21 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{state}\f[R]
 T}@T{
 Current state of the notification daemon in icon form
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -3573,6 +3822,15 @@ No
 T}@T{
 \f[C]false\f[R]
 T}
+T{
+\f[C]show_power_draw\f[R]
+T}@T{
+Display GPU power draw in watts.
+T}@T{
+No
+T}@T{
+\f[C]false\f[R]
+T}
 .TE
 .SS \[u21A5] back to top
 .SS Pacman
@@ -3581,6 +3839,11 @@ Creates a block which displays the pending updates available on pacman
 or an AUR helper.
 .PP
 Requires fakeroot to be installed (only required for pacman).
+.PP
+Tip: You can grab the list of available updates using
+\f[C]fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/\f[R].
+If you have the CHECKUPDATES_DB env var set on your system then
+substitute that dir instead of /tmp/checkup-db-yourusername.
 .SS Examples
 .PP
 Update the list of pending updates every ten minutes (600 seconds):
@@ -3598,7 +3861,9 @@ interval = 600
 format = \[dq]{pacman} updates available\[dq]
 format_singular = \[dq]{pacman} update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
-critical_updates_regex = \[dq](linux |linux-lts|linux-zen)\[dq]
+critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
+# pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
+on_click = \[dq]fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu\[dq]
 \f[R]
 .fi
 .PP
@@ -3614,10 +3879,10 @@ format_singular = \[dq]{pacman} update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
 # If a linux update is availble, but no ZFS package, it won\[aq]t be possible to
 # actually perform a system upgrade, so we show a warning.
-warning_updates_regex = \[dq](linux |linux-lts|linux-zen)\[dq]
+warning_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
 # If ZFS is available, we know that we can and should do an upgrade, so we show 
 # the status as critical.
-critical_updates_regex = \[dq](zfs |zfs-lts)\[dq]
+critical_updates_regex = \[dq](zfs|zfs-lts)\[dq]
 \f[R]
 .fi
 .PP
@@ -3631,7 +3896,7 @@ interval = 600
 format = \[dq]{pacman} + {aur} = {both} updates available\[dq]
 format_singular = \[dq]{both} update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
-critical_updates_regex = \[dq](linux |linux-lts|linux-zen)\[dq]
+critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
 # aur_command should output available updates to stdout (ie behave as echo -ne \[dq]update\[rs]n\[dq])
 aur_command = \[dq]pikaur -Qua\[dq]
 \f[R]
@@ -3731,11 +3996,13 @@ T}
 .PP
 .TS
 tab(@);
-lw(25.5n) lw(44.5n).
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
@@ -3743,22 +4010,30 @@ T{
 T}@T{
 Number of pacman updates available (\f[B]deprecated\f[R]: use
 \f[C]{pacman}\f[R] instead)
+T}@T{
+Integer
 T}
 T{
 \f[C]{pacman}\f[R]
 T}@T{
 Number of updates available according to \f[C]pacman\f[R]
+T}@T{
+Integer
 T}
 T{
 \f[C]{aur}\f[R]
 T}@T{
 Number of updates available according to \f[C]<aur_command>\f[R]
+T}@T{
+Integer
 T}
 T{
 \f[C]{both}\f[R]
 T}@T{
 Cumulative number of updates available according to \f[C]pacman\f[R] and
 \f[C]<aur_command>\f[R]
+T}@T{
+Integer
 T}
 .TE
 .SS \[u21A5] back to top
@@ -3891,6 +4166,14 @@ step_width = 3
 \f[C]
 [[block]]
 block = \[dq]sound\[dq]
+format = \[dq]{output_description} {volume}\[dq]
+\f[R]
+.fi
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]sound\[dq]
 format = \[dq]{output_name} {volume}\[dq]
 [block.mappings]
 \[dq]alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo\[dq] = \[dq]\[u1F508]\[dq]
@@ -3931,7 +4214,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]{volume}%\f[R]
+\f[C]{volume}\f[R]
 T}
 T{
 \f[C]name\f[R]
@@ -4019,22 +4302,37 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{volume}\f[R]
 T}@T{
 Current volume in percent
+T}@T{
+Integer
 T}
 T{
 \f[C]{output_name}\f[R]
 T}@T{
 PulseAudio or ALSA device name
+T}@T{
+String
+T}
+T{
+\f[C]{output_description}\f[R]
+T}@T{
+PulseAudio device description, will fallback to \f[C]output_name\f[R] if
+no description is available and will be overwritten by mappings
+(mappings will still use \f[C]output_name\f[R])
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -4044,13 +4342,25 @@ Creates a block which uses
 \f[C]speedtest-cli\f[R] (https://github.com/sivel/speedtest-cli) to
 measure your ping, download, and upload speeds.
 .SS Examples
+.PP
+Display speed in bits per second using 3 digits (defaults)
 .IP
 .nf
 \f[C]
 [[block]]
 block = \[dq]speedtest\[dq]
-bytes = true
 interval = 1800
+\f[R]
+.fi
+.PP
+Display speed in bytes per second using 4 digits
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]speedtest\[dq]
+interval = 1800
+format = \[dq]{ping}{speed_down:4*B}{speed_up:4*B}\[dq]
 \f[R]
 .fi
 .SS Options
@@ -4069,14 +4379,15 @@ Default
 T}
 _
 T{
-\f[C]bytes\f[R]
+\f[C]format\f[R]
 T}@T{
-Whether to use bytes or bits in the display (true for bytes, false for
-bits).
+A string to customise the output of this block.
+See below for available placeholders.
+Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]false\f[R]
+\f[C]\[dq]{ping}{speed_down}{speed_up}\[dq]\f[R]
 T}
 T{
 \f[C]interval\f[R]
@@ -4087,25 +4398,48 @@ No
 T}@T{
 \f[C]1800\f[R]
 T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l l l.
 T{
-\f[C]speed_digits\f[R]
+Key
 T}@T{
-Number of digits to use when displaying speeds and latencies.
+Value
 T}@T{
-No
+Type
 T}@T{
-\f[C]3\f[R]
+Unit
+T}
+_
+T{
+\f[C]{ping}\f[R]
+T}@T{
+Ping delay
+T}@T{
+Float
+T}@T{
+Seconds
 T}
 T{
-\f[C]speed_min_unit\f[R]
+\f[C]{speed_down}\f[R]
 T}@T{
-Smallest unit to use when displaying speeds.
-Possible choices: \f[C]\[dq]B\[dq]\f[R], \f[C]\[dq]K\[dq]\f[R],
-\f[C]\[dq]M\[dq]\f[R], \f[C]\[dq]G\[dq]\f[R], \f[C]\[dq]T\[dq]\f[R].
+Download speed
 T}@T{
-No
+Float
 T}@T{
-\f[C]\[dq]K\[dq]\f[R]
+Bits per second
+T}
+T{
+\f[C]{speed_up}\f[R]
+T}@T{
+Upload speed
+T}@T{
+Float
+T}@T{
+Bits per second
 T}
 .TE
 .SS \[u21A5] back to top
@@ -4240,29 +4574,35 @@ T}
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{count}\f[R]
 T}@T{
 The number of pending tasks
+T}@T{
+Integer
 T}
 T{
 \f[C]{filter_name}\f[R]
 T}@T{
 The name of the current filter
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
 .SS Temperature
 .PP
 Creates a block which displays the system temperature, based on
-lm_sensors\[cq] \f[C]sensors -j\f[R] output.
+lm_sensors\[cq] \f[C]sensors\f[R] output.
 The block has two modes: \[lq]collapsed\[rq], which uses only colour as
 an indicator, and \[lq]expanded\[rq], which shows the content of a
 \f[C]format\f[R] string.
@@ -4271,7 +4611,7 @@ Requires \f[C]lm_sensors\f[R] and appropriate kernel modules for your
 hardware.
 .PP
 The average, minimum, and maximum temperatures are computed using all
-sensors displayed by \f[C]sensors -j\f[R], or optionally filtered by
+sensors displayed by \f[C]sensors\f[R], or optionally filtered by
 \f[C]chip\f[R] and \f[C]inputs\f[R].
 .PP
 Note that the colour of the block is always determined by the maximum
@@ -4285,7 +4625,7 @@ You may need to keep this in mind if you have a misbehaving sensor.
 block = \[dq]temperature\[dq]
 collapsed = false
 interval = 10
-format = \[dq]{min}\[de] min, {max}\[de] max, {average}\[de] avg\[dq]
+format = \[dq]{min} min, {max} max, {average} avg\[dq]
 chip = \[dq]*-isa-*\[dq]
 inputs = [\[dq]CPUTIN\[dq], \[dq]SYSTIN\[dq]]
 \f[R]
@@ -4383,6 +4723,8 @@ T{
 \f[C]inputs\f[R]
 T}@T{
 Narrows the results to individual inputs reported by each chip.
+Note this only works if you have an up-to-date \f[C]sensors\f[R] command
+with the \f[C]-j\f[R] JSON output flag available.
 T}@T{
 No
 T}@T{
@@ -4397,34 +4739,42 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{average}\[de] avg, {max}\[de] max\[dq]\f[R]
+\f[C]\[dq]{average} avg, {max} max\[dq]\f[R]
 T}
 .TE
 .SS Available Format Keys
 .PP
 .TS
 tab(@);
-l l.
+l l l.
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{min}\f[R]
 T}@T{
 Minimum temperature among all sensors
+T}@T{
+Integer
 T}
 T{
 \f[C]{average}\f[R]
 T}@T{
 Average temperature among all sensors
+T}@T{
+Integer
 T}
 T{
 \f[C]{max}\f[R]
 T}@T{
 Maximum temperature among all sensors
+T}@T{
+Integer
 T}
 .TE
 .SS \[u21A5] back to top
@@ -4744,7 +5094,7 @@ service:
 \f[C]
 [[block]]
 block = \[dq]weather\[dq]
-format = \[dq]{weather} ({location}) {temp}\[de], {wind} m/s {direction}\[dq]
+format = \[dq]{weather} ({location}) {temp}, {wind} m/s {direction}\[dq]
 service = { name = \[dq]openweathermap\[dq], api_key = \[dq]XXX\[dq], city_id = \[dq]5398563\[dq], units = \[dq]metric\[dq] }
 \f[R]
 .fi
@@ -4772,7 +5122,7 @@ Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[C]\[dq]{weather} {temp}\[de]\[dq]\f[R]
+\f[C]\[dq]{weather} {temp}\[dq]\f[R]
 T}
 T{
 \f[C]service\f[R]
@@ -4876,6 +5226,17 @@ Yes
 T}@T{
 \f[C]metric\f[R]
 T}
+T{
+\f[C]lang\f[R]
+T}@T{
+Language code.
+See here (https://openweathermap.org/current#multi).
+Currently only affects \f[C]weather_verbose\f[R] key.
+T}@T{
+No
+T}@T{
+\f[C]en\f[R]
+T}
 .TE
 .PP
 One of \f[C]city_id\f[R], \f[C]place\f[R] or \f[C]coordinates\f[R] is
@@ -4891,53 +5252,79 @@ environment variables \f[C]OPENWEATHERMAP_API_KEY\f[R],
 .PP
 .TS
 tab(@);
-l l.
+lw(20.6n) lw(28.8n) lw(20.6n).
 T{
 Key
 T}@T{
 Value
+T}@T{
+Type
 T}
 _
 T{
 \f[C]{location}\f[R]
 T}@T{
 Location name (exact format depends on the service)
+T}@T{
+String
 T}
 T{
 \f[C]{temp}\f[R]
 T}@T{
 Temperature
+T}@T{
+Integer
 T}
 T{
 \f[C]{apparent}\f[R]
 T}@T{
 Australian Apparent Temperature
+T}@T{
+Integer
 T}
 T{
 \f[C]{humidity}\f[R]
 T}@T{
 Humidity
+T}@T{
+Integer
 T}
 T{
 \f[C]{weather}\f[R]
 T}@T{
-Textual description of the weather, e.g.\ \[lq]Raining\[rq]
+Textual brief description of the weather, e.g.\ \[lq]Raining\[rq]
+T}@T{
+String
+T}
+T{
+\f[C]{weather_verbose}\f[R]
+T}@T{
+Textual verbose description of the weather, e.g.\ \[lq]overcast
+clouds\[rq]
+T}@T{
+String
 T}
 T{
 \f[C]{wind}\f[R]
 T}@T{
 Wind speed
+T}@T{
+Float
 T}
 T{
 \f[C]{wind_kmh}\f[R]
 T}@T{
 Wind speed.
 The wind speed in km/h.
+T}@T{
+Float
 T}
 T{
 \f[C]{direction}\f[R]
 T}@T{
 Wind direction, e.g.\ \[lq]NE\[rq]
+T}@T{
+String
 T}
 .TE
 .SS \[u21A5] back to top
@@ -5075,6 +5462,344 @@ command = \[dq]echo \[aq]<b>1 &amp;</b>\[aq]\[dq]
 \f[R]
 .fi
 .SS \[u21A5] back to top
+.SH Formatting
+.SS Syntax
+.PP
+The syntax for placeholders is
+.IP
+.nf
+\f[C]
+{<name>[:[0]<min width>][\[ha]<max width>][;<min prefix>][*[_]<unit>][#<bar max value>]}
+\f[R]
+.fi
+.SS \f[C]<name>\f[R]
+.PP
+This is just a name of a placeholder.
+Each block that uses formatting will list them under \[lq]Available
+Format Keys\[rq] section of their config.
+.SS \f[C][0]<min width>\f[R]
+.PP
+Sets the minimum width of the content (in characters).
+If starts with a zero, \f[C]0\f[R] symbol will be used to pad the
+content.
+A space is used otherwise.
+Floats and Integers are shifted to the right, while Strings are to the
+left.
+Defaults to \f[C]0\f[R] for Strings, \f[C]2\f[R] for Integers and
+\f[C]3\f[R] for Floats.
+.SS Examples (spaces are shown as `\[sq]' to make the differences more obvious)
+.PP
+\f[C]\[dq]{var:3}\[dq]\f[R]
+.PP
+.TS
+tab(@);
+l l.
+T{
+The value of \f[C]var\f[R]
+T}@T{
+Output
+T}
+_
+T{
+\f[C]\[dq]abc\[dq]\f[R]
+T}@T{
+\f[C]\[dq]abc\[dq]\f[R]
+T}
+T{
+\f[C]\[dq]abcde\[dq]\f[R]
+T}@T{
+\f[C]\[dq]abcde\[dq]\f[R]
+T}
+T{
+\f[C]\[dq]ab\[dq]\f[R]
+T}@T{
+\f[C]\[dq]ab\[sq]\[dq]\f[R]
+T}
+T{
+\f[C]1\f[R]
+T}@T{
+\f[C]\[dq]\[sq]\[sq]1\[dq]\f[R]
+T}
+T{
+\f[C]1234\f[R]
+T}@T{
+\f[C]\[dq]1234\[dq]\f[R]
+T}
+T{
+\f[C]1.0\f[R]
+T}@T{
+\f[C]\[dq]1.0\[dq]\f[R]
+T}
+T{
+\f[C]12.0\f[R]
+T}@T{
+\f[C]\[dq]\[sq]12\[dq]\f[R]
+T}
+T{
+\f[C]123.0\f[R]
+T}@T{
+\f[C]\[dq]123\[dq]\f[R]
+T}
+T{
+\f[C]1234.0\f[R]
+T}@T{
+\f[C]\[dq]1234\[dq]\f[R]
+T}
+.TE
+.SS \f[C]<max width>\f[R]
+.PP
+Sets the maximum width of the content (in characters).
+Applicable only for Strings.
+.SS Examples
+.PP
+\f[C]\[dq]{var\[ha]3}\[dq]\f[R]
+.PP
+.TS
+tab(@);
+l l.
+T{
+The value of \f[C]var\f[R]
+T}@T{
+Output
+T}
+_
+T{
+\f[C]\[dq]abc\[dq]\f[R]
+T}@T{
+\f[C]\[dq]abc\[dq]\f[R]
+T}
+T{
+\f[C]\[dq]abcde\[dq]\f[R]
+T}@T{
+\f[C]\[dq]abc\[dq]\f[R]
+T}
+T{
+\f[C]\[dq]ab\[dq]\f[R]
+T}@T{
+\f[C]\[dq]ab\[dq]\f[R]
+T}
+.TE
+.SS \f[C]<min prefix>\f[R]
+.PP
+Float values are formatted following engineering
+notation (https://en.wikipedia.org/wiki/Engineering_notation).
+This option sets the minimal SI prefix to use.
+The default value is \f[C]1\f[R] (no prefix) for bytes/bits and
+\f[C]n\f[R] (for nano) for everything else.
+Possible values are \f[C]n\f[R], \f[C]u\f[R], \f[C]m\f[R], \f[C]1\f[R],
+\f[C]K\f[R], \f[C]M\f[R], \f[C]G\f[R] and \f[C]T\f[R].
+.SS Examples
+.PP
+\f[C]\[dq]{var:3;n}\[dq]\f[R]
+.PP
+.TS
+tab(@);
+l l.
+T{
+The value of \f[C]var\f[R]
+T}@T{
+Output
+T}
+_
+T{
+\f[C]0.0001\f[R]
+T}@T{
+\[lq]100u\[rq]
+T}
+T{
+\f[C]0.001\f[R]
+T}@T{
+\[lq]1.0m\[rq]
+T}
+T{
+\f[C]0.01\f[R]
+T}@T{
+\[dq] 10m\[dq]
+T}
+T{
+\f[C]0.1\f[R]
+T}@T{
+\[lq]100m\[rq]
+T}
+T{
+\f[C]1.0\f[R]
+T}@T{
+\[lq]1.0\[rq]
+T}
+T{
+\f[C]12.0\f[R]
+T}@T{
+\[dq] 12\[dq]
+T}
+T{
+\f[C]123.0\f[R]
+T}@T{
+\[lq]123\[rq]
+T}
+T{
+\f[C]1234.0\f[R]
+T}@T{
+\[lq]1.23K\[rq]
+T}
+.TE
+.PP
+\f[C]\[dq]{var:3;1}\[dq]\f[R]
+.PP
+.TS
+tab(@);
+l l.
+T{
+The value of \f[C]var\f[R]
+T}@T{
+Output
+T}
+_
+T{
+\f[C]0.0001\f[R]
+T}@T{
+\[lq]0.0\[rq]
+T}
+T{
+\f[C]0.001\f[R]
+T}@T{
+\[lq]0.0\[rq]
+T}
+T{
+\f[C]0.01\f[R]
+T}@T{
+\[lq]0.0\[rq]
+T}
+T{
+\f[C]0.1\f[R]
+T}@T{
+\[lq]0.1\[rq]
+T}
+T{
+\f[C]1.0\f[R]
+T}@T{
+\[lq]1.0\[rq]
+T}
+T{
+\f[C]12.0\f[R]
+T}@T{
+\[dq] 12\[dq]
+T}
+T{
+\f[C]123.0\f[R]
+T}@T{
+\[lq]123\[rq]
+T}
+T{
+\f[C]1234.0\f[R]
+T}@T{
+\[lq]1.23K\[rq]
+T}
+.TE
+.SS \f[C][_]<unit>\f[R]
+.PP
+Some placeholders have a \[lq]unit\[rq].
+For example, \f[C]net\f[R] block displays speed in bytes per second by
+default.
+This option gives ability to convert one units into another.
+Ignored for strings.
+Prepend the unit with the underscore \f[C]_\f[R] to hide the unit
+(i.e.\ don\[cq]t display it).
+.SS The list of units
+.PP
+.TS
+tab(@);
+l l l.
+T{
+Unit
+T}@T{
+Means
+T}@T{
+Displays
+T}
+_
+T{
+B
+T}@T{
+Bytes
+T}@T{
+B
+T}
+T{
+b
+T}@T{
+Bits
+T}@T{
+b
+T}
+T{
+%
+T}@T{
+Percents
+T}@T{
+%
+T}
+T{
+deg
+T}@T{
+Degrees
+T}@T{
+\[de]
+T}
+T{
+s
+T}@T{
+Seconds
+T}@T{
+s
+T}
+T{
+W
+T}@T{
+Watts
+T}@T{
+W
+T}
+T{
+Hz
+T}@T{
+Hertz
+T}@T{
+Hz
+T}
+.TE
+.SS Example
+.PP
+\f[C]\[dq]{speed_down*b}\[dq]\f[R] - show the download speed in bits per
+second.
+.PP
+\f[C]\[dq]{speed_down*_b}\[dq]\f[R] - show the download speed in bits
+per second, but hide the \[lq]b\[rq].
+.PP
+\f[C]\[dq]{speed_down*_}\[dq]\f[R] - show the download speed in it\[cq]s
+default units, but hide the units.
+.PP
+\f[C]\[dq]{speed_down*_b}Bi/s\[dq]\f[R] - show the download in bits per
+second, and disply the untit as \[lq]Bi/s\[rq] instead of \[lq]b\[rq].
+.SS \f[C]<bar max value>\f[R]
+.PP
+Every numeric placeholder (Integers and Floats) can be drawn as a bar.
+This option sets the value to be considered \[lq]100%\[rq].
+If this option is set, every other option will be ignored, except for
+\f[C]min width\f[R], which will set the length of a bar.
+.SS Example
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]sound\[dq]
+format = \[dq]{volume:5#110} {volume:03}\[dq]
+\f[R]
+.fi
+.PP
+Here, \f[C]{volume:5#110}\f[R] means \[dq]draw a bar, 5 character long,
+with 100% being 110.
+.PP
+Output: https://imgur.com/a/CCNw04e
 .SH THEMES
 
 .PP
@@ -5108,12 +5833,14 @@ name = \[dq]awesome\[dq]
 \f[R]
 .fi
 .PP
-You can also use your own custom theme:
+Both theme and an icon set can be loaded from a separate file.
 .IP
 .nf
 \f[C]
 [theme]
 file = \[dq]<file>\[dq]
+[icons]
+file = \[dq]<file_2>
 \f[R]
 .fi
 .PP
@@ -5126,10 +5853,18 @@ If full path given, then use it as is:
 If filename given, e.g.\ \[lq]custom_theme.toml\[rq], then first check
 \f[C]XDG_CONFIG_HOME/i3status-rust/themes\f[R]
 .IP "3." 3
+Then look for it in \f[C]\[ti]/.local/share/i3status-rust/themes\f[R]
+.IP "4." 3
 Otherwise look for it in \f[C]/usr/share/i3status-rust/themes\f[R]
 .PP
-Example theme file can be found in
-\f[C]example/theme/solarized-dark.toml\f[R].
+Notes: - In case with icon sets, the file should be in \f[C]icons\f[R]
+subdirectory instead of \f[C]themes\f[R].
+- You can omit the \f[C].toml\f[R] extension while specifying
+\f[C]file\f[R] parameter.
+- \f[C]file\f[R] parameter is an alias to \f[C]name\f[R], they are
+completely interchangeable.
+- All the standard themes are provides in files, so you can take them as
+examples of how to write your own themes/icon sets.
 .SS Available themes
 .IP \[bu] 2
 \f[C]plain\f[R] (default)
@@ -5161,6 +5896,12 @@ Example theme file can be found in
 .IP \[bu] 2
 \f[C]native\f[R] (like plain with no background and native separators)
 [IMAGE: native (https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)]
+.IP \[bu] 2
+\f[C]semi-native\f[R] (like native but with background) //TODO add an
+image
+.IP \[bu] 2
+\f[C]nord-dark\f[R] (polar night)
+[IMAGE: nord-dark (https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)]
 .SS Available icon sets
 .IP \[bu] 2
 \f[C]none\f[R] (default.
@@ -5171,6 +5912,8 @@ Uses text labels instead of icons)
 \f[C]awesome5\f[R] (Font Awesome 5.x)
 .IP \[bu] 2
 \f[C]material\f[R]
+.IP \[bu] 2
+\f[C]material-nf\f[R] (Any font from Nerd Fonts collection)
 .RS
 .PP
 \f[B]Note\f[R]: In order to use the material icon set, you need a
@@ -5203,7 +5946,35 @@ bat_discharging = \[dq] |v| \[dq]
 .PP
 Example configurations can be found as \f[C]example_theme.toml\f[R] and
 \f[C]example_icon.toml\f[R].
+.PP
+Besides global overrides you may also use per-block overrides using the
+\f[C]theme_overrides\f[R] and \f[C]icons_format\f[R] options available
+for all blocks.
+For example:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]cpu\[dq]
+icons_format = \[dq]{icon}\[dq] # Remove spaces aroud icons for this block.
+[block.theme_overrides]
+idle_bg = \[dq]#123456\[dq]
+idle_fg = \[dq]#abcdef\[dq]
+\f[R]
+.fi
 .SS Available theme overrides
+.PP
+All \f[C]bg\f[R] and \f[C]fg\f[R] overrides are html hex color codes
+like \f[C]#000000\f[R] or \f[C]#789ABC\f[R].
+A fourth byte for alpha (like \f[C]#acbdef42\f[R]) works on some
+systems.
+\f[C]00\f[R] is transparent, \f[C]FF\f[R] is opaque.
+.PP
+The tints are added to every second block counting from the right.
+They will therefore always brighten the block and never darken it.
+The alpha channel, if it works, can also be alternated in the same way.
+.PP
+Feel free to take a look at the provided color schemes for reference.
 .IP \[bu] 2
 \f[C]alternating_tint_bg\f[R]
 .IP \[bu] 2
@@ -5235,16 +6006,46 @@ Example configurations can be found as \f[C]example_theme.toml\f[R] and
 .IP \[bu] 2
 \f[C]warning_fg\f[R]
 .SS Available icon overrides
+.PP
+These can be directly set to a string containing the desired unicode
+codepoint(s) or use a TOML escape sequence like
+\f[C]\[dq]\[rs]uf0f3\[dq]\f[R] for up to 4-nibble codepoints and
+\f[C]\[dq]\[rs]U0001f312\[dq]\f[R] for up to 8-nibble codepoints.
+.PP
+You can find the codepoints in the documentation of the icon font
+you\[cq]re using.
+.PP
+Feel free to take a look at the provided icon mappings for reference.
 .IP \[bu] 2
 \f[C]backlight_empty\f[R]
 .IP \[bu] 2
 \f[C]backlight_full\f[R]
 .IP \[bu] 2
-\f[C]backlight_partial1\f[R]
+\f[C]backlight_1\f[R]
 .IP \[bu] 2
-\f[C]backlight_partial2\f[R]
+\f[C]backlight_2\f[R]
 .IP \[bu] 2
-\f[C]backlight_partial3\f[R]
+\f[C]backlight_3\f[R]
+.IP \[bu] 2
+\f[C]backlight_4\f[R]
+.IP \[bu] 2
+\f[C]backlight_5\f[R]
+.IP \[bu] 2
+\f[C]backlight_6\f[R]
+.IP \[bu] 2
+\f[C]backlight_7\f[R]
+.IP \[bu] 2
+\f[C]backlight_8\f[R]
+.IP \[bu] 2
+\f[C]backlight_9\f[R]
+.IP \[bu] 2
+\f[C]backlight_10\f[R]
+.IP \[bu] 2
+\f[C]backlight_11\f[R]
+.IP \[bu] 2
+\f[C]backlight_12\f[R]
+.IP \[bu] 2
+\f[C]backlight_13\f[R]
 .IP \[bu] 2
 \f[C]bat_charging\f[R]
 .IP \[bu] 2
@@ -5259,6 +6060,8 @@ Example configurations can be found as \f[C]example_theme.toml\f[R] and
 \f[C]cpu\f[R]
 .IP \[bu] 2
 \f[C]gpu\f[R]
+.IP \[bu] 2
+\f[C]disk_drive\f[R]
 .IP \[bu] 2
 \f[C]mail\f[R]
 .IP \[bu] 2

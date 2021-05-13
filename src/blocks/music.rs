@@ -229,7 +229,7 @@ pub struct MusicConfig {
     pub hide_when_empty: bool,
 
     /// Format string for displaying music player info.
-    pub format: String,
+    pub format: FormatTemplate,
 }
 
 impl Default for MusicConfig {
@@ -248,7 +248,7 @@ impl Default for MusicConfig {
             seek_step: 1000,
             interface_name_exclude: Vec::new(),
             hide_when_empty: false,
-            format: "{combo}".to_string(),
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -364,18 +364,18 @@ impl ConfigBlock for Music {
                                     if let Some(data) = prop_changed.changed_properties.get("PlaybackStatus") {
                                         let new_playback = extract_playback_status(&data.0);
                                         if player.playback_status != new_playback {
-                                            player.playback_status = extract_playback_status(&data.0);
+                                            player.playback_status = new_playback;
                                             updated = true;
                                         }
                                     }
                                     // workaround for `playerctld`
-                                    // This block keeps track of players currently active on the MPRIS bus, 
+                                    // This block keeps track of players currently active on the MPRIS bus,
                                     // and only clears the metadata when a player has disappeared from the bus.
                                     // However `playerctl` is essentially doing the same thing as this block by
                                     // keeping track of players by itself, and when the last player is closed
                                     // the playerctld bus still remains which means the block never clears the
                                     // metadata for the last player that disappeared. We can get around this by
-                                    // listening to the PlayerNames signal sent by playerctld and then only clear 
+                                    // listening to the PlayerNames signal sent by playerctld and then only clear
                                     // the metadata when there are no more players left.
                                     if let Some(data) = prop_changed.changed_properties.get("PlayerNames") {
                                         if data.0.as_iter().unwrap().peekable().peek().is_none() {
@@ -501,7 +501,7 @@ impl ConfigBlock for Music {
             players,
             hide_when_empty: block_config.hide_when_empty,
             send,
-            format: FormatTemplate::from_string(&block_config.format)?,
+            format: block_config.format.with_default("{combo}")?,
             scrolling: shared_config.scrolling,
         })
     }
@@ -565,9 +565,21 @@ impl Block for Music {
                 self.current_song_widget.set_text(String::new());
             } else {
                 self.current_song_widget
-                    .set_text(self.format.render(&values)?);
+                    .set_text(self.format.render(&values)?.0);
             }
         }
+
+        let state = match metadata.playback_status {
+            PlaybackStatus::Playing => State::Info,
+            _ => State::Idle,
+        };
+
+        [&mut self.play, &mut self.prev, &mut self.next]
+            .iter_mut()
+            .filter_map(|button| button.as_mut())
+            .for_each(|button| button.set_state(state));
+
+        self.current_song_widget.set_state(state);
 
         if let Some(ref mut play) = self.play {
             play.set_icon(match metadata.playback_status {

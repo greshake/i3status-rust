@@ -32,14 +32,14 @@ pub struct Notify {
 #[serde(deny_unknown_fields, default)]
 pub struct NotifyConfig {
     /// Format string which describes the output of this block.
-    pub format: String,
+    pub format: FormatTemplate,
 }
 
 impl Default for NotifyConfig {
     fn default() -> Self {
         Self {
             // display just the bell icon
-            format: "".into(),
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -109,7 +109,7 @@ impl ConfigBlock for Notify {
         Ok(Notify {
             id,
             paused: state,
-            format: FormatTemplate::from_string(&block_config.format)?,
+            format: block_config.format.with_default("")?,
             output: TextWidget::new(id, 0, shared_config).with_icon(icon)?,
         })
     }
@@ -130,7 +130,7 @@ impl Block for Notify {
             "state" => Value::from_string(paused.to_string())
         );
 
-        self.output.set_text(self.format.render(&values)?);
+        self.output.set_texts(self.format.render(&values)?);
 
         let icon = if paused == 1 { "bell-slash" } else { "bell" };
         self.output.set_icon(icon)?;

@@ -54,7 +54,7 @@ impl TryInto<Placeholder> for &str {
                     current_buf = &mut min_width_buf;
                 }
                 MAX_WIDTH_TOKEN => {
-                    if !min_width_buf.is_empty() {
+                    if !max_width_buf.is_empty() {
                         return unexpected_token(c);
                     }
                     current_buf = &mut max_width_buf;

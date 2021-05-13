@@ -46,7 +46,7 @@ pub struct CpuConfig {
     pub critical: u64,
 
     /// Format override
-    pub format: String,
+    pub format: FormatTemplate,
 }
 
 impl Default for CpuConfig {
@@ -56,7 +56,7 @@ impl Default for CpuConfig {
             info: 30,
             warning: 60,
             critical: 90,
-            format: "{utilization}".to_string(),
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -77,11 +77,10 @@ impl ConfigBlock for Cpu {
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("cpu", "Invalid format specified for cpu")?,
             boost_icon_on: shared_config.get_icon("cpu_boost_on")?,
             boost_icon_off: shared_config.get_icon("cpu_boost_off")?,
             output: TextWidget::new(id, 0, shared_config).with_icon("cpu")?,
+            format: block_config.format.with_default("{utilization}")?,
         })
     }
 }
@@ -204,7 +203,7 @@ impl Block for Cpu {
             );
         }
 
-        self.output.set_text(self.format.render(&values)?);
+        self.output.set_texts(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

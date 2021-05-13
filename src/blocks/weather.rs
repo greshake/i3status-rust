@@ -32,6 +32,8 @@ pub enum WeatherService {
         place: Option<String>,
         coordinates: Option<(String, String)>,
         units: OpenWeatherMapUnits,
+        #[serde(default = "WeatherService::default_lang")]
+        lang: Option<String>,
     },
 }
 
@@ -45,6 +47,9 @@ impl WeatherService {
     fn getenv_openweathermap_place() -> Option<String> {
         env::var(OPENWEATHERMAP_PLACE_ENV).ok()
     }
+    fn default_lang() -> Option<String> {
+        Some("en".to_string())
+    }
 }
 
 #[derive(Copy, Clone, Debug, Deserialize, PartialEq)]
@@ -57,7 +62,7 @@ pub enum OpenWeatherMapUnits {
 pub struct Weather {
     id: usize,
     weather: TextWidget,
-    format: String,
+    format: FormatTemplate,
     weather_keys: HashMap<&'static str, Value>,
     service: WeatherService,
     update_interval: Duration,
@@ -154,6 +159,7 @@ impl Weather {
                 place,
                 units,
                 coordinates,
+                lang,
             } => {
                 if api_key_opt.is_none() {
                     return configuration_error(&format!(
@@ -191,13 +197,14 @@ impl Weather {
                 // This uses the "Current Weather Data" API endpoint
                 // Refer to https://openweathermap.org/current
                 let openweather_url = &format!(
-                    "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}",
+                    "https://api.openweathermap.org/data/2.5/weather?{location_query}&appid={api_key}&units={units}&lang={lang}",
                     location_query = location_query,
                     api_key = api_key,
                     units = match *units {
                         OpenWeatherMapUnits::Metric => "metric",
                         OpenWeatherMapUnits::Imperial => "imperial",
                     },
+                    lang = lang.as_ref().unwrap(),
                 );
 
                 let output =
@@ -224,6 +231,13 @@ impl Weather {
 
                 let raw_weather = json
                     .pointer("/weather/0/main")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(malformed_json_error)?
+                    .to_string();
+
+                let raw_weather_verbose = json
+                    .pointer("/weather/0/description")
+                    .and_then(|v| v.as_str())
                     .ok_or_else(malformed_json_error)?
                     .to_string();
 
@@ -274,6 +288,7 @@ impl Weather {
 
                 self.weather_keys = map!(
                     "weather" => Value::from_string(raw_weather),
+                    "weather_verbose" => Value::from_string(raw_weather_verbose),
                     "temp" => Value::from_integer(raw_temp as i64).degrees(),
                     "humidity" => Value::from_integer(raw_humidity as i64),
                     "apparent" => Value::from_integer(apparent_temp as i64).degrees(),
@@ -296,24 +311,16 @@ pub struct WeatherConfig {
         deserialize_with = "deserialize_duration"
     )]
     pub interval: Duration,
-    #[serde(default = "WeatherConfig::default_format")]
-    pub format: String,
+    #[serde(default)]
+    pub format: FormatTemplate,
     pub service: WeatherService,
-    #[serde(default = "WeatherConfig::default_autolocate")]
+    #[serde(default)]
     pub autolocate: bool,
 }
 
 impl WeatherConfig {
     fn default_interval() -> Duration {
         Duration::from_secs(600)
-    }
-
-    fn default_format() -> String {
-        "{weather} {temp}\u{00b0}".to_string()
-    }
-
-    fn default_autolocate() -> bool {
-        false
     }
 }
 
@@ -329,7 +336,9 @@ impl ConfigBlock for Weather {
         Ok(Weather {
             id,
             weather: TextWidget::new(id, 0, shared_config),
-            format: block_config.format,
+            format: block_config
+                .format
+                .with_default("{weather} {temp}\u{00b0}")?,
             weather_keys: HashMap::new(),
             service: block_config.service,
             update_interval: block_config.interval,
@@ -342,8 +351,8 @@ impl Block for Weather {
     fn update(&mut self) -> Result<Option<Update>> {
         match self.update_weather() {
             Ok(_) => {
-                let fmt = FormatTemplate::from_string(&self.format)?;
-                self.weather.set_text(fmt.render(&self.weather_keys)?);
+                self.weather
+                    .set_texts(self.format.render(&self.weather_keys)?);
                 self.weather.set_state(State::Idle)
             }
             Err(BlockError(block, _)) | Err(InternalError(block, _, _)) if block == "curl" => {

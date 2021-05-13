@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
@@ -35,6 +36,7 @@ struct Memstate {
     shmem: (u64, bool),
     swap_total: (u64, bool),
     swap_free: (u64, bool),
+    zfs_arc_cache: u64,
 }
 
 impl Memstate {
@@ -70,6 +72,10 @@ impl Memstate {
         self.swap_free.0
     }
 
+    fn zfs_arc_cache(&self) -> u64 {
+        self.zfs_arc_cache
+    }
+
     fn new() -> Self {
         Memstate {
             mem_total: (0, false),
@@ -80,6 +86,7 @@ impl Memstate {
             shmem: (0, false),
             swap_total: (0, false),
             swap_free: (0, false),
+            zfs_arc_cache: 0,
         }
     }
 
@@ -112,10 +119,10 @@ pub struct Memory {
 #[serde(deny_unknown_fields, default)]
 pub struct MemoryConfig {
     /// Format string for Memory view. All format values are described below.
-    pub format_mem: String,
+    pub format_mem: FormatTemplate,
 
     /// Format string for Swap view.
-    pub format_swap: String,
+    pub format_swap: FormatTemplate,
 
     /// Default view displayed on startup. Options are <br/> memory, swap
     pub display_type: Memtype,
@@ -146,8 +153,8 @@ pub struct MemoryConfig {
 impl Default for MemoryConfig {
     fn default() -> Self {
         Self {
-            format_mem: "{mem_free;M}/{mem_total;M}({mem_total_used_percents})".to_string(),
-            format_swap: "{swap_free;M}/{swap_total;M}({swap_used_percents})".to_string(),
+            format_mem: FormatTemplate::default(),
+            format_swap: FormatTemplate::default(),
             display_type: Memtype::Memory,
             icons: true,
             clickable: true,
@@ -161,7 +168,7 @@ impl Default for MemoryConfig {
 }
 
 impl Memory {
-    fn format_insert_values(&mut self, mem_state: Memstate) -> Result<String> {
+    fn format_insert_values(&mut self, mem_state: Memstate) -> Result<(String, Option<String>)> {
         let mem_total = mem_state.mem_total() as f64 * 1024.;
         let mem_free = mem_state.mem_free() as f64 * 1024.;
         let swap_total = mem_state.swap_total() as f64 * 1024.;
@@ -171,7 +178,8 @@ impl Memory {
         let buffers = mem_state.buffers() as f64 * 1024.;
         let cached =
             // Why do we include shared memory to "cached"?
-            (mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem()) as f64 * 1024.;
+            (mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem()) as f64 * 1024.
+            + mem_state.zfs_arc_cache() as f64;
         let mem_used = mem_total_used - (buffers + cached);
         let mem_avail = mem_total - mem_used;
 
@@ -250,8 +258,12 @@ impl ConfigBlock for Memory {
             },
             clickable: block_config.clickable,
             format: (
-                FormatTemplate::from_string(&block_config.format_mem)?,
-                FormatTemplate::from_string(&block_config.format_swap)?,
+                block_config
+                    .format_mem
+                    .with_default("{mem_free;M}/{mem_total;M}({mem_total_used_percents})")?,
+                block_config
+                    .format_swap
+                    .with_default("{swap_free;M}/{swap_total;M}({swap_used_percents})")?,
             ),
             update_interval: block_config.interval,
             tx_update_request: tx,
@@ -352,12 +364,23 @@ impl Block for Memory {
             }
         }
 
+        // Read ZFS arc cache size to add to total cache size
+        let zfs_arcstats_file = std::fs::read_to_string("/proc/spl/kstat/zfs/arcstats");
+        if let Ok(arcstats) = zfs_arcstats_file {
+            let size_re = Regex::new(r"size\s+\d+\s+(\d+)").unwrap(); // Valid regex is safe to unwrap.
+            let size = &size_re
+                .captures(&arcstats)
+                .block_error("memory", "failed to find zfs_arc_cache size")?[1];
+            mem_state.zfs_arc_cache =
+                u64::from_str(size).block_error("memory", "failed to parse zfs_arc_cache size")?;
+        }
+
         // Now, create the string to be shown
         let output_text = self.format_insert_values(mem_state)?;
 
         match self.memtype {
-            Memtype::Memory => self.output.0.set_text(output_text),
-            Memtype::Swap => self.output.1.set_text(output_text),
+            Memtype::Memory => self.output.0.set_texts(output_text),
+            Memtype::Swap => self.output.1.set_texts(output_text),
         }
 
         Ok(Some(self.update_interval.into()))

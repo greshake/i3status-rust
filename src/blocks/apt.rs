@@ -39,13 +39,13 @@ pub struct AptConfig {
     pub interval: Duration,
 
     /// Format override
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Alternative format override for when exactly 1 update is available
-    pub format_singular: String,
+    pub format_singular: FormatTemplate,
 
     /// Alternative format override for when no updates are available
-    pub format_up_to_date: String,
+    pub format_up_to_date: FormatTemplate,
 
     /// Indicate a `warning` state for the block if any pending update match the
     /// following regex. Default behaviour is that no package updates are deemed
@@ -61,9 +61,9 @@ impl Default for AptConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(600),
-            format: "{count:1}".to_string(),
-            format_singular: "{count:1}".to_string(),
-            format_up_to_date: "{count:1}".to_string(),
+            format: FormatTemplate::default(),
+            format_singular: FormatTemplate::default(),
+            format_up_to_date: FormatTemplate::default(),
             warning_updates_regex: None,
             critical_updates_regex: None,
         }
@@ -104,12 +104,9 @@ impl ConfigBlock for Apt {
         Ok(Apt {
             id,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("apt", "Invalid format specified for apt::format")?,
-            format_singular: FormatTemplate::from_string(&block_config.format_singular)
-                .block_error("apt", "Invalid format specified for apt::format_singular")?,
-            format_up_to_date: FormatTemplate::from_string(&block_config.format_up_to_date)
-                .block_error("apt", "Invalid format specified for apt::format_up_to_date")?,
+            format: block_config.format.with_default("{count:1}")?,
+            format_singular: block_config.format_singular.with_default("{count:1}")?,
+            format_up_to_date: block_config.format_up_to_date.with_default("{count:1}")?,
             output,
             warning_updates_regex: match block_config.warning_updates_regex {
                 None => None, // no regex configured
@@ -188,7 +185,7 @@ impl Block for Apt {
             let updates_list = get_updates_list(&self.config_path)?;
             let count = get_update_count(&updates_list);
             let formatting_map = map!(
-                "{count}" => Value::from_integer(count as i64)
+                "count" => Value::from_integer(count as i64)
             );
 
             let warning = self
@@ -202,7 +199,7 @@ impl Block for Apt {
 
             (formatting_map, warning, critical, count)
         };
-        self.output.set_text(match cum_count {
+        self.output.set_texts(match cum_count {
             0 => self.format_up_to_date.render(&formatting_map)?,
             1 => self.format_singular.render(&formatting_map)?,
             _ => self.format.render(&formatting_map)?,

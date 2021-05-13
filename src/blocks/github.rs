@@ -40,7 +40,7 @@ pub struct GithubConfig {
     pub api_server: String,
 
     /// Format override
-    pub format: String,
+    pub format: FormatTemplate,
 
     pub hide_if_total_is_zero: bool,
 }
@@ -50,7 +50,7 @@ impl Default for GithubConfig {
         Self {
             interval: Duration::from_secs(30),
             api_server: "https://api.github.com".to_string(),
-            format: "{total}".to_string(),
+            format: FormatTemplate::default(),
             hide_if_total_is_zero: false,
         }
     }
@@ -77,8 +77,7 @@ impl ConfigBlock for Github {
             text,
             api_server: block_config.api_server,
             token,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("github", "Invalid format specified")?,
+            format: block_config.format.with_default("{total:1}")?,
             total_notifications: 0,
             hide_if_total_is_zero: block_config.hide_if_total_is_zero,
         })
@@ -125,7 +124,7 @@ impl Block for Github {
             "team_mention" =>     Value::from_integer(*aggregations.get("team_mention").unwrap_or(&default) as i64),
         );
 
-        self.text.set_text(self.format.render(&values)?);
+        self.text.set_texts(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }

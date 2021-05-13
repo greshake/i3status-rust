@@ -72,7 +72,7 @@ fn format_number(
         (value, prefix)
     };
 
-    if unit == Unit::Percents {
+    if unit == Unit::Percents || unit == Unit::None {
         value = raw_value;
         prefix = Prefix::One;
     }
@@ -180,7 +180,6 @@ impl Value {
         self
     }
 
-    //TODO impl Display
     pub fn format(&self, var: &Placeholder) -> Result<String> {
         let min_width = var.min_width.unwrap_or(self.min_width);
         let pad_with = var.pad_with.unwrap_or(' ');
@@ -201,12 +200,13 @@ impl Value {
         let value = match self.value {
             InternalValue::Text(ref text) => {
                 let mut text = text.clone();
-                let text_len = text.len();
-                for _ in text_len..min_width {
+                for _ in (text.chars().count())..min_width {
                     text.push(pad_with);
                 }
                 if let Some(max_width) = var.max_width {
-                    text.truncate(max_width);
+                    for _ in 0..(text.chars().count() as isize - max_width as isize) {
+                        text.pop();
+                    }
                 }
                 text
             }
