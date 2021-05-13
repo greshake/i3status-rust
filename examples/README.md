@@ -13,6 +13,7 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 - [HTTP Status Code](#http-status-code)
 - [Intel GPU Usage](#intel-gpu-usage)
 - [Kernel](#kernel)
+- [Liquid cooling system status](#Liquid-cooling-system-status)
 - [Monitors](#monitors)
 - [Ping/RTT](#pingrtt)
 - [Public IP](#public-ip)
