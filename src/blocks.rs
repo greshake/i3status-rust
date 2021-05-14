@@ -9,6 +9,7 @@ pub mod custom_dbus;
 pub mod disk_space;
 pub mod docker;
 pub mod focused_window;
+pub mod get_crypto;
 pub mod github;
 pub mod hueshift;
 pub mod ibus;
@@ -50,6 +51,7 @@ use self::custom_dbus::*;
 use self::disk_space::*;
 use self::docker::*;
 use self::focused_window::*;
+use self::get_crypto::*;
 use self::github::*;
 use self::hueshift::*;
 use self::ibus::*;
@@ -236,6 +238,7 @@ pub fn create_block(
             shared_config,
             update_request
         ),
+        "get_crypto" => block!(GetCrypto, id, block_config, shared_config, update_request),
         "github" => block!(Github, id, block_config, shared_config, update_request),
         "hueshift" => block!(Hueshift, id, block_config, shared_config, update_request),
         "ibus" => block!(IBus, id, block_config, shared_config, update_request),
