@@ -140,6 +140,10 @@ impl ConfigBlock for Pacman {
     ) -> Result<Self> {
         let output = TextWidget::new(id, 0, shared_config).with_icon("update")?;
 
+        let fmt_normal = block_config.format.with_default("{pacman}")?;
+        let fmt_singular = block_config.format_singular.with_default("{pacman}")?;
+        let fmt_up_to_date = block_config.format_up_to_date.with_default("{pacman}")?;
+
         Ok(Pacman {
             id,
             update_interval: block_config.interval,
@@ -169,16 +173,16 @@ impl ConfigBlock for Pacman {
                 }
             },
             watched: PacmanConfig::watched(
-                &block_config.format,
-                &block_config.format_singular,
-                &block_config.format_up_to_date,
+                &fmt_normal,
+                &fmt_singular,
+                &fmt_up_to_date,
                 block_config.aur_command,
             )?,
             uptodate: false,
             hide_when_uptodate: block_config.hide_when_uptodate,
-            format: block_config.format.with_default("{pacman}")?,
-            format_singular: block_config.format_singular.with_default("{pacman}")?,
-            format_up_to_date: block_config.format_up_to_date.with_default("{pacman}")?,
+            format: fmt_normal,
+            format_singular: fmt_singular,
+            format_up_to_date: fmt_up_to_date,
         })
     }
 }
