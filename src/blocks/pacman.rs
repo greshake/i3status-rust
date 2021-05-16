@@ -188,8 +188,8 @@ impl ConfigBlock for Pacman {
 }
 
 fn run_command(var: &str) -> Result<()> {
-    Command::new("fakeroot")
-        .args(&["--", var])
+    Command::new("sh")
+        .args(&["-c", var])
         .stdout(Stdio::null())
         .spawn()
         .block_error("pacman", &format!("Failed to run command '{}'", var))?
@@ -251,7 +251,7 @@ fn get_pacman_available_updates() -> Result<String> {
 
     // Update database
     run_command(&format!(
-        "pacman -Sy --dbpath \"{}\" --logfile /dev/null",
+        "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null",
         updates_db
     ))?;
 
@@ -259,7 +259,7 @@ fn get_pacman_available_updates() -> Result<String> {
     String::from_utf8(
         Command::new("sh")
             .env("LC_ALL", "C")
-            .args(&["-c", &format!("pacman -Qu --dbpath \"{}\"", updates_db)])
+            .args(&["-c", &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db)])
             .output()
             .block_error("pacman", "There was a problem running the pacman commands")?
             .stdout,
