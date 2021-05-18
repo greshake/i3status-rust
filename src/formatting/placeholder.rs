@@ -123,6 +123,8 @@ impl TryInto<Placeholder> for &str {
         // Parse unit
         let (unit, unit_hidden) = if unit_buf.is_empty() {
             (None, false)
+        } else if unit_buf == "_" {
+            (None, true)
         } else if let ("_", unit) = unit_buf.split_at(1) {
             (Some(unit.try_into()?), true)
         } else {
