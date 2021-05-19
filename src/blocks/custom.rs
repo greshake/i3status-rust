@@ -151,11 +151,14 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let raw_output = Command::new(&self.shell)
+        let raw_output = match Command::new(&self.shell)
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.to_string());
+        {
+            Ok(output) => output,
+            Err(e) => return Err(BlockError("custom".to_string(), e.to_string())),
+        };
 
         if self.json {
             let output: Output = serde_json::from_str(&*raw_output).map_err(|e| {
