@@ -1,5 +1,5 @@
-use std::convert::TryInto;
 use std::fmt;
+use std::str::FromStr;
 
 use crate::errors::*;
 
@@ -34,11 +34,11 @@ impl fmt::Display for Unit {
     }
 }
 
-impl TryInto<Unit> for &str {
-    type Error = crate::errors::Error;
+impl FromStr for Unit {
+    type Err = Error;
 
-    fn try_into(self) -> Result<Unit> {
-        match self {
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
             "B" => Ok(Unit::Bytes),
             "b" => Ok(Unit::Bits),
             "%" => Ok(Unit::Percents),
@@ -47,9 +47,10 @@ impl TryInto<Unit> for &str {
             "W" => Ok(Unit::Watts),
             "Hz" => Ok(Unit::Hertz),
             "" => Ok(Unit::None),
-            x => Err(ConfigurationError(
-                "Can not parse unit".to_string(),
+            x => Err(InternalError(
+                "format parser".to_string(),
                 format!("unknown unit: '{}'", x.to_string()),
+                None,
             )),
         }
     }
@@ -62,9 +63,10 @@ impl Unit {
             Self::Bits if into == Self::Bytes => Ok(1. / 8.),
             Self::Bytes if into == Self::Bits => Ok(8.),
             x if into == *x || into == Self::None => Ok(1.),
-            x => Err(ConfigurationError(
-                "Can not convert unit".to_string(),
+            x => Err(InternalError(
+                "format converter".to_string(),
                 format!("it is not possible to convert '{:?}' to '{:?}'", x, into),
+                None,
             )),
         }
     }
