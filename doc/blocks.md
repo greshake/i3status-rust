@@ -1203,6 +1203,19 @@ Requires fakeroot to be installed (only required for pacman).
 
 Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/`. If you have the CHECKUPDATES_DB env var set on your system then substitute that dir instead of /tmp/checkup-db-yourusername.
 
+Tip: On Arch Linux you can setup a `pacman` hook to signal i3status-rs to update after packages have been upgraded, so you won't have stale info in your pacman block. Create `/usr/share/libalpm/hooks/i3status.hook` with the below contents:
+
+```ini
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+When = PostTransaction
+Exec = pkill -SIGUSR2 i3status-rs
+```
+
 #### Examples
 
 Update the list of pending updates every ten minutes (600 seconds):
