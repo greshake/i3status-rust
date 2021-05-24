@@ -259,7 +259,10 @@ fn get_pacman_available_updates() -> Result<String> {
     String::from_utf8(
         Command::new("sh")
             .env("LC_ALL", "C")
-            .args(&["-c", &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db)])
+            .args(&[
+                "-c",
+                &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db),
+            ])
             .output()
             .block_error("pacman", "There was a problem running the pacman commands")?
             .stdout,
