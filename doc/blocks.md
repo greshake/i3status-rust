@@ -517,7 +517,7 @@ Key | Values | Required | Default
 
 ## GitHub
 
-Creates a block which shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope is requried, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
+Creates a block which shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
 
 #### Examples
 
