@@ -221,9 +221,9 @@ impl Block for Cpu {
 /// or intel pstate interface
 fn boost_status() -> Option<bool> {
     if let Ok(boost) = read_to_string("/sys/devices/system/cpu/cpufreq/boost") {
-        return Some(boost.starts_with("1"));
+        return Some(boost.starts_with('1'));
     } else if let Ok(no_turbo) = read_to_string("/sys/devices/system/cpu/intel_pstate/no_turbo") {
-        return Some(no_turbo.starts_with("0"));
+        return Some(no_turbo.starts_with('0'));
     }
     None
 }
