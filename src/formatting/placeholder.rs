@@ -144,7 +144,7 @@ impl FromStr for MinPrefixConfig {
     type Err = Error;
 
     fn from_str(mut s: &str) -> Result<Self> {
-        let space = s.starts_with(" ");
+        let space = s.starts_with(' ');
         if space {
             s = &s[1..];
         }
