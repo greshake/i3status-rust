@@ -1,154 +1,162 @@
-use std::convert::TryInto;
+use std::str::FromStr;
 
 use super::prefix::Prefix;
 use super::unit::Unit;
 use crate::errors::*;
 
-const MIN_WIDTH_TOKEN: char = ':';
-const MAX_WIDTH_TOKEN: char = '^';
-const MIN_SUFFIX_TOKEN: char = ';';
-const UNIT_TOKEN: char = '*';
-const BAR_MAX_VAL_TOKEN: char = '#';
+const DELIMETERS: &[char] = &[':', '^', ';', '*', '#'];
+const MIN_WIDTH_TOKEN: char = DELIMETERS[0];
+const MAX_WIDTH_TOKEN: char = DELIMETERS[1];
+const MIN_PREFIX_TOKEN: char = DELIMETERS[2];
+const UNIT_TOKEN: char = DELIMETERS[3];
+const BAR_MAX_VAL_TOKEN: char = DELIMETERS[4];
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Placeholder {
     pub name: String,
-    pub min_width: Option<usize>,
+    pub min_width: MinWidthConfig,
+    pub unit: UnitConfig,
+    pub min_prefix: MinPrefixConfig,
     pub max_width: Option<usize>,
-    pub pad_with: Option<char>,
-    pub min_prefix: Option<Prefix>,
-    pub unit: Option<Unit>,
-    pub unit_hidden: bool,
     pub bar_max_value: Option<f64>,
 }
 
-fn unexpected_token<T>(token: char) -> Result<T> {
-    Err(ConfigurationError(
-        format!(
-            "failed to parse formatting string: unexpected token '{}'",
-            token
-        ),
-        String::new(),
+pub(super) fn unexpected_token<T>(token: char) -> Result<T> {
+    Err(InternalError(
+        "format parser".to_string(),
+        format!("unexpected token '{}'", token),
+        None,
     ))
 }
 
-impl TryInto<Placeholder> for &str {
-    type Error = crate::errors::Error;
+impl FromStr for Placeholder {
+    type Err = Error;
 
-    fn try_into(self) -> Result<Placeholder> {
-        let mut var_buf = String::new();
-        let mut min_width_buf = String::new();
-        let mut max_width_buf = String::new();
-        let mut min_prefix_buf = String::new();
-        let mut unit_buf = String::new();
-        let mut bar_max_value_buf = String::new();
-
-        let mut current_buf = &mut var_buf;
-
-        for c in self.chars() {
-            match c {
-                MIN_WIDTH_TOKEN => {
-                    if !min_width_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut min_width_buf;
+    fn from_str(s: &str) -> Result<Self> {
+        // A handy macro for parsing placeholders configuration
+        macro_rules! parse {
+            ($delim:expr) => {
+                match s.split_once($delim) {
+                    None => "",
+                    Some((_, min_width)) => match min_width.split_once(DELIMETERS) {
+                        None => min_width,
+                        Some((min_width, _)) => min_width,
+                    },
                 }
-                MAX_WIDTH_TOKEN => {
-                    if !max_width_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut max_width_buf;
-                }
-                MIN_SUFFIX_TOKEN => {
-                    if !min_prefix_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut min_prefix_buf;
-                }
-                UNIT_TOKEN => {
-                    if !unit_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut unit_buf;
-                }
-                BAR_MAX_VAL_TOKEN => {
-                    if !bar_max_value_buf.is_empty() {
-                        return unexpected_token(c);
-                    }
-                    current_buf = &mut bar_max_value_buf;
-                }
-                x => current_buf.push(x),
-            }
+            };
         }
 
-        // Parse padding
-        let (min_width, pad_with) =
-            if min_width_buf.is_empty() {
-                (None, None)
-            } else if let ("0", "") = min_width_buf.split_at(1) {
-                (Some(0), None)
-            } else if let ("0", min_width) = min_width_buf.split_at(1) {
-                (
-                    Some(min_width.parse().configuration_error(&format!(
-                        "failed to parse min_width '{}'",
-                        min_width
-                    ))?),
-                    Some('0'),
-                )
-            } else {
-                (
-                    Some(min_width_buf.parse().configuration_error(&format!(
-                        "failed to parse min_width '{}'",
-                        min_width_buf
-                    ))?),
-                    None,
-                )
-            };
+        let name = s.split_once(DELIMETERS).unwrap_or((s, "")).0;
+        let min_width = parse!(MIN_WIDTH_TOKEN);
+        let max_width = parse!(MAX_WIDTH_TOKEN);
+        let min_prefix = parse!(MIN_PREFIX_TOKEN);
+        let unit = parse!(UNIT_TOKEN);
+        let bar_max_value = parse!(BAR_MAX_VAL_TOKEN);
+
         // Parse max_width
-        let max_width =
-            if max_width_buf.is_empty() {
-                None
-            } else {
-                Some(max_width_buf.parse().configuration_error(&format!(
-                    "failed to parse max_width '{}'",
-                    max_width_buf
-                ))?)
-            };
-        // Parse min_prefix
-        let min_prefix = if min_prefix_buf.is_empty() {
+        let max_width = if max_width.is_empty() {
             None
         } else {
-            Some(min_prefix_buf.as_str().try_into()?)
-        };
-        // Parse unit
-        let (unit, unit_hidden) = if unit_buf.is_empty() {
-            (None, false)
-        } else if unit_buf == "_" {
-            (None, true)
-        } else if let ("_", unit) = unit_buf.split_at(1) {
-            (Some(unit.try_into()?), true)
-        } else {
-            (Some(unit_buf.as_str().try_into()?), false)
+            Some(max_width.parse().internal_error(
+                "format parser",
+                &format!("failed to parse max_width '{}'", max_width),
+            )?)
         };
         // Parse bar_max_value
-        let bar_max_value = if bar_max_value_buf.is_empty() {
+        let bar_max_value = if bar_max_value.is_empty() {
             None
         } else {
-            Some(bar_max_value_buf.parse().configuration_error(&format!(
-                "failed to parse bar_max_value '{}'",
-                bar_max_value_buf
-            ))?)
+            Some(bar_max_value.parse().internal_error(
+                "format parser",
+                &format!("failed to parse bar_max_value '{}'", bar_max_value),
+            )?)
         };
 
-        Ok(Placeholder {
-            name: var_buf,
-            min_width,
+        Ok(Self {
+            name: name.to_string(),
+            min_width: min_width.parse()?,
+            unit: unit.parse()?,
+            min_prefix: min_prefix.parse()?,
             max_width,
-            pad_with,
-            min_prefix,
-            unit,
-            unit_hidden,
             bar_max_value,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MinWidthConfig {
+    pub min_width: Option<usize>,
+    pub pad_with: char,
+}
+
+impl FromStr for MinWidthConfig {
+    type Err = Error;
+
+    fn from_str(mut s: &str) -> Result<Self> {
+        let pad_with_zero = s.starts_with('0');
+        if pad_with_zero {
+            s = &s[1..];
+        }
+
+        Ok(MinWidthConfig {
+            min_width: if s.is_empty() {
+                None
+            } else {
+                Some(s.parse().internal_error(
+                    "format parser",
+                    &format!("failed to parse min_width '{}'", s),
+                )?)
+            },
+            pad_with: if pad_with_zero { '0' } else { ' ' },
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct UnitConfig {
+    pub unit: Option<Unit>,
+    pub hidden: bool,
+}
+
+impl FromStr for UnitConfig {
+    type Err = Error;
+
+    fn from_str(mut s: &str) -> Result<Self> {
+        let hidden = s.starts_with('_');
+        if hidden {
+            s = &s[1..];
+        }
+        Ok(UnitConfig {
+            unit: if s.is_empty() { None } else { Some(s.parse()?) },
+            hidden,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MinPrefixConfig {
+    pub value: Option<Prefix>,
+    pub space: bool,
+    pub hidden: bool,
+}
+
+impl FromStr for MinPrefixConfig {
+    type Err = Error;
+
+    fn from_str(mut s: &str) -> Result<Self> {
+        let space = s.starts_with(" ");
+        if space {
+            s = &s[1..];
+        }
+        let hidden = s.starts_with('_');
+        if hidden {
+            s = &s[1..];
+        }
+
+        Ok(Self {
+            value: if s.is_empty() { None } else { Some(s.parse()?) },
+            space,
+            hidden,
         })
     }
 }
