@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn render() {
         let ft = FormatTemplate::new(
-            Some("some text {var} var again {var}{new_var:3} {bar:2#100} {freq;1}."),
+            "some text {var} var again {var}{new_var:3} {bar:2#100} {freq;1}.",
             None,
         );
         assert!(ft.is_ok());
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn contains() {
-        let format = FormatTemplate::new(Some("some text {foo} {bar:1} foobar"), None);
+        let format = FormatTemplate::new("some text {foo} {bar:1} foobar", None);
         assert!(format.is_ok());
         let format = format.unwrap();
         assert!(format.contains("foo"));

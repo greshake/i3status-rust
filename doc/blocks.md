@@ -1759,7 +1759,7 @@ Your `i3` or `sway` will switch all blocks over to the `short` variant whenever 
 The syntax for placeholders is
 
 ```
-{<name>[:[0]<min width>][^<max width>][;<min prefix>][*[_]<unit>][#<bar max value>]}
+{<name>[:[0]<min width>][^<max width>][;[ ][_]<min prefix>][*[_]<unit>][#<bar max value>]}
 ```
 
 ### `<name>`
@@ -1800,9 +1800,13 @@ The value of `var` | Output
 `"abcde"`          | `"abc"`
 `"ab"`             | `"ab"`
 
-### `<min prefix>`
+### `[ ][_]<min prefix>`
 
 Float values are formatted following [engineering notation](https://en.wikipedia.org/wiki/Engineering_notation). This option sets the minimal SI prefix to use. The default value is `1` (no prefix) for bytes/bits and `n` (for nano) for everything else. Possible values are `n`, `u`, `m`, `1`, `K`, `M`, `G` and `T`.
+
+Prepend an underscore `_` to hide the prefix (i.e. don't display it).
+
+Prepend a space ` ` to add a space between the value and prefix.
 
 #### Examples
 
@@ -1817,20 +1821,30 @@ The value of `var` | Output
 `1.0`              | "1.0"
 `12.0`             | " 12"
 `123.0`            | "123"
-`1234.0`           | "1.23K"
+`1234.0`           | "1.2K"
 
-`"{var:3;1}"`
+`"{var:3; 1}"`
 
 The value of `var` | Output
 -------------------|--------
-`0.0001`           | "0.0"
-`0.001`            | "0.0"
-`0.01`             | "0.0"
-`0.1`              | "0.1"
-`1.0`              | "1.0"
-`12.0`             | " 12"
-`123.0`            | "123"
-`1234.0`           | "1.23K"
+`0.0001`           | "0.0 "
+`0.001`            | "0.0 "
+`0.01`             | "0.0 "
+`0.1`              | "0.1 "
+`1.0`              | "1.0 "
+`12.0`             | " 12 "
+`123.0`            | "123 "
+`1234.0`           | "1.2 K"
+
+`"{var:3;_K}"`
+
+The value of `var` | Output
+-------------------|--------
+`1.0`              | "0.0"
+`12.0`             | "0.0"
+`123.0`            | "0.1"
+`1234.0`           | "1.2"
+`12345.0`          | " 12"
 
 ### `[_]<unit>`
 
