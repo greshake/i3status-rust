@@ -20,7 +20,7 @@ Both theme and an icon set can be loaded from a separate file.
 [theme]
 file = "<file>"
 [icons]
-file = "<file_2>
+file = "<file_2>"
 ```
 where `<file>` can be either a filename or a full path and will be checked in this order:
 
