@@ -1028,7 +1028,7 @@ Key | Values | Required | Default
 `frequency` | WiFi frequency (wireless only) | Float | Hz
 `bitrate` | Connection bitrate | String | -
 `ip` | Connection IP address | String | -
-`ipv6` | Cnnection IPv6 address | String | -
+`ipv6` | Connection IPv6 address | String | -
 `speed_up` | Upload speed | Float | Bytes per second
 `speed_down` | Download speed | Float | Bytes per second
 `graph_up` | A bar graph for upload speed | String | -
