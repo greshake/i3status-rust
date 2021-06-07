@@ -179,7 +179,7 @@ format = "{percentage} {time}"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | `"BAT0"`
+`device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. Defaults to finding the first `"BAT"` file in `/sys/class/power_supply`. | No | `"BAT0"`
 `driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}"`
