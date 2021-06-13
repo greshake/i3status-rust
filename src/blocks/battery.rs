@@ -551,11 +551,31 @@ pub struct BatteryConfig {
     pub hide_missing: bool,
 }
 
+fn default_device() -> String {
+    let mut res = "BAT0".to_string();
+    let mut found = false;
+    if let Ok(dir) = std::fs::read_dir("/sys/class/power_supply") {
+        for entry in dir {
+            if let Ok(e) = entry {
+                if let Some(f) = e.file_name().to_str() {
+                    if &f[..3] == "BAT" {
+                        if !found || f < res.as_str() {
+                            found = true;
+                            res = f.to_string();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    res
+}
+
 impl Default for BatteryConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(10),
-            device: "BAT0".to_string(),
+            device: default_device(),
             format: FormatTemplate::default(),
             full_format: FormatTemplate::default(),
             missing_format: FormatTemplate::default(),
