@@ -558,7 +558,7 @@ fn default_device() -> String {
         for entry in dir {
             if let Ok(e) = entry {
                 if let Some(f) = e.file_name().to_str() {
-                    if &f[..3] == "BAT" {
+                    if f.starts_with("BAT") {
                         if !found || f < res.as_str() {
                             found = true;
                             res = f.to_string();
