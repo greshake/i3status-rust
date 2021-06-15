@@ -487,6 +487,7 @@ pub struct Battery {
     allow_missing: bool,
     hide_missing: bool,
     driver: BatteryDriver,
+    full_threshold: u64,
     good: u64,
     info: u64,
     warning: u64,
@@ -531,6 +532,9 @@ pub struct BatteryConfig {
 
     /// The "driver" to use for powering the block. One of "sysfs" or "upower".
     pub driver: BatteryDriver,
+
+    /// The threshold above which the battery is considered full (no time/precentage shown)
+    pub full_threshold: u64,
 
     /// The threshold above which the remaining capacity is shown as good
     pub good: u64,
@@ -580,6 +584,7 @@ impl Default for BatteryConfig {
             full_format: FormatTemplate::default(),
             missing_format: FormatTemplate::default(),
             driver: BatteryDriver::Sysfs,
+            full_threshold: 100,
             good: 60,
             info: 60,
             warning: 30,
@@ -622,6 +627,7 @@ impl ConfigBlock for Battery {
             allow_missing: block_config.allow_missing,
             hide_missing: block_config.hide_missing,
             driver: block_config.driver,
+            full_threshold: block_config.full_threshold,
             good: block_config.good,
             info: block_config.info,
             warning: block_config.warning,
@@ -678,7 +684,12 @@ impl Block for Battery {
             },
         );
 
-        if status == "Full" || status == "Not charging" {
+        let capacity_is_above_full_threshold = match capacity {
+            Ok(capacity) => (capacity >= self.full_threshold),
+            _ => false,
+        };
+
+        if status == "Full" || status == "Not charging" || capacity_is_above_full_threshold {
             self.output.set_icon("bat_full")?;
             self.output.set_texts(self.full_format.render(&values)?);
             self.output.set_state(State::Good);
