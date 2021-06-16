@@ -86,6 +86,10 @@ Key | Value | Type
 
 The number one in `{count:1}` sets the minimal width to one character.
 
+#### Icons Used
+
+- `update`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Backlight
@@ -135,6 +139,24 @@ ACTION=="add", SUBSYSTEM=="backlight", GROUP="video", MODE="0664"
 ```
 
 This will allow the video group to modify all backlight devices. You will also need to restart for this rule to take effect.
+
+#### Icons Used
+
+`backlight_empty` (when brightness between 0 and 6%)
+`backlight_1` (when brightness between 7 and 13%)
+`backlight_2` (when brightness between 14 and 20%)
+`backlight_3` (when brightness between 21 and 26%)
+`backlight_4` (when brightness between 27 and 33%)
+`backlight_5` (when brightness between 34 and 40%)
+`backlight_6` (when brightness between 41 and 46%)
+`backlight_7` (when brightness between 47 and 53%)
+`backlight_8` (when brightness between 54 and 60%)
+`backlight_9` (when brightness between 61 and 67%)
+`backlight_10` (when brightness between 68 and 73%)
+`backlight_11` (when brightness between 74 and 80%)
+`backlight_12` (when brightness between 81 and 87%)
+`backlight_13` (when brightness between 88 and 93%)
+`backlight_full` (when brightness above 94%)
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -201,6 +223,16 @@ Placeholder | Description | Type
 `{time}` | Time remaining until (dis)charge is complete | String
 `{power}` | Power consumption by the battery or from the power supply when charging | String or Float
 
+#### Icons Used
+
+`bat_charging`
+`bat_not_available`
+`bat_empty` (charge between 0 and 5%)
+`bat_quarter` (charge between 6 and 25%)
+`bat_half` (charge between 26 and 50%)
+`bat_three_quarters` (charge between 51 and 75%)
+`bat_full` (charge over 75%)
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Bluetooth
@@ -250,6 +282,14 @@ Key | Value
 ----|-------
 `{label}` | Device label as set in the block config
 
+#### Icons Used
+
+`headphones` for bluetooth devices identifying as "audio-card"
+`joystick` for bluetooth devices identifying as "input-gaming"
+`keyboard` for bluetooth devices identifying as "input-keyboard"
+`mouse` for bluetooth devices identifying as "input-mouse"
+`bluetooth` for all other devices
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## CPU Utilization
@@ -287,6 +327,12 @@ Placeholder | Description | Type
 `{frequency}` | CPU frequency | Float
 `{frequency<n>}` | CPU frequency in GHz for core `n` | Float
 `{boost}` | CPU turbo boost status | String
+
+#### Icons Used
+
+`cpu`
+`cpu_boost_on`
+`cpu_boost_off`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -460,6 +506,10 @@ Key | Value | Type
 ----|-------|-------
 `{alias}` | The value of `alias` option | String
 
+#### Icons Used
+
+`disk_drive`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Docker
@@ -491,6 +541,10 @@ Key | Value | Type
 `{stopped}` | Containers stopped on the host | Integer
 `{paused}`  | Containers paused on the host | Integer
 `{images}`  | Total images on the host | Integer
+
+#### Icons Used
+
+`docker`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -555,6 +609,10 @@ Key | Values | Required | Default
 `{team_mention}` | Total number of notification related to thread where your team was mentioned | Integer
 
 For more information about notifications, refer to the [GitHub API documentation](https://developer.github.com/v3/activity/notifications/#notification-reasons).
+
+#### Icons Used
+
+`github`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -667,6 +725,19 @@ Key | Values | Required | Default
 `{notif_count}` | Number of unread notifications on your phone | Integer
 `{name}` | Name of your device as reported by KDEConnect | String
 `{id}` | KDEConnect device ID | String
+
+#### Icons Used
+
+`bat_charging`
+`bat_not_available`
+`bat_empty` (charge between 0 and 5%)
+`bat_quarter` (charge between 6 and 25%)
+`bat_half` (charge between 26 and 50%)
+`bat_three_quarters` (charge between 51 and 75%)
+`bat_full` (charge over 75%)
+`notification`
+`phone`
+`phone_disconnected`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -781,6 +852,10 @@ Key | Values | Required | Default
 `{5m}` | 5minute load average | Float
 `{15m}` | 15minute load average | Float
 
+#### Icons Used
+
+`cogs`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Maildir
@@ -809,6 +884,10 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `5`
 `display_type` | Which part of the maildir to count: `"new"`, `"cur"`, or `"all"`. | No | `"new"`
 `icon` | Whether or not to prepend the output with the mail icon. | No | `true`
+
+#### Icons Used
+
+`mail`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -913,6 +992,11 @@ Key | Values | Required | Default
 `{SUp}`  | `{swap_used_percents}`
 `{SUpi}` | `{swap_used_percents:1}`
 
+#### Icons Used
+
+`memory_mem`
+`memory_swap`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Music
@@ -988,6 +1072,13 @@ Key | Values | Required | Default
 `{player}` | Name of the current player (taken from the last part of its MPRIS bus name) | String
 `{avail}`  | Total number of players available to switch between | String
 
+#### Icons Used
+
+`music`
+`music_next`
+`music_play`
+`music_prev`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Net
@@ -1034,6 +1125,15 @@ Key | Values | Required | Default
 `speed_down` | Download speed | Float | Bytes per second
 `graph_up` | A bar graph for upload speed | String | -
 `graph_down` | A bar graph for download speed | String | -
+
+#### Icons Used
+
+`net_loopback`
+`net_vpn`
+`net_wired`
+`net_wireless`
+`net_up`
+`net_down`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1098,6 +1198,15 @@ Key | Values | Required | Default
 `{devices}` | The list of devices, each formatted with the device format string | String
 `{id}` | ??? | String
 
+#### Icons Used
+
+`net_bridge`
+`net_modem`
+`net_vpn`
+`net_wired`
+`net_wireless`
+`unknown`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Notify
@@ -1119,6 +1228,11 @@ Key | Values | Required | Default
  Key | Value | Type
 -----|-------|-----
 `{state}` | Current state of the notification daemon in icon form | String
+
+#### Icons Used
+
+`bell`
+`bell-slash`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1154,6 +1268,10 @@ Key | Values | Required | Default
 `name` | Label to show before the mail count. | No | `""`
 `no_icon` | Disable the mail icon. | No | `false`
 `interval` | Update interval in seconds. | No | `10`
+
+#### Icons Used
+
+`mail`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1193,6 +1311,10 @@ Key | Values | Required | Default
 `show_fan_speed` | Display fan speed. | No | `false`
 `show_clocks` | Display gpu clocks. | No | `false`
 `show_power_draw` | Display GPU power draw in watts. | No | `false`
+
+#### Icons Used
+
+`gpu`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1290,6 +1412,10 @@ Key | Values | Required | Default
 `{aur}` | Number of updates available according to `<aur_command>` | Integer
 `{both}` | Cumulative number of updates available according to `pacman` and `<aur_command>` | Integer
 
+#### Icons Used
+
+`update`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Pomodoro
@@ -1322,6 +1448,10 @@ Key | Values | Required | Default
 `message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
 `break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
 `nag_path` | i3-nagbar binary path. | No | `i3-nagbar`
+
+#### Icons Used
+
+`pomodoro`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1376,7 +1506,6 @@ Key | Values | Required | Default
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
 
-
 ### Available Format Keys
 
  Key | Value | Type
@@ -1384,6 +1513,17 @@ Key | Values | Required | Default
 `{volume}` | Current volume in percent | Integer
 `{output_name}` | PulseAudio or ALSA device name | String
 `{output_description}` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | String
+
+#### Icons Used
+
+`microphone-muted`
+`microphone-empty` (1 to 20%)
+`microphone-half` (21 to 70%)
+`microphone-full` (over 71%)
+`volume-muted`
+`volume-empty` (1 to 20%)
+`volume-half` (21 to 70%)
+`volume-full` (over 71%)
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1417,7 +1557,6 @@ Key | Values | Required | Default
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{ping}{speed_down}{speed_up}"`
 `interval` | Update interval in seconds. | No | `1800`
 
-
 ### Available Format Keys
 
  Key | Value | Type | Unit
@@ -1425,6 +1564,12 @@ Key | Values | Required | Default
 `{ping}` | Ping delay | Float | Seconds
 `{speed_down}` | Download speed | Float | Bits per second
 `{speed_up}` | Upload speed | Float | Bits per second
+
+#### Icons Used
+
+`ping`
+`net_down`
+`net_up`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1476,6 +1621,10 @@ Key | Values | Required | Default
 `{count}` | The number of pending tasks | Integer
 `{filter_name}` | The name of the current filter | String
 
+#### Icons Used
+
+`tasks`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Temperature
@@ -1523,6 +1672,10 @@ Key | Values | Required | Default
 `{average}` | Average temperature among all sensors | Integer
 `{max}` | Maximum temperature among all sensors | Integer
 
+#### Icons Used
+
+`thermometer`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Time
@@ -1549,6 +1702,10 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds. | No | `5`
 `timezone` | A timezone specifier (e.g. "Europe/Lisbon"). | No | Local timezone
 `locale` | Locale to apply when formatting the time. | No | System locale
+
+#### Icons Used
+
+`time`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1585,6 +1742,11 @@ Key | Values | Required | Default
 `icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
 `interval` | Update interval, in seconds. | No | None
 
+#### Icons Used
+
+`toggle_off`
+`toggle_on`
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Uptime
@@ -1602,6 +1764,10 @@ block = "uptime"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval in seconds. | No | `60`
+
+#### Used Icons
+
+`uptime`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1688,6 +1854,15 @@ in which case they must be provided in the environment variables
 `{wind_kmh}` | Wind speed. The wind speed in km/h. | Float
 `{direction}` | Wind direction, e.g. "NE" | String
 
+#### Used Icons
+
+`weather_sun` (when weather is reported as "Clear")
+`weather_rain` (when weather is reported as "Rain" or "Drizzle")
+`weather_clouds` (when weather is reported as "Clouds", "Fog" or "Mist")
+`weather_thunder` (when weather is reported as "Thunderstorm")
+`weather_snow` (when weather is reported as "Snow")
+`weather_default` (in all other cases)
+
 ###### [↥ back to top](#list-of-available-blocks)
 
 ## Xrandr
@@ -1714,6 +1889,12 @@ Key | Values | Required | Default
 `resolution` | Shows the screens resolution. | No | `false`
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | No | `5`
 `interval` | Update interval in seconds. | No | `5`
+
+#### Used Icons
+
+`xrandr`
+`backlight_full`
+`resolution`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
