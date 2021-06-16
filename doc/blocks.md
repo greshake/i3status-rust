@@ -952,46 +952,6 @@ Key | Values | Required | Default
 `{cached}` | Cached memory, similar to htop's yellow bar | Float
 `{cached_percent}` | Cached memory, similar to htop's yellow bar (in %) | Float
 
-#### Removed Format Keys
- Old key | New alternative
----------|---------------
-`{MTg}`  | `{mem_total;G}`
-`{MTm}`  | `{mem_total;M}`
-`{MAg}`  | `{mem_avail;G}`
-`{MAm}`  | `{mem_avail;M}`
-`{MAp}`  | `{mem_avail_percents}`
-`{MApi}` | `{mem_avail_percents:1}`
-`{MFg}`  | `{mem_free;G}`
-`{MFm}`  | `{mem_free;M}`
-`{MFp}`  | `{mem_free_percents}`
-`{MFpi}` | `{mem_free_percents:1}`
-`{Mug}`  | `{mem_used;G}`
-`{Mum}`  | `{mem_used;M}`
-`{Mup}`  | `{mem_used_percents}`
-`{Mupi}` | `{mem_used_percents:1}`
-`{MUg}`  | `{mem_total_used;G}`
-`{MUm}`  | `{mem_total_used;M}`
-`{MUp}`  | `{mem_total_used_percents}`
-`{MUpi}` | `{mem_total_used_percents:1}`
-`{Cg}`   | `{cached;G}`
-`{Cm}`   | `{cached;M}`
-`{Cp}`   | `{cached_percent}`
-`{Cpi}`  | `{cached_percent:1}`
-`{Bg}`   | `{buffers;G}`
-`{Bm}`   | `{buffers;M}`
-`{Bp}`   | `{buffers_percent}`
-`{Bpi}`  | `{buffers_percent:1}`
-`{STg}`  | `{swap_total;G}`
-`{STm}`  | `{swap_total;M}`
-`{SFg}`  | `{swap_free;G}`
-`{SFm}`  | `{swap_free;M}`
-`{SFp}`  | `{swap_free_percents}`
-`{SFpi}` | `{swap_free_percents:1}`
-`{SUg}`  | `{swap_used;G}`
-`{SUm}`  | `{swap_used;M}`
-`{SUp}`  | `{swap_used_percents}`
-`{SUpi}` | `{swap_used_percents:1}`
-
 #### Icons Used
 
 - `memory_mem`
