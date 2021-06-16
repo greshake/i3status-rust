@@ -26,12 +26,53 @@ Blocks:
 * Battery and Disk Space blocks: The `{bar}` format key has been removed in favor of the new [bar](doc/blocks.md#formatting#bar-max-value) formatter. For example, to make the Battery block display the current percentage as a 6 character bar with 100% as the max value, set the format string as so: `format = "{percentage:6#100}`. 
 * Disk Space block: The `{unit}` format key has been removed since the unit of `{free}` and similar format keys don't rely on `unit` configuration option anymore.
 * Maildir block: this is now optional and must be enabled at compile time (#1103 by @MaxVerevkin)
-* Memory block: all old format keys have been removed, refer to [Removed Format Keys](doc/blocks.md#removed-format-keys) section of block's documentation for more details.
+* Memory block: all old format keys have been removed, refer to the table below for more details.
 * Net block: `use_bits`, `speed_min_unit`, `speed_digits` and `max_ssid_width` configuration options have been removed and require manual intervention to fix your config. `speed_min_unit` is replaced by the [min prefix](doc/blocks.md#min-prefix) formatter. `max_ssid_width` is replaced by the [max width](doc/blocks.md#0max-width) formatter.
 * Net block: partially moved from calling external commands to using the netlink interface, which may not work on BSD systems (#1142 by @MaxVerevkin)
 * Networkmanager block: `max_ssid_width` config option has been removed, but the bevaviour can be restored using the [max width](doc/blocks.md#max-width) formatter. For example, `max_ssid_width = 10` is now achieved with `ap_format = "{ssid^10}"`.
 * Sound block: `max_width` config option has been removed, but the bevaviour can be restored using the [max width](doc/blocks.md#max-width) formatter.
 * Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of the new `format` string formatter. For example, to replicate `bytes=true; speed_min_unit="M", speed_digits=4` use `format = "{speed_down:4*B;M}{speed_up:4*B;M}"`
+
+Memory block removed format keys:
+
+ Old key | New alternative
+---------|---------------
+`{MTg}`  | `{mem_total;G}`
+`{MTm}`  | `{mem_total;M}`
+`{MAg}`  | `{mem_avail;G}`
+`{MAm}`  | `{mem_avail;M}`
+`{MAp}`  | `{mem_avail_percents}`
+`{MApi}` | `{mem_avail_percents:1}`
+`{MFg}`  | `{mem_free;G}`
+`{MFm}`  | `{mem_free;M}`
+`{MFp}`  | `{mem_free_percents}`
+`{MFpi}` | `{mem_free_percents:1}`
+`{Mug}`  | `{mem_used;G}`
+`{Mum}`  | `{mem_used;M}`
+`{Mup}`  | `{mem_used_percents}`
+`{Mupi}` | `{mem_used_percents:1}`
+`{MUg}`  | `{mem_total_used;G}`
+`{MUm}`  | `{mem_total_used;M}`
+`{MUp}`  | `{mem_total_used_percents}`
+`{MUpi}` | `{mem_total_used_percents:1}`
+`{Cg}`   | `{cached;G}`
+`{Cm}`   | `{cached;M}`
+`{Cp}`   | `{cached_percent}`
+`{Cpi}`  | `{cached_percent:1}`
+`{Bg}`   | `{buffers;G}`
+`{Bm}`   | `{buffers;M}`
+`{Bp}`   | `{buffers_percent}`
+`{Bpi}`  | `{buffers_percent:1}`
+`{STg}`  | `{swap_total;G}`
+`{STm}`  | `{swap_total;M}`
+`{SFg}`  | `{swap_free;G}`
+`{SFm}`  | `{swap_free;M}`
+`{SFp}`  | `{swap_free_percents}`
+`{SFpi}` | `{swap_free_percents:1}`
+`{SUg}`  | `{swap_used;G}`
+`{SUm}`  | `{swap_used;M}`
+`{SUp}`  | `{swap_used_percents}`
+`{SUpi}` | `{swap_used_percents:1}`
 
 ## Deprecation Warnings
 
