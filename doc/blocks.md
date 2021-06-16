@@ -142,21 +142,21 @@ This will allow the video group to modify all backlight devices. You will also n
 
 #### Icons Used
 
-`backlight_empty` (when brightness between 0 and 6%)
-`backlight_1` (when brightness between 7 and 13%)
-`backlight_2` (when brightness between 14 and 20%)
-`backlight_3` (when brightness between 21 and 26%)
-`backlight_4` (when brightness between 27 and 33%)
-`backlight_5` (when brightness between 34 and 40%)
-`backlight_6` (when brightness between 41 and 46%)
-`backlight_7` (when brightness between 47 and 53%)
-`backlight_8` (when brightness between 54 and 60%)
-`backlight_9` (when brightness between 61 and 67%)
-`backlight_10` (when brightness between 68 and 73%)
-`backlight_11` (when brightness between 74 and 80%)
-`backlight_12` (when brightness between 81 and 87%)
-`backlight_13` (when brightness between 88 and 93%)
-`backlight_full` (when brightness above 94%)
+- `backlight_empty` (when brightness between 0 and 6%)
+- `backlight_1` (when brightness between 7 and 13%)
+- `backlight_2` (when brightness between 14 and 20%)
+- `backlight_3` (when brightness between 21 and 26%)
+- `backlight_4` (when brightness between 27 and 33%)
+- `backlight_5` (when brightness between 34 and 40%)
+- `backlight_6` (when brightness between 41 and 46%)
+- `backlight_7` (when brightness between 47 and 53%)
+- `backlight_8` (when brightness between 54 and 60%)
+- `backlight_9` (when brightness between 61 and 67%)
+- `backlight_10` (when brightness between 68 and 73%)
+- `backlight_11` (when brightness between 74 and 80%)
+- `backlight_12` (when brightness between 81 and 87%)
+- `backlight_13` (when brightness between 88 and 93%)
+- `backlight_full` (when brightness above 94%)
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -225,13 +225,13 @@ Placeholder | Description | Type
 
 #### Icons Used
 
-`bat_charging`
-`bat_not_available`
-`bat_empty` (charge between 0 and 5%)
-`bat_quarter` (charge between 6 and 25%)
-`bat_half` (charge between 26 and 50%)
-`bat_three_quarters` (charge between 51 and 75%)
-`bat_full` (charge over 75%)
+- `bat_charging`
+- `bat_not_available`
+- `bat_empty` (charge between 0 and 5%)
+- `bat_quarter` (charge between 6 and 25%)
+- `bat_half` (charge between 26 and 50%)
+- `bat_three_quarters` (charge between 51 and 75%)
+- `bat_full` (charge over 75%)
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -284,11 +284,11 @@ Key | Value
 
 #### Icons Used
 
-`headphones` for bluetooth devices identifying as "audio-card"
-`joystick` for bluetooth devices identifying as "input-gaming"
-`keyboard` for bluetooth devices identifying as "input-keyboard"
-`mouse` for bluetooth devices identifying as "input-mouse"
-`bluetooth` for all other devices
+- `headphones` for bluetooth devices identifying as "audio-card"
+- `joystick` for bluetooth devices identifying as "input-gaming"
+- `keyboard` for bluetooth devices identifying as "input-keyboard"
+- `mouse` for bluetooth devices identifying as "input-mouse"
+- `bluetooth` for all other devices
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -330,9 +330,9 @@ Placeholder | Description | Type
 
 #### Icons Used
 
-`cpu`
-`cpu_boost_on`
-`cpu_boost_off`
+- `cpu`
+- `cpu_boost_on`
+- `cpu_boost_off`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -508,7 +508,7 @@ Key | Value | Type
 
 #### Icons Used
 
-`disk_drive`
+- `disk_drive`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -544,7 +544,7 @@ Key | Value | Type
 
 #### Icons Used
 
-`docker`
+- `docker`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -612,7 +612,7 @@ For more information about notifications, refer to the [GitHub API documentation
 
 #### Icons Used
 
-`github`
+- `github`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -728,16 +728,16 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`bat_charging`
-`bat_not_available`
-`bat_empty` (charge between 0 and 5%)
-`bat_quarter` (charge between 6 and 25%)
-`bat_half` (charge between 26 and 50%)
-`bat_three_quarters` (charge between 51 and 75%)
-`bat_full` (charge over 75%)
-`notification`
-`phone`
-`phone_disconnected`
+- `bat_charging`
+- `bat_not_available`
+- `bat_empty` (charge between 0 and 5%)
+- `bat_quarter` (charge between 6 and 25%)
+- `bat_half` (charge between 26 and 50%)
+- `bat_three_quarters` (charge between 51 and 75%)
+- `bat_full` (charge over 75%)
+- `notification`
+- `phone`
+- `phone_disconnected`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -854,7 +854,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`cogs`
+- `cogs`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -887,7 +887,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`mail`
+- `mail`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -994,8 +994,8 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`memory_mem`
-`memory_swap`
+- `memory_mem`
+- `memory_swap`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1074,10 +1074,10 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`music`
-`music_next`
-`music_play`
-`music_prev`
+- `music`
+- `music_next`
+- `music_play`
+- `music_prev`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1128,12 +1128,12 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`net_loopback`
-`net_vpn`
-`net_wired`
-`net_wireless`
-`net_up`
-`net_down`
+- `net_loopback`
+- `net_vpn`
+- `net_wired`
+- `net_wireless`
+- `net_up`
+- `net_down`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1200,12 +1200,12 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`net_bridge`
-`net_modem`
-`net_vpn`
-`net_wired`
-`net_wireless`
-`unknown`
+- `net_bridge`
+- `net_modem`
+- `net_vpn`
+- `net_wired`
+- `net_wireless`
+- `unknown`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1231,8 +1231,8 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`bell`
-`bell-slash`
+- `bell`
+- `bell-slash`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1271,7 +1271,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`mail`
+- `mail`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1314,7 +1314,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`gpu`
+- `gpu`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1414,7 +1414,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`update`
+- `update`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1451,7 +1451,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`pomodoro`
+- `pomodoro`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1516,14 +1516,14 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`microphone-muted`
-`microphone-empty` (1 to 20%)
-`microphone-half` (21 to 70%)
-`microphone-full` (over 71%)
-`volume-muted`
-`volume-empty` (1 to 20%)
-`volume-half` (21 to 70%)
-`volume-full` (over 71%)
+- `microphone-muted`
+- `microphone-empty` (1 to 20%)
+- `microphone-half` (21 to 70%)
+- `microphone-full` (over 71%)
+- `volume-muted`
+- `volume-empty` (1 to 20%)
+- `volume-half` (21 to 70%)
+- `volume-full` (over 71%)
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1567,9 +1567,9 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`ping`
-`net_down`
-`net_up`
+- `ping`
+- `net_down`
+- `net_up`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1623,7 +1623,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`tasks`
+- `tasks`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1674,7 +1674,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`thermometer`
+- `thermometer`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1705,7 +1705,7 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`time`
+- `time`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1744,8 +1744,8 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-`toggle_off`
-`toggle_on`
+- `toggle_off`
+- `toggle_on`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1767,7 +1767,7 @@ Key | Values | Required | Default
 
 #### Used Icons
 
-`uptime`
+- `uptime`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1856,12 +1856,12 @@ in which case they must be provided in the environment variables
 
 #### Used Icons
 
-`weather_sun` (when weather is reported as "Clear")
-`weather_rain` (when weather is reported as "Rain" or "Drizzle")
-`weather_clouds` (when weather is reported as "Clouds", "Fog" or "Mist")
-`weather_thunder` (when weather is reported as "Thunderstorm")
-`weather_snow` (when weather is reported as "Snow")
-`weather_default` (in all other cases)
+- `weather_sun` (when weather is reported as "Clear")
+- `weather_rain` (when weather is reported as "Rain" or "Drizzle")
+- `weather_clouds` (when weather is reported as "Clouds", "Fog" or "Mist")
+- `weather_thunder` (when weather is reported as "Thunderstorm")
+- `weather_snow` (when weather is reported as "Snow")
+- `weather_default` (in all other cases)
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1892,9 +1892,9 @@ Key | Values | Required | Default
 
 #### Used Icons
 
-`xrandr`
-`backlight_full`
-`resolution`
+- `xrandr`
+- `backlight_full`
+- `resolution`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
