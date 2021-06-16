@@ -1,4 +1,4 @@
-Examples
+Custom Block Examples
 ========
 
 This is a collection of more or less useful `custom` or `custom_dbus` block configs for use with `i3status-rust`.
