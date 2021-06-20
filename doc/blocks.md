@@ -1404,9 +1404,15 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `length` | Timer duration in minutes. | No | `25`
 `break_length` | Break duration in minutes. | No | `5`
+`message` | Message displayed by notifier when timer expires. | No | `Pomodoro over! Take a break!`
+`break_message` | Message displayed by notifier when break is over. | No | `Break over! Time to work!`
+`notifier` | Notifier to use: `i3nag`, `swaynag`, `notifysend`, `none` | No | `none`
+`notifier_path` | Override binary/path to run for the notifier | No | Defaults to `i3-nagbar`, `swaynag`, or `notify-send` depending on the value of `notifier` above.
+
+#### Deprecated Options
+Key | Values | Required | Default
+----|--------|----------|--------
 `use_nag` | i3-nagbar enabled. | No | `false`
-`message` | i3-nagbar message when timer expires. | No | `Pomodoro over! Take a break!`
-`break_message` | i3-nagbar message when break is over. | No | `Break over! Time to work!`
 `nag_path` | i3-nagbar binary path. | No | `i3-nagbar`
 
 #### Icons Used
