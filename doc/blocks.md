@@ -1418,6 +1418,10 @@ Key | Values | Required | Default
 #### Icons Used
 
 - `pomodoro`
+- `pomodoro_started`
+- `pomodoro_stopped`
+- `pomodoro_paused`
+- `pomodoro_break`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
