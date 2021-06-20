@@ -1394,8 +1394,7 @@ length = 25
 break_length = 5
 message = "Take a break!"
 break_message = "Back to work!"
-use_nag = true
-nag_path = "i3-nagbar"
+notifier = "swaynag
 ```
 
 #### Options
