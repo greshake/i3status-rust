@@ -1,3 +1,16 @@
+# i3status-rust 0.20.2
+
+## Bug Fixes and Improvements
+
+* Pomodoro block: Allow `notify-send` as a notification method
+
+## Breaking Changes
+
+* Pomodoro block: Icons are no longer hardcoded. New icons: `pomodoro_started`, `pomodoro_stopped`, `pomodoro_paused`, `pomodoro_break` have been added to the icon themes in the repo, so you must update your icon theme files if it is not done by your package manager. (#1264)
+
+## Deprecation Warnings
+* Pomodoro block: `use_nag` and `nagbar_path` will be removed in a future release. Use `notifier` and `notifier_path` instead.
+
 # i3status-rust 0.20.1
 
 ## Bug Fixes and Improvements
