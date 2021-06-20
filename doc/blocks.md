@@ -417,10 +417,11 @@ Key | Values | Required | Default
 Creates a block that can be updated asynchronously using DBus.
 
 For example, updating the block using command line tools:  
-busctl:
-`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`  
-or
+busctl:  
+`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`   
+or  
 `busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus s Headphones`  
+
 qdbus:
 `qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus Headphones music Good`.  
 
