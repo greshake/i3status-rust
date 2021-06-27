@@ -2,7 +2,19 @@
 
 ## Bug Fixes and Improvements
 
+* Battery block: find battery by default instead of hardcoding "BAT0" (#1258 by @orvij)
+* Batter block: new `full_threshold` option for batteries that don't reach 100% (#1261 by @GlasOSkar)
+* CPU block: add `boost` format key for displaying CPU boost status (#1152 by @indlin)
+* Custom block: better error message (#1233 by @jespino)
+* Memory block: Count ZFS arc cache to cache to exclude from used memory (#1227 by @GladOSkar)
+* Pacman block: fix invocation of fakeroot/pacman command (#1241)
+* Pacman block: fix default format string (#1240 by @GladOSkar)
 * Pomodoro block: Allow `notify-send` as a notification method
+* Fixed missing net block icons for the material icon theme (#1244 by @K4rakara)
+* Formatter: allow hiding unit prefixes. For example, `"{key;_K}"` will set the min unit prefix to "K" but hides it from showing.
+* Formatter: allow spaces between the value and unit/prefix. For example, `"{key; K*b}"` results in "value Kb" and `"{key; _K*b}"` results in "val b".
+* Add short_text support (#1207 by @GladOSkar)
+
 
 ## Breaking Changes
 
