@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use lazy_static::lazy_static;
-use regex::bytes::Regex;
+use regex::bytes::{Captures, Regex};
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
@@ -657,21 +657,14 @@ struct IpAddrInfo {
 }
 
 fn decode_escaped_unicode(raw: &[u8]) -> String {
-    let mut result: Vec<u8> = Vec::new();
+    // Match escape sequences like \x2a or \x0D
+    let re = Regex::new(r"\\x([0-9A-Fa-f]{2})").unwrap();
 
-    let mut idx = 0;
-    while idx < raw.len() {
-        if raw[idx] == b'\\' {
-            idx += 2; // skip "\x"
-
-            let hex = std::str::from_utf8(&raw[idx..idx + 2]).unwrap();
-            result.extend(Some(u8::from_str_radix(hex, 16).unwrap()));
-            idx += 2;
-        } else {
-            result.extend(Some(&raw[idx]));
-            idx += 1;
-        }
-    }
+    let result = re.replace_all(raw, |caps: &Captures| {
+        let hex = std::str::from_utf8(&caps[1]).unwrap();
+        let byte = u8::from_str_radix(hex, 16).unwrap();
+        [byte; 1]
+    });
 
     String::from_utf8_lossy(&result).to_string()
 }
@@ -722,6 +715,22 @@ mod tests {
         assert_eq!(
             decode_escaped_unicode(r"\x20surrounded by spaces\x20".as_bytes()),
             r" surrounded by spaces ".to_string()
+        );
+    }
+
+    #[test]
+    fn test_ssid_decode_noescape_path() {
+        assert_eq!(
+            decode_escaped_unicode(r"C:\Program Files(x86)\Custom\Utilities\Tool.exe".as_bytes()),
+            r"C:\Program Files(x86)\Custom\Utilities\Tool.exe".to_string()
+        );
+    }
+
+    #[test]
+    fn test_ssid_decode_noescape_invalid() {
+        assert_eq!(
+            decode_escaped_unicode(r"\xp0".as_bytes()),
+            r"\xp0".to_string()
         );
     }
 }
