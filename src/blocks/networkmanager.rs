@@ -525,14 +525,14 @@ impl ConfigBlock for NetworkManager {
                 c.add_match(
                     "type='signal',\
                     path='/org/freedesktop/NetworkManager',\
-                    interface='org.freedesktop.NetworkManager',\
+                    interface='org.freedesktop.DBus.Properties',\
                     member='PropertiesChanged'",
                 )
                 .unwrap();
                 c.add_match(
                     "type='signal',\
                     path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
-                    interface='org.freedesktop.NetworkManager.Connection.Active',\
+                    interface='org.freedesktop.DBus.Properties',\
                     member='PropertiesChanged'",
                 )
                 .unwrap();
