@@ -34,26 +34,7 @@ impl SharedConfig {
 
     pub fn theme_override(&mut self, overrides: &HashMap<String, String>) -> errors::Result<()> {
         let mut theme = self.theme.as_ref().clone();
-        for entry in overrides {
-            match entry.0.as_str() {
-                "idle_fg" => theme.idle_fg = Some(entry.1.to_string()),
-                "idle_bg" => theme.idle_bg = Some(entry.1.to_string()),
-                "info_fg" => theme.info_fg = Some(entry.1.to_string()),
-                "info_bg" => theme.info_bg = Some(entry.1.to_string()),
-                "good_fg" => theme.good_fg = Some(entry.1.to_string()),
-                "good_bg" => theme.good_bg = Some(entry.1.to_string()),
-                "warning_fg" => theme.warning_fg = Some(entry.1.to_string()),
-                "warning_bg" => theme.warning_bg = Some(entry.1.to_string()),
-                "critical_fg" => theme.critical_fg = Some(entry.1.to_string()),
-                "critical_bg" => theme.critical_bg = Some(entry.1.to_string()),
-                x => {
-                    return Err(errors::ConfigurationError(
-                        format!("Theme element \"{}\" cannot be overriden", x),
-                        String::new(),
-                    ))
-                }
-            }
-        }
+        theme.apply_overrides(overrides)?;
         self.theme = Rc::new(theme);
         Ok(())
     }

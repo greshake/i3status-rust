@@ -126,3 +126,16 @@ where
         InternalError("unknown".to_string(), "send error".to_string(), None)
     }
 }
+
+pub trait ToSerdeError<T> {
+    fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E>;
+}
+
+impl<T, F> ToSerdeError<T> for StdResult<T, F>
+where
+    F: fmt::Display,
+{
+    fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E> {
+        self.map_err(|e| E::custom(e.to_string()))
+    }
+}
