@@ -492,6 +492,7 @@ pub struct Battery {
     info: u64,
     warning: u64,
     critical: u64,
+    fallback_icons: bool,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -614,6 +615,14 @@ impl ConfigBlock for Battery {
             )?),
         };
 
+        let fallback = match shared_config.get_icon("bat_10") {
+            Ok(_) => false,
+            Err(_) => {
+                eprintln!("Icon bat_10 not found in your icons file. Please check NEWS.md");
+                true
+            }
+        };
+
         Ok(Battery {
             id,
             update_interval: block_config.interval,
@@ -630,6 +639,8 @@ impl ConfigBlock for Battery {
             info: block_config.info,
             warning: block_config.warning,
             critical: block_config.critical,
+            // TODO remove on next release
+            fallback_icons: fallback,
         })
     }
 }
@@ -722,9 +733,9 @@ impl Block for Battery {
             }
 
             self.output.set_icon(match status.as_str() {
-                "Discharging" => battery_level_to_icon(capacity),
+                "Discharging" => battery_level_to_icon(capacity, self.fallback_icons),
                 "Charging" => "bat_charging",
-                _ => battery_level_to_icon(capacity),
+                _ => battery_level_to_icon(capacity, self.fallback_icons),
             })?;
             self.output.set_spacing(Spacing::Normal);
         }

@@ -591,7 +591,18 @@ impl Block for KDEConnect {
                 // better than nothing I guess?
                 "bat_full"
             } else {
-                battery_level_to_icon(Ok(charge as u64))
+                battery_level_to_icon(
+                    Ok(charge as u64),
+                    match self.shared_config.get_icon("bat_10") {
+                        Ok(_) => false,
+                        Err(_) => {
+                            eprintln!(
+                                "Icon bat_10 not found in your icons file. Please check NEWS.md"
+                            );
+                            true
+                        }
+                    },
+                )
             })
             .unwrap_or_default();
 
