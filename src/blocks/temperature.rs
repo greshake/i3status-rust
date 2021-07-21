@@ -13,7 +13,6 @@ use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::has_command;
 use crate::widgets::{text::TextWidget, I3BarWidget, Spacing, State};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
@@ -154,7 +153,21 @@ impl ConfigBlock for Temperature {
                 .with_default("{average} avg, {max} max")?,
             chip: block_config.chip,
             inputs: block_config.inputs,
-            fallback_required: !has_command("temperature", "sensors -j").unwrap_or(false),
+            fallback_required: !Command::new("sensors")
+                .args(&["--help"])
+                .output()
+                .block_error(
+                    "temperature",
+                    "Failed to check lm_sensors json output support. Is it installed?",
+                )
+                .and_then(|raw_output| {
+                    String::from_utf8(raw_output.stdout).block_error(
+                        "temperature",
+                        "Failed to check lm_sensors json output support.",
+                    )
+                })
+                .unwrap()
+                .contains(" -j "),
         })
     }
 }
