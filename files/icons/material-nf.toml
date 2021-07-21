@@ -1,5 +1,9 @@
 # Material from NerdFont
 # https://www.nerdfonts.com/cheat-sheet
+#
+# Note: aviod using icons in the range 0xf500-0xfd46,
+# as they will cause the block to render backwards
+# until https://github.com/ryanoasis/nerd-fonts/issues/365 is fixed
 backlight_empty = "\ue38d" # nf-weather-moon_new
 backlight_full = "\ue39b" # nf-weather-moon_full
 backlight_1 = "\ue3d4" # nf-weather-moon_alt_waxing_gibbous_6
