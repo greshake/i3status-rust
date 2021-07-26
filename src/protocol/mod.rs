@@ -4,7 +4,7 @@ pub mod i3bar_event;
 use crate::blocks::Block;
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::util::add_colors;
+use crate::themes::Color;
 
 use i3bar_block::I3BarBlock;
 
@@ -17,7 +17,7 @@ pub fn init(never_pause: bool) {
 }
 
 pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<()> {
-    let mut last_bg: Option<String> = None;
+    let mut last_bg = Color::None;
 
     let mut rendered_blocks = vec![];
 
@@ -45,16 +45,9 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
                 let mut data = widget.get_data();
                 if alternator {
                     // Apply tint for all widgets of every second block
-                    data.background = add_colors(
-                        data.background.as_deref(),
-                        config.theme.alternating_tint_bg.as_deref(),
-                    )
-                    .unwrap();
-                    data.color = add_colors(
-                        data.color.as_deref(),
-                        config.theme.alternating_tint_bg.as_deref(),
-                    )
-                    .unwrap();
+                    // TODO: Allow for other non-additive tints
+                    data.background = data.background + config.theme.alternating_tint_bg;
+                    data.color = data.color + config.theme.alternating_tint_fg;
                 }
                 data
             })
@@ -82,14 +75,14 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
         }
 
         // The first widget's BG is used to get the FG color for the current separator
-        let sep_fg = if config.theme.separator_fg == Some("auto".to_string()) {
+        let sep_fg = if config.theme.separator_fg == Color::Auto {
             rendered_widgets.first().unwrap().background.clone()
         } else {
             config.theme.separator_fg.clone()
         };
 
         // The separator's BG is the last block's last widget's BG
-        let sep_bg = if config.theme.separator_bg == Some("auto".to_string()) {
+        let sep_bg = if config.theme.separator_bg == Color::Auto {
             last_bg
         } else {
             config.theme.separator_bg.clone()

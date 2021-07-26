@@ -1,11 +1,13 @@
+use crate::themes::Color;
+
 /// Represent block as described in https://i3wm.org/docs/i3bar-protocol.html
 
 #[derive(Debug, Clone)]
 pub struct I3BarBlock {
     pub full_text: String,
     pub short_text: Option<String>,
-    pub color: Option<String>,
-    pub background: Option<String>,
+    pub color: Color,
+    pub background: Color,
     pub border: Option<String>,
     pub border_top: Option<usize>,
     pub border_right: Option<usize>,
@@ -52,8 +54,8 @@ impl I3BarBlock {
 
         json_add_str!(retval, Some(&self.full_text), full_text);
         json_add_str!(retval, self.short_text, short_text);
-        json_add_str!(retval, self.color, color);
-        json_add_str!(retval, self.background, background);
+        json_add_str!(retval, self.color.to_string(), color);
+        json_add_str!(retval, self.background.to_string(), background);
         json_add_str!(retval, self.border, border);
         json_add_val!(retval, self.border_top, border_top);
         json_add_val!(retval, self.border_right, border_right);
@@ -92,8 +94,8 @@ impl Default for I3BarBlock {
         Self {
             full_text: String::new(),
             short_text: None,
-            color: None,
-            background: None,
+            color: Color::None,
+            background: Color::None,
             border,
             border_top: None,
             border_right: None,

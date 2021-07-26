@@ -165,46 +165,6 @@ macro_rules! map_to_owned {
      };
 }
 
-pub fn color_from_rgba(
-    color: &str,
-) -> ::std::result::Result<(u8, u8, u8, u8), Box<dyn std::error::Error>> {
-    Ok((
-        u8::from_str_radix(&color.get(1..3).ok_or("invalid rgba color")?, 16)?,
-        u8::from_str_radix(&color.get(3..5).ok_or("invalid rgba color")?, 16)?,
-        u8::from_str_radix(&color.get(5..7).ok_or("invalid rgba color")?, 16)?,
-        u8::from_str_radix(&color.get(7..9).unwrap_or("FF"), 16)?,
-    ))
-}
-
-pub fn color_to_rgba(color: (u8, u8, u8, u8)) -> String {
-    format!(
-        "#{:02X}{:02X}{:02X}{:02X}",
-        color.0, color.1, color.2, color.3
-    )
-}
-
-// TODO: Allow for other non-additive tints
-pub fn add_colors(
-    a: Option<&str>,
-    b: Option<&str>,
-) -> ::std::result::Result<Option<String>, Box<dyn std::error::Error>> {
-    match (a, b) {
-        (None, _) => Ok(None),
-        (Some(a), None) => Ok(Some(a.to_string())),
-        (Some(a), Some(b)) => {
-            let (r_a, g_a, b_a, a_a) = color_from_rgba(a)?;
-            let (r_b, g_b, b_b, a_b) = color_from_rgba(b)?;
-
-            Ok(Some(color_to_rgba((
-                r_a.saturating_add(r_b),
-                g_a.saturating_add(g_b),
-                b_a.saturating_add(b_b),
-                a_a.saturating_add(a_b),
-            ))))
-        }
-    }
-}
-
 pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f64>) -> String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     static BARS: [char; 8] = [
@@ -240,7 +200,7 @@ pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f6
 
 #[cfg(test)]
 mod tests {
-    use crate::util::{color_from_rgba, has_command};
+    use crate::util::has_command;
 
     #[test]
     // we assume sh is always available
@@ -258,29 +218,5 @@ mod tests {
         assert!(has_command.is_ok());
         let has_command = has_command.unwrap();
         assert!(!has_command)
-    }
-    #[test]
-    fn test_color_from_rgba() {
-        let valid_rgb = "#AABBCC"; //rgb
-        let rgba = color_from_rgba(valid_rgb);
-        assert!(rgba.is_ok());
-        assert_eq!(rgba.unwrap(), (0xAA, 0xBB, 0xCC, 0xFF));
-        let valid_rgba = "#AABBCC00"; // rgba
-        let rgba = color_from_rgba(valid_rgba);
-        assert!(rgba.is_ok());
-        assert_eq!(rgba.unwrap(), (0xAA, 0xBB, 0xCC, 0x00));
-    }
-
-    #[test]
-    fn test_color_from_rgba_invalid() {
-        let invalid = "invalid";
-        let rgba = color_from_rgba(invalid);
-        assert!(rgba.is_err());
-        let invalid = "AA"; // too short
-        let rgba = color_from_rgba(invalid);
-        assert!(rgba.is_err());
-        let invalid = "AABBCC"; // invalid rgba (missing #)
-        let rgba = color_from_rgba(invalid);
-        assert!(rgba.is_err());
     }
 }

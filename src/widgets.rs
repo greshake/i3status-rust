@@ -8,7 +8,7 @@ use serde::de::{Deserialize, IntoDeserializer};
 use serde_derive::Deserialize;
 
 use crate::protocol::i3bar_block::I3BarBlock;
-use crate::themes::Theme;
+use crate::themes::{Color, Theme};
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 pub enum Spacing {
@@ -54,14 +54,14 @@ pub enum State {
 }
 
 impl State {
-    pub fn theme_keys(self, theme: &Theme) -> (&Option<String>, &Option<String>) {
+    pub fn theme_keys(self, theme: &Theme) -> (Color, Color) {
         use self::State::*;
         match self {
-            Idle => (&theme.idle_bg, &theme.idle_fg),
-            Info => (&theme.info_bg, &theme.info_fg),
-            Good => (&theme.good_bg, &theme.good_fg),
-            Warning => (&theme.warning_bg, &theme.warning_fg),
-            Critical => (&theme.critical_bg, &theme.critical_fg),
+            Idle => (theme.idle_bg, theme.idle_fg),
+            Info => (theme.info_bg, theme.info_fg),
+            Good => (theme.good_bg, theme.good_fg),
+            Warning => (theme.warning_bg, theme.warning_fg),
+            Critical => (theme.critical_bg, theme.critical_fg),
         }
     }
 }
