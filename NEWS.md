@@ -1,3 +1,16 @@
+# i3status-rust 0.20.3
+
+## Bug Fixes and Improvements
+
+* Net block: fix SSID escape code decoding (#1274 by @GlasOSkar)
+* NetworkManager block: update DBus interface for newer verisons of NM (#1269 by @mailhost)
+* Temperature block: fix fallback for users with old versions of `lm-sensors` (#1281 by @freswa)
+* Icons: Fix `material-nf` icons that caused some blocks to render backwards (#1280 by @freswa)
+* Themes: Add ability to unset colors using overrides (#1279 by @GlasOSkar and @MaxVerevkin)
+* Themes: Fix alternating tint for the `slick` theme (#1284 by @MaxVerevkin)
+
+If you are manually managing your icon/theme files then you may want to update them now for the above fixes.
+
 # i3status-rust 0.20.2
 
 ## Bug Fixes and Improvements
