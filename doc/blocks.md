@@ -1299,7 +1299,7 @@ Target = *
 
 [Action]
 When = PostTransaction
-Exec = /usr/bin/pkill -SIGUSR2 i3status-rs
+Exec = /usr/bin/pkill -SIGUSR1 i3status-rs
 ```
 
 #### Examples
