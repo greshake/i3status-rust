@@ -251,6 +251,14 @@ impl ConfigBlock for NvidiaGpu {
     }
 }
 
+impl Drop for NvidiaGpu {
+    //Prevent zombies by killing and waiting on nvidia-smi command
+    fn drop(&mut self) {
+        let _ = self.handle.kill();
+        let _ = self.handle.wait();
+    }
+}
+
 impl Block for NvidiaGpu {
     fn update(&mut self) -> Result<Option<Update>> {
         self.gpu_enabled = match self.handle.try_wait() {
