@@ -14,8 +14,7 @@ use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::http;
 use crate::scheduler::Task;
-use crate::widgets::text::TextWidget;
-use crate::widgets::I3BarWidget;
+use crate::widgets::{text::TextWidget, I3BarWidget, State};
 
 const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
@@ -28,6 +27,10 @@ pub struct Github {
     format: FormatTemplate,
     total_notifications: u64,
     hide_if_total_is_zero: bool,
+    good: Option<Vec<String>>,
+    info: Option<Vec<String>>,
+    warning: Option<Vec<String>>,
+    critical: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -43,6 +46,18 @@ pub struct GithubConfig {
     pub format: FormatTemplate,
 
     pub hide_if_total_is_zero: bool,
+
+    /// good state list
+    pub good: Option<Vec<String>>,
+
+    /// info state list
+    pub info: Option<Vec<String>>,
+
+    /// warning state list
+    pub warning: Option<Vec<String>>,
+
+    /// critical state list
+    pub critical: Option<Vec<String>>,
 }
 
 impl Default for GithubConfig {
@@ -52,6 +67,10 @@ impl Default for GithubConfig {
             api_server: "https://api.github.com".to_string(),
             format: FormatTemplate::default(),
             hide_if_total_is_zero: false,
+            good: None,
+            info: None,
+            warning: None,
+            critical: None,
         }
     }
 }
@@ -80,6 +99,10 @@ impl ConfigBlock for Github {
             format: block_config.format.with_default("{total:1}")?,
             total_notifications: 0,
             hide_if_total_is_zero: block_config.hide_if_total_is_zero,
+            good: block_config.good,
+            info: block_config.info,
+            warning: block_config.warning,
+            critical: block_config.critical,
         })
     }
 }
@@ -125,6 +148,14 @@ impl Block for Github {
         );
 
         self.text.set_texts(self.format.render(&values)?);
+
+        self.text.set_state(get_state(
+            &self.critical,
+            &self.warning,
+            &self.info,
+            &self.good,
+            &aggregations,
+        ));
 
         Ok(Some(self.update_interval.into()))
     }
@@ -208,6 +239,31 @@ impl<'a> Notifications<'a> {
 
         Ok(self.notifications.next())
     }
+}
+
+fn get_state(
+    critical: &Option<Vec<String>>,
+    warning: &Option<Vec<String>>,
+    info: &Option<Vec<String>>,
+    good: &Option<Vec<String>>,
+    agg: &HashMap<String, u64>,
+) -> State {
+    let default: u64 = 0;
+    for (list_opt, ret) in vec![
+        (critical, State::Critical),
+        (warning, State::Warning),
+        (info, State::Info),
+        (good, State::Good),
+    ] {
+        if let Some(list) = list_opt {
+            for key in agg.keys() {
+                if list.contains(key) && *agg.get(key).unwrap_or(&default) > 0 {
+                    return ret;
+                }
+            }
+        }
+    }
+    return State::Idle;
 }
 
 fn parse_links_header(raw_links: &str) -> HashMap<&str, &str> {

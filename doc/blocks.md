@@ -575,14 +575,26 @@ Key | Values | Required | Default
 
 ## GitHub
 
-Creates a block which shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
+Creates a block which shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: `critical`,`warning`,`info`,`good`
 
 #### Examples
+
+Display notification counts
 
 ```toml
 [[block]]
 block = "github"
 format = "{total}|{author}|{comment}|{mention}|{review_requested}"
+```
+
+Display number of total notifications, change to info colour if there are any notifications, and warning colour if there is a mention or review_requested notification
+
+```toml
+[[block]]
+block = "github"
+format = "{total}"
+info = ["total"]
+warning = ["mention","review_requested"]
 ```
 
 #### Options
@@ -593,6 +605,10 @@ Key | Values | Required | Default
 `format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{total}"`
 `api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
 `hide_if_total_is_zero` | Hide this block if the total count of notifications is zero | No | `false`
+`critical` | List of notification types that change the block to the critical colour | No | None
+`warning` | List of notification types that change the block to the warning colour | No | None
+`info` | List of notification types that change the block to the info colour | No | None
+`good` | List of notification types that change the block to the good colour | No | None
 
 #### Available Format Keys
 
