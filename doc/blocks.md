@@ -1632,8 +1632,9 @@ Key | Values | Required | Default
 `idle` | Maximum temperature to set state to idle. | No | `45` °C (`113` °F)
 `info` | Maximum temperature to set state to info. | No | `60` °C (`140` °F)
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
-`chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
-`inputs` | Narrows the results to individual inputs reported by each chip. Note this only works if you have an up-to-date `sensors` command with the `-j` JSON output flag available. | No | None
+`driver` | One of `"sensors"` or `"sysfs"`. | No | `"sensors"`
+`chip` | Narrows the results to a given chip name. If driver = `"sensors"` then `*` may be used as a wildcard. If driver = `"sysfs"` then narrows to chips whose '"/sys/class/hwmon/hwmon*/name"' is a substring of the given chip name or vice versa. `sysfs` can not match to the bus such as `*-isa-*` or `*-pci-*`). | No | None
+`inputs` | Narrows the results to individual inputs reported by each chip. Note for driver = `"sensors"` this only works if you have an up-to-date `sensors` command with the `-j` JSON output flag available. | No | None
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average} avg, {max} max"`
 
 #### Available Format Keys

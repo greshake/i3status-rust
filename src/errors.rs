@@ -127,6 +127,12 @@ where
     }
 }
 
+impl From<std::io::Error> for Error {
+    fn from(_err: std::io::Error) -> Error {
+        InternalError("unknown".to_string(), "io error".to_string(), None)
+    }
+}
+
 pub trait ToSerdeError<T> {
     fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E>;
 }
