@@ -237,6 +237,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     },
                     signal_hook::consts::SIGUSR2 => {
                         //USR2 signal that should reload the config
+                        blocks.drain(..);
                         restart();
                     },
                     _ => {

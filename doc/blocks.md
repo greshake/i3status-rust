@@ -575,14 +575,26 @@ Key | Values | Required | Default
 
 ## GitHub
 
-Creates a block which shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable.
+Creates a block which shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the "notifications" scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: `critical`,`warning`,`info`,`good`
 
 #### Examples
+
+Display notification counts
 
 ```toml
 [[block]]
 block = "github"
 format = "{total}|{author}|{comment}|{mention}|{review_requested}"
+```
+
+Display number of total notifications, change to info colour if there are any notifications, and warning colour if there is a mention or review_requested notification
+
+```toml
+[[block]]
+block = "github"
+format = "{total}"
+info = ["total"]
+warning = ["mention","review_requested"]
 ```
 
 #### Options
@@ -593,6 +605,10 @@ Key | Values | Required | Default
 `format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{total}"`
 `api_server`| API Server URL to use to fetch notifications. | No | `https://api.github.com`
 `hide_if_total_is_zero` | Hide this block if the total count of notifications is zero | No | `false`
+`critical` | List of notification types that change the block to the critical colour | No | None
+`warning` | List of notification types that change the block to the warning colour | No | None
+`info` | List of notification types that change the block to the info colour | No | None
+`good` | List of notification types that change the block to the good colour | No | None
 
 #### Available Format Keys
 
@@ -1299,7 +1315,7 @@ Target = *
 
 [Action]
 When = PostTransaction
-Exec = /usr/bin/pkill -SIGUSR2 i3status-rs
+Exec = /usr/bin/pkill -SIGUSR1 i3status-rs
 ```
 
 #### Examples
@@ -1632,8 +1648,9 @@ Key | Values | Required | Default
 `idle` | Maximum temperature to set state to idle. | No | `45` °C (`113` °F)
 `info` | Maximum temperature to set state to info. | No | `60` °C (`140` °F)
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
-`chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
-`inputs` | Narrows the results to individual inputs reported by each chip. Note this only works if you have an up-to-date `sensors` command with the `-j` JSON output flag available. | No | None
+`driver` | One of `"sensors"` or `"sysfs"`. | No | `"sensors"`
+`chip` | Narrows the results to a given chip name. If driver = `"sensors"` then `*` may be used as a wildcard. If driver = `"sysfs"` then narrows to chips whose '"/sys/class/hwmon/hwmon*/name"' is a substring of the given chip name or vice versa. `sysfs` can not match to the bus such as `*-isa-*` or `*-pci-*`). | No | None
+`inputs` | Narrows the results to individual inputs reported by each chip. Note for driver = `"sensors"` this only works if you have an up-to-date `sensors` command with the `-j` JSON output flag available. | No | None
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average} avg, {max} max"`
 
 #### Available Format Keys

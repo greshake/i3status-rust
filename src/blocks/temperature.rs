@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs;
 use std::process::Command;
 use std::time::Duration;
 
@@ -28,6 +29,19 @@ impl Default for TemperatureScale {
     }
 }
 
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TemperatureDriver {
+    Sysfs,
+    Sensors,
+}
+
+impl Default for TemperatureDriver {
+    fn default() -> Self {
+        TemperatureDriver::Sensors
+    }
+}
+
 pub struct Temperature {
     id: usize,
     text: TextWidget,
@@ -35,11 +49,12 @@ pub struct Temperature {
     collapsed: bool,
     update_interval: Duration,
     scale: TemperatureScale,
-    maximum_good: i64,
-    maximum_idle: i64,
-    maximum_info: i64,
-    maximum_warning: i64,
+    maximum_good: f64,
+    maximum_idle: f64,
+    maximum_info: f64,
+    maximum_warning: f64,
     format: FormatTemplate,
+    driver: TemperatureDriver,
     chip: Option<String>,
     inputs: Option<Vec<String>>,
     fallback_required: bool,
@@ -61,22 +76,25 @@ pub struct TemperatureConfig {
 
     /// Maximum temperature, below which state is set to good
     #[serde(default)]
-    pub good: Option<i64>,
+    pub good: Option<f64>,
 
     /// Maximum temperature, below which state is set to idle
     #[serde(default)]
-    pub idle: Option<i64>,
+    pub idle: Option<f64>,
 
     /// Maximum temperature, below which state is set to info
     #[serde(default)]
-    pub info: Option<i64>,
+    pub info: Option<f64>,
 
     /// Maximum temperature, below which state is set to warning
     #[serde(default)]
-    pub warning: Option<i64>,
+    pub warning: Option<f64>,
 
     /// Format override
     pub format: FormatTemplate,
+
+    /// The "driver " to use for temperature block. One of "sysfs" or "sensors"
+    pub driver: TemperatureDriver,
 
     /// Chip override
     pub chip: Option<String>,
@@ -96,6 +114,7 @@ impl Default for TemperatureConfig {
             idle: None,
             info: None,
             warning: None,
+            driver: TemperatureDriver::default(),
             chip: None,
             inputs: None,
         }
@@ -127,47 +146,51 @@ impl ConfigBlock for Temperature {
             maximum_good: block_config
                 .good
                 .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 20,
-                    TemperatureScale::Fahrenheit => 68,
+                    TemperatureScale::Celsius => 20f64,
+                    TemperatureScale::Fahrenheit => 68f64,
                 }),
             maximum_idle: block_config
                 .idle
                 .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 45,
-                    TemperatureScale::Fahrenheit => 113,
+                    TemperatureScale::Celsius => 45f64,
+                    TemperatureScale::Fahrenheit => 113f64,
                 }),
             maximum_info: block_config
                 .info
                 .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 60,
-                    TemperatureScale::Fahrenheit => 140,
+                    TemperatureScale::Celsius => 60f64,
+                    TemperatureScale::Fahrenheit => 140f64,
                 }),
             maximum_warning: block_config
                 .warning
                 .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 80,
-                    TemperatureScale::Fahrenheit => 176,
+                    TemperatureScale::Celsius => 80f64,
+                    TemperatureScale::Fahrenheit => 176f64,
                 }),
             format: block_config
                 .format
                 .with_default("{average} avg, {max} max")?,
+            driver: block_config.driver,
             chip: block_config.chip,
             inputs: block_config.inputs,
-            fallback_required: !Command::new("sensors")
-                .args(&["--help"])
-                .output()
-                .block_error(
-                    "temperature",
-                    "Failed to check lm_sensors json output support. Is it installed?",
-                )
-                .and_then(|raw_output| {
-                    String::from_utf8(raw_output.stdout).block_error(
+            fallback_required: match block_config.driver {
+                TemperatureDriver::Sysfs => false,
+                TemperatureDriver::Sensors => !Command::new("sensors")
+                    .args(&["--help"])
+                    .output()
+                    .block_error(
                         "temperature",
-                        "Failed to check lm_sensors json output support.",
+                        "Failed to check lm_sensors json output support. Is it installed?",
                     )
-                })
-                .unwrap()
-                .contains(" -j "),
+                    .and_then(|raw_output| {
+                        String::from_utf8(raw_output.stdout).block_error(
+                            "temperature",
+                            "Failed to check lm_sensors json output support.",
+                        )
+                    })
+                    .unwrap()
+                    .contains(" -j "),
+            },
         })
     }
 }
@@ -177,103 +200,166 @@ type InputReadings = HashMap<String, f64>;
 
 impl Block for Temperature {
     fn update(&mut self) -> Result<Option<Update>> {
-        let mut args = if self.fallback_required {
-            vec!["-u"]
-        } else {
-            vec!["-j"]
-        };
+        let mut temperatures: Vec<f64> = Vec::new();
+
+        match self.driver {
+            TemperatureDriver::Sensors => {
+                let mut args = if self.fallback_required {
+                    vec!["-u"]
+                } else {
+                    vec!["-j"]
+                };
+
+                if let Some(ref chip) = &self.chip {
+                    args.push(chip);
+                }
+                let output = Command::new("sensors")
+                    .args(&args)
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+                    .unwrap_or_else(|e| e.to_string());
+
+                if self.fallback_required {
+                    for line in output.lines() {
+                        if let Some(rest) = line.strip_prefix("  temp") {
+                            let rest = rest
+                                .split('_')
+                                .flat_map(|x| x.split(' '))
+                                .flat_map(|x| x.split('.'))
+                                .collect::<Vec<_>>();
+
+                            if rest[1].starts_with("input") {
+                                match rest[2].parse::<f64>() {
+                                    Ok(t) if t == 0f64 => Ok(()),
+                                    Ok(t) if t > -101f64 && t < 151f64 => {
+                                        temperatures.push(t);
+                                        Ok(())
+                                    }
+                                    Ok(t) => {
+                                        // This error is recoverable and therefore should not stop the program
+                                        eprintln!(
+                                            "Temperature ({}) outside of range ([-100, 150])",
+                                            t
+                                        );
+                                        Ok(())
+                                    }
+                                    Err(_) => Err(BlockError(
+                                        "temperature".to_owned(),
+                                        "failed to parse temperature as an integer".to_owned(),
+                                    )),
+                                }?
+                            }
+                        }
+                    }
+                } else {
+                    let parsed: SensorsOutput = serde_json::from_str(&output)
+                        .block_error("temperature", "sensors output is invalid")?;
+                    for (_chip, inputs) in parsed {
+                        for (input_name, input_values) in inputs {
+                            if let Some(ref whitelist) = self.inputs {
+                                if !whitelist.contains(&input_name) {
+                                    continue;
+                                }
+                            }
+
+                            let values_parsed: InputReadings =
+                                match serde_json::from_value(input_values) {
+                                    Ok(values) => values,
+                                    Err(_) => continue, // probably the "Adapter" key, just ignore.
+                                };
+
+                            for (value_name, value) in values_parsed {
+                                if !value_name.starts_with("temp") || !value_name.ends_with("input")
+                                {
+                                    continue;
+                                }
+
+                                if value > -101f64 && value < 151f64 {
+                                    temperatures.push(value);
+                                } else {
+                                    // This error is recoverable and therefore should not stop the program
+                                    eprintln!(
+                                        "Temperature ({}) outside of range ([-100, 150])",
+                                        value
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            TemperatureDriver::Sysfs => {
+                for hwmon_dir in fs::read_dir("/sys/class/hwmon")? {
+                    let hwmon = &hwmon_dir?.path();
+                    if let Some(ref chip_name) = self.chip {
+                        // Narrow to hwmon names that are substrings of the given chip name or vice versa
+                        let hwmon_untrimmed = fs::read_to_string(hwmon.join("name"))?;
+                        let hwmon_name = hwmon_untrimmed.trim();
+                        if !(chip_name.contains(hwmon_name) || hwmon_name.contains(chip_name)) {
+                            continue;
+                        }
+                    }
+                    for entry in hwmon.read_dir()? {
+                        let entry = entry?;
+                        if let Ok(name) = entry.file_name().into_string() {
+                            if name.starts_with("temp") && name.ends_with("label") {
+                                if let Some(ref whitelist) = self.inputs {
+                                    //narrow to labels that are an exact match for one of the inputs
+                                    if !whitelist.contains(
+                                        &fs::read_to_string(entry.path())?.trim().to_string(),
+                                    ) {
+                                        continue;
+                                    }
+                                }
+                                let value: f64 =
+                                    fs::read_to_string(hwmon.join(name.replace("label", "input")))?
+                                        .trim()
+                                        .parse::<f64>()
+                                        .block_error(
+                                            "temperature",
+                                            "failed to parse temperature as an integer",
+                                        )?
+                                        / 1000f64;
+
+                                if value > -101f64 && value < 151f64 {
+                                    temperatures.push(value);
+                                } else {
+                                    // This error is recoverable and therefore should not stop the program
+                                    eprintln!(
+                                        "Temperature ({}) outside of range ([-100, 150])",
+                                        value
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         if let TemperatureScale::Fahrenheit = self.scale {
-            args.push("-f");
-        }
-        if let Some(ref chip) = &self.chip {
-            args.push(chip);
-        }
-        let output = Command::new("sensors")
-            .args(&args)
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.to_string());
-
-        let mut temperatures: Vec<i64> = Vec::new();
-
-        if self.fallback_required {
-            for line in output.lines() {
-                if let Some(rest) = line.strip_prefix("  temp") {
-                    let rest = rest
-                        .split('_')
-                        .flat_map(|x| x.split(' '))
-                        .flat_map(|x| x.split('.'))
-                        .collect::<Vec<_>>();
-
-                    if rest[1].starts_with("input") {
-                        match rest[2].parse::<i64>() {
-                            Ok(t) if t == 0 => Ok(()),
-                            Ok(t) if t > -101 && t < 151 => {
-                                temperatures.push(t);
-                                Ok(())
-                            }
-                            Ok(t) => {
-                                // This error is recoverable and therefore should not stop the program
-                                eprintln!("Temperature ({}) outside of range ([-100, 150])", t);
-                                Ok(())
-                            }
-                            Err(_) => Err(BlockError(
-                                "temperature".to_owned(),
-                                "failed to parse temperature as an integer".to_owned(),
-                            )),
-                        }?
-                    }
-                }
-            }
-        } else {
-            let parsed: SensorsOutput = serde_json::from_str(&output)
-                .block_error("temperature", "sensors output is invalid")?;
-            for (_chip, inputs) in parsed {
-                for (input_name, input_values) in inputs {
-                    if let Some(ref whitelist) = self.inputs {
-                        if !whitelist.contains(&input_name) {
-                            continue;
-                        }
-                    }
-
-                    let values_parsed: InputReadings = match serde_json::from_value(input_values) {
-                        Ok(values) => values,
-                        Err(_) => continue, // probably the "Adapter" key, just ignore.
-                    };
-
-                    for (value_name, value) in values_parsed {
-                        if !value_name.starts_with("temp") || !value_name.ends_with("input") {
-                            continue;
-                        }
-
-                        if value > -101f64 && value < 151f64 {
-                            temperatures.push(value as i64);
-                        } else {
-                            // This error is recoverable and therefore should not stop the program
-                            eprintln!("Temperature ({}) outside of range ([-100, 150])", value);
-                        }
-                    }
-                }
-            }
+            temperatures
+                .iter_mut()
+                .for_each(|c| *c = *c * 9f64 / 5f64 + 32f64);
         }
 
         if !temperatures.is_empty() {
-            let max: i64 = *temperatures
+            let max: f64 = temperatures
                 .iter()
-                .max()
+                .cloned()
+                .reduce(f64::max)
                 .block_error("temperature", "failed to get max temperature")?;
-            let min: i64 = *temperatures
+            let min: f64 = temperatures
                 .iter()
-                .min()
+                .cloned()
+                .reduce(f64::min)
                 .block_error("temperature", "failed to get min temperature")?;
-            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
-                .round() as i64;
+            let avg: f64 = temperatures.iter().sum::<f64>() / temperatures.len() as f64;
 
             let values = map!(
-                "average" => Value::from_integer(avg).degrees(),
-                "min" => Value::from_integer(min).degrees(),
-                "max" => Value::from_integer(max).degrees()
+                "average" => Value::from_float(avg).degrees(),
+                "min" => Value::from_float(min).degrees(),
+                "max" => Value::from_float(max).degrees()
             );
 
             self.output = self.format.render(&values)?;
