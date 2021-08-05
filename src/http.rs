@@ -1,6 +1,7 @@
 use curl::easy::Easy;
 use serde_json::value::Value;
 use std::time::Duration;
+use url::Url;
 
 use crate::errors;
 use crate::errors::{Result, ResultExtInternal};
@@ -43,7 +44,8 @@ fn http_easy(mut easy: Easy) -> Result<HttpResponse<Vec<u8>>> {
 pub fn http_get_socket_json(path: std::path::PathBuf, url: &str) -> Result<HttpResponse<Value>> {
     let mut easy = curl::easy::Easy::new();
 
-    easy.url(url)?;
+    let encoded_url = Url::parse(url)?;
+    easy.url(&String::from(encoded_url))?;
     easy.unix_socket_path(Some(path))?;
 
     let response = http_easy(easy)?;
@@ -65,7 +67,8 @@ pub fn http_get_json(
 ) -> Result<HttpResponse<Value>> {
     let mut easy = curl::easy::Easy::new();
 
-    easy.url(url)?;
+    let encoded_url = Url::parse(url)?;
+    easy.url(&String::from(encoded_url))?;
 
     if let Some(t) = timeout {
         easy.timeout(t)?;
@@ -98,6 +101,16 @@ impl From<curl::Error> for errors::Error {
         errors::InternalError(
             "curl".to_owned(),
             "error running curl".to_owned(),
+            Some((format!("{}", err), format!("{:?}", err))),
+        )
+    }
+}
+
+impl From<url::ParseError> for errors::Error {
+    fn from(err: url::ParseError) -> Self {
+        errors::InternalError(
+            "url".to_owned(),
+            "error parsing url".to_owned(),
             Some((format!("{}", err), format!("{:?}", err))),
         )
     }
