@@ -83,13 +83,29 @@ pub fn escape_pango_text(text: String) -> String {
         .collect()
 }
 
-pub fn battery_level_to_icon(charge_level: Result<u64>) -> &'static str {
-    match charge_level {
-        Ok(0..=5) => "bat_empty",
-        Ok(6..=25) => "bat_quarter",
-        Ok(26..=50) => "bat_half",
-        Ok(51..=75) => "bat_three_quarters",
-        _ => "bat_full",
+pub fn battery_level_to_icon(charge_level: Result<u64>, fallback_icons: bool) -> &'static str {
+    // TODO remove fallback in next release
+    if fallback_icons {
+        match charge_level {
+            Ok(0..=5) => "bat_empty",
+            Ok(6..=25) => "bat_quarter",
+            Ok(26..=50) => "bat_half",
+            Ok(51..=75) => "bat_three_quarters",
+            _ => "bat_full",
+        }
+    } else {
+        match charge_level {
+            Ok(0..=10) => "bat_10",
+            Ok(11..=20) => "bat_20",
+            Ok(21..=30) => "bat_30",
+            Ok(31..=40) => "bat_40",
+            Ok(41..=50) => "bat_50",
+            Ok(51..=60) => "bat_60",
+            Ok(61..=70) => "bat_70",
+            Ok(71..=80) => "bat_80",
+            Ok(81..=90) => "bat_90",
+            _ => "bat_full",
+        }
     }
 }
 
