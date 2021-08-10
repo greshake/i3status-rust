@@ -43,7 +43,8 @@ fn http_easy(mut easy: Easy) -> Result<HttpResponse<Vec<u8>>> {
 pub fn http_get_socket_json(path: std::path::PathBuf, url: &str) -> Result<HttpResponse<Value>> {
     let mut easy = curl::easy::Easy::new();
 
-    easy.url(url)?;
+    let cleaned_url = url.replace(" ", "%20");
+    easy.url(&cleaned_url)?;
     easy.unix_socket_path(Some(path))?;
 
     let response = http_easy(easy)?;
@@ -65,7 +66,8 @@ pub fn http_get_json(
 ) -> Result<HttpResponse<Value>> {
     let mut easy = curl::easy::Easy::new();
 
-    easy.url(url)?;
+    let cleaned_url = url.replace(" ", "%20");
+    easy.url(&cleaned_url)?;
 
     if let Some(t) = timeout {
         easy.timeout(t)?;
