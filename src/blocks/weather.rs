@@ -336,9 +336,7 @@ impl ConfigBlock for Weather {
         Ok(Weather {
             id,
             weather: TextWidget::new(id, 0, shared_config),
-            format: block_config
-                .format
-                .with_default("{weather} {temp}")?,
+            format: block_config.format.with_default("{weather} {temp}")?,
             weather_keys: HashMap::new(),
             service: block_config.service,
             update_interval: block_config.interval,
