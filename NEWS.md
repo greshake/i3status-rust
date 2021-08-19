@@ -1,3 +1,19 @@
+# i3status-rust 0.20.4
+
+## New Blocks and Features
+
+* Github block: new config options `critical`, `warning`, `info`, `good` to colour the block for different notifications (#1286 by @ZachCook)
+* Temperature block: new `driver` config option with the option to choose a new backend using sysfs to grab temp info instead of `lm_sensors` (#1286 by @ZachCook)
+
+## Bug Fixes and Improvements
+
+* Battery/Kdeconnect block: add more battery icons. For the new battery icons you will need to update your icon files, otherwise it will fallback to the previous icons. (#1282 by @freswa)
+* Nvidia block: only run `nvidia-smi` once instead of spawning a new instance for each update (#1286 by @ZachCook)
+* Weather block: escape spaces in internally generated URL (#1289 by @rbuch)
+
+## Deprecation Warnings
+`bat_half`, `bat_quarter`, `bat_three_quarters` are likely to be removed in a future release.
+
 # i3status-rust 0.20.3
 
 ## Bug Fixes and Improvements
@@ -16,7 +32,7 @@ If you are manually managing your icon/theme files then you may want to update t
 ## Bug Fixes and Improvements
 
 * Battery block: find battery by default instead of hardcoding "BAT0" (#1258 by @orvij)
-* Batter block: new `full_threshold` option for batteries that don't reach 100% (#1261 by @GlasOSkar)
+* Batter block: new `full_threshold` option for batteries that don't reach 100% (#1261 by @GladOSkar)
 * CPU block: add `boost` format key for displaying CPU boost status (#1152 by @indlin)
 * Custom block: better error message (#1233 by @jespino)
 * Memory block: Count ZFS arc cache to cache to exclude from used memory (#1227 by @GladOSkar)
