@@ -60,7 +60,7 @@ phone_disconnected = "\U0001f4f5"
 ping = "\uf362"
 pomodoro = "\U0001f345"
 pomodoro_break = "\uf0f4" # fa-coffee
-pomododo_paused = "\uf04c" # fa-pause
+pomodoro_paused = "\uf04c" # fa-pause
 pomodoro_started = "\uf04b" # fa-play
 pomodoro_stopped = "\uf04d" # fa-stop
 resolution = "\uf096" # fa-square-o
@@ -87,4 +87,3 @@ weather_snow = "\uf2dc"
 weather_sun = "\uf185"
 weather_thunder = "\uf0e7"
 xrandr = "\uf26c"
-
