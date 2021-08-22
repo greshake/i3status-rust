@@ -20,6 +20,7 @@
 
 * Net block: fix SSID escape code decoding (#1274 by @GlasOSkar)
 * NetworkManager block: update DBus interface for newer verisons of NM (#1269 by @mailhost)
+* Pomodoro block: fix crash causing by pause icon typo (#1295 by @GladOSkar)
 * Temperature block: fix fallback for users with old versions of `lm-sensors` (#1281 by @freswa)
 * Icons: Fix `material-nf` icons that caused some blocks to render backwards (#1280 by @freswa)
 * Themes: Add ability to unset colors using overrides (#1279 by @GlasOSkar and @MaxVerevkin)
