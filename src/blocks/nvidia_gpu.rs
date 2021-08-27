@@ -278,70 +278,80 @@ impl Block for NvidiaGpu {
         };
 
         let mut result_str = String::new();
-        match self.reader.read_line(&mut result_str) {
-            Ok(_) => {
-                let result: Vec<&str> = result_str.trim().split(", ").collect();
+        let buf = self
+            .reader
+            .fill_buf()
+            .block_error("gpu", "Nvidia-smi fill_buf error")?;
+        let buf_str =
+            String::from_utf8(buf.to_vec()).block_error("gpu", "Nvidia-smi from_utf8 error")?;
 
-                let gpu_name = result[0].to_string();
-                let memory_total = result[1].to_string();
+        /* Catch up on any existing lines */
+        for _ in buf_str.lines() {
+            result_str.clear();
+            self.reader
+                .read_line(&mut result_str)
+                .block_error("gpu", "Nvidia-smi read_line error")?;
+        }
 
-                match self.name_widget_mode {
-                    NameWidgetMode::ShowDefaultName => {
-                        self.name_widget.set_text(gpu_name);
-                        self.name_widget.set_spacing(Spacing::Inline);
-                    }
-                    NameWidgetMode::ShowLabel => {
-                        if self.label.is_empty() {
-                            self.name_widget.set_spacing(Spacing::Hidden);
-                        } else {
-                            self.name_widget.set_spacing(Spacing::Inline);
-                        }
-                        self.name_widget.set_text(self.label.to_string());
-                    }
-                }
+        let result: Vec<&str> = result_str.trim().split(", ").collect();
 
-                let mut count: usize = 2;
-                if let Some(ref mut utilization_widget) = self.show_utilization {
-                    utilization_widget.set_text(format!("{:02}%", result[count]));
-                    count += 1;
+        let gpu_name = result[0].to_string();
+        let memory_total = result[1].to_string();
+
+        match self.name_widget_mode {
+            NameWidgetMode::ShowDefaultName => {
+                self.name_widget.set_text(gpu_name);
+                self.name_widget.set_spacing(Spacing::Inline);
+            }
+            NameWidgetMode::ShowLabel => {
+                if self.label.is_empty() {
+                    self.name_widget.set_spacing(Spacing::Hidden);
+                } else {
+                    self.name_widget.set_spacing(Spacing::Inline);
                 }
-                if let Some(ref mut memory_widget) = self.show_memory {
-                    match self.memory_widget_mode {
-                        MemoryWidgetMode::ShowUsedMemory => {
-                            memory_widget.set_text(format!("{}MB", result[count]));
-                        }
-                        MemoryWidgetMode::ShowTotalMemory => {
-                            memory_widget.set_text(format!("{}MB", memory_total));
-                        }
-                    }
-                    count += 1;
+                self.name_widget.set_text(self.label.to_string());
+            }
+        }
+
+        let mut count: usize = 2;
+        if let Some(ref mut utilization_widget) = self.show_utilization {
+            utilization_widget.set_text(format!("{:02}%", result[count]));
+            count += 1;
+        }
+        if let Some(ref mut memory_widget) = self.show_memory {
+            match self.memory_widget_mode {
+                MemoryWidgetMode::ShowUsedMemory => {
+                    memory_widget.set_text(format!("{}MB", result[count]));
                 }
-                if let Some(ref mut temperature_widget) = self.show_temperature {
-                    let temp = result[count].parse::<u64>().unwrap_or(0);
-                    temperature_widget.set_state(match temp {
-                        t if t <= self.maximum_idle => State::Idle,
-                        t if t <= self.maximum_good => State::Good,
-                        t if t <= self.maximum_info => State::Info,
-                        t if t <= self.maximum_warning => State::Warning,
-                        _ => State::Critical,
-                    });
-                    temperature_widget.set_text(format!("{:02}°C", temp));
-                    count += 1;
-                }
-                if let Some(ref mut fan_widget) = self.show_fan {
-                    self.fan_speed = result[count].parse::<u64>().unwrap_or(0);
-                    fan_widget.set_text(format!("{:02}%", self.fan_speed));
-                    count += 1;
-                }
-                if let Some(ref mut clocks_widget) = self.show_clocks {
-                    clocks_widget.set_text(format!("{}MHz", result[count]));
-                    count += 1;
-                }
-                if let Some(ref mut power_draw_widget) = self.show_power_draw {
-                    power_draw_widget.set_text(format!("{} W", result[count]));
+                MemoryWidgetMode::ShowTotalMemory => {
+                    memory_widget.set_text(format!("{}MB", memory_total));
                 }
             }
-            Err(_) => self.name_widget.set_text("DISABLED".to_string()),
+            count += 1;
+        }
+        if let Some(ref mut temperature_widget) = self.show_temperature {
+            let temp = result[count].parse::<u64>().unwrap_or(0);
+            temperature_widget.set_state(match temp {
+                t if t <= self.maximum_idle => State::Idle,
+                t if t <= self.maximum_good => State::Good,
+                t if t <= self.maximum_info => State::Info,
+                t if t <= self.maximum_warning => State::Warning,
+                _ => State::Critical,
+            });
+            temperature_widget.set_text(format!("{:02}°C", temp));
+            count += 1;
+        }
+        if let Some(ref mut fan_widget) = self.show_fan {
+            self.fan_speed = result[count].parse::<u64>().unwrap_or(0);
+            fan_widget.set_text(format!("{:02}%", self.fan_speed));
+            count += 1;
+        }
+        if let Some(ref mut clocks_widget) = self.show_clocks {
+            clocks_widget.set_text(format!("{}MHz", result[count]));
+            count += 1;
+        }
+        if let Some(ref mut power_draw_widget) = self.show_power_draw {
+            power_draw_widget.set_text(format!("{} W", result[count]));
         }
 
         Ok(Some(self.update_interval.into()))
