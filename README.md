@@ -8,7 +8,7 @@ For a list of available blocks, see the [block documentation](https://github.com
 
 ## Requirements
 
-The Rust compilter `rustc`, the `cargo` package manager, the C compiler `gcc` and `openssl-sys` are required to build the binary.
+The Rust compiler `rustc`, `cargo` package manager, C compiler `gcc` and `openssl-sys` are required to build the binary.
 
 We also require Libdbus 1.6 or higher. On some older systems this may require installing `libdbus-1-dev`. See [#194](https://github.com/greshake/i3status-rust/issues/194) if you are having dbus-related compilation issues.
 
