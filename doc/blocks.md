@@ -1413,7 +1413,7 @@ length = 25
 break_length = 5
 message = "Take a break!"
 break_message = "Back to work!"
-notifier = "swaynag
+notifier = "swaynag"
 ```
 
 #### Options
