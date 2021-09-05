@@ -170,15 +170,11 @@ macro_rules! map {
 }
 
 macro_rules! map_to_owned {
-    { $($key:expr => $value:expr),+ } => {
-        {
-            let mut m = ::std::collections::HashMap::new();
-            $(
-                m.insert($key.to_owned(), $value.to_owned());
-            )+
-            m
-        }
-     };
+    ($($key:expr => $value:expr),+ $(,)*) => {{
+        let mut m = ::std::collections::HashMap::new();
+        $(m.insert($key.to_owned(), $value.to_owned());)+
+        m
+    }};
 }
 
 pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f64>) -> String {
