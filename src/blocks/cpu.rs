@@ -179,26 +179,21 @@ impl Block for Cpu {
             _ => String::new(),
         };
 
-        let mut values = map!(
+        let mut values = map_to_owned!(
             "frequency" => Value::from_float(freqs_avg).hertz(),
             "barchart" => Value::from_string(barchart),
             "utilization" => Value::from_integer(avg_utilization as i64).percents(),
             "boost" => Value::from_string(boost),
         );
-        let mut frequency_keys = vec![]; // There should be a better way to dynamically crate keys?
-        for i in 0..freqs.len() {
-            frequency_keys.push(format!("frequency{}", i + 1));
-        }
-        for (i, freq) in freqs.iter().enumerate() {
-            values.insert(&frequency_keys[i], Value::from_float(*freq).hertz());
-        }
-        let mut utilization_keys = vec![]; // There should be a better way to dynamically crate keys?
-        for i in 0..utilizations.len() {
-            utilization_keys.push(format!("utilization{}", i + 1));
-        }
-        for (i, utilization) in utilizations.iter().enumerate() {
+        for (i, freq) in freqs.into_iter().enumerate() {
             values.insert(
-                &utilization_keys[i],
+                format!("frequency{}", i + 1),
+                Value::from_float(freq).hertz(),
+            );
+        }
+        for (i, utilization) in utilizations.into_iter().enumerate() {
+            values.insert(
+                format!("utilization{}", i + 1),
                 Value::from_integer((utilization * 100.) as i64).percents(),
             );
         }

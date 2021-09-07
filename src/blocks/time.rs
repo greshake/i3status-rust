@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::time::Duration;
 
@@ -73,7 +74,7 @@ impl ConfigBlock for Time {
             formats: block_config
                 .format
                 .with_default("%a %d/%m %R")?
-                .render(&::std::collections::HashMap::new())?,
+                .render(&HashMap::<&str, _>::new())?,
             timezone: block_config.timezone,
             locale: block_config.locale,
         })

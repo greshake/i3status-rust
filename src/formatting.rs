@@ -3,8 +3,10 @@ pub mod prefix;
 pub mod unit;
 pub mod value;
 
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::fmt;
+use std::hash::Hash;
 
 use serde::de::{MapAccess, Visitor};
 use serde::{de, Deserialize, Deserializer};
@@ -25,6 +27,9 @@ pub struct FormatTemplate {
     full: Option<Vec<Token>>,
     short: Option<Vec<Token>>,
 }
+
+pub trait FormatMapKey: Borrow<str> + Eq + Hash {}
+impl<T> FormatMapKey for T where T: Borrow<str> + Eq + Hash {}
 
 impl FormatTemplate {
     pub fn new(full: &str, short: Option<&str>) -> Result<Self> {
@@ -124,7 +129,10 @@ impl FormatTemplate {
         Ok(tokens)
     }
 
-    pub fn render(&self, vars: &HashMap<&str, Value>) -> Result<(String, Option<String>)> {
+    pub fn render(
+        &self,
+        vars: &HashMap<impl FormatMapKey, Value>,
+    ) -> Result<(String, Option<String>)> {
         let full = match &self.full {
             Some(tokens) => Self::render_tokens(tokens, vars)?,
             None => String::new(), // TODO: throw an error that says that it's a bug?
@@ -136,7 +144,7 @@ impl FormatTemplate {
         Ok((full, short))
     }
 
-    fn render_tokens(tokens: &[Token], vars: &HashMap<&str, Value>) -> Result<String> {
+    fn render_tokens(tokens: &[Token], vars: &HashMap<impl FormatMapKey, Value>) -> Result<String> {
         let mut rendered = String::new();
         for token in tokens {
             match token {
