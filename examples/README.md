@@ -22,6 +22,7 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 - [System (Suspend/Shutdown/Reboot)](#system-suspendshutdownreboot)
 - [User](#user)
 - [XKCD](#xkcd)
+- [Spotify TUI](#spt)
 
 ### Hostname
 
@@ -207,4 +208,16 @@ _Example for NZXT Kraken X series:_
 block = "custom"
 command = ''' liquidctl --match 'NZXT Kraken X' status | grep -e speed -e temp | awk '{printf "%s ", substr($0, 28,4)}' | awk '{printf " %s %s /%s", substr($0,0,4), substr($0,5,5), substr($0,10,6)}' '''
 interval = 5
+```
+
+### Spotify TUI
+
+Display song with [Spotify TUI](https://github.com/Rigellute/spotify-tui)
+
+```toml
+[[block]]
+block = "custom"
+command = "spt playback --format"
+on_click = "spt playback --toggle"
+interval = 3
 ```
