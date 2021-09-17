@@ -340,10 +340,10 @@ Placeholder | Description | Type
 
 Creates a block that display the output of custom shell commands.
 
-For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
-`{"icon": "ICON", "state": "STATE", "text": "YOURTEXT"}`
-`icon` is optional, it may be an icon name from `icons.rs` (default "")
-`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)
+For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  
+`{"icon": "ICON", "state": "STATE", "text": "YOURTEXT"}`  
+`icon` is optional, it may be an icon name from `icons.rs` (default "")  
+`state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
 
 See [`examples`](https://github.com/greshake/i3status-rust/blob/master/examples/README.md) for a list of how many functionalities can be easily achieved using the `custom` block.
 
@@ -416,14 +416,14 @@ Key | Values | Required | Default
 
 Creates a block that can be updated asynchronously using DBus.
 
-For example, updating the block using command line tools:
-busctl:
-`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`
-or
-`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus s Headphones`
+For example, updating the block using command line tools:  
+busctl:  
+`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`  
+or  
+`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus s Headphones`  
 
 qdbus:
-`qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus Headphones music Good`.
+`qdbus i3.status.rs /CurrentSoundDevice i3.status.rs.SetStatus Headphones music Good`.  
 
 The first argument is the text content of the block, the second (optional) argument is the icon to use (as found in `icons.rs`; default `""`), and the third (optional) argument is the state (one of Idle, Info, Good, Warning, or Critical; default Idle).
 
@@ -1064,8 +1064,8 @@ Key | Values | Required | Default
 
 Creates a block which displays the upload and download throughput for a network interface.
 
-`bitrate` requires either `ethtool` for wired devices or `iw` for wireless devices.
-`ip` and `ipv6` require `ip`.
+`bitrate` requires either `ethtool` for wired devices or `iw` for wireless devices.  
+`ip` and `ipv6` require `ip`.  
 
 #### Examples
 
