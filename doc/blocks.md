@@ -41,11 +41,11 @@ See [`custom` block examples](https://github.com/greshake/i3status-rust/blob/mas
 - [Weather](#weather)
 - [Xrandr](#xrandr)
 
-## Apt 
+## Apt
 
 Creates a block which displays the pending updates available for your Debian/Ubuntu based system.
 
-Behind the scenes this uses `apt`, and in order to run it without root priveleges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
+Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
 
 Tip: You can grab the list of available updates using `APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable`
 
@@ -418,7 +418,7 @@ Creates a block that can be updated asynchronously using DBus.
 
 For example, updating the block using command line tools:  
 busctl:  
-`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`   
+`busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus sss Headphones music Good`  
 or  
 `busctl --user call i3.status.rs /CurrentSoundDevice i3.status.rs SetStatus s Headphones`  
 
@@ -1146,7 +1146,7 @@ ap_format = "{ssid^10}"
 Key | Values | Required | Default
 ----|--------|----------|---------
 `primary_only` | Whether to show only the primary active connection or all active connections. | No | `false`
-`ap_format` | Acces point string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{ssid}"`
+`ap_format` | Access point string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{ssid}"`
 `device_format` | Device string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{icon}{ap} {ips}"`
 `connection_format` | Connection string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{devices}"`
 `interface_name_exclude` | A list of regex patterns for device interface names to ignore. | No | ""
@@ -1350,7 +1350,7 @@ format_up_to_date = "system up to date"
 # If a linux update is availble, but no ZFS package, it won't be possible to
 # actually perform a system upgrade, so we show a warning.
 warning_updates_regex = "(linux|linux-lts|linux-zen)"
-# If ZFS is available, we know that we can and should do an upgrade, so we show 
+# If ZFS is available, we know that we can and should do an upgrade, so we show
 # the status as critical.
 critical_updates_regex = "(zfs|zfs-lts)"
 ```
@@ -1504,14 +1504,14 @@ Key | Values | Required | Default
 
 #### Icons Used
 
-- `microphone-muted`
-- `microphone-empty` (1 to 20%)
-- `microphone-half` (21 to 70%)
-- `microphone-full` (over 71%)
-- `volume-muted`
-- `volume-empty` (1 to 20%)
-- `volume-half` (21 to 70%)
-- `volume-full` (over 71%)
+- `microphone_muted`
+- `microphone_empty` (1 to 20%)
+- `microphone_half` (21 to 70%)
+- `microphone_full` (over 71%)
+- `volume_muted`
+- `volume_empty` (1 to 20%)
+- `volume_half` (21 to 70%)
+- `volume_full` (over 71%)
 
 ###### [↥ back to top](#list-of-available-blocks)
 
@@ -1959,7 +1959,7 @@ The value of `var` | Output
 
 ### `<max width>`
 
-Sets the maximum width of the content (in characters). Applicable only for Strings. 
+Sets the maximum width of the content (in characters). Applicable only for Strings.
 
 #### Examples
 
@@ -2041,7 +2041,7 @@ Some placeholders have a "unit". For example, `net` block displays speed in byte
 
 `"{speed_down*_}"` - show the download speed in it's default units, but hide the units.
 
-`"{speed_down*_b}Bi/s"` - show the download in bits per second, and disply the untit as "Bi/s" instead of "b".
+`"{speed_down*_b}Bi/s"` - show the download in bits per second, and display the unit as "Bi/s" instead of "b".
 
 ### `<bar max value>`
 

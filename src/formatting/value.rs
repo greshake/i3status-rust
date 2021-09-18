@@ -125,7 +125,7 @@ fn format_bar(value: f64, length: usize) -> String {
 }
 
 impl Value {
-    // Constuctors
+    // Constructors
     pub fn from_string(text: String) -> Self {
         Self {
             icon: None,
@@ -199,7 +199,7 @@ impl Value {
         let unit = var.unit.unit.unwrap_or(self.unit);
 
         // Draw the bar instead of usual formatting if `bar_max_value` is set
-        // (olny for integers and floats)
+        // (only for integers and floats)
         if let Some(bar_max_value) = var.bar_max_value {
             match self.value {
                 InternalValue::Integer(i) => {
@@ -227,10 +227,10 @@ impl Value {
             }
             InternalValue::Integer(value) => {
                 // Convert the value
-                // TODO better convertion mechanism
+                // TODO better conversion mechanism
                 let value = (value as f64 * self.unit.convert(unit)?) as i64;
 
-                // Pad the restulting string to the right
+                // Pad the resulting string to the right
                 let text = value.to_string();
                 let mut retval = String::new();
                 let text_len = text.len();
@@ -242,7 +242,7 @@ impl Value {
             }
             InternalValue::Float(value) => {
                 // Convert the value
-                // TODO better convertion mechanism
+                // TODO better conversion mechanism
                 let value = value * self.unit.convert(unit)?;
 
                 // Apply engineering notation (Float-only)
