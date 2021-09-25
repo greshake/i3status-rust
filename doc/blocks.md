@@ -534,6 +534,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Update interval, in seconds. | No | `5`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{running}"`
+`socket_path` | The path to the docker socket. | No | `"/var/run/docker.sock"`
 
 #### Available Format Keys
 
