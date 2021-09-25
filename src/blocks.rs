@@ -7,6 +7,7 @@ pub mod cpu;
 pub mod custom;
 pub mod custom_dbus;
 pub mod disk_space;
+pub mod dnf;
 pub mod docker;
 pub mod focused_window;
 pub mod github;
@@ -48,6 +49,7 @@ use self::cpu::*;
 use self::custom::*;
 use self::custom_dbus::*;
 use self::disk_space::*;
+use self::dnf::*;
 use self::docker::*;
 use self::focused_window::*;
 use self::github::*;
@@ -228,6 +230,7 @@ pub fn create_block(
         "custom" => block!(Custom, id, block_config, shared_config, update_request),
         "custom_dbus" => block!(CustomDBus, id, block_config, shared_config, update_request),
         "disk_space" => block!(DiskSpace, id, block_config, shared_config, update_request),
+        "dnf" => block!(Dnf, id, block_config, shared_config, update_request),
         "docker" => block!(Docker, id, block_config, shared_config, update_request), ///////
         "focused_window" => block!(
             FocusedWindow,

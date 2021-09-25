@@ -515,6 +515,53 @@ Key | Value | Type
 
 ###### [↥ back to top](#list-of-available-blocks)
 
+## Dnf
+
+Creates a block which displays the pending updates available for your Fedora system.
+
+#### Examples
+
+Update the list of pending updates every thirty minutes (1800 seconds):
+
+```toml
+[[block]]
+block = "dnf"
+interval = 1800
+format = "{count:1} updates available"
+format_singular = "{count:1} update available"
+format_up_to_date = "system up to date"
+critical_updates_regex = "(linux|linux-lts|linux-zen)"
+# shows dmenu with cached available updates. Any dmenu alternative should also work.
+on_click = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval in seconds. | No | `600`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{count:1}"`
+`format_singular` | Same as `format`, but for when exactly one update is available. | No | `"{count:1}"`
+`format_up_to_date` | Same as `format`, but for when no updates are available. | No | `"{count:1}"`
+`warning_updates_regex` | Display block as warning if updates matching regex are available. | No | `None`
+`critical_updates_regex` | Display block as critical if updates matching regex are available. | No | `None`
+
+#### Available Format Keys
+
+Key | Value | Type
+----|-------|-----
+`{count}` | Number of updates available | Integer
+
+#### Notes
+
+The number one in `{count:1}` sets the minimal width to one character.
+
+#### Icons Used
+
+- `update`
+
+###### [↥ back to top](#list-of-available-blocks)
+
 ## Docker
 
 Creates a block which shows the local docker daemon status (containers running, paused, stopped, total and image count).
