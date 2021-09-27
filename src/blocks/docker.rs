@@ -19,6 +19,7 @@ pub struct Docker {
     text: TextWidget,
     format: FormatTemplate,
     update_interval: Duration,
+    socket_path: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -48,6 +49,9 @@ pub struct DockerConfig {
 
     /// Format override
     pub format: FormatTemplate,
+
+    /// Absolute path to docker socket
+    pub socket_path: String,
 }
 
 impl Default for DockerConfig {
@@ -55,6 +59,7 @@ impl Default for DockerConfig {
         Self {
             interval: Duration::from_secs(5),
             format: FormatTemplate::default(),
+            socket_path: "/var/run/docker.sock".to_string(),
         }
     }
 }
@@ -76,13 +81,14 @@ impl ConfigBlock for Docker {
             text,
             format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
+            socket_path: block_config.socket_path,
         })
     }
 }
 
 impl Block for Docker {
     fn update(&mut self) -> Result<Option<Update>> {
-        let socket_path = std::path::PathBuf::from("/var/run/docker.sock");
+        let socket_path = std::path::PathBuf::from(self.socket_path.as_str());
         let output = http::http_get_socket_json(socket_path, "http:/api/info");
 
         if output.is_err() {
