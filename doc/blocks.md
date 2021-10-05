@@ -1541,6 +1541,7 @@ Key | Values | Required | Default
 `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | No | `None`
 `on_click` | Shell command to run when the sound block is clicked. | No | None
 `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
+`headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | No | `false`
 
 ### Available Format Keys
 
@@ -1560,6 +1561,7 @@ Key | Values | Required | Default
 - `volume_empty` (1 to 20%)
 - `volume_half` (21 to 70%)
 - `volume_full` (over 71%)
+- `headphones`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
