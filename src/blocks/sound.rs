@@ -47,6 +47,7 @@ trait SoundDevice {
     fn muted(&self) -> bool;
     fn output_name(&self) -> String;
     fn output_description(&self) -> Option<String>;
+    fn active_port(&self) -> Option<String>;
 
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
@@ -89,6 +90,9 @@ impl SoundDevice for AlsaSoundDevice {
     }
     fn output_description(&self) -> Option<String> {
         // TODO Does Alsa has something similar like descripitons in Pulse?
+        None
+    }
+    fn active_port(&self) -> Option<String> {
         None
     }
 
@@ -221,6 +225,7 @@ struct PulseAudioClient {
 struct PulseAudioSoundDevice {
     name: Option<String>,
     description: Option<String>,
+    active_port: Option<String>,
     device_kind: DeviceKind,
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
@@ -234,6 +239,7 @@ struct PulseAudioVolInfo {
     mute: bool,
     name: String,
     description: Option<String>,
+    active_port: Option<String>,
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -251,6 +257,11 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
                     .description
                     .clone()
                     .map(|description| description.into_owned()),
+                active_port: source_info
+                    .active_port
+                    .as_ref()
+                    .map(|a| a.name.as_ref().map(|n| n.to_string()))
+                    .flatten(),
             }),
         }
     }
@@ -271,6 +282,11 @@ impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
                     .description
                     .clone()
                     .map(|description| description.into_owned()),
+                active_port: sink_info
+                    .active_port
+                    .as_ref()
+                    .map(|a| a.name.as_ref().map(|n| n.to_string()))
+                    .flatten(),
             }),
         }
     }
@@ -585,6 +601,7 @@ impl PulseAudioSoundDevice {
         let device = PulseAudioSoundDevice {
             name: None,
             description: None,
+            active_port: None,
             device_kind,
             volume: None,
             volume_avg: 0,
@@ -634,6 +651,10 @@ impl SoundDevice for PulseAudioSoundDevice {
         self.description.clone()
     }
 
+    fn active_port(&self) -> Option<String> {
+        self.active_port.clone()
+    }
+
     fn get_info(&mut self) -> Result<()> {
         let devices = PULSEAUDIO_DEVICES.lock().unwrap();
 
@@ -641,6 +662,7 @@ impl SoundDevice for PulseAudioSoundDevice {
             self.volume(info.volume);
             self.muted = info.mute;
             self.description = info.description.clone();
+            self.active_port = info.active_port.clone();
         }
 
         Ok(())
@@ -704,6 +726,7 @@ pub struct Sound {
     device_kind: DeviceKind,
     step_width: u32,
     format: FormatTemplate,
+    headphones_indicator: bool,
     on_click: Option<String>,
     show_volume_when_muted: bool,
     mappings: Option<BTreeMap<String, String>>,
@@ -775,6 +798,9 @@ pub struct SoundConfig {
     /// placeholders: {volume}
     pub format: FormatTemplate,
 
+    /// Change icon when headphones are plugged in (pulseaudio only)
+    pub headphones_indicator: bool,
+
     pub show_volume_when_muted: bool,
 
     pub mappings: Option<BTreeMap<String, String>>,
@@ -792,6 +818,7 @@ impl Default for SoundConfig {
             natural_mapping: false,
             step_width: 5,
             format: FormatTemplate::default(),
+            headphones_indicator: false,
             show_volume_when_muted: false,
             mappings: None,
             max_vol: None,
@@ -800,7 +827,13 @@ impl Default for SoundConfig {
 }
 
 impl Sound {
-    fn icon(&self, volume: u32) -> String {
+    fn icon(&self, volume: u32, headphones: bool) -> String {
+        if self.headphones_indicator {
+            if self.device_kind == DeviceKind::Sink && headphones {
+                return String::from("headphones");
+            }
+        }
+
         let prefix = match self.device_kind {
             DeviceKind::Source => "microphone",
             DeviceKind::Sink => "volume",
@@ -866,6 +899,7 @@ impl ConfigBlock for Sound {
             device,
             device_kind: block_config.device_kind,
             format: block_config.format.with_default("{volume}")?,
+            headphones_indicator: block_config.headphones_indicator,
             step_width,
             on_click: None,
             show_volume_when_muted: block_config.show_volume_when_muted,
@@ -920,8 +954,14 @@ impl Block for Sound {
         );
         let texts = self.format.render(&values)?;
 
+        let headphones = self
+            .device
+            .active_port()
+            .map(|p| p.contains("headphones"))
+            .unwrap_or(false);
+
         if self.device.muted() {
-            self.text.set_icon(&self.icon(0))?;
+            self.text.set_icon(&self.icon(0, headphones))?;
             if self.show_volume_when_muted {
                 self.text.set_spacing(Spacing::Normal);
                 self.text.set_texts(texts);
@@ -930,7 +970,7 @@ impl Block for Sound {
             }
             self.text.set_state(State::Warning);
         } else {
-            self.text.set_icon(&self.icon(volume))?;
+            self.text.set_icon(&self.icon(volume, headphones))?;
             self.text.set_spacing(Spacing::Normal);
             self.text.set_state(State::Idle);
             self.text.set_texts(texts);
