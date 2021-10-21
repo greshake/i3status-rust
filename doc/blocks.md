@@ -1355,6 +1355,7 @@ Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbp
 
 Tip: On Arch Linux you can setup a `pacman` hook to signal i3status-rs to update after packages have been upgraded, so you won't have stale info in your pacman block. Create `/usr/share/libalpm/hooks/i3status.hook` with the below contents:
 
+Note: `pikaur` may hang the whole block if there is no internet connectivity. In that case, try a different AUR helper.
 ```ini
 [Trigger]
 Operation = Upgrade
