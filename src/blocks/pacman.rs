@@ -187,17 +187,6 @@ impl ConfigBlock for Pacman {
     }
 }
 
-fn run_command(var: &str) -> Result<()> {
-    Command::new("sh")
-        .args(&["-c", var])
-        .stdout(Stdio::null())
-        .spawn()
-        .block_error("pacman", &format!("Failed to run command '{}'", var))?
-        .wait()
-        .block_error("pacman", &format!("Failed to wait for command '{}'", var))
-        .map(|_| ())
-}
-
 fn has_fake_root() -> Result<bool> {
     has_command("pacman", "fakeroot")
 }
@@ -250,12 +239,20 @@ fn get_pacman_available_updates() -> Result<String> {
     }
 
     // Update database
-    run_command(&format!(
-        "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null",
-        updates_db
-    ))?;
+    Command::new("sh")
+        .env("LC_ALL", "C")
+        .args(&[
+            "-c",
+            &format!(
+                "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null",
+                updates_db
+            ),
+        ])
+        .stdout(Stdio::null())
+        .status()
+        .block_error("pacman", &format!("Failed to run command"))?;
 
-    // Get update count
+    // Get updates list
     String::from_utf8(
         Command::new("sh")
             .env("LC_ALL", "C")
@@ -354,8 +351,8 @@ impl Block for Pacman {
             Watched::Both(aur_command) => {
                 check_fakeroot_command_exists()?;
                 let pacman_available_updates = get_pacman_available_updates()?;
-                let aur_available_updates = get_aur_available_updates(&aur_command)?;
                 let pacman_count = get_update_count(&pacman_available_updates);
+                let aur_available_updates = get_aur_available_updates(&aur_command)?;
                 let aur_count = get_update_count(&aur_available_updates);
                 let formatting_map = map!(
                     "count" =>  Value::from_integer(pacman_count as i64),
