@@ -10,7 +10,7 @@ For a list of available blocks, see the [block documentation](https://github.com
 
 The Rust compiler `rustc`, `cargo` package manager, C compiler `gcc` and `libssl-dev` packages are required to build the binary.
 
-We also require Libdbus 1.6 or higher. On some older systems this may require installing `libdbus-1-dev`. See [#194](https://github.com/greshake/i3status-rust/issues/194) if you are having dbus-related compilation issues.
+We also require Libdbus 1.6 or higher. On some older systems this may require installing `libdbus-1-dev`. 
 
 Compilation is only tested with very recent stable versions of `rustc`. If you use a distro with older Rust packages, consider using [rustup](https://rustup.rs/) to install a newer toolchain.
 
