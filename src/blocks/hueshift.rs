@@ -217,6 +217,7 @@ impl Block for Hueshift {
             MouseButton::Left => {
                 self.current_temp = self.click_temp;
                 self.hue_shift_driver.update(self.current_temp)?;
+                self.text.set_text(self.current_temp.to_string());
             }
             MouseButton::Right => {
                 if self.max_temp > 6500 {
@@ -226,6 +227,7 @@ impl Block for Hueshift {
                     self.current_temp = self.max_temp;
                     self.hue_shift_driver.update(self.current_temp)?;
                 }
+                self.text.set_text(self.current_temp.to_string());
             }
             mb => {
                 use LogicalDirection::*;
@@ -245,8 +247,9 @@ impl Block for Hueshift {
                             self.current_temp = new_temp;
                         }
                     }
-                    None => {}
+                    None => return Ok(()), // avoid updating text
                 }
+                self.text.set_text(self.current_temp.to_string());
             }
         }
         Ok(())
