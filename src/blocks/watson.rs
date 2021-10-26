@@ -73,8 +73,8 @@ impl ConfigBlock for Watson {
             prev_state: None,
         };
 
-        // Spin up a thread to watch for changes to the brightness file for the
-        // device, and schedule an update if needed.
+        // Spin up a thread to watch for changes to the watson state file
+        // and schedule an update if needed.
         thread::spawn(move || {
             // Split filepath into filename and parent directory
             let (file_name, parent_dir) = {
