@@ -1,10 +1,12 @@
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
+use std::thread;
 use std::time::{Duration, Instant};
 use std::vec;
 
 use crossbeam_channel::Sender;
+use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
@@ -49,6 +51,9 @@ pub struct CustomConfig {
     /// Signal to update upon reception
     pub signal: Option<i32>,
 
+    /// Files to watch for modifications and trigger update
+    pub watch_files: Option<Vec<String>>,
+
     /// Parse command output if it contains valid bar JSON
     pub json: bool,
 
@@ -65,6 +70,7 @@ impl Default for CustomConfig {
             command: None,
             cycle: None,
             signal: None,
+            watch_files: None,
             json: false,
             hide_when_empty: false,
             shell: env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()),
@@ -99,6 +105,42 @@ impl ConfigBlock for Custom {
         if let Some(signal) = block_config.signal {
             // If the signal is not in the valid range we return an error
             custom.signal = Some(convert_to_valid_signal(signal)?);
+        };
+
+        if let Some(paths) = block_config.watch_files {
+            let tx_inotify = custom.tx_update_request.clone();
+            let mut notify = Inotify::init().expect("Failed to start inotify");
+            for p in paths {
+                notify.add_watch(&p, WatchMask::MODIFY).map_err(|e| {
+                    ConfigurationError(
+                        "custom".to_string(),
+                        format!("Failed to watch file {}: {}", &p, e),
+                    )
+                })?;
+            }
+            thread::Builder::new()
+                .name("custom".into())
+                .spawn(move || {
+                    let mut buffer = [0; 1024];
+                    loop {
+                        let mut events = notify
+                            .read_events_blocking(&mut buffer)
+                            .expect("Error while reading inotify events");
+
+                        if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
+                            tx_inotify
+                                .send(Task {
+                                    id,
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+                        }
+
+                        // Avoid update spam.
+                        thread::sleep(Duration::from_millis(250))
+                    }
+                })
+                .unwrap();
         };
 
         if block_config.cycle.is_some() && block_config.command.is_some() {
