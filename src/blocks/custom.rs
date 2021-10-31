@@ -5,10 +5,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 use std::vec;
 
-use crossbeam_channel::Sender;
-use inotify::{EventMask, Inotify, WatchMask};
-use serde_derive::Deserialize;
-
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_update;
@@ -19,6 +15,9 @@ use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
+use crossbeam_channel::Sender;
+use inotify::{EventMask, Inotify, WatchMask};
+use serde_derive::Deserialize;
 
 pub struct Custom {
     id: usize,
@@ -110,13 +109,21 @@ impl ConfigBlock for Custom {
         if let Some(paths) = block_config.watch_files {
             let tx_inotify = custom.tx_update_request.clone();
             let mut notify = Inotify::init().expect("Failed to start inotify");
-            for p in paths {
-                notify.add_watch(&p, WatchMask::MODIFY).map_err(|e| {
+            for path in paths {
+                let path_expanded = shellexpand::full(&path).map_err(|e| {
                     ConfigurationError(
                         "custom".to_string(),
-                        format!("Failed to watch file {}: {}", &p, e),
+                        format!("Failed to expand file path {}: {}", &path, e),
                     )
                 })?;
+                notify
+                    .add_watch(&*path_expanded, WatchMask::MODIFY)
+                    .map_err(|e| {
+                        ConfigurationError(
+                            "custom".to_string(),
+                            format!("Failed to watch file {}: {}", &path, e),
+                        )
+                    })?;
             }
             thread::Builder::new()
                 .name("custom".into())
