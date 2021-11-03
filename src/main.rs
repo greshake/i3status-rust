@@ -219,13 +219,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 blocks.get_mut(req.id)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
-                protocol::print_blocks(&blocks, &shared_config)?;
                 } else {
                 // Otherwise add to scheduler tasks and trigger update
                 // In case this needs to schedule further updates e.g. marquee
                 scheduler.schedule.push(req);
                 scheduler.do_scheduled_updates(&mut blocks)?;
                 }
+                protocol::print_blocks(&blocks, &shared_config)?;
             },
             // Receive update timer events
             recv(ttnu) -> _ => {
