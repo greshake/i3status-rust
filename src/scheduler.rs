@@ -41,7 +41,7 @@ impl cmp::Ord for Task {
 }
 
 pub struct UpdateScheduler {
-    schedule: BinaryHeap<Task>,
+    pub schedule: BinaryHeap<Task>,
 }
 
 impl UpdateScheduler {

@@ -214,10 +214,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
             },
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
-                // Process immediately and forget
+                if scheduler.schedule.iter().filter(|x| x.id == req.id).next().is_some() {
+                // If block is already scheduled then process immediately and forget
                 blocks.get_mut(req.id)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
+                } else {
+                // Otherwise add to scheduler tasks and trigger update
+                // In case this needs to schedule further updates e.g. marquee
+                scheduler.schedule.push(req);
+                scheduler.do_scheduled_updates(&mut blocks)?;
+                }
                 protocol::print_blocks(&blocks, &shared_config)?;
             },
             // Receive update timer events
