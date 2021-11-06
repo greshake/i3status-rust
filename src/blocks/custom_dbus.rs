@@ -37,9 +37,22 @@ pub struct CustomDBus {
 pub struct CustomDBusConfig {
     pub name: String,
 
+    /// Text to display on startup until the first update is received on the bus.
+    pub initial_text: String,
+
     /// Timeout for clearing the block output after an update (in seconds)
     #[serde(default, deserialize_with = "deserialize_opt_duration")]
     pub timeout: Option<Duration>,
+}
+
+impl Default for CustomDBusConfig {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            initial_text: "??".to_string(),
+            timeout: None,
+        }
+    }
 }
 
 impl ConfigBlock for CustomDBus {
@@ -52,7 +65,7 @@ impl ConfigBlock for CustomDBus {
         send: Sender<Task>,
     ) -> Result<Self> {
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
-            content: String::from("??"),
+            content: String::from(block_config.initial_text),
             icon: String::from(""),
             state: State::Idle,
         }));
