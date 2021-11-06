@@ -55,10 +55,12 @@ impl Default for Icons {
             "memory_swap" => "SWAP",
             "mouse" => "MOUSE",
             "music" => "MUSIC",
-            "music_next" => ">",
             "music_pause" => "||",
-            "music_play" => ">",
-            "music_prev" => "<",
+            // these need to be pango escaped
+            // TODO: more general fix?
+            "music_play" => "&gt;",
+            "music_next" => "&gt;",
+            "music_prev" => "&lt;",
             "net_down" => "DOWN",
             "net_loopback" => "LO",
             "net_up" => "UP ",
