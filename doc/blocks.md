@@ -395,6 +395,16 @@ signal = 4
 interval = "once"
 ```
 
+Update block when one or more specified files are modified:
+
+```toml
+[[block]]
+block = "custom"
+command = "cat ~/custom_status"
+watch_files = ["~/custom_status"]
+interval = "once"
+```
+
 #### Options
 
 Note that `command` and `cycle` are mutually exclusive.
@@ -407,6 +417,7 @@ Key | Values | Required | Default
 `interval` | Update interval, in seconds (or `"once"` to update only once). | No | `10`
 `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
 `signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX`. | No | None
+`watch_files` | Watch files to trigger update on file modification | No | None
 `hide_when_empty` | Hides the block when the command output (or json text field) is empty. | No | false
 `shell` | Specify the shell to use when running commands. | No | `$SHELL` if set, otherwise fallback to `sh`
 
