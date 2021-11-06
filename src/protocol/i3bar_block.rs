@@ -32,6 +32,7 @@ macro_rules! json_add_str {
                 val.chars()
                     .map(|c| match c {
                         '\\' => "\\\\".to_string(),
+                        '\n' => "\\n".to_string(),
                         '"' => "\\\"".to_string(),
                         x => x.to_string(),
                     })
