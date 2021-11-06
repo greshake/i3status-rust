@@ -1,3 +1,18 @@
+# i3status-rust 0.20.5
+
+## New Blocks and Features
+
+* New DNF block for Fedora (#1311 by @sigvei)
+* Docker block: allow non-default docker socket files (#1310 by @JTarasovic)
+* Sound block: add option to automatically change icon based on output device type (#1313 by @codicodi)
+
+## Bug Fixes and Improvements
+
+* Hueshift block: fix sluggishness by updating widget text on interactions (#1320 by @JohnDowson)
+* Music block: fix long standing issue where block tandomly stops updating (#1327 by jamesmcm)
+* Nvidia block: fix nvidia block falling behind on lines from nvidia-smi (#1296 by @ZachCook)
+ 
+
 # i3status-rust 0.20.4
 
 ## New Blocks and Features
