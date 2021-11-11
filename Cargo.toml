@@ -35,7 +35,7 @@ toml = "0.5"
 
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.0", default-features = false }
-notmuch = { optional = true, version = "0.6.0" }
+notmuch = { optional = true, version = "0.7.0" }
 maildir = { optional = true, version = "0.5" }
 # Used only in debug build for profiling blocks
 cpuprofiler = { version = "0.0.4", optional = true }
