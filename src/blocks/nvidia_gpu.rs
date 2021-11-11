@@ -358,8 +358,7 @@ impl Block for NvidiaGpu {
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        let mut widgets: Vec<&dyn I3BarWidget> = Vec::new();
-        widgets.push(&self.name_widget);
+        let mut widgets: Vec<&dyn I3BarWidget> = vec![&self.name_widget];
 
         if self.gpu_enabled {
             if let Some(ref utilization_widget) = self.show_utilization {

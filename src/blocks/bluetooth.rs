@@ -41,8 +41,6 @@ impl BluetoothDevice {
             .get_managed_objects()
             .block_error("bluetooth", "Failed to get managed objects from org.bluez.")?;
 
-        
-
         // If we need to suppress errors from missing devices, this is the place
         // to do it. We could also pick the "default" device here, although that
         // does not make much sense to me in the context of Bluetooth.

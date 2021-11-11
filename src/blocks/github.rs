@@ -249,10 +249,12 @@ fn get_state(
     agg: &HashMap<String, u64>,
 ) -> State {
     let default: u64 = 0;
-    for (list_opt, ret) in &[(critical, State::Critical),
+    for (list_opt, ret) in &[
+        (critical, State::Critical),
         (warning, State::Warning),
         (info, State::Info),
-        (good, State::Good)] {
+        (good, State::Good),
+    ] {
         if let Some(list) = list_opt {
             for key in agg.keys() {
                 if list.contains(key) && *agg.get(key).unwrap_or(&default) > 0 {
