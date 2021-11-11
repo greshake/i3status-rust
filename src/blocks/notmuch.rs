@@ -68,7 +68,7 @@ impl Default for NotmuchConfig {
 fn run_query(db_path: &str, query_string: &str) -> std::result::Result<u32, notmuch::Error> {
     let db = notmuch::Database::open(&db_path, notmuch::DatabaseMode::ReadOnly)?;
     let query = db.create_query(query_string)?;
-    Ok(query.count_messages()?)
+    query.count_messages()
 }
 
 impl ConfigBlock for Notmuch {

@@ -556,7 +556,7 @@ impl ConfigBlock for NetworkManager {
             .unwrap();
 
         fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
-            patterns.iter().map(|p| Regex::new(&p)).collect()
+            patterns.iter().map(|p| Regex::new(p)).collect()
         }
 
         Ok(NetworkManager {
@@ -630,7 +630,7 @@ impl Block for NetworkManager {
                     match self.manager.primary_connection(&self.dbus_conn) {
                         Ok(conn) => vec![conn.clone()]
                             .into_iter()
-                            .chain(active.into_iter().filter(|ref x| x.path != conn.path))
+                            .chain(active.into_iter().filter(|x| x.path != conn.path))
                             .collect(),
                         Err(_) => active,
                     }

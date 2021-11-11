@@ -214,7 +214,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             },
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
-                if scheduler.schedule.iter().filter(|x| x.id == req.id).next().is_some() {
+                if scheduler.schedule.iter().any(|x| x.id == req.id) {
                 // If block is already scheduled then process immediately and forget
                 blocks.get_mut(req.id)
                     .internal_error("scheduler", "could not get required block")?
@@ -324,12 +324,12 @@ fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>)
     let profile_runs = runs
         .parse::<i32>()
         .configuration_error("failed to parse --profile-runs as an integer")?;
-    let shared_config = SharedConfig::new(&config);
+    let shared_config = SharedConfig::new(config);
     for &(ref block_name, ref block_config) in &config.blocks {
         if block_name == name {
             let mut block =
-                create_block(0, &block_name, block_config.clone(), shared_config, update)?;
-            profile(profile_runs, &block_name, block.deref_mut());
+                create_block(0, block_name, block_config.clone(), shared_config, update)?;
+            profile(profile_runs, block_name, block.deref_mut());
             break;
         }
     }

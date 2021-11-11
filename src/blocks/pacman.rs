@@ -250,7 +250,7 @@ fn get_pacman_available_updates() -> Result<String> {
         ])
         .stdout(Stdio::null())
         .status()
-        .block_error("pacman", &format!("Failed to run command"))?;
+        .block_error("pacman", &"Failed to run command".to_string())?;
 
     // Get updates list
     String::from_utf8(
@@ -333,7 +333,7 @@ impl Block for Pacman {
                 (formatting_map, warning, critical, pacman_count)
             }
             Watched::AUR(aur_command) => {
-                let aur_available_updates = get_aur_available_updates(&aur_command)?;
+                let aur_available_updates = get_aur_available_updates(aur_command)?;
                 let aur_count = get_update_count(&aur_available_updates);
                 let formatting_map = map!(
                     "aur" => Value::from_integer(aur_count as i64)
@@ -352,7 +352,7 @@ impl Block for Pacman {
                 check_fakeroot_command_exists()?;
                 let pacman_available_updates = get_pacman_available_updates()?;
                 let pacman_count = get_update_count(&pacman_available_updates);
-                let aur_available_updates = get_aur_available_updates(&aur_command)?;
+                let aur_available_updates = get_aur_available_updates(aur_command)?;
                 let aur_count = get_update_count(&aur_available_updates);
                 let formatting_map = map!(
                     "count" =>  Value::from_integer(pacman_count as i64),

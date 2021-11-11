@@ -143,7 +143,7 @@ impl SoundDevice for AlsaSoundDevice {
             args.push("-M")
         };
         let vol_str = &format!("{}%", capped_volume);
-        args.extend(&["-D", &self.device, "set", &self.name, &vol_str]);
+        args.extend(&["-D", &self.device, "set", &self.name, vol_str]);
 
         Command::new("amixer")
             .args(&args)
@@ -828,10 +828,8 @@ impl Default for SoundConfig {
 
 impl Sound {
     fn icon(&self, volume: u32, headphones: bool) -> String {
-        if self.headphones_indicator {
-            if self.device_kind == DeviceKind::Sink && headphones {
-                return String::from("headphones");
-            }
+        if self.headphones_indicator && self.device_kind == DeviceKind::Sink && headphones {
+            return String::from("headphones");
         }
 
         let prefix = match self.device_kind {

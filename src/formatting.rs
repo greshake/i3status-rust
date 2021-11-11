@@ -148,7 +148,7 @@ impl FormatTemplate {
         let mut rendered = String::new();
         for token in tokens {
             match token {
-                Token::Text(text) => rendered.push_str(&text),
+                Token::Text(text) => rendered.push_str(text),
                 Token::Var(var) => rendered.push_str(
                     &vars
                         .get(&*var.name)
@@ -156,7 +156,7 @@ impl FormatTemplate {
                             "util",
                             &format!("Unknown placeholder in format string: '{}'", var.name),
                         )?
-                        .format(&var)?,
+                        .format(var)?,
                 ),
             }
         }

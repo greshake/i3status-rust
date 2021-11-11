@@ -172,8 +172,8 @@ impl RotatingTextWidget {
                 Some(I3BarBlockMinWidth::Text(icon))
             }
         };
-        self.inner.background = key_bg.clone();
-        self.inner.color = key_fg.clone();
+        self.inner.background = key_bg;
+        self.inner.color = key_fg;
     }
 
     pub fn next(&mut self) -> Result<(bool, Option<Duration>)> {

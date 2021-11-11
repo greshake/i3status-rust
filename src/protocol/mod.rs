@@ -76,16 +76,16 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
 
         // The first widget's BG is used to get the FG color for the current separator
         let sep_fg = if config.theme.separator_fg == Color::Auto {
-            rendered_widgets.first().unwrap().background.clone()
+            rendered_widgets.first().unwrap().background
         } else {
-            config.theme.separator_fg.clone()
+            config.theme.separator_fg
         };
 
         // The separator's BG is the last block's last widget's BG
         let sep_bg = if config.theme.separator_bg == Color::Auto {
             last_bg
         } else {
-            config.theme.separator_bg.clone()
+            config.theme.separator_bg
         };
 
         if let Some(ref separator) = config.theme.separator {
@@ -101,7 +101,7 @@ pub fn print_blocks(blocks: &[Box<dyn Block>], config: &SharedConfig) -> Result<
         }
 
         // The last widget's BG is used to get the BG color for the next separator
-        last_bg = rendered_widgets.last().unwrap().background.clone();
+        last_bg = rendered_widgets.last().unwrap().background;
     }
 
     println!("[{}],", rendered_blocks.join(","));

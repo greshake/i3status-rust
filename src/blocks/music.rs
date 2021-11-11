@@ -460,7 +460,7 @@ impl ConfigBlock for Music {
         }
 
         fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
-            patterns.iter().map(|p| Regex::new(&p)).collect()
+            patterns.iter().map(|p| Regex::new(p)).collect()
         }
 
         Ok(Music {
@@ -702,8 +702,7 @@ impl Block for Music {
         if players.len() <= 1 && self.current_song_widget.is_empty() && self.hide_when_empty {
             vec![]
         } else if players.len() > 0 && !self.current_song_widget.is_empty() {
-            let mut elements: Vec<&dyn I3BarWidget> = Vec::new();
-            elements.push(&self.current_song_widget);
+            let mut elements: Vec<&dyn I3BarWidget> = vec![&self.current_song_widget];
             if let Some(ref prev) = self.prev {
                 elements.push(prev);
             }
@@ -797,7 +796,7 @@ fn ignored_player(
 
     if interface_name_exclude_regexps
         .iter()
-        .any(|regex| regex.is_match(&name))
+        .any(|regex| regex.is_match(name))
     {
         return true;
     }

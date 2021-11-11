@@ -86,7 +86,7 @@ impl<'de> Deserialize<'de> for Color {
 }
 
 impl Color {
-    pub fn to_string(&self) -> Option<String> {
+    pub fn to_string(self) -> Option<String> {
         match self {
             Color::Rgba(r, g, b, a) => Some(format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a)),
             _ => None,

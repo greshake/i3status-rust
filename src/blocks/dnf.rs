@@ -72,7 +72,7 @@ impl DnfConfig {
             None => Ok(None),
             Some(s) => Regex::new(s.as_ref())
                 .map_err(|_| ConfigurationError("dnf".to_string(), errorstring.to_string()))
-                .map(|regex| Some(regex)),
+                .map(Some),
         }
     }
 }

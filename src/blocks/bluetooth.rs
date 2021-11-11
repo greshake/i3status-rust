@@ -41,7 +41,11 @@ impl BluetoothDevice {
             .get_managed_objects()
             .block_error("bluetooth", "Failed to get managed objects from org.bluez.")?;
 
-        let devices: Vec<(dbus::Path, String)> = objects
+        // If we need to suppress errors from missing devices, this is the place
+        // to do it. We could also pick the "default" device here, although that
+        // does not make much sense to me in the context of Bluetooth.
+        let mut initial_available = false;
+        let auto_path = objects
             .into_iter()
             .filter(|(_, interfaces)| interfaces.contains_key("org.bluez.Device1"))
             .map(|(path, interfaces)| {
@@ -58,14 +62,6 @@ impl BluetoothDevice {
                     .to_string();
                 (path, address)
             })
-            .collect();
-
-        // If we need to suppress errors from missing devices, this is the place
-        // to do it. We could also pick the "default" device here, although that
-        // does not make much sense to me in the context of Bluetooth.
-        let mut initial_available = false;
-        let auto_path = devices
-            .into_iter()
             .filter(|(_, address)| address == &mac)
             .map(|(path, _)| path)
             .next();

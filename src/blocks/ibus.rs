@@ -67,7 +67,7 @@ impl ConfigBlock for IBus {
         send: Sender<Task>,
     ) -> Result<Self> {
         let init_text = block_config.initial_text;
-        let engine_original = Arc::new(Mutex::new(String::from(init_text.clone())));
+        let engine_original = Arc::new(Mutex::new(init_text.clone()));
 
         let c = Connection::get_private(BusType::Session).block_error(
             "ibus",
@@ -147,7 +147,7 @@ impl ConfigBlock for IBus {
             // This is a hack.
             // Even when IBus is up and running, this call can error out if an engine has not been set yet.
             // Instead of bringing down the whole bar, we should instead just display a placeholder text.
-            let default = Box::new(String::from(init_text.clone())) as Box<dyn RefArg>;
+            let default = Box::new(init_text.clone()) as Box<dyn RefArg>;
             let info: arg::Variant<Box<dyn arg::RefArg>> = p
                 .get("org.freedesktop.IBus", "GlobalEngine")
                 .unwrap_or(arg::Variant(default));
@@ -155,7 +155,7 @@ impl ConfigBlock for IBus {
             match value.arg_type() {
                 arg::ArgType::String => {
                     eprintln!("ibus block: global engine not set");
-                    init_text.clone()
+                    init_text
                 }
                 arg::ArgType::Struct => {
                     // // `info` should contain something containing an array with the contents as such:
@@ -170,13 +170,13 @@ impl ConfigBlock for IBus {
                         .nth(2)
                         .block_error("ibus", "Failed to parse D-Bus message (step 2)")?
                         .as_str()
-                        .unwrap_or(&init_text.clone())
+                        .unwrap_or(&init_text)
                         .to_string()
                 }
-                _ => init_text.clone().to_string(),
+                _ => init_text,
             }
         } else {
-            init_text.to_string()
+            init_text
         };
 
         let engine_copy2 = engine_original.clone();
@@ -200,10 +200,9 @@ impl ConfigBlock for IBus {
                 }
                 std::mem::drop(available);
                 let ibus_address = get_ibus_address().unwrap();
-                let c = Connection::open_private(&ibus_address).expect(&format!(
-                    "Failed to establish D-Bus connection to {}",
-                    ibus_address
-                ));
+                let c = Connection::open_private(&ibus_address).unwrap_or_else(|_| {
+                    panic!("Failed to establish D-Bus connection to {}", ibus_address)
+                });
                 c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
                     .expect("Failed to add D-Bus message rule - has IBus interface changed?");
                 loop {

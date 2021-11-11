@@ -191,7 +191,7 @@ impl Block for Cpu {
                 Value::from_float(freq).hertz(),
             );
         }
-        for (i, utilization) in utilizations.into_iter().enumerate() {
+        for (i, utilization) in utilizations.iter().enumerate() {
             values.insert(
                 format!("utilization{}", i + 1),
                 Value::from_integer((utilization * 100.) as i64).percents(),

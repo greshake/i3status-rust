@@ -109,7 +109,7 @@ impl Block for Time {
     fn update(&mut self) -> Result<Option<Update>> {
         let full = self.get_formatted_time(&self.formats.0)?;
         let short = match &self.formats.1 {
-            Some(short_fmt) => Some(self.get_formatted_time(&short_fmt)?),
+            Some(short_fmt) => Some(self.get_formatted_time(short_fmt)?),
             None => None,
         };
         self.time.set_texts((full, short));
