@@ -8,6 +8,7 @@
 
 ## Bug Fixes and Improvements
 
+* IBus block: no longer crashes the bar if IBus reports that there is no global engine set on first startup
 * Music block: the default text icons are now pango escaped and should cause no errors with i3bar
  
 # i3status-rust 0.20.5
