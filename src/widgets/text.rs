@@ -23,8 +23,8 @@ impl TextWidget {
         let inner = I3BarBlock {
             name: Some(id.to_string()),
             instance: Some(instance.to_string()),
-            color: key_fg.clone(),
-            background: key_bg.clone(),
+            color: key_fg,
+            background: key_bg,
             ..I3BarBlock::default()
         };
 
@@ -85,7 +85,7 @@ impl TextWidget {
     pub fn set_texts(&mut self, contents: (String, Option<String>)) {
         self.spacing = Spacing::from_content(&contents.0);
         self.spacing_short = if let Some(ref short) = contents.1 {
-            Spacing::from_content(&short)
+            Spacing::from_content(short)
         } else {
             self.spacing
         };
@@ -124,8 +124,8 @@ impl TextWidget {
             Some(text) => Some(self.format_text(text.clone(), self.spacing_short)),
             _ => None,
         };
-        self.inner.background = key_bg.clone();
-        self.inner.color = key_fg.clone();
+        self.inner.background = key_bg;
+        self.inner.color = key_fg;
     }
 }
 

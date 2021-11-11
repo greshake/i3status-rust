@@ -149,7 +149,7 @@ impl KeyboardLayoutMonitor for LocaleBus {
                 // Skip the NameAcquired event.
                 con.incoming(10_000).next();
 
-                con.add_match(&rule)
+                con.add_match(rule)
                     .expect("Failed to add D-Bus match rule.");
 
                 loop {

@@ -36,7 +36,7 @@ impl<T: Block> Block for BaseBlock<T> {
         match &self.on_click {
             Some(cmd) => {
                 if let MouseButton::Left = e.button {
-                    spawn_child_async("sh", &["-c", &cmd])
+                    spawn_child_async("sh", &["-c", cmd])
                         .block_error(&self.name, "could not spawn child")?;
                 }
                 Ok(())

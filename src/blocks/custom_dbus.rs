@@ -65,7 +65,7 @@ impl ConfigBlock for CustomDBus {
         send: Sender<Task>,
     ) -> Result<Self> {
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
-            content: String::from(block_config.initial_text),
+            content: block_config.initial_text,
             icon: String::from(""),
             state: State::Idle,
         }));

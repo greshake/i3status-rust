@@ -231,7 +231,7 @@ impl<'a> Notifications<'a> {
                     None
                 }
             })
-            .unwrap_or(&"")
+            .unwrap_or("")
             .to_string();
 
         let notifications: Vec<Notification> = serde_json::from_value(result.content)?;
@@ -249,21 +249,19 @@ fn get_state(
     agg: &HashMap<String, u64>,
 ) -> State {
     let default: u64 = 0;
-    for (list_opt, ret) in vec![
-        (critical, State::Critical),
+    for (list_opt, ret) in &[(critical, State::Critical),
         (warning, State::Warning),
         (info, State::Info),
-        (good, State::Good),
-    ] {
+        (good, State::Good)] {
         if let Some(list) = list_opt {
             for key in agg.keys() {
                 if list.contains(key) && *agg.get(key).unwrap_or(&default) > 0 {
-                    return ret;
+                    return *ret;
                 }
             }
         }
     }
-    return State::Idle;
+    State::Idle
 }
 
 fn parse_links_header(raw_links: &str) -> HashMap<&str, &str> {

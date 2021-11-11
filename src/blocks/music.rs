@@ -460,7 +460,7 @@ impl ConfigBlock for Music {
         }
 
         fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
-            patterns.iter().map(|p| Regex::new(&p)).collect()
+            patterns.iter().map(|p| Regex::new(p)).collect()
         }
 
         Ok(Music {
@@ -797,7 +797,7 @@ fn ignored_player(
 
     if interface_name_exclude_regexps
         .iter()
-        .any(|regex| regex.is_match(&name))
+        .any(|regex| regex.is_match(name))
     {
         return true;
     }
