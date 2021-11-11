@@ -42,6 +42,8 @@ pub struct IBus {
 pub struct IBusConfig {
     pub mappings: Option<BTreeMap<String, String>>,
     pub format: FormatTemplate,
+    /// Text to display on startup when IBus global engine is not yet set.
+    pub initial_text: String,
 }
 
 impl Default for IBusConfig {
@@ -49,6 +51,7 @@ impl Default for IBusConfig {
         Self {
             mappings: None,
             format: FormatTemplate::default(),
+            initial_text: "??".to_string(),
         }
     }
 }
@@ -63,9 +66,9 @@ impl ConfigBlock for IBus {
         shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
-        let send2 = send.clone();
+        let init_text = block_config.initial_text;
+        let engine_original = Arc::new(Mutex::new(String::from(init_text.clone())));
 
-        let engine_original = Arc::new(Mutex::new(String::from("??")));
         let c = Connection::get_private(BusType::Session).block_error(
             "ibus",
             "failed to establish D-Bus connection to session bus",
@@ -85,12 +88,14 @@ impl ConfigBlock for IBus {
         // `GlobalEngine` result in a "No global engine" response.
         // Hence the check below to see if there are 3 or more names on the bus with "IBus" in them.
         // TODO: Possibly we only need to check for `org.freedesktop.portal.IBus`? Not sure atm.
+        // TODO: Is the Gtk3 one always there? Is it ever a Qt one?
         let running = arr.filter(|entry| entry.contains("IBus")).count() > 2;
         // TODO: revisit this lint
         #[allow(clippy::mutex_atomic)]
         let available = Arc::new((Mutex::new(running), Condvar::new()));
         let available_copy = available.clone();
         let engine_copy = engine_original.clone();
+        let send2 = send.clone();
         thread::Builder::new().name("ibus-daemon-monitor".into()).spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
             c.add_match("interface='org.freedesktop.DBus',member='NameOwnerChanged',path='/org/freedesktop/DBus',arg0namespace='org.freedesktop.IBus'")
@@ -107,8 +112,10 @@ impl ConfigBlock for IBus {
 							*available = false;
 							cvar.notify_one();
                             let mut engine = engine_copy.lock().unwrap();
-                            // see comment on L167
-                            *engine = "Reload the bar!".to_string();
+                            // see comment in the ibus-engine-monitor thread
+                            // TODO: way to restart the other thread with the new IBus address
+                            eprintln!("ibus block: ibus-daemon was restarted, so the block will no longer update");
+                            *engine = "ibus restarted so i3status-rs must be restarted!".to_string();
 							send2.send(Task {
 								id,
 								update_time: Instant::now(),
@@ -118,7 +125,7 @@ impl ConfigBlock for IBus {
 							let mut available = lock.lock().unwrap();
 							*available = true;
 							cvar.notify_one();
-
+                            eprintln!("ibus block: ibus-daemon has started!");
 							send2.send(Task {
 						   		id,
 						   		update_time: Instant::now(),
@@ -136,35 +143,42 @@ impl ConfigBlock for IBus {
                 &format!("Failed to establish D-Bus connection to {}", ibus_address),
             )?;
             let p = c.with_path("org.freedesktop.IBus", "/org/freedesktop/IBus", 5000);
-            let info: arg::Variant<Box<dyn arg::RefArg>> =
-                p.get("org.freedesktop.IBus", "GlobalEngine").map_err(|e| {
-                    BlockError(
-                        "ibus".to_string(),
-                        format!(
-                            "Failed to query IBus for GlobalEngine at {} with error {}",
-                            ibus_address, e
-                        ),
-                    )
-                })?;
 
-            // `info` should contain something containing an array with the contents as such:
-            // [name, longname, description, language, license, author, icon, layout, layout_variant, layout_option, rank, hotkeys, symbol, setup, version, textdomain, icon_prop_key]
-            // Refer to: https://github.com/ibus/ibus/blob/7cef5bf572596361bc502e8fa917569676a80372/src/ibusenginedesc.c
-            // e.g.                   name           longname        description     language
-            // ["IBusEngineDesc", {}, "xkb:us::eng", "English (US)", "English (US)", "en", "GPL", "Peng Huang <shawn.p.huang@gmail.com>", "ibus-keyboard", "us", 99, "", "", "", "", "", "", "", ""]
-            //                         ↑ We will use this element (name) as it is what GlobalEngineChanged signal returns.
-            let engine = info
-                .0
-                .as_iter()
-                .block_error("ibus", "Failed to parse D-Bus message (step 1)")?
-                .nth(2)
-                .block_error("ibus", "Failed to parse D-Bus message (step 2)")?
-                .as_str()
-                .unwrap_or("??");
-            engine.to_string()
+            // This is a hack.
+            // Even when IBus is up and running, this call can error out if an engine has not been set yet.
+            // Instead of bringing down the whole bar, we should instead just display a placeholder text.
+            let default = Box::new(String::from(init_text.clone())) as Box<dyn RefArg>;
+            let info: arg::Variant<Box<dyn arg::RefArg>> = p
+                .get("org.freedesktop.IBus", "GlobalEngine")
+                .unwrap_or(arg::Variant(default));
+            let value = &info.0;
+            match value.arg_type() {
+                arg::ArgType::String => {
+                    eprintln!("ibus block: global engine not set");
+                    init_text.clone()
+                }
+                arg::ArgType::Struct => {
+                    // // `info` should contain something containing an array with the contents as such:
+                    // // [name, longname, description, language, license, author, icon, layout, layout_variant, layout_option, rank, hotkeys, symbol, setup, version, textdomain, icon_prop_key]
+                    // // Refer to: https://github.com/ibus/ibus/blob/7cef5bf572596361bc502e8fa917569676a80372/src/ibusenginedesc.c
+                    // // e.g.                   name           longname        description     language
+                    // // ["IBusEngineDesc", {}, "xkb:us::eng", "English (US)", "English (US)", "en", "GPL", "Peng Huang <shawn.p.huang@gmail.com>", "ibus-keyboard", "us", 99, "", "", "", "", "", "", "", ""]
+                    // //                         ↑ We will use this element (name) as it is what GlobalEngineChanged signal returns.
+                    value
+                        .as_iter()
+                        .block_error("ibus", "Failed to parse D-Bus message (step 1)")?
+                        .nth(2)
+                        .block_error("ibus", "Failed to parse D-Bus message (step 2)")?
+                        .as_str()
+                        .unwrap_or(&init_text.clone())
+                        .to_string()
+                }
+                _ => init_text.clone().to_string(),
+            }
         } else {
-            "??".to_string()
+            init_text.to_string()
         };
+
         let engine_copy2 = engine_original.clone();
         let mut engine = engine_copy2.lock().unwrap();
         *engine = current_engine;
@@ -186,8 +200,10 @@ impl ConfigBlock for IBus {
                 }
                 std::mem::drop(available);
                 let ibus_address = get_ibus_address().unwrap();
-                let c = Connection::open_private(&ibus_address)
-                    .expect("Failed to establish D-Bus connection in thread");
+                let c = Connection::open_private(&ibus_address).expect(&format!(
+                    "Failed to establish D-Bus connection to {}",
+                    ibus_address
+                ));
                 c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
                     .expect("Failed to add D-Bus message rule - has IBus interface changed?");
                 loop {
@@ -290,6 +306,7 @@ fn parse_msg(ci: &ConnectionItem) -> Option<&str> {
 // ```
 fn get_ibus_address() -> Result<String> {
     if let Ok(address) = env::var("IBUS_ADDRESS") {
+        eprintln!("ibus block: using address from $IBUS_ADDRESS ({})", address);
         return Ok(address);
     }
 
@@ -299,6 +316,10 @@ fn get_ibus_address() -> Result<String> {
         .output()
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
     {
+        eprintln!(
+            "ibus block: using address from `ibus address` ({})",
+            address
+        );
         return Ok(address);
     }
 
@@ -367,5 +388,11 @@ fn get_ibus_address() -> Result<String> {
         &format!("Failed to extract address out of '{}'.", address),
     )?;
 
-    Ok(cap[1].to_string())
+    let address = cap[1].to_string();
+    eprintln!(
+        "ibus block: using address from {} ({})",
+        socket_path.into_os_string().into_string().unwrap(),
+        address
+    );
+    Ok(address)
 }
