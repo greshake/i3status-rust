@@ -101,6 +101,43 @@ impl HueShiftDriver for Gammastep {
         Ok(())
     }
 }
+struct Wlsunset();
+impl HueShiftDriver for Wlsunset {
+    fn update(&self, temp: u16) -> Result<()> {
+        Command::new("sh")
+            // wlsunset does not have a oneshot option, so set both day and
+            // night temperature. wlsunset dose not allow for day and night
+            // temperatures to be the same, so increment the day temperature.
+            .args(&[
+                "-c",
+                &format!("killall wlsunset; wlsunset -T {} -t {} &", temp + 1, temp),
+            ])
+            .spawn()
+            .block_error(
+                "hueshift",
+                "Failed to set new color temperature using wlsunset.",
+            )?;
+        Ok(())
+    }
+    fn reset(&self) -> Result<()> {
+        Command::new("sh")
+            // wlsunset does not have a reset option, so just kill the process.
+            // Trying to call wlsunset without any arguments uses the defaults:
+            // day temp: 6500K
+            // night temp: 4000K
+            // latitude/longitude: NaN
+            //     ^ results in sun_condition == POLAR_NIGHT at time of testing
+            // With these defaults, this results in the the color temperature
+            // getting set to 4000K.
+            .args(&["-c", "killall wlsunset > /dev/null 2>&1"])
+            .spawn()
+            .block_error(
+                "hueshift",
+                "Failed to set new color temperature using wlsunset.",
+            )?;
+        Ok(())
+    }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -108,6 +145,7 @@ pub enum HueShifter {
     Redshift,
     Sct,
     Gammastep,
+    Wlsunset,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -145,6 +183,8 @@ impl Default for HueshiftConfig {
                 Some(HueShifter::Sct)
             } else if has_command("hueshift", "gammastep").unwrap_or(false) {
                 Some(HueShifter::Gammastep)
+            } else if has_command("hueshift", "wlsunset").unwrap_or(false) {
+                Some(HueShifter::Wlsunset)
             } else {
                 None
             },
@@ -185,6 +225,7 @@ impl ConfigBlock for Hueshift {
             HueShifter::Redshift => Box::new(Redshift {}),
             HueShifter::Sct => Box::new(Sct {}),
             HueShifter::Gammastep => Box::new(Gammastep {}),
+            HueShifter::Wlsunset => Box::new(Wlsunset {}),
         };
 
         Ok(Hueshift {

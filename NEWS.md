@@ -1,3 +1,16 @@
+# i3status-rust 0.20.6
+
+## New Blocks and Features
+
+* Custom block: new `watch watch_files` option that uses inotify to trigger the block to update when one or more specified files are seen to have been modified (#1325 by @BrendanBall)
+* CustomDBus block: new `initial_text` option to set the text shown up until the first update is received
+* Hueshift block: added support for wlsunset (#1337 by @DerVerruckteFuchs)
+
+## Bug Fixes and Improvements
+
+* IBus block: no longer crashes the bar if IBus reports that there is no global engine set on first startup
+* Music block: the default text icons are now pango escaped and should cause no errors with i3bar
+ 
 # i3status-rust 0.20.5
 
 ## New Blocks and Features
