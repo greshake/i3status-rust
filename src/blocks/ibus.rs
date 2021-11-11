@@ -200,8 +200,9 @@ impl ConfigBlock for IBus {
                 }
                 std::mem::drop(available);
                 let ibus_address = get_ibus_address().unwrap();
-                let c = Connection::open_private(&ibus_address).unwrap_or_else(|_| panic!("Failed to establish D-Bus connection to {}",
-                    ibus_address));
+                let c = Connection::open_private(&ibus_address).unwrap_or_else(|_| {
+                    panic!("Failed to establish D-Bus connection to {}", ibus_address)
+                });
                 c.add_match("interface='org.freedesktop.IBus',member='GlobalEngineChanged'")
                     .expect("Failed to add D-Bus message rule - has IBus interface changed?");
                 loop {
