@@ -5,7 +5,7 @@ Define blocks in your config file in the following format:
 block = "insert-block-name-here"
 ```
 
-Each block has different required and optional parameters that may be specified.
+Each block has different required or optional parameters that may be specified.
 These are listed in the docs for each block below.
 
 In addition, there are some global config directives that can be applied to any block.  
