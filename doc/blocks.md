@@ -1,6 +1,20 @@
-Refer to [formatting section](#formatting) to customize formatting strings' placeholders.
+Define blocks in your config file in the following format:
 
-See [`custom` block examples](https://github.com/greshake/i3status-rust/blob/master/examples/README.md) for a list of how many additional blocks can be easily made using the `custom` block.
+```toml
+[[block]]
+block = "insert-block-name-here"
+```
+
+Each block has different required and optional parameters that may be specified.
+These are listed in the docs for each block below.
+
+In addition, there are some global config directives that can be applied to any block.  
+`on_click`: this can be set for any block to run a command when the block is left clicked.
+This will override any default actions the block already has.
+
+Some blocks support format strings - refer to the [formatting section](#formatting) to see how to customize formatting strings' placeholders.
+
+You may find that the block you desire is not in the list below. In that case, first see the [`custom` block examples](https://github.com/greshake/i3status-rust/blob/master/examples/README.md) for inspiration of how you can easily create additional blocks using the `custom` block.
 
 # List of Available Blocks
 
