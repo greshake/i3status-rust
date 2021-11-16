@@ -141,12 +141,6 @@ impl BacklitDevice {
             .block_error("backlight", "Failed to write into brightness file")
     }
 
-    fn toggle(&mut self) -> Result<()> {
-        let current = self.brightness()?;
-        let target = if current > 50 { 0 } else { 100 };
-        self.set_brightness(target)
-    }
-
     fn set_brightness_via_dbus(&self, raw_value: u64) -> Result<()> {
         let device_name = self
             .device_path
@@ -189,6 +183,9 @@ pub struct Backlight {
     output: TextWidget,
     device: BacklitDevice,
     step_width: u64,
+    min_bright: u64,
+    max_bright: u64,
+    curr_bright: u64,
     scrolling: Scrolling,
     invert_icons: bool,
     on_click: Option<String>,
@@ -204,6 +201,11 @@ pub struct BacklightConfig {
 
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
     pub step_width: u64,
+
+    /// the min and max brightness limit the range over which the brightness can be in/decreased
+    /// as well as determine the values between which toggle alternates
+    pub min_bright: u64,
+    pub max_bright: u64,
 
     /// Format string for displaying backlight information.
     /// placeholders: {brightness}
@@ -232,7 +234,40 @@ impl Default for BacklightConfig {
             invert_icons: false,
             on_click: None,
             format: FormatTemplate::default(),
+            min_bright: 5,
+            max_bright: 100,
         }
+    }
+}
+
+impl Backlight {
+    fn toggle_device(&mut self) -> Result<()> {
+        let target = {
+            let brightness = self.device.brightness()?;
+            if self.curr_bright == self.min_bright || self.curr_bright == self.max_bright {
+                // special case: if curr is an extremity, alternate between the two extremities
+                if brightness == self.min_bright {
+                    self.max_bright
+                } else {
+                    self.min_bright
+                }
+            } else {
+                // normal case: cycle through min -> max -> curr
+                if brightness == self.min_bright {
+                    self.max_bright
+                } else if brightness == self.max_bright {
+                    self.curr_bright
+                } else {
+                    self.min_bright
+                }
+            }
+        };
+        self.device.set_brightness(target)
+    }
+
+    fn register_brightness(&mut self) -> Result<()> {
+        self.curr_bright = self.device.brightness()?;
+        Ok(())
     }
 }
 
@@ -249,13 +284,23 @@ impl ConfigBlock for Backlight {
             Some(path) => BacklitDevice::from_device(path, block_config.root_scaling),
             None => BacklitDevice::default(block_config.root_scaling),
         }?;
+        let curr_bright = device.brightness()?;
 
         let brightness_file = device.brightness_file();
+
+        let (min_bright, max_bright) = if block_config.min_bright <= block_config.max_bright {
+            (block_config.min_bright, block_config.max_bright)
+        } else {
+            (block_config.max_bright, block_config.min_bright)
+        };
 
         let backlight = Self {
             id,
             device,
-            step_width: block_config.step_width,
+            step_width: block_config.step_width.max(1),
+            min_bright,
+            max_bright,
+            curr_bright,
             on_click: block_config.on_click,
             scrolling: shared_config.scrolling,
             output: TextWidget::new(id, 0, shared_config),
@@ -340,17 +385,19 @@ impl Block for Backlight {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         match event.button {
-            MouseButton::Right => self.device.toggle()?,
+            MouseButton::Right => self.toggle_device()?,
             MouseButton::Left => {
                 if let Some(ref cmd) = self.on_click {
                     spawn_child_async("sh", &["-c", cmd])
                         .block_error("backlight", "could not spawn child")?;
+                    self.register_brightness()?;
                 } else {
-                    self.device.toggle()?
+                    self.toggle_device()?
                 }
             }
             _ => {
-                let brightness = self.device.brightness()?;
+                let brightness = self.device.brightness()? as i64;
+                let step_width = self.step_width as i64;
                 if let Some(direction) = self.scrolling.to_logical_direction(event.button) {
                     use LogicalDirection::*;
                     let sign = match direction {
@@ -358,8 +405,11 @@ impl Block for Backlight {
                         Down => -1,
                     };
                     self.device.set_brightness(
-                        (brightness as i64 + sign * self.step_width as i64).clamp(0, 100) as u64,
+                        (brightness + sign * step_width)
+                            .clamp(self.min_bright as i64, self.max_bright as i64)
+                            as u64,
                     )?;
+                    self.register_brightness()?;
                 }
             }
         }

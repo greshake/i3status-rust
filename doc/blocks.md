@@ -138,10 +138,14 @@ Key | Values | Required | Default
 `device` | The `/sys/class/backlight` device to read brightness information from. | No | Default device
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{brightness}"`
 `step_width` | The brightness increment to use when scrolling, in percent. | No | `5`
+`min_bright` | The minimum brightness that can be scrolled down or clicked to | No | `1`
+`max_bright` | The maximum brightness that can be scrolled up or clicked to | No | `100`
 `root_scaling` | Scaling exponent reciprocal (ie. root). | No | `1.0`
 `invert_icons` | Invert icons' ordering, useful if you have colorful emoji. | No | `false`
 
 Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for `root_scaling` between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear). More information: <https://en.wikipedia.org/wiki/Lightness>
+
+Also be aware that some devices turn off when brightness is set to `0`. Be careful when setting `min_bright` to 0.
 
 #### Available Format Keys
 
