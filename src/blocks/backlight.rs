@@ -21,10 +21,11 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
-use crate::protocol::i3bar_event::I3BarEvent;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -53,11 +54,7 @@ pub struct BacklitDevice {
 
 /// Clamp scale root to a safe range. Useful values are 1.0 to 3.0.
 fn clamp_root_scaling(root_scaling: f64) -> f64 {
-    if 0.1 < root_scaling && root_scaling < 10.0 {
-        root_scaling
-    } else {
-        1.0
-    }
+    root_scaling.clamp(0.1, 10.0)
 }
 
 impl BacklitDevice {
@@ -144,6 +141,16 @@ impl BacklitDevice {
             .block_error("backlight", "Failed to write into brightness file")
     }
 
+    fn toggle(&mut self) -> Result<()> {
+        let current = self.brightness()?;
+        let target = if current > 50 {
+            0
+        } else {
+            100
+        };
+        self.set_brightness(target)
+    }
+
     fn set_brightness_via_dbus(&self, raw_value: u64) -> Result<()> {
         let device_name = self
             .device_path
@@ -188,6 +195,7 @@ pub struct Backlight {
     step_width: u64,
     scrolling: Scrolling,
     invert_icons: bool,
+    on_click: Option<String>,
     format: FormatTemplate,
 }
 
@@ -215,6 +223,8 @@ pub struct BacklightConfig {
     pub root_scaling: f64,
 
     pub invert_icons: bool,
+
+    pub on_click: Option<String>,
 }
 
 impl Default for BacklightConfig {
@@ -224,6 +234,7 @@ impl Default for BacklightConfig {
             step_width: 5,
             root_scaling: 1f64,
             invert_icons: false,
+            on_click: None,
             format: FormatTemplate::default(),
         }
     }
@@ -249,6 +260,7 @@ impl ConfigBlock for Backlight {
             id,
             device,
             step_width: block_config.step_width,
+            on_click: block_config.on_click,
             scrolling: shared_config.scrolling,
             output: TextWidget::new(id, 0, shared_config),
             invert_icons: block_config.invert_icons,
@@ -287,6 +299,10 @@ impl ConfigBlock for Backlight {
             .unwrap();
 
         Ok(backlight)
+    }
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        Some(&mut self.on_click)
     }
 }
 
@@ -327,22 +343,30 @@ impl Block for Backlight {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        let brightness = self.device.brightness()?;
-        use LogicalDirection::*;
-        match self.scrolling.to_logical_direction(event.button) {
-            Some(Up) => {
-                if brightness < 100 {
-                    self.device.set_brightness(brightness + self.step_width)?;
+        match event.button {
+            MouseButton::Right => self.device.toggle()?,
+            MouseButton::Left => {
+                if let Some(ref cmd) = self.on_click {
+                    spawn_child_async("sh", &["-c", cmd])
+                        .block_error("backlight", "could not spawn child")?;
+                } else {
+                    self.device.toggle()?
                 }
             }
-            Some(Down) => {
-                if brightness > self.step_width {
-                    self.device.set_brightness(brightness - self.step_width)?;
+            _ => {
+                let brightness = self.device.brightness()?;
+                if let Some(direction) = self.scrolling.to_logical_direction(event.button) {
+                    use LogicalDirection::*;
+                    let sign = match direction {
+                        Up => 1,
+                        Down => -1,
+                    };
+                    self.device.set_brightness(
+                        (brightness as i64 + sign * self.step_width as i64).clamp(0, 100) as u64
+                    )?;
                 }
             }
-            None => {}
         }
-
         Ok(())
     }
 
