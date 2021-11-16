@@ -22,6 +22,8 @@ use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
 use crate::protocol::i3bar_event::I3BarEvent;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
@@ -186,6 +188,7 @@ pub struct Backlight {
     step_width: u64,
     scrolling: Scrolling,
     invert_icons: bool,
+    format: FormatTemplate,
 }
 
 /// Configuration for the [`Backlight`](./struct.Backlight.html) block.
@@ -197,6 +200,10 @@ pub struct BacklightConfig {
 
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
     pub step_width: u64,
+
+    /// Format string for displaying backlight information.
+    /// placeholders: {brightness}
+    pub format: FormatTemplate,
 
     /// Scaling exponent reciprocal (ie. root). Some devices expose raw values
     /// that are best handled with nonlinear scaling. The human perception of
@@ -217,6 +224,7 @@ impl Default for BacklightConfig {
             step_width: 5,
             root_scaling: 1f64,
             invert_icons: false,
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -237,13 +245,14 @@ impl ConfigBlock for Backlight {
 
         let brightness_file = device.brightness_file();
 
-        let backlight = Backlight {
+        let backlight = Self {
             id,
             device,
             step_width: block_config.step_width,
             scrolling: shared_config.scrolling,
             output: TextWidget::new(id, 0, shared_config),
             invert_icons: block_config.invert_icons,
+            format: block_config.format.with_default("{brightness}")?,
         };
 
         // Spin up a thread to watch for changes to the brightness file for the
@@ -284,7 +293,11 @@ impl ConfigBlock for Backlight {
 impl Block for Backlight {
     fn update(&mut self) -> Result<Option<Update>> {
         let mut brightness = self.device.brightness()?;
-        self.output.set_text(format!("{}%", brightness));
+        let values = map!(
+            "brightness" => Value::from_integer(brightness as i64).percents(),
+        );
+        let texts = self.format.render(&values)?;
+        self.output.set_texts(texts);
         if self.invert_icons {
             brightness = 100 - brightness;
         }
