@@ -143,11 +143,7 @@ impl BacklitDevice {
 
     fn toggle(&mut self) -> Result<()> {
         let current = self.brightness()?;
-        let target = if current > 50 {
-            0
-        } else {
-            100
-        };
+        let target = if current > 50 { 0 } else { 100 };
         self.set_brightness(target)
     }
 
@@ -362,7 +358,7 @@ impl Block for Backlight {
                         Down => -1,
                     };
                     self.device.set_brightness(
-                        (brightness as i64 + sign * self.step_width as i64).clamp(0, 100) as u64
+                        (brightness as i64 + sign * self.step_width as i64).clamp(0, 100) as u64,
                     )?;
                 }
             }
