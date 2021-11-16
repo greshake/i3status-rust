@@ -183,9 +183,10 @@ pub struct Backlight {
     output: TextWidget,
     device: BacklitDevice,
     step_width: u64,
-    min_bright: u64,
-    max_bright: u64,
-    curr_bright: u64,
+    minimum: u64,
+    maximum: u64,
+    cycle: Vec<u64>,
+    cycle_index: usize,
     scrolling: Scrolling,
     invert_icons: bool,
     on_click: Option<String>,
@@ -203,9 +204,11 @@ pub struct BacklightConfig {
     pub step_width: u64,
 
     /// the min and max brightness limit the range over which the brightness can be in/decreased
-    /// as well as determine the values between which toggle alternates
-    pub min_bright: u64,
-    pub max_bright: u64,
+    pub minimum: u64,
+    pub maximum: u64,
+
+    /// when the block is clicked, brightness cycles through all of these
+    pub cycle: Option<Vec<u64>>,
 
     /// Format string for displaying backlight information.
     /// placeholders: {brightness}
@@ -234,40 +237,34 @@ impl Default for BacklightConfig {
             invert_icons: false,
             on_click: None,
             format: FormatTemplate::default(),
-            min_bright: 5,
-            max_bright: 100,
+            minimum: 5,
+            maximum: 100,
+            cycle: None,
         }
     }
 }
 
 impl Backlight {
-    fn toggle_device(&mut self) -> Result<()> {
-        let target = {
-            let brightness = self.device.brightness()?;
-            if self.curr_bright == self.min_bright || self.curr_bright == self.max_bright {
-                // special case: if curr is an extremity, alternate between the two extremities
-                if brightness == self.min_bright {
-                    self.max_bright
-                } else {
-                    self.min_bright
-                }
-            } else {
-                // normal case: cycle through min -> max -> curr
-                if brightness == self.min_bright {
-                    self.max_bright
-                } else if brightness == self.max_bright {
-                    self.curr_bright
-                } else {
-                    self.min_bright
-                }
-            }
+    fn cycle(&mut self) -> Result<()> {
+        if self.cycle.is_empty() {
+            return Ok(());
+        }
+        let current = self.device.brightness()? as i64;
+        let nearest = if self.cycle[self.cycle_index] as i64 == current {
+            (self.cycle_index + 1) % self.cycle.len() // shortcut
+        } else {
+            // by default, restart cycle at nearest value
+            let base_index = self.cycle[self.cycle_index..]
+                .iter()
+                .chain(self.cycle[..self.cycle_index].iter())
+                .enumerate()
+                .min_by_key(|(_, &val)| (val as i64 - current).abs())
+                .unwrap() // cycle has been checked non-empty
+                .0;
+            (base_index + self.cycle_index + 1) % self.cycle.len()
         };
-        self.device.set_brightness(target)
-    }
-
-    fn register_brightness(&mut self) -> Result<()> {
-        self.curr_bright = self.device.brightness()?;
-        Ok(())
+        self.cycle_index = nearest;
+        self.device.set_brightness(self.cycle[self.cycle_index])
     }
 }
 
@@ -284,23 +281,22 @@ impl ConfigBlock for Backlight {
             Some(path) => BacklitDevice::from_device(path, block_config.root_scaling),
             None => BacklitDevice::default(block_config.root_scaling),
         }?;
-        let curr_bright = device.brightness()?;
-
         let brightness_file = device.brightness_file();
 
-        let (min_bright, max_bright) = if block_config.min_bright <= block_config.max_bright {
-            (block_config.min_bright, block_config.max_bright)
+        let (minimum, maximum) = if block_config.minimum <= block_config.maximum {
+            (block_config.minimum, block_config.maximum)
         } else {
-            (block_config.max_bright, block_config.min_bright)
+            (block_config.maximum, block_config.minimum)
         };
 
         let backlight = Self {
             id,
             device,
             step_width: block_config.step_width.max(1),
-            min_bright,
-            max_bright,
-            curr_bright,
+            minimum,
+            maximum,
+            cycle: block_config.cycle.unwrap_or_else(|| vec![minimum, maximum]),
+            cycle_index: 0,
             on_click: block_config.on_click,
             scrolling: shared_config.scrolling,
             output: TextWidget::new(id, 0, shared_config),
@@ -385,14 +381,13 @@ impl Block for Backlight {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         match event.button {
-            MouseButton::Right => self.toggle_device()?,
+            MouseButton::Right => self.cycle()?,
             MouseButton::Left => {
                 if let Some(ref cmd) = self.on_click {
                     spawn_child_async("sh", &["-c", cmd])
                         .block_error("backlight", "could not spawn child")?;
-                    self.register_brightness()?;
                 } else {
-                    self.toggle_device()?
+                    self.cycle()?
                 }
             }
             _ => {
@@ -406,10 +401,9 @@ impl Block for Backlight {
                     };
                     self.device.set_brightness(
                         (brightness + sign * step_width)
-                            .clamp(self.min_bright as i64, self.max_bright as i64)
+                            .clamp(self.minimum as i64, self.maximum as i64)
                             as u64,
                     )?;
-                    self.register_brightness()?;
                 }
             }
         }
