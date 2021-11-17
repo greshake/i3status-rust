@@ -46,6 +46,7 @@ You may find that the block you desire is not in the list below. In that case, f
 - [Pomodoro](#pomodoro)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
+- [Supertoggle](#supertoggle)
 - [Taskwarrior](#taskwarrior)
 - [Temperature](#temperature)
 - [Time](#time)
@@ -1634,6 +1635,55 @@ Key | Values | Required | Default
 - `ping`
 - `net_down`
 - `net_up`
+
+###### [↥ back to top](#list-of-available-blocks)
+
+## Supertoggle
+
+Creates a toggle block, but with extras to make it possible to do more with a toggle block. You can add commands to be executed to disable the toggle (`command_off`), and to enable it (`command_on`). If these command exit with a non-zero status, the block will not be toggled and the block state will be changed to give a visual warning of the failure. The state of the toggle is determined by running command_current_state before the toggle commands are run, so if you change the state from the command line, the toggle will work correctly.
+You also need to specify a command to determine the state of the toggle (`command_current_state`). If the regex command_data_on_regex matches the toggle is considered on, if the regex command_data_off_regex matches, the toggle is considered off. Named capture groups in these regexes become format specifiers in format_on and format_off, where you can display information in the toggle when its in that state.
+By specifying the `interval` property you can let the `command_state` be executed continuously.
+
+#### Examples
+
+This is what I use to toggle my TimeWarrior tracking:
+
+```toml
+[[block]]
+block = "supertoggle"
+
+command_current_state="timew; timew day"
+command_on="timew continue"
+command_off="timew stop"
+
+format_on="TW [ {tags} ] {hours}:{minutes}"
+format_off="TW IDLE"
+
+command_status_on_regex="(?m)(?s)Tracking\\s+(?P<tags>\\w*).*Tracked\\s+(?P<hours>\\d{1,2}):(?P<minutes>\\d{1,2}):(?P<seconds>\\d{1,2})"
+command_status_off_regex="(?m)There is no active time tracking\\.$"
+
+interval = 60
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`command_current_state` | Shell Command to enable the toggle to determine whether things are toggled or not by matching the regexes command_status_on_regex and command_status_off_regex. | Yes | None
+`command_on` | Shell Command to enable the toggle. | Yes | None
+`command_off` | Shell Command to disable the toggle. | Yes | None
+`format_on` | Format for when the toggle is on, uses named capture groups from command_status_on_regex as format values | Yes | None
+`format_off` | Format for when the toggle is off, uses named capture groups from command_status_off_regex as format values | Yes | None
+`command_status_on_regex` | Regular expression that need matches the output of the command command_current_state, named capture groups become available for the format_on formatting string | Yes | None
+`command_status_off_regex` | Regular expression that need matches the output of the command command_current_state, named capture groups become available for the format_off formatting string | Yes | None
+`icon_on` | Icon override for the toggle button while on. | No | `"toggle_on"`
+`icon_off` | Icon override for the toggle button while off. | No | `"toggle_off"`
+`interval` | Update interval, in seconds. | No | None
+
+#### Icons Used
+
+- `toggle_off`
+- `toggle_on`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
