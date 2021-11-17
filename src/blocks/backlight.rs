@@ -303,7 +303,7 @@ impl ConfigBlock for Backlight {
         let backlight = Self {
             id,
             device,
-            step_width: block_config.step_width.max(1),
+            step_width: block_config.step_width,
             minimum,
             maximum,
             cycle: block_config.cycle.unwrap_or_else(|| vec![minimum, maximum]),
