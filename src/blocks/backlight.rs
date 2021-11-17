@@ -245,25 +245,36 @@ impl Default for BacklightConfig {
 }
 
 impl Backlight {
-    fn cycle(&mut self) -> Result<()> {
+    fn advance_cycle(&mut self) -> Result<()> {
         if self.cycle.is_empty() {
             return Ok(());
         }
-        let current = self.device.brightness()? as i64;
-        let nearest = if self.cycle[self.cycle_index] as i64 == current {
-            (self.cycle_index + 1) % self.cycle.len() // shortcut
+        let current = self.device.brightness()?;
+        let nearest = if self.cycle[self.cycle_index] == current {
+            self.cycle_index // shortcut
         } else {
+            let current = current as i64;
             // by default, restart cycle at nearest value
-            let base_index = self.cycle[self.cycle_index..]
+            let key = |idx: usize, val: i64| {
+                // distance to current brightness is the first criterion
+                let distance = (val - current).abs();
+                // offset makes it so that in case of an equality for distance,
+                // the winning index is the first one after cycle_index (circularly)
+                let offset = if idx >= self.cycle_index {
+                    0
+                } else {
+                    self.cycle.len()
+                };
+                (distance, idx + offset)
+            };
+            self.cycle
                 .iter()
-                .chain(self.cycle[..self.cycle_index].iter())
                 .enumerate()
-                .min_by_key(|(_, &val)| (val as i64 - current).abs())
+                .min_by_key(|&(idx, &val)| key(idx, val as i64))
                 .unwrap() // cycle has been checked non-empty
-                .0;
-            (base_index + self.cycle_index + 1) % self.cycle.len()
+                .0
         };
-        self.cycle_index = nearest;
+        self.cycle_index = (nearest + 1) % self.cycle.len();
         self.device.set_brightness(self.cycle[self.cycle_index])
     }
 }
@@ -381,13 +392,13 @@ impl Block for Backlight {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         match event.button {
-            MouseButton::Right => self.cycle()?,
+            MouseButton::Right => self.advance_cycle()?,
             MouseButton::Left => {
                 if let Some(ref cmd) = self.on_click {
                     spawn_child_async("sh", &["-c", cmd])
-                        .block_error("backlight", "could not spawn child")?;
+                        .block_error("backlight", "could not spawn child")?
                 } else {
-                    self.cycle()?
+                    self.advance_cycle()?
                 }
             }
             _ => {
@@ -403,7 +414,7 @@ impl Block for Backlight {
                         (brightness + sign * step_width)
                             .clamp(self.minimum as i64, self.maximum as i64)
                             as u64,
-                    )?;
+                    )?
                 }
             }
         }
