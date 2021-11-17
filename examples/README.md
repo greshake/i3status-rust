@@ -23,6 +23,7 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 - [User](#user)
 - [XKCD](#xkcd)
 - [Spotify TUI](#spt)
+- [Nextcloud](#nextcloud)
 
 ### Hostname
 
@@ -220,4 +221,15 @@ block = "custom"
 command = "spt playback --format"
 on_click = "spt playback --toggle"
 interval = 3
+```
+
+### Nextcloud
+
+Show Nextcloud GUI (if `nextcloud` is already running in background)
+
+```toml
+[[block]]
+block = "custom"
+command = "echo \uf0c2 Nextcloud" # icon is for nerdfont, replace if other
+on_click = "nextcloud"
 ```
