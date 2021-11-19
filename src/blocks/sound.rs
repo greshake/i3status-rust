@@ -952,6 +952,8 @@ impl Block for Sound {
         );
         let texts = self.format.render(&values)?;
 
+        // Reference: PulseAudio type definitions
+        // https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0ce3008605e5f644fac4bb5edbb1443110201ec1/src/pulse/def.h#L1073-1100
         let headphones = self
             .device
             .active_port()
