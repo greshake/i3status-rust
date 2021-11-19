@@ -16,11 +16,6 @@ mod subprocess;
 mod themes;
 mod widgets;
 
-#[cfg(feature = "profiling")]
-use cpuprofiler::PROFILER;
-#[cfg(feature = "profiling")]
-use std::ops::DerefMut;
-
 #[cfg(feature = "pulseaudio")]
 use libpulse_binding as pulse;
 
@@ -78,37 +73,12 @@ fn main() {
                 .takes_value(false),
         )
         .arg(
-            Arg::with_name("one-shot")
-                .help("Print blocks once and exit")
-                .long("one-shot")
-                .takes_value(false)
-                .hidden(true),
-        )
-        .arg(
             Arg::with_name("no-init")
                 .help("Do not send an init sequence")
                 .long("no-init")
                 .takes_value(false)
                 .hidden(true),
         );
-
-    #[cfg(feature = "profiling")]
-    {
-        builder = builder
-            .arg(
-                Arg::with_name("profile")
-                    .long("profile")
-                    .takes_value(true)
-                    .help("A block to be profiled. Creates a `block.profile` file that can be analyzed with `pprof`"),
-            )
-            .arg(
-                Arg::with_name("profile-runs")
-                    .long("profile-runs")
-                    .takes_value(true)
-                    .default_value("10000")
-                    .help("Number of times to execute update when profiling"),
-            );
-    }
 
     let matches = builder.get_matches();
     let exit_on_error = matches.is_present("exit-on-error");
@@ -156,19 +126,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =
         crossbeam_channel::unbounded();
 
-    // In dev build, we might diverge into profiling blocks here
-    #[cfg(feature = "profiling")]
-    {
-        if let Some(name) = matches.value_of("profile") {
-            return profile_config(
-                name,
-                matches.value_of("profile-runs").unwrap(),
-                &config,
-                tx_update_requests,
-            );
-        }
-    }
-
     let shared_config = SharedConfig::new(&config);
 
     // Initialize the blocks
@@ -198,7 +155,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
     // Fires immediately for first updates
     let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
 
-    let one_shot = matches.is_present("one-shot");
     loop {
         // We use the message passing concept of channel selection
         // to avoid busy wait
@@ -263,9 +219,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if let Some(time) = scheduler.time_to_next_update() {
             ttnu = crossbeam_channel::after(time)
         }
-        if one_shot {
-            break Ok(());
-        }
     }
 }
 
@@ -292,46 +245,4 @@ fn restart() -> ! {
     // Restart
     nix::unistd::execvp(&exe, &arg).unwrap();
     unreachable!();
-}
-
-#[cfg(feature = "profiling")]
-fn profile(iterations: i32, name: &str, block: &mut dyn Block) {
-    let mut bar = progress::Bar::new();
-    println!(
-        "Now profiling the {0} block by executing {1} updates.\n \
-         Use pprof to analyze {0}.profile later.",
-        name, iterations
-    );
-
-    PROFILER
-        .lock()
-        .unwrap()
-        .start(format!("./{}.profile", name))
-        .unwrap();
-
-    bar.set_job_title("Profiling...");
-
-    for i in 0..iterations {
-        block.update().expect("block update failed");
-        bar.reach_percent(((i as f64 / iterations as f64) * 100.).round() as i32);
-    }
-
-    PROFILER.lock().unwrap().stop().unwrap();
-}
-
-#[cfg(feature = "profiling")]
-fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>) -> Result<()> {
-    let profile_runs = runs
-        .parse::<i32>()
-        .configuration_error("failed to parse --profile-runs as an integer")?;
-    let shared_config = SharedConfig::new(config);
-    for &(ref block_name, ref block_config) in &config.blocks {
-        if block_name == name {
-            let mut block =
-                create_block(0, block_name, block_config.clone(), shared_config, update)?;
-            profile(profile_runs, block_name, block.deref_mut());
-            break;
-        }
-    }
-    Ok(())
 }
