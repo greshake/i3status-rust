@@ -49,7 +49,7 @@ impl FromStr for Unit {
             "" => Ok(Unit::None),
             x => Err(InternalError(
                 "format parser".to_string(),
-                format!("unknown unit: '{}'", x.to_string()),
+                format!("unknown unit: '{}'", x),
                 None,
             )),
         }

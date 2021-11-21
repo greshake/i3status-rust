@@ -164,7 +164,7 @@ impl Weather {
                 if api_key_opt.is_none() {
                     return configuration_error(&format!(
                         "Missing member 'service.api_key'. Add the member or configure with the environment variable {}",
-                        OPENWEATHERMAP_API_KEY_ENV.to_string()));
+                        OPENWEATHERMAP_API_KEY_ENV));
                 }
 
                 let api_key = api_key_opt.as_ref().unwrap();
@@ -190,8 +190,8 @@ impl Weather {
                 } else {
                     return configuration_error(&format!(
                         "Either 'service.city_id' or 'service.place' must be provided. Add one to your config file or set with the environment variables {} or {}",
-                        OPENWEATHERMAP_CITY_ID_ENV.to_string(),
-                        OPENWEATHERMAP_PLACE_ENV.to_string()));
+                        OPENWEATHERMAP_CITY_ID_ENV,
+                        OPENWEATHERMAP_PLACE_ENV));
                 };
 
                 // This uses the "Current Weather Data" API endpoint

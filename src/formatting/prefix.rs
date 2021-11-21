@@ -52,7 +52,7 @@ impl FromStr for Prefix {
             "T" => Ok(Prefix::Tera),
             x => Err(InternalError(
                 "format parser".to_string(),
-                format!("unknown prefix: '{}'", x.to_string()),
+                format!("unknown prefix: '{}'", x),
                 None,
             )),
         }
