@@ -131,20 +131,44 @@ Show brightness for the default device:
 block = "backlight"
 ```
 
+Setup bounds and cycle:
+
+```toml
+[[block]]
+block = "backlight"
+minimum = 15
+maximum = 100
+cycle = [100, 50, 0, 50]
+```
+
+Note that `cycle = []` will disable cycling, and `cycle = [n]` will reset brightness to `n` on each click
+
 #### Options
 
 Key | Values | Required | Default
 ----|--------|----------|--------
 `device` | The `/sys/class/backlight` device to read brightness information from. | No | Default device
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{brightness}"`
 `step_width` | The brightness increment to use when scrolling, in percent. | No | `5`
+`minimum` | The minimum brightness that can be scrolled down to | No | `1`
+`maximum` | The maximum brightness that can be scrolled up to | No | `100`
+`cycle` | The brightnesses to cycle through on each click | No | `[minimum, maximum]`
 `root_scaling` | Scaling exponent reciprocal (ie. root). | No | `1.0`
 `invert_icons` | Invert icons' ordering, useful if you have colorful emoji. | No | `false`
 
 Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for `root_scaling` between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear). More information: <https://en.wikipedia.org/wiki/Lightness>
 
+Also be aware that some devices turn off when brightness is set to `0`. Be careful when setting `minimum` to 0.
+
+#### Available Format Keys
+
+Placeholder | Description | Type
+------------|-------------|-----
+`{brightness}` | Device brightness percentage | String or Integer
+
 #### Setting Brightness with the Mouse Wheel
 
-The block allows for setting brightness with the mouse wheel. However, depending on how you installed i3status-rust, it may not have the appropriate permissions to modify these files, and will fail silently. To remedy this you can write a `udev` rule for your system (if you are comfortable doing so).
+The block allows for setting brightness with the mouse wheel and toggling min/max brightness on click. However, depending on how you installed i3status-rust, it may not have the appropriate permissions to modify these files, and will fail silently. To remedy this you can write a `udev` rule for your system (if you are comfortable doing so).
 
 First, check that your user is a member of the "video" group using the `groups` command. Then add a rule in the `/etc/udev/rules.d/` directory containing the following, for example in `backlight.rules`:
 

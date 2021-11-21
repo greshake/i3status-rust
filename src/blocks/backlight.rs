@@ -21,8 +21,11 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
-use crate::protocol::i3bar_event::I3BarEvent;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -51,11 +54,7 @@ pub struct BacklitDevice {
 
 /// Clamp scale root to a safe range. Useful values are 1.0 to 3.0.
 fn clamp_root_scaling(root_scaling: f64) -> f64 {
-    if 0.1 < root_scaling && root_scaling < 10.0 {
-        root_scaling
-    } else {
-        1.0
-    }
+    root_scaling.clamp(0.1, 10.0)
 }
 
 impl BacklitDevice {
@@ -184,8 +183,14 @@ pub struct Backlight {
     output: TextWidget,
     device: BacklitDevice,
     step_width: u64,
+    minimum: u64,
+    maximum: u64,
+    cycle: Vec<u64>,
+    cycle_index: usize,
     scrolling: Scrolling,
     invert_icons: bool,
+    on_click: Option<String>,
+    format: FormatTemplate,
 }
 
 /// Configuration for the [`Backlight`](./struct.Backlight.html) block.
@@ -198,6 +203,17 @@ pub struct BacklightConfig {
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
     pub step_width: u64,
 
+    /// the min and max brightness limit the range over which the brightness can be in/decreased
+    pub minimum: u64,
+    pub maximum: u64,
+
+    /// when the block is clicked, brightness cycles through all of these
+    pub cycle: Option<Vec<u64>>,
+
+    /// Format string for displaying backlight information.
+    /// placeholders: {brightness}
+    pub format: FormatTemplate,
+
     /// Scaling exponent reciprocal (ie. root). Some devices expose raw values
     /// that are best handled with nonlinear scaling. The human perception of
     /// lightness is close to the cube root of relative luminance. Settings
@@ -208,6 +224,8 @@ pub struct BacklightConfig {
     pub root_scaling: f64,
 
     pub invert_icons: bool,
+
+    pub on_click: Option<String>,
 }
 
 impl Default for BacklightConfig {
@@ -217,7 +235,47 @@ impl Default for BacklightConfig {
             step_width: 5,
             root_scaling: 1f64,
             invert_icons: false,
+            on_click: None,
+            format: FormatTemplate::default(),
+            minimum: 5,
+            maximum: 100,
+            cycle: None,
         }
+    }
+}
+
+impl Backlight {
+    fn advance_cycle(&mut self) -> Result<()> {
+        if self.cycle.is_empty() {
+            return Ok(());
+        }
+        let current = self.device.brightness()?;
+        let nearest = if self.cycle[self.cycle_index] == current {
+            self.cycle_index // shortcut
+        } else {
+            let current = current as i64;
+            // by default, restart cycle at nearest value
+            let key = |idx: usize, val: i64| {
+                // distance to current brightness is the first criterion
+                let distance = (val - current).abs();
+                // offset makes it so that in case of an equality for distance,
+                // the winning index is the first one after cycle_index (circularly)
+                let offset = if idx >= self.cycle_index {
+                    0
+                } else {
+                    self.cycle.len()
+                };
+                (distance, idx + offset)
+            };
+            self.cycle
+                .iter()
+                .enumerate()
+                .min_by_key(|&(idx, &val)| key(idx, val as i64))
+                .unwrap() // cycle has been checked non-empty
+                .0
+        };
+        self.cycle_index = (nearest + 1) % self.cycle.len();
+        self.device.set_brightness(self.cycle[self.cycle_index])
     }
 }
 
@@ -234,16 +292,27 @@ impl ConfigBlock for Backlight {
             Some(path) => BacklitDevice::from_device(path, block_config.root_scaling),
             None => BacklitDevice::default(block_config.root_scaling),
         }?;
-
         let brightness_file = device.brightness_file();
 
-        let backlight = Backlight {
+        let (minimum, maximum) = if block_config.minimum <= block_config.maximum {
+            (block_config.minimum, block_config.maximum)
+        } else {
+            (block_config.maximum, block_config.minimum)
+        };
+
+        let backlight = Self {
             id,
             device,
             step_width: block_config.step_width,
+            minimum,
+            maximum,
+            cycle: block_config.cycle.unwrap_or_else(|| vec![minimum, maximum]),
+            cycle_index: 0,
+            on_click: block_config.on_click,
             scrolling: shared_config.scrolling,
             output: TextWidget::new(id, 0, shared_config),
             invert_icons: block_config.invert_icons,
+            format: block_config.format.with_default("{brightness}")?,
         };
 
         // Spin up a thread to watch for changes to the brightness file for the
@@ -279,12 +348,20 @@ impl ConfigBlock for Backlight {
 
         Ok(backlight)
     }
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        Some(&mut self.on_click)
+    }
 }
 
 impl Block for Backlight {
     fn update(&mut self) -> Result<Option<Update>> {
         let mut brightness = self.device.brightness()?;
-        self.output.set_text(format!("{}%", brightness));
+        let values = map!(
+            "brightness" => Value::from_integer(brightness as i64).percents(),
+        );
+        let texts = self.format.render(&values)?;
+        self.output.set_texts(texts);
         if self.invert_icons {
             brightness = 100 - brightness;
         }
@@ -314,22 +391,33 @@ impl Block for Backlight {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        let brightness = self.device.brightness()?;
-        use LogicalDirection::*;
-        match self.scrolling.to_logical_direction(event.button) {
-            Some(Up) => {
-                if brightness < 100 {
-                    self.device.set_brightness(brightness + self.step_width)?;
+        match event.button {
+            MouseButton::Right => self.advance_cycle()?,
+            MouseButton::Left => {
+                if let Some(ref cmd) = self.on_click {
+                    spawn_child_async("sh", &["-c", cmd])
+                        .block_error("backlight", "could not spawn child")?
+                } else {
+                    self.advance_cycle()?
                 }
             }
-            Some(Down) => {
-                if brightness > self.step_width {
-                    self.device.set_brightness(brightness - self.step_width)?;
+            _ => {
+                let brightness = self.device.brightness()? as i64;
+                let step_width = self.step_width as i64;
+                if let Some(direction) = self.scrolling.to_logical_direction(event.button) {
+                    use LogicalDirection::*;
+                    let sign = match direction {
+                        Up => 1,
+                        Down => -1,
+                    };
+                    self.device.set_brightness(
+                        (brightness + sign * step_width)
+                            .clamp(self.minimum as i64, self.maximum as i64)
+                            as u64,
+                    )?
                 }
             }
-            None => {}
         }
-
         Ok(())
     }
 
