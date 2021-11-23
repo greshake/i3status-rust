@@ -44,6 +44,7 @@ You may find that the block you desire is not in the list below. In that case, f
 - [Nvidia Gpu](#nvidia-gpu)
 - [Pacman](#pacman)
 - [Pomodoro](#pomodoro)
+- [Rofication](#rofication)
 - [Sound](#sound)
 - [Speed Test](#speed-test)
 - [Taskwarrior](#taskwarrior)
@@ -1538,6 +1539,33 @@ Key | Values | Required | Default
 - `pomodoro_stopped`
 - `pomodoro_paused`
 - `pomodoro_break`
+
+###### [↥ back to top](#list-of-available-blocks)
+
+## Rofication
+
+Creates a block with shows the number of pending notifications in rofication-daemon. A different color is used is there are critical notications. Left clicking the block opens the GUI.
+
+#### Examples
+
+```toml
+[[block]]
+block = "rofication"
+interval = 1
+socket_path = "/tmp/rofi_notification_daemon"
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Refresh rate in seconds. | No | `1`
+`socket_path` | Socket path for the rofication daemon. | No | "/tmp/rofi_notification_daemon"
+
+#### Icons Used
+
+- `bell`
+- `bell-slash`
 
 ###### [↥ back to top](#list-of-available-blocks)
 
