@@ -4,9 +4,9 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
-use std::os::unix::net::UnixStream;
-use std::io::Write;
 use std::io::Read;
+use std::io::Write;
+use std::os::unix::net::UnixStream;
 use std::path::Path;
 
 use crate::blocks::{Block, ConfigBlock, Update};
@@ -16,15 +16,15 @@ use crate::errors::*;
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::protocol::i3bar_event::MouseButton;
 use crate::scheduler::Task;
-use crate::widgets::text::TextWidget;
-use crate::widgets::State;
-use crate::widgets::I3BarWidget;
 use crate::subprocess::spawn_child_async;
+use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
+use crate::widgets::State;
 
 #[derive(Debug)]
 struct RotificationStatus {
     num: u64,
-    crit: u64
+    crit: u64,
 }
 
 pub struct Rofication {
@@ -80,7 +80,7 @@ impl ConfigBlock for Rofication {
             text,
             tx_update_request,
             shared_config,
-            socket_path: block_config.socket_path
+            socket_path: block_config.socket_path,
         })
     }
 }
@@ -100,7 +100,7 @@ impl Block for Rofication {
                         self.text.set_state(State::Good)
                     }
                 }
-            },
+            }
             Err(_) => {
                 self.text.set_text("?".to_string());
                 self.text.set_state(State::Critical);
@@ -128,41 +128,68 @@ impl Block for Rofication {
     }
 }
 
-fn rofication_status(socket_path: &str) -> Result<RotificationStatus>{
+fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
     let socket = Path::new(socket_path);
     // Connect to socket
     let mut stream = match UnixStream::connect(&socket) {
-        Err(_) => return Err(BlockError ("rofication".to_string(), "Failed to connect to socket".to_string())),
+        Err(_) => {
+            return Err(BlockError(
+                "rofication".to_string(),
+                "Failed to connect to socket".to_string(),
+            ))
+        }
         Ok(stream) => stream,
     };
 
     // Request count
     match stream.write(b"num\n") {
-        Err(_) => return Err(BlockError ("rofication".to_string(), "Failed to write to socket".to_string())),
-        Ok(_) => {},
+        Err(_) => {
+            return Err(BlockError(
+                "rofication".to_string(),
+                "Failed to write to socket".to_string(),
+            ))
+        }
+        Ok(_) => {}
     };
 
     // Response must be two comma separated integers: regular and critical
     let mut buffer = String::new();
     match stream.read_to_string(&mut buffer) {
-        Err(_) => return Err(BlockError ("rofication".to_string(), "Failed to read from socket".to_string())),
-        Ok(_) => {},
+        Err(_) => {
+            return Err(BlockError(
+                "rofication".to_string(),
+                "Failed to read from socket".to_string(),
+            ))
+        }
+        Ok(_) => {}
     };
 
-    let values  = buffer.split(',').collect::<Vec<&str>>();
+    let values = buffer.split(',').collect::<Vec<&str>>();
     if values.len() != 2 {
-        return Err(BlockError("rofication".to_string(), "Format error".to_string()))
+        return Err(BlockError(
+            "rofication".to_string(),
+            "Format error".to_string(),
+        ));
     }
 
     let num = match values[0].parse::<u64>() {
         Ok(num) => num,
-        Err(_) => return Err(BlockError ("rofication".to_string(), "Failed to parse num".to_string()))
+        Err(_) => {
+            return Err(BlockError(
+                "rofication".to_string(),
+                "Failed to parse num".to_string(),
+            ))
+        }
     };
     let crit = match values[1].parse::<u64>() {
         Ok(crit) => crit,
-        Err(_) => return Err(BlockError ("rofication".to_string(), "Failed to parse crit".to_string()))
+        Err(_) => {
+            return Err(BlockError(
+                "rofication".to_string(),
+                "Failed to parse crit".to_string(),
+            ))
+        }
     };
 
-    Ok (RotificationStatus{num, crit})
+    Ok(RotificationStatus { num, crit })
 }
-
