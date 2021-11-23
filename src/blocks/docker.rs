@@ -76,12 +76,21 @@ impl ConfigBlock for Docker {
         let text = TextWidget::new(id, 0, shared_config)
             .with_text("N/A")
             .with_icon("docker")?;
+        let path_expanded = shellexpand::full(&block_config.socket_path).map_err(|e| {
+            ConfigurationError(
+                "docker".to_string(),
+                format!(
+                    "Failed to expand socket path {}: {}",
+                    &block_config.socket_path, e
+                ),
+            )
+        })?;
         Ok(Docker {
             id,
             text,
             format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
-            socket_path: block_config.socket_path,
+            socket_path: path_expanded.to_string(),
         })
     }
 }
