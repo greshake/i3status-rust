@@ -90,7 +90,7 @@ impl Block for Rofication {
         match rofication_status(&self.socket_path) {
             Ok(status) => {
                 self.text.set_icon("bell")?;
-                self.text.set_text(format!("{}", status.num).to_string());
+                self.text.set_text(status.num.to_string());
                 if status.crit > 0 {
                     self.text.set_state(State::Critical)
                 } else {
