@@ -89,7 +89,6 @@ impl Block for Rofication {
     fn update(&mut self) -> Result<Option<Update>> {
         match rofication_status(&self.socket_path) {
             Ok(status) => {
-                self.text.set_icon("bell")?;
                 self.text.set_text(status.num.to_string());
                 if status.crit > 0 {
                     self.text.set_state(State::Critical)
@@ -100,6 +99,7 @@ impl Block for Rofication {
                         self.text.set_state(State::Good)
                     }
                 }
+                self.text.set_icon("bell")?;
             }
             Err(_) => {
                 self.text.set_text("?".to_string());
