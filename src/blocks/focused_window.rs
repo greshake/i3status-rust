@@ -11,9 +11,11 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::scheduler::Task;
-use crate::util::escape_pango_text;
+// use crate::util::escape_pango_text;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -29,6 +31,7 @@ pub struct FocusedWindow {
     title: Arc<Mutex<String>>,
     marks: Arc<Mutex<String>>,
     show_marks: MarksType,
+    format: FormatTemplate,
     max_width: usize,
 }
 
@@ -40,6 +43,9 @@ pub struct FocusedWindowConfig {
 
     /// Show marks in place of title (if exist)
     pub show_marks: MarksType,
+
+    /// Format override
+    pub format: FormatTemplate,
 }
 
 impl Default for FocusedWindowConfig {
@@ -47,6 +53,7 @@ impl Default for FocusedWindowConfig {
         Self {
             max_width: 21,
             show_marks: MarksType::None,
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -177,12 +184,14 @@ impl ConfigBlock for FocusedWindow {
             })
             .expect("failed to start watching thread for `window` block");
 
-        let text = TextWidget::new(id, 0, shared_config);
+        let text = TextWidget::new(id, 0, shared_config)
+            .with_text("x");
         Ok(FocusedWindow {
             id,
             text,
             max_width: block_config.max_width,
             show_marks: block_config.show_marks,
+            format: block_config.format.with_default("{composed}")?,
             title,
             marks,
         })
@@ -213,7 +222,11 @@ impl Block for FocusedWindow {
                 }
             }
         };
-        self.text.set_text(escape_pango_text(out_str));
+        let values = map!(
+            "composed" => Value::from_string(out_str)
+        );
+
+        self.text.set_texts(self.format.render(&values)?);
 
         Ok(None)
     }
