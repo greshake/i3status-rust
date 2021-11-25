@@ -1,3 +1,9 @@
+i3status-rust (0.20.7ubuntu1) UNRELEASED; urgency=low
+
+  * Upstream release.
+
+ -- Carlos Fernandez Sanz <carlos@sanz.dev>  Wed, 24 Nov 2021 21:17:30 -0800
+
 i3status-rust (0.13.1) UNRELEASED; urgency=low
 
   * Upstream release.

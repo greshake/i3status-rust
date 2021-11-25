@@ -78,9 +78,9 @@ priority = "optional"
 assets = [
     ["target/release/i3status-rs", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/i3status-rust/README", "644"],
-    ["blocks.md", "usr/share/doc/i3status-rust/", "644"],
-    ["example_config.toml", "usr/share/doc/i3status-rust/", "644"],
-    ["example_theme.toml", "usr/share/doc/i3status-rust/", "644"],
-    ["example_icon.toml", "usr/share/doc/i3status-rust/", "644"]
+    ["doc/blocks.md", "usr/share/doc/i3status-rust/", "644"],
+    ["examples/config.toml", "usr/share/doc/i3status-rust/", "644"],
+    ["examples/config_theme_override.toml", "usr/share/doc/i3status-rust/", "644"],
+    ["examples/config_icon_override.toml", "usr/share/doc/i3status-rust/", "644"]
 ]
 changelog = "debian/changelog"
