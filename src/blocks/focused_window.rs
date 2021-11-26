@@ -11,7 +11,6 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::scheduler::Task;
-// use crate::util::escape_pango_text;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::widgets::text::TextWidget;
