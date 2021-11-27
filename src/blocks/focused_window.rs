@@ -184,7 +184,7 @@ impl ConfigBlock for FocusedWindow {
             })
             .expect("failed to start watching thread for `window` block");
 
-        let text = TextWidget::new(id, 0, shared_config).with_text("x");
+        let text = TextWidget::new(id, 0, shared_config);
         Ok(FocusedWindow {
             id,
             text,
@@ -212,17 +212,19 @@ impl Block for FocusedWindow {
         .clone();
         title_string = title_string.chars().take(self.max_width).collect();
         let out_str = match self.show_marks {
-            MarksType::None => title_string,
+            MarksType::None => &title_string,
             _ => {
                 if !marks_string.is_empty() {
-                    marks_string
+                    &marks_string
                 } else {
-                    title_string
+                    &title_string
                 }
             }
         };
         let values = map!(
-            "composed" => Value::from_string(escape_pango_text(out_str))
+            "composed" => Value::from_string(escape_pango_text(&out_str)),
+            "marks" => Value::from_string(escape_pango_text(&marks_string)),
+            "title" => Value::from_string(escape_pango_text(&title_string))
         );
 
         self.text.set_texts(self.format.render(&values)?);

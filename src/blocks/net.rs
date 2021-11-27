@@ -175,7 +175,7 @@ impl NetworkDevice {
                         continue;
                     }
 
-                    let ssid = Some(escape_pango_text(decode_escaped_unicode(&ssid)));
+                    let ssid = Some(escape_pango_text(&decode_escaped_unicode(&ssid)));
                     let freq = interface
                         .frequency
                         .map(|f| nl80211::parse_u32(&f) as f64 * 1e6);
