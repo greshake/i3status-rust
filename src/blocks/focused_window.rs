@@ -10,9 +10,10 @@ use swayipc::{Connection, EventType};
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::scheduler::Task;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
+use crate::scheduler::Task;
+use crate::util::escape_pango_text;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
@@ -221,7 +222,7 @@ impl Block for FocusedWindow {
             }
         };
         let values = map!(
-            "composed" => Value::from_string(out_str)
+            "composed" => Value::from_string(escape_pango_text(out_str))
         );
 
         self.text.set_texts(self.format.render(&values)?);
