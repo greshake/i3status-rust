@@ -190,7 +190,7 @@ impl ConfigBlock for FocusedWindow {
             text,
             max_width: block_config.max_width,
             show_marks: block_config.show_marks,
-            format: block_config.format.with_default("{composed}")?,
+            format: block_config.format.with_default("{combo}")?,
             title,
             marks,
         })
@@ -222,7 +222,7 @@ impl Block for FocusedWindow {
             }
         };
         let values = map!(
-            "composed" => Value::from_string(escape_pango_text(&out_str)),
+            "combo" => Value::from_string(escape_pango_text(&out_str)),
             "marks" => Value::from_string(escape_pango_text(&marks_string)),
             "title" => Value::from_string(escape_pango_text(&title_string))
         );
