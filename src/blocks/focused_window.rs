@@ -222,7 +222,7 @@ impl Block for FocusedWindow {
             }
         };
         let values = map!(
-            "combo" => Value::from_string(escape_pango_text(&out_str)),
+            "combo" => Value::from_string(escape_pango_text(out_str)),
             "marks" => Value::from_string(escape_pango_text(&marks_string)),
             "title" => Value::from_string(escape_pango_text(&title_string))
         );
