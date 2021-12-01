@@ -22,6 +22,7 @@ backlight_13 = "\ue3c8" # nf-weather-moon_alt_waxing_crescent_1
 bat_charging = "\uf583" # nf-mdi-battery_charging
 bat_discharging = "\uf57d" # nf-mdi-battery_50
 bat_empty = "\uf58d" # nf-mdi-battery_outline # TODO remove on next release
+bat_not_available = "\uf590" # nf-mdi-battery_unknown
 bat_10 = "\uf579" # nf-mdi-battery_10
 bat_20 = "\uf57a"# nf-mdi-battery_20
 bat_30 = "\uf57b"# nf-mdi-battery_30
