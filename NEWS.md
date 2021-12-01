@@ -1,3 +1,15 @@
+# i3status-rust 0.20.7
+
+## New Blocks and Features
+
+* Backlight block: new options `minimum`, `maximum`, `cycle` for toggling min/max brightness on click or on scrolll (#1349 by @Vanille-N)
+* Focused Window block: add `format` string (#1360 by @cfsmp3)
+
+## Bug Fixes and Improvements
+
+* icons: Add missing bat_not_available icon (#1361 by @ram02z)
+* Docker block: colour errors using Critical state (#1360 by @cfsmp3)
+
 # i3status-rust 0.20.6
 
 ## New Blocks and Features
