@@ -13,6 +13,7 @@ use crate::http;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
+use crate::widgets::State;
 
 pub struct Docker {
     id: usize,
@@ -102,11 +103,19 @@ impl Block for Docker {
 
         if output.is_err() {
             self.text.set_text("N/A".to_string());
+            self.text.set_state(State::Critical);
             return Ok(Some(self.update_interval.into()));
         }
 
-        let status: Status = serde_json::from_value(output.unwrap().content)
-            .block_error("docker", "Failed to parse JSON response.")?;
+        let status: Status = match serde_json::from_value(output.unwrap().content)
+            .block_error("docker", "Failed to parse JSON response.")
+        {
+            Ok(status) => status,
+            Err(e) => {
+                self.text.set_state(State::Critical);
+                return Err(e);
+            }
+        };
 
         let values = map!(
             "total" =>   Value::from_integer(status.total),
@@ -117,6 +126,7 @@ impl Block for Docker {
         );
 
         self.text.set_texts(self.format.render(&values)?);
+        self.text.set_state(State::Idle);
 
         Ok(Some(self.update_interval.into()))
     }

@@ -71,7 +71,7 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
     None
 }
 
-pub fn escape_pango_text(text: String) -> String {
+pub fn escape_pango_text(text: &str) -> String {
     text.chars()
         .map(|x| match x {
             '&' => "&amp;".to_string(),

@@ -158,7 +158,7 @@ impl RotatingTextWidget {
         self.inner.full_text = format!(
             "{}{}{}",
             icon,
-            escape_pango_text(self.get_rotated_content()),
+            escape_pango_text(&self.get_rotated_content()),
             match self.spacing {
                 Spacing::Hidden => String::from(""),
                 _ => String::from(" "),

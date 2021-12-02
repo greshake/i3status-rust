@@ -10,6 +10,8 @@ use swayipc::{Connection, EventType};
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
 use crate::util::escape_pango_text;
 use crate::widgets::text::TextWidget;
@@ -29,6 +31,7 @@ pub struct FocusedWindow {
     title: Arc<Mutex<String>>,
     marks: Arc<Mutex<String>>,
     show_marks: MarksType,
+    format: FormatTemplate,
     max_width: usize,
 }
 
@@ -40,6 +43,9 @@ pub struct FocusedWindowConfig {
 
     /// Show marks in place of title (if exist)
     pub show_marks: MarksType,
+
+    /// Format override
+    pub format: FormatTemplate,
 }
 
 impl Default for FocusedWindowConfig {
@@ -47,6 +53,7 @@ impl Default for FocusedWindowConfig {
         Self {
             max_width: 21,
             show_marks: MarksType::None,
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -183,6 +190,7 @@ impl ConfigBlock for FocusedWindow {
             text,
             max_width: block_config.max_width,
             show_marks: block_config.show_marks,
+            format: block_config.format.with_default("{combo}")?,
             title,
             marks,
         })
@@ -204,16 +212,22 @@ impl Block for FocusedWindow {
         .clone();
         title_string = title_string.chars().take(self.max_width).collect();
         let out_str = match self.show_marks {
-            MarksType::None => title_string,
+            MarksType::None => &title_string,
             _ => {
                 if !marks_string.is_empty() {
-                    marks_string
+                    &marks_string
                 } else {
-                    title_string
+                    &title_string
                 }
             }
         };
-        self.text.set_text(escape_pango_text(out_str));
+        let values = map!(
+            "combo" => Value::from_string(escape_pango_text(out_str)),
+            "marks" => Value::from_string(escape_pango_text(&marks_string)),
+            "title" => Value::from_string(escape_pango_text(&title_string))
+        );
+
+        self.text.set_texts(self.format.render(&values)?);
 
         Ok(None)
     }

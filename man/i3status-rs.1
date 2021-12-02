@@ -232,6 +232,21 @@ Show brightness for the default device:
 block = \[dq]backlight\[dq]
 \f[R]
 .fi
+.PP
+Setup bounds and cycle:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]backlight\[dq]
+minimum = 15
+maximum = 100
+cycle = [100, 50, 0, 50]
+\f[R]
+.fi
+.PP
+Note that \f[C]cycle = []\f[R] will disable cycling, and
+\f[C]cycle = [n]\f[R] will reset brightness to \f[C]n\f[R] on each click
 .SS Options
 .PP
 .TS
@@ -258,6 +273,17 @@ T}@T{
 Default device
 T}
 T{
+\f[C]format\f[R]
+T}@T{
+A string to customise the output of this block.
+See below for available placeholders.
+Text may need to be escaped, refer to Escaping Text.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{brightness}\[dq]\f[R]
+T}
+T{
 \f[C]step_width\f[R]
 T}@T{
 The brightness increment to use when scrolling, in percent.
@@ -265,6 +291,33 @@ T}@T{
 No
 T}@T{
 \f[C]5\f[R]
+T}
+T{
+\f[C]minimum\f[R]
+T}@T{
+The minimum brightness that can be scrolled down to
+T}@T{
+No
+T}@T{
+\f[C]1\f[R]
+T}
+T{
+\f[C]maximum\f[R]
+T}@T{
+The maximum brightness that can be scrolled up to
+T}@T{
+No
+T}@T{
+\f[C]100\f[R]
+T}
+T{
+\f[C]cycle\f[R]
+T}@T{
+The brightnesses to cycle through on each click
+T}@T{
+No
+T}@T{
+\f[C][minimum, maximum]\f[R]
 T}
 T{
 \f[C]root_scaling\f[R]
@@ -294,9 +347,35 @@ luminance, so settings for \f[C]root_scaling\f[R] between 2.4 and 3.0
 are worth trying.
 For devices with few discrete steps this should be 1.0 (linear).
 More information: <https://en.wikipedia.org/wiki/Lightness>
+.PP
+Also be aware that some devices turn off when brightness is set to
+\f[C]0\f[R].
+Be careful when setting \f[C]minimum\f[R] to 0.
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l l.
+T{
+Placeholder
+T}@T{
+Description
+T}@T{
+Type
+T}
+_
+T{
+\f[C]{brightness}\f[R]
+T}@T{
+Device brightness percentage
+T}@T{
+String or Integer
+T}
+.TE
 .SS Setting Brightness with the Mouse Wheel
 .PP
-The block allows for setting brightness with the mouse wheel.
+The block allows for setting brightness with the mouse wheel and
+toggling min/max brightness on click.
 However, depending on how you installed i3status-rust, it may not have
 the appropriate permissions to modify these files, and will fail
 silently.
@@ -1684,6 +1763,53 @@ T}@T{
 No
 T}@T{
 \f[C]\[dq]none\[dq]\f[R]
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+AA string to customise the output of this block.
+See below for available placeholders.
+Text may need to be escaped, refer to Escaping Text.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{combo}\[dq]\f[R]
+T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+lw(20.6n) lw(28.8n) lw(20.6n).
+T{
+Key
+T}@T{
+Value
+T}@T{
+Type
+T}
+_
+T{
+\f[C]{title}\f[R]
+T}@T{
+Title
+T}@T{
+String
+T}
+T{
+\f[C]{marks}\f[R]
+T}@T{
+Marks
+T}@T{
+String
+T}
+T{
+\f[C]{combo}\f[R]
+T}@T{
+Title \f[I]or\f[R] marks depending on whether the title is empty or not
+and show_marks is enabled or not
+T}@T{
+String
 T}
 .TE
 .SS GitHub

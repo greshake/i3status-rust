@@ -668,6 +668,15 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `max_width` | Truncates titles to this length. | No | `21`
 `show_marks` | Display marks instead of the title, if there are some. Options are `"none"`, `"all"` or `"visible"`, the latter of which ignores marks that start with an underscore. | No | `"none"`
+`format` | AA string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{combo}"`
+
+#### Available Format Keys
+
+ Key | Value | Type
+-----|-------|-----
+`{title}` | Title | String
+`{marks}` | Marks | String
+`{combo}` | Title _or_ marks depending on whether the title is empty or not and show_marks is enabled or not | String
 
 ###### [↥ back to top](#list-of-available-blocks)
 
