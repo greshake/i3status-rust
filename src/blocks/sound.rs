@@ -957,7 +957,7 @@ impl Block for Sound {
         let headphones = self
             .device
             .active_port()
-            .map(|p| p.starts_with("head") || p.starts_with("hand") || p.starts_with("ear"))
+            .map(|p| p.contains("headphones"))
             .unwrap_or(false);
 
         if self.device.muted() {
