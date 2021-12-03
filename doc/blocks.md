@@ -1569,7 +1569,14 @@ socket_path = "/tmp/rofi_notification_daemon"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Refresh rate in seconds. | No | `1`
+`format` | A string to customise the output of this block. See below for placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{num}"`
 `socket_path` | Socket path for the rofication daemon. | No | "/tmp/rofi_notification_daemon"
+
+### Available Format Keys
+
+ Key | Value | Type
+-----|-------|-----
+`{num}` | Number of pending notifications | Integer
 
 #### Icons Used
 

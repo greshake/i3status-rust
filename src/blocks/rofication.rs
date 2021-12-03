@@ -20,6 +20,8 @@ use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 use crate::widgets::State;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 
 #[derive(Debug)]
 struct RotificationStatus {
@@ -31,12 +33,8 @@ pub struct Rofication {
     id: usize,
     text: TextWidget,
     update_interval: Duration,
+    format: FormatTemplate,
 
-    //useful, but optional
-    #[allow(dead_code)]
-    shared_config: SharedConfig,
-    #[allow(dead_code)]
-    tx_update_request: Sender<Task>,
     // UNIX socket to read from
     pub socket_path: String,
 }
@@ -47,15 +45,20 @@ pub struct RoficationConfig {
     /// Update interval in seconds
     #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+
     // UNIX socket to read from
     pub socket_path: String,
+
+    /// Format override
+    pub format: FormatTemplate,
 }
 
 impl Default for RoficationConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(1),
-            socket_path: String::from_str("/tmp/rofi_notification_daemon").unwrap(),
+            socket_path: "/tmp/rofi_notification_daemon".to_string(),
+            format: FormatTemplate::default(),
         }
     }
 }
@@ -67,10 +70,10 @@ impl ConfigBlock for Rofication {
         id: usize,
         block_config: Self::Config,
         shared_config: SharedConfig,
-        tx_update_request: Sender<Task>,
+        _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let text = TextWidget::new(id, 0, shared_config.clone())
-            .with_text("0")
+            .with_text("?")
             .with_icon("bell")?
             .with_state(State::Good);
 
@@ -78,9 +81,8 @@ impl ConfigBlock for Rofication {
             id,
             update_interval: block_config.interval,
             text,
-            tx_update_request,
-            shared_config,
             socket_path: block_config.socket_path,
+            format: block_config.format.with_default("{num}")?,
         })
     }
 }
@@ -89,7 +91,11 @@ impl Block for Rofication {
     fn update(&mut self) -> Result<Option<Update>> {
         match rofication_status(&self.socket_path) {
             Ok(status) => {
-                self.text.set_text(status.num.to_string());
+                let values = map!(
+                    "num" => Value::from_string(status.num.to_string()),
+                );
+
+                self.text.set_texts(self.format.render(&values)?);
                 if status.crit > 0 {
                     self.text.set_state(State::Critical)
                 } else {
