@@ -145,21 +145,11 @@ fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
     };
 
     // Request count
-    if stream.write(b"num\n").is_err() {
-        return Err(BlockError(
-            "rofication".to_string(),
-            "Failed to write to socket".to_string(),
-        ));
-    };
+    stream.write(b"num\n").block_error("rofication", "Failed to write to socket")?;
 
     // Response must be two comma separated integers: regular and critical
     let mut buffer = String::new();
-    if stream.read_to_string(&mut buffer).is_err() {
-        return Err(BlockError(
-            "rofication".to_string(),
-            "Failed to read from socket".to_string(),
-        ));
-    };
+    stream.read_to_string(&mut buffer).block_error("rofication", "Failed to read from socket")?;
 
     let values = buffer.split(',').collect::<Vec<&str>>();
     if values.len() != 2 {
@@ -169,24 +159,8 @@ fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
         ));
     }
 
-    let num = match values[0].parse::<u64>() {
-        Ok(num) => num,
-        Err(_) => {
-            return Err(BlockError(
-                "rofication".to_string(),
-                "Failed to parse num".to_string(),
-            ))
-        }
-    };
-    let crit = match values[1].parse::<u64>() {
-        Ok(crit) => crit,
-        Err(_) => {
-            return Err(BlockError(
-                "rofication".to_string(),
-                "Failed to parse crit".to_string(),
-            ))
-        }
-    };
+    let num = values[0].parse::<u64>().block_error("rofication", "Failed to parse num")?;
+    let crit = values[1].parse::<u64>().block_error("rofication", "Failed to parse crit")?;
 
     Ok(RotificationStatus { num, crit })
 }
