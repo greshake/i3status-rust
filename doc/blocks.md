@@ -1976,7 +1976,6 @@ NOTE: Some users report issues (e.g. [here](https://github.com/greshake/i3status
 block = "xrandr"
 icons = true
 resolution = true
-interval = 2
 ```
 
 #### Options
