@@ -13,6 +13,8 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::protocol::i3bar_event::MouseButton;
 use crate::scheduler::Task;
@@ -20,8 +22,6 @@ use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 use crate::widgets::State;
-use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
 
 #[derive(Debug)]
 struct RotificationStatus {
