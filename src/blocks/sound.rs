@@ -952,12 +952,13 @@ impl Block for Sound {
         );
         let texts = self.format.render(&values)?;
 
-        // Reference: PulseAudio type definitions
-        // https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0ce3008605e5f644fac4bb5edbb1443110201ec1/src/pulse/def.h#L1073-1100
+        // TODO: Query port names instead? See https://github.com/greshake/i3status-rust/pull/1363#issue-1069904082
+        // Reference: PulseAudio port name definitions are the first item in the well_known_descriptions struct:
+        // https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0ce3008605e5f644fac4bb5edbb1443110201ec1/src/modules/alsa/alsa-mixer.c#L2709-L2731
         let headphones = self
             .device
             .active_port()
-            .map(|p| p.starts_with("head") || p.starts_with("hand") || p.starts_with("ear"))
+            .map(|p| p.contains("headphones"))
             .unwrap_or(false);
 
         if self.device.muted() {
