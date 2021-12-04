@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -72,7 +71,7 @@ impl ConfigBlock for Rofication {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(id, 0, shared_config.clone())
+        let text = TextWidget::new(id, 0, shared_config)
             .with_text("?")
             .with_icon("bell")?
             .with_state(State::Good);
@@ -98,12 +97,10 @@ impl Block for Rofication {
                 self.text.set_texts(self.format.render(&values)?);
                 if status.crit > 0 {
                     self.text.set_state(State::Critical)
+                } else if status.num > 0 {
+                    self.text.set_state(State::Warning)
                 } else {
-                    if status.num > 0 {
-                        self.text.set_state(State::Warning)
-                    } else {
-                        self.text.set_state(State::Good)
-                    }
+                    self.text.set_state(State::Good)
                 }
                 self.text.set_icon("bell")?;
             }
@@ -148,27 +145,15 @@ fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
     };
 
     // Request count
-    match stream.write(b"num\n") {
-        Err(_) => {
-            return Err(BlockError(
-                "rofication".to_string(),
-                "Failed to write to socket".to_string(),
-            ))
-        }
-        Ok(_) => {}
-    };
+    stream
+        .write(b"num\n")
+        .block_error("rofication", "Failed to write to socket")?;
 
     // Response must be two comma separated integers: regular and critical
     let mut buffer = String::new();
-    match stream.read_to_string(&mut buffer) {
-        Err(_) => {
-            return Err(BlockError(
-                "rofication".to_string(),
-                "Failed to read from socket".to_string(),
-            ))
-        }
-        Ok(_) => {}
-    };
+    stream
+        .read_to_string(&mut buffer)
+        .block_error("rofication", "Failed to read from socket")?;
 
     let values = buffer.split(',').collect::<Vec<&str>>();
     if values.len() != 2 {
@@ -178,24 +163,12 @@ fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
         ));
     }
 
-    let num = match values[0].parse::<u64>() {
-        Ok(num) => num,
-        Err(_) => {
-            return Err(BlockError(
-                "rofication".to_string(),
-                "Failed to parse num".to_string(),
-            ))
-        }
-    };
-    let crit = match values[1].parse::<u64>() {
-        Ok(crit) => crit,
-        Err(_) => {
-            return Err(BlockError(
-                "rofication".to_string(),
-                "Failed to parse crit".to_string(),
-            ))
-        }
-    };
+    let num = values[0]
+        .parse::<u64>()
+        .block_error("rofication", "Failed to parse num")?;
+    let crit = values[1]
+        .parse::<u64>()
+        .block_error("rofication", "Failed to parse crit")?;
 
     Ok(RotificationStatus { num, crit })
 }
