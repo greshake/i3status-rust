@@ -27,6 +27,7 @@ You may find that the block you desire is not in the list below. In that case, f
 - [Custom DBus](#custom-dbus)
 - [Disk Space](#disk-space)
 - [Docker](#docker)
+- [ExternalIP](#external-ip)
 - [Focused Window](#focused-window)
 - [GitHub](#github)
 - [Hueshift](#hueshift)
@@ -646,6 +647,57 @@ Key | Value | Type
 #### Icons Used
 
 - `docker`
+
+###### [↥ back to top](#list-of-available-blocks)
+
+## ExternalIP
+
+Creates a block which displays the external IP address and various information about it.
+
+#### Examples
+
+```toml
+[[block]]
+block = "externalip"
+format = "{address} {country_code}"
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{address} {country_flag}"`
+`refresh_interval_success` | Interval in seconds for automatic updates when the previous update was successful | No | 300
+`refresh_interval_failure` | Interval in seconds for automatic updates when the previous update failed | No | 15
+
+#### Available Format Keys
+
+ Key | Value | Type
+-----|-------|-----
+`{address}` | The external IP address, as seen from a remote server | String
+`{country}` | Full country name, such as "Spain" | Integer
+`{country_code}` | Two characters country code, such as "ES" | String
+`{region}` | Region name, such as "California" | String
+`{region_name}` | Region code, such as "CA" | String
+`{city}` | City | String
+`{zip}` | ZIP / Postal code | String
+`{latitude}` | Latitude | Float
+`{longitude}` | Longitude | Float
+`{timezone}` | Time zone | String
+`{isp}` | Internet Service Provider | String
+`{org}` | Organization | String
+`{autonomous_system}` | Autonomous system (AS) | String
+`{country_flag}` | Flag of the country | String (glyph)
+
+##### Notes
+The external IP address system uses the free tier of ip-api.com which is
+http, not https.
+The IP is queried, 1) When i3status-rs starts, 2) When a signal is received
+on D-Bus about a network configuration change, 3) Every 5 minutes. This
+periodic refresh exists to catch IP updates that don't trigger a notification,
+for example due to a IP refresh at the router.
+Flags: They are not icons but unicode glyphs. You will need a font that
+includes them. Tested with: https://www.babelstone.co.uk/Fonts/Flags.html
 
 ###### [↥ back to top](#list-of-available-blocks)
 

@@ -61,6 +61,11 @@ impl FormatTemplate {
         Self::format_contains(&self.full, var) || Self::format_contains(&self.short, var)
     }
 
+    pub fn has_tokens(&self) -> bool {
+        !self.full.as_ref().map(Vec::is_empty).unwrap_or(true)
+            || !self.short.as_ref().map(Vec::is_empty).unwrap_or(true)
+    }
+
     fn format_contains(format: &Option<Vec<Token>>, var: &str) -> bool {
         if let Some(tokens) = format {
             for token in tokens {
