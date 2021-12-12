@@ -18,28 +18,39 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 use crate::Duration;
 
-const API_ENDPOINT: &str = "http://ip-api.com/json";
+const API_ENDPOINT: &str = "https://ipapi.co/json/";
+const BLOCK_NAME: &str = "external_ip";
 
 #[derive(ser, des, Default)]
 struct IPAddressInfo {
-    #[serde(rename = "query")]
-    address: String,
-    status: String,
-    country: String,
-    #[serde(rename = "countryCode")]
-    country_code: String,
-    region: String,
-    #[serde(rename = "regionName")]
-    region_name: String,
+    #[serde(default = "bool::default")]
+    error: bool,
+    ip: String,
+    version: String,
     city: String,
-    zip: String,
-    lat: f64,
-    lon: f64,
+    region: String,
+    region_code: String,
+    country: String,
+    country_name: String,
+    country_code: String,
+    country_code_iso3: String,
+    country_capital: String,
+    country_tld: String,
+    continent_code: String,
+    in_eu: bool,
+    postal: String,
+    latitude: f64,
+    longitude: f64,
     timezone: String,
-    isp: String,
+    utc_offset: String,
+    country_calling_code: String,
+    currency: String,
+    currency_name: String,
+    languages: String,
+    country_area: f64,
+    country_population: f64,
+    asn: String,
     org: String,
-    #[serde(rename = "as")]
-    autonomous_system: String,
 }
 
 pub struct ExternalIP {
@@ -126,9 +137,7 @@ impl ConfigBlock for ExternalIP {
         Ok(ExternalIP {
             id,
             output: TextWidget::new(id, 0, shared_config),
-            format: block_config
-                .format
-                .with_default("{address} {country_flag}")?,
+            format: block_config.format.with_default("{ip} {country_flag}")?,
             refresh_interval_success: block_config.refresh_interval_success,
             refresh_interval_failure: block_config.refresh_interval_failure,
         })
@@ -142,35 +151,52 @@ impl Block for ExternalIP {
 
     fn update(&mut self) -> Result<Option<Update>> {
         let (external_ip, success) = {
-            let ip_info =
+            let ip_info: IPAddressInfo =
                 match http::http_get_json(API_ENDPOINT, Some(Duration::from_secs(3)), vec![]) {
-                    Ok(ip_info_json) => serde_json::from_value(ip_info_json.content).unwrap(),
-                    _ => IPAddressInfo::default(),
-                };
-            match ip_info.status.as_ref() {
-                "success" => {
+                    Ok(ip_info_json) => serde_json::from_value(ip_info_json.content)
+                        .block_error(BLOCK_NAME, "Failed to decode JSON"),
+                    _ => Err(BlockError(
+                        BLOCK_NAME.to_string(),
+                        "Failed to contact API".to_string(),
+                    )),
+                }?;
+            match ip_info.error {
+                false => {
                     self.output.set_state(State::Idle);
                     let flag = country_flag_from_iso_code(ip_info.country_code.as_str());
                     let values = map!(
-                        "address" => Value::from_string (ip_info.address),
-                        "country" => Value::from_string (ip_info.country),
-                        "country_code" => Value::from_string (ip_info.country_code),
-                        "region" => Value::from_string (ip_info.region),
-                        "region_name" => Value::from_string (ip_info.region_name),
+                        "ip" => Value::from_string (ip_info.ip),
+                        "version" => Value::from_string (ip_info.version),
                         "city" => Value::from_string (ip_info.city),
-                        "zip" => Value::from_string (ip_info.zip),
-                        "latitude" => Value::from_float (ip_info.lat),
-                        "longitude" => Value::from_float (ip_info.lon),
+                        "region" => Value::from_string (ip_info.region),
+                        "region_code" => Value::from_string (ip_info.region_code),
+                        "country" => Value::from_string (ip_info.country),
+                        "country_name" => Value::from_string (ip_info.country_name),
+                        "country_code" => Value::from_string (ip_info.country_code),
+                        "country_code_iso3" => Value::from_string (ip_info.country_code_iso3),
+                        "country_capital" => Value::from_string (ip_info.country_capital),
+                        "country_tld" => Value::from_string (ip_info.country_tld),
+                        "continent_code" => Value::from_string (ip_info.continent_code),
+                        "in_eu" => Value::from_boolean (ip_info.in_eu),
+                        "postal" => Value::from_string (ip_info.postal),
+                        "latitude" => Value::from_float (ip_info.latitude),
+                        "longitude" => Value::from_float (ip_info.longitude),
                         "timezone" => Value::from_string (ip_info.timezone),
-                        "isp" => Value::from_string (ip_info.isp),
+                        "utc_offset" => Value::from_string (ip_info.utc_offset),
+                        "country_calling_code" => Value::from_string (ip_info.country_calling_code),
+                        "currency" => Value::from_string (ip_info.currency),
+                        "currency_name" => Value::from_string (ip_info.currency_name),
+                        "languages" => Value::from_string (ip_info.languages),
+                        "country_area" => Value::from_float (ip_info.country_area),
+                        "country_population" => Value::from_float (ip_info.country_population),
+                        "asn" => Value::from_string (ip_info.asn),
                         "org" => Value::from_string (ip_info.org),
-                        "autonomous_system" => Value::from_string (ip_info.autonomous_system),
                         "country_flag" => Value::from_string(flag),
                     );
                     let s = self.format.render(&values)?;
                     (s.0, true)
                 }
-                _ => {
+                true => {
                     self.output.set_state(State::Critical);
                     ("Request to IP service failed".to_string(), false)
                 }

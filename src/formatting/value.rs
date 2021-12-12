@@ -17,6 +17,7 @@ enum InternalValue {
     Text(String),
     Integer(i64),
     Float(f64),
+    Boolean(bool),
 }
 
 fn format_number(
@@ -150,6 +151,14 @@ impl Value {
             value: InternalValue::Float(value),
         }
     }
+    pub fn from_boolean(value: bool) -> Self {
+        Self {
+            icon: None,
+            min_width: 2,
+            unit: Unit::None,
+            value: InternalValue::Boolean(value),
+        }
+    }
 
     // Set options
     pub fn icon(mut self, icon: String) -> Self {
@@ -248,6 +257,10 @@ impl Value {
                 // Apply engineering notation (Float-only)
                 format_number(value, min_width, var.min_prefix, unit, pad_with)
             }
+            InternalValue::Boolean(value) => match value {
+                true => String::from("T"),
+                false => String::from("F"),
+            },
         };
 
         // We prepend the resulting string with the icon if it is set
