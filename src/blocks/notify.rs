@@ -28,20 +28,11 @@ pub struct Notify {
     output: TextWidget,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct NotifyConfig {
     /// Format string which describes the output of this block.
     pub format: FormatTemplate,
-}
-
-impl Default for NotifyConfig {
-    fn default() -> Self {
-        Self {
-            // display just the bell icon
-            format: FormatTemplate::default(),
-        }
-    }
 }
 
 impl ConfigBlock for Notify {

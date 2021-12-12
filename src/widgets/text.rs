@@ -5,7 +5,6 @@ use crate::protocol::i3bar_block::I3BarBlock;
 
 #[derive(Clone, Debug)]
 pub struct TextWidget {
-    id: usize,
     pub instance: usize,
     content: Option<String>,
     content_short: Option<String>,
@@ -29,7 +28,6 @@ impl TextWidget {
         };
 
         TextWidget {
-            id,
             instance,
             content: None,
             content_short: None,

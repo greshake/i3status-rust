@@ -8,7 +8,6 @@ use crate::util::escape_pango_text;
 
 #[derive(Clone, Debug)]
 pub struct RotatingTextWidget {
-    id: usize,
     pub instance: usize,
     pub rotating: bool,
     rotation_pos: usize,
@@ -43,7 +42,6 @@ impl RotatingTextWidget {
         };
 
         RotatingTextWidget {
-            id,
             instance,
             rotation_pos: 0,
             max_width,

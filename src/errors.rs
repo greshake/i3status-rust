@@ -59,6 +59,8 @@ impl<T> OptionExt<T> for ::std::option::Option<T> {
 
 /// A set of errors that can occur during the runtime of i3status-rs.
 /// TODO: rewrite using struct-like fields ("what is the order of InternalError again?")
+/// TODO: rename variants
+#[allow(clippy::enum_variant_names)]
 pub enum Error {
     BlockError(String, String),
     ConfigurationError(String, String),
