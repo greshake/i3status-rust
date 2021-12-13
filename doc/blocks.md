@@ -669,6 +669,7 @@ Key | Values | Required | Default
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{address} {country_flag}"`
 `refresh_interval_success` | Interval in seconds for automatic updates when the previous update was successful | No | 300
 `refresh_interval_failure` | Interval in seconds for automatic updates when the previous update failed | No | 15
+`with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | No | "true"
 
 #### Available Format Keys
 

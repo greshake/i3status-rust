@@ -68,6 +68,7 @@ pub struct ExternalIPConfig {
     pub format: FormatTemplate,
     pub refresh_interval_success: u64,
     pub refresh_interval_failure: u64,
+    pub with_network_manager: bool,
 }
 
 impl Default for ExternalIPConfig {
@@ -76,6 +77,7 @@ impl Default for ExternalIPConfig {
             format: FormatTemplate::default(),
             refresh_interval_success: 300,
             refresh_interval_failure: 15,
+            with_network_manager: true,
         }
     }
 }
@@ -89,51 +91,52 @@ impl ConfigBlock for ExternalIP {
         shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
-        thread::Builder::new()
-            .name("externalip".into())
-            .spawn(move || {
-                let c = Connection::get_private(BusType::System).unwrap();
-                c.add_match(
-                    "type='signal',\
+        if block_config.with_network_manager {
+            thread::Builder::new()
+                .name("externalip".into())
+                .spawn(move || {
+                    let c = Connection::get_private(BusType::System).unwrap();
+                    c.add_match(
+                        "type='signal',\
                     path='/org/freedesktop/NetworkManager',\
                     interface='org.freedesktop.DBus.Properties',\
                     member='PropertiesChanged'",
-                )
-                .unwrap();
-                c.add_match(
-                    "type='signal',\
+                    )
+                    .unwrap();
+                    c.add_match(
+                        "type='signal',\
                     path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
                     interface='org.freedesktop.DBus.Properties',\
                     member='PropertiesChanged'",
-                )
-                .unwrap();
-                c.add_match(
-                    "type='signal',\
+                    )
+                    .unwrap();
+                    c.add_match(
+                        "type='signal',\
                     path_namespace='/org/freedesktop/NetworkManager/IP4Config',\
                     interface='org.freedesktop.DBus',\
                     member='PropertiesChanged'",
-                )
-                .unwrap();
+                    )
+                    .unwrap();
 
-                loop {
-                    let timeout = 300_000;
+                    loop {
+                        let timeout = 300_000;
 
-                    for event in c.iter(timeout) {
-                        match event {
-                            ConnectionItem::Nothing => (),
-                            _ => {
-                                send.send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
+                        for event in c.iter(timeout) {
+                            match event {
+                                ConnectionItem::Nothing => (),
+                                _ => {
+                                    send.send(Task {
+                                        id,
+                                        update_time: Instant::now(),
+                                    })
+                                    .unwrap();
+                                }
                             }
                         }
                     }
-                }
-            })
-            .unwrap();
-
+                })
+                .unwrap();
+        }
         Ok(ExternalIP {
             id,
             output: TextWidget::new(id, 0, shared_config),
@@ -151,7 +154,7 @@ impl Block for ExternalIP {
 
     fn update(&mut self) -> Result<Option<Update>> {
         let (external_ip, success) = {
-            let ip_info: IPAddressInfo =
+            let ip_info: Result<IPAddressInfo> =
                 match http::http_get_json(API_ENDPOINT, Some(Duration::from_secs(3)), vec![]) {
                     Ok(ip_info_json) => serde_json::from_value(ip_info_json.content)
                         .block_error(BLOCK_NAME, "Failed to decode JSON"),
@@ -159,49 +162,56 @@ impl Block for ExternalIP {
                         BLOCK_NAME.to_string(),
                         "Failed to contact API".to_string(),
                     )),
-                }?;
-            match ip_info.error {
-                false => {
-                    self.output.set_state(State::Idle);
-                    let flag = country_flag_from_iso_code(ip_info.country_code.as_str());
-                    let values = map!(
-                        "ip" => Value::from_string (ip_info.ip),
-                        "version" => Value::from_string (ip_info.version),
-                        "city" => Value::from_string (ip_info.city),
-                        "region" => Value::from_string (ip_info.region),
-                        "region_code" => Value::from_string (ip_info.region_code),
-                        "country" => Value::from_string (ip_info.country),
-                        "country_name" => Value::from_string (ip_info.country_name),
-                        "country_code" => Value::from_string (ip_info.country_code),
-                        "country_code_iso3" => Value::from_string (ip_info.country_code_iso3),
-                        "country_capital" => Value::from_string (ip_info.country_capital),
-                        "country_tld" => Value::from_string (ip_info.country_tld),
-                        "continent_code" => Value::from_string (ip_info.continent_code),
-                        "in_eu" => Value::from_boolean (ip_info.in_eu),
-                        "postal" => Value::from_string (ip_info.postal),
-                        "latitude" => Value::from_float (ip_info.latitude),
-                        "longitude" => Value::from_float (ip_info.longitude),
-                        "timezone" => Value::from_string (ip_info.timezone),
-                        "utc_offset" => Value::from_string (ip_info.utc_offset),
-                        "country_calling_code" => Value::from_string (ip_info.country_calling_code),
-                        "currency" => Value::from_string (ip_info.currency),
-                        "currency_name" => Value::from_string (ip_info.currency_name),
-                        "languages" => Value::from_string (ip_info.languages),
-                        "country_area" => Value::from_float (ip_info.country_area),
-                        "country_population" => Value::from_float (ip_info.country_population),
-                        "asn" => Value::from_string (ip_info.asn),
-                        "org" => Value::from_string (ip_info.org),
-                        "country_flag" => Value::from_string(flag),
-                    );
-                    let s = self.format.render(&values)?;
-                    (s.0, true)
-                }
-                true => {
+                };
+            match ip_info {
+                Ok(ip_info) => match ip_info.error {
+                    false => {
+                        self.output.set_state(State::Idle);
+                        let flag = country_flag_from_iso_code(ip_info.country_code.as_str());
+                        let values = map!(
+                            "ip" => Value::from_string (ip_info.ip),
+                            "version" => Value::from_string (ip_info.version),
+                            "city" => Value::from_string (ip_info.city),
+                            "region" => Value::from_string (ip_info.region),
+                            "region_code" => Value::from_string (ip_info.region_code),
+                            "country" => Value::from_string (ip_info.country),
+                            "country_name" => Value::from_string (ip_info.country_name),
+                            "country_code" => Value::from_string (ip_info.country_code),
+                            "country_code_iso3" => Value::from_string (ip_info.country_code_iso3),
+                            "country_capital" => Value::from_string (ip_info.country_capital),
+                            "country_tld" => Value::from_string (ip_info.country_tld),
+                            "continent_code" => Value::from_string (ip_info.continent_code),
+                            "in_eu" => Value::from_boolean (ip_info.in_eu),
+                            "postal" => Value::from_string (ip_info.postal),
+                            "latitude" => Value::from_float (ip_info.latitude),
+                            "longitude" => Value::from_float (ip_info.longitude),
+                            "timezone" => Value::from_string (ip_info.timezone),
+                            "utc_offset" => Value::from_string (ip_info.utc_offset),
+                            "country_calling_code" => Value::from_string (ip_info.country_calling_code),
+                            "currency" => Value::from_string (ip_info.currency),
+                            "currency_name" => Value::from_string (ip_info.currency_name),
+                            "languages" => Value::from_string (ip_info.languages),
+                            "country_area" => Value::from_float (ip_info.country_area),
+                            "country_population" => Value::from_float (ip_info.country_population),
+                            "asn" => Value::from_string (ip_info.asn),
+                            "org" => Value::from_string (ip_info.org),
+                            "country_flag" => Value::from_string(flag),
+                        );
+                        let s = self.format.render(&values)?;
+                        (s.0, true)
+                    }
+                    true => {
+                        self.output.set_state(State::Critical);
+                        ("Request to IP service failed".to_string(), false)
+                    }
+                },
+                Err(err) => {
                     self.output.set_state(State::Critical);
-                    ("Request to IP service failed".to_string(), false)
+                    (err.to_string(), false)
                 }
             }
         };
+
         self.output.set_text(external_ip);
         match success {
             /* The external IP address can change without triggering a
