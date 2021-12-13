@@ -38,6 +38,7 @@ struct IPAddressInfo {
     country_tld: String,
     continent_code: String,
     in_eu: bool,
+    #[serde(default)]
     postal: String,
     latitude: f64,
     longitude: f64,
