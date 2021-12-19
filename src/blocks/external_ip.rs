@@ -22,9 +22,10 @@ const API_ENDPOINT: &str = "https://ipapi.co/json/";
 const BLOCK_NAME: &str = "external_ip";
 
 #[derive(ser, des, Default)]
+#[serde(default)]
 struct IPAddressInfo {
-    #[serde(default = "bool::default")]
     error: bool,
+    reason: String,
     ip: String,
     version: String,
     city: String,
@@ -38,8 +39,7 @@ struct IPAddressInfo {
     country_tld: String,
     continent_code: String,
     in_eu: bool,
-    #[serde(default)]
-    postal: String,
+    postal: Option<String>,
     latitude: f64,
     longitude: f64,
     timezone: String,
@@ -183,7 +183,7 @@ impl Block for ExternalIP {
                             "country_tld" => Value::from_string (ip_info.country_tld),
                             "continent_code" => Value::from_string (ip_info.continent_code),
                             "in_eu" => Value::from_boolean (ip_info.in_eu),
-                            "postal" => Value::from_string (ip_info.postal),
+                            "postal" => Value::from_string (ip_info.postal.unwrap_or("No postal code".to_string())),
                             "latitude" => Value::from_float (ip_info.latitude),
                             "longitude" => Value::from_float (ip_info.longitude),
                             "timezone" => Value::from_string (ip_info.timezone),
@@ -203,7 +203,7 @@ impl Block for ExternalIP {
                     }
                     true => {
                         self.output.set_state(State::Critical);
-                        ("Request to IP service failed".to_string(), false)
+                        (format!("Error: {}", ip_info.reason.clone()), false)
                     }
                 },
                 Err(err) => {
