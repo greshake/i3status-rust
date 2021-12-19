@@ -20,6 +20,7 @@ use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
+use crate::util::escape_pango_text;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, Spacing, State};
 
@@ -718,7 +719,7 @@ impl Block for NetworkManager {
                                     };
 
                                     let values = map!(
-                                        "ssid" => Value::from_string(ssid),
+                                        "ssid" => Value::from_string(escape_pango_text(&ssid)),
                                         "strength" => Value::from_integer(strength as i64).percents(),
                                         "freq" => Value::from_string(freq).percents(),
                                     );
