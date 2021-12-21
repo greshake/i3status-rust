@@ -183,7 +183,7 @@ impl Block for ExternalIP {
                             "country_tld" => Value::from_string (ip_info.country_tld),
                             "continent_code" => Value::from_string (ip_info.continent_code),
                             "in_eu" => Value::from_boolean (ip_info.in_eu),
-                            "postal" => Value::from_string (ip_info.postal.unwrap_or("No postal code".to_string())),
+                            "postal" => Value::from_string (ip_info.postal.unwrap_or_else(|| "No postal code".to_string())),
                             "latitude" => Value::from_float (ip_info.latitude),
                             "longitude" => Value::from_float (ip_info.longitude),
                             "timezone" => Value::from_string (ip_info.timezone),
@@ -203,7 +203,7 @@ impl Block for ExternalIP {
                     }
                     true => {
                         self.output.set_state(State::Critical);
-                        (format!("Error: {}", ip_info.reason.clone()), false)
+                        (format!("Error: {}", ip_info.reason), false)
                     }
                 },
                 Err(err) => {
