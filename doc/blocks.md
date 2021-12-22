@@ -27,6 +27,7 @@ You may find that the block you desire is not in the list below. In that case, f
 - [Custom DBus](#custom-dbus)
 - [Disk Space](#disk-space)
 - [Docker](#docker)
+- [ExternalIP](#external-ip)
 - [Focused Window](#focused-window)
 - [GitHub](#github)
 - [Hueshift](#hueshift)
@@ -646,6 +647,74 @@ Key | Value | Type
 #### Icons Used
 
 - `docker`
+
+###### [↥ back to top](#list-of-available-blocks)
+
+## ExternalIP
+
+Creates a block which displays the external IP address and various information about it.
+
+#### Examples
+
+```toml
+[[block]]
+block = "externalip"
+format = "{ip} {country_code}"
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{address} {country_flag}"`
+`refresh_interval_success` | Interval in seconds for automatic updates when the previous update was successful | No | 300
+`refresh_interval_failure` | Interval in seconds for automatic updates when the previous update failed | No | 15
+`with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | No | "true"
+
+#### Available Format Keys
+
+ Key | Value | Type
+-----|-------|-----
+`{ip}` | The external IP address, as seen from a remote server | String
+`{version}` | IPv4 or IPv6 | String
+`{city}` | City name, such as "San Francisco" | Integer
+`{region}` | Region name, such as "California" | String
+`{region_code}` | Region code, such as "CA" for California | String
+`{country}` | Country code (2 letter, ISO 3166-1 alpha-2) | String
+`{country_name}` | Short country name | String
+`{country_code}` | Country code (2 letter, ISO 3166-1 alpha-2) | String
+`{country_code_iso3}` | Country code (3 letter, ISO 3166-1 alpha-3) | String
+`{country_capital}` | Capital of the country | String
+`{country_tld}` | Country specific TLD (top-level domain) | String
+`{continent_code}` | Continent code | String
+`{in_eu}` | Region code, such as "CA" | String
+`{postal}` | ZIP / Postal code | String
+`{latitude}` | Latitude | Float
+`{longitude}` | Longitude | Float
+`{timezone}` | City | String
+`{utc_offset}` | UTC offset (with daylight saving time) as +HHMM or -HHMM (HH is hours, MM is minutes) | String
+`{country_calling_code}` | Country calling code (dial in code, comma separated) | String
+`{currency}` | Currency code (ISO 4217) | String
+`{currency_name}` | Currency name | String
+`{languages}` | Languages spoken (comma separated 2 or 3 letter ISO 639 code with optional hyphen separated country suffix) | String
+`{country_area}` | Area of the country (in sq km) | Float
+`{country_population}` | Population of the country | Float
+`{timezone}` | Time zone | String
+`{org}` | Organization | String
+`{asn}` | Autonomous system (AS) | String
+`{country_flag}` | Flag of the country | String (glyph)
+
+##### Notes
+All the information comes from https://ipapi.co/json/ 
+Check their documentation here: https://ipapi.co/api/#complete-location5
+
+The IP is queried, 1) When i3status-rs starts, 2) When a signal is received
+on D-Bus about a network configuration change, 3) Every 5 minutes. This
+periodic refresh exists to catch IP updates that don't trigger a notification,
+for example due to a IP refresh at the router.
+
+Flags: They are not icons but unicode glyphs. You will need a font that
+includes them. Tested with: https://www.babelstone.co.uk/Fonts/Flags.html
 
 ###### [↥ back to top](#list-of-available-blocks)
 
