@@ -30,7 +30,7 @@ pub struct BluetoothDevice {
 }
 
 impl BluetoothDevice {
-    pub fn new(mac: String, label: Option<String>) -> Result<Self> {
+    pub fn new(mac: String, controller_id: String, label: Option<String>) -> Result<Self> {
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("bluetooth", "Failed to establish D-Bus connection.")?;
 
@@ -60,18 +60,30 @@ impl BluetoothDevice {
                     .as_str()
                     .unwrap()
                     .to_string();
-                (path, address)
+                let adapter: String = props
+                    .get("Adapter")
+                    .unwrap()
+                    .0
+                    .as_str()
+                    .unwrap()
+                    .to_string();
+                (path, adapter, address)
             })
-            .filter(|(_, address)| address == &mac)
-            .map(|(path, _)| path)
+            .filter(|(_, _, address)| address == &mac)
+            .filter(|(_, adapter, _)| adapter.ends_with(&controller_id))
+            .map(|(path, _, _)| path)
             .next();
         let path = if let Some(p) = auto_path {
             initial_available = true;
             p
         } else {
-            // TODO: do not hardcode device
-            dbus::strings::Path::new(format!("/org/bluez/hci0/dev_{}", mac.replace(":", "_")))
-                .unwrap()
+            // TODO: possible not to hardcode device?
+            dbus::strings::Path::new(format!(
+                "/org/bluez/{}/dev_{}",
+                controller_id,
+                mac.replace(":", "_")
+            ))
+            .unwrap()
         }
         .to_string();
 
@@ -138,7 +150,6 @@ impl BluetoothDevice {
             dbus::Message::new_method_call("org.bluez", &self.path, "org.bluez.Device1", method)
                 .block_error("bluetooth", "Failed to build D-Bus method.")?;
 
-        // Swallow errors rather than nuke the bar.
         let _ = self.con.send(msg);
         Ok(())
     }
@@ -220,19 +231,29 @@ pub struct Bluetooth {
     format_unavailable: FormatTemplate,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BluetoothConfig {
     pub mac: String,
-    //DEPRECATED
-    //TODO remove
-    pub label: Option<String>,
+    #[serde(default = "default_controller")]
+    pub controller_id: String,
     #[serde(default)]
     pub hide_disconnected: bool,
     #[serde(default)]
     pub format: FormatTemplate,
     #[serde(default)]
     pub format_unavailable: FormatTemplate,
+    //DEPRECATED, TODO: REMOVE
+    pub label: Option<String>,
+}
+
+fn default_controller() -> String {
+    // If there are multiple controllers, then the wrong one might be selected on updates.
+    // Avoid this by allowing the controller to be specified.
+    // This also applies in the case where the bluetooth module is disabled on startup,
+    // and we set a manual fallback path. There's no way to know the controller id beforehand,
+    // so we default to hci0, but this might not always be the desired controller.
+    String::from("hci0")
 }
 
 impl ConfigBlock for Bluetooth {
@@ -244,7 +265,11 @@ impl ConfigBlock for Bluetooth {
         shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
-        let device = BluetoothDevice::new(block_config.mac, block_config.label)?;
+        let device = BluetoothDevice::new(
+            block_config.mac,
+            block_config.controller_id,
+            block_config.label,
+        )?;
         device.monitor(id, send);
 
         Ok(Bluetooth {
@@ -275,6 +300,7 @@ impl Block for Bluetooth {
                 "label" => Value::from_string(self.device.label.clone()),
                 "percentage" => Value::from_integer(self.device.battery().unwrap_or(0) as i64).percents(),
             );
+
             let connected = self.device.connected();
             self.output.set_text(self.device.label.to_string());
             self.output
