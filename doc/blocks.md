@@ -658,7 +658,7 @@ Creates a block which displays the external IP address and various information a
 
 ```toml
 [[block]]
-block = "externalip"
+block = "external_ip"
 format = "{ip} {country_code}"
 ```
 
