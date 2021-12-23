@@ -241,7 +241,7 @@ format = "{percentage} {time}"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | sysfs: the first device starting with `"BAT"` in `/sys/class/power_supply`, usually "BAT0". upower: first device returned by the `EnumerateDevices` D-Bus method`
+`device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | sysfs: the first device starting with `"BAT"` in `/sys/class/power_supply`, usually "BAT0". upower: first matching device returned by the `EnumerateDevices` D-Bus method`
 `driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}"`
