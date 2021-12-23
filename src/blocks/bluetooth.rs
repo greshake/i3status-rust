@@ -228,6 +228,7 @@ pub struct Bluetooth {
     device: BluetoothDevice,
     hide_disconnected: bool,
     format: FormatTemplate,
+    format_disconnected: FormatTemplate,
     format_unavailable: FormatTemplate,
 }
 
@@ -241,6 +242,8 @@ pub struct BluetoothConfig {
     pub hide_disconnected: bool,
     #[serde(default)]
     pub format: FormatTemplate,
+    #[serde(default)]
+    pub format_disconnected: FormatTemplate,
     #[serde(default)]
     pub format_unavailable: FormatTemplate,
     //DEPRECATED, TODO: REMOVE
@@ -284,6 +287,7 @@ impl ConfigBlock for Bluetooth {
             device,
             hide_disconnected: block_config.hide_disconnected,
             format: block_config.format.with_default("{label} {percentage}")?,
+            format_disconnected: block_config.format_disconnected.with_default("{label}")?,
             format_unavailable: block_config.format_unavailable.with_default("{label} x")?,
         })
     }
@@ -324,7 +328,12 @@ impl Block for Bluetooth {
                     _ => State::Warning,
                 });
             }
-            self.output.set_texts(self.format.render(&values)?);
+            if connected {
+                self.output.set_texts(self.format.render(&values)?);
+            } else {
+                self.output
+                    .set_texts(self.format_disconnected.render(&values)?);
+            }
         } else {
             let values = map!(
                 "label" => Value::from_string(self.device.label.clone()),
