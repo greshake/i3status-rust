@@ -30,6 +30,7 @@ shellexpand = "2.1"
 signal-hook = "0.3"
 swayipc = "2.7"
 toml = "0.5"
+dirs = "4.0"
 
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.0", default-features = false }
