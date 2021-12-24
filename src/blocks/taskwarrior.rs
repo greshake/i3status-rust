@@ -1,4 +1,3 @@
-use dirs;
 use std::process::Command;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -91,11 +90,6 @@ pub struct TaskwarriorConfig {
 
 impl Default for TaskwarriorConfig {
     fn default() -> Self {
-        let home_dir = match dirs::home_dir() {
-            Some(path) => path.into_os_string().into_string().unwrap(),
-            None => "".to_owned(),
-        };
-        let task_dir = format!("{}/.task", home_dir);
 
         Self {
             interval: Duration::from_secs(600),
@@ -109,7 +103,7 @@ impl Default for TaskwarriorConfig {
             format: FormatTemplate::default(),
             format_singular: FormatTemplate::default(),
             format_everything_done: FormatTemplate::default(),
-            data_location: task_dir,
+            data_location: "~/.task".to_string(),
         }
     }
 }
