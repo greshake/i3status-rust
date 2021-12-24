@@ -1,5 +1,7 @@
+use dirs;
 use std::process::Command;
-use std::time::Duration;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -14,6 +16,7 @@ use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
+use inotify::{EventMask, Inotify, WatchMask};
 
 pub struct Taskwarrior {
     id: usize,
@@ -107,7 +110,7 @@ impl ConfigBlock for Taskwarrior {
         id: usize,
         block_config: Self::Config,
         shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
+        tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let output = TextWidget::new(id, 0, shared_config)
             .with_icon("tasks")?
@@ -122,6 +125,43 @@ impl ConfigBlock for Taskwarrior {
         } else {
             block_config.filters
         };
+
+        let home_dir = match dirs::home_dir() {
+            Some(path) => path.into_os_string().into_string().unwrap(),
+            None => "".to_owned(),
+        };
+        let task_dir = format!("{}/.task", home_dir);
+
+        // Spin up a thread to watch for changes to the task directory (~/.task)
+        // and schedule an update if needed.
+        thread::Builder::new()
+            .name("taskwarrior".into())
+            .spawn(move || {
+                let mut notify = Inotify::init().expect("Failed to start inotify");
+                notify
+                    .add_watch(task_dir, WatchMask::MODIFY)
+                    .expect("Failed to watch task directory");
+
+                let mut buffer = [0; 1024];
+                loop {
+                    let mut events = notify
+                        .read_events_blocking(&mut buffer)
+                        .expect("Error while reading inotify events");
+
+                    if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
+                        tx_update_request
+                            .send(Task {
+                                id,
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                    }
+
+                    // Avoid update spam.
+                    thread::sleep(Duration::from_millis(250))
+                }
+            })
+            .unwrap();
 
         Ok(Taskwarrior {
             id,
