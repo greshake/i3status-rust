@@ -90,7 +90,6 @@ pub struct TaskwarriorConfig {
 
 impl Default for TaskwarriorConfig {
     fn default() -> Self {
-
         Self {
             interval: Duration::from_secs(600),
             warning_threshold: 10,
