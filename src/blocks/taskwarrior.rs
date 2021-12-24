@@ -91,7 +91,6 @@ pub struct TaskwarriorConfig {
 
 impl Default for TaskwarriorConfig {
     fn default() -> Self {
-
         let home_dir = match dirs::home_dir() {
             Some(path) => path.into_os_string().into_string().unwrap(),
             None => "".to_owned(),
@@ -110,7 +109,7 @@ impl Default for TaskwarriorConfig {
             format: FormatTemplate::default(),
             format_singular: FormatTemplate::default(),
             format_everything_done: FormatTemplate::default(),
-            data_location: task_dir
+            data_location: task_dir,
         }
     }
 }
@@ -139,12 +138,14 @@ impl ConfigBlock for Taskwarrior {
         };
 
         let data_location = block_config.data_location.clone();
-        let data_location = shellexpand::full(data_location.as_str()).map_err(|e| {
-            ConfigurationError(
-                        "custom".to_string(),
-                        format!("Failed to expand data location {}: {}", data_location, e),
-                    )
-                })?.to_string();
+        let data_location = shellexpand::full(data_location.as_str())
+            .map_err(|e| {
+                ConfigurationError(
+                    "custom".to_string(),
+                    format!("Failed to expand data location {}: {}", data_location, e),
+                )
+            })?
+            .to_string();
 
         // Spin up a thread to watch for changes to the task directory (~/.task)
         // and schedule an update if needed.

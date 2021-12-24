@@ -1814,6 +1814,9 @@ Key | Values | Required | Default
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{count}"`
 `format_singular` | Same as `format` but for when exactly one task is pending. | No | `"{count}"`
 `format_everything_done` | Same as `format` but for when all tasks are completed. | No | `"{count}"`
+`data_location`| Directory in which taskwarrior stores its data files. | No | "~/.task"`
+
+Note: data_location is used to get instant notifications (changes in files inside that directory will trigger a check) only. The actual counts come from executing taskwarrior.
 
 #### Available Format Keys
 
