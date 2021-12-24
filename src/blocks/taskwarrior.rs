@@ -83,10 +83,21 @@ pub struct TaskwarriorConfig {
 
     /// Format override if the count is zero
     pub format_everything_done: FormatTemplate,
+
+    /// Data directory. Defaults to ~/.task but it's configurable in taskwarrior
+    /// (data.location in .taskrc) so make it configurable here, too
+    pub data_location: String,
 }
 
 impl Default for TaskwarriorConfig {
     fn default() -> Self {
+
+        let home_dir = match dirs::home_dir() {
+            Some(path) => path.into_os_string().into_string().unwrap(),
+            None => "".to_owned(),
+        };
+        let task_dir = format!("{}/.task", home_dir);
+
         Self {
             interval: Duration::from_secs(600),
             warning_threshold: 10,
@@ -99,6 +110,7 @@ impl Default for TaskwarriorConfig {
             format: FormatTemplate::default(),
             format_singular: FormatTemplate::default(),
             format_everything_done: FormatTemplate::default(),
+            data_location: task_dir
         }
     }
 }
@@ -126,11 +138,13 @@ impl ConfigBlock for Taskwarrior {
             block_config.filters
         };
 
-        let home_dir = match dirs::home_dir() {
-            Some(path) => path.into_os_string().into_string().unwrap(),
-            None => "".to_owned(),
-        };
-        let task_dir = format!("{}/.task", home_dir);
+        let data_location = block_config.data_location.clone();
+        let data_location = shellexpand::full(data_location.as_str()).map_err(|e| {
+            ConfigurationError(
+                        "custom".to_string(),
+                        format!("Failed to expand data location {}: {}", data_location, e),
+                    )
+                })?.to_string();
 
         // Spin up a thread to watch for changes to the task directory (~/.task)
         // and schedule an update if needed.
@@ -139,7 +153,7 @@ impl ConfigBlock for Taskwarrior {
             .spawn(move || {
                 let mut notify = Inotify::init().expect("Failed to start inotify");
                 notify
-                    .add_watch(task_dir, WatchMask::MODIFY)
+                    .add_watch(data_location, WatchMask::MODIFY)
                     .expect("Failed to watch task directory");
 
                 let mut buffer = [0; 1024];
