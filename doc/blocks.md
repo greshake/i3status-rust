@@ -1862,9 +1862,9 @@ Note: data_location is used to get instant notifications (changes in files insid
 
 ## Temperature
 
-Creates a block which displays the system temperature, based on lm_sensors' `sensors` output. The block has two modes: "collapsed", which uses only colour as an indicator, and "expanded", which shows the content of a `format` string.
+Creates a block which displays the system temperature, based on `libsensors` library. The block has two modes: "collapsed", which uses only colour as an indicator, and "expanded", which shows the content of a `format` string.
 
-Requires `lm_sensors` and appropriate kernel modules for your hardware.
+Requires `libsensors` and appropriate kernel modules for your hardware.
 
 The average, minimum, and maximum temperatures are computed using all sensors displayed by `sensors`, or optionally filtered by `chip` and `inputs`.
 
@@ -1895,7 +1895,7 @@ Key | Values | Required | Default
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
 `driver` | One of `"sensors"` or `"sysfs"`. | No | `"sensors"`
 `chip` | Narrows the results to a given chip name. If driver = `"sensors"` then `*` may be used as a wildcard. If driver = `"sysfs"` then narrows to chips whose '"/sys/class/hwmon/hwmon*/name"' is a substring of the given chip name or vice versa. `sysfs` can not match to the bus such as `*-isa-*` or `*-pci-*`). | No | None
-`inputs` | Narrows the results to individual inputs reported by each chip. Note for driver = `"sensors"` this only works if you have an up-to-date `sensors` command with the `-j` JSON output flag available. | No | None
+`inputs` | Narrows the results to individual inputs reported by each chip. | No | None
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average} avg, {max} max"`
 
 #### Available Format Keys

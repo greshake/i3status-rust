@@ -391,6 +391,7 @@ dependencies = [
  "nl80211",
  "notmuch",
  "regex",
+ "sensors",
  "serde",
  "serde_derive",
  "serde_json",
@@ -506,6 +507,12 @@ dependencies = [
  "pkg-config",
  "winapi",
 ]
+
+[[package]]
+name = "libsensors-sys"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1730cc7164b96de1d460c1f87c993430a3dda88ee336f0d2ea9a52097243132"
 
 [[package]]
 name = "libz-sys"
@@ -889,6 +896,16 @@ checksum = "8f05ba609c234e60bee0d547fe94a4c7e9da733d1c962cf6e59efa4cd9c8bc75"
 dependencies = [
  "lazy_static",
  "winapi",
+]
+
+[[package]]
+name = "sensors"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6993a8ec96ef1f96f4285b5fbe7f80d7c8b2674b20f0c9bbbdaab80d14f0c06e"
+dependencies = [
+ "libc",
+ "libsensors-sys",
 ]
 
 [[package]]
