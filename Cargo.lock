@@ -901,8 +901,7 @@ dependencies = [
 [[package]]
 name = "sensors"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6993a8ec96ef1f96f4285b5fbe7f80d7c8b2674b20f0c9bbbdaab80d14f0c06e"
+source = "git+https://github.com/ishitatsuyuki/sensors.git?branch=fix-chip-filter#dd84ed8c0d27e68e770cab9a808b477c78da8d14"
 dependencies = [
  "libc",
  "libsensors-sys",

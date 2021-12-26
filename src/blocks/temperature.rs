@@ -56,6 +56,7 @@ pub struct Temperature {
     maximum_info: f64,
     maximum_warning: f64,
     format: FormatTemplate,
+    // DEPRECATED
     driver: TemperatureDriver,
     chip: Option<String>,
     inputs: Option<Vec<String>>,
