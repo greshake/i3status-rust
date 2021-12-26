@@ -1,6 +1,7 @@
 use std::fs;
 use std::time::Duration;
 
+use sensors::FeatureType::SENSORS_FEATURE_TEMP;
 use sensors::Sensors;
 use sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
 
@@ -194,6 +195,9 @@ impl Block for Temperature {
 
                 for chip in chips {
                     for feat in chip {
+                        if *feat.feature_type() != SENSORS_FEATURE_TEMP {
+                            continue;
+                        }
                         if let Some(inputs) = &self.inputs {
                             let label = feat
                                 .get_label()
