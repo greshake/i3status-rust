@@ -1,5 +1,6 @@
 use std::process::Command;
-use std::time::Duration;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -14,6 +15,7 @@ use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
+use inotify::{EventMask, Inotify, WatchMask};
 
 pub struct Taskwarrior {
     id: usize,
@@ -80,6 +82,10 @@ pub struct TaskwarriorConfig {
 
     /// Format override if the count is zero
     pub format_everything_done: FormatTemplate,
+
+    /// Data directory. Defaults to ~/.task but it's configurable in taskwarrior
+    /// (data.location in .taskrc) so make it configurable here, too
+    pub data_location: String,
 }
 
 impl Default for TaskwarriorConfig {
@@ -96,6 +102,7 @@ impl Default for TaskwarriorConfig {
             format: FormatTemplate::default(),
             format_singular: FormatTemplate::default(),
             format_everything_done: FormatTemplate::default(),
+            data_location: "~/.task".to_string(),
         }
     }
 }
@@ -107,7 +114,7 @@ impl ConfigBlock for Taskwarrior {
         id: usize,
         block_config: Self::Config,
         shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
+        tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let output = TextWidget::new(id, 0, shared_config)
             .with_icon("tasks")?
@@ -122,6 +129,47 @@ impl ConfigBlock for Taskwarrior {
         } else {
             block_config.filters
         };
+
+        let data_location = block_config.data_location.clone();
+        let data_location = shellexpand::full(data_location.as_str())
+            .map_err(|e| {
+                ConfigurationError(
+                    "custom".to_string(),
+                    format!("Failed to expand data location {}: {}", data_location, e),
+                )
+            })?
+            .to_string();
+
+        // Spin up a thread to watch for changes to the task directory (~/.task)
+        // and schedule an update if needed.
+        thread::Builder::new()
+            .name("taskwarrior".into())
+            .spawn(move || {
+                let mut notify = Inotify::init().expect("Failed to start inotify");
+                notify
+                    .add_watch(data_location, WatchMask::MODIFY)
+                    .expect("Failed to watch task directory");
+
+                let mut buffer = [0; 1024];
+                loop {
+                    let mut events = notify
+                        .read_events_blocking(&mut buffer)
+                        .expect("Error while reading inotify events");
+
+                    if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
+                        tx_update_request
+                            .send(Task {
+                                id,
+                                update_time: Instant::now(),
+                            })
+                            .unwrap();
+                    }
+
+                    // Avoid update spam.
+                    thread::sleep(Duration::from_millis(250))
+                }
+            })
+            .unwrap();
 
         Ok(Taskwarrior {
             id,
