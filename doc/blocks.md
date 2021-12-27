@@ -2086,10 +2086,24 @@ resolution = true
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`icons` | Show icons for brightness and resolution. | No | `true`
-`resolution` | Shows the screens resolution. | No | `false`
+`format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | Depends on `icons` and `resolution`. With default `icons` and `resolution` the default value is `"{display} {brightness_icon} {brightness}"``
 `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | No | `5`
 `interval` | Update interval in seconds. | No | `5`
+
+Placeholder         | Value                        | Type   | Unit
+--------------------|------------------------------|--------|---------------
+`{display}`         | The name of a monitor        | Text   | -
+`{brightness}`      | The brightness of a monitor  | Number | %
+`{brightness_icon}` | A static icon                | Icon   | -
+`{resolution}`      | The resolution of a monitor  | Text   | -
+`{res_icon}`        | A static icon                | Icon   | -
+
+#### Deprecated options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`icons` | Show icons for brightness and resolution. | No | `true`
+`resolution` | Shows the screens resolution. | No | `false`
 
 #### Used Icons
 

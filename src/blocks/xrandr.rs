@@ -51,10 +51,9 @@ impl Monitor {
 pub struct Xrandr {
     id: usize,
     text: TextWidget,
+    format: FormatTemplate,
     update_interval: Duration,
     monitors: Vec<Monitor>,
-    icons: bool,
-    resolution: bool,
     step_width: u32,
     current_idx: usize,
     shared_config: SharedConfig,
@@ -64,6 +63,8 @@ pub struct Xrandr {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct XrandrConfig {
+    format: FormatTemplate,
+
     /// Update interval in seconds
     #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
@@ -81,6 +82,7 @@ pub struct XrandrConfig {
 impl Default for XrandrConfig {
     fn default() -> Self {
         Self {
+            format: Default::default(),
             interval: Duration::from_secs(5),
             icons: true,
             resolution: false,
@@ -191,24 +193,7 @@ impl Xrandr {
                 "resolution" => Value::from_string(m.resolution.clone()),
                 "res_icon" => Value::from_string(self.shared_config.get_icon("resolution")?),
             );
-
-            self.text.set_icon("xrandr")?;
-            //FIXME: allow user to set those strings
-            let format_str = if self.resolution {
-                if self.icons {
-                    "{display} {brightness_icon} {brightness} {res_icon} {resolution}"
-                } else {
-                    "{display}: {brightness} [{resolution}]"
-                }
-            } else if self.icons {
-                "{display} {brightness_icon} {brightness}"
-            } else {
-                "{display}: {brightness}"
-            };
-
-            if let Ok(fmt_template) = FormatTemplate::new(format_str, None) {
-                self.text.set_texts(fmt_template.render(&values)?);
-            }
+            self.text.set_texts(self.format.render(&values)?);
         }
 
         Ok(())
@@ -228,13 +213,25 @@ impl ConfigBlock for Xrandr {
         if step_width > 50 {
             step_width = 50;
         }
+
+        let format_str = if block_config.resolution {
+            if block_config.icons {
+                "{display} {brightness_icon} {brightness} {res_icon} {resolution}"
+            } else {
+                "{display}: {brightness} [{resolution}]"
+            }
+        } else if block_config.icons {
+            "{display} {brightness_icon} {brightness}"
+        } else {
+            "{display}: {brightness}"
+        };
+
         Ok(Xrandr {
             id,
             text: TextWidget::new(id, 0, shared_config.clone()).with_icon("xrandr")?,
+            format: block_config.format.with_default(format_str)?,
             update_interval: block_config.interval,
             current_idx: 0,
-            icons: block_config.icons,
-            resolution: block_config.resolution,
             step_width,
             monitors: Vec::new(),
             shared_config,
