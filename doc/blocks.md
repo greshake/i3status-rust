@@ -1116,13 +1116,18 @@ Key | Values | Required | Default
 `format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{mem_free;M}/{mem_total;M}({mem_total_used_percents})"`
 `format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{swap_free;M}/{swap_total;M}({swap_used_percents})"`
 `display_type` | Default view displayed on startup: "`memory`" or "`swap`". | No | `"memory"`
-`icons` | Whether the format string should be prepended with icons. | No | `true`
 `clickable` | Whether the view should switch between memory and swap on click. | No | `true`
 `warning_mem` | Percentage of memory usage, where state is set to warning. | No | `80.0`
 `warning_swap` | Percentage of swap usage, where state is set to warning. | No | `80.0`
 `critical_mem` | Percentage of memory usage, where state is set to critical. | No | `95.0`
 `critical_swap` | Percentage of swap usage, where state is set to critical. | No | `95.0`
 `interval` | The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only. | No | `5`
+
+#### Deprecated options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`icons` | Whether the format string should be prepended with icons. Deprecated - set `icons_format = ""` to disable icons. | No | `true`
 
 #### Available Format Keys
 

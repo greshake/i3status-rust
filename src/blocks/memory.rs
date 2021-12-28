@@ -128,6 +128,7 @@ pub struct MemoryConfig {
     pub display_type: Memtype,
 
     /// Whether the format string should be prepended with Icons. Options are <br/> true, false
+    /// (Deprecated)
     pub icons: bool,
 
     /// Whether the view should switch between memory and swap on click. Options are <br/> true, false
