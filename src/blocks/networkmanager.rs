@@ -278,6 +278,21 @@ impl<'a> NmConnection<'a> {
         Ok(vpn.0)
     }
 
+    fn conn_type(&self, c: &Connection) -> Result<String> {
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.Connection.Active",
+            "Type",
+        )
+        .block_error("networkmanager", "Failed to retrieve connection Type")?;
+
+        let conn_type: Variant<String> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read Type")?;
+        Ok(conn_type.0)
+    }
+
     fn id(&self, c: &Connection) -> Result<String> {
         let m = ConnectionManager::get(
             c,
@@ -468,6 +483,8 @@ pub struct NetworkManager {
     connection_format: FormatTemplate,
     interface_name_exclude_regexps: Vec<Regex>,
     interface_name_include_regexps: Vec<Regex>,
+    connection_type_include_regexps: Vec<Regex>,
+    hide_duplicate_vpn_devices: bool,
     shared_config: SharedConfig,
 }
 
@@ -491,6 +508,12 @@ pub struct NetworkManagerConfig {
 
     /// Interface name regex patterns to include.
     pub interface_name_include: Vec<String>,
+
+    /// connection type regex patterns to include.
+    pub connection_type_include: Vec<String>,
+
+    /// Whether to hide duplicate devices that appear when connected to a VPN.
+    pub hide_duplicate_vpn_devices: bool,
 }
 
 #[allow(clippy::derivable_impls)]
@@ -503,6 +526,8 @@ impl Default for NetworkManagerConfig {
             connection_format: FormatTemplate::default(),
             interface_name_exclude: Vec::new(),
             interface_name_include: Vec::new(),
+            connection_type_include: Vec::new(),
+            hide_duplicate_vpn_devices: true,
         }
     }
 }
@@ -575,9 +600,21 @@ impl ConfigBlock for NetworkManager {
                 .with_default("{icon}{ap} {ips}")?,
             connection_format: block_config.connection_format.with_default("{devices}")?,
             interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
-                .block_error("networkmanager", "failed to parse exclude patterns")?,
+                .block_error(
+                    "networkmanager",
+                    "failed to parse device name exclude patterns",
+                )?,
             interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
-                .block_error("networkmanager", "failed to parse include patterns")?,
+                .block_error(
+                    "networkmanager",
+                    "failed to parse device name include patterns",
+                )?,
+            connection_type_include_regexps: compile_regexps(block_config.connection_type_include)
+                .block_error(
+                    "networkmanager",
+                    "failed to parse device type include patterns",
+                )?,
+            hide_duplicate_vpn_devices: block_config.hide_duplicate_vpn_devices,
             shared_config,
         })
     }
@@ -643,7 +680,23 @@ impl Block for NetworkManager {
                     .into_iter()
                     .filter_map(|conn| {
                         // Hide vpn connection(s) since its devices are the devices of its parent connection
-                        if let Ok(true) = conn.vpn(&self.dbus_conn) {
+                        if self.hide_duplicate_vpn_devices {
+                            if let Ok(true) = conn.vpn(&self.dbus_conn) {
+                                return None;
+                            };
+                        };
+
+                        // Allow filtering by connection type
+                        let conn_type = match conn.conn_type(&self.dbus_conn) {
+                            Ok(v) => v,
+                            Err(_) => "".to_string(),
+                        };
+                        if !self.connection_type_include_regexps.is_empty()
+                            && !self
+                                .connection_type_include_regexps
+                                .iter()
+                                .any(|regex| regex.is_match(&conn_type))
+                        {
                             return None;
                         };
 
