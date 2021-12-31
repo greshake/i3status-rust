@@ -67,8 +67,8 @@ pub struct ExternalIP {
 pub struct ExternalIPConfig {
     /// External IP formatter.
     pub format: FormatTemplate,
-    pub refresh_interval_success: u64,
-    pub refresh_interval_failure: u64,
+    pub interval: u64,
+    pub error_interval: u64,
     pub with_network_manager: bool,
 }
 
@@ -76,8 +76,8 @@ impl Default for ExternalIPConfig {
     fn default() -> Self {
         Self {
             format: FormatTemplate::default(),
-            refresh_interval_success: 300,
-            refresh_interval_failure: 15,
+            interval: 300,
+            error_interval: 15,
             with_network_manager: true,
         }
     }
@@ -142,8 +142,8 @@ impl ConfigBlock for ExternalIP {
             id,
             output: TextWidget::new(id, 0, shared_config),
             format: block_config.format.with_default("{ip} {country_flag}")?,
-            refresh_interval_success: block_config.refresh_interval_success,
-            refresh_interval_failure: block_config.refresh_interval_failure,
+            refresh_interval_success: block_config.interval,
+            refresh_interval_failure: block_config.error_interval,
         })
     }
 }
