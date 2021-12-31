@@ -486,10 +486,10 @@ pub struct NetworkManagerConfig {
     /// Connection formatter.
     pub connection_format: FormatTemplate,
 
-    /// Interface name regex patterns to include.
+    /// Interface name regex patterns to ignore.
     pub interface_name_exclude: Vec<String>,
 
-    /// Interface name regex patterns to ignore.
+    /// Interface name regex patterns to include.
     pub interface_name_include: Vec<String>,
 }
 
