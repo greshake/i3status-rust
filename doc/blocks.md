@@ -206,7 +206,7 @@ Creates a block which displays the current battery state (Full, Charging or Disc
 
 The battery block collapses when the battery is fully charged -- or, in the case of some Thinkpad batteries, when it reports "Not charging".
 
-The battery block supports reading charging and status information from either `sysfs` or the [UPower](https://upower.freedesktop.org/) D-Bus interface. These "drivers" have largely identical features, but UPower does include support for `device = "DisplayDevice"`, which treats all physical power sources as a single logical battery. This is particularly useful if your system has multiple batteries.
+The battery block supports reading charging and status information from either `sysfs`, [apcaccess](http://www.apcaccess.org/manual/manual.html#nis-server-client-configuration-using-the-net-driver), or the [UPower](https://upower.freedesktop.org/) D-Bus interface. These "drivers" have largely identical features, but UPower does include support for `device = "DisplayDevice"`, which treats all physical power sources as a single logical battery. This is particularly useful if your system has multiple batteries.
 
 #### Examples
 
@@ -241,9 +241,9 @@ format = "{percentage} {time}"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | sysfs: the first device starting with `"BAT"` in `/sys/class/power_supply`, usually "BAT0". upower: first matching device returned by the `EnumerateDevices` D-Bus method`
-`driver` | One of `"sysfs"` or `"upower"`. | No | `"sysfs"`
-`interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
+`device` | `sysfs`: The device in `/sys/class/power_supply/` to read from.<br />`apcaccess`: IPv4Address/hostname:port<br/>`UPower`: this can be `"DisplayDevice"` or any of the other paths found by running `upower --enumerate`. | No | `sysfs`: the first device starting with `"BAT"` in `/sys/class/power_supply`, usually "BAT0".<br />`apcaccess`: "localhost:3551"<br />`upower`: first matching device returned by the `EnumerateDevices` D-Bus method`
+`driver` | One of `"sysfs"`, `"apcaccess"`, or `"upower"`. | No | `"sysfs"`
+`interval` | Update interval, in seconds. Only relevant for `driver = "sysfs" \|\| "apcaccess"`. | No | `10`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}"`
 `full_format` | Same as `format` but for when the battery is full. | No | `"{percentage}"`
 `missing_format` | Same as `format` but for when the specified battery is missing. | No | `"{percentage}"`

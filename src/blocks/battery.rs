@@ -4,7 +4,9 @@
 //! display the status, capacity, and time remaining for (dis)charge for an
 //! internal power supply.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -13,6 +15,7 @@ use dbus::arg::Array;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::Properties;
 use serde_derive::Deserialize;
 
+use crate::apcaccess::ApcAccess;
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
@@ -50,7 +53,7 @@ pub trait BatteryDevice {
     /// complete.
     fn time_remaining(&self) -> Result<u64>;
 
-    /// Query the current power consumption, in uW.
+    /// Query the current power consumption, in μW.
     fn power_consumption(&self) -> Result<u64>;
 }
 
@@ -306,6 +309,125 @@ impl BatteryDevice for PowerSupplyDevice {
 }
 
 /// Represents a battery known to UPower.
+pub struct ApcUpsDevice {
+    con: ApcAccess,
+    stat: Option<String>,
+    charge_percent: f64,
+    time_left: f64,
+    nom_power: f64,
+    load_percent: f64,
+}
+
+impl ApcUpsDevice {
+    pub fn from_device(device: &str) -> Result<ApcUpsDevice> {
+        let mut device_addr = device;
+        if !device_addr.contains(':') {
+            device_addr = "localhost:3551";
+        }
+        Ok(ApcUpsDevice {
+            con: ApcAccess::new(device_addr, 1).block_error(
+                "battery",
+                &format!("Could not create a apcaccess connection to {}", device_addr),
+            )?,
+            stat: None,
+            charge_percent: 0.0,
+            time_left: 0.0,
+            nom_power: 0.0,
+            load_percent: 0.0,
+        })
+    }
+}
+
+impl BatteryDevice for ApcUpsDevice {
+    fn is_available(&self) -> bool {
+        self.con.is_available()
+    }
+
+    fn refresh_device_info(&mut self) -> Result<()> {
+        fn prepare_value<T: FromStr>(
+            status_data: &HashMap<String, String>,
+            stat_name: &str,
+            required_unit: &str,
+            default_value: T,
+        ) -> Result<T> {
+            if let Some(charge_percent) = status_data.get(stat_name) {
+                let (value, unit) = charge_percent
+                    .split_once(' ')
+                    .block_error("battery", &format!("could not split {}", stat_name))
+                    .unwrap();
+                if unit == required_unit {
+                    return Ok(str::parse::<T>(value)
+                        .block_error(
+                            "battery",
+                            &format!("could not parse {} to float", stat_name),
+                        )
+                        .unwrap());
+                } else {
+                    return Err(BlockError(
+                        "battery".to_string(),
+                        format!(
+                            "Expected unit for {} are {}, but got {}",
+                            stat_name, required_unit, unit
+                        ),
+                    ));
+                }
+            }
+            Ok(default_value)
+        }
+
+        let status_data = self.con.get_status().unwrap_or_default();
+
+        self.stat = status_data.get("STATUS").map(String::from);
+
+        // NOTE: Percentages are 0.0-100.0, not 0.0-1.0
+        self.charge_percent = prepare_value(&status_data, "BCHARGE", "Percent", 0.0)?;
+        self.time_left = prepare_value(&status_data, "TIMELEFT", "Minutes", 0.0)?;
+        self.nom_power = prepare_value(&status_data, "NOMPOWER", "Watts", 0.0)?;
+        self.load_percent = prepare_value(&status_data, "LOADPCT", "Percent", 0.0)?;
+
+        Ok(())
+    }
+
+    fn status(&self) -> Result<String> {
+        let charge_percent = self.charge_percent;
+        if let Some(status) = &self.stat {
+            if status.contains("ONBATT") {
+                if charge_percent == 0.0 {
+                    return Ok("Empty".to_string());
+                } else {
+                    return Ok("Discharging".to_string());
+                }
+            } else if status.contains("ONLINE") {
+                if charge_percent >= 100.0 {
+                    return Ok("Full".to_string());
+                } else {
+                    return Ok("Charging".to_string());
+                }
+            }
+        }
+        Ok("Unknown".to_string())
+    }
+
+    fn capacity(&self) -> Result<u64> {
+        let capacity = self.charge_percent;
+        if capacity > 100.0 {
+            Ok(100)
+        } else {
+            Ok(capacity as u64)
+        }
+    }
+
+    fn time_remaining(&self) -> Result<u64> {
+        Ok(self.time_left as u64)
+    }
+
+    fn power_consumption(&self) -> Result<u64> {
+        //Watts * Percent (0.0-100.0) / 100 * 1_000_000.0 = μW
+        //Watts * Percent (0.0-100.0) * 10_000.0 = μW
+        Ok((self.nom_power * self.load_percent * 10_000.0) as u64)
+    }
+}
+
 pub struct UpowerDevice {
     device_path: String,
     con: dbus::ffidisp::Connection,
@@ -498,6 +620,7 @@ pub struct Battery {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum BatteryDriver {
+    ApcAccess,
     Sysfs,
     Upower,
 }
@@ -531,10 +654,10 @@ pub struct BatteryConfig {
     /// placeholders: {percentage}, {bar}, {time} and {power}
     pub missing_format: FormatTemplate,
 
-    /// The "driver" to use for powering the block. One of "sysfs" or "upower".
+    /// The "driver" to use for powering the block. One of "apcaccess", "sysfs", or "upower".
     pub driver: BatteryDriver,
 
-    /// The threshold above which the battery is considered full (no time/precentage shown)
+    /// The threshold above which the battery is considered full (no time/percentage shown)
     pub full_threshold: u64,
 
     /// The threshold above which the remaining capacity is shown as good
@@ -549,7 +672,7 @@ pub struct BatteryConfig {
     /// The threshold below which the remaining capacity is shown as critical
     pub critical: u64,
 
-    /// If the battery device cannot be found, do not fail and show the block anyway (sysfs only).
+    /// If the battery device cannot be found, do not fail and show the block anyway.
     pub allow_missing: bool,
 
     /// If the battery device cannot be found, completely hide this block.
@@ -602,6 +725,7 @@ impl ConfigBlock for Battery {
         update_request: Sender<Task>,
     ) -> Result<Self> {
         let device: Box<dyn BatteryDevice> = match block_config.driver {
+            BatteryDriver::ApcAccess => Box::new(ApcUpsDevice::from_device(&block_config.device)?),
             BatteryDriver::Upower => {
                 let out = UpowerDevice::from_device(&block_config.device)?;
                 out.monitor(id, update_request);
@@ -663,7 +787,9 @@ impl Block for Battery {
             self.output.set_state(State::Warning);
 
             return match self.driver {
-                BatteryDriver::Sysfs => Ok(Some(Update::Every(self.update_interval))),
+                BatteryDriver::ApcAccess | BatteryDriver::Sysfs => {
+                    Ok(Some(Update::Every(self.update_interval)))
+                }
                 BatteryDriver::Upower => Ok(None),
             };
         }
@@ -739,7 +865,9 @@ impl Block for Battery {
         }
 
         match self.driver {
-            BatteryDriver::Sysfs => Ok(Some(self.update_interval.into())),
+            BatteryDriver::ApcAccess | BatteryDriver::Sysfs => {
+                Ok(Some(self.update_interval.into()))
+            }
             BatteryDriver::Upower => Ok(None),
         }
     }

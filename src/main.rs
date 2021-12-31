@@ -4,6 +4,7 @@ mod de;
 mod util;
 #[macro_use]
 mod formatting;
+mod apcaccess;
 pub mod blocks;
 mod config;
 mod errors;
