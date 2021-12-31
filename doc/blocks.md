@@ -1330,8 +1330,8 @@ Key | Values | Required | Default
 `ap_format` | Access point string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{ssid}"`
 `device_format` | Device string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{icon}{ap} {ips}"`
 `connection_format` | Connection string formatter. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{devices}"`
-`interface_name_exclude` | A list of regex patterns for device interface names to ignore. | No | ""
-`interface_name_include` | A list of regex patterns for device interface names to include (only interfaces that match at least one are shown). | No | ""
+`interface_name_exclude` | A list of regex patterns for device interface names to ignore. | No | `""`
+`interface_name_include` | A list of regex patterns for device interface names to include (only interfaces that match at least one are shown). | No | `""`
 
 #### AP format string
 
