@@ -28,7 +28,12 @@ impl ApcAccess {
     }
 
     pub fn is_available(&self) -> bool {
-        self.connect().is_ok()
+        if let Ok(status_data) = self.get_status() {
+            if let Some(status) = status_data.get("STATUS") {
+                return !status.contains("COMMLOST");
+            }
+        }
+        false
     }
 
     pub fn get_status(&self) -> Result<HashMap<String, String>> {
