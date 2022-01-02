@@ -959,6 +959,16 @@ driver = "setxkbmap"
 interval = 15
 ```
 
+Use the [`xkb-switch`](https://github.com/grwlf/xkb-switch) X11 tool to switch to next `setxkbmap` layout on click:
+
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "setxkbmap"
+on_click = "xkb-switch -n"
+interval = 1
+```
+
 Listen to D-Bus for changes:
 
 ```toml
