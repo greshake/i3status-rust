@@ -435,9 +435,7 @@ fn xkb_switch_show_layout_and_variant() -> Result<(String, Option<String>)> {
             String::from_utf8(raw.stdout).block_error("keyboard_layout", "Non-UTF8 input.")
         })
         .and_then(|layout_and_variant| {
-            let mut components = layout_and_variant
-                .trim_end()
-                .split("(");
+            let mut components = layout_and_variant.trim_end().split('(');
 
             let layout = components
                 .next()
@@ -448,10 +446,7 @@ fn xkb_switch_show_layout_and_variant() -> Result<(String, Option<String>)> {
             let variant = components
                 .last()
                 // Remove the trailing parenthesis ")"
-                .map(|variant_str| variant_str
-                     .split_at(variant_str.len() - 1)
-                     .0
-                     .to_string());
+                .map(|variant_str| variant_str.split_at(variant_str.len() - 1).0.to_string());
 
             Ok((layout, variant))
         })
@@ -459,13 +454,12 @@ fn xkb_switch_show_layout_and_variant() -> Result<(String, Option<String>)> {
 
 impl KeyboardLayoutMonitor for XkbSwitch {
     fn keyboard_layout(&self) -> Result<String> {
-        xkb_switch_show_layout_and_variant()
-            .map(|layout_and_variant| layout_and_variant.0)
+        xkb_switch_show_layout_and_variant().map(|layout_and_variant| layout_and_variant.0)
     }
 
     fn keyboard_variant(&self) -> Result<String> {
         xkb_switch_show_layout_and_variant()
-            .map(|layout_and_variant| layout_and_variant.1.unwrap_or("".into()))
+            .map(|layout_and_variant| layout_and_variant.1.unwrap_or_else(|| "".into()))
     }
 
     fn must_poll(&self) -> bool {
