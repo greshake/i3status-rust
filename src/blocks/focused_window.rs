@@ -4,8 +4,7 @@ use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use swayipc::reply::{Event, Node, WindowChange, WorkspaceChange};
-use swayipc::{Connection, EventType};
+use swayipc::{Connection, Event, EventType, Node, WindowChange, WorkspaceChange};
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;

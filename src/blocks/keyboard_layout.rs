@@ -11,9 +11,7 @@ use dbus::{
     Message,
 };
 use serde_derive::Deserialize;
-use swayipc::reply::Event;
-use swayipc::reply::InputChange;
-use swayipc::{Connection, EventType};
+use swayipc::{Connection, Event, EventType, InputChange};
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
