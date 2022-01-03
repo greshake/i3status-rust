@@ -51,6 +51,7 @@ pub struct MaildirConfig {
     pub threshold_warning: usize,
     pub threshold_critical: usize,
     pub display_type: MailType,
+    // DEPRECATED
     pub icon: bool,
 }
 

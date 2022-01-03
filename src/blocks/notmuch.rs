@@ -39,6 +39,7 @@ pub struct NotmuchConfig {
     pub threshold_info: u32,
     pub threshold_good: u32,
     pub name: Option<String>,
+    // DEPRECATED
     pub no_icon: bool,
 }
 

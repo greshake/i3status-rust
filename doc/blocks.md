@@ -1088,7 +1088,7 @@ Key | Values | Required | Default
 `threshold_critical` | Number of unread mails where state is set to critical. | No | `10`
 `interval` | Update interval, in seconds. | No | `5`
 `display_type` | Which part of the maildir to count: `"new"`, `"cur"`, or `"all"`. | No | `"new"`
-`icon` | Whether or not to prepend the output with the mail icon. | No | `true`
+`icon` | Whether or not to prepend the output with the mail icon. **Deprecated**: set `icons_format=""` to hide the icon. | No | `true`
 
 #### Icons Used
 
@@ -1436,7 +1436,7 @@ Key | Values | Required | Default
 `threshold_good` | Mail count that triggers `good` state. | No | `99999`
 `threshold_info` | Mail count that triggers `info` state. | No | `99999`
 `name` | Label to show before the mail count. | No | `""`
-`no_icon` | Disable the mail icon. | No | `false`
+`no_icon` | Disable the mail icon. **Deprecated**: set `icons_format=""` to disable hide the icon. | No | `false`
 `interval` | Update interval in seconds. | No | `10`
 
 #### Icons Used
