@@ -22,7 +22,7 @@ use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
 use crate::util::{battery_level_to_icon, read_file};
 use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, Spacing, State};
+use crate::widgets::{I3BarWidget, State};
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {
@@ -700,7 +700,6 @@ impl Block for Battery {
             self.output.set_icon("bat_full")?;
             self.output.set_texts(self.full_format.render(&values)?);
             self.output.set_state(State::Good);
-            self.output.set_spacing(Spacing::Hidden);
         } else {
             self.output.set_texts(self.format.render(&values)?);
 
@@ -735,7 +734,6 @@ impl Block for Battery {
                 "Charging" => "bat_charging",
                 _ => battery_level_to_icon(capacity, self.fallback_icons),
             })?;
-            self.output.set_spacing(Spacing::Normal);
         }
 
         match self.driver {
