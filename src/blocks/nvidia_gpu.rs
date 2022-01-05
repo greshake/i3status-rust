@@ -304,11 +304,6 @@ impl Block for NvidiaGpu {
                 self.name_widget.set_spacing(Spacing::Inline);
             }
             NameWidgetMode::ShowLabel => {
-                if self.label.is_empty() {
-                    self.name_widget.set_spacing(Spacing::Hidden);
-                } else {
-                    self.name_widget.set_spacing(Spacing::Inline);
-                }
                 self.name_widget.set_text(self.label.to_string());
             }
         }

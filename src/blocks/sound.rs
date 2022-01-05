@@ -40,7 +40,7 @@ use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, Spacing, State};
+use crate::widgets::{I3BarWidget, State};
 
 trait SoundDevice {
     fn volume(&self) -> u32;
@@ -964,7 +964,6 @@ impl Block for Sound {
         if self.device.muted() {
             self.text.set_icon(&self.icon(0, headphones))?;
             if self.show_volume_when_muted {
-                self.text.set_spacing(Spacing::Normal);
                 self.text.set_texts(texts);
             } else {
                 self.text.set_text(String::new());
@@ -972,7 +971,6 @@ impl Block for Sound {
             self.text.set_state(State::Warning);
         } else {
             self.text.set_icon(&self.icon(volume, headphones))?;
-            self.text.set_spacing(Spacing::Normal);
             self.text.set_state(State::Idle);
             self.text.set_texts(texts);
         }
