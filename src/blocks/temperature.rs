@@ -390,10 +390,8 @@ impl Block for Temperature {
             self.collapsed = !self.collapsed;
             if self.collapsed {
                 self.text.set_text(String::new());
-                self.text.set_spacing(Spacing::Hidden);
             } else {
                 self.text.set_texts(self.output.clone());
-                self.text.set_spacing(Spacing::Normal);
             }
         }
 
