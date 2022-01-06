@@ -7,7 +7,6 @@
 //! brightness levels using `xrandr`, see the
 //! [`Xrandr`](../xrandr/struct.Xrandr.html) block.
 
-use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -19,13 +18,16 @@ use inotify::{EventMask, Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection, Scrolling};
+use crate::config::SharedConfig;
+use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
-use crate::widget::I3BarWidget;
-use crate::widgets::button::ButtonWidget;
+use crate::subprocess::spawn_child_async;
+use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 /// Read a brightness value from the given path.
 fn read_brightness(device_file: &Path) -> Result<u64> {
@@ -52,11 +54,7 @@ pub struct BacklitDevice {
 
 /// Clamp scale root to a safe range. Useful values are 1.0 to 3.0.
 fn clamp_root_scaling(root_scaling: f64) -> f64 {
-    if 0.1 < root_scaling && root_scaling < 10.0 {
-        root_scaling
-    } else {
-        1.0
-    }
+    root_scaling.clamp(0.1, 10.0)
 }
 
 impl BacklitDevice {
@@ -67,18 +65,11 @@ impl BacklitDevice {
             .read_dir() // Iterate over entries in the directory.
             .block_error("backlight", "Failed to read backlight device directory")?;
 
-        let first_device = match devices.take(1).next() {
-            None => Err(BlockError(
-                "backlight".to_string(),
-                "No backlit devices found".to_string(),
-            )),
-            Some(device) => device.map_err(|_| {
-                BlockError(
-                    "backlight".to_string(),
-                    "Failed to read default device file".to_string(),
-                )
-            }),
-        }?;
+        let first_device = devices
+            .take(1)
+            .next()
+            .block_error("backlight", "No backlit devices found")?
+            .block_error("backlight", "Failed to read default device file")?;
 
         let max_brightness = read_brightness(&first_device.path().join("max_brightness"))?;
 
@@ -188,24 +179,40 @@ impl BacklitDevice {
 
 /// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
-    id: String,
-    output: ButtonWidget,
+    id: usize,
+    output: TextWidget,
     device: BacklitDevice,
     step_width: u64,
+    minimum: u64,
+    maximum: u64,
+    cycle: Vec<u64>,
+    cycle_index: usize,
     scrolling: Scrolling,
+    invert_icons: bool,
+    on_click: Option<String>,
+    format: FormatTemplate,
 }
 
 /// Configuration for the [`Backlight`](./struct.Backlight.html) block.
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct BacklightConfig {
     /// The backlight device in `/sys/class/backlight/` to read brightness from.
-    #[serde(default = "BacklightConfig::default_device")]
     pub device: Option<String>,
 
     /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
-    #[serde(default = "BacklightConfig::default_step_width")]
     pub step_width: u64,
+
+    /// the min and max brightness limit the range over which the brightness can be in/decreased
+    pub minimum: u64,
+    pub maximum: u64,
+
+    /// when the block is clicked, brightness cycles through all of these
+    pub cycle: Option<Vec<u64>>,
+
+    /// Format string for displaying backlight information.
+    /// placeholders: {brightness}
+    pub format: FormatTemplate,
 
     /// Scaling exponent reciprocal (ie. root). Some devices expose raw values
     /// that are best handled with nonlinear scaling. The human perception of
@@ -214,28 +221,61 @@ pub struct BacklightConfig {
     /// More information: <https://en.wikipedia.org/wiki/Lightness>
     ///
     /// For devices with few discrete steps this should be 1.0 (linear).
-    #[serde(default = "BacklightConfig::default_root_scaling")]
     pub root_scaling: f64,
 
-    #[serde(default = "BacklightConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    pub invert_icons: bool,
+
+    pub on_click: Option<String>,
 }
 
-impl BacklightConfig {
-    fn default_device() -> Option<String> {
-        None
+impl Default for BacklightConfig {
+    fn default() -> Self {
+        Self {
+            device: None,
+            step_width: 5,
+            root_scaling: 1f64,
+            invert_icons: false,
+            on_click: None,
+            format: FormatTemplate::default(),
+            minimum: 5,
+            maximum: 100,
+            cycle: None,
+        }
     }
+}
 
-    fn default_step_width() -> u64 {
-        5
-    }
-
-    fn default_root_scaling() -> f64 {
-        1f64
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Backlight {
+    fn advance_cycle(&mut self) -> Result<()> {
+        if self.cycle.is_empty() {
+            return Ok(());
+        }
+        let current = self.device.brightness()?;
+        let nearest = if self.cycle[self.cycle_index] == current {
+            self.cycle_index // shortcut
+        } else {
+            let current = current as i64;
+            // by default, restart cycle at nearest value
+            let key = |idx: usize, val: i64| {
+                // distance to current brightness is the first criterion
+                let distance = (val - current).abs();
+                // offset makes it so that in case of an equality for distance,
+                // the winning index is the first one after cycle_index (circularly)
+                let offset = if idx >= self.cycle_index {
+                    0
+                } else {
+                    self.cycle.len()
+                };
+                (distance, idx + offset)
+            };
+            self.cycle
+                .iter()
+                .enumerate()
+                .min_by_key(|&(idx, &val)| key(idx, val as i64))
+                .unwrap() // cycle has been checked non-empty
+                .0
+        };
+        self.cycle_index = (nearest + 1) % self.cycle.len();
+        self.device.set_brightness(self.cycle[self.cycle_index])
     }
 }
 
@@ -243,25 +283,36 @@ impl ConfigBlock for Backlight {
     type Config = BacklightConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let device = match block_config.device {
             Some(path) => BacklitDevice::from_device(path, block_config.root_scaling),
             None => BacklitDevice::default(block_config.root_scaling),
         }?;
-
-        let id = pseudo_uuid();
         let brightness_file = device.brightness_file();
 
-        let scrolling = config.scrolling;
-        let backlight = Backlight {
-            output: ButtonWidget::new(config, &id),
-            id: id.clone(),
+        let (minimum, maximum) = if block_config.minimum <= block_config.maximum {
+            (block_config.minimum, block_config.maximum)
+        } else {
+            (block_config.maximum, block_config.minimum)
+        };
+
+        let backlight = Self {
+            id,
             device,
             step_width: block_config.step_width,
-            scrolling,
+            minimum,
+            maximum,
+            cycle: block_config.cycle.unwrap_or_else(|| vec![minimum, maximum]),
+            cycle_index: 0,
+            on_click: block_config.on_click,
+            scrolling: shared_config.scrolling,
+            output: TextWidget::new(id, 0, shared_config),
+            invert_icons: block_config.invert_icons,
+            format: block_config.format.with_default("{brightness}")?,
         };
 
         // Spin up a thread to watch for changes to the brightness file for the
@@ -283,7 +334,7 @@ impl ConfigBlock for Backlight {
                     if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
                         tx_update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -297,19 +348,41 @@ impl ConfigBlock for Backlight {
 
         Ok(backlight)
     }
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        Some(&mut self.on_click)
+    }
 }
 
 impl Block for Backlight {
     fn update(&mut self) -> Result<Option<Update>> {
-        let brightness = self.device.brightness()?;
-        self.output.set_text(format!("{}%", brightness));
-        match brightness {
-            0..=19 => self.output.set_icon("backlight_empty"),
-            20..=39 => self.output.set_icon("backlight_partial1"),
-            40..=59 => self.output.set_icon("backlight_partial2"),
-            60..=79 => self.output.set_icon("backlight_partial3"),
-            _ => self.output.set_icon("backlight_full"),
+        let mut brightness = self.device.brightness()?;
+        let values = map!(
+            "brightness" => Value::from_integer(brightness as i64).percents(),
+        );
+        let texts = self.format.render(&values)?;
+        self.output.set_texts(texts);
+        if self.invert_icons {
+            brightness = 100 - brightness;
         }
+        self.output.set_icon(match brightness {
+            0..=6 => "backlight_empty",
+            7..=13 => "backlight_1",
+            14..=20 => "backlight_2",
+            21..=26 => "backlight_3",
+            27..=33 => "backlight_4",
+            34..=40 => "backlight_5",
+            41..=46 => "backlight_6",
+            47..=53 => "backlight_7",
+            54..=60 => "backlight_8",
+            61..=67 => "backlight_9",
+            68..=73 => "backlight_10",
+            74..=80 => "backlight_11",
+            81..=87 => "backlight_12",
+            88..=93 => "backlight_13",
+            _ => "backlight_full",
+        })?;
+
         Ok(None)
     }
 
@@ -318,30 +391,37 @@ impl Block for Backlight {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            if name.as_str() == self.id {
-                let brightness = self.device.brightness()?;
-                use LogicalDirection::*;
-                match self.scrolling.to_logical_direction(event.button) {
-                    Some(Up) => {
-                        if brightness < 100 {
-                            self.device.set_brightness(brightness + self.step_width)?;
-                        }
-                    }
-                    Some(Down) => {
-                        if brightness > self.step_width {
-                            self.device.set_brightness(brightness - self.step_width)?;
-                        }
-                    }
-                    None => {}
+        match event.button {
+            MouseButton::Right => self.advance_cycle()?,
+            MouseButton::Left => {
+                if let Some(ref cmd) = self.on_click {
+                    spawn_child_async("sh", &["-c", cmd])
+                        .block_error("backlight", "could not spawn child")?
+                } else {
+                    self.advance_cycle()?
+                }
+            }
+            _ => {
+                let brightness = self.device.brightness()? as i64;
+                let step_width = self.step_width as i64;
+                if let Some(direction) = self.scrolling.to_logical_direction(event.button) {
+                    use LogicalDirection::*;
+                    let sign = match direction {
+                        Up => 1,
+                        Down => -1,
+                    };
+                    self.device.set_brightness(
+                        (brightness + sign * step_width)
+                            .clamp(self.minimum as i64, self.maximum as i64)
+                            as u64,
+                    )?
                 }
             }
         }
-
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

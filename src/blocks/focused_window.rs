@@ -1,20 +1,20 @@
-use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
-use swayipc::reply::{Event, Node, WindowChange, WorkspaceChange};
-use swayipc::{Connection, EventType};
+use swayipc::{Connection, Event, EventType, Node, WindowChange, WorkspaceChange};
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
-use crate::widget::I3BarWidget;
+use crate::util::escape_pango_text;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -25,50 +25,47 @@ pub enum MarksType {
 }
 
 pub struct FocusedWindow {
+    id: usize,
     text: TextWidget,
     title: Arc<Mutex<String>>,
     marks: Arc<Mutex<String>>,
     show_marks: MarksType,
+    format: FormatTemplate,
     max_width: usize,
-    id: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, default)]
 pub struct FocusedWindowConfig {
     /// Truncates titles if longer than max-width
-    #[serde(default = "FocusedWindowConfig::default_max_width")]
     pub max_width: usize,
 
     /// Show marks in place of title (if exist)
-    #[serde(default = "FocusedWindowConfig::default_show_marks")]
     pub show_marks: MarksType,
 
-    #[serde(default = "FocusedWindowConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    /// Format override
+    pub format: FormatTemplate,
 }
 
-impl FocusedWindowConfig {
-    fn default_max_width() -> usize {
-        21
-    }
-
-    fn default_show_marks() -> MarksType {
-        MarksType::None
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for FocusedWindowConfig {
+    fn default() -> Self {
+        Self {
+            max_width: 21,
+            show_marks: MarksType::None,
+            format: FormatTemplate::default(),
+        }
     }
 }
 
 impl ConfigBlock for FocusedWindow {
     type Config = FocusedWindowConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let id = pseudo_uuid();
-        let id_clone = id.clone();
-
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        tx: Sender<Task>,
+    ) -> Result<Self> {
         let title = Arc::new(Mutex::new(String::from("")));
         let marks = Arc::new(Mutex::new(String::from("")));
         let marks_type = block_config.show_marks;
@@ -177,7 +174,7 @@ impl ConfigBlock for FocusedWindow {
 
                     if updated {
                         tx.send(Task {
-                            id: id_clone.clone(),
+                            id,
                             update_time: Instant::now(),
                         })
                         .expect("could not communicate with channel in `window` block");
@@ -186,11 +183,13 @@ impl ConfigBlock for FocusedWindow {
             })
             .expect("failed to start watching thread for `window` block");
 
+        let text = TextWidget::new(id, 0, shared_config);
         Ok(FocusedWindow {
             id,
-            text: TextWidget::new(config),
+            text,
             max_width: block_config.max_width,
             show_marks: block_config.show_marks,
+            format: block_config.format.with_default("{combo}")?,
             title,
             marks,
         })
@@ -212,16 +211,22 @@ impl Block for FocusedWindow {
         .clone();
         title_string = title_string.chars().take(self.max_width).collect();
         let out_str = match self.show_marks {
-            MarksType::None => title_string,
+            MarksType::None => &title_string,
             _ => {
                 if !marks_string.is_empty() {
-                    marks_string
+                    &marks_string
                 } else {
-                    title_string
+                    &title_string
                 }
             }
         };
-        self.text.set_text(out_str);
+        let values = map!(
+            "combo" => Value::from_string(escape_pango_text(out_str)),
+            "marks" => Value::from_string(escape_pango_text(&marks_string)),
+            "title" => Value::from_string(escape_pango_text(&title_string))
+        );
+
+        self.text.set_texts(self.format.render(&values)?);
 
         Ok(None)
     }
@@ -239,7 +244,7 @@ impl Block for FocusedWindow {
         }
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

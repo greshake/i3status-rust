@@ -1,6 +1,6 @@
 use crate::blocks::Update;
 use std::cmp;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::BinaryHeap;
 use std::fmt;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -10,7 +10,7 @@ use crate::errors::*;
 
 #[derive(Debug, Clone)]
 pub struct Task {
-    pub id: String,
+    pub id: usize,
     pub update_time: Instant,
 }
 
@@ -41,7 +41,7 @@ impl cmp::Ord for Task {
 }
 
 pub struct UpdateScheduler {
-    schedule: BinaryHeap<Task>,
+    pub schedule: BinaryHeap<Task>,
 }
 
 impl UpdateScheduler {
@@ -51,7 +51,7 @@ impl UpdateScheduler {
         let now = Instant::now();
         for block in blocks.iter() {
             schedule.push(Task {
-                id: String::from(block.id()),
+                id: block.id(),
                 update_time: now,
             });
         }
@@ -74,10 +74,7 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(
-        &mut self,
-        block_map: &mut HashMap<String, &mut dyn Block>,
-    ) -> Result<()> {
+    pub fn do_scheduled_updates(&mut self, blocks: &mut Vec<Box<dyn Block>>) -> Result<()> {
         let t = self
             .schedule
             .pop()
@@ -107,8 +104,8 @@ impl UpdateScheduler {
         let now = Instant::now();
 
         for task in tasks_next {
-            if let Some(dur) = block_map
-                .get_mut(&task.id)
+            if let Some(dur) = blocks
+                .get_mut(task.id as usize)
                 .internal_error("scheduler", "could not get required block")?
                 .update()?
             {

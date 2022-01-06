@@ -1,50 +1,57 @@
-use std::collections::BTreeMap;
-use std::process::Command;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::process::{Child, ChildStdout, Command, Stdio};
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection, Scrolling};
+use crate::config::SharedConfig;
+use crate::config::{LogicalDirection, Scrolling};
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::util::pseudo_uuid;
-use crate::widget::{I3BarWidget, Spacing, State};
-use crate::widgets::button::ButtonWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, Spacing, State};
 
 pub struct NvidiaGpu {
-    id: String,
-    id_fans: String,
-    id_memory: String,
+    id: usize,
+    id_fans: usize,
+    id_memory: usize,
     update_interval: Duration,
 
     gpu_enabled: bool,
     gpu_id: u64,
 
-    name_widget: ButtonWidget,
+    name_widget: TextWidget,
     name_widget_mode: NameWidgetMode,
     label: String,
 
-    show_memory: Option<ButtonWidget>,
+    show_memory: Option<TextWidget>,
     memory_widget_mode: MemoryWidgetMode,
 
     show_utilization: Option<TextWidget>,
     show_temperature: Option<TextWidget>,
 
-    show_fan: Option<ButtonWidget>,
+    show_fan: Option<TextWidget>,
     fan_speed: u64,
     fan_speed_controlled: bool,
     scrolling: Scrolling,
 
     show_clocks: Option<TextWidget>,
+
+    show_power_draw: Option<TextWidget>,
+
     maximum_idle: u64,
     maximum_good: u64,
     maximum_info: u64,
     maximum_warning: u64,
+
+    handle: Child,
+    reader: BufReader<ChildStdout>,
 }
 
 enum MemoryWidgetMode {
@@ -57,115 +64,68 @@ enum NameWidgetMode {
     ShowLabel,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+// TODO add `format` option
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct NvidiaGpuConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "NvidiaGpuConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Label to show instead of the default GPU name from `nvidia-smi`
-    #[serde(default = "NvidiaGpuConfig::default_label")]
     pub label: Option<String>,
 
     /// GPU id in system
-    #[serde(default = "NvidiaGpuConfig::default_gpu_id")]
     pub gpu_id: u64,
 
     /// GPU utilization. In percent.
-    #[serde(default = "NvidiaGpuConfig::default_show_utilization")]
     pub show_utilization: bool,
 
     /// VRAM utilization.
-    #[serde(default = "NvidiaGpuConfig::default_show_memory")]
     pub show_memory: bool,
 
     /// Core GPU temperature. In degrees C.
-    #[serde(default = "NvidiaGpuConfig::default_show_temperature")]
     pub show_temperature: bool,
 
     /// Fan speed. In percents.
-    #[serde(default = "NvidiaGpuConfig::default_show_fan_speed")]
     pub show_fan_speed: bool,
 
     /// GPU clocks. In percents.
-    #[serde(default = "NvidiaGpuConfig::default_show_clocks")]
     pub show_clocks: bool,
 
+    /// Last Measured Power Draw of GPU. In Watts.
+    pub show_power_draw: bool,
+
     /// Maximum temperature, below which state is set to idle
-    #[serde(default = "NvidiaGpuConfig::default_idle")]
     pub idle: u64,
 
     /// Maximum temperature, below which state is set to good
-    #[serde(default = "NvidiaGpuConfig::default_good")]
     pub good: u64,
 
     /// Maximum temperature, below which state is set to info
-    #[serde(default = "NvidiaGpuConfig::default_info")]
     pub info: u64,
 
     /// Maximum temperature, below which state is set to warning
-    #[serde(default = "NvidiaGpuConfig::default_warning")]
     pub warning: u64,
-
-    #[serde(default = "NvidiaGpuConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
-impl NvidiaGpuConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(3)
-    }
-
-    fn default_label() -> Option<String> {
-        None
-    }
-
-    fn default_gpu_id() -> u64 {
-        0
-    }
-
-    fn default_show_utilization() -> bool {
-        true
-    }
-
-    fn default_show_memory() -> bool {
-        true
-    }
-
-    fn default_show_temperature() -> bool {
-        true
-    }
-
-    fn default_show_fan_speed() -> bool {
-        false
-    }
-
-    fn default_show_clocks() -> bool {
-        false
-    }
-
-    fn default_idle() -> u64 {
-        50
-    }
-
-    fn default_good() -> u64 {
-        70
-    }
-
-    fn default_info() -> u64 {
-        75
-    }
-
-    fn default_warning() -> u64 {
-        80
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for NvidiaGpuConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(3),
+            label: None,
+            gpu_id: 0,
+            show_utilization: true,
+            show_memory: true,
+            show_temperature: true,
+            show_fan_speed: false,
+            show_clocks: false,
+            show_power_draw: false,
+            idle: 50,
+            good: 70,
+            info: 75,
+            warning: 80,
+        }
     }
 }
 
@@ -173,195 +133,227 @@ impl ConfigBlock for NvidiaGpu {
     type Config = NvidiaGpuConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
         let id_memory = pseudo_uuid();
         let id_fans = pseudo_uuid();
 
+        let mut params = String::from("name,memory.total,");
+
+        let show_utilization = if block_config.show_utilization {
+            params += "utilization.gpu,";
+            Some(TextWidget::new(id, id, shared_config.clone()).with_spacing(Spacing::Inline))
+        } else {
+            None
+        };
+
+        let show_memory = if block_config.show_memory {
+            params += "memory.used,";
+            Some(
+                TextWidget::new(id, id_memory, shared_config.clone()).with_spacing(Spacing::Inline),
+            )
+        } else {
+            None
+        };
+
+        let show_temperature = if block_config.show_temperature {
+            params += "temperature.gpu,";
+            Some(TextWidget::new(id, id, shared_config.clone()).with_spacing(Spacing::Inline))
+        } else {
+            None
+        };
+
+        let show_fan = if block_config.show_fan_speed {
+            params += "fan.speed,";
+            Some(TextWidget::new(id, id_fans, shared_config.clone()).with_spacing(Spacing::Inline))
+        } else {
+            None
+        };
+
+        let show_clocks = if block_config.show_clocks {
+            params += "clocks.current.graphics,";
+            Some(TextWidget::new(id, id, shared_config.clone()).with_spacing(Spacing::Inline))
+        } else {
+            None
+        };
+
+        let show_power_draw = if block_config.show_power_draw {
+            params += "power.draw,";
+            Some(TextWidget::new(id, id, shared_config.clone()).with_spacing(Spacing::Inline))
+        } else {
+            None
+        };
+
+        let mut handle = Command::new("nvidia-smi")
+            .args(&[
+                "-l",
+                &block_config.interval.as_secs().to_string(),
+                "-i",
+                &block_config.gpu_id.to_string(),
+                &format!("--query-gpu={}", params),
+                "--format=csv,noheader,nounits",
+            ])
+            .stdout(Stdio::piped())
+            .spawn()
+            .block_error("gpu", "Failed to execute nvidia-smi.")?;
+
+        let reader = BufReader::new(
+            handle
+                .stdout
+                .take()
+                .block_error("gpu", "Failed to create bufreader for nvidia-smi.")?,
+        );
+
         Ok(NvidiaGpu {
-            id: id.clone(),
-            id_fans: id_fans.clone(),
-            id_memory: id_memory.clone(),
+            id,
+            id_fans,
+            id_memory,
             update_interval: block_config.interval,
             gpu_enabled: false,
             gpu_id: block_config.gpu_id,
 
-            name_widget: ButtonWidget::new(config.clone(), &id)
-                .with_icon("gpu")
+            name_widget: TextWidget::new(id, id, shared_config.clone())
+                .with_icon("gpu")?
                 .with_spacing(Spacing::Inline),
             name_widget_mode: if block_config.label.is_some() {
                 NameWidgetMode::ShowLabel
             } else {
                 NameWidgetMode::ShowDefaultName
             },
-            label: if block_config.label.is_some() {
-                block_config.label.unwrap()
-            } else {
-                "".to_string()
-            },
+            label: block_config.label.unwrap_or_default(),
 
-            show_memory: if block_config.show_memory {
-                Some(ButtonWidget::new(config.clone(), &id_memory).with_spacing(Spacing::Inline))
-            } else {
-                None
-            },
+            show_memory,
             memory_widget_mode: MemoryWidgetMode::ShowUsedMemory,
 
-            show_utilization: if block_config.show_utilization {
-                Some(TextWidget::new(config.clone()).with_spacing(Spacing::Inline))
-            } else {
-                None
-            },
+            show_utilization,
+            show_temperature,
 
-            show_temperature: if block_config.show_temperature {
-                Some(TextWidget::new(config.clone()).with_spacing(Spacing::Inline))
-            } else {
-                None
-            },
-
-            show_fan: if block_config.show_fan_speed {
-                Some(ButtonWidget::new(config.clone(), &id_fans).with_spacing(Spacing::Inline))
-            } else {
-                None
-            },
+            show_fan,
             fan_speed: 0,
             fan_speed_controlled: false,
-            scrolling: config.scrolling,
+            scrolling: shared_config.scrolling,
 
-            show_clocks: if block_config.show_clocks {
-                Some(TextWidget::new(config).with_spacing(Spacing::Inline))
-            } else {
-                None
-            },
+            show_clocks,
+
+            show_power_draw,
 
             maximum_idle: block_config.idle,
             maximum_good: block_config.good,
             maximum_info: block_config.info,
             maximum_warning: block_config.warning,
+
+            handle,
+            reader,
         })
+    }
+}
+
+impl Drop for NvidiaGpu {
+    //Prevent zombies by killing and waiting on nvidia-smi command
+    fn drop(&mut self) {
+        let _ = self.handle.kill();
+        let _ = self.handle.wait();
     }
 }
 
 impl Block for NvidiaGpu {
     fn update(&mut self) -> Result<Option<Update>> {
-        let mut params = String::from("name,memory.total,");
-        if self.show_utilization.is_some() {
-            params += "utilization.gpu,";
-        }
-        if self.show_memory.is_some() {
-            params += "memory.used,";
-        }
-        if self.show_temperature.is_some() {
-            params += "temperature.gpu,";
-        }
-        if self.show_fan.is_some() {
-            params += "fan.speed,";
-        }
-        if self.show_clocks.is_some() {
-            params += "clocks.current.graphics,";
-        }
-
-        let handle = Command::new("nvidia-smi")
-            .args(&[
-                "-i",
-                &self.gpu_id.to_string(),
-                &format!("--query-gpu={}", params),
-                "--format=csv,noheader,nounits",
-            ])
-            .output()
-            .block_error("gpu", "Failed to execute nvidia-smi.")?;
-
-        self.gpu_enabled = match handle.status.code() {
-            Some(0) => true,
-            Some(9) => false,
-            Some(code) => {
+        self.gpu_enabled = match self.handle.try_wait() {
+            Ok(None) => true,
+            Ok(Some(code)) => {
                 return Err(BlockError(
                     "nvidia_gpu".to_string(),
-                    format!("nvidia-smi error code {}", code),
+                    format!("nvidia-smi exited with error code {}", code),
                 ))
             }
-            None => {
+            Err(e) => {
                 return Err(BlockError(
                     "nvidia_gpu".to_string(),
-                    "nvidia-smi terminated by signal".to_string(),
+                    format!("error attempting to wait for nvidia-smi: {}", e),
                 ))
             }
         };
 
-        if self.gpu_enabled {
-            let mut output = handle.stdout;
-            output.pop(); // Remove trailing newline.
-            let result_str = String::from_utf8(output).unwrap();
-            // TODO: Change to 'retain' in rust 1.26
-            let result: Vec<&str> = result_str.split(", ").collect();
+        let mut result_str = String::new();
+        let buf = self
+            .reader
+            .fill_buf()
+            .block_error("gpu", "Nvidia-smi fill_buf error")?;
+        let buf_str =
+            String::from_utf8(buf.to_vec()).block_error("gpu", "Nvidia-smi from_utf8 error")?;
 
-            let gpu_name = result[0].to_string();
-            let memory_total = result[1].to_string();
+        /* Catch up on any existing lines */
+        for _ in buf_str.lines() {
+            result_str.clear();
+            self.reader
+                .read_line(&mut result_str)
+                .block_error("gpu", "Nvidia-smi read_line error")?;
+        }
 
-            match self.name_widget_mode {
-                NameWidgetMode::ShowDefaultName => {
-                    self.name_widget.set_text(gpu_name);
-                    self.name_widget.set_spacing(Spacing::Inline);
-                }
-                NameWidgetMode::ShowLabel => {
-                    if self.label.is_empty() {
-                        self.name_widget.set_spacing(Spacing::Hidden);
-                    } else {
-                        self.name_widget.set_spacing(Spacing::Inline);
-                    }
-                    self.name_widget.set_text(self.label.to_string());
-                }
-            }
+        let result: Vec<&str> = result_str.trim().split(", ").collect();
 
-            let mut count: usize = 2;
-            if let Some(ref mut utilization_widget) = self.show_utilization {
-                utilization_widget.set_text(format!("{:02}%", result[count]));
-                count += 1;
+        let gpu_name = result[0].to_string();
+        let memory_total = result[1].to_string();
+
+        match self.name_widget_mode {
+            NameWidgetMode::ShowDefaultName => {
+                self.name_widget.set_text(gpu_name);
+                self.name_widget.set_spacing(Spacing::Inline);
             }
-            if let Some(ref mut memory_widget) = self.show_memory {
-                match self.memory_widget_mode {
-                    MemoryWidgetMode::ShowUsedMemory => {
-                        memory_widget.set_text(format!("{}MB", result[count]));
-                    }
-                    MemoryWidgetMode::ShowTotalMemory => {
-                        memory_widget.set_text(format!("{}MB", memory_total));
-                    }
+            NameWidgetMode::ShowLabel => {
+                self.name_widget.set_text(self.label.to_string());
+            }
+        }
+
+        let mut count: usize = 2;
+        if let Some(ref mut utilization_widget) = self.show_utilization {
+            utilization_widget.set_text(format!("{:02}%", result[count]));
+            count += 1;
+        }
+        if let Some(ref mut memory_widget) = self.show_memory {
+            match self.memory_widget_mode {
+                MemoryWidgetMode::ShowUsedMemory => {
+                    memory_widget.set_text(format!("{}MB", result[count]));
                 }
-                count += 1;
+                MemoryWidgetMode::ShowTotalMemory => {
+                    memory_widget.set_text(format!("{}MB", memory_total));
+                }
             }
-            if let Some(ref mut temperature_widget) = self.show_temperature {
-                let temp = result[count].parse::<u64>().unwrap_or(0);
-                temperature_widget.set_state(match temp {
-                    t if t <= self.maximum_idle => State::Idle,
-                    t if t <= self.maximum_good => State::Good,
-                    t if t <= self.maximum_info => State::Info,
-                    t if t <= self.maximum_warning => State::Warning,
-                    _ => State::Critical,
-                });
-                temperature_widget.set_text(format!("{:02}°C", temp));
-                count += 1;
-            }
-            if let Some(ref mut fan_widget) = self.show_fan {
-                self.fan_speed = result[count].parse::<u64>().unwrap_or(0);
-                fan_widget.set_text(format!("{:02}%", self.fan_speed));
-                count += 1;
-            }
-            if let Some(ref mut clocks_widget) = self.show_clocks {
-                clocks_widget.set_text(format!("{}MHz", result[count]));
-            }
-        } else {
-            self.name_widget.set_text("DISABLED".to_string());
+            count += 1;
+        }
+        if let Some(ref mut temperature_widget) = self.show_temperature {
+            let temp = result[count].parse::<u64>().unwrap_or(0);
+            temperature_widget.set_state(match temp {
+                t if t <= self.maximum_idle => State::Idle,
+                t if t <= self.maximum_good => State::Good,
+                t if t <= self.maximum_info => State::Info,
+                t if t <= self.maximum_warning => State::Warning,
+                _ => State::Critical,
+            });
+            temperature_widget.set_text(format!("{:02}°C", temp));
+            count += 1;
+        }
+        if let Some(ref mut fan_widget) = self.show_fan {
+            self.fan_speed = result[count].parse::<u64>().unwrap_or(0);
+            fan_widget.set_text(format!("{:02}%", self.fan_speed));
+            count += 1;
+        }
+        if let Some(ref mut clocks_widget) = self.show_clocks {
+            clocks_widget.set_text(format!("{}MHz", result[count]));
+            count += 1;
+        }
+        if let Some(ref mut power_draw_widget) = self.show_power_draw {
+            power_draw_widget.set_text(format!("{} W", result[count]));
         }
 
         Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        let mut widgets: Vec<&dyn I3BarWidget> = Vec::new();
-        widgets.push(&self.name_widget);
+        let mut widgets: Vec<&dyn I3BarWidget> = vec![&self.name_widget];
 
         if self.gpu_enabled {
             if let Some(ref utilization_widget) = self.show_utilization {
@@ -379,15 +371,16 @@ impl Block for NvidiaGpu {
             if let Some(ref clocks_widget) = self.show_clocks {
                 widgets.push(clocks_widget);
             }
+            if let Some(ref power_draw_widget) = self.show_power_draw {
+                widgets.push(power_draw_widget);
+            }
         }
         widgets
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            let event_name = name.as_str();
-
-            if event_name == self.id {
+        if let Some(event_id) = e.instance {
+            if event_id == self.id {
                 if let MouseButton::Left = e.button {
                     match self.name_widget_mode {
                         NameWidgetMode::ShowDefaultName => {
@@ -401,7 +394,7 @@ impl Block for NvidiaGpu {
                 }
             }
 
-            if event_name == self.id_memory {
+            if event_id == self.id_memory {
                 if let MouseButton::Left = e.button {
                     match self.memory_widget_mode {
                         MemoryWidgetMode::ShowUsedMemory => {
@@ -415,7 +408,7 @@ impl Block for NvidiaGpu {
                 }
             }
 
-            if event_name == self.id_fans {
+            if event_id == self.id_fans {
                 let mut controlled_changed = false;
                 let mut new_fan_speed = self.fan_speed;
                 match e.button {
@@ -489,7 +482,7 @@ impl Block for NvidiaGpu {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

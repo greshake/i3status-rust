@@ -1,29 +1,28 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::iter::{Cycle, Peekable};
 use std::process::Command;
+use std::thread;
 use std::time::{Duration, Instant};
 use std::vec;
 
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
-
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_update;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
 use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
-use crate::util::pseudo_uuid;
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
+use crossbeam_channel::Sender;
+use inotify::{EventMask, Inotify, WatchMask};
+use serde_derive::Deserialize;
 
 pub struct Custom {
-    id: String,
+    id: usize,
     update_interval: Update,
-    output: ButtonWidget,
+    output: TextWidget,
     command: Option<String>,
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
@@ -35,21 +34,15 @@ pub struct Custom {
     shell: String,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct CustomConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "CustomConfig::default_interval",
-        deserialize_with = "deserialize_update"
-    )]
+    #[serde(deserialize_with = "deserialize_update")]
     pub interval: Update,
 
     /// Shell Command to execute & display
     pub command: Option<String>,
-
-    /// Command to execute when the button is clicked
-    pub on_click: Option<String>,
 
     /// Commands to execute and change when the button is clicked
     pub cycle: Option<Vec<String>>,
@@ -57,45 +50,46 @@ pub struct CustomConfig {
     /// Signal to update upon reception
     pub signal: Option<i32>,
 
+    /// Files to watch for modifications and trigger update
+    pub watch_files: Option<Vec<String>>,
+
     /// Parse command output if it contains valid bar JSON
-    #[serde(default = "CustomConfig::default_json")]
     pub json: bool,
 
-    #[serde(default = "CustomConfig::hide_when_empty")]
     pub hide_when_empty: bool,
 
-    pub shell: Option<String>,
-
-    #[serde(default = "CustomConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    // TODO make a global config option
+    pub shell: String,
 }
 
-impl CustomConfig {
-    fn default_interval() -> Update {
-        Update::Every(Duration::new(10, 0))
-    }
-
-    fn default_json() -> bool {
-        false
-    }
-
-    fn hide_when_empty() -> bool {
-        false
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for CustomConfig {
+    fn default() -> Self {
+        Self {
+            interval: Update::Every(Duration::from_secs(10)),
+            command: None,
+            cycle: None,
+            signal: None,
+            watch_files: None,
+            json: false,
+            hide_when_empty: false,
+            shell: env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()),
+        }
     }
 }
 
 impl ConfigBlock for Custom {
     type Config = CustomConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        tx: Sender<Task>,
+    ) -> Result<Self> {
         let mut custom = Custom {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            output: ButtonWidget::new(config.clone(), ""),
+            output: TextWidget::new(id, 0, shared_config),
             command: None,
             on_click: None,
             cycle: None,
@@ -104,21 +98,56 @@ impl ConfigBlock for Custom {
             json: block_config.json,
             hide_when_empty: block_config.hide_when_empty,
             is_empty: true,
-            shell: if let Some(s) = block_config.shell {
-                s
-            } else {
-                env::var("SHELL").unwrap_or_else(|_| "sh".to_owned())
-            },
-        };
-        custom.output = ButtonWidget::new(config, &custom.id);
-
-        if let Some(on_click) = block_config.on_click {
-            custom.on_click = Some(on_click)
+            shell: block_config.shell,
         };
 
         if let Some(signal) = block_config.signal {
             // If the signal is not in the valid range we return an error
             custom.signal = Some(convert_to_valid_signal(signal)?);
+        };
+
+        if let Some(paths) = block_config.watch_files {
+            let tx_inotify = custom.tx_update_request.clone();
+            let mut notify = Inotify::init().expect("Failed to start inotify");
+            for path in paths {
+                let path_expanded = shellexpand::full(&path).map_err(|e| {
+                    ConfigurationError(
+                        "custom".to_string(),
+                        format!("Failed to expand file path {}: {}", &path, e),
+                    )
+                })?;
+                notify
+                    .add_watch(&*path_expanded, WatchMask::MODIFY)
+                    .map_err(|e| {
+                        ConfigurationError(
+                            "custom".to_string(),
+                            format!("Failed to watch file {}: {}", &path, e),
+                        )
+                    })?;
+            }
+            thread::Builder::new()
+                .name("custom".into())
+                .spawn(move || {
+                    let mut buffer = [0; 1024];
+                    loop {
+                        let mut events = notify
+                            .read_events_blocking(&mut buffer)
+                            .expect("Error while reading inotify events");
+
+                        if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
+                            tx_inotify
+                                .send(Task {
+                                    id,
+                                    update_time: Instant::now(),
+                                })
+                                .unwrap();
+                        }
+
+                        // Avoid update spam.
+                        thread::sleep(Duration::from_millis(250))
+                    }
+                })
+                .unwrap();
         };
 
         if block_config.cycle.is_some() && block_config.command.is_some() {
@@ -138,6 +167,10 @@ impl ConfigBlock for Custom {
         };
 
         Ok(custom)
+    }
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        Some(&mut self.on_click)
     }
 }
 
@@ -167,23 +200,24 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let raw_output = Command::new(&self.shell)
+        let raw_output = match Command::new(&self.shell)
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.to_string());
+        {
+            Ok(output) => output,
+            Err(e) => return Err(BlockError("custom".to_string(), e.to_string())),
+        };
 
         if self.json {
-            let output: Output = match serde_json::from_str(&*raw_output) {
-                Err(e) => {
-                    return Err(BlockError(
-                        "custom".to_string(),
-                        format!("Error parsing JSON: {}", e),
-                    ));
-                }
-                Ok(s) => s,
-            };
-            self.output.set_icon(&output.icon);
+            let output: Output = serde_json::from_str(&*raw_output).map_err(|e| {
+                BlockError("custom".to_string(), format!("Error parsing JSON: {}", e))
+            })?;
+            if output.icon.is_empty() {
+                self.output.unset_icon();
+            } else {
+                self.output.set_icon(&output.icon)?;
+            }
             self.output.set_state(output.state);
             self.is_empty = output.text.is_empty();
             self.output.set_text(output.text);
@@ -207,7 +241,7 @@ impl Block for Custom {
         if let Some(sig) = self.signal {
             if sig == signal {
                 self.tx_update_request.send(Task {
-                    id: self.id.clone(),
+                    id: self.id,
                     update_time: Instant::now(),
                 })?;
             }
@@ -215,15 +249,7 @@ impl Block for Custom {
         Ok(())
     }
 
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = event.name {
-            if name != &self.id {
-                return Ok(());
-            }
-        } else {
-            return Ok(());
-        }
-
+    fn click(&mut self, _e: &I3BarEvent) -> Result<()> {
         let mut update = false;
 
         if let Some(ref on_click) = self.on_click {
@@ -238,7 +264,7 @@ impl Block for Custom {
 
         if update {
             self.tx_update_request.send(Task {
-                id: self.id.clone(),
+                id: self.id,
                 update_time: Instant::now(),
             })?;
         }
@@ -246,7 +272,7 @@ impl Block for Custom {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
 use std::time::Duration;
@@ -7,75 +6,52 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Load {
+    id: usize,
     text: TextWidget,
     logical_cores: u32,
     format: FormatTemplate,
-    id: String,
     update_interval: Duration,
-    minimum_info: f32,
-    minimum_warning: f32,
-    minimum_critical: f32,
+    minimum_info: f64,
+    minimum_warning: f64,
+    minimum_critical: f64,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct LoadConfig {
-    #[serde(default = "LoadConfig::default_format")]
-    pub format: String,
-    #[serde(
-        default = "LoadConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    pub format: FormatTemplate,
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Minimum load, where state is set to info
-    #[serde(default = "LoadConfig::default_info")]
-    pub info: f32,
+    pub info: f64,
 
     /// Minimum load, where state is set to warning
-    #[serde(default = "LoadConfig::default_warning")]
-    pub warning: f32,
+    pub warning: f64,
 
     /// Minimum load, where state is set to critical
-    #[serde(default = "LoadConfig::default_critical")]
-    pub critical: f32,
-
-    #[serde(default = "LoadConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    pub critical: f64,
 }
 
-impl LoadConfig {
-    fn default_format() -> String {
-        "{1m}".to_owned()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_info() -> f32 {
-        0.3
-    }
-
-    fn default_warning() -> f32 {
-        0.6
-    }
-
-    fn default_critical() -> f32 {
-        0.9
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for LoadConfig {
+    fn default() -> Self {
+        Self {
+            format: FormatTemplate::default(),
+            interval: Duration::from_secs(5),
+            info: 0.3,
+            warning: 0.6,
+            critical: 0.9,
+        }
     }
 }
 
@@ -83,12 +59,13 @@ impl ConfigBlock for Load {
     type Config = LoadConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let text = TextWidget::new(config)
-            .with_icon("cogs")
+        let text = TextWidget::new(id, 0, shared_config)
+            .with_icon("cogs")?
             .with_state(State::Info);
 
         // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
@@ -100,14 +77,13 @@ impl ConfigBlock for Load {
             .count() as u32;
 
         Ok(Load {
-            id: pseudo_uuid(),
+            id,
             logical_cores,
             update_interval: block_config.interval,
             minimum_info: block_config.info,
             minimum_warning: block_config.warning,
             minimum_critical: block_config.critical,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("load", "Invalid format specified for load")?,
+            format: block_config.format.with_default("{1m}")?,
             text,
         })
     }
@@ -126,16 +102,19 @@ impl Block for Load {
         f.read_to_string(&mut loadavg)
             .block_error("load", "Failed to read the load average of your system!")?;
 
-        let split: Vec<&str> = (&loadavg).split(' ').collect();
+        let split: Vec<f64> = (&loadavg)
+            .split(' ')
+            .take(3)
+            .map(|x| x.parse().unwrap())
+            .collect();
 
-        let values = map!("{1m}" => split[0],
-                          "{5m}" => split[1],
-                          "{15m}" => split[2]);
+        let values = map!(
+            "1m" => Value::from_float(split[0]),
+            "5m" => Value::from_float(split[1]),
+            "15m" => Value::from_float(split[2]),
+        );
 
-        let used_perc = values["{1m}"]
-            .parse::<f32>()
-            .block_error("load", "failed to parse float percentage")?
-            / self.logical_cores as f32;
+        let used_perc = split[0] / (self.logical_cores as f64);
 
         self.text.set_state(match used_perc {
             x if x > self.minimum_critical => State::Critical,
@@ -144,7 +123,7 @@ impl Block for Load {
             _ => State::Idle,
         });
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_texts(self.format.render(&values)?);
 
         Ok(Some(self.update_interval.into()))
     }
@@ -153,7 +132,7 @@ impl Block for Load {
         vec![&self.text]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -7,17 +6,16 @@ use std::time::{Duration, Instant};
 use crossbeam_channel::Sender;
 use dbus::blocking::LocalConnection;
 use dbus::strings::Signature;
-use dbus::tree::Factory;
+use dbus_tree::Factory;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
+use crate::de::deserialize_opt_duration;
 use crate::errors::*;
-use crate::input::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 #[derive(Clone)]
 struct CustomDBusStatus {
@@ -27,35 +25,47 @@ struct CustomDBusStatus {
 }
 
 pub struct CustomDBus {
-    id: String,
+    id: usize,
     text: TextWidget,
     status: Arc<Mutex<CustomDBusStatus>>,
+    timeout: Option<Duration>,
+    clear_pending: Option<Instant>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct CustomDBusConfig {
     pub name: String,
 
-    #[serde(default = "CustomDBusConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    /// Text to display on startup until the first update is received on the bus.
+    pub initial_text: String,
+
+    /// Timeout for clearing the block output after an update (in seconds)
+    #[serde(default, deserialize_with = "deserialize_opt_duration")]
+    pub timeout: Option<Duration>,
 }
 
-impl CustomDBusConfig {
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for CustomDBusConfig {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            initial_text: "??".to_string(),
+            timeout: None,
+        }
     }
 }
 
 impl ConfigBlock for CustomDBus {
     type Config = CustomDBusConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id_copy = id.clone();
-
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
-            content: String::from("??"),
+            content: block_config.initial_text,
             icon: String::from(""),
             state: State::Idle,
         }));
@@ -101,7 +111,7 @@ impl ConfigBlock for CustomDBus {
 
                                         // Tell block to update now.
                                         send.send(Task {
-                                            id: id.clone(),
+                                            id,
                                             update_time: Instant::now(),
                                         })
                                         .unwrap();
@@ -129,17 +139,20 @@ impl ConfigBlock for CustomDBus {
             })
             .unwrap();
 
+        let text = TextWidget::new(id, 0, shared_config).with_text("CustomDBus");
         Ok(CustomDBus {
-            id: id_copy,
-            text: TextWidget::new(config).with_text("CustomDBus"),
+            id,
+            text,
             status,
+            timeout: block_config.timeout,
+            clear_pending: None,
         })
     }
 }
 
 impl Block for CustomDBus {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     // Updates the internal state of the block.
@@ -149,19 +162,34 @@ impl Block for CustomDBus {
             .lock()
             .block_error("custom_dbus", "failed to acquire lock")?)
         .clone();
+
+        let now = Instant::now();
+        if let Some(time) = self.clear_pending {
+            if time < now {
+                self.clear_pending = None;
+                self.text.set_text(String::from(""));
+                return Ok(None);
+            }
+        }
+
         self.text.set_text(status.content);
-        self.text.set_icon(&status.icon);
+        if status.icon.is_empty() {
+            self.text.unset_icon();
+        } else {
+            self.text.set_icon(&status.icon)?;
+        }
         self.text.set_state(status.state);
-        Ok(None)
+
+        if let Some(delay) = self.timeout {
+            self.clear_pending = Some(now + delay);
+            Ok(Some(delay.into()))
+        } else {
+            Ok(None)
+        }
     }
 
     // Returns the view of the block, comprised of widgets.
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    // This function is called on every block for every click.
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
     }
 }

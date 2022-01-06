@@ -1,52 +1,42 @@
-use std::collections::BTreeMap;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
-use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 pub struct Template {
+    id: usize,
     text: TextWidget,
-    id: String,
     update_interval: Duration,
 
     //useful, but optional
     #[allow(dead_code)]
-    config: Config,
+    shared_config: SharedConfig,
     #[allow(dead_code)]
     tx_update_request: Sender<Task>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct TemplateConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "TemplateConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
-
-    #[serde(default = "TemplateConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
-impl TemplateConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for TemplateConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(5),
+        }
     }
 }
 
@@ -54,16 +44,19 @@ impl ConfigBlock for Template {
     type Config = TemplateConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let text = TextWidget::new(id, 0, shared_config.clone()).with_text("Template");
+
         Ok(Template {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            text: TextWidget::new(config.clone()).with_text("Template"),
+            text,
             tx_update_request,
-            config,
+            shared_config,
         })
     }
 }
@@ -81,7 +74,7 @@ impl Block for Template {
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

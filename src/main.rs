@@ -1,29 +1,24 @@
 #[macro_use]
-extern crate serde_json;
-#[cfg(feature = "pulseaudio")]
-use libpulse_binding as pulse;
-
-#[macro_use]
 mod de;
 #[macro_use]
 mod util;
+#[macro_use]
+mod formatting;
 pub mod blocks;
 mod config;
 mod errors;
+mod http;
 mod icons;
-mod input;
+mod protocol;
 mod scheduler;
 mod signals;
 mod subprocess;
 mod themes;
-mod widget;
 mod widgets;
 
-#[cfg(feature = "profiling")]
-use cpuprofiler::PROFILER;
+#[cfg(feature = "pulseaudio")]
+use libpulse_binding as pulse;
 
-use std::collections::HashMap;
-use std::ops::DerefMut;
 use std::time::Duration;
 
 use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
@@ -31,13 +26,15 @@ use crossbeam_channel::{select, Receiver, Sender};
 
 use crate::blocks::create_block;
 use crate::blocks::Block;
-use crate::config::{load_config, Config};
+use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::input::{process_events, I3BarEvent};
+use crate::protocol::i3bar_event::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
 use crate::signals::process_signals;
-use crate::widget::{I3BarWidget, State};
+use crate::util::deserialize_file;
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 fn main() {
     let ver = if env!("GIT_COMMIT_HASH").is_empty() || env!("GIT_COMMIT_DATE").is_empty() {
@@ -50,7 +47,9 @@ fn main() {
             env!("GIT_COMMIT_DATE")
         )
     };
-    let mut builder = App::new("i3status-rs")
+
+    let mut builder = App::new("i3status-rs");
+    builder = builder
         .version(&*ver)
         .author(crate_authors!())
         .about(crate_description!())
@@ -74,29 +73,12 @@ fn main() {
                 .takes_value(false),
         )
         .arg(
-            Arg::with_name("one-shot")
-                .help("Print blocks once and exit")
-                .long("one-shot")
+            Arg::with_name("no-init")
+                .help("Do not send an init sequence")
+                .long("no-init")
                 .takes_value(false)
                 .hidden(true),
         );
-
-    if_debug!({
-        builder = builder
-            .arg(
-                Arg::with_name("profile")
-                    .long("profile")
-                    .takes_value(true)
-                    .help("A block to be profiled. Creates a `block.profile` file that can be analyzed with `pprof`"),
-            )
-            .arg(
-                Arg::with_name("profile-runs")
-                    .long("profile-runs")
-                    .takes_value(true)
-                    .default_value("10000")
-                    .help("Number of times to execute update when profiling"),
-            );
-    });
 
     let matches = builder.get_matches();
     let exit_on_error = matches.is_present("exit-on-error");
@@ -108,82 +90,57 @@ fn main() {
             ::std::process::exit(1);
         }
 
-        let error_widget = TextWidget::new(Default::default())
+        // Create widget with error message
+        let error_widget = TextWidget::new(0, 0, Default::default())
             .with_state(State::Critical)
             .with_text(&format!("{:?}", error));
-        let error_rendered = error_widget.get_rendered();
-        println!(
-            "{}",
-            serde_json::to_string(&[error_rendered]).expect("failed to serialize error message")
-        );
 
+        // Print errors
+        println!("[{}],", error_widget.get_data().render());
         eprintln!("\n\n{:?}", error);
-        // Do nothing, so the error message keeps displayed
-        loop {
-            ::std::thread::sleep(Duration::from_secs(::std::u64::MAX));
-        }
+
+        // Wait for USR2 signal to restart
+        signal_hook::iterator::Signals::new(&[signal_hook::consts::SIGUSR2])
+            .unwrap()
+            .forever()
+            .next()
+            .unwrap();
+        restart();
     }
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    // Now we can start to run the i3bar protocol
-    let initialise = if matches.is_present("never-pause") {
-        format!(
-            "\"version\": 1, \"click_events\": true, \"stop_signal\": {}",
-            nix::sys::signal::Signal::SIGCONT as i8
-        )
-    } else {
-        "\"version\": 1, \"click_events\": true".to_string()
-    };
-    print!("{{{}}}\n[", initialise);
+    if !matches.is_present("no-init") {
+        // Now we can start to run the i3bar protocol
+        protocol::init(matches.is_present("never-pause"));
+    }
 
     // Read & parse the config file
     let config_path = match matches.value_of("config") {
         Some(config_path) => std::path::PathBuf::from(config_path),
         None => util::xdg_config_home().join("i3status-rust/config.toml"),
     };
-    let config = load_config(&config_path)?;
+    let config: Config = deserialize_file(&config_path)?;
 
     // Update request channel
     let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =
         crossbeam_channel::unbounded();
 
-    // In dev build, we might diverge into profiling blocks here
-    if let Some(name) = matches.value_of("profile") {
-        profile_config(
-            name,
-            matches.value_of("profile-runs").unwrap(),
-            &config,
-            tx_update_requests,
-        )?;
-        return Ok(());
-    }
+    let shared_config = SharedConfig::new(&config);
 
     // Initialize the blocks
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
     for &(ref block_name, ref block_config) in &config.blocks {
         blocks.push(create_block(
+            blocks.len(),
             block_name,
             block_config.clone(),
-            config.clone(),
+            shared_config.clone(),
             tx_update_requests.clone(),
         )?);
     }
 
-    // We save the order of the blocks here,
-    // because they will be passed to an unordered HashMap
-    let order = blocks
-        .iter()
-        .map(|x| String::from(x.id()))
-        .collect::<Vec<_>>();
-
     let mut scheduler = UpdateScheduler::new(&blocks);
-
-    let mut block_map: HashMap<String, &mut dyn Block> = HashMap::new();
-
-    for block in &mut blocks {
-        block_map.insert(String::from(block.id()), (*block).deref_mut());
-    }
 
     // We wait for click events in a separate thread, to avoid blocking to wait for stdin
     let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =
@@ -198,56 +155,63 @@ fn run(matches: &ArgMatches) -> Result<()> {
     // Fires immediately for first updates
     let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
 
-    let one_shot = matches.is_present("one-shot");
     loop {
         // We use the message passing concept of channel selection
         // to avoid busy wait
         select! {
             // Receive click events
             recv(rx_clicks) -> res => if let Ok(event) = res {
-                    for block in block_map.values_mut() {
-                        block.click(&event)?;
-                    }
-                    util::print_blocks(&order, &block_map, &config)?;
+                if let Some(id) = event.id {
+                        blocks.get_mut(id)
+                    .internal_error("click handler", "could not get required block")?
+                            .click(&event)?;
+                    protocol::print_blocks(&blocks, &shared_config)?;
+                }
             },
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
-                // Process immediately and forget
-                block_map
-                    .get_mut(&req.id)
+                if scheduler.schedule.iter().any(|x| x.id == req.id) {
+                // If block is already scheduled then process immediately and forget
+                blocks.get_mut(req.id)
                     .internal_error("scheduler", "could not get required block")?
                     .update()?;
-                util::print_blocks(&order, &block_map, &config)?;
+                } else {
+                // Otherwise add to scheduler tasks and trigger update
+                // In case this needs to schedule further updates e.g. marquee
+                scheduler.schedule.push(req);
+                scheduler.do_scheduled_updates(&mut blocks)?;
+                }
+                protocol::print_blocks(&blocks, &shared_config)?;
             },
             // Receive update timer events
             recv(ttnu) -> _ => {
-                scheduler.do_scheduled_updates(&mut block_map)?;
+                scheduler.do_scheduled_updates(&mut blocks)?;
                 // redraw the blocks, state changed
-                util::print_blocks(&order, &block_map, &config)?;
+                protocol::print_blocks(&blocks, &shared_config)?;
             },
             // Receive signal events
             recv(rx_signals) -> res => if let Ok(sig) = res {
                 match sig {
-                    signal_hook::SIGUSR1 => {
+                    signal_hook::consts::SIGUSR1 => {
                         //USR1 signal that updates every block in the bar
-                        for block in block_map.values_mut() {
+                        for block in blocks.iter_mut() {
                             block.update()?;
                         }
-                        util::print_blocks(&order, &block_map, &config)?;
                     },
-                    signal_hook::SIGUSR2 => {
+                    signal_hook::consts::SIGUSR2 => {
                         //USR2 signal that should reload the config
-                        //TODO not implemented
-                        //unimplemented!("SIGUSR2 is meant to be used to reload the config toml, but this feature is yet not implemented");
+                        blocks.drain(..);
+                        restart();
                     },
                     _ => {
                         //Real time signal that updates only the blocks listening
                         //for that signal
-                        for block in block_map.values_mut() {
+                        for block in blocks.iter_mut() {
                             block.signal(sig)?;
                         }
                     },
                 };
+                protocol::print_blocks(&blocks, &shared_config)?;
             }
         }
 
@@ -255,59 +219,30 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if let Some(time) = scheduler.time_to_next_update() {
             ttnu = crossbeam_channel::after(time)
         }
-        if one_shot {
-            break Ok(());
-        }
     }
 }
 
-#[cfg(feature = "profiling")]
-fn profile(iterations: i32, name: &str, block: &mut dyn Block) {
-    let mut bar = progress::Bar::new();
-    println!(
-        "Now profiling the {0} block by executing {1} updates.\n \
-         Use pprof to analyze {0}.profile later.",
-        name, iterations
-    );
+/// Restart `i3status-rs` in-place
+fn restart() -> ! {
+    use std::env;
+    use std::ffi::CString;
+    use std::os::unix::ffi::OsStringExt;
 
-    PROFILER
-        .lock()
-        .unwrap()
-        .start(format!("./{}.profile", name))
-        .unwrap();
+    // On linux this line should be OK
+    let exe = CString::new(env::current_exe().unwrap().into_os_string().into_vec()).unwrap();
 
-    bar.set_job_title("Profiling...");
+    // Get current arguments
+    let mut arg = env::args()
+        .map(|a| CString::new(a).unwrap())
+        .collect::<Vec<CString>>();
 
-    for i in 0..iterations {
-        block.update().expect("block update failed");
-        bar.reach_percent(((i as f64 / iterations as f64) * 100.).round() as i32);
+    // Add "--no-init" argument if not already added
+    let no_init_arg = CString::new("--no-init").unwrap();
+    if !arg.iter().any(|a| *a == no_init_arg) {
+        arg.push(no_init_arg);
     }
 
-    PROFILER.lock().unwrap().stop().unwrap();
-}
-
-#[cfg(feature = "profiling")]
-fn profile_config(name: &str, runs: &str, config: &Config, update: Sender<Task>) -> Result<()> {
-    let profile_runs = runs
-        .parse::<i32>()
-        .configuration_error("failed to parse --profile-runs as an integer")?;
-    for &(ref block_name, ref block_config) in &config.blocks {
-        if block_name == name {
-            let mut block =
-                create_block(&block_name, block_config.clone(), config.clone(), update)?;
-            profile(profile_runs, &block_name, block.deref_mut());
-            break;
-        }
-    }
-    Ok(())
-}
-
-#[cfg(not(feature = "profiling"))]
-fn profile_config(_name: &str, _runs: &str, _config: &Config, _update: Sender<Task>) -> Result<()> {
-    // TODO: Maybe we should just panic! here.
-    Err(InternalError(
-        "profile".to_string(),
-        "The 'profiling' feature was not enabled at compile time.".to_string(),
-        None,
-    ))
+    // Restart
+    nix::unistd::execvp(&exe, &arg).unwrap();
+    unreachable!();
 }

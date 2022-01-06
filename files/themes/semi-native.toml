@@ -1,0 +1,5 @@
+idle_fg = "#93a1a1"
+info_fg = "#93a1a1"
+good_fg = "#859900"
+warning_fg = "#b58900"
+critical_fg = "#dc322f"

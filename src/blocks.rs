@@ -1,12 +1,15 @@
 pub mod apt;
 pub mod backlight;
+pub mod base_block;
 pub mod battery;
 pub mod bluetooth;
 pub mod cpu;
 pub mod custom;
 pub mod custom_dbus;
 pub mod disk_space;
+pub mod dnf;
 pub mod docker;
+pub mod external_ip;
 pub mod focused_window;
 pub mod github;
 pub mod hueshift;
@@ -14,6 +17,7 @@ pub mod ibus;
 pub mod kdeconnect;
 pub mod keyboard_layout;
 pub mod load;
+#[cfg(feature = "maildir")]
 pub mod maildir;
 pub mod memory;
 pub mod music;
@@ -25,6 +29,7 @@ pub mod notmuch;
 pub mod nvidia_gpu;
 pub mod pacman;
 pub mod pomodoro;
+pub mod rofication;
 pub mod sound;
 pub mod speedtest;
 pub mod taskwarrior;
@@ -39,13 +44,16 @@ pub mod xrandr;
 
 use self::apt::*;
 use self::backlight::*;
+use self::base_block::*;
 use self::battery::*;
 use self::bluetooth::*;
 use self::cpu::*;
 use self::custom::*;
 use self::custom_dbus::*;
 use self::disk_space::*;
+use self::dnf::*;
 use self::docker::*;
+use self::external_ip::*;
 use self::focused_window::*;
 use self::github::*;
 use self::hueshift::*;
@@ -53,6 +61,7 @@ use self::ibus::*;
 use self::kdeconnect::*;
 use self::keyboard_layout::*;
 use self::load::*;
+#[cfg(feature = "maildir")]
 use self::maildir::*;
 use self::memory::*;
 use self::music::*;
@@ -64,6 +73,7 @@ use self::notmuch::*;
 use self::nvidia_gpu::*;
 use self::pacman::*;
 use self::pomodoro::*;
+use self::rofication::*;
 use self::sound::*;
 use self::speedtest::*;
 use self::taskwarrior::*;
@@ -82,11 +92,11 @@ use crossbeam_channel::Sender;
 use serde::de::Deserialize;
 use toml::value::Value;
 
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
-use crate::widget::I3BarWidget;
+use crate::widgets::I3BarWidget;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Update {
@@ -100,132 +110,182 @@ impl Default for Update {
     }
 }
 
-impl Into<Update> for Duration {
-    fn into(self) -> Update {
-        Update::Every(self)
+impl From<Duration> for Update {
+    fn from(d: Duration) -> Update {
+        Update::Every(d)
     }
 }
 
-pub trait Block {
-    /// A unique id for the block.
-    fn id(&self) -> &str;
-
-    /// The current "view" of the block, comprised of widgets.
-    fn view(&self) -> Vec<&dyn I3BarWidget>;
-
-    /// Forces an update of the internal state of the block.
-    fn update(&mut self) -> Result<Option<Update>> {
-        Ok(None)
-    }
-
-    ///Sends a signal event with the provided signal, this function is called on every block
-    ///for every signal event
-    fn signal(&mut self, _signal: i32) -> Result<()> {
-        Ok(())
-    }
-
-    /// Sends click events to the block. This function is called on every block
-    /// for every click; filter events by using the `event.name` property.
-    fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
-}
-
+/// The ConfigBlock trait combines a constructor (new(...)) and an associated configuration type
+/// to form a block that can be instantiated from a piece of TOML (from the block configuration).
+/// The associated type has to be a deserializable struct, which you can then use to get your
+/// configurations from. The template shows you how to instantiate a simple Text widget.
+/// For more info on how to use widgets, just look into other Blocks. More documentation to come.
+///
+/// The sender object can be used to send asynchronous update request for any block from a separate
+/// thread, provide you know the Block's ID. This advanced feature can be used to reduce
+/// the number of system calls by asynchronously waiting for events. A usage example can be found
+/// in the Music block, which updates only when dbus signals a new song.
 pub trait ConfigBlock: Block {
     type Config;
 
     /// Creates a new block from the relevant configuration.
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         update_request: Sender<Task>,
     ) -> Result<Self>
     where
         Self: Sized;
+
+    /// TODO: write documentation
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        None
+    }
+}
+
+/// The Block trait is used to interact with a block after it has been instantiated from ConfigBlock
+pub trait Block {
+    /// A unique id for the block (asigend by the constructor).
+    fn id(&self) -> usize;
+
+    /// Use this function to return the widgets that comprise the UI of your component.
+    ///
+    /// The music block may, for example, be comprised of a text widget and multiple
+    /// buttons (buttons are also TextWidgets). Use a vec to wrap the references to your view.
+    fn view(&self) -> Vec<&dyn I3BarWidget>;
+
+    /// Required if you don't want a static block.
+    ///
+    /// Use this function to update the internal state of your block, for example during
+    /// periodic updates. Return the duration until your block wants to be updated next.
+    /// For example, a clock could request only to be updated every 60 seconds by returning
+    /// Some(Update::Every(Duration::new(60, 0))) every time. If you return None,
+    /// this function will not be called again automatically.
+    fn update(&mut self) -> Result<Option<Update>> {
+        Ok(None)
+    }
+
+    /// Sends a signal event with the provided signal, this function is called on every block
+    /// for every signal event
+    fn signal(&mut self, _signal: i32) -> Result<()> {
+        Ok(())
+    }
+
+    /// Sends click events to the block.
+    ///
+    /// Here you can react to the user clicking your block. The I3BarEvent instance contains all
+    /// fields to describe the click action, including mouse button and location down to the pixel.
+    /// You may also update the internal state here.
+    ///
+    /// If block uses more that one widget, use the event.instance property to determine which widget was clicked.
+    fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
+        Ok(())
+    }
 }
 
 macro_rules! block {
-    ($block_type:ident, $block_config:expr, $config:expr, $update_request:expr) => {{
-        let block_config: <$block_type as ConfigBlock>::Config =
-            <$block_type as ConfigBlock>::Config::deserialize($block_config)
-                .configuration_error("Failed to deserialize block config.")?;
-        let mut main_config = $config;
-        if let Some(ref overrides) = block_config.color_overrides {
-            for entry in overrides {
-                match entry.0.as_str() {
-                    "idle_fg" => main_config.theme.idle_fg = Some(entry.1.to_string()),
-                    "idle_bg" => main_config.theme.idle_bg = Some(entry.1.to_string()),
-                    "info_fg" => main_config.theme.info_fg = Some(entry.1.to_string()),
-                    "info_bg" => main_config.theme.info_bg = Some(entry.1.to_string()),
-                    "good_fg" => main_config.theme.good_fg = Some(entry.1.to_string()),
-                    "good_bg" => main_config.theme.good_bg = Some(entry.1.to_string()),
-                    "warning_fg" => main_config.theme.warning_fg = Some(entry.1.to_string()),
-                    "warning_bg" => main_config.theme.warning_bg = Some(entry.1.to_string()),
-                    "critical_fg" => main_config.theme.critical_fg = Some(entry.1.to_string()),
-                    "critical_bg" => main_config.theme.critical_bg = Some(entry.1.to_string()),
-                    // TODO the below as well?
-                    // "separator"
-                    // "separator_bg"
-                    // "separator_fg"
-                    // "alternating_tint_bg"
-                    _ => (),
-                }
-            }
+    ($block_type:ident, $id:expr, $block_config:expr, $shared_config:expr, $update_request:expr) => {{
+        // Extract base(common) config
+        let common_config = BaseBlockConfig::extract(&mut $block_config);
+        let mut common_config = BaseBlockConfig::deserialize(common_config)
+            .configuration_error("Failed to deserialize common block config.")?;
+
+        // Apply theme overrides if presented
+        if let Some(ref overrides) = common_config.theme_overrides {
+            $shared_config.theme_override(overrides)?;
         }
-        Ok(Box::new($block_type::new(
-            block_config,
-            main_config,
-            $update_request,
-        )?) as Box<dyn Block>)
+        if let Some(overrides) = common_config.icons_format {
+            $shared_config.icons_format_override(overrides);
+        }
+
+        // Extract block-specific config
+        let block_config = <$block_type as ConfigBlock>::Config::deserialize($block_config)
+            .configuration_error("Failed to deserialize block config.")?;
+
+        let mut block = $block_type::new($id, block_config, $shared_config, $update_request)?;
+        if let Some(overrided) = block.override_on_click() {
+            *overrided = common_config.on_click.take();
+        }
+
+        Ok(Box::new(BaseBlock {
+            name: stringify!($block_type).to_string(),
+            inner: block,
+            on_click: common_config.on_click,
+        }) as Box<dyn Block>)
     }};
 }
 
 pub fn create_block(
+    id: usize,
     name: &str,
-    block_config: Value,
-    config: Config,
+    mut block_config: Value,
+    mut shared_config: SharedConfig,
     update_request: Sender<Task>,
 ) -> Result<Box<dyn Block>> {
     match name {
         // Please keep these in alphabetical order.
-        "apt" => block!(Apt, block_config, config, update_request),
-        "backlight" => block!(Backlight, block_config, config, update_request),
-        "battery" => block!(Battery, block_config, config, update_request),
-        "bluetooth" => block!(Bluetooth, block_config, config, update_request),
-        "cpu" => block!(Cpu, block_config, config, update_request),
-        "custom" => block!(Custom, block_config, config, update_request),
-        "custom_dbus" => block!(CustomDBus, block_config, config, update_request),
-        "disk_space" => block!(DiskSpace, block_config, config, update_request),
-        "docker" => block!(Docker, block_config, config, update_request),
-        "focused_window" => block!(FocusedWindow, block_config, config, update_request),
-        "github" => block!(Github, block_config, config, update_request),
-        "hueshift" => block!(Hueshift, block_config, config, update_request),
-        "ibus" => block!(IBus, block_config, config, update_request),
-        "kdeconnect" => block!(KDEConnect, block_config, config, update_request),
-        "keyboard_layout" => block!(KeyboardLayout, block_config, config, update_request),
-        "load" => block!(Load, block_config, config, update_request),
-        "maildir" => block!(Maildir, block_config, config, update_request),
-        "memory" => block!(Memory, block_config, config, update_request),
-        "music" => block!(Music, block_config, config, update_request),
-        "net" => block!(Net, block_config, config, update_request),
-        "networkmanager" => block!(NetworkManager, block_config, config, update_request),
-        "notify" => block!(Notify, block_config, config, update_request),
+        "apt" => block!(Apt, id, block_config, shared_config, update_request),
+        "backlight" => block!(Backlight, id, block_config, shared_config, update_request),
+        "battery" => block!(Battery, id, block_config, shared_config, update_request),
+        "bluetooth" => block!(Bluetooth, id, block_config, shared_config, update_request),
+        "cpu" => block!(Cpu, id, block_config, shared_config, update_request),
+        "custom" => block!(Custom, id, block_config, shared_config, update_request),
+        "custom_dbus" => block!(CustomDBus, id, block_config, shared_config, update_request),
+        "disk_space" => block!(DiskSpace, id, block_config, shared_config, update_request),
+        "dnf" => block!(Dnf, id, block_config, shared_config, update_request),
+        "docker" => block!(Docker, id, block_config, shared_config, update_request), ///////
+        "external_ip" => block!(ExternalIP, id, block_config, shared_config, update_request),
+        "focused_window" => block!(
+            FocusedWindow,
+            id,
+            block_config,
+            shared_config,
+            update_request
+        ),
+        "github" => block!(Github, id, block_config, shared_config, update_request),
+        "hueshift" => block!(Hueshift, id, block_config, shared_config, update_request),
+        "ibus" => block!(IBus, id, block_config, shared_config, update_request),
+        "kdeconnect" => block!(KDEConnect, id, block_config, shared_config, update_request),
+        "keyboard_layout" => block!(
+            KeyboardLayout,
+            id,
+            block_config,
+            shared_config,
+            update_request
+        ),
+        "load" => block!(Load, id, block_config, shared_config, update_request),
+        #[cfg(feature = "maildir")]
+        "maildir" => block!(Maildir, id, block_config, shared_config, update_request),
+        "memory" => block!(Memory, id, block_config, shared_config, update_request),
+        "music" => block!(Music, id, block_config, shared_config, update_request),
+        "net" => block!(Net, id, block_config, shared_config, update_request),
+        "networkmanager" => block!(
+            NetworkManager,
+            id,
+            block_config,
+            shared_config,
+            update_request
+        ),
+        "notify" => block!(Notify, id, block_config, shared_config, update_request),
         #[cfg(feature = "notmuch")]
-        "notmuch" => block!(Notmuch, block_config, config, update_request),
-        "nvidia_gpu" => block!(NvidiaGpu, block_config, config, update_request),
-        "pacman" => block!(Pacman, block_config, config, update_request),
-        "pomodoro" => block!(Pomodoro, block_config, config, update_request),
-        "sound" => block!(Sound, block_config, config, update_request),
-        "speedtest" => block!(SpeedTest, block_config, config, update_request),
-        "taskwarrior" => block!(Taskwarrior, block_config, config, update_request),
-        "temperature" => block!(Temperature, block_config, config, update_request),
-        "template" => block!(Template, block_config, config, update_request),
-        "time" => block!(Time, block_config, config, update_request),
-        "toggle" => block!(Toggle, block_config, config, update_request),
-        "uptime" => block!(Uptime, block_config, config, update_request),
-        "watson" => block!(Watson, block_config, config, update_request),
-        "weather" => block!(Weather, block_config, config, update_request),
-        "xrandr" => block!(Xrandr, block_config, config, update_request),
+        "notmuch" => block!(Notmuch, id, block_config, shared_config, update_request),
+        "nvidia_gpu" => block!(NvidiaGpu, id, block_config, shared_config, update_request),
+        "pacman" => block!(Pacman, id, block_config, shared_config, update_request),
+        "pomodoro" => block!(Pomodoro, id, block_config, shared_config, update_request),
+        "rofication" => block!(Rofication, id, block_config, shared_config, update_request),
+        "sound" => block!(Sound, id, block_config, shared_config, update_request),
+        "speedtest" => block!(SpeedTest, id, block_config, shared_config, update_request),
+        "taskwarrior" => block!(Taskwarrior, id, block_config, shared_config, update_request),
+        "temperature" => block!(Temperature, id, block_config, shared_config, update_request),
+        "template" => block!(Template, id, block_config, shared_config, update_request),
+        "time" => block!(Time, id, block_config, shared_config, update_request), /////////
+        "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
+        "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
+        "watson" => block!(Watson, id, block_config, shared_config, update_request),
+        "weather" => block!(Weather, id, block_config, shared_config, update_request),
+        "xrandr" => block!(Xrandr, id, block_config, shared_config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
     }
 }

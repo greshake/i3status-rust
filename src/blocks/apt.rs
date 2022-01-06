@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::io::Write;
@@ -10,18 +9,19 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Apt {
-    output: ButtonWidget,
-    id: String,
+    id: usize,
+    output: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
     format_singular: FormatTemplate,
@@ -31,62 +31,42 @@ pub struct Apt {
     config_path: String,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct AptConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "AptConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Format override
-    #[serde(default = "AptConfig::default_format")]
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Alternative format override for when exactly 1 update is available
-    #[serde(default = "AptConfig::default_format")]
-    pub format_singular: String,
+    pub format_singular: FormatTemplate,
 
     /// Alternative format override for when no updates are available
-    #[serde(default = "AptConfig::default_format")]
-    pub format_up_to_date: String,
+    pub format_up_to_date: FormatTemplate,
 
     /// Indicate a `warning` state for the block if any pending update match the
     /// following regex. Default behaviour is that no package updates are deemed
     /// warning
-    #[serde(default = "AptConfig::default_warning_updates_regex")]
     pub warning_updates_regex: Option<String>,
 
     /// Indicate a `critical` state for the block if any pending update match the following regex.
     /// Default behaviour is that no package updates are deemed critical
-    #[serde(default = "AptConfig::default_critical_updates_regex")]
     pub critical_updates_regex: Option<String>,
-
-    #[serde(default = "AptConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
-impl AptConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(60 * 10)
-    }
-
-    fn default_format() -> String {
-        "{count}".to_owned()
-    }
-
-    fn default_warning_updates_regex() -> Option<String> {
-        None
-    }
-
-    fn default_critical_updates_regex() -> Option<String> {
-        None
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for AptConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(600),
+            format: FormatTemplate::default(),
+            format_singular: FormatTemplate::default(),
+            format_up_to_date: FormatTemplate::default(),
+            warning_updates_regex: None,
+            critical_updates_regex: None,
+        }
     }
 }
 
@@ -94,8 +74,9 @@ impl ConfigBlock for Apt {
     type Config = AptConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let mut cache_dir = env::temp_dir();
@@ -118,26 +99,22 @@ impl ConfigBlock for Apt {
             .block_error("apt", "Failed to create config file")?;
         write!(config_file, "{}", apt_conf).block_error("apt", "Failed to write to config file")?;
 
+        let output = TextWidget::new(id, 0, shared_config).with_icon("update")?;
+
         Ok(Apt {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("apt", "Invalid format specified for apt::format")?,
-            format_singular: FormatTemplate::from_string(&block_config.format_singular)
-                .block_error("apt", "Invalid format specified for apt::format_singular")?,
-            format_up_to_date: FormatTemplate::from_string(&block_config.format_up_to_date)
-                .block_error("apt", "Invalid format specified for apt::format_up_to_date")?,
-            output: ButtonWidget::new(config, "apt").with_icon("update"),
+            format: block_config.format.with_default("{count:1}")?,
+            format_singular: block_config.format_singular.with_default("{count:1}")?,
+            format_up_to_date: block_config.format_up_to_date.with_default("{count:1}")?,
+            output,
             warning_updates_regex: match block_config.warning_updates_regex {
                 None => None, // no regex configured
                 Some(regex_str) => {
                     let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
                         ConfigurationError(
                             "apt".to_string(),
-                            (
-                                "invalid warning updates regex".to_string(),
-                                "invalid regex".to_string(),
-                            ),
+                            "invalid warning updates regex".to_string(),
                         )
                     })?;
                     Some(regex)
@@ -149,10 +126,7 @@ impl ConfigBlock for Apt {
                     let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
                         ConfigurationError(
                             "apt".to_string(),
-                            (
-                                "invalid critical updates regex".to_string(),
-                                "invalid regex".to_string(),
-                            ),
+                            "invalid critical updates regex".to_string(),
                         )
                     })?;
                     Some(regex)
@@ -198,8 +172,8 @@ fn get_update_count(updates: &str) -> usize {
 }
 
 impl Block for Apt {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
@@ -210,7 +184,9 @@ impl Block for Apt {
         let (formatting_map, warning, critical, cum_count) = {
             let updates_list = get_updates_list(&self.config_path)?;
             let count = get_update_count(&updates_list);
-            let formatting_map = map!("{count}" => count);
+            let formatting_map = map!(
+                "count" => Value::from_integer(count as i64)
+            );
 
             let warning = self
                 .warning_updates_regex
@@ -223,10 +199,10 @@ impl Block for Apt {
 
             (formatting_map, warning, critical, count)
         };
-        self.output.set_text(match cum_count {
-            0 => self.format_up_to_date.render_static_str(&formatting_map)?,
-            1 => self.format_singular.render_static_str(&formatting_map)?,
-            _ => self.format.render_static_str(&formatting_map)?,
+        self.output.set_texts(match cum_count {
+            0 => self.format_up_to_date.render(&formatting_map)?,
+            1 => self.format_singular.render(&formatting_map)?,
+            _ => self.format.render(&formatting_map)?,
         });
         self.output.set_state(match cum_count {
             0 => State::Idle,
@@ -244,12 +220,9 @@ impl Block for Apt {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == "apt").unwrap_or(false)
-            && event.button == MouseButton::Left
-        {
+        if event.button == MouseButton::Left {
             self.update()?;
         }
-
         Ok(())
     }
 }

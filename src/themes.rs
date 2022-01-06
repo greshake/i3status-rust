@@ -1,341 +1,283 @@
+use std::collections::HashMap;
 use std::default::Default;
-use std::path::Path;
+use std::fmt;
+use std::ops::Add;
+use std::str::FromStr;
 
-use lazy_static::lazy_static;
+use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use serde_derive::Deserialize;
 
+use crate::errors::ToSerdeError;
 use crate::util;
 
-lazy_static! {
-    pub static ref SLICK: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#424242")),
-        idle_fg: Some(String::from("#ffffff")),
-        info_bg: Some(String::from("#2196f3")),
-        info_fg: Some(String::from("#ffffff")),
-        good_bg: Some(String::from("#8bc34a")),
-        good_fg: Some(String::from("#000000")),
-        warning_bg: Some(String::from("#ffc107")),
-        warning_fg: Some(String::from("#000000")),
-        critical_bg: Some(String::from("#f44336")),
-        critical_fg: Some(String::from("#ffffff")),
-        separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")),
-        separator_fg: Some(String::from("auto")),
-        alternating_tint_bg: Some(String::from("#111111")),
-        alternating_tint_fg: Some(String::from("#111111")),
-    };
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Color {
+    None,
+    Auto,
+    Rgba(u8, u8, u8, u8),
+}
 
-    pub static ref SOLARIZED_DARK: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#002b36")),      // base03
-        idle_fg: Some(String::from("#93a1a1")),      // base1
-        info_bg: Some(String::from("#268bd2")),      // blue
-        info_fg: Some(String::from("#002b36")),      // base03
-        good_bg: Some(String::from("#859900")),      // green
-        good_fg: Some(String::from("#002b36")),      // base03
-        warning_bg: Some(String::from("#b58900")),   // yellow
-        warning_fg: Some(String::from("#002b36")),   // base03
-        critical_bg: Some(String::from("#dc322f")),  // red
-        critical_fg: Some(String::from("#002b36")),  // base03
-        separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")),
-        separator_fg: Some(String::from("auto")),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
+impl Add for Color {
+    type Output = Color;
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (x, Color::None) => x,
+            (x, Color::Auto) => x,
+            (Color::None, x) => x,
+            (Color::Auto, x) => x,
+            (Color::Rgba(r1, g1, b1, a1), Color::Rgba(r2, g2, b2, a2)) => Color::Rgba(
+                r1.saturating_add(r2),
+                g1.saturating_add(g2),
+                b1.saturating_add(b2),
+                a1.saturating_add(a2),
+            ),
+        }
+    }
+}
 
-    pub static ref SOLARIZED_LIGHT: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#fdf6e3")),      // base3
-        idle_fg: Some(String::from("#586e75")),      // base01
-        info_bg: Some(String::from("#268bd2")),      // blue
-        info_fg: Some(String::from("#fdf6e3")),      // base3
-        good_bg: Some(String::from("#859900")),      // green
-        good_fg: Some(String::from("#fdf6e3")),      // base3
-        warning_bg: Some(String::from("#b58900")),   // yellow
-        warning_fg: Some(String::from("#fdf6e3")),   // base3
-        critical_bg: Some(String::from("#dc322f")),  // red
-        critical_fg: Some(String::from("#fdf6e3")),  // base3
-        separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")),
-        separator_fg: Some(String::from("auto")),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
+impl FromStr for Color {
+    type Err = crate::errors::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "none" || s.is_empty() {
+            Ok(Color::None)
+        } else if s == "auto" {
+            Ok(Color::Auto)
+        } else {
+            use crate::errors::{OptionExt, ResultExtInternal};
+            let err_msg = "invaild RGBA color";
+            let r = s.get(1..3).internal_error("color parser", err_msg)?;
+            let g = s.get(3..5).internal_error("color parser", err_msg)?;
+            let b = s.get(5..7).internal_error("color parser", err_msg)?;
+            let a = s.get(7..9).unwrap_or("FF");
+            Ok(Color::Rgba(
+                u8::from_str_radix(r, 16).internal_error("color parser", err_msg)?,
+                u8::from_str_radix(g, 16).internal_error("color parser", err_msg)?,
+                u8::from_str_radix(b, 16).internal_error("color parser", err_msg)?,
+                u8::from_str_radix(a, 16).internal_error("color parser", err_msg)?,
+            ))
+        }
+    }
+}
 
-    pub static ref MODERN: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#222D32")),
-        idle_fg: Some(String::from("#CFD8DC")),
-        info_bg: Some(String::from("#449CDB")),
-        info_fg: Some(String::from("#1D1F21")),
-        good_bg: Some(String::from("#99b938")),
-        good_fg: Some(String::from("#1D1F21")),
-        warning_bg: Some(String::from("#FE7E29")),
-        warning_fg: Some(String::from("#1D1F21")),
-        critical_bg: Some(String::from("#ff5252")),
-        critical_fg: Some(String::from("#1D1F21")),
-        separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")),
-        separator_fg: Some(String::from("auto")),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
+impl<'de> Deserialize<'de> for Color {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ColorVisitor;
 
-    pub static ref PLAIN: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#000000")),
-        idle_fg: Some(String::from("#93a1a1")),
-        info_bg: Some(String::from("#000000")),
-        info_fg: Some(String::from("#93a1a1")),
-        good_bg: Some(String::from("#000000")),
-        good_fg: Some(String::from("#859900")),
-        warning_bg: Some(String::from("#000000")),
-        warning_fg: Some(String::from("#b58900")),
-        critical_bg: Some(String::from("#000000")),
-        critical_fg: Some(String::from("#dc322f")),
-        separator: "|".to_owned(),
-        separator_bg: Some(String::from("#000000")),
-        separator_fg: Some(String::from("#a9a9a9")),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
+        impl<'de> Visitor<'de> for ColorVisitor {
+            type Value = Color;
 
-    pub static ref BAD_WOLF: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#444444")),
-        idle_fg: Some(String::from("#f5f5f5")),
-        info_bg: Some(String::from("#626262")),
-        info_fg: Some(String::from("#ffd680")),
-        good_bg: Some(String::from("#afff00")),
-        good_fg: Some(String::from("#000000")),
-        warning_bg: Some(String::from("#ffaf00")),
-        warning_fg: Some(String::from("#000000")),
-        critical_bg: Some(String::from("#d70000")),
-        critical_fg: Some(String::from("#000000")),
-        separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")),
-        separator_fg: Some(String::from("auto")),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("color")
+            }
 
-    pub static ref GRUVBOX_LIGHT: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#fbf1c7")),
-        idle_fg: Some(String::from("#3c3836")),
-        info_bg: Some(String::from("#458588")),
-        info_fg: Some(String::from("#fbf1c7")),
-        good_bg: Some(String::from("#98971a")),
-        good_fg: Some(String::from("#fbf1c7")),
-        warning_bg: Some(String::from("#d79921")),
-        warning_fg: Some(String::from("#fbf1c7")),
-        critical_bg: Some(String::from("#cc241d")),
-        critical_fg: Some(String::from("#fbf1c7")),
-        separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")),
-        separator_fg: Some(String::from("auto")),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
+            fn visit_str<E>(self, s: &str) -> Result<Color, E>
+            where
+                E: de::Error,
+            {
+                s.parse().serde_error()
+            }
+        }
 
-    pub static ref GRUVBOX_DARK: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#282828")),
-        idle_fg: Some(String::from("#ebdbb2")),
-        info_bg: Some(String::from("#458588")),
-        info_fg: Some(String::from("#ebdbb2")),
-        good_bg: Some(String::from("#98971a")),
-        good_fg: Some(String::from("#ebdbb2")),
-        warning_bg: Some(String::from("#d79921")),
-        warning_fg: Some(String::from("#ebdbb2")),
-        critical_bg: Some(String::from("#cc241d")),
-        critical_fg: Some(String::from("#ebdbb2")),
-        separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")),
-        separator_fg: Some(String::from("auto")),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
+        deserializer.deserialize_any(ColorVisitor)
+    }
+}
 
-    pub static ref SPACE_VILLAIN: Theme = Theme {
-        native_separators: false.to_owned(),
-        idle_bg: Some(String::from("#06060f")), //Rich black
-        idle_fg: Some(String::from("#c1c1c1")), //Silver
-        info_bg: Some(String::from("#00223f")), //Maastricht Blue
-        info_fg: Some(String::from("#c1c1c1")), //Silver
-        good_bg: Some(String::from("#394049")), //Arsenic
-        good_fg: Some(String::from("#c1c1c1")), //Silver
-        warning_bg: Some(String::from("#2d1637")), //Dark Purple
-        warning_fg: Some(String::from("#c1c1c1")), //Silver
-        critical_bg: Some(String::from("#c1c1c1")), //Silver
-        critical_fg: Some(String::from("#2c1637")), //Dark Purple
-        separator: "\u{e0b2}".to_owned(),
-        separator_bg: Some(String::from("auto")),
-        separator_fg: Some(String::from("auto")),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
-
-    pub static ref SEMI_NATIVE: Theme = Theme {
-        native_separators: true.to_owned(),
-        idle_bg: None.to_owned(),
-        idle_fg: Some(String::from("#93a1a1")),
-        info_bg: None.to_owned(),
-        info_fg: Some(String::from("#93a1a1")),
-        good_bg: None.to_owned(),
-        good_fg: Some(String::from("#859900")),
-        warning_bg: None.to_owned(),
-        warning_fg: Some(String::from("#b58900")),
-        critical_bg: None.to_owned(),
-        critical_fg: Some(String::from("#dc322f")),
-        separator: "".to_owned(),
-        separator_bg: None.to_owned(),
-        separator_fg: None.to_owned(),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
-
-    pub static ref NATIVE: Theme = Theme {
-        native_separators: true.to_owned(),
-        idle_bg: None.to_owned(),
-        idle_fg: None.to_owned(),
-        info_bg: None.to_owned(),
-        info_fg: None.to_owned(),
-        good_bg: None.to_owned(),
-        good_fg: None.to_owned(),
-        warning_bg: None.to_owned(),
-        warning_fg: None.to_owned(),
-        critical_bg: None.to_owned(),
-        critical_fg: None.to_owned(),
-        separator: "".to_owned(),
-        separator_bg: None.to_owned(),
-        separator_fg: None.to_owned(),
-        alternating_tint_bg: None.to_owned(),
-        alternating_tint_fg: None.to_owned(),
-    };
-
+impl Color {
+    pub fn to_string(self) -> Option<String> {
+        match self {
+            Color::Rgba(r, g, b, a) => Some(format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a)),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct Theme {
-    pub native_separators: bool,
-    pub idle_bg: Option<String>,
-    pub idle_fg: Option<String>,
-    pub info_bg: Option<String>,
-    pub info_fg: Option<String>,
-    pub good_bg: Option<String>,
-    pub good_fg: Option<String>,
-    pub warning_bg: Option<String>,
-    pub warning_fg: Option<String>,
-    pub critical_bg: Option<String>,
-    pub critical_fg: Option<String>,
-    pub separator: String,
-    pub separator_bg: Option<String>,
-    pub separator_fg: Option<String>,
-    pub alternating_tint_bg: Option<String>,
-    pub alternating_tint_fg: Option<String>,
+#[serde(default, deny_unknown_fields)]
+pub struct InternalTheme {
+    pub idle_bg: Color,
+    pub idle_fg: Color,
+    pub info_bg: Color,
+    pub info_fg: Color,
+    pub good_bg: Color,
+    pub good_fg: Color,
+    pub warning_bg: Color,
+    pub warning_fg: Color,
+    pub critical_bg: Color,
+    pub critical_fg: Color,
+    pub separator: Option<String>,
+    pub separator_bg: Color,
+    pub separator_fg: Color,
+    pub alternating_tint_bg: Color,
+    pub alternating_tint_fg: Color,
 }
+
+impl Default for InternalTheme {
+    fn default() -> Self {
+        Self {
+            idle_bg: Color::None,
+            idle_fg: Color::None,
+            info_bg: Color::None,
+            info_fg: Color::None,
+            good_bg: Color::None,
+            good_fg: Color::None,
+            warning_bg: Color::None,
+            warning_fg: Color::None,
+            critical_bg: Color::None,
+            critical_fg: Color::None,
+            separator: None,
+            separator_bg: Color::None,
+            separator_fg: Color::None,
+            alternating_tint_bg: Color::None,
+            alternating_tint_fg: Color::None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Theme(pub InternalTheme);
 
 impl Default for Theme {
     fn default() -> Self {
-        PLAIN.clone()
+        Self::from_file("plain").unwrap_or_else(|| Self(InternalTheme::default()))
+    }
+}
+
+impl std::ops::Deref for Theme {
+    type Target = InternalTheme;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Theme {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
 impl Theme {
-    pub fn from_name(name: &str) -> Option<Theme> {
-        match name {
-            "slick" => Some(SLICK.clone()),
-            "solarized-dark" => Some(SOLARIZED_DARK.clone()),
-            "solarized-light" => Some(SOLARIZED_LIGHT.clone()),
-            "plain" => Some(PLAIN.clone()),
-            "modern" => Some(MODERN.clone()),
-            "bad-wolf" => Some(BAD_WOLF.clone()),
-            "gruvbox-light" => Some(GRUVBOX_LIGHT.clone()),
-            "gruvbox-dark" => Some(GRUVBOX_DARK.clone()),
-            "space-villain" => Some(SPACE_VILLAIN.clone()),
-            "semi-native" => Some(SEMI_NATIVE.clone()),
-            "native" => Some(NATIVE.clone()),
-            _ => None,
-        }
-    }
-
     pub fn from_file(file: &str) -> Option<Theme> {
-        let full_path = Path::new(file);
-        let xdg_path = util::xdg_config_home()
-            .join("i3status-rust/themes")
-            .join(file);
-        let share_path = Path::new(util::USR_SHARE_PATH).join("themes").join(file);
+        let file = util::find_file(file, Some("themes"), Some("toml"))?;
+        Some(Theme(util::deserialize_file(&file).ok()?))
+    }
 
-        if full_path.exists() {
-            util::deserialize_file(full_path.to_str().unwrap()).ok()
-        } else if xdg_path.exists() {
-            util::deserialize_file(xdg_path.to_str().unwrap()).ok()
-        } else if share_path.exists() {
-            util::deserialize_file(share_path.to_str().unwrap()).ok()
-        } else {
-            None
+    pub fn apply_overrides(
+        &mut self,
+        overrides: &HashMap<String, String>,
+    ) -> Result<(), crate::errors::Error> {
+        if let Some(separator) = overrides.get("separator") {
+            self.separator = Some(separator.clone());
         }
+        macro_rules! apply {
+            ($prop:tt) => {
+                if let Some(val) = overrides.get(stringify!($prop)) {
+                    self.$prop = val.parse()?;
+                }
+            };
+        }
+        apply!(idle_bg);
+        apply!(idle_fg);
+        apply!(info_bg);
+        apply!(info_fg);
+        apply!(good_bg);
+        apply!(good_fg);
+        apply!(warning_bg);
+        apply!(warning_fg);
+        apply!(critical_bg);
+        apply!(critical_fg);
+        apply!(separator_bg);
+        apply!(separator_fg);
+        apply!(alternating_tint_bg);
+        apply!(alternating_tint_fg);
+        Ok(())
     }
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct ThemeOverrides {
-    idle_bg: Option<String>,
-    idle_fg: Option<String>,
-    info_bg: Option<String>,
-    info_fg: Option<String>,
-    good_bg: Option<String>,
-    good_fg: Option<String>,
-    warning_bg: Option<String>,
-    warning_fg: Option<String>,
-    critical_bg: Option<String>,
-    critical_fg: Option<String>,
-    separator: Option<String>,
-    separator_bg: Option<String>,
-    separator_fg: Option<String>,
-    alternating_tint_bg: Option<String>,
-    alternating_tint_fg: Option<String>,
-}
-
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct ThemeConfig {
-    name: Option<String>,
-    file: Option<String>,
-    overrides: Option<ThemeOverrides>,
-}
-
-impl ThemeConfig {
-    pub fn into_theme(self) -> Option<Theme> {
-        let mut theme = if let Some(name) = self.name {
-            Theme::from_name(&name)
-        } else if let Some(file) = self.file {
-            Theme::from_file(&file)
-        } else {
-            None
-        }?;
-        if let Some(overrides) = self.overrides {
-            theme.idle_bg = overrides.idle_bg.or(theme.idle_bg);
-            theme.idle_fg = overrides.idle_fg.or(theme.idle_fg);
-            theme.info_bg = overrides.info_bg.or(theme.info_bg);
-            theme.info_fg = overrides.info_fg.or(theme.info_fg);
-            theme.good_bg = overrides.good_bg.or(theme.good_bg);
-            theme.good_fg = overrides.good_fg.or(theme.good_fg);
-            theme.warning_bg = overrides.warning_bg.or(theme.warning_bg);
-            theme.warning_fg = overrides.warning_fg.or(theme.warning_fg);
-            theme.critical_bg = overrides.critical_bg.or(theme.critical_bg);
-            theme.critical_fg = overrides.critical_fg.or(theme.critical_fg);
-            theme.separator = overrides.separator.unwrap_or(theme.separator);
-            theme.separator_bg = overrides.separator_bg.or(theme.separator_bg);
-            theme.separator_fg = overrides.separator_fg.or(theme.separator_fg);
-            theme.alternating_tint_bg = overrides.alternating_tint_bg.or(theme.alternating_tint_bg);
-            theme.alternating_tint_fg = overrides.alternating_tint_fg.or(theme.alternating_tint_fg);
+impl<'de> Deserialize<'de> for Theme {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Name,
+            File,
+            Overrides,
         }
-        Some(theme)
+
+        struct ThemeVisitor;
+
+        impl<'de> Visitor<'de> for ThemeVisitor {
+            type Value = Theme;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Theme")
+            }
+
+            /// Handle configs like:
+            ///
+            /// ```toml
+            /// theme = "slick"
+            /// ```
+            fn visit_str<E>(self, file: &str) -> Result<Theme, E>
+            where
+                E: de::Error,
+            {
+                Theme::from_file(file)
+                    .ok_or_else(|| de::Error::custom(format!("Theme '{}' not found.", file)))
+            }
+
+            /// Handle configs like:
+            ///
+            /// ```toml
+            /// [theme]
+            /// name = "modern"
+            /// ```
+            fn visit_map<V>(self, mut map: V) -> Result<Theme, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut theme: Option<String> = None;
+                let mut overrides: Option<HashMap<String, String>> = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        // TODO merge name and file into one option (let's say "theme")
+                        Field::Name => {
+                            if theme.is_some() {
+                                return Err(de::Error::duplicate_field("name or file"));
+                            }
+                            theme = Some(map.next_value()?);
+                        }
+                        Field::File => {
+                            if theme.is_some() {
+                                return Err(de::Error::duplicate_field("name or file"));
+                            }
+                            theme = Some(map.next_value()?);
+                        }
+                        Field::Overrides => {
+                            if overrides.is_some() {
+                                return Err(de::Error::duplicate_field("overrides"));
+                            }
+                            overrides = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let theme = theme.unwrap_or_else(|| "plain".to_string());
+                let mut theme = Theme::from_file(&theme)
+                    .ok_or_else(|| de::Error::custom(format!("Theme '{}' not found.", theme)))?;
+
+                if let Some(ref overrides) = overrides {
+                    theme.apply_overrides(overrides).serde_error()?;
+                }
+                Ok(theme)
+            }
+        }
+
+        deserializer.deserialize_any(ThemeVisitor)
     }
 }

@@ -1,0 +1,13 @@
+idle_bg = "#2e3440" # nord0
+idle_fg = "#81a1c1" # light blue
+info_bg = "#5e81ac" # dark blue
+info_fg = "#2e3440" # nord0
+good_bg = "#a3be86" # green
+good_fg = "#2e3440" # nord0
+warning_bg = "#ebcb8b" # yellow
+warning_fg = "#2e3440" # nord0
+critical_bg = "#bf616a" # red
+critical_fg = "#2e3440" # nord0
+separator = "\ue0b2"
+separator_bg = "auto"
+separator_fg = "auto"

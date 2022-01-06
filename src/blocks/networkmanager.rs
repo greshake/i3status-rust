@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fmt;
 use std::net::Ipv4Addr;
 use std::result;
@@ -16,14 +15,14 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
-use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, Spacing, State};
-use crate::widgets::button::ButtonWidget;
+use crate::util::escape_pango_text;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, Spacing, State};
 
 enum NetworkState {
     Unknown,
@@ -92,7 +91,7 @@ enum DeviceType {
     Wifi,
     Modem,
     Bridge,
-    TUN,
+    Tun,
     Wireguard,
 }
 
@@ -104,7 +103,7 @@ impl From<u32> for DeviceType {
             2 => DeviceType::Wifi,
             8 => DeviceType::Modem,
             13 => DeviceType::Bridge,
-            16 => DeviceType::TUN,
+            16 => DeviceType::Tun,
             29 => DeviceType::Wireguard,
             _ => DeviceType::Unknown,
         }
@@ -118,7 +117,7 @@ impl DeviceType {
             DeviceType::Wifi => Some("net_wireless".to_string()),
             DeviceType::Modem => Some("net_modem".to_string()),
             DeviceType::Bridge => Some("net_bridge".to_string()),
-            DeviceType::TUN => Some("net_bridge".to_string()),
+            DeviceType::Tun => Some("net_bridge".to_string()),
             DeviceType::Wireguard => Some("net_vpn".to_string()),
             _ => None,
         }
@@ -129,6 +128,7 @@ impl DeviceType {
 struct Ipv4Address {
     address: Ipv4Addr,
     prefix: u32,
+    #[allow(dead_code)]
     gateway: Ipv4Addr,
 }
 
@@ -215,13 +215,11 @@ impl ConnectionManager {
             .get1()
             .block_error("networkmanager", "Failed to read primary connection")?;
 
-        if let Ok(conn) = primary_connection.0.as_cstr().to_str() {
-            if conn == "/" {
-                return Err(BlockError(
-                    "networkmanager".to_string(),
-                    "No primary connection".to_string(),
-                ));
-            }
+        if primary_connection.0.to_string() == "/" {
+            return Err(BlockError(
+                "networkmanager".to_string(),
+                "No primary connection".to_string(),
+            ));
         }
 
         Ok(NmConnection {
@@ -263,6 +261,21 @@ impl<'a> NmConnection<'a> {
             .get1()
             .block_error("networkmanager", "Failed to read connection state")?;
         Ok(ActiveConnectionState::from(state.0))
+    }
+
+    fn vpn(&self, c: &Connection) -> Result<bool> {
+        let m = ConnectionManager::get(
+            c,
+            self.path.clone(),
+            "org.freedesktop.NetworkManager.Connection.Active",
+            "Vpn",
+        )
+        .block_error("networkmanager", "Failed to retrieve connection vpn flag")?;
+
+        let vpn: Variant<bool> = m
+            .get1()
+            .block_error("networkmanager", "Failed to read connection vpn flag")?;
+        Ok(vpn.0)
     }
 
     fn id(&self, c: &Connection) -> Result<String> {
@@ -444,104 +457,65 @@ impl<'a> NmIp4Config<'a> {
 }
 
 pub struct NetworkManager {
-    id: String,
-    indicator: ButtonWidget,
-    output: Vec<ButtonWidget>,
+    id: usize,
+    indicator: TextWidget,
+    output: Vec<TextWidget>,
     dbus_conn: Connection,
     manager: ConnectionManager,
-    config: Config,
-    on_click: Option<String>,
     primary_only: bool,
-    max_ssid_width: usize,
     ap_format: FormatTemplate,
     device_format: FormatTemplate,
     connection_format: FormatTemplate,
     interface_name_exclude_regexps: Vec<Regex>,
     interface_name_include_regexps: Vec<Regex>,
+    shared_config: SharedConfig,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct NetworkManagerConfig {
-    #[serde(default = "NetworkManagerConfig::default_on_click")]
-    pub on_click: Option<String>,
-
     /// Whether to only show the primary connection, or all active connections.
-    #[serde(default = "NetworkManagerConfig::default_primary_only")]
     pub primary_only: bool,
 
-    /// Max SSID width, in characters.
-    #[serde(default = "NetworkManagerConfig::default_max_ssid_width")]
-    pub max_ssid_width: usize,
-
     /// AP formatter
-    #[serde(default = "NetworkManagerConfig::default_ap_format")]
-    pub ap_format: String,
+    pub ap_format: FormatTemplate,
 
     /// Device formatter.
-    #[serde(default = "NetworkManagerConfig::default_device_format")]
-    pub device_format: String,
+    pub device_format: FormatTemplate,
 
     /// Connection formatter.
-    #[serde(default = "NetworkManagerConfig::default_connection_format")]
-    pub connection_format: String,
-
-    /// Interface name regex patterns to include.
-    #[serde(default = "NetworkManagerConfig::default_interface_name_include_patterns")]
-    pub interface_name_exclude: Vec<String>,
+    pub connection_format: FormatTemplate,
 
     /// Interface name regex patterns to ignore.
-    #[serde(default = "NetworkManagerConfig::default_interface_name_exclude_patterns")]
-    pub interface_name_include: Vec<String>,
+    pub interface_name_exclude: Vec<String>,
 
-    #[serde(default = "NetworkManagerConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    /// Interface name regex patterns to include.
+    pub interface_name_include: Vec<String>,
 }
 
-impl NetworkManagerConfig {
-    fn default_on_click() -> Option<String> {
-        None
-    }
-
-    fn default_primary_only() -> bool {
-        false
-    }
-
-    fn default_max_ssid_width() -> usize {
-        21
-    }
-
-    fn default_ap_format() -> String {
-        "{ssid}".to_string()
-    }
-
-    fn default_device_format() -> String {
-        "{icon}{ap} {ips}".to_string()
-    }
-
-    fn default_connection_format() -> String {
-        "{devices}".to_string()
-    }
-
-    fn default_interface_name_include_patterns() -> Vec<String> {
-        vec![]
-    }
-
-    fn default_interface_name_exclude_patterns() -> Vec<String> {
-        vec![]
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+#[allow(clippy::derivable_impls)]
+impl Default for NetworkManagerConfig {
+    fn default() -> Self {
+        Self {
+            primary_only: false,
+            ap_format: FormatTemplate::default(),
+            device_format: FormatTemplate::default(),
+            connection_format: FormatTemplate::default(),
+            interface_name_exclude: Vec::new(),
+            interface_name_include: Vec::new(),
+        }
     }
 }
 
 impl ConfigBlock for NetworkManager {
     type Config = NetworkManagerConfig;
 
-    fn new(block_config: Self::Config, config: Config, send: Sender<Task>) -> Result<Self> {
-        let id: String = pseudo_uuid();
-        let id_copy = id.clone();
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        send: Sender<Task>,
+    ) -> Result<Self> {
         let dbus_conn = Connection::get_private(BusType::System)
             .block_error("networkmanager", "failed to establish D-Bus connection")?;
         let manager = ConnectionManager::new();
@@ -550,12 +524,21 @@ impl ConfigBlock for NetworkManager {
             .name("networkmanager".into())
             .spawn(move || {
                 let c = Connection::get_private(BusType::System).unwrap();
-                let rule = "type='signal',\
-                        path='/org/freedesktop/NetworkManager',\
-                        interface='org.freedesktop.NetworkManager',\
-                        member='PropertiesChanged'";
 
-                c.add_match(&rule).unwrap();
+                c.add_match(
+                    "type='signal',\
+                    path='/org/freedesktop/NetworkManager',\
+                    interface='org.freedesktop.DBus.Properties',\
+                    member='PropertiesChanged'",
+                )
+                .unwrap();
+                c.add_match(
+                    "type='signal',\
+                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
+                    interface='org.freedesktop.DBus.Properties',\
+                    member='PropertiesChanged'",
+                )
+                .unwrap();
 
                 loop {
                     let timeout = 300_000;
@@ -565,7 +548,7 @@ impl ConfigBlock for NetworkManager {
                             ConnectionItem::Nothing => (),
                             _ => send
                                 .send(Task {
-                                    id: id_copy.clone(),
+                                    id,
                                     update_time: Instant::now(),
                                 })
                                 .unwrap(),
@@ -576,33 +559,33 @@ impl ConfigBlock for NetworkManager {
             .unwrap();
 
         fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
-            patterns.iter().map(|p| Regex::new(&p)).collect()
+            patterns.iter().map(|p| Regex::new(p)).collect()
         }
 
         Ok(NetworkManager {
-            id: id.clone(),
-            config: config.clone(),
-            indicator: ButtonWidget::new(config, &id),
+            id,
+            indicator: TextWidget::new(id, 0, shared_config.clone()),
             output: Vec::new(),
             dbus_conn,
             manager,
-            on_click: block_config.on_click,
             primary_only: block_config.primary_only,
-            max_ssid_width: block_config.max_ssid_width,
-            ap_format: FormatTemplate::from_string(&block_config.ap_format)?,
-            device_format: FormatTemplate::from_string(&block_config.device_format)?,
-            connection_format: FormatTemplate::from_string(&block_config.connection_format)?,
+            ap_format: block_config.ap_format.with_default("{ssid}")?,
+            device_format: block_config
+                .device_format
+                .with_default("{icon}{ap} {ips}")?,
+            connection_format: block_config.connection_format.with_default("{devices}")?,
             interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
                 .block_error("networkmanager", "failed to parse exclude patterns")?,
             interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
                 .block_error("networkmanager", "failed to parse include patterns")?,
+            shared_config,
         })
     }
 }
 
 impl Block for NetworkManager {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -617,10 +600,10 @@ impl Block for NetworkManager {
             _ => State::Critical,
         });
         self.indicator.set_text(match state {
-            Ok(NetworkState::Disconnected) => "×",
-            Ok(NetworkState::Asleep) => "×",
-            Ok(NetworkState::Unknown) => "E",
-            _ => "",
+            Ok(NetworkState::Disconnected) => "×".to_string(),
+            Ok(NetworkState::Asleep) => "×".to_string(),
+            Ok(NetworkState::Unknown) => "E".to_string(),
+            _ => String::new(),
         });
 
         self.output = match state {
@@ -650,7 +633,7 @@ impl Block for NetworkManager {
                     match self.manager.primary_connection(&self.dbus_conn) {
                         Ok(conn) => vec![conn.clone()]
                             .into_iter()
-                            .chain(active.into_iter().filter(|ref x| x.path != conn.path))
+                            .chain(active.into_iter().filter(|x| x.path != conn.path))
                             .collect(),
                         Err(_) => active,
                     }
@@ -659,8 +642,13 @@ impl Block for NetworkManager {
                 connections
                     .into_iter()
                     .filter_map(|conn| {
+                        // Hide vpn connection(s) since its devices are the devices of its parent connection
+                        if let Ok(true) = conn.vpn(&self.dbus_conn) {
+                            return None;
+                        };
+
                         // inline spacing for no leading space, because the icon is set in the string
-                        let mut widget = ButtonWidget::new(self.config.clone(), &self.id)
+                        let mut widget = TextWidget::new(self.id, 0, self.shared_config.clone())
                             .with_spacing(Spacing::Inline);
 
                         // Set the state for this connection
@@ -699,57 +687,44 @@ impl Block for NetworkManager {
                                     continue 'devices;
                                 }
 
-                                let (icon, type_name) = if let Ok(dev_type) =
-                                    device.device_type(&self.dbus_conn)
-                                {
-                                    match dev_type.to_icon_name() {
-                                        Some(icon_name) => {
-                                            let i = self
-                                                .config
-                                                .icons
-                                                .get(&icon_name)
-                                                .cloned()
-                                                .unwrap_or_else(|| "".to_string());
-                                            (i.to_string(), format!("{:?}", dev_type).to_string())
+                                let (icon, type_name) =
+                                    if let Ok(dev_type) = device.device_type(&self.dbus_conn) {
+                                        match dev_type.to_icon_name() {
+                                            Some(icon_name) => {
+                                                let i = self
+                                                    .shared_config
+                                                    .get_icon(&icon_name)
+                                                    .unwrap_or_default();
+                                                (i, format!("{:?}", dev_type).to_string())
+                                            }
+                                            None => (
+                                                self.shared_config
+                                                    .get_icon("unknown")
+                                                    .unwrap_or_default(),
+                                                format!("{:?}", dev_type).to_string(),
+                                            ),
                                         }
-                                        None => (
-                                            self.config
-                                                .icons
-                                                .get("unknown")
-                                                .cloned()
-                                                .unwrap_or_else(|| "".to_string()),
-                                            format!("{:?}", dev_type).to_string(),
-                                        ),
-                                    }
-                                } else {
-                                    // TODO: Communicate the error to the user?
-                                    ("".to_string(), "".to_string())
-                                };
+                                    } else {
+                                        // TODO: Communicate the error to the user?
+                                        ("".to_string(), "".to_string())
+                                    };
 
                                 let ap = if let Ok(ap) = device.active_access_point(&self.dbus_conn)
                                 {
-                                    let ssid = match ap.ssid(&self.dbus_conn) {
-                                        Ok(ssid) => {
-                                            let mut truncated = ssid.to_string();
-                                            truncated.truncate(self.max_ssid_width);
-                                            truncated
-                                        }
-                                        Err(_) => "".to_string(),
-                                    };
-                                    let strength = match ap.strength(&self.dbus_conn) {
-                                        Ok(v) => format!("{}", v).to_string(),
-                                        Err(_) => "0".to_string(),
-                                    };
+                                    let ssid = ap.ssid(&self.dbus_conn).unwrap_or_else(|_| "".to_string());
+                                    let strength = ap.strength(&self.dbus_conn).unwrap_or(0);
                                     let freq = match ap.frequency(&self.dbus_conn) {
-                                        Ok(v) => format!("{}", v).to_string(),
+                                        Ok(v) => v.to_string(),
                                         Err(_) => "0".to_string(),
                                     };
 
-                                    let values = map!("{ssid}" => ssid,
-                                                      "{strength}" => strength,
-                                                      "{freq}" => freq);
-                                    if let Ok(s) = self.ap_format.render_static_str(&values) {
-                                        s
+                                    let values = map!(
+                                        "ssid" => Value::from_string(escape_pango_text(&ssid)),
+                                        "strength" => Value::from_integer(strength as i64).percents(),
+                                        "freq" => Value::from_string(freq).percents(),
+                                    );
+                                    if let Ok(s) = self.ap_format.render(&values) {
+                                        s.0
                                     } else {
                                         "[invalid device format string]".to_string()
                                     }
@@ -770,14 +745,16 @@ impl Block for NetworkManager {
                                     }
                                 }
 
-                                let values = map!("{icon}" => icon,
-                                                  "{typename}" => type_name,
-                                                  "{ap}" => ap,
-                                                  "{name}" => name.to_string(), 
-                                                  "{ips}" => ips);
+                                let values = map!(
+                                    "icon" => Value::from_string(icon),
+                                    "typename" => Value::from_string(type_name),
+                                    "ap" => Value::from_string(ap),
+                                    "name" => Value::from_string(name.to_string()),
+                                    "ips" => Value::from_string(ips),
+                                );
 
-                                if let Ok(s) = self.device_format.render_static_str(&values) {
-                                    devicevec.push(s);
+                                if let Ok(s) = self.device_format.render(&values) {
+                                    devicevec.push(s.0);
                                 } else {
                                     devicevec.push("[invalid device format string]".to_string())
                                 }
@@ -789,13 +766,15 @@ impl Block for NetworkManager {
                             Err(v) => format!("{:?}", v),
                         };
 
-                        let values = map!("{devices}" => devicevec.join(" "),
-                                          "{id}" => id);
+                        let values = map!(
+                            "devices" => Value::from_string(devicevec.join(" ")),
+                            "id" => Value::from_string(id),
+                        );
 
-                        if let Ok(s) = self.connection_format.render_static_str(&values) {
-                            widget.set_text(s);
+                        if let Ok(s) = self.connection_format.render(&values) {
+                            widget.set_texts(s);
                         } else {
-                            widget.set_text("[invalid connection format string]");
+                            widget.set_text("[invalid connection format string]".to_string());
                         }
 
                         if !devicevec.is_empty() {
@@ -817,20 +796,5 @@ impl Block for NetworkManager {
         } else {
             self.output.iter().map(|x| x as &dyn I3BarWidget).collect()
         }
-    }
-
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                if let MouseButton::Left = e.button {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("networkmanager", "could not spawn child")?;
-                    }
-                }
-            }
-        }
-
-        Ok(())
     }
 }
