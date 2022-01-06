@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::time::Duration;
 
@@ -11,76 +11,48 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
-use crate::util::pseudo_uuid;
-use crate::widget::I3BarWidget;
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 pub struct Time {
-    time: ButtonWidget,
-    id: String,
+    id: usize,
+    time: TextWidget,
     update_interval: Duration,
-    format: String,
-    on_click: Option<String>,
+    formats: (String, Option<String>),
     timezone: Option<Tz>,
     locale: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct TimeConfig {
-    /// Format string.<br/> See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
-    #[serde(default = "TimeConfig::default_format")]
-    pub format: String,
+    /// Format string.
+    ///
+    /// See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options.
+    pub format: FormatTemplate,
 
     /// Update interval in seconds
-    #[serde(
-        default = "TimeConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    #[serde(default = "TimeConfig::default_on_click")]
-    pub on_click: Option<String>,
-
-    #[serde(default = "TimeConfig::default_timezone")]
     pub timezone: Option<Tz>,
 
-    #[serde(default = "TimeConfig::default_locale")]
     pub locale: Option<String>,
-
-    #[serde(default = "TimeConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
-impl TimeConfig {
-    fn default_format() -> String {
-        "%a %d/%m %R".to_owned()
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_on_click() -> Option<String> {
-        None
-    }
-
-    fn default_timezone() -> Option<Tz> {
-        None
-    }
-
-    fn default_locale() -> Option<String> {
-        None
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for TimeConfig {
+    fn default() -> Self {
+        Self {
+            format: FormatTemplate::default(),
+            interval: Duration::from_secs(5),
+            timezone: None,
+            locale: None,
+        }
     }
 }
 
@@ -88,27 +60,29 @@ impl ConfigBlock for Time {
     type Config = TimeConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let i = pseudo_uuid();
         Ok(Time {
-            id: i.clone(),
-            format: block_config.format,
-            time: ButtonWidget::new(config, i.as_str())
+            id,
+            time: TextWidget::new(id, 0, shared_config)
                 .with_text("")
-                .with_icon("time"),
+                .with_icon("time")?,
             update_interval: block_config.interval,
-            on_click: block_config.on_click,
+            formats: block_config
+                .format
+                .with_default("%a %d/%m %R")?
+                .render(&HashMap::<&str, _>::new())?,
             timezone: block_config.timezone,
             locale: block_config.locale,
         })
     }
 }
 
-impl Block for Time {
-    fn update(&mut self) -> Result<Option<Update>> {
+impl Time {
+    fn get_formatted_time(&self, format: &str) -> Result<String> {
         let time = match &self.locale {
             Some(l) => {
                 let locale: Locale = l
@@ -118,38 +92,35 @@ impl Block for Time {
                 match self.timezone {
                     Some(tz) => Utc::now()
                         .with_timezone(&tz)
-                        .format_localized(&self.format, locale),
-                    None => Local::now().format_localized(&self.format, locale),
+                        .format_localized(format, locale),
+                    None => Local::now().format_localized(format, locale),
                 }
             }
             None => match self.timezone {
-                Some(tz) => Utc::now().with_timezone(&tz).format(&self.format),
-                None => Local::now().format(&self.format),
+                Some(tz) => Utc::now().with_timezone(&tz).format(format),
+                None => Local::now().format(format),
             },
         };
-        self.time.set_text(format!("{}", time));
-        Ok(Some(self.update_interval.into()))
+        Ok(format!("{}", time))
     }
+}
 
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                if let MouseButton::Left = e.button {
-                    if let Some(ref cmd) = self.on_click {
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("time", "could not spawn child")?;
-                    }
-                }
-            }
-        }
-        Ok(())
+impl Block for Time {
+    fn update(&mut self) -> Result<Option<Update>> {
+        let full = self.get_formatted_time(&self.formats.0)?;
+        let short = match &self.formats.1 {
+            Some(short_fmt) => Some(self.get_formatted_time(short_fmt)?),
+            None => None,
+        };
+        self.time.set_texts((full, short));
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.time]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

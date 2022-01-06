@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::path::Path;
 use std::time::Duration;
 
@@ -7,172 +6,90 @@ use nix::sys::statvfs::statvfs;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::FormatTemplate;
+use crate::formatting::{prefix::Prefix, value::Value};
 use crate::scheduler::Task;
-use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
-
-#[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq)]
-pub enum Unit {
-    MB,
-    GB,
-    TB,
-    TiB,
-    GiB,
-    MiB,
-    Percent,
-}
-
-impl Unit {
-    fn bytes_in_unit(unit: Unit, bytes: u64) -> f64 {
-        match unit {
-            Unit::MB => bytes as f64 / 1000. / 1000.,
-            Unit::GB => bytes as f64 / 1000. / 1000. / 1000.,
-            Unit::TB => bytes as f64 / 1000. / 1000. / 1000. / 1000.,
-            Unit::MiB => bytes as f64 / 1024. / 1024.,
-            Unit::GiB => bytes as f64 / 1024. / 1024. / 1024.,
-            Unit::TiB => bytes as f64 / 1024. / 1024. / 1024. / 1024.,
-            Unit::Percent => bytes as f64,
-        }
-    }
-}
+use crate::widgets::{I3BarWidget, State};
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum InfoType {
     Available,
     Free,
-    Total,
     Used,
 }
 
 pub struct DiskSpace {
+    id: usize,
     disk_space: TextWidget,
-    id: String,
     update_interval: Duration,
-    alias: String,
     path: String,
-    unit: Unit,
+    unit: Prefix,
     info_type: InfoType,
     warning: f64,
     alert: f64,
-    show_percentage: bool,
-    show_bar: bool,
     alert_absolute: bool,
     format: FormatTemplate,
     icon: String,
+
+    // DEPRECATED
+    // TODO remove
+    alias: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, default)]
 pub struct DiskSpaceConfig {
     /// Path to collect information from
-    #[serde(default = "DiskSpaceConfig::default_path")]
     pub path: String,
-
-    /// Alias that is displayed for path
-    #[serde(default = "DiskSpaceConfig::default_alias")]
-    pub alias: String,
 
     /// Currently supported options are available, free, total and used
     /// Sets value used for {percentage} calculation
     /// total is the same as used, use format to set format string for output
-    #[serde(default = "DiskSpaceConfig::default_info_type")]
     pub info_type: InfoType,
 
     /// Format string for output
-    /// placeholders: {percentage}, {bar}, {path}, {alias}, {available}, {free}, {total}, {used},
-    ///               {unit}
-    #[serde(default = "DiskSpaceConfig::default_format")]
-    pub format: String,
+    pub format: FormatTemplate,
 
-    /// Unit that is used to display disk space. Options are MB, MiB, GB, GiB, TB and TiB
-    #[serde(default = "DiskSpaceConfig::default_unit")]
-    pub unit: Unit,
+    /// Unit that is used to display disk space. Options are B, KB, MB, GB and TB
+    pub unit: String,
 
     /// Update interval in seconds
-    #[serde(
-        default = "DiskSpaceConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    /// Diskspace warning in GiB (yellow)
-    #[serde(default = "DiskSpaceConfig::default_warning")]
+    /// Diskspace warning (yellow)
     pub warning: f64,
 
-    /// Diskspace alert in GiB (red)
-    #[serde(default = "DiskSpaceConfig::default_alert")]
+    /// Diskspace alert (red)
     pub alert: f64,
 
-    /// Show percentage - deprecated for format string, kept for previous configs
-    #[serde(default = "DiskSpaceConfig::default_show_percentage")]
-    pub show_percentage: bool,
-
-    /// Show percentage bar - deprecated for format string, kept for previous configs
-    #[serde(default = "DiskSpaceConfig::default_show_bar")]
-    pub show_bar: bool,
-
     /// use absolute (unit) values for disk space alerts
-    #[serde(default = "DiskSpaceConfig::default_alert_absolute")]
     pub alert_absolute: bool,
 
-    #[serde(default = "DiskSpaceConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    /// Alias that is displayed for path
+    // DEPRECATED
+    // TODO remove
+    pub alias: String,
 }
 
-impl DiskSpaceConfig {
-    fn default_path() -> String {
-        "/".to_owned()
-    }
-
-    fn default_alias() -> String {
-        "/".to_owned()
-    }
-
-    fn default_info_type() -> InfoType {
-        InfoType::Available
-    }
-
-    fn default_format() -> String {
-        String::from("{alias} {available} {unit}")
-    }
-
-    fn default_unit() -> Unit {
-        Unit::GB
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(20)
-    }
-
-    fn default_warning() -> f64 {
-        20.
-    }
-
-    fn default_alert() -> f64 {
-        10.
-    }
-
-    // Deprecated with format string, kept for previous config support
-    fn default_show_percentage() -> bool {
-        false
-    }
-
-    // Deprecated with format string, kept for previous config support
-    fn default_show_bar() -> bool {
-        false
-    }
-
-    fn default_alert_absolute() -> bool {
-        false
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for DiskSpaceConfig {
+    fn default() -> Self {
+        Self {
+            path: "/".to_string(),
+            info_type: InfoType::Available,
+            format: FormatTemplate::default(),
+            unit: "GB".to_string(),
+            interval: Duration::from_secs(20),
+            warning: 20.,
+            alert: 10.,
+            alert_absolute: false,
+            alias: "/".to_string(),
+        }
     }
 }
 
@@ -210,31 +127,38 @@ impl ConfigBlock for DiskSpace {
     type Config = DiskSpaceConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let icon = config
-            .icons
-            .get("disk_drive")
-            .cloned()
-            .unwrap_or_else(|| "".to_string());
+        let icon = shared_config.get_icon("disk_drive")?;
 
         Ok(DiskSpace {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            disk_space: TextWidget::new(config),
-            alias: block_config.alias,
+            disk_space: TextWidget::new(id, 0, shared_config),
             path: block_config.path,
-            format: FormatTemplate::from_string(&block_config.format)?,
+            format: block_config.format.with_default("{available}")?,
             info_type: block_config.info_type,
-            unit: block_config.unit,
+            unit: match block_config.unit.as_str() {
+                "TB" => Prefix::Tera,
+                "GB" => Prefix::Giga,
+                "MB" => Prefix::Mega,
+                "KB" => Prefix::Kilo,
+                "B" => Prefix::One,
+                x => {
+                    return Err(BlockError(
+                        "disk_space".to_string(),
+                        format!("cannot set unit to '{}'", x),
+                    ))
+                }
+            },
             warning: block_config.warning,
             alert: block_config.alert,
-            show_percentage: block_config.show_percentage,
-            show_bar: block_config.show_bar,
             alert_absolute: block_config.alert_absolute,
-            icon,
+            icon: icon.trim().to_string(),
+            alias: block_config.alias,
         })
     }
 }
@@ -244,64 +168,56 @@ impl Block for DiskSpace {
         let statvfs = statvfs(Path::new(self.path.as_str()))
             .block_error("disk_space", "failed to retrieve statvfs")?;
 
-        let result;
         let total = (statvfs.blocks() as u64) * (statvfs.fragment_size() as u64);
         let used = ((statvfs.blocks() as u64) - (statvfs.blocks_free() as u64))
             * (statvfs.fragment_size() as u64);
         let available = (statvfs.blocks_available() as u64) * (statvfs.block_size() as u64);
         let free = (statvfs.blocks_free() as u64) * (statvfs.block_size() as u64);
 
+        let result;
         let alert_type;
         match self.info_type {
             InfoType::Available => {
-                result = available;
+                result = available as f64;
                 alert_type = AlertType::Below;
             }
             InfoType::Free => {
-                result = free;
+                result = free as f64;
                 alert_type = AlertType::Below;
             }
-            InfoType::Total => {
-                // Deprecated: Same as Used - use format string to set output format
-                // Kept for back-compatibility
-                // Use format: "{used}/{total} {unit}" for previous format
-                result = used;
-                alert_type = AlertType::Above;
-                self.format = FormatTemplate::from_string("{used}/{total} {unit}")?;
-            }
             InfoType::Used => {
-                result = used;
+                result = used as f64;
                 alert_type = AlertType::Above;
             }
         }
 
-        let percentage = (result as f32) / (total as f32) * 100f32;
-        if self.show_percentage {
-            self.format = FormatTemplate::from_string("{alias} {result} ({percentage}) {unit}")?;
-        } else if self.show_bar {
-            self.format = FormatTemplate::from_string("{alias} {result} {unit} {bar}")?;
-        }
-
-        let values = map!("{percentage}" => format!("{:.2}%", percentage),
-        "{bar}" => format_percent_bar(percentage),
-        "{alias}" => self.alias.clone(),
-        "{unit}" => format!("{:?}", self.unit),
-        "{path}" => self.path.clone(),
-        "{total}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, total)),
-        "{used}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, used)),
-        "{available}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, available)),
-        "{free}" => format!("{:.2}", Unit::bytes_in_unit(self.unit, free)),
-        "{icon}" => self.icon.to_string(),
-        "{result}" => format!("{:.2}", result)
+        let percentage = result / (total as f64) * 100.;
+        let values = map!(
+            "percentage" => Value::from_float(percentage).percents(),
+            "path" => Value::from_string(self.path.clone()),
+            "total" => Value::from_float(total as f64).bytes(),
+            "used" => Value::from_float(used as f64).bytes(),
+            "available" => Value::from_float(available as f64).bytes(),
+            "free" => Value::from_float(free as f64).bytes(),
+            "icon" => Value::from_string(self.icon.to_string()),
+            //TODO remove
+            "alias" => Value::from_string(self.alias.clone()),
         );
-        self.disk_space
-            .set_text(self.format.render_static_str(&values)?);
+        self.disk_space.set_texts(self.format.render(&values)?);
 
         // Send percentage to alert check if we don't want absolute alerts
-        let alert_val = if !self.alert_absolute {
-            percentage as f64
+        let alert_val = if self.alert_absolute {
+            result
+                / match self.unit {
+                    Prefix::Tera => 1u64 << 40,
+                    Prefix::Giga => 1u64 << 30,
+                    Prefix::Mega => 1u64 << 20,
+                    Prefix::Kilo => 1u64 << 10,
+                    Prefix::One => 1u64,
+                    _ => unreachable!(),
+                } as f64
         } else {
-            Unit::bytes_in_unit(self.unit, result)
+            percentage
         };
 
         let state = self.compute_state(alert_val, self.warning, self.alert, alert_type);
@@ -314,7 +230,7 @@ impl Block for DiskSpace {
         vec![&self.disk_space]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

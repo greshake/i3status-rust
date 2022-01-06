@@ -1,3 +1,375 @@
+# i3status-rust 0.20.7
+
+## New Blocks and Features
+
+* Backlight block: new options `minimum`, `maximum`, `cycle` for toggling min/max brightness on click or on scrolll (#1349 by @Vanille-N)
+* Focused Window block: add `format` string (#1360 by @cfsmp3)
+
+## Bug Fixes and Improvements
+
+* icons: Add missing bat_not_available icon (#1361 by @ram02z)
+* Docker block: colour errors using Critical state (#1360 by @cfsmp3)
+
+# i3status-rust 0.20.6
+
+## New Blocks and Features
+
+* Custom block: new `watch watch_files` option that uses inotify to trigger the block to update when one or more specified files are seen to have been modified (#1325 by @BrendanBall)
+* CustomDBus block: new `initial_text` option to set the text shown up until the first update is received
+* Hueshift block: added support for wlsunset (#1337 by @DerVerruckteFuchs)
+
+## Bug Fixes and Improvements
+
+* IBus block: no longer crashes the bar if IBus reports that there is no global engine set on first startup
+* Music block: the default text icons are now pango escaped and should cause no errors with i3bar
+ 
+# i3status-rust 0.20.5
+
+## New Blocks and Features
+
+* New DNF block for Fedora (#1311 by @sigvei)
+* Docker block: allow non-default docker socket files (#1310 by @JTarasovic)
+* Sound block: add option to automatically change icon based on output device type (#1313 by @codicodi)
+
+## Bug Fixes and Improvements
+
+* Hueshift block: fix sluggishness by updating widget text on interactions (#1320 by @JohnDowson)
+* Music block: fix long standing issue where block tandomly stops updating (#1327 by jamesmcm)
+* Nvidia block: fix nvidia block falling behind on lines from nvidia-smi (#1296 by @ZachCook)
+ 
+
+# i3status-rust 0.20.4
+
+## New Blocks and Features
+
+* Github block: new config options `critical`, `warning`, `info`, `good` to colour the block for different notifications (#1286 by @ZachCook)
+* Temperature block: new `driver` config option with the option to choose a new backend using sysfs to grab temp info instead of `lm_sensors` (#1286 by @ZachCook)
+
+## Bug Fixes and Improvements
+
+* Battery/Kdeconnect block: add more battery icons. For the new battery icons you will need to update your icon files, otherwise it will fallback to the previous icons. (#1282 by @freswa)
+* Nvidia block: only run `nvidia-smi` once instead of spawning a new instance for each update (#1286 by @ZachCook)
+* Weather block: escape spaces in internally generated URL (#1289 by @rbuch)
+
+## Deprecation Warnings
+`bat_half`, `bat_quarter`, `bat_three_quarters` are likely to be removed in a future release.
+
+# i3status-rust 0.20.3
+
+## Bug Fixes and Improvements
+
+* Net block: fix SSID escape code decoding (#1274 by @GlasOSkar)
+* NetworkManager block: update DBus interface for newer verisons of NM (#1269 by @mailhost)
+* Pomodoro block: fix crash causing by pause icon typo (#1295 by @GladOSkar)
+* Temperature block: fix fallback for users with old versions of `lm-sensors` (#1281 by @freswa)
+* Icons: Fix `material-nf` icons that caused some blocks to render backwards (#1280 by @freswa)
+* Themes: Add ability to unset colors using overrides (#1279 by @GlasOSkar and @MaxVerevkin)
+* Themes: Fix alternating tint for the `slick` theme (#1284 by @MaxVerevkin)
+
+If you are manually managing your icon/theme files then you may want to update them now for the above fixes.
+
+# i3status-rust 0.20.2
+
+## Bug Fixes and Improvements
+
+* Battery block: find battery by default instead of hardcoding "BAT0" (#1258 by @orvij)
+* Batter block: new `full_threshold` option for batteries that don't reach 100% (#1261 by @GladOSkar)
+* CPU block: add `boost` format key for displaying CPU boost status (#1152 by @indlin)
+* Custom block: better error message (#1233 by @jespino)
+* Memory block: Count ZFS arc cache to cache to exclude from used memory (#1227 by @GladOSkar)
+* Pacman block: fix invocation of fakeroot/pacman command (#1241)
+* Pacman block: fix default format string (#1240 by @GladOSkar)
+* Pomodoro block: Allow `notify-send` as a notification method
+* Fixed missing net block icons for the material icon theme (#1244 by @K4rakara)
+* Formatter: allow hiding unit prefixes. For example, `"{key;_K}"` will set the min unit prefix to "K" but hides it from showing.
+* Formatter: allow spaces between the value and unit/prefix. For example, `"{key; K*b}"` results in "value Kb" and `"{key; _K*b}"` results in "val b".
+* Add short_text support (#1207 by @GladOSkar)
+
+
+## Breaking Changes
+
+* Pomodoro block: Icons are no longer hardcoded. New icons: `pomodoro_started`, `pomodoro_stopped`, `pomodoro_paused`, `pomodoro_break` have been added to the icon themes in the repo, so you must update your icon theme files if it is not done by your package manager. (#1264)
+
+## Deprecation Warnings
+* Pomodoro block: `use_nag` and `nagbar_path` will be removed in a future release. Use `notifier` and `notifier_path` instead.
+
+# i3status-rust 0.20.1
+
+## Bug Fixes and Improvements
+
+* Fixed config error messages showing in swaybar but not in i3bar (#1224 by @jthomaschewski)
+* Fixed pacman block crash due to stderr output of pacman itself (#1220 by @mpldr)
+* Custom block example list has been created and documented (#1223 by @GladOSkar)
+
+# i3status-rust 0.20.0
+
+## Breaking Changes
+
+Themes/Icons:
+
+* These have been moved out into files instead of being hardcoded in the Rust source. The following folders are checked in this order: first `$XDG_CONFIG_HOME/i3status-rust/<icons|themes>`, next `$HOME/.local/share/i3status-rust/<icons|themes>`, finally `/usr/share/i3status-rust/<icons|themes>`. If installing manually via cargo, you will need to copy the files to an appropriate location (an `install.sh` script is provided which does this). If installing via the AUR on Arch Linux, the package will install the files to `/usr/share/i3status-rust/<icons|themes>` for you, so you do not need to do anything (this should also be true for other distros assuming the package maintainer has packaged i3status-rust correctly). 
+
+* Per block theme overrides have been renamed from `color_overrides` to `theme_overrides` (this was previously undocumented but has since been mentioned in themes.md)
+
+Formatting:
+
+* Formatting for all blocks using `format` strings has been overhauled to allow users to customise how numbers and strings are displayed, which was not possible previously. Due to this some blocks may now display slightly differently to previous versions and have been documented below. Refer to the [formatting documentation](doc/blocks.md#formatting) to get more information on the new formatting options.
+
+Blocks: 
+
+* CPU Utilization block: Due to an overhaul of our internal code, the `per_core` option has been removed. The same configuration can be achieved using the new `{utilization<n>}` format keys.
+* Battery and Disk Space blocks: The `{bar}` format key has been removed in favor of the new [bar](doc/blocks.md#formatting#bar-max-value) formatter. For example, to make the Battery block display the current percentage as a 6 character bar with 100% as the max value, set the format string as so: `format = "{percentage:6#100}`. 
+* Disk Space block: The `{unit}` format key has been removed since the unit of `{free}` and similar format keys don't rely on `unit` configuration option anymore.
+* Maildir block: this is now optional and must be enabled at compile time (#1103 by @MaxVerevkin)
+* Memory block: all old format keys have been removed, refer to the table below for more details.
+* Net block: `use_bits`, `speed_min_unit`, `speed_digits` and `max_ssid_width` configuration options have been removed and require manual intervention to fix your config. `speed_min_unit` is replaced by the [min prefix](doc/blocks.md#min-prefix) formatter. `max_ssid_width` is replaced by the [max width](doc/blocks.md#0max-width) formatter.
+* Net block: partially moved from calling external commands to using the netlink interface, which may not work on BSD systems (#1142 by @MaxVerevkin)
+* Networkmanager block: `max_ssid_width` config option has been removed, but the bevaviour can be restored using the [max width](doc/blocks.md#max-width) formatter. For example, `max_ssid_width = 10` is now achieved with `ap_format = "{ssid^10}"`.
+* Sound block: `max_width` config option has been removed, but the bevaviour can be restored using the [max width](doc/blocks.md#max-width) formatter.
+* Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of the new `format` string formatter. For example, to replicate `bytes=true; speed_min_unit="M", speed_digits=4` use `format = "{speed_down:4*B;M}{speed_up:4*B;M}"`
+
+Memory block removed format keys:
+
+ Old key | New alternative
+---------|---------------
+`{MTg}`  | `{mem_total;G}`
+`{MTm}`  | `{mem_total;M}`
+`{MAg}`  | `{mem_avail;G}`
+`{MAm}`  | `{mem_avail;M}`
+`{MAp}`  | `{mem_avail_percents}`
+`{MApi}` | `{mem_avail_percents:1}`
+`{MFg}`  | `{mem_free;G}`
+`{MFm}`  | `{mem_free;M}`
+`{MFp}`  | `{mem_free_percents}`
+`{MFpi}` | `{mem_free_percents:1}`
+`{Mug}`  | `{mem_used;G}`
+`{Mum}`  | `{mem_used;M}`
+`{Mup}`  | `{mem_used_percents}`
+`{Mupi}` | `{mem_used_percents:1}`
+`{MUg}`  | `{mem_total_used;G}`
+`{MUm}`  | `{mem_total_used;M}`
+`{MUp}`  | `{mem_total_used_percents}`
+`{MUpi}` | `{mem_total_used_percents:1}`
+`{Cg}`   | `{cached;G}`
+`{Cm}`   | `{cached;M}`
+`{Cp}`   | `{cached_percent}`
+`{Cpi}`  | `{cached_percent:1}`
+`{Bg}`   | `{buffers;G}`
+`{Bm}`   | `{buffers;M}`
+`{Bp}`   | `{buffers_percent}`
+`{Bpi}`  | `{buffers_percent:1}`
+`{STg}`  | `{swap_total;G}`
+`{STm}`  | `{swap_total;M}`
+`{SFg}`  | `{swap_free;G}`
+`{SFm}`  | `{swap_free;M}`
+`{SFp}`  | `{swap_free_percents}`
+`{SFpi}` | `{swap_free_percents:1}`
+`{SUg}`  | `{swap_used;G}`
+`{SUm}`  | `{swap_used;M}`
+`{SUp}`  | `{swap_used_percents}`
+`{SUpi}` | `{swap_used_percents:1}`
+
+## Deprecation Warnings
+
+* Disk Space block: the `alias` has been deprecated in favour of using `format` and may be removed in a future release.
+
+## New Blocks and Features
+
+* Backlight block: new `invert_icons` config option for people using coloured icons (#1098 by @MaxVerevkin)
+* Net block: new `format_alt` option to set an alternative format string to switch between when the block is clicked (#1063 by @MaxVerevkin)
+* Nvidia block: new "Power Draw" option (#1154 by @quintenpalmer)
+* Sound block: new `{output_description}` format key to show the PulseAudio device description
+* Speedtest block: new `format` configuration option to customize the output of the block.
+* Temperature block: add fallback for older systems without JSON support (#1070 by @ammgws)
+* Weather block: new config option to set display language, and new format key `{weather_verbose}` to display textual verbose description of the weather, e.g. "overcast clouds" (#1169 by @halfcrazy)
+* SIGUSR2 signal can now be used to reload i3status-rust in-place without restarting i3/swaybar (#1131 by @MaxVerevkin)
+* New compile time feature `debug_borders` for debugging spacing issues (#1083 by @MaxVerevkin)
+* New "material-nf" icon set (#1095 by @MaxVerevkin)
+* New `icons_format` config option for overriding icon formatting on a per-block basis (#1095 by @MaxVerevkin)
+ 
+## Bug Fixes and Improvements
+
+* Music block: fix `on_collapsed_click` which was broken in a previous release (#1061 by @MaxVerevkin)
+* Net block: print "N/A" when trying to get ssid or signal strength using wired connections instead of erroring out (#1068 by @MaxVerevkin)
+* Networkmanager block: avoid duplicate device with VPN connections (#1099 by @ravomavain), fix cases where connections would not update (#1119 by TilCreator)
+* Sound block: fix spacing for empty format strings (#1071 by @ammgws)
+
+# i3status-rust 0.14.7
+
+Bug fix release for compile error on 32bit systems
+
+# i3status-rust 0.14.6
+
+Fixes bug with loading config from file introduced in 0.14.4 (and also present in 0.14.5)
+
+# i3status-rust 0.14.5
+
+Fixes crash on i3 introduced in 0.14.4
+
+# i3status-rust 0.14.4
+
+## General Notices
+
+* Due to a bugfix in the CPU block, when using the `{frequency}` and `{utilization}` format key specifiers,  "GHz" and "%" will be appended within the format keys themselves so there is no need to write them in your `format` string anymore.
+
+## Deprecation Warnings
+
+* Battery block config option `show` has been deprecated in favour of `format` (deprecated since at least v0.10.0 released in July 2019)
+
+* Battery block config option `upower` has been deprecated in favour of `device` (deprecated since at least v0.10.0 released in July 2019)
+
+* CPU Utilization block config option `frequency` has been deprecated in favour of `format` (deprecated since at least v0.10.0 released in July 2019)
+
+* Network block config options `ssid`,  `signal_strength`, `bitrate`, `ip`, `ipv6`, `speed_up`, `speed_down`, `graph_up`, `graph_down` have been deprecated in favour of `format` (deprecated since v0.14.2 released in October 2020)
+
+* Pacman block format key `{count}` has been deprecated in favour of `{pacman}` (deprecated since v0.14.0 released in June 2020)
+
+* Taskwarrior block config option `filter_tags` has been deprecated in favour of `filters` (since v0.14.4 - this release)
+
+## New Blocks and Features
+
+* `on_click` option is now available for all blocks  (#1006 by @edwin0cheng)
+
+* Github block: new option to hide block when there are no notifications (#1023 by @ammgws)
+
+* Hueshift block: add support for gammastep (#1027 by @MaxVerevkin)
+
+* Pacman block: new option to hide block when up to date (#982 by @ammgws)
+
+* Taskwarrior block: support multiple filters with new `filters` option (#1008 by @matt-snider)
+
+## Bug Fixes and Improvements
+
+* Fix config error when using custom themes (#968 by @ammgws)
+
+* Fix microphone icons in awesome5 (#1017 by @MaxVerevkin)
+
+* Make blocks using http more resilient (#1011 by @simao)
+
+* Various performance improvements/optimisations (#1033, #1039 by @MaxVerevkin)
+
+* Bluetooth: monitor device availability to avoid erroring out block (#986 by @ammgws)
+
+* CPU block: fix "{frequency}" format in per-core mode (#1031 by @MaxVerevkin)
+
+* KDEConnect block: support new version of kdeconnect (v20.12.* and above)
+
+* KeyboardLayout block: support both `{variant}` and `{layout}` when using the sway driver (#1028 by @MaxVerevkin)
+
+* Music block: handle case when metadata is unavailable (#967 by @ammgws), add workaround for `playerctl` (#973 by @ammgws), various other bugfixes (see #972)
+
+* Net block: fix overflow panic (#993 by @ammgws), better autodiscovery (#994 by @ammgws), fix issues with parsing JSON output (#998 by @ammgws), `speed_min_unit` is now correctly handled (#1021 by @MaxVerevkin), allow Unicode SSIDs to be displayed correctly (#995 by @2m)
+
+* Speedtest block: use `speed_digits` to format ping as well (#975 by @GladOSkar), `speed_min_unit` is now correctly handled (#1021 by @MaxVerevkin)
+
+* Xrandr block: do not leave zombie processes around (#990 by @ammgws)
+
+# i3status-rust 0.14.3
+
+## New Blocks and Features
+
+* New Apt block for keeping tabs on pending updates on Debian based systems (#943 by @ammgws)
+
+* New Notify block for controlling/monitoring your notification daemon's do-not-disturb status
+
+* KeyboardLayout block: add `variant` format specifier for localebus (#940 by @ammgws)
+
+* Music block: implement format string (#949 by @ammgws), allow right click to cycle between available players (#930 by @ammgws)
+
+* Implement per-block colour overrides (#947 by @ammgws)
+
+* New "native" and "semi-native" themes (#938 by @GladOSkar)
+
+## Bug Fixes and Improvements
+
+* Add git commit hash to version output (#915 by @ammgws)
+
+* Replace `uuid` dependency with just `getrandom` (#921 by @ammgws)
+
+* Fix alternating tint behaviour (#924 by @ammgws, #927 by @GladOSkar)
+
+* Fix panic when no icon exists for Diskspace, KDEConnect blocks (#908, #910 by @ammgws)
+
+* Fix spacing for Battery, Sound & NetworkManager blocks (#923 from @Stunkymonkey)
+
+* Battery block: clamp 'time remaining' values to something more realistic (#912 by @ammgws)
+
+* KeyboardLayout block: fix crash on sway (#918 by @gdamjan, #939 by @ammgws)
+
+* Music block: completely overhaul update mechanism (#906 by @ammgws)
+
+* Net block: do not error out when arrays are empty (#926 by @ammgws)
+
+* Xrandr block: remove hardcoded icons (#911 by @ammgws)
+
+# i3status-rust 0.14.2
+
+## New Blocks and Features
+
+* New Hueshift block (#802 by @AkechiShiro)
+
+* Backlight block: add nonlinear brightness control via new `root_scaling` option (#882 by @dancek)
+
+* Battery block: add `allow_missing_battery` option (#835 by @Nukesor)
+
+* Bluetooth block: add `hide_disconnected` option to hide block when device is disconnected (#858 by @ammgws)
+
+* CPU block: add `on_click` option (#813 by @Dieterbe)
+
+* Custom block: add signal support (#822 by @Gelox), add `hide_when_empty` option to hide block when output is empty (#860 by @ammgws), add `shell` option to set the shell used (#861 by @ammgws)
+
+* CustomDBus block: allow setting the icon and state (#757 by @jmgrosen)
+
+* Disk Space block: add `format` string option (#714 by @jamesmcm)
+
+* IBus block: add `format` string option (#765 by @ammgws)
+
+* Music block: add `dynamic_width`option (#787 by @UnkwUsr), add `on_click` (#817 by @Dieterbe),  add `hide_when_empty` option (#892 by @ammgws), add `interface_name_exclude` option (#888 by @ammgws)
+
+* Net block: add `format` string option (#738 by @gurditsbedi)
+
+* NetworkManager block: add regex filters for interface names (#781 by @omertuc)
+
+* Sound block: add support for input devices (#740 by @remi-dupre), and new `max_vol` config option (#796 by @ammgws)
+
+* Temperature block: add `inputs` whitelist (#811 by @arraypad), add `scale` option (#895 by @rjframe)
+
+* Time block: add `locale` option (#863 by @ammgws)
+
+## Bug Fixes and Improvements
+
+* Fix spacing for inline widgets (#866 from @DCsunset)
+
+* Fix spacing for plain theme (#894 by @Stunkymonkey)
+
+* Battery block: add `full_format` to show text when battery is full (#785 by @DCsunset)
+
+* Custom block: ensure `command` and `cycle` are actually mutually exclusive (#899 by @ammgws)
+
+* Focusedwindow block: fix panic under sway (#792, #793 by @ammgws)
+
+* IBus block: fix logic for finding dbus address (#759 by @ammgws)
+
+* KDEConnect block: fix panic (#743 by @v0idifier)
+
+* Load block: fix cpu count (#859 by @ammgws)
+
+* Music block: only respond to left clicks (#862 by @ammgws), allow scrolling to seek forward/backward (#873 by @ammgws)
+
+* Net block: sed awk grep removal (#758 by @themadprofessor, #825 by @hlmtre), fix regex parsing (#821 by @Dieterbe), fix logic for `hide_inactive`/`hide_missing` (#897 by @GladOSkar)
+
+* NVidia block: fix panics (#771 by @themadprofessor, #807, #846 by @ammgws)
+
+* Pacman block: fix regex logic (#804 by @PicoJr)
+
+* TaskWarrior block: don't count deleted items (#788 by @HPrivakos)
+
+# i3status-rust 0.14.1
+
+* Forgot to regenerate Cargo.lock when 0.14.0 was released
+
+(No features/code changes from 0.14.0)
+
 # i3status-rust 0.14.0
 
 ## New Blocks and Features

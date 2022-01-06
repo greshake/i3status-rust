@@ -11,9 +11,7 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-20.04
-
     steps:
     - name: Get required packages
       run: sudo apt-get update && sudo apt-get install libdbus-1-dev libpulse-dev libgoogle-perftools-dev libnotmuch-dev pandoc
@@ -26,6 +24,3 @@ jobs:
       run: cargo build --all-features --all-targets --verbose --release
     - name: Run tests
       run: cargo test --all-features --all-targets --verbose
-    - name: Check manpage
-      run: man/generate.sh man/test.1 && diff man/test.1 man/i3status-rs.1 || true
-      

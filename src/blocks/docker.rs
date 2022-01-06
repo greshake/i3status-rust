@@ -1,25 +1,26 @@
-use std::collections::BTreeMap;
-use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::http;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::I3BarWidget;
 use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
+use crate::widgets::State;
 
 pub struct Docker {
+    id: usize,
     text: TextWidget,
-    id: String,
     format: FormatTemplate,
     update_interval: Duration,
+    socket_path: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -40,88 +41,92 @@ struct Status {
     images: i64,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct DockerConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "DockerConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Format override
-    #[serde(default = "DockerConfig::default_format")]
-    pub format: String,
+    pub format: FormatTemplate,
 
-    #[serde(default = "DockerConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    /// Absolute path to docker socket
+    pub socket_path: String,
 }
 
-impl DockerConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_format() -> String {
-        "{running}%".to_owned()
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for DockerConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(5),
+            format: FormatTemplate::default(),
+            socket_path: "/var/run/docker.sock".to_string(),
+        }
     }
 }
 
 impl ConfigBlock for Docker {
     type Config = DockerConfig;
 
-    fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        _: Sender<Task>,
+    ) -> Result<Self> {
+        let text = TextWidget::new(id, 0, shared_config)
+            .with_text("N/A")
+            .with_icon("docker")?;
+        let path_expanded = shellexpand::full(&block_config.socket_path).map_err(|e| {
+            ConfigurationError(
+                "docker".to_string(),
+                format!(
+                    "Failed to expand socket path {}: {}",
+                    &block_config.socket_path, e
+                ),
+            )
+        })?;
         Ok(Docker {
-            id: pseudo_uuid(),
-            text: TextWidget::new(config).with_text("N/A").with_icon("docker"),
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("docker", "Invalid format specified")?,
+            id,
+            text,
+            format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
+            socket_path: path_expanded.to_string(),
         })
     }
 }
 
 impl Block for Docker {
     fn update(&mut self) -> Result<Option<Update>> {
-        let output = match Command::new("sh")
-            .args(&[
-                "-c",
-                "curl --fail --unix-socket /var/run/docker.sock http:/api/info",
-            ])
-            .output()
-        {
-            Ok(raw_output) => {
-                String::from_utf8(raw_output.stdout).block_error("docker", "Failed to decode")?
-            }
-            Err(_) => {
-                // We don't want the bar to crash if we can't reach the docker daemon.
-                self.text.set_text("N/A".to_string());
-                return Ok(Some(self.update_interval.into()));
-            }
-        };
+        let socket_path = std::path::PathBuf::from(self.socket_path.as_str());
+        let output = http::http_get_socket_json(socket_path, "http:/api/info");
 
-        if output.is_empty() {
+        if output.is_err() {
             self.text.set_text("N/A".to_string());
+            self.text.set_state(State::Critical);
             return Ok(Some(self.update_interval.into()));
         }
 
-        let status: Status = serde_json::from_str(&output)
-            .block_error("docker", "Failed to parse JSON response.")?;
+        let status: Status = match serde_json::from_value(output.unwrap().content)
+            .block_error("docker", "Failed to parse JSON response.")
+        {
+            Ok(status) => status,
+            Err(e) => {
+                self.text.set_state(State::Critical);
+                return Err(e);
+            }
+        };
 
         let values = map!(
-            "{total}" => format!("{}", status.total),
-            "{running}" => format!("{}", status.running),
-            "{paused}" => format!("{}", status.paused),
-            "{stopped}" => format!("{}", status.stopped),
-            "{images}" => format!("{}", status.images)
+            "total" =>   Value::from_integer(status.total),
+            "running" => Value::from_integer(status.running),
+            "paused" =>  Value::from_integer(status.paused),
+            "stopped" => Value::from_integer(status.stopped),
+            "images" =>  Value::from_integer(status.images),
         );
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_texts(self.format.render(&values)?);
+        self.text.set_state(State::Idle);
 
         Ok(Some(self.update_interval.into()))
     }
@@ -130,11 +135,7 @@ impl Block for Docker {
         vec![&self.text]
     }
 
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
-
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

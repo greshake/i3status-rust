@@ -1,10 +1,9 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -12,18 +11,20 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{has_command, pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::util::has_command;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Pacman {
-    output: ButtonWidget,
-    id: String,
+    id: usize,
+    output: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
     format_singular: FormatTemplate,
@@ -31,10 +32,13 @@ pub struct Pacman {
     warning_updates_regex: Option<Regex>,
     critical_updates_regex: Option<Regex>,
     watched: Watched,
+    uptodate: bool,
+    hide_when_uptodate: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Watched {
+    None,
     Pacman,
     /// cf `Pacman::aur_command`
     AUR(String),
@@ -42,83 +46,69 @@ pub enum Watched {
     Both(String),
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct PacmanConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "PacmanConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Format override
-    #[serde(default = "PacmanConfig::default_format")]
-    pub format: String,
+    pub format: FormatTemplate,
 
     /// Alternative format override for when exactly 1 update is available
-    #[serde(default = "PacmanConfig::default_format")]
-    pub format_singular: String,
+    pub format_singular: FormatTemplate,
 
     /// Alternative format override for when no updates are available
-    #[serde(default = "PacmanConfig::default_format")]
-    pub format_up_to_date: String,
+    pub format_up_to_date: FormatTemplate,
 
     /// Indicate a `warning` state for the block if any pending update match the
     /// following regex. Default behaviour is that no package updates are deemed
     /// warning
-    #[serde(default = "PacmanConfig::default_warning_updates_regex")]
     pub warning_updates_regex: Option<String>,
 
     /// Indicate a `critical` state for the block if any pending update match the following regex.
     /// Default behaviour is that no package updates are deemed critical
-    #[serde(default = "PacmanConfig::default_critical_updates_regex")]
     pub critical_updates_regex: Option<String>,
 
     /// Optional AUR command, listing available updates
-    #[serde()]
     pub aur_command: Option<String>,
 
-    #[serde(default = "PacmanConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    pub hide_when_uptodate: bool,
+}
+
+impl Default for PacmanConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(600),
+            format: FormatTemplate::default(),
+            format_singular: FormatTemplate::default(),
+            format_up_to_date: FormatTemplate::default(),
+            warning_updates_regex: None,
+            critical_updates_regex: None,
+            aur_command: None,
+            hide_when_uptodate: false,
+        }
+    }
 }
 
 impl PacmanConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(60 * 10)
-    }
-
-    fn default_format() -> String {
-        "{pacman}".to_owned()
-    }
-
-    fn default_warning_updates_regex() -> Option<String> {
-        None
-    }
-
-    fn default_critical_updates_regex() -> Option<String> {
-        None
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
-    }
-
     fn watched(
-        format: &str,
-        format_singular: &str,
-        format_up_to_date: &str,
+        format: &FormatTemplate,
+        format_singular: &FormatTemplate,
+        format_up_to_date: &FormatTemplate,
         aur_command: Option<String>,
     ) -> Result<Watched> {
-        let aur_format = "{aur}";
-        let pacman_format = "{pacman}";
-        let both_format = "{both}";
-        let pacman_deprecated_format = "{count}";
-        let concatenated_format_str = format!("{}{}{}", format, format_singular, format_up_to_date);
-        let aur = concatenated_format_str.contains(aur_format);
-        let pacman = concatenated_format_str.contains(pacman_format)
-            || concatenated_format_str.contains(pacman_deprecated_format);
-        let both = concatenated_format_str.contains(both_format);
+        macro_rules! any_format_contains {
+            ($name:expr) => {
+                format.contains($name)
+                    || format_singular.contains($name)
+                    || format_up_to_date.contains($name)
+            };
+        }
+        let aur = any_format_contains!("aur");
+        let pacman = any_format_contains!("pacman") || any_format_contains!("count");
+        let both = any_format_contains!("both");
         if both || (pacman && aur) {
             let aur_command = aur_command.block_error(
                 "pacman",
@@ -134,15 +124,7 @@ impl PacmanConfig {
             )?;
             Ok(Watched::AUR(aur_command))
         } else {
-            // most likely a mistake: {count}, {pacman}, {aur}, {both} not found in format string
-            Err(ConfigurationError(
-                "pacman".to_string(),
-                (
-                    "No formatter ({count}|{pacman}|{aur}|{both}) found in format string"
-                        .to_string(),
-                    "invalid format".to_string(),
-                ),
-            ))
+            Ok(Watched::None)
         }
     }
 }
@@ -151,36 +133,28 @@ impl ConfigBlock for Pacman {
     type Config = PacmanConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let output = TextWidget::new(id, 0, shared_config).with_icon("update")?;
+
+        let fmt_normal = block_config.format.with_default("{pacman}")?;
+        let fmt_singular = block_config.format_singular.with_default("{pacman}")?;
+        let fmt_up_to_date = block_config.format_up_to_date.with_default("{pacman}")?;
+
         Ok(Pacman {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("pacman", "Invalid format specified for pacman::format")?,
-            format_singular: FormatTemplate::from_string(&block_config.format_singular)
-                .block_error(
-                    "pacman",
-                    "Invalid format specified for pacman::format_singular",
-                )?,
-            format_up_to_date: FormatTemplate::from_string(&block_config.format_up_to_date)
-                .block_error(
-                    "pacman",
-                    "Invalid format specified for pacman::format_up_to_date",
-                )?,
-            output: ButtonWidget::new(config, "pacman").with_icon("update"),
+            output,
             warning_updates_regex: match block_config.warning_updates_regex {
                 None => None, // no regex configured
                 Some(regex_str) => {
                     let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
                         ConfigurationError(
                             "pacman".to_string(),
-                            (
-                                "invalid warning updates regex".to_string(),
-                                "invalid regex".to_string(),
-                            ),
+                            "invalid warning updates regex".to_string(),
                         )
                     })?;
                     Some(regex)
@@ -192,33 +166,25 @@ impl ConfigBlock for Pacman {
                     let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
                         ConfigurationError(
                             "pacman".to_string(),
-                            (
-                                "invalid critical updates regex".to_string(),
-                                "invalid regex".to_string(),
-                            ),
+                            "invalid critical updates regex".to_string(),
                         )
                     })?;
                     Some(regex)
                 }
             },
             watched: PacmanConfig::watched(
-                &block_config.format,
-                &block_config.format_singular,
-                &block_config.format_up_to_date,
+                &fmt_normal,
+                &fmt_singular,
+                &fmt_up_to_date,
                 block_config.aur_command,
             )?,
+            uptodate: false,
+            hide_when_uptodate: block_config.hide_when_uptodate,
+            format: fmt_normal,
+            format_singular: fmt_singular,
+            format_up_to_date: fmt_up_to_date,
         })
     }
-}
-
-fn run_command(var: &str) -> Result<()> {
-    Command::new("sh")
-        .args(&["-c", var])
-        .spawn()
-        .block_error("pacman", &format!("Failed to run command '{}'", var))?
-        .wait()
-        .block_error("pacman", &format!("Failed to wait for command '{}'", var))
-        .map(|_| ())
 }
 
 fn has_fake_root() -> Result<bool> {
@@ -273,12 +239,20 @@ fn get_pacman_available_updates() -> Result<String> {
     }
 
     // Update database
-    run_command(&format!(
-        "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null &> /dev/null",
-        updates_db
-    ))?;
+    Command::new("sh")
+        .env("LC_ALL", "C")
+        .args(&[
+            "-c",
+            &format!(
+                "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null",
+                updates_db
+            ),
+        ])
+        .stdout(Stdio::null())
+        .status()
+        .block_error("pacman", &"Failed to run command".to_string())?;
 
-    // Get update count
+    // Get updates list
     String::from_utf8(
         Command::new("sh")
             .env("LC_ALL", "C")
@@ -326,12 +300,16 @@ fn has_critical_update(updates: &str, regex: &Regex) -> bool {
 }
 
 impl Block for Pacman {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
+        if self.uptodate && self.hide_when_uptodate {
+            vec![]
+        } else {
+            vec![&self.output]
+        }
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -340,7 +318,10 @@ impl Block for Pacman {
                 check_fakeroot_command_exists()?;
                 let pacman_available_updates = get_pacman_available_updates()?;
                 let pacman_count = get_update_count(&pacman_available_updates);
-                let formatting_map = map!("{count}" => pacman_count, "{pacman}" => pacman_count);
+                let formatting_map = map!(
+                    "count" => Value::from_integer(pacman_count as i64),
+                    "pacman" => Value::from_integer(pacman_count as i64),
+                );
 
                 let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
                     has_warning_update(&pacman_available_updates, regex)
@@ -352,9 +333,11 @@ impl Block for Pacman {
                 (formatting_map, warning, critical, pacman_count)
             }
             Watched::AUR(aur_command) => {
-                let aur_available_updates = get_aur_available_updates(&aur_command)?;
+                let aur_available_updates = get_aur_available_updates(aur_command)?;
                 let aur_count = get_update_count(&aur_available_updates);
-                let formatting_map = map!("{aur}" => aur_count);
+                let formatting_map = map!(
+                    "aur" => Value::from_integer(aur_count as i64)
+                );
 
                 let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
                     has_warning_update(&aur_available_updates, regex)
@@ -368,10 +351,15 @@ impl Block for Pacman {
             Watched::Both(aur_command) => {
                 check_fakeroot_command_exists()?;
                 let pacman_available_updates = get_pacman_available_updates()?;
-                let aur_available_updates = get_aur_available_updates(&aur_command)?;
                 let pacman_count = get_update_count(&pacman_available_updates);
+                let aur_available_updates = get_aur_available_updates(aur_command)?;
                 let aur_count = get_update_count(&aur_available_updates);
-                let formatting_map = map!("{count}" => pacman_count, "{pacman}" => pacman_count, "{aur}" => aur_count, "{both}" => pacman_count + aur_count);
+                let formatting_map = map!(
+                    "count" =>  Value::from_integer(pacman_count as i64),
+                    "pacman" => Value::from_integer(pacman_count as i64),
+                    "aur" =>    Value::from_integer(aur_count as i64),
+                    "both" =>   Value::from_integer((pacman_count + aur_count) as i64),
+                );
 
                 let warning = self.warning_updates_regex.as_ref().map_or(false, |regex| {
                     has_warning_update(&aur_available_updates, regex)
@@ -384,11 +372,12 @@ impl Block for Pacman {
 
                 (formatting_map, warning, critical, pacman_count + aur_count)
             }
+            Watched::None => (std::collections::HashMap::new(), false, false, 0),
         };
-        self.output.set_text(match cum_count {
-            0 => self.format_up_to_date.render_static_str(&formatting_map)?,
-            1 => self.format_singular.render_static_str(&formatting_map)?,
-            _ => self.format.render_static_str(&formatting_map)?,
+        self.output.set_texts(match cum_count {
+            0 => self.format_up_to_date.render(&formatting_map)?,
+            1 => self.format_singular.render(&formatting_map)?,
+            _ => self.format.render(&formatting_map)?,
         });
         self.output.set_state(match cum_count {
             0 => State::Idle,
@@ -402,13 +391,12 @@ impl Block for Pacman {
                 }
             }
         });
+        self.uptodate = cum_count == 0;
         Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == "pacman").unwrap_or(false)
-            && event.button == MouseButton::Left
-        {
+        if let MouseButton::Left = event.button {
             self.update()?;
         }
 
@@ -421,6 +409,7 @@ mod tests {
     use crate::blocks::pacman::{
         get_aur_available_updates, get_update_count, PacmanConfig, Watched,
     };
+    use crate::formatting::FormatTemplate;
 
     #[test]
     fn test_get_update_count() {
@@ -435,41 +424,49 @@ mod tests {
 
     #[test]
     fn test_watched() {
-        let watched = PacmanConfig::watched("foo {count} bar", "foo {count} bar", "", None);
+        let fmt_count = FormatTemplate::new("foo {count} bar", None).unwrap();
+        let fmt_pacman = FormatTemplate::new("foo {pacman} bar", None).unwrap();
+        let fmt_aur = FormatTemplate::new("foo {aur} bar", None).unwrap();
+        let fmt_pacman_aur = FormatTemplate::new("foo {pacman} {aur} bar", None).unwrap();
+        let fmt_both = FormatTemplate::new("foo {both} bar", None).unwrap();
+        let fmt_none = FormatTemplate::new("foo bar", None).unwrap();
+        let fmt_empty = FormatTemplate::new("", None).unwrap();
+
+        let watched = PacmanConfig::watched(&fmt_count, &fmt_count, &fmt_empty, None);
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Pacman);
-        let watched = PacmanConfig::watched("foo {pacman} bar", "foo {pacman} bar", "", None);
+        let watched = PacmanConfig::watched(&fmt_pacman, &fmt_pacman, &fmt_empty, None);
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Pacman);
-        let watched = PacmanConfig::watched("foo bar", "foo bar", "", None);
-        assert!(watched.is_err()); // missing formatter
-        let watched = PacmanConfig::watched("foo bar", "foo bar", "", Some("aur cmd".to_string()));
-        assert!(watched.is_err()); // missing formatter
+        let watched = PacmanConfig::watched(&fmt_none, &fmt_none, &fmt_empty, None);
+        assert!(watched.is_ok()); // missing formatter should not cause an error
         let watched = PacmanConfig::watched(
-            "foo {aur} bar",
-            "foo {aur} bar",
-            "",
+            &fmt_none,
+            &fmt_none,
+            &fmt_empty,
             Some("aur cmd".to_string()),
         );
+        assert!(watched.is_ok()); // missing formatter should not cause an error
+        let watched =
+            PacmanConfig::watched(&fmt_aur, &fmt_aur, &fmt_empty, Some("aur cmd".to_string()));
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::AUR("aur cmd".to_string()));
         let watched = PacmanConfig::watched(
-            "foo {pacman} {aur} bar",
-            "foo {pacman} {aur} bar",
-            "",
+            &fmt_pacman_aur,
+            &fmt_pacman_aur,
+            &fmt_empty,
             Some("aur cmd".to_string()),
         );
         assert!(watched.is_ok());
         assert_eq!(watched.unwrap(), Watched::Both("aur cmd".to_string()));
-        let watched =
-            PacmanConfig::watched("foo {pacman} {aur} bar", "foo {pacman} {aur} bar", "", None);
+        let watched = PacmanConfig::watched(&fmt_pacman_aur, &fmt_pacman_aur, &fmt_empty, None);
         assert!(watched.is_err()); // missing aur command
-        let watched = PacmanConfig::watched("foo {both} bar", "foo {both} bar", "", None);
+        let watched = PacmanConfig::watched(&fmt_both, &fmt_both, &fmt_empty, None);
         assert!(watched.is_err()); // missing aur command
         let watched = PacmanConfig::watched(
-            "foo {both} bar",
-            "foo {both} bar",
-            "",
+            &fmt_both,
+            &fmt_both,
+            &fmt_empty,
             Some("aur cmd".to_string()),
         );
         assert!(watched.is_ok());

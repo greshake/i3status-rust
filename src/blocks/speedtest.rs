@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-use std::fmt;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -9,98 +7,51 @@ use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{format_speed, pseudo_uuid};
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::I3BarWidget;
 
 pub struct SpeedTest {
+    id: usize,
     vals: Arc<Mutex<(bool, Vec<f32>)>>,
-    text: Vec<ButtonWidget>,
-    id: String,
-    config: SpeedTestConfig,
+    output: TextWidget,
+    format: FormatTemplate,
+    interval: Duration,
+    ping_icon: String,
+    down_icon: String,
+    up_icon: String,
     send: Sender<()>,
 }
 
-#[derive(Copy, Clone, Debug, Deserialize)]
-pub enum Unit {
-    B,
-    K,
-    M,
-    G,
-    T,
-}
-
-impl Default for Unit {
-    fn default() -> Self {
-        Unit::K
-    }
-}
-
-impl fmt::Display for Unit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct SpeedTestConfig {
+    /// Format override
+    pub format: FormatTemplate,
+
     /// Update interval in seconds
-    #[serde(
-        default = "SpeedTestConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
-
-    /// Mode of speed display, true => MB/s, false => Mb/s
-    #[serde(default = "SpeedTestConfig::default_bytes")]
-    pub bytes: bool,
-
-    /// Number of digits to show for throughput indiciators.
-    #[serde(default = "SpeedTestConfig::default_speed_digits")]
-    pub speed_digits: usize,
-
-    /// Minimum unit to display for throughput indicators.
-    #[serde(default = "SpeedTestConfig::default_speed_min_unit")]
-    pub speed_min_unit: Unit,
-
-    #[serde(default = "SpeedTestConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
-impl SpeedTestConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(1800)
-    }
-
-    fn default_bytes() -> bool {
-        false
-    }
-
-    fn default_speed_min_unit() -> Unit {
-        Unit::M
-    }
-
-    fn default_speed_digits() -> usize {
-        3
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for SpeedTestConfig {
+    fn default() -> Self {
+        Self {
+            format: FormatTemplate::default(),
+            interval: Duration::from_secs(1800),
+        }
     }
 }
 
-fn get_values(bytes: bool) -> Result<String> {
+fn get_values() -> Result<String> {
     let mut cmd = Command::new("speedtest-cli");
     cmd.arg("--simple");
-    if bytes {
-        cmd.arg("--bytes");
-    }
     String::from_utf8(
         cmd.output()
             .block_error("speedtest", "could not get speedtest-cli output")?
@@ -130,14 +81,13 @@ fn make_thread(
     recv: Receiver<()>,
     done: Sender<Task>,
     values: Arc<Mutex<(bool, Vec<f32>)>>,
-    config: SpeedTestConfig,
-    id: String,
+    id: usize,
 ) {
     thread::Builder::new()
         .name("speedtest".into())
         .spawn(move || loop {
             if recv.recv().is_ok() {
-                if let Ok(output) = get_values(config.bytes) {
+                if let Ok(output) = get_values() {
                     if let Ok(vals) = parse_values(&output) {
                         if vals.len() == 3 {
                             let (ref mut update, ref mut values) = *values
@@ -148,7 +98,7 @@ fn make_thread(
                             *update = true;
 
                             done.send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -163,32 +113,31 @@ fn make_thread(
 impl ConfigBlock for SpeedTest {
     type Config = SpeedTestConfig;
 
-    fn new(block_config: Self::Config, config: Config, done: Sender<Task>) -> Result<Self> {
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        done: Sender<Task>,
+    ) -> Result<Self> {
         // Create all the things we are going to send and take for ourselves.
         let (send, recv): (Sender<()>, Receiver<()>) = unbounded();
         let vals = Arc::new(Mutex::new((false, vec![])));
-        let id = pseudo_uuid();
 
         // Make the update thread
-        make_thread(recv, done, vals.clone(), block_config.clone(), id.clone());
+        make_thread(recv, done, vals.clone(), id);
 
-        let ty = if block_config.bytes { "MB/s" } else { "Mb/s" };
         Ok(SpeedTest {
-            vals,
-            text: vec![
-                ButtonWidget::new(config.clone(), &id)
-                    .with_icon("ping")
-                    .with_text("0ms"),
-                ButtonWidget::new(config.clone(), &id)
-                    .with_icon("net_down")
-                    .with_text(&format!("0{}", ty)),
-                ButtonWidget::new(config, &id)
-                    .with_icon("net_up")
-                    .with_text(&format!("0{}", ty)),
-            ],
             id,
+            vals,
+            format: block_config
+                .format
+                .with_default("{ping}{speed_down}{speed_up}")?,
+            interval: block_config.interval,
+            ping_icon: shared_config.get_icon("ping")?,
+            down_icon: shared_config.get_icon("net_down")?,
+            up_icon: shared_config.get_icon("net_up")?,
+            output: TextWidget::new(id, 0, shared_config).with_text("..."),
             send,
-            config: block_config,
         })
     }
 }
@@ -204,66 +153,39 @@ impl Block for SpeedTest {
             *updated = false;
 
             if vals.len() == 3 {
-                self.text[0].set_text(format!("{}ms", vals[0]));
-                let (down_bytes, up_bytes) = if self.config.bytes {
-                    (vals[1] * 1_000_000.0, vals[2] * 1_000_000.0)
-                } else {
-                    (vals[1] * 125_000.0, vals[2] * 125_000.0)
-                };
-                self.text[1].set_text(format!(
-                    "{}/s",
-                    format_speed(
-                        down_bytes as u64,
-                        self.config.speed_digits,
-                        &self.config.speed_min_unit.to_string(),
-                        !self.config.bytes
-                    )
-                ));
-                self.text[2].set_text(format!(
-                    "{}/s",
-                    format_speed(
-                        up_bytes as u64,
-                        self.config.speed_digits,
-                        &self.config.speed_min_unit.to_string(),
-                        !self.config.bytes
-                    )
-                ));
+                // ping is in seconds
+                let ping = vals[0] as f64 / 1_000.0;
+                let down = vals[1] as f64 * 1_000_000.0;
+                let up = vals[2] as f64 * 1_000_000.0;
 
-                // TODO: remove clippy workaround
-                #[allow(clippy::unknown_clippy_lints)]
-                #[allow(clippy::match_on_vec_items)]
-                self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
-                            0.0 ; 25.0 => State::Good,
-                            25.0 ; 60.0 => State::Info,
-                            60.0 ; 100.0 => State::Warning
-                }));
+                let values = map!(
+                    "ping" => Value::from_float(ping).seconds().icon(self.ping_icon.clone()),
+                    "speed_down" => Value::from_float(down).bits().icon(self.down_icon.clone()),
+                    "speed_up" => Value::from_float(up).bits().icon(self.up_icon.clone()),
+                );
+
+                self.output.set_texts(self.format.render(&values)?);
             }
 
             Ok(None)
         } else {
             self.send.send(())?;
-            Ok(Some(self.config.interval.into()))
+            Ok(Some(self.interval.into()))
         }
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id && e.button == MouseButton::Left {
-                self.send.send(())?;
-            }
+        if let MouseButton::Left = e.button {
+            self.send.send(())?;
         }
         Ok(())
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        let mut new: Vec<&dyn I3BarWidget> = Vec::with_capacity(self.text.len());
-        for w in &self.text {
-            new.push(w);
-        }
-        new
+        vec![&self.output]
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

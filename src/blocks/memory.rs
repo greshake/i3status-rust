@@ -1,5 +1,4 @@
-use std::collections::BTreeMap;
-use std::fmt;
+use regex::Regex;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
@@ -9,78 +8,21 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::*;
-use crate::widget::{I3BarWidget, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum Memtype {
     Swap,
     Memory,
-}
-
-#[derive(Clone, Copy)]
-enum Unit {
-    MiB(u64),
-    GiB(f32),
-    KiB(u64),
-}
-
-impl fmt::Display for Unit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Unit::MiB(n) => n.fmt(f),
-            Unit::KiB(n) => n.fmt(f),
-            Unit::GiB(n) => n.fmt(f),
-        }
-    }
-}
-
-impl Unit {
-    fn n(&self) -> u64 {
-        match self.kib() {
-            Unit::KiB(n) => n,
-            _ => 0,
-        }
-    }
-
-    fn gib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::GiB((n as f32) / 1024f32.powi(2)),
-            Unit::MiB(n) => Unit::GiB((n as f32) / 1024f32),
-            Unit::GiB(n) => Unit::GiB(n),
-        }
-    }
-
-    fn mib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::MiB(n / 1024),
-            Unit::MiB(n) => Unit::MiB(n),
-            Unit::GiB(n) => Unit::MiB((n * 1024f32) as u64),
-        }
-    }
-
-    fn kib(&self) -> Unit {
-        match *self {
-            Unit::KiB(n) => Unit::KiB(n),
-            Unit::MiB(n) => Unit::KiB(n * 1024),
-            Unit::GiB(n) => Unit::KiB((n * 1024f32.powi(2)) as u64),
-        }
-    }
-
-    fn percent(&self, reference: Unit) -> f32 {
-        if reference.n() < 1 {
-            100f32
-        } else {
-            (self.n() as f32) / (reference.n() as f32) * 100f32
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -94,6 +36,7 @@ struct Memstate {
     shmem: (u64, bool),
     swap_total: (u64, bool),
     swap_free: (u64, bool),
+    zfs_arc_cache: u64,
 }
 
 impl Memstate {
@@ -129,6 +72,10 @@ impl Memstate {
         self.swap_free.0
     }
 
+    fn zfs_arc_cache(&self) -> u64 {
+        self.zfs_arc_cache
+    }
+
     fn new() -> Self {
         Memstate {
             mem_total: (0, false),
@@ -139,6 +86,7 @@ impl Memstate {
             shmem: (0, false),
             swap_total: (0, false),
             swap_free: (0, false),
+            zfs_arc_cache: 0,
         }
     }
 
@@ -156,9 +104,9 @@ impl Memstate {
 
 #[derive(Clone, Debug)]
 pub struct Memory {
-    id: String,
+    id: usize,
     memtype: Memtype,
-    output: (ButtonWidget, ButtonWidget),
+    output: (TextWidget, TextWidget),
     clickable: bool,
     format: (FormatTemplate, FormatTemplate),
     update_interval: Duration,
@@ -168,178 +116,114 @@ pub struct Memory {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct MemoryConfig {
     /// Format string for Memory view. All format values are described below.
-    #[serde(default = "MemoryConfig::default_format_mem")]
-    pub format_mem: String,
+    pub format_mem: FormatTemplate,
 
     /// Format string for Swap view.
-    #[serde(default = "MemoryConfig::default_format_swap")]
-    pub format_swap: String,
+    pub format_swap: FormatTemplate,
 
     /// Default view displayed on startup. Options are <br/> memory, swap
-    #[serde(default = "MemoryConfig::default_display_type")]
     pub display_type: Memtype,
 
     /// Whether the format string should be prepended with Icons. Options are <br/> true, false
-    #[serde(default = "MemoryConfig::default_icons")]
+    /// (Deprecated)
     pub icons: bool,
 
     /// Whether the view should switch between memory and swap on click. Options are <br/> true, false
-    #[serde(default = "MemoryConfig::default_clickable")]
     pub clickable: bool,
 
     /// The delay in seconds between an update. If `clickable`, an update is triggered on click. Integer values only.
-    #[serde(
-        default = "MemoryConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
     /// Percentage of memory usage, where state is set to warning
-    #[serde(default = "MemoryConfig::default_warning_mem")]
     pub warning_mem: f64,
 
     /// Percentage of swap usage, where state is set to warning
-    #[serde(default = "MemoryConfig::default_warning_swap")]
     pub warning_swap: f64,
 
     /// Percentage of memory usage, where state is set to critical
-    #[serde(default = "MemoryConfig::default_critical_mem")]
     pub critical_mem: f64,
 
     /// Percentage of swap usage, where state is set to critical
-    #[serde(default = "MemoryConfig::default_critical_swap")]
     pub critical_swap: f64,
-
-    #[serde(default = "MemoryConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
-impl MemoryConfig {
-    fn default_format_mem() -> String {
-        "{MFm}MB/{MTm}MB({MUp}%)".to_owned()
-    }
-
-    fn default_format_swap() -> String {
-        "{SFm}MB/{STm}MB({SUp}%)".to_owned()
-    }
-
-    fn default_display_type() -> Memtype {
-        Memtype::Memory
-    }
-
-    fn default_icons() -> bool {
-        true
-    }
-
-    fn default_clickable() -> bool {
-        true
-    }
-
-    fn default_interval() -> Duration {
-        Duration::from_secs(5)
-    }
-
-    fn default_warning_mem() -> f64 {
-        80.0
-    }
-
-    fn default_warning_swap() -> f64 {
-        80.0
-    }
-
-    fn default_critical_mem() -> f64 {
-        95.0
-    }
-
-    fn default_critical_swap() -> f64 {
-        95.0
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for MemoryConfig {
+    fn default() -> Self {
+        Self {
+            format_mem: FormatTemplate::default(),
+            format_swap: FormatTemplate::default(),
+            display_type: Memtype::Memory,
+            icons: true,
+            clickable: true,
+            interval: Duration::from_secs(5),
+            warning_mem: 80.,
+            warning_swap: 80.,
+            critical_mem: 95.,
+            critical_swap: 95.,
+        }
     }
 }
 
 impl Memory {
-    fn format_insert_values(&mut self, mem_state: Memstate) -> Result<String> {
-        let mem_total = Unit::KiB(mem_state.mem_total());
-        let mem_free = Unit::KiB(mem_state.mem_free());
-        let swap_total = Unit::KiB(mem_state.swap_total());
-        let swap_free = Unit::KiB(mem_state.swap_free());
-        let swap_used = Unit::KiB(mem_state.swap_total() - mem_state.swap_free());
-        let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
-        let buffers = Unit::KiB(mem_state.buffers());
-        let cached = Unit::KiB(mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem());
-        let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
-        let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
+    fn format_insert_values(&mut self, mem_state: Memstate) -> Result<(String, Option<String>)> {
+        let mem_total = mem_state.mem_total() as f64 * 1024.;
+        let mem_free = mem_state.mem_free() as f64 * 1024.;
+        let swap_total = mem_state.swap_total() as f64 * 1024.;
+        let swap_free = mem_state.swap_free() as f64 * 1024.;
+        let swap_used = swap_total - swap_free;
+        let mem_total_used = mem_total - mem_free;
+        let buffers = mem_state.buffers() as f64 * 1024.;
+        let cached =
+            // Why do we include shared memory to "cached"?
+            (mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem()) as f64 * 1024.
+            + mem_state.zfs_arc_cache() as f64;
+        let mem_used = mem_total_used - (buffers + cached);
+        let mem_avail = mem_total - mem_used;
 
         let values = map!(
-            "{MTg}" => format!("{:.1}", mem_total.gib()),
-            "{MTm}" => format!("{}", mem_total.mib()),
-            "{MFg}" => format!("{:.1}", mem_free.gib()),
-            "{MFm}" => format!("{}", mem_free.mib()),
-            "{MFp}" => format!("{:.2}", mem_free.percent(mem_total)),
-            "{MFpi}" => format!("{:02}", mem_free.percent(mem_total) as i32),
-            "{MFpb}" => format_percent_bar(mem_free.percent(mem_total)),
-            "{MUg}" => format!("{:.1}", mem_total_used.gib()),
-            "{MUm}" => format!("{}", mem_total_used.mib()),
-            "{MUp}" => format!("{:.2}", mem_total_used.percent(mem_total)),
-            "{MUpi}" => format!("{:02}", mem_total_used.percent(mem_total) as i32),
-            "{MUpb}" => format_percent_bar(mem_total_used.percent(mem_total)),
-            "{Mug}" => format!("{:.1}", mem_used.gib()),
-            "{Mum}" => format!("{}", mem_used.mib()),
-            "{Mup}" => format!("{:.2}", mem_used.percent(mem_total)),
-            "{Mupi}" => format!("{:02}", mem_used.percent(mem_total) as i32),
-            "{Mupb}" => format_percent_bar(mem_used.percent(mem_total)),
-            "{MAg}" => format!("{:.1}", mem_avail.gib()),
-            "{MAm}" => format!("{}", mem_avail.mib()),
-            "{MAp}" => format!("{:.2}", mem_avail.percent(mem_total)),
-            "{MApi}" => format!("{:02}", mem_avail.percent(mem_total) as i32),
-            "{MApb}" => format_percent_bar(mem_avail.percent(mem_total)),
-            "{STg}" => format!("{:.1}", swap_total.gib()),
-            "{STm}" => format!("{}", swap_total.mib()),
-            "{SFg}" => format!("{:.1}", swap_free.gib()),
-            "{SFm}" => format!("{}", swap_free.mib()),
-            "{SFp}" => format!("{:.2}", swap_free.percent(swap_total)),
-            "{SFpi}" => format!("{:02}", swap_free.percent(swap_total) as i32),
-            "{SFpb}" => format_percent_bar(swap_free.percent(swap_total)),
-            "{SUg}" => format!("{:.1}", swap_used.gib()),
-            "{SUm}" => format!("{}", swap_used.mib()),
-            "{SUp}" => format!("{:.2}", swap_used.percent(swap_total)),
-            "{SUpi}" => format!("{:02}", swap_used.percent(swap_total) as i32),
-            "{SUpb}" => format_percent_bar(swap_used.percent(swap_total)),
-            "{Bg}" => format!("{:.1}", buffers.gib()),
-            "{Bm}" => format!("{}", buffers.mib()),
-            "{Bp}" => format!("{:.2}", buffers.percent(mem_total)),
-            "{Bpi}" => format!("{:02}", buffers.percent(mem_total) as i32),
-            "{Bpb}" => format_percent_bar(buffers.percent(mem_total)),
-            "{Cg}" => format!("{:.1}", cached.gib()),
-            "{Cm}" => format!("{}", cached.mib()),
-            "{Cp}" => format!("{:.2}", cached.percent(mem_total)),
-            "{Cpi}" => format!("{:02}", cached.percent(mem_total) as i32),
-            "{Cpb}" => format_percent_bar(cached.percent(mem_total)));
+            "mem_total" => Value::from_float(mem_total).bytes(),
+            "mem_free" => Value::from_float(mem_free).bytes(),
+            "mem_free_percents" => Value::from_float(mem_free / mem_total * 100.).percents(),
+            "mem_total_used" => Value::from_float(mem_total_used).bytes(),
+            "mem_total_used_percents" => Value::from_float(mem_total_used / mem_total * 100.).percents(),
+            "mem_used" => Value::from_float(mem_used).bytes(),
+            "mem_used_percents" => Value::from_float(mem_used / mem_total * 100.).percents(),
+            "mem_avail" => Value::from_float(mem_avail).bytes(),
+            "mem_avail_percents" => Value::from_float(mem_avail / mem_total * 100.).percents(),
+            "swap_total" => Value::from_float(swap_total).bytes(),
+            "swap_free" => Value::from_float(swap_free).bytes(),
+            "swap_free_percents" => Value::from_float(swap_free / swap_total * 100.).percents(),
+            "swap_used" => Value::from_float(swap_used).bytes(),
+            "swap_used_percents" => Value::from_float(swap_used / swap_total * 100.).percents(),
+            "buffers" => Value::from_float(buffers).bytes(),
+            "buffers_percent" => Value::from_float(buffers / mem_total * 100.).percents(),
+            "cached" => Value::from_float(cached).bytes(),
+            "cached_percent" => Value::from_float(cached / mem_total * 100.).percents(),
+        );
 
         match self.memtype {
-            Memtype::Memory => self.output.0.set_state(match mem_used.percent(mem_total) {
-                x if f64::from(x) > self.critical.0 => State::Critical,
-                x if f64::from(x) > self.warning.0 => State::Warning,
+            Memtype::Memory => self.output.0.set_state(match mem_used / mem_total * 100. {
+                x if x > self.critical.0 => State::Critical,
+                x if x > self.warning.0 => State::Warning,
                 _ => State::Idle,
             }),
             Memtype::Swap => self
                 .output
                 .1
-                .set_state(match swap_used.percent(swap_total) {
-                    x if f64::from(x) > self.critical.1 => State::Critical,
-                    x if f64::from(x) > self.warning.1 => State::Warning,
+                .set_state(match swap_used / swap_total * 100. {
+                    x if x > self.critical.1 => State::Critical,
+                    x if x > self.warning.1 => State::Warning,
                     _ => State::Idle,
                 }),
         };
 
         Ok(match self.memtype {
-            Memtype::Memory => self.format.0.render_static_str(&values)?,
-            Memtype::Swap => self.format.1.render_static_str(&values)?,
+            Memtype::Memory => self.format.0.render(&values)?,
+            Memtype::Swap => self.format.1.render(&values)?,
         })
     }
 
@@ -355,24 +239,32 @@ impl Memory {
 impl ConfigBlock for Memory {
     type Config = MemoryConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
-        let icons: bool = block_config.icons;
-        let widget = ButtonWidget::new(config, "memory").with_text("");
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        tx: Sender<Task>,
+    ) -> Result<Self> {
+        let widget = TextWidget::new(id, 0, shared_config);
         Ok(Memory {
-            id: pseudo_uuid(),
+            id,
             memtype: block_config.display_type,
-            output: if icons {
+            output: if block_config.icons {
                 (
-                    widget.clone().with_icon("memory_mem"),
-                    widget.with_icon("memory_swap"),
+                    widget.clone().with_icon("memory_mem")?,
+                    widget.with_icon("memory_swap")?,
                 )
             } else {
                 (widget.clone(), widget)
             },
             clickable: block_config.clickable,
             format: (
-                FormatTemplate::from_string(&block_config.format_mem)?,
-                FormatTemplate::from_string(&block_config.format_swap)?,
+                block_config
+                    .format_mem
+                    .with_default("{mem_free;M}/{mem_total;M}({mem_total_used_percents})")?,
+                block_config
+                    .format_swap
+                    .with_default("{swap_free;M}/{swap_total;M}({swap_used_percents})")?,
             ),
             update_interval: block_config.interval,
             tx_update_request: tx,
@@ -383,8 +275,8 @@ impl ConfigBlock for Memory {
 }
 
 impl Block for Memory {
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
@@ -473,27 +365,36 @@ impl Block for Memory {
             }
         }
 
+        // Read ZFS arc cache size to add to total cache size
+        let zfs_arcstats_file = std::fs::read_to_string("/proc/spl/kstat/zfs/arcstats");
+        if let Ok(arcstats) = zfs_arcstats_file {
+            let size_re = Regex::new(r"size\s+\d+\s+(\d+)").unwrap(); // Valid regex is safe to unwrap.
+            let size = &size_re
+                .captures(&arcstats)
+                .block_error("memory", "failed to find zfs_arc_cache size")?[1];
+            mem_state.zfs_arc_cache =
+                u64::from_str(size).block_error("memory", "failed to parse zfs_arc_cache size")?;
+        }
+
         // Now, create the string to be shown
         let output_text = self.format_insert_values(mem_state)?;
 
         match self.memtype {
-            Memtype::Memory => self.output.0.set_text(output_text),
-            Memtype::Swap => self.output.1.set_text(output_text),
+            Memtype::Memory => self.output.0.set_texts(output_text),
+            Memtype::Swap => self.output.1.set_texts(output_text),
         }
 
         Ok(Some(self.update_interval.into()))
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if let Some(ref s) = event.name {
-            if self.clickable && event.button == MouseButton::Left && *s == "memory" {
-                self.switch();
-                self.update()?;
-                self.tx_update_request.send(Task {
-                    id: self.id.clone(),
-                    update_time: Instant::now(),
-                })?;
-            }
+        if event.button == MouseButton::Left && self.clickable {
+            self.switch();
+            self.update()?;
+            self.tx_update_request.send(Task {
+                id: self.id,
+                update_time: Instant::now(),
+            })?;
         }
 
         Ok(())

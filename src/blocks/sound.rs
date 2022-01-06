@@ -2,14 +2,14 @@
 use {
     crate::pulse::callbacks::ListResult,
     crate::pulse::context::{
-        flags, introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo,
-        subscribe::subscription_masks, subscribe::Facility,
-        subscribe::Operation as SubscribeOperation, Context, State as PulseState,
+        introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo, subscribe::Facility,
+        subscribe::InterestMaskSet, subscribe::Operation as SubscribeOperation, Context, FlagSet,
+        State as PulseState,
     },
     crate::pulse::mainloop::standard::IterateResult,
     crate::pulse::mainloop::standard::Mainloop,
     crate::pulse::proplist::{properties, Proplist},
-    crate::pulse::volume::{ChannelVolumes, VOLUME_MAX, VOLUME_NORM},
+    crate::pulse::volume::{ChannelVolumes, Volume},
     crossbeam_channel::unbounded,
     lazy_static::lazy_static,
     std::cell::RefCell,
@@ -31,24 +31,28 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{Config, LogicalDirection};
+use crate::config::SharedConfig;
+use crate::config::{LogicalDirection, Scrolling};
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
-use crate::util::{format_percent_bar, pseudo_uuid, FormatTemplate};
-use crate::widget::{I3BarWidget, Spacing, State};
-use crate::widgets::button::ButtonWidget;
+use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 trait SoundDevice {
     fn volume(&self) -> u32;
     fn muted(&self) -> bool;
     fn output_name(&self) -> String;
+    fn output_description(&self) -> Option<String>;
+    fn active_port(&self) -> Option<String>;
 
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
     fn toggle(&mut self) -> Result<()>;
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()>;
+    fn monitor(&mut self, id: usize, tx_update_request: Sender<Task>) -> Result<()>;
 }
 
 struct AlsaSoundDevice {
@@ -83,6 +87,13 @@ impl SoundDevice for AlsaSoundDevice {
     }
     fn output_name(&self) -> String {
         self.name.clone()
+    }
+    fn output_description(&self) -> Option<String> {
+        // TODO Does Alsa has something similar like descripitons in Pulse?
+        None
+    }
+    fn active_port(&self) -> Option<String> {
+        None
     }
 
     fn get_info(&mut self) -> Result<()> {
@@ -132,7 +143,7 @@ impl SoundDevice for AlsaSoundDevice {
             args.push("-M")
         };
         let vol_str = &format!("{}%", capped_volume);
-        args.extend(&["-D", &self.device, "set", &self.name, &vol_str]);
+        args.extend(&["-D", &self.device, "set", &self.name, vol_str]);
 
         Command::new("amixer")
             .args(&args)
@@ -161,7 +172,7 @@ impl SoundDevice for AlsaSoundDevice {
         Ok(())
     }
 
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
+    fn monitor(&mut self, id: usize, tx_update_request: Sender<Task>) -> Result<()> {
         // Monitor volume changes in a separate thread.
         thread::Builder::new()
             .name("sound_alsa".into())
@@ -183,7 +194,7 @@ impl SoundDevice for AlsaSoundDevice {
                     if monitor.read(&mut buffer).is_ok() {
                         tx_update_request
                             .send(Task {
-                                id: id.clone(),
+                                id,
                                 update_time: Instant::now(),
                             })
                             .unwrap();
@@ -213,6 +224,8 @@ struct PulseAudioClient {
 #[cfg(feature = "pulseaudio")]
 struct PulseAudioSoundDevice {
     name: Option<String>,
+    description: Option<String>,
+    active_port: Option<String>,
     device_kind: DeviceKind,
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
@@ -225,6 +238,8 @@ struct PulseAudioVolInfo {
     volume: ChannelVolumes,
     mute: bool,
     name: String,
+    description: Option<String>,
+    active_port: Option<String>,
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -238,6 +253,15 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
                 volume: source_info.volume,
                 mute: source_info.mute,
                 name: name.to_string(),
+                description: source_info
+                    .description
+                    .clone()
+                    .map(|description| description.into_owned()),
+                active_port: source_info
+                    .active_port
+                    .as_ref()
+                    .map(|a| a.name.as_ref().map(|n| n.to_string()))
+                    .flatten(),
             }),
         }
     }
@@ -254,6 +278,15 @@ impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
                 volume: sink_info.volume,
                 mute: sink_info.mute,
                 name: name.to_string(),
+                description: sink_info
+                    .description
+                    .clone()
+                    .map(|description| description.into_owned()),
+                active_port: sink_info
+                    .active_port
+                    .as_ref()
+                    .map(|a| a.name.as_ref().map(|n| n.to_string()))
+                    .flatten(),
             }),
         }
     }
@@ -272,7 +305,7 @@ enum PulseAudioClientRequest {
 #[cfg(feature = "pulseaudio")]
 lazy_static! {
     static ref PULSEAUDIO_CLIENT: Result<PulseAudioClient> = PulseAudioClient::new();
-    static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<String, Sender<Task>>> =
+    static ref PULSEAUDIO_EVENT_LISTENER: Mutex<HashMap<usize, Sender<Task>>> =
         Mutex::new(HashMap::new());
 
     // Default device names
@@ -306,7 +339,7 @@ impl PulseAudioConnection {
 
         context
             .borrow_mut()
-            .connect(None, flags::NOFLAGS, None)
+            .connect(None, FlagSet::NOFLAGS, None)
             .block_error("sound", "failed to connect to pulseaudio context")?;
 
         let mut connection = PulseAudioConnection { mainloop, context };
@@ -362,13 +395,9 @@ impl PulseAudioClient {
             }
         };
         let thread_result = || -> Result<()> {
-            match recv_result.recv() {
-                Err(_) => Err(BlockError(
-                    "sound".into(),
-                    "failed to receive from pulseaudio thread channel".into(),
-                )),
-                Ok(result) => result,
-            }
+            recv_result
+                .recv()
+                .block_error("sound", "failed to receive from pulseaudio thread channel")?
         };
 
         // requests
@@ -454,9 +483,7 @@ impl PulseAudioClient {
                     .borrow_mut()
                     .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
                 connection.context.borrow_mut().subscribe(
-                    subscription_masks::SERVER
-                        | subscription_masks::SINK
-                        | subscription_masks::SOURCE,
+                    InterestMaskSet::SERVER | InterestMaskSet::SINK | InterestMaskSet::SOURCE,
                     |_| {},
                 );
 
@@ -558,7 +585,7 @@ impl PulseAudioClient {
         for (id, tx_update_request) in &*PULSEAUDIO_EVENT_LISTENER.lock().unwrap() {
             tx_update_request
                 .send(Task {
-                    id: id.clone(),
+                    id: *id,
                     update_time: Instant::now(),
                 })
                 .unwrap();
@@ -573,6 +600,8 @@ impl PulseAudioSoundDevice {
 
         let device = PulseAudioSoundDevice {
             name: None,
+            description: None,
+            active_port: None,
             device_kind,
             volume: None,
             volume_avg: 0,
@@ -600,7 +629,7 @@ impl PulseAudioSoundDevice {
 
     fn volume(&mut self, volume: ChannelVolumes) {
         self.volume = Some(volume);
-        self.volume_avg = (volume.avg().0 as f32 / VOLUME_NORM.0 as f32 * 100.0).round() as u32;
+        self.volume_avg = (volume.avg().0 as f32 / Volume::NORMAL.0 as f32 * 100.0).round() as u32;
     }
 }
 
@@ -618,36 +647,43 @@ impl SoundDevice for PulseAudioSoundDevice {
         self.name()
     }
 
+    fn output_description(&self) -> Option<String> {
+        self.description.clone()
+    }
+
+    fn active_port(&self) -> Option<String> {
+        self.active_port.clone()
+    }
+
     fn get_info(&mut self) -> Result<()> {
         let devices = PULSEAUDIO_DEVICES.lock().unwrap();
 
         if let Some(info) = devices.get(&(self.device_kind, self.name())) {
             self.volume(info.volume);
             self.muted = info.mute;
+            self.description = info.description.clone();
+            self.active_port = info.active_port.clone();
         }
 
         Ok(())
     }
 
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()> {
-        let mut volume = match self.volume {
-            Some(volume) => volume,
-            None => return Err(BlockError("sound".into(), "volume unknown".into())),
-        };
+        let mut volume = self.volume.block_error("sound", "volume unknown")?;
 
         // apply step to volumes
-        let step = (step as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as i32;
+        let step = (step as f32 * Volume::NORMAL.0 as f32 / 100.0).round() as i32;
         for vol in volume.get_mut().iter_mut() {
             let uncapped_vol = max(0, vol.0 as i32 + step) as u32;
             let capped_vol = if let Some(vol_cap) = max_vol {
                 min(
                     uncapped_vol,
-                    (vol_cap as f32 * VOLUME_NORM.0 as f32 / 100.0).round() as u32,
+                    (vol_cap as f32 * Volume::NORMAL.0 as f32 / 100.0).round() as u32,
                 )
             } else {
                 uncapped_vol
             };
-            vol.0 = min(capped_vol, VOLUME_MAX.0);
+            vol.0 = min(capped_vol, Volume::MAX.0);
         }
 
         // update volumes
@@ -673,7 +709,7 @@ impl SoundDevice for PulseAudioSoundDevice {
         Ok(())
     }
 
-    fn monitor(&mut self, id: String, tx_update_request: Sender<Task>) -> Result<()> {
+    fn monitor(&mut self, id: usize, tx_update_request: Sender<Task>) -> Result<()> {
         PULSEAUDIO_EVENT_LISTENER
             .lock()
             .unwrap()
@@ -684,18 +720,18 @@ impl SoundDevice for PulseAudioSoundDevice {
 
 // TODO: Use the alsa control bindings to implement push updates
 pub struct Sound {
-    text: ButtonWidget,
-    id: String,
+    text: TextWidget,
+    id: usize,
     device: Box<dyn SoundDevice>,
     device_kind: DeviceKind,
     step_width: u32,
     format: FormatTemplate,
-    config: Config,
+    headphones_indicator: bool,
     on_click: Option<String>,
     show_volume_when_muted: bool,
-    bar: bool,
     mappings: Option<BTreeMap<String, String>>,
     max_vol: Option<u32>,
+    scrolling: Scrolling,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
@@ -721,59 +757,6 @@ impl Default for DeviceKind {
     }
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct SoundConfig {
-    /// ALSA / PulseAudio sound device name
-    #[serde(default)]
-    pub driver: SoundDriver,
-
-    /// PulseAudio device name, or
-    /// ALSA control name as listed in the output of `amixer -D yourdevice scontrols` (default is "Master")
-    #[serde(default = "SoundConfig::default_name")]
-    pub name: Option<String>,
-
-    /// ALSA device name, usually in the form "hw:#" where # is the number of the card desired (default is "default")
-    #[serde(default = "SoundConfig::default_device")]
-    pub device: Option<String>,
-
-    /// Type of device: sink or source (default is "sink")
-    #[serde(default)]
-    pub device_kind: DeviceKind,
-
-    /// Use the mapped volume for evaluating the percentage representation like alsamixer, to be more natural for human ear
-    #[serde(default = "SoundConfig::default_natural_mapping")]
-    pub natural_mapping: bool,
-
-    /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
-    #[serde(default = "SoundConfig::default_step_width")]
-    pub step_width: u32,
-
-    /// Format string for displaying sound information.
-    /// placeholders: {volume}
-    #[serde(default = "SoundConfig::default_format")]
-    pub format: String,
-
-    #[serde(default = "SoundConfig::default_on_click")]
-    pub on_click: Option<String>,
-
-    #[serde(default = "SoundConfig::default_show_volume_when_muted")]
-    pub show_volume_when_muted: bool,
-
-    /// Show volume as bar instead of percent
-    #[serde(default = "SoundConfig::default_bar")]
-    pub bar: bool,
-
-    #[serde(default = "SoundConfig::default_mappings")]
-    pub mappings: Option<BTreeMap<String, String>>,
-
-    #[serde(default = "SoundConfig::default_max_vol")]
-    pub max_vol: Option<u32>,
-
-    #[serde(default = "SoundConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
-}
-
 #[derive(Deserialize, Copy, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum SoundDriver {
@@ -789,54 +772,66 @@ impl Default for SoundDriver {
     }
 }
 
-impl SoundConfig {
-    fn default_name() -> Option<String> {
-        None
-    }
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
+pub struct SoundConfig {
+    /// ALSA / PulseAudio sound device name
+    pub driver: SoundDriver,
 
-    fn default_device() -> Option<String> {
-        None
-    }
+    /// PulseAudio device name, or
+    /// ALSA control name as listed in the output of `amixer -D yourdevice scontrols` (default is "Master")
+    pub name: Option<String>,
 
-    fn default_natural_mapping() -> bool {
-        false
-    }
+    /// ALSA device name, usually in the form "hw:#" where # is the number of the card desired (default is "default")
+    pub device: Option<String>,
 
-    fn default_step_width() -> u32 {
-        5
-    }
+    /// Type of device: sink or source (default is "sink")
+    pub device_kind: DeviceKind,
 
-    fn default_format() -> String {
-        "{volume}%".into()
-    }
+    /// Use the mapped volume for evaluating the percentage representation like alsamixer, to be more natural for human ear
+    pub natural_mapping: bool,
 
-    fn default_on_click() -> Option<String> {
-        None
-    }
+    /// The steps volume is in/decreased for the selected audio device (When greater than 50 it gets limited to 50)
+    pub step_width: u32,
 
-    fn default_show_volume_when_muted() -> bool {
-        false
-    }
+    /// Format string for displaying sound information.
+    /// placeholders: {volume}
+    pub format: FormatTemplate,
 
-    fn default_bar() -> bool {
-        false
-    }
+    /// Change icon when headphones are plugged in (pulseaudio only)
+    pub headphones_indicator: bool,
 
-    fn default_mappings() -> Option<BTreeMap<String, String>> {
-        None
-    }
+    pub show_volume_when_muted: bool,
 
-    fn default_max_vol() -> Option<u32> {
-        None
-    }
+    pub mappings: Option<BTreeMap<String, String>>,
 
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+    pub max_vol: Option<u32>,
+}
+
+impl Default for SoundConfig {
+    fn default() -> Self {
+        Self {
+            driver: Default::default(),
+            name: None,
+            device: None,
+            device_kind: Default::default(),
+            natural_mapping: false,
+            step_width: 5,
+            format: FormatTemplate::default(),
+            headphones_indicator: false,
+            show_volume_when_muted: false,
+            mappings: None,
+            max_vol: None,
+        }
     }
 }
 
 impl Sound {
-    fn icon(&self, volume: u32) -> String {
+    fn icon(&self, volume: u32, headphones: bool) -> String {
+        if self.headphones_indicator && self.device_kind == DeviceKind::Sink && headphones {
+            return String::from("headphones");
+        }
+
         let prefix = match self.device_kind {
             DeviceKind::Source => "microphone",
             DeviceKind::Sink => "volume",
@@ -851,63 +846,17 @@ impl Sound {
 
         format!("{}_{}", prefix, suffix)
     }
-
-    fn display(&mut self) -> Result<()> {
-        self.device.get_info()?;
-
-        let volume = self.device.volume();
-        let output_name = self.device.output_name();
-        let mapped_output_name = if let Some(m) = &self.mappings {
-            match m.get(&output_name) {
-                Some(mapping) => mapping.to_string(),
-                None => output_name,
-            }
-        } else {
-            output_name
-        };
-        let values = map!("{volume}" => format!("{:02}", volume),
-                          "{output_name}" => mapped_output_name
-        );
-        let text = self.format.render_static_str(&values)?;
-
-        if self.device.muted() {
-            self.text.set_icon(&self.icon(0));
-            if self.show_volume_when_muted {
-                if self.bar {
-                    self.text.set_text(format_percent_bar(volume as f32));
-                } else {
-                    self.text.set_text(text);
-                }
-                self.text.set_spacing(Spacing::Normal);
-            } else {
-                self.text.set_text("");
-                self.text.set_spacing(Spacing::Hidden);
-            }
-            self.text.set_state(State::Warning);
-        } else {
-            self.text.set_icon(&self.icon(volume));
-            self.text.set_text(if self.bar {
-                format_percent_bar(volume as f32)
-            } else {
-                text
-            });
-            self.text.set_spacing(Spacing::Normal);
-            self.text.set_state(State::Idle);
-        }
-
-        Ok(())
-    }
 }
 
 impl ConfigBlock for Sound {
     type Config = SoundConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let id = pseudo_uuid();
         let mut step_width = block_config.step_width;
         if step_width > 50 {
             step_width = 50;
@@ -944,23 +893,27 @@ impl ConfigBlock for Sound {
         };
 
         let mut sound = Self {
-            text: ButtonWidget::new(config.clone(), &id).with_icon("volume_empty"),
-            id: id.clone(),
+            id,
             device,
             device_kind: block_config.device_kind,
-            format: FormatTemplate::from_string(&block_config.format)?,
+            format: block_config.format.with_default("{volume}")?,
+            headphones_indicator: block_config.headphones_indicator,
             step_width,
-            config,
-            on_click: block_config.on_click,
+            on_click: None,
             show_volume_when_muted: block_config.show_volume_when_muted,
-            bar: block_config.bar,
             mappings: block_config.mappings,
             max_vol: block_config.max_vol,
+            scrolling: shared_config.scrolling,
+            text: TextWidget::new(id, 0, shared_config).with_icon("volume_empty")?,
         };
 
         sound.device.monitor(id, tx_update_request)?;
 
         Ok(sound)
+    }
+
+    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
+        Some(&mut self.on_click)
     }
 }
 
@@ -969,7 +922,59 @@ const FILTER: &[char] = &['[', ']', '%'];
 
 impl Block for Sound {
     fn update(&mut self) -> Result<Option<Update>> {
-        self.display()?;
+        self.device.get_info()?;
+
+        let volume = self.device.volume();
+        let (output_name, output_description) = {
+            let mut output_name = self.device.output_name();
+            let mut output_description = self
+                .device
+                .output_description()
+                .unwrap_or_else(|| output_name.clone());
+
+            if let Some(mapped_name) = if let Some(m) = &self.mappings {
+                m.get(&output_name)
+                    .map(|output_name| output_name.to_string())
+            } else {
+                None
+            } {
+                output_name = mapped_name.clone();
+                output_description = mapped_name;
+            }
+
+            (output_name, output_description)
+        };
+
+        let values = map!(
+            "volume" => Value::from_integer(volume as i64).percents(),
+            "output_name" => Value::from_string(output_name),
+            "output_description" => Value::from_string(output_description),
+        );
+        let texts = self.format.render(&values)?;
+
+        // TODO: Query port names instead? See https://github.com/greshake/i3status-rust/pull/1363#issue-1069904082
+        // Reference: PulseAudio port name definitions are the first item in the well_known_descriptions struct:
+        // https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0ce3008605e5f644fac4bb5edbb1443110201ec1/src/modules/alsa/alsa-mixer.c#L2709-L2731
+        let headphones = self
+            .device
+            .active_port()
+            .map(|p| p.contains("headphones"))
+            .unwrap_or(false);
+
+        if self.device.muted() {
+            self.text.set_icon(&self.icon(0, headphones))?;
+            if self.show_volume_when_muted {
+                self.text.set_texts(texts);
+            } else {
+                self.text.set_text(String::new());
+            }
+            self.text.set_state(State::Warning);
+        } else {
+            self.text.set_icon(&self.icon(volume, headphones))?;
+            self.text.set_state(State::Idle);
+            self.text.set_texts(texts);
+        }
+
         Ok(None)
     }
 
@@ -978,37 +983,32 @@ impl Block for Sound {
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if let Some(ref name) = e.name {
-            if name.as_str() == self.id {
-                match e.button {
-                    MouseButton::Right => self.device.toggle()?,
-                    MouseButton::Left => {
-                        if let Some(ref cmd) = self.on_click {
-                            spawn_child_async("sh", &["-c", cmd])
-                                .block_error("sound", "could not spawn child")?;
-                        }
-                    }
-                    _ => {
-                        use LogicalDirection::*;
-                        match self.config.scrolling.to_logical_direction(e.button) {
-                            Some(Up) => self
-                                .device
-                                .set_volume(self.step_width as i32, self.max_vol)?,
-                            Some(Down) => self
-                                .device
-                                .set_volume(-(self.step_width as i32), self.max_vol)?,
-                            None => (),
-                        }
-                    }
+        match e.button {
+            MouseButton::Right => self.device.toggle()?,
+            MouseButton::Left => {
+                if let Some(ref cmd) = self.on_click {
+                    spawn_child_async("sh", &["-c", cmd])
+                        .block_error("sound", "could not spawn child")?;
                 }
-                self.display()?;
+            }
+            _ => {
+                use LogicalDirection::*;
+                match self.scrolling.to_logical_direction(e.button) {
+                    Some(Up) => self
+                        .device
+                        .set_volume(self.step_width as i32, self.max_vol)?,
+                    Some(Down) => self
+                        .device
+                        .set_volume(-(self.step_width as i32), self.max_vol)?,
+                    None => (),
+                }
             }
         }
-
+        self.update()?;
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

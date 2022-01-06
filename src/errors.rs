@@ -1,11 +1,13 @@
 pub use std::error::Error as StdError;
 use std::fmt;
+pub use std::result::Result as StdResult;
 
 pub use self::Error::{BlockError, ConfigurationError, InternalError};
 
 /// Result type returned from functions that can have our `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
 
+// Why `ResultExtBlock` and `ResultExtInternal` are splitted?
 pub trait ResultExtBlock<T, E> {
     fn block_error(self, block: &str, message: &str) -> Result<T>;
 }
@@ -26,9 +28,7 @@ where
     E: fmt::Display + fmt::Debug,
 {
     fn configuration_error(self, message: &str) -> Result<T> {
-        self.map_err(|e| {
-            ConfigurationError(message.to_owned(), (format!("{}", e), format!("{:?}", e)))
-        })
+        self.map_err(|e| ConfigurationError(message.to_owned(), format!("{}", e)))
     }
 
     fn internal_error(self, context: &str, message: &str) -> Result<T> {
@@ -58,9 +58,12 @@ impl<T> OptionExt<T> for ::std::option::Option<T> {
 }
 
 /// A set of errors that can occur during the runtime of i3status-rs.
+/// TODO: rewrite using struct-like fields ("what is the order of InternalError again?")
+/// TODO: rename variants
+#[allow(clippy::enum_variant_names)]
 pub enum Error {
     BlockError(String, String),
-    ConfigurationError(String, (String, String)),
+    ConfigurationError(String, String),
     InternalError(String, String, Option<(String, String)>),
 }
 
@@ -87,12 +90,12 @@ impl fmt::Debug for Error {
             BlockError(ref block, ref message) => {
                 f.write_str(&format!("Error in block '{}': {}", block, message))
             }
-            ConfigurationError(ref message, (ref cause, _)) => f.write_str(&format!(
-                "Configuration error: {}.\nCause: {}",
+            ConfigurationError(ref message, ref cause) => f.write_str(&format!(
+                "Configuration error: {}. Cause: {}",
                 message, cause
             )),
             InternalError(ref context, ref message, Some((ref cause, _))) => f.write_str(&format!(
-                "Internal error in context '{}': {}.\nCause: {}",
+                "Internal error in context '{}': {}. Cause: {}",
                 context, message, cause
             )),
             InternalError(ref context, ref message, None) => f.write_str(&format!(
@@ -123,5 +126,24 @@ where
 {
     fn from(_err: ::crossbeam_channel::SendError<T>) -> Error {
         InternalError("unknown".to_string(), "send error".to_string(), None)
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(_err: std::io::Error) -> Error {
+        InternalError("unknown".to_string(), "io error".to_string(), None)
+    }
+}
+
+pub trait ToSerdeError<T> {
+    fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E>;
+}
+
+impl<T, F> ToSerdeError<T> for StdResult<T, F>
+where
+    F: fmt::Display,
+{
+    fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E> {
+        self.map_err(|e| E::custom(e.to_string()))
     }
 }

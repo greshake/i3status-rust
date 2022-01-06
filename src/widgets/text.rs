@@ -1,44 +1,49 @@
-use serde_json::value::Value;
-
-use super::super::widget::I3BarWidget;
-use crate::config::Config;
-use crate::widget::Spacing;
-use crate::widget::State;
+use super::{I3BarWidget, Spacing, State};
+use crate::config::SharedConfig;
+use crate::errors::*;
+use crate::protocol::i3bar_block::I3BarBlock;
 
 #[derive(Clone, Debug)]
 pub struct TextWidget {
+    pub instance: usize,
     content: Option<String>,
+    content_short: Option<String>,
     icon: Option<String>,
     state: State,
     spacing: Spacing,
-    rendered: Value,
-    cached_output: Option<String>,
-    config: Config,
+    spacing_short: Spacing,
+    shared_config: SharedConfig,
+    inner: I3BarBlock,
 }
 
 impl TextWidget {
-    pub fn new(config: Config) -> Self {
+    pub fn new(id: usize, instance: usize, shared_config: SharedConfig) -> Self {
+        let (key_bg, key_fg) = State::Idle.theme_keys(&shared_config.theme); // Initial colors
+        let inner = I3BarBlock {
+            name: Some(id.to_string()),
+            instance: Some(instance.to_string()),
+            color: key_fg,
+            background: key_bg,
+            ..I3BarBlock::default()
+        };
+
         TextWidget {
+            instance,
             content: None,
+            content_short: None,
             icon: None,
             state: State::Idle,
             spacing: Spacing::Normal,
-            rendered: json!({
-                "full_text": "",
-                "separator": false,
-                "separator_block_width": 0,
-                "background": "#000000",
-                "color": "#000000"
-            }),
-            config,
-            cached_output: None,
+            spacing_short: Spacing::Normal,
+            shared_config,
+            inner,
         }
     }
 
-    pub fn with_icon(mut self, name: &str) -> Self {
-        self.icon = self.config.icons.get(name).cloned();
+    pub fn with_icon(mut self, name: &str) -> Result<Self> {
+        self.icon = Some(self.shared_config.get_icon(name)?);
         self.update();
-        self
+        Ok(self)
     }
 
     pub fn with_text(mut self, content: &str) -> Self {
@@ -55,17 +60,35 @@ impl TextWidget {
 
     pub fn with_spacing(mut self, spacing: Spacing) -> Self {
         self.spacing = spacing;
+        self.spacing_short = spacing;
         self.update();
         self
     }
 
-    pub fn set_text(&mut self, content: String) {
-        self.content = Some(content);
+    pub fn set_icon(&mut self, name: &str) -> Result<()> {
+        self.icon = Some(self.shared_config.get_icon(name)?);
+        self.update();
+        Ok(())
+    }
+
+    pub fn unset_icon(&mut self) {
+        self.icon = None;
         self.update();
     }
 
-    pub fn set_icon(&mut self, name: &str) {
-        self.icon = self.config.icons.get(name).cloned();
+    pub fn set_text(&mut self, content: String) {
+        self.set_texts((content, None));
+    }
+
+    pub fn set_texts(&mut self, contents: (String, Option<String>)) {
+        self.spacing = Spacing::from_content(&contents.0);
+        self.spacing_short = if let Some(ref short) = contents.1 {
+            Spacing::from_content(short)
+        } else {
+            self.spacing
+        };
+        self.content = Some(contents.0);
+        self.content_short = contents.1;
         self.update();
     }
 
@@ -79,41 +102,33 @@ impl TextWidget {
         self.update();
     }
 
+    fn format_text(&self, content: String, spacing: Spacing) -> String {
+        format!(
+            "{}{}{}",
+            self.icon
+                .clone()
+                .unwrap_or_else(|| spacing.to_string_leading()),
+            content,
+            spacing.to_string_trailing()
+        )
+    }
+
     fn update(&mut self) {
-        let (key_bg, key_fg) = self.state.theme_keys(&self.config.theme);
+        let (key_bg, key_fg) = self.state.theme_keys(&self.shared_config.theme);
 
-        self.rendered = json!({
-            "full_text": format!("{}{}{}",
-                                self.icon.clone().unwrap_or_else(|| {
-                                    match self.spacing {
-                                        Spacing::Normal => String::from(" "),
-                                        _ => String::from("")
-                                    }
-                                }),
-                                self.content.clone().unwrap_or_else(|| String::from("")),
-                                match self.spacing {
-                                    Spacing::Hidden => String::from(""),
-                                    _ => String::from(" ")
-                                }
-                            ),
-            "separator": false,
-            "separator_block_width": 0,
-            "background": key_bg.to_owned(),
-            "color": key_fg.to_owned()
-        });
-
-        self.cached_output = Some(self.rendered.to_string());
+        self.inner.full_text =
+            self.format_text(self.content.clone().unwrap_or_default(), self.spacing);
+        self.inner.short_text = match &self.content_short {
+            Some(text) => Some(self.format_text(text.clone(), self.spacing_short)),
+            _ => None,
+        };
+        self.inner.background = key_bg;
+        self.inner.color = key_fg;
     }
 }
 
 impl I3BarWidget for TextWidget {
-    fn to_string(&self) -> String {
-        self.cached_output
-            .clone()
-            .unwrap_or_else(|| self.rendered.to_string())
-    }
-
-    fn get_rendered(&self) -> &Value {
-        &self.rendered
+    fn get_data(&self) -> I3BarBlock {
+        self.inner.clone()
     }
 }

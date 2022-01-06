@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::env;
 use std::time::Duration;
 
@@ -6,18 +5,17 @@ use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::{I3BarEvent, MouseButton};
+use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::pseudo_uuid;
-use crate::widget::{I3BarWidget, State};
 use crate::widgets::text::TextWidget;
+use crate::widgets::{I3BarWidget, State};
 
 pub struct Notmuch {
+    id: usize,
     text: TextWidget,
-    id: String,
     update_interval: Duration,
     query: String,
     db: String,
@@ -28,104 +26,67 @@ pub struct Notmuch {
     name: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct NotmuchConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "NotmuchConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
-    #[serde(default = "NotmuchConfig::default_maildir")]
     pub maildir: String,
-    #[serde(default = "NotmuchConfig::default_query")]
     pub query: String,
-    #[serde(default = "NotmuchConfig::default_threshold_warning")]
     pub threshold_warning: u32,
-    #[serde(default = "NotmuchConfig::default_threshold_critical")]
     pub threshold_critical: u32,
-    #[serde(default = "NotmuchConfig::default_threshold_info")]
     pub threshold_info: u32,
-    #[serde(default = "NotmuchConfig::default_threshold_good")]
     pub threshold_good: u32,
-    #[serde(default = "NotmuchConfig::default_name")]
     pub name: Option<String>,
-    #[serde(default = "NotmuchConfig::default_no_icon")]
+    // DEPRECATED
     pub no_icon: bool,
-
-    #[serde(default = "NotmuchConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
 }
 
-impl NotmuchConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(10)
-    }
-
-    fn default_maildir() -> String {
+impl Default for NotmuchConfig {
+    fn default() -> Self {
         #[allow(deprecated)]
         let home_dir = match env::home_dir() {
             Some(path) => path.into_os_string().into_string().unwrap(),
             None => "".to_owned(),
         };
+        let maildir = format!("{}/.mail", home_dir);
 
-        format!("{}/.mail", home_dir)
-    }
-
-    fn default_query() -> String {
-        "".to_owned()
-    }
-
-    fn default_threshold_info() -> u32 {
-        <u32>::max_value()
-    }
-
-    fn default_threshold_good() -> u32 {
-        <u32>::max_value()
-    }
-
-    fn default_threshold_warning() -> u32 {
-        <u32>::max_value()
-    }
-
-    fn default_threshold_critical() -> u32 {
-        <u32>::max_value()
-    }
-
-    fn default_name() -> Option<String> {
-        None
-    }
-
-    fn default_no_icon() -> bool {
-        false
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+        Self {
+            interval: Duration::from_secs(10),
+            maildir,
+            query: "".to_string(),
+            threshold_warning: std::u32::MAX,
+            threshold_critical: std::u32::MAX,
+            threshold_info: std::u32::MAX,
+            threshold_good: std::u32::MAX,
+            name: None,
+            no_icon: false,
+        }
     }
 }
 
 fn run_query(db_path: &str, query_string: &str) -> std::result::Result<u32, notmuch::Error> {
     let db = notmuch::Database::open(&db_path, notmuch::DatabaseMode::ReadOnly)?;
     let query = db.create_query(query_string)?;
-    Ok(query.count_messages()?)
+    query.count_messages()
 }
 
 impl ConfigBlock for Notmuch {
     type Config = NotmuchConfig;
 
     fn new(
+        id: usize,
         block_config: Self::Config,
-        config: Config,
+        shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let mut widget = TextWidget::new(config);
+        let mut widget = TextWidget::new(id, 0, shared_config);
         if !block_config.no_icon {
-            widget.set_icon("mail");
+            widget.set_icon("mail")?;
         }
         Ok(Notmuch {
-            id: pseudo_uuid().to_string(),
+            id,
             update_interval: block_config.interval,
             db: block_config.maildir,
             query: block_config.query,
@@ -180,16 +141,14 @@ impl Block for Notmuch {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == "notmuch").unwrap_or(false)
-            && event.button == MouseButton::Left
-        {
+        if event.button == MouseButton::Left {
             self.update()?;
         }
 
         Ok(())
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }

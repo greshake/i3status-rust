@@ -1,5 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
-use std::process::Command;
+use std::collections::HashMap;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -8,87 +7,102 @@ use regex::Regex;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::Config;
+use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
-use crate::input::I3BarEvent;
+use crate::formatting::value::Value;
+use crate::formatting::FormatTemplate;
+use crate::http;
 use crate::scheduler::Task;
-use crate::util::{pseudo_uuid, FormatTemplate};
-use crate::widget::I3BarWidget;
-use crate::widgets::text::TextWidget;
+use crate::widgets::{text::TextWidget, I3BarWidget, State};
 
 const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
 pub struct Github {
+    id: usize,
     text: TextWidget,
-    id: String,
     update_interval: Duration,
     api_server: String,
     token: String,
     format: FormatTemplate,
+    total_notifications: u64,
+    hide_if_total_is_zero: bool,
+    good: Option<Vec<String>>,
+    info: Option<Vec<String>>,
+    warning: Option<Vec<String>>,
+    critical: Option<Vec<String>>,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields, default)]
 pub struct GithubConfig {
     /// Update interval in seconds
-    #[serde(
-        default = "GithubConfig::default_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
 
-    #[serde(default = "GithubConfig::default_api_server")]
     pub api_server: String,
 
     /// Format override
-    #[serde(default = "GithubConfig::default_format")]
-    pub format: String,
+    pub format: FormatTemplate,
 
-    #[serde(default = "GithubConfig::default_color_overrides")]
-    pub color_overrides: Option<BTreeMap<String, String>>,
+    pub hide_if_total_is_zero: bool,
+
+    /// good state list
+    pub good: Option<Vec<String>>,
+
+    /// info state list
+    pub info: Option<Vec<String>>,
+
+    /// warning state list
+    pub warning: Option<Vec<String>>,
+
+    /// critical state list
+    pub critical: Option<Vec<String>>,
 }
 
-impl GithubConfig {
-    fn default_interval() -> Duration {
-        Duration::from_secs(30)
-    }
-
-    fn default_api_server() -> String {
-        "https://api.github.com".to_owned()
-    }
-
-    fn default_format() -> String {
-        "{total}".to_owned()
-    }
-
-    fn default_color_overrides() -> Option<BTreeMap<String, String>> {
-        None
+impl Default for GithubConfig {
+    fn default() -> Self {
+        Self {
+            interval: Duration::from_secs(30),
+            api_server: "https://api.github.com".to_string(),
+            format: FormatTemplate::default(),
+            hide_if_total_is_zero: false,
+            good: None,
+            info: None,
+            warning: None,
+            critical: None,
+        }
     }
 }
 
 impl ConfigBlock for Github {
     type Config = GithubConfig;
 
-    fn new(block_config: Self::Config, config: Config, _: Sender<Task>) -> Result<Self> {
-        let token = match std::env::var(GITHUB_TOKEN_ENV).ok() {
-            Some(v) => v,
-            None => {
-                return Err(BlockError(
-                    "github".to_owned(),
-                    "missing I3RS_GITHUB_TOKEN environment variable".to_owned(),
-                ))
-            }
-        };
+    fn new(
+        id: usize,
+        block_config: Self::Config,
+        shared_config: SharedConfig,
+        _: Sender<Task>,
+    ) -> Result<Self> {
+        let token = std::env::var(GITHUB_TOKEN_ENV)
+            .block_error("github", "missing I3RS_GITHUB_TOKEN environment variable")?;
 
+        let text = TextWidget::new(id, 0, shared_config)
+            .with_text("x")
+            .with_icon("github")?;
         Ok(Github {
-            id: pseudo_uuid(),
+            id,
             update_interval: block_config.interval,
-            text: TextWidget::new(config).with_text("x").with_icon("github"),
+            text,
             api_server: block_config.api_server,
             token,
-            format: FormatTemplate::from_string(&block_config.format)
-                .block_error("github", "Invalid format specified")?,
+            format: block_config.format.with_default("{total:1}")?,
+            total_notifications: 0,
+            hide_if_total_is_zero: block_config.hide_if_total_is_zero,
+            good: block_config.good,
+            info: block_config.info,
+            warning: block_config.warning,
+            critical: block_config.critical,
         })
     }
 }
@@ -115,38 +129,47 @@ impl Block for Github {
         };
 
         let default: u64 = 0;
+        self.total_notifications = *aggregations.get("total").unwrap_or(&default);
         let values = map!(
-            "{total}" => format!("{}", aggregations.get("total").unwrap_or(&default)),
+            "total" => Value::from_integer(self.total_notifications as i64),
             // As specified by:
             // https://developer.github.com/v3/activity/notifications/#notification-reasons
-            "{assign}" => format!("{}", aggregations.get("assign").unwrap_or(&default)),
-            "{author}" => format!("{}", aggregations.get("author").unwrap_or(&default)),
-            "{comment}" => format!("{}", aggregations.get("comment").unwrap_or(&default)),
-            "{invitation}" => format!("{}", aggregations.get("invitation").unwrap_or(&default)),
-            "{manual}" => format!("{}", aggregations.get("manual").unwrap_or(&default)),
-            "{mention}" => format!("{}", aggregations.get("mention").unwrap_or(&default)),
-            "{review_requested}" => format!("{}", aggregations.get("review_requested").unwrap_or(&default)),
-            "{security_alert}" => format!("{}", aggregations.get("security_alert").unwrap_or(&default)),
-            "{state_change}" => format!("{}", aggregations.get("state_change").unwrap_or(&default)),
-            "{subscribed}" => format!("{}", aggregations.get("subscribed").unwrap_or(&default)),
-            "{team_mention}" => format!("{}", aggregations.get("team_mention").unwrap_or(&default))
+            "assign" =>           Value::from_integer(*aggregations.get("assign").unwrap_or(&default) as i64),
+            "author" =>           Value::from_integer(*aggregations.get("author").unwrap_or(&default) as i64),
+            "comment" =>          Value::from_integer(*aggregations.get("comment").unwrap_or(&default) as i64),
+            "invitation" =>       Value::from_integer(*aggregations.get("invitation").unwrap_or(&default) as i64),
+            "manual" =>           Value::from_integer(*aggregations.get("manual").unwrap_or(&default) as i64),
+            "mention" =>          Value::from_integer(*aggregations.get("mention").unwrap_or(&default) as i64),
+            "review_requested" => Value::from_integer(*aggregations.get("review_requested").unwrap_or(&default) as i64),
+            "security_alert" =>   Value::from_integer(*aggregations.get("security_alert").unwrap_or(&default) as i64),
+            "state_change" =>     Value::from_integer(*aggregations.get("state_change").unwrap_or(&default) as i64),
+            "subscribed" =>       Value::from_integer(*aggregations.get("subscribed").unwrap_or(&default) as i64),
+            "team_mention" =>     Value::from_integer(*aggregations.get("team_mention").unwrap_or(&default) as i64),
         );
 
-        self.text.set_text(self.format.render_static_str(&values)?);
+        self.text.set_texts(self.format.render(&values)?);
+
+        self.text.set_state(get_state(
+            &self.critical,
+            &self.warning,
+            &self.info,
+            &self.good,
+            &aggregations,
+        ));
 
         Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
+        if self.hide_if_total_is_zero && self.total_notifications == 0 {
+            vec![]
+        } else {
+            vec![&self.text]
+        }
     }
 
-    fn click(&mut self, _: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
-
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> usize {
+        self.id
     }
 }
 
@@ -189,56 +212,58 @@ impl<'a> Notifications<'a> {
             return Ok(Some(notif));
         }
 
-        if self.next_page_url == "" {
+        if self.next_page_url.is_empty() {
             return Ok(None);
         }
 
-        let result = Command::new("sh")
-            .args(&[
-                "-c",
-                &format!(
-                    "curl --silent --dump-header - --header \"Authorization: Bearer {token}\" -m 3 \"{next_page_url}\"",
-                    token = self.token,
-                    next_page_url = self.next_page_url,
-                ),
-            ])
-            .output()?;
+        let header_value = format!("Bearer {}", self.token);
+        let headers = vec![("Authorization", header_value.as_str())];
+        let result =
+            http::http_get_json(&self.next_page_url, Some(Duration::from_secs(3)), headers)?;
 
-        // Catch all errors, if response status is not 200, then curl wont exit with status code 0.
-        if !result.status.success() {
-            return Err(Box::new(BlockError(
-                "github".to_owned(),
-                "curl status code different than 0".to_owned(),
-            )));
-        }
+        self.next_page_url = result
+            .headers
+            .iter()
+            .find_map(|header| {
+                if header.starts_with("Link:") {
+                    parse_links_header(header).get("next").cloned()
+                } else {
+                    None
+                }
+            })
+            .unwrap_or("")
+            .to_string();
 
-        let output = String::from_utf8(result.stdout)?;
-
-        // Status / headers sections are separed by a blank line.
-        let split: Vec<&str> = output.split("\r\n\r\n").collect();
-        if split.len() != 2 {
-            return Err(Box::new(BlockError(
-                "github".to_owned(),
-                "unexpected curl output".to_owned(),
-            )));
-        }
-
-        let (meta, body) = (split[0], split[1]);
-
-        let next = match meta.lines().find(|&l| l.starts_with("Link:")) {
-            Some(v) => match parse_links_header(v).get("next") {
-                Some(next) => next,
-                None => "",
-            },
-            None => "",
-        };
-        self.next_page_url = next.to_owned();
-
-        let notifications: Vec<Notification> = serde_json::from_str(body)?;
+        let notifications: Vec<Notification> = serde_json::from_value(result.content)?;
         self.notifications = notifications.into_iter();
 
         Ok(self.notifications.next())
     }
+}
+
+fn get_state(
+    critical: &Option<Vec<String>>,
+    warning: &Option<Vec<String>>,
+    info: &Option<Vec<String>>,
+    good: &Option<Vec<String>>,
+    agg: &HashMap<String, u64>,
+) -> State {
+    let default: u64 = 0;
+    for (list_opt, ret) in &[
+        (critical, State::Critical),
+        (warning, State::Warning),
+        (info, State::Info),
+        (good, State::Good),
+    ] {
+        if let Some(list) = list_opt {
+            for key in agg.keys() {
+                if list.contains(key) && *agg.get(key).unwrap_or(&default) > 0 {
+                    return *ret;
+                }
+            }
+        }
+    }
+    State::Idle
 }
 
 fn parse_links_header(raw_links: &str) -> HashMap<&str, &str> {
