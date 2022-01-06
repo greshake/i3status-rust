@@ -146,7 +146,7 @@ fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
 
     // Request count
     stream
-        .write(b"num\n")
+        .write(b"num:\n")
         .block_error("rofication", "Failed to write to socket")?;
 
     // Response must be two comma separated integers: regular and critical
@@ -154,6 +154,8 @@ fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
     stream
         .read_to_string(&mut buffer)
         .block_error("rofication", "Failed to read from socket")?;
+
+    buffer = buffer.replace("\n", ","); // Original rofication uses NL to separate, while regolith forks uses comma. Convert if needed.
 
     let values = buffer.split(',').collect::<Vec<&str>>();
     if values.len() != 2 {
