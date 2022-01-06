@@ -1067,6 +1067,8 @@ Key | Values | Required | Default
 
 Creates a block which shows unread mails. Only supports maildir format.
 
+NOTE: This block can only be used if you build with `cargo build --features=maildir`
+
 #### Examples
 
 ```toml
