@@ -29,6 +29,7 @@ pub enum KeyboardLayoutDriver {
     SetXkbMap,
     LocaleBus,
     KbddBus,
+    XkbSwitch,
     Sway,
 }
 
@@ -411,6 +412,59 @@ impl KeyboardLayoutMonitor for Sway {
     }
 }
 
+pub struct XkbSwitch;
+
+impl XkbSwitch {
+    pub fn new() -> Result<XkbSwitch> {
+        Command::new("xkb-switch")
+            .output()
+            .block_error("keyboard_layout", "Failed to find xkb-switch in PATH")
+            .map(|_| XkbSwitch)
+    }
+}
+
+fn xkb_switch_show_layout_and_variant() -> Result<(String, Option<String>)> {
+    // This command should return a string like "layout(variant)" or "layout"
+    Command::new("xkb-switch")
+        .args(&["-p"])
+        .output()
+        .block_error("keyboard_layout", "Failed to execute `xkb-switch -p`.")
+        .and_then(|raw| {
+            String::from_utf8(raw.stdout).block_error("keyboard_layout", "Non-UTF8 input.")
+        })
+        .and_then(|layout_and_variant| {
+            let mut components = layout_and_variant.trim_end().split('(');
+
+            let layout = components
+                .next()
+                .ok_or("")
+                .block_error("keyboard_layout", "Unable to find keyboard layout")?
+                .to_string();
+
+            let variant = components
+                .last()
+                // Remove the trailing parenthesis ")"
+                .map(|variant_str| variant_str.split_at(variant_str.len() - 1).0.to_string());
+
+            Ok((layout, variant))
+        })
+}
+
+impl KeyboardLayoutMonitor for XkbSwitch {
+    fn keyboard_layout(&self) -> Result<String> {
+        xkb_switch_show_layout_and_variant().map(|layout_and_variant| layout_and_variant.0)
+    }
+
+    fn keyboard_variant(&self) -> Result<String> {
+        xkb_switch_show_layout_and_variant()
+            .map(|layout_and_variant| layout_and_variant.1.unwrap_or_else(|| "".into()))
+    }
+
+    fn must_poll(&self) -> bool {
+        true
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(default, deny_unknown_fields)]
 pub struct KeyboardLayoutConfig {
@@ -468,6 +522,7 @@ impl ConfigBlock for KeyboardLayout {
                 monitor.monitor(id, send);
                 Box::new(monitor)
             }
+            KeyboardLayoutDriver::XkbSwitch => Box::new(XkbSwitch::new()?),
             KeyboardLayoutDriver::Sway => {
                 let monitor = Sway::new(block_config.sway_kb_identifier)?;
                 monitor.monitor(id, send);

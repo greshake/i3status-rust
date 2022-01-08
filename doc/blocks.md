@@ -944,6 +944,7 @@ Four drivers are available:
 - `setxkbmap` which polls setxkbmap to get the current layout
 - `localebus` which can read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path
 - `kbddbus` which uses [kbdd](https://github.com/qnikst/kbdd) to monitor per-window layout changes via DBus
+- `xkbswitch` which uses [xkb-switch](https://github.com/grwlf/xkb-switch) to show the current layout and variant. This works when `setxkbmap` is used to set a comma separated list of layouts, such as `us,es,fr`.
 - `sway` which can read asynchronous updates from the sway IPC
 
 Which of these methods is appropriate will depend on your system setup.
@@ -983,6 +984,17 @@ Listen to kbdd for changes:
 [[block]]
 block = "keyboard_layout"
 driver = "kbddbus"
+```
+
+Poll `xkb-switch` for current layout and variant:
+
+```toml
+[[block]]
+block = "keyboard_layout"
+driver = "xkbswitch"
+on_click = "xkb-switch -n"
+format = "{layout} {variant}"
+interval = 1
 ```
 
 Listen to sway for changes:
