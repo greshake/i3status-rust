@@ -408,8 +408,11 @@ impl PulseAudioClient {
 
                 loop {
                     // make sure mainloop dispatched everything
-                    for _ in 0..10 {
+                    loop {
                         connection.iterate(false).unwrap();
+                        if connection.context.borrow().get_state() == PulseState::Ready {
+                            break;
+                        }
                     }
 
                     match recv_req.recv() {
@@ -595,11 +598,11 @@ impl PulseAudioClient {
 
 #[cfg(feature = "pulseaudio")]
 impl PulseAudioSoundDevice {
-    fn new(device_kind: DeviceKind) -> Result<Self> {
+    fn new(device_kind: DeviceKind, name: Option<String>) -> Result<Self> {
         PulseAudioClient::send(PulseAudioClientRequest::GetDefaultDevice)?;
 
         let device = PulseAudioSoundDevice {
-            name: None,
+            name,
             description: None,
             active_port: None,
             device_kind,
@@ -614,11 +617,6 @@ impl PulseAudioSoundDevice {
         ))?;
 
         Ok(device)
-    }
-
-    fn with_name(mut self, name: String) -> Self {
-        self.name = Some(name);
-        self
     }
 
     fn name(&self) -> String {
@@ -869,12 +867,7 @@ impl ConfigBlock for Sound {
         let pulseaudio_device: Result<PulseAudioSoundDevice> = match block_config.driver {
             #[cfg(feature = "pulseaudio")]
             SoundDriver::Auto | SoundDriver::PulseAudio => {
-                let sound_device = PulseAudioSoundDevice::new(block_config.device_kind);
-
-                match block_config.name.as_ref() {
-                    None => sound_device,
-                    Some(name) => sound_device.map(|device| device.with_name(name.to_string())),
-                }
+                PulseAudioSoundDevice::new(block_config.device_kind, block_config.name.clone())
             }
             _ => Err(BlockError(
                 "sound".into(),
