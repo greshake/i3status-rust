@@ -537,6 +537,25 @@ impl UpowerDevice {
             })
             .unwrap();
     }
+
+    fn get_upower_value<T: for<'b> dbus::arg::Get<'b>>(
+        &self,
+        key: &str,
+        fallback_value: T,
+    ) -> Result<T> {
+        self.con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get::<T>("org.freedesktop.UPower.Device", key)
+            .or_else(|_| {
+                if self.allow_missing {
+                    return Ok(fallback_value);
+                }
+                Err(BlockError(
+                    "battery".into(),
+                    format!("Failed to read UPower {} property.", key),
+                ))
+            })
+    }
 }
 
 impl BatteryDevice for UpowerDevice {
@@ -560,21 +579,7 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
-        if !self.is_available() {
-            if self.allow_missing {
-                return Ok(());
-            }
-            return Err(BlockError(
-                "battery".into(),
-                format!("Power supply device '{}' does not exist", self.device_path),
-            ));
-        }
-        let upower_type: u32 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", "Type")
-            .block_error("battery", "Failed to read UPower Type property.")?;
-
+        let upower_type = self.get_upower_value("Type", -1)?;
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
         // consider any peripheral, UPS and internal battery
         if upower_type == 1 {
@@ -583,41 +588,31 @@ impl BatteryDevice for UpowerDevice {
                 "UPower device is not a battery.".into(),
             ));
         }
-
         Ok(())
     }
 
     fn status(&self) -> Result<String> {
-        let status: u32 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", "State")
-            .block_error("battery", "Failed to read UPower State property.")?;
-
+        self.get_upower_value("State", -1).map(|status| 
         // https://upower.freedesktop.org/docs/Device.html#Device:State
         match status {
-            1 => Ok("Charging".to_string()),
-            2 => Ok("Discharging".to_string()),
-            3 => Ok("Empty".to_string()),
-            4 => Ok("Full".to_string()),
-            5 => Ok("Not charging".to_string()),
-            6 => Ok("Discharging".to_string()),
-            _ => Ok("Unknown".to_string()),
-        }
+            1 => "Charging".to_string(),
+            2 => "Discharging".to_string(),
+            3 => "Empty".to_string(),
+            4 => "Full".to_string(),
+            5 => "Not charging".to_string(),
+            6 => "Discharging".to_string(),
+            _ => "Unknown".to_string(),
+        })
     }
 
     fn capacity(&self) -> Result<u64> {
-        let capacity: f64 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", "Percentage")
-            .block_error("battery", "Failed to read UPower Percentage property.")?;
-
-        if capacity > 100.0 {
-            Ok(100)
-        } else {
-            Ok(capacity as u64)
-        }
+        self.get_upower_value("Percentage", 0.0).map(|capacity| {
+            if capacity > 100.0 {
+                100
+            } else {
+                capacity as u64
+            }
+        })
     }
 
     fn time_remaining(&self) -> Result<u64> {
@@ -626,25 +621,15 @@ impl BatteryDevice for UpowerDevice {
         } else {
             "TimeToEmpty"
         };
-        let time_to_empty: i64 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", property)
-            .block_error(
-                "battery",
-                &format!("Failed to read UPower {} property.", property),
-            )?;
-        Ok((time_to_empty / 60) as u64)
+
+        self.get_upower_value(property, 0_i64)
+            .map(|time_to_empty| (time_to_empty / 60) as u64)
     }
 
     fn power_consumption(&self) -> Result<u64> {
-        let energy_rate: f64 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", "EnergyRate")
-            .block_error("battery", "Failed to read UPower EnergyRate property.")?;
         // FIXME: Might want to make the interface send Watts instead.
-        Ok((energy_rate * 1_000_000.0) as u64)
+        self.get_upower_value("EnergyRate", 0.0)
+            .map(|energy_rate| (energy_rate * 1_000_000.0) as u64)
     }
 }
 
