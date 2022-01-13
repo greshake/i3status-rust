@@ -6,7 +6,6 @@
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -308,10 +307,11 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 }
 
-/// Represents a battery known to UPower.
+/// Represents a battery known to apcaccess.
 pub struct ApcUpsDevice {
     con: ApcAccess,
-    stat: Option<String>,
+    allow_missing: bool,
+    status: Option<String>,
     charge_percent: f64,
     time_left: f64,
     nom_power: f64,
@@ -319,7 +319,7 @@ pub struct ApcUpsDevice {
 }
 
 impl ApcUpsDevice {
-    pub fn from_device(device: &str) -> Result<ApcUpsDevice> {
+    pub fn from_device(device: &str, allow_missing: bool) -> Result<ApcUpsDevice> {
         let mut device_addr = device;
         if !device_addr.contains(':') {
             device_addr = "localhost:3551";
@@ -329,7 +329,8 @@ impl ApcUpsDevice {
                 "battery",
                 &format!("Could not create a apcaccess connection to {}", device_addr),
             )?,
-            stat: None,
+            status: None,
+            allow_missing,
             charge_percent: 0.0,
             time_left: 0.0,
             nom_power: 0.0,
@@ -340,57 +341,78 @@ impl ApcUpsDevice {
 
 impl BatteryDevice for ApcUpsDevice {
     fn is_available(&self) -> bool {
-        self.con.is_available()
+        self.con.is_available(&self.con.get_status())
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
-        fn prepare_value<T: FromStr>(
+        fn prepare_value(
             status_data: &HashMap<String, String>,
             stat_name: &str,
             required_unit: &str,
-            default_value: T,
-        ) -> Result<T> {
-            if let Some(charge_percent) = status_data.get(stat_name) {
-                let (value, unit) = charge_percent
-                    .split_once(' ')
-                    .block_error("battery", &format!("could not split {}", stat_name))
-                    .unwrap();
-                if unit == required_unit {
-                    return Ok(str::parse::<T>(value)
-                        .block_error(
-                            "battery",
-                            &format!("could not parse {} to float", stat_name),
-                        )
-                        .unwrap());
-                } else {
+        ) -> Result<f64> {
+            match status_data.get(stat_name) {
+                Some(charge_percent) => {
+                    let (value, unit) = charge_percent
+                        .split_once(' ')
+                        .block_error("battery", &format!("could not split {}", stat_name))
+                        .unwrap();
+                    if unit == required_unit {
+                        return Ok(str::parse::<f64>(value)
+                            .block_error(
+                                "battery",
+                                &format!("could not parse {} to float", stat_name),
+                            )
+                            .unwrap());
+                    } else {
+                        return Err(BlockError(
+                            "battery".to_string(),
+                            format!(
+                                "Expected unit for {} are {}, but got {}",
+                                stat_name, required_unit, unit
+                            ),
+                        ));
+                    }
+                }
+                _ => {
                     return Err(BlockError(
                         "battery".to_string(),
-                        format!(
-                            "Expected unit for {} are {}, but got {}",
-                            stat_name, required_unit, unit
-                        ),
-                    ));
+                        format!("{} not in apcaccess data", stat_name),
+                    ))
                 }
             }
-            Ok(default_value)
         }
 
+        let status_result = self.con.get_status();
         let status_data = self.con.get_status().unwrap_or_default();
+        self.status = status_data.get("STATUS").map(String::from);
 
-        self.stat = status_data.get("STATUS").map(String::from);
+        if !self.con.is_available(&status_result) {
+            // The user indicated that it's ok for this battery to be missing/go away
+            if self.allow_missing {
+                self.charge_percent = 0.0;
+                self.time_left = 0.0;
+                self.nom_power = 0.0;
+                self.load_percent = 0.0;
+                return Ok(());
+            }
+            return Err(BlockError(
+                "battery".into(),
+                "Unable to communicate with apcupsd".to_string(),
+            ));
+        }
 
         // NOTE: Percentages are 0.0-100.0, not 0.0-1.0
-        self.charge_percent = prepare_value(&status_data, "BCHARGE", "Percent", 0.0)?;
-        self.time_left = prepare_value(&status_data, "TIMELEFT", "Minutes", 0.0)?;
-        self.nom_power = prepare_value(&status_data, "NOMPOWER", "Watts", 0.0)?;
-        self.load_percent = prepare_value(&status_data, "LOADPCT", "Percent", 0.0)?;
+        self.charge_percent = prepare_value(&status_data, "BCHARGE", "Percent")?;
+        self.time_left = prepare_value(&status_data, "TIMELEFT", "Minutes")?;
+        self.nom_power = prepare_value(&status_data, "NOMPOWER", "Watts")?;
+        self.load_percent = prepare_value(&status_data, "LOADPCT", "Percent")?;
 
         Ok(())
     }
 
     fn status(&self) -> Result<String> {
         let charge_percent = self.charge_percent;
-        if let Some(status) = &self.stat {
+        if let Some(status) = &self.status {
             if status.contains("ONBATT") {
                 if charge_percent == 0.0 {
                     return Ok("Empty".to_string());
@@ -431,6 +453,7 @@ impl BatteryDevice for ApcUpsDevice {
 pub struct UpowerDevice {
     device_path: String,
     con: dbus::ffidisp::Connection,
+    allow_missing: bool,
 }
 
 impl UpowerDevice {
@@ -440,50 +463,16 @@ impl UpowerDevice {
     /// path `"/org/freedesktop/UPower/devices/DisplayDevice"`. Raises an error
     /// if D-Bus cannot connect to this device, or if the device is not a
     /// battery.
-    pub fn from_device(device: &str) -> Result<Self> {
-        let device_path;
+    pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
+        let device_path = format!("/org/freedesktop/UPower/devices/{}", device);
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
-        if device == "DisplayDevice" {
-            device_path = String::from("/org/freedesktop/UPower/devices/DisplayDevice");
-        } else {
-            let msg = dbus::Message::new_method_call(
-                "org.freedesktop.UPower",
-                "/org/freedesktop/UPower",
-                "org.freedesktop.UPower",
-                "EnumerateDevices",
-            )
-            .block_error("battery", "Failed to create DBus message")?;
-
-            let dbus_reply = con
-                .send_with_reply_and_block(msg, 2000)
-                .block_error("battery", "Failed to retrieve DBus reply")?;
-
-            // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
-            let mut paths: Array<dbus::Path, _> = dbus_reply
-                .get1()
-                .block_error("battery", "Failed to read DBus reply")?;
-
-            device_path = paths
-                .find(|entry| entry.ends_with(device))
-                .block_error("battery", "UPower device could not be found.")?
-                .to_string();
-        }
-        let upower_type: u32 = con
-            .with_path("org.freedesktop.UPower", &device_path, 1000)
-            .get("org.freedesktop.UPower.Device", "Type")
-            .block_error("battery", "Failed to read UPower Type property.")?;
-
-        // https://upower.freedesktop.org/docs/Device.html#Device:Type
-        // consider any peripheral, UPS and internal battery
-        if upower_type == 1 {
-            return Err(BlockError(
-                "battery".into(),
-                "UPower device is not a battery.".into(),
-            ));
-        }
-        Ok(UpowerDevice { device_path, con })
+        Ok(UpowerDevice {
+            device_path,
+            con,
+            allow_missing,
+        })
     }
 
     /// Monitor UPower property changes in a separate thread and send updates
@@ -548,6 +537,25 @@ impl UpowerDevice {
             })
             .unwrap();
     }
+
+    fn get_upower_value<T: for<'b> dbus::arg::Get<'b>>(
+        &self,
+        key: &str,
+        fallback_value: T,
+    ) -> Result<T> {
+        self.con
+            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
+            .get::<T>("org.freedesktop.UPower.Device", key)
+            .or_else(|_| {
+                if self.allow_missing {
+                    return Ok(fallback_value);
+                }
+                Err(BlockError(
+                    "battery".into(),
+                    format!("Failed to read UPower {} property.", key),
+                ))
+            })
+    }
 }
 
 impl BatteryDevice for UpowerDevice {
@@ -571,40 +579,40 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
+        let upower_type = self.get_upower_value("Type", -1)?;
+        // https://upower.freedesktop.org/docs/Device.html#Device:Type
+        // consider any peripheral, UPS and internal battery
+        if upower_type == 1 {
+            return Err(BlockError(
+                "battery".into(),
+                "UPower device is not a battery.".into(),
+            ));
+        }
         Ok(())
     }
 
     fn status(&self) -> Result<String> {
-        let status: u32 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", "State")
-            .block_error("battery", "Failed to read UPower State property.")?;
-
+        self.get_upower_value("State", -1).map(|status| 
         // https://upower.freedesktop.org/docs/Device.html#Device:State
         match status {
-            1 => Ok("Charging".to_string()),
-            2 => Ok("Discharging".to_string()),
-            3 => Ok("Empty".to_string()),
-            4 => Ok("Full".to_string()),
-            5 => Ok("Not charging".to_string()),
-            6 => Ok("Discharging".to_string()),
-            _ => Ok("Unknown".to_string()),
-        }
+            1 => "Charging".to_string(),
+            2 => "Discharging".to_string(),
+            3 => "Empty".to_string(),
+            4 => "Full".to_string(),
+            5 => "Not charging".to_string(),
+            6 => "Discharging".to_string(),
+            _ => "Unknown".to_string(),
+        })
     }
 
     fn capacity(&self) -> Result<u64> {
-        let capacity: f64 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", "Percentage")
-            .block_error("battery", "Failed to read UPower Percentage property.")?;
-
-        if capacity > 100.0 {
-            Ok(100)
-        } else {
-            Ok(capacity as u64)
-        }
+        self.get_upower_value("Percentage", 0.0).map(|capacity| {
+            if capacity > 100.0 {
+                100
+            } else {
+                capacity as u64
+            }
+        })
     }
 
     fn time_remaining(&self) -> Result<u64> {
@@ -613,25 +621,15 @@ impl BatteryDevice for UpowerDevice {
         } else {
             "TimeToEmpty"
         };
-        let time_to_empty: i64 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", property)
-            .block_error(
-                "battery",
-                &format!("Failed to read UPower {} property.", property),
-            )?;
-        Ok((time_to_empty / 60) as u64)
+
+        self.get_upower_value(property, 0_i64)
+            .map(|time_to_empty| (time_to_empty / 60) as u64)
     }
 
     fn power_consumption(&self) -> Result<u64> {
-        let energy_rate: f64 = self
-            .con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get("org.freedesktop.UPower.Device", "EnergyRate")
-            .block_error("battery", "Failed to read UPower EnergyRate property.")?;
         // FIXME: Might want to make the interface send Watts instead.
-        Ok((energy_rate * 1_000_000.0) as u64)
+        self.get_upower_value("EnergyRate", 0.0)
+            .map(|energy_rate| (energy_rate * 1_000_000.0) as u64)
     }
 }
 
@@ -763,9 +761,13 @@ impl ConfigBlock for Battery {
         update_request: Sender<Task>,
     ) -> Result<Self> {
         let device: Box<dyn BatteryDevice> = match block_config.driver {
-            BatteryDriver::ApcAccess => Box::new(ApcUpsDevice::from_device(&block_config.device)?),
+            BatteryDriver::ApcAccess => Box::new(ApcUpsDevice::from_device(
+                &block_config.device,
+                block_config.allow_missing,
+            )?),
             BatteryDriver::Upower => {
-                let out = UpowerDevice::from_device(&block_config.device)?;
+                let out =
+                    UpowerDevice::from_device(&block_config.device, block_config.allow_missing)?;
                 out.monitor(id, update_request);
                 Box::new(out)
             }

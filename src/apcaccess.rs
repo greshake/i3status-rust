@@ -27,8 +27,8 @@ impl ApcAccess {
         Ok(stream)
     }
 
-    pub fn is_available(&self) -> bool {
-        if let Ok(status_data) = self.get_status() {
+    pub fn is_available(&self, status_result: &Result<HashMap<String, String>>) -> bool {
+        if let Ok(status_data) = status_result {
             if let Some(status) = status_data.get("STATUS") {
                 return !status.contains("COMMLOST");
             }
