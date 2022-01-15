@@ -31,8 +31,8 @@ signal-hook = "0.3"
 swayipc = "3.0"
 toml = "0.5"
 
-# https://github.com/nyantec/sensors/pull/6
-sensors = { git = "https://github.com/ishitatsuyuki/sensors.git", branch = "fix-chip-filter" }
+libsensors-sys = "0.2"
+libc = "0.2"
 
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.0", default-features = false }

@@ -1,9 +1,9 @@
 use std::fs;
 use std::time::Duration;
 
-use sensors::FeatureType::SENSORS_FEATURE_TEMP;
-use sensors::Sensors;
-use sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
+use crate::sensors::FeatureType::SENSORS_FEATURE_TEMP;
+use crate::sensors::Sensors;
+use crate::sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -145,30 +145,22 @@ impl ConfigBlock for Temperature {
             output: (String::new(), None),
             collapsed: block_config.collapsed,
             scale: block_config.scale,
-            maximum_good: block_config
-                .good
-                .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 20f64,
-                    TemperatureScale::Fahrenheit => 68f64,
-                }),
-            maximum_idle: block_config
-                .idle
-                .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 45f64,
-                    TemperatureScale::Fahrenheit => 113f64,
-                }),
-            maximum_info: block_config
-                .info
-                .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 60f64,
-                    TemperatureScale::Fahrenheit => 140f64,
-                }),
-            maximum_warning: block_config
-                .warning
-                .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 80f64,
-                    TemperatureScale::Fahrenheit => 176f64,
-                }),
+            maximum_good: block_config.good.unwrap_or(match block_config.scale {
+                TemperatureScale::Celsius => 20f64,
+                TemperatureScale::Fahrenheit => 68f64,
+            }),
+            maximum_idle: block_config.idle.unwrap_or(match block_config.scale {
+                TemperatureScale::Celsius => 45f64,
+                TemperatureScale::Fahrenheit => 113f64,
+            }),
+            maximum_info: block_config.info.unwrap_or(match block_config.scale {
+                TemperatureScale::Celsius => 60f64,
+                TemperatureScale::Fahrenheit => 140f64,
+            }),
+            maximum_warning: block_config.warning.unwrap_or(match block_config.scale {
+                TemperatureScale::Celsius => 80f64,
+                TemperatureScale::Fahrenheit => 176f64,
+            }),
             format: block_config
                 .format
                 .with_default("{average} avg, {max} max")?,

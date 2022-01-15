@@ -385,13 +385,14 @@ dependencies = [
  "dbus-tree",
  "inotify",
  "lazy_static",
+ "libc",
  "libpulse-binding",
+ "libsensors-sys",
  "maildir",
  "nix",
  "nl80211",
  "notmuch",
  "regex",
- "sensors",
  "serde",
  "serde_derive",
  "serde_json",
@@ -896,15 +897,6 @@ checksum = "8f05ba609c234e60bee0d547fe94a4c7e9da733d1c962cf6e59efa4cd9c8bc75"
 dependencies = [
  "lazy_static",
  "winapi",
-]
-
-[[package]]
-name = "sensors"
-version = "0.2.1"
-source = "git+https://github.com/ishitatsuyuki/sensors.git?branch=fix-chip-filter#dd84ed8c0d27e68e770cab9a808b477c78da8d14"
-dependencies = [
- "libc",
- "libsensors-sys",
 ]
 
 [[package]]

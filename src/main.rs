@@ -12,6 +12,7 @@ mod http;
 mod icons;
 mod protocol;
 mod scheduler;
+mod sensors;
 mod signals;
 mod subprocess;
 mod themes;
