@@ -81,7 +81,7 @@ impl HueShiftDriver for Gammastep {
         Command::new("sh")
             .args(&[
                 "-c",
-                &format!("killall gammastep; gammastep -O {} -P &", temp),
+                &format!("pkill gammastep; gammastep -O {} -P &", temp),
             ])
             .spawn()
             .block_error(
@@ -110,7 +110,7 @@ impl HueShiftDriver for Wlsunset {
             // temperatures to be the same, so increment the day temperature.
             .args(&[
                 "-c",
-                &format!("killall wlsunset; wlsunset -T {} -t {} &", temp + 1, temp),
+                &format!("pkill wlsunset; wlsunset -T {} -t {} &", temp + 1, temp),
             ])
             .spawn()
             .block_error(
@@ -129,7 +129,7 @@ impl HueShiftDriver for Wlsunset {
             //     ^ results in sun_condition == POLAR_NIGHT at time of testing
             // With these defaults, this results in the the color temperature
             // getting set to 4000K.
-            .args(&["-c", "killall wlsunset > /dev/null 2>&1"])
+            .args(&["-c", "pkill wlsunset > /dev/null 2>&1"])
             .spawn()
             .block_error(
                 "hueshift",
