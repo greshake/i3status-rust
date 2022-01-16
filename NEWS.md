@@ -1,3 +1,28 @@
+# i3status-rust 0.21.0 (not released)
+
+## New Blocks and Features
+
+* New block: `rofication` (#1356 by @cfsmp3)
+* New block: `external_ip` (#1366 by @cfsmp3)
+* Xrandr block: new option `format` (it overrides `icons` and `resolution` options which are now deprecated) (ca86a97)
+* Battery block: add new apcupsd driver (#1383 by @bim9262)
+* Battery block: enable `allow_missing` for the UPower driver (#1378 by @bim9262)
+* KeyboardLayout: add support for the xkb-switch keyboard layout reader (#1386 by @roguh)
+
+## Bug Fixes and Improvements
+
+* Sound block: fix headphones indicator (#1363 by @codicodi)
+* Sound block: named PulseAudio devices now work as expected (#1394 by @bim9262)
+* NetworkManager block: escape SSID (#1373 by @nzig)
+* Taskwarrior block: use inotify to get instant changes (you will need to set `data_location` option if `taskwarrior` is configured to use a custom data directory) (#1374 by @cfsmp3)
+* Battery block: fix spacing (#1389 by @bim9262)
+
+## Deprecation Warnings
+* Xrandr block: `icon` and `resolution` will be removed in a future release. Use `format` instead.
+* Memory block: `icons` will be removed in a future release. Set `icons_format = ""` to disable icons.
+* Maildir block: `icon` will be removed in a future release. Set `icons_format = ""` to disable icons.
+* Notmuch block: `no_icon` will be removed in a future release. Set `icons_format = ""` to disable icons.
+
 # i3status-rust 0.20.7
 
 ## New Blocks and Features
