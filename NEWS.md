@@ -1,4 +1,4 @@
-# i3status-rust 0.21.0 (not released)
+# i3status-rust 0.21.0
 
 ## New Blocks and Features
 
@@ -16,6 +16,7 @@
 * NetworkManager block: escape SSID (#1373 by @nzig)
 * Taskwarrior block: use inotify to get instant changes (you will need to set `data_location` option if `taskwarrior` is configured to use a custom data directory) (#1374 by @cfsmp3)
 * Battery block: fix spacing (#1389 by @bim9262)
+* Hueshift block: replace `killall` with `pkill` (#1398 by @stelcodes)
 
 ## Deprecation Warnings
 * Xrandr block: `icon` and `resolution` will be removed in a future release. Use `format` instead.

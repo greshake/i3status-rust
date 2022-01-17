@@ -437,8 +437,9 @@ in the case of some Thinkpad batteries, when it reports \[lq]Not
 charging\[rq].
 .PP
 The battery block supports reading charging and status information from
-either \f[C]sysfs\f[R] or the UPower (https://upower.freedesktop.org/)
-D-Bus interface.
+either \f[C]sysfs\f[R],
+apcaccess (http://www.apcaccess.org/manual/manual.html#nis-server-client-configuration-using-the-net-driver),
+or the UPower (https://upower.freedesktop.org/) D-Bus interface.
 These \[lq]drivers\[rq] have largely identical features, but UPower does
 include support for \f[C]device = \[dq]DisplayDevice\[dq]\f[R], which
 treats all physical power sources as a single logical battery.
@@ -496,128 +497,22 @@ _
 T{
 \f[C]device\f[R]
 T}@T{
-The device in \f[C]/sys/class/power_supply/\f[R] to read from.
-When using UPower, this can also be \f[C]\[dq]DisplayDevice\[dq]\f[R].
-Defaults to finding the first \f[C]\[dq]BAT\[dq]\f[R] file in
-\f[C]/sys/class/power_supply\f[R].
+\f[C]sysfs\f[R]: The device in \f[C]/sys/class/power_supply/\f[R] to
+read from.\f[C]apcaccess\f[R]:
+IPv4Address/hostname:port\f[C]UPower\f[R]: this can be
+\f[C]\[dq]DisplayDevice\[dq]\f[R] or any of the other paths found by
+running \f[C]upower --enumerate\f[R].
 T}@T{
 No
 T}@T{
-\f[C]\[dq]BAT0\[dq]\f[R]
-T}
-T{
-\f[C]driver\f[R]
-T}@T{
-One of \f[C]\[dq]sysfs\[dq]\f[R] or \f[C]\[dq]upower\[dq]\f[R].
-T}@T{
-No
-T}@T{
-\f[C]\[dq]sysfs\[dq]\f[R]
-T}
-T{
-\f[C]interval\f[R]
-T}@T{
-Update interval, in seconds.
-Only relevant for \f[C]driver = \[dq]sysfs\[dq]\f[R].
-T}@T{
-No
-T}@T{
-\f[C]10\f[R]
-T}
-T{
-\f[C]format\f[R]
-T}@T{
-A string to customise the output of this block.
-See below for available placeholders.
-Text may need to be escaped, refer to Escaping Text.
-T}@T{
-No
-T}@T{
-\f[C]\[dq]{percentage}\[dq]\f[R]
-T}
-T{
-\f[C]full_format\f[R]
-T}@T{
-Same as \f[C]format\f[R] but for when the battery is full.
-T}@T{
-No
-T}@T{
-\f[C]\[dq]{percentage}\[dq]\f[R]
-T}
-T{
-\f[C]missing_format\f[R]
-T}@T{
-Same as \f[C]format\f[R] but for when the specified battery is missing.
-T}@T{
-No
-T}@T{
-\f[C]\[dq]{percentage}\[dq]\f[R]
-T}
-T{
-\f[C]allow_missing\f[R]
-T}@T{
-Don\[cq]t display errors when the battery cannot be found.
-Only works with the \f[C]sysfs\f[R] driver.
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]hide_missing\f[R]
-T}@T{
-Completely hide this block if the battery cannot be found.
-Only works in combination with \f[C]allow_missing\f[R].
-T}@T{
-No
-T}@T{
-\f[C]false\f[R]
-T}
-T{
-\f[C]full_threshold\f[R]
-T}@T{
-Percentage at which the battery is considered full
-(\f[C]full_format\f[R] shown)
-T}@T{
-No
-T}@T{
-\f[C]100\f[R]
-T}
-T{
-\f[C]good\f[R]
-T}@T{
-Minimum battery level, where state is set to good.
-T}@T{
-No
-T}@T{
-\f[C]60\f[R]
-T}
-T{
-\f[C]info\f[R]
-T}@T{
-Minimum battery level, where state is set to info.
-T}@T{
-No
-T}@T{
-\f[C]60\f[R]
-T}
-T{
-\f[C]warning\f[R]
-T}@T{
-Minimum battery level, where state is set to warning.
-T}@T{
-No
-T}@T{
-\f[C]30\f[R]
-T}
-T{
-\f[C]critical\f[R]
-T}@T{
-Minimum battery level, where state is set to critical.
-T}@T{
-No
-T}@T{
-\f[C]15\f[R]
+\f[C]sysfs\f[R]: the first device starting with \f[C]\[dq]BAT\[dq]\f[R]
+in \f[C]/sys/class/power_supply\f[R], usually
+\[lq]BAT0\[rq].\f[C]apcaccess\f[R]:
+\[lq]localhost:3551\[rq]\f[C]upower\f[R]: first matching device returned
+by the \f[C]EnumerateDevices\f[R] D-Bus
+method\f[C]\f[R]driver\f[C]| One of\f[R]\[lq]sysfs\[rq]\f[C],\f[R]\[lq]apcaccess\[rq]\f[C], or\f[R]\[lq]upower\[rq]\f[C]. | No |\f[R]\[lq]sysfs\[rq]\f[C]\f[R]interval\f[C]| Update interval, in seconds. Only relevant for\f[R]driver
+= \[lq]sysfs\[rq] ||
+\[lq]apcaccess\[rq]\f[C]. | No |\f[R]10\f[C]\f[R]format\f[C]| A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No |\f[R]\[lq]{percentage}\[rq]\f[C]\f[R]full_format\f[C]| Same as\f[R]format\f[C]but for when the battery is full. | No |\f[R]\[lq]{percentage}\[rq]\f[C]\f[R]missing_format\f[C]| Same as\f[R]format\f[C]but for when the specified battery is missing. | No |\f[R]\[lq]{percentage}\[rq]\f[C]\f[R]allow_missing\f[C]| Don\[aq]t display errors when the battery cannot be found. | No |\f[R]false\f[C]\f[R]hide_missing\f[C]| Completely hide this block if the battery cannot be found. Only works in combination with\f[R]allow_missing\f[C]. | No |\f[R]false\f[C]\f[R]full_threshold\f[C]| Percentage at which the battery is considered full (\f[R]full_format\f[C]shown) | No |\f[R]100\f[C]\f[R]good\f[C]| Minimum battery level, where state is set to good. | No |\f[R]60\f[C]\f[R]info\f[C]| Minimum battery level, where state is set to info. | No |\f[R]60\f[C]\f[R]warning\f[C]| Minimum battery level, where state is set to warning. | No |\f[R]30\f[C]\f[R]critical\f[C]| Minimum battery level, where state is set to critical. | No |\f[R]15\[ga]
 T}
 .TE
 .SS Available Format Keys
@@ -1710,6 +1605,302 @@ T}
 .SS Icons Used
 .IP \[bu] 2
 \f[C]docker\f[R]
+.SS ExternalIP
+.PP
+Creates a block which displays the external IP address and various
+information about it.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]external_ip\[dq]
+format = \[dq]{ip} {country_code}\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]format\f[R]
+T}@T{
+A string to customise the output of this block.
+See below for available placeholders.
+Text may need to be escaped, refer to Escaping Text.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{address} {country_flag}\[dq]\f[R]
+T}
+T{
+\f[C]interval\f[R]
+T}@T{
+Interval in seconds for automatic updates when the previous update was
+successful
+T}@T{
+No
+T}@T{
+300
+T}
+T{
+\f[C]error_interval\f[R]
+T}@T{
+Interval in seconds for automatic updates when the previous update
+failed
+T}@T{
+No
+T}@T{
+15
+T}
+T{
+\f[C]with_network_manager\f[R]
+T}@T{
+If `true', listen for NetworkManager events and update the IP
+immediately if there was a change
+T}@T{
+No
+T}@T{
+\[lq]true\[rq]
+T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+lw(20.6n) lw(28.8n) lw(20.6n).
+T{
+Key
+T}@T{
+Value
+T}@T{
+Type
+T}
+_
+T{
+\f[C]{ip}\f[R]
+T}@T{
+The external IP address, as seen from a remote server
+T}@T{
+String
+T}
+T{
+\f[C]{version}\f[R]
+T}@T{
+IPv4 or IPv6
+T}@T{
+String
+T}
+T{
+\f[C]{city}\f[R]
+T}@T{
+City name, such as \[lq]San Francisco\[rq]
+T}@T{
+Integer
+T}
+T{
+\f[C]{region}\f[R]
+T}@T{
+Region name, such as \[lq]California\[rq]
+T}@T{
+String
+T}
+T{
+\f[C]{region_code}\f[R]
+T}@T{
+Region code, such as \[lq]CA\[rq] for California
+T}@T{
+String
+T}
+T{
+\f[C]{country}\f[R]
+T}@T{
+Country code (2 letter, ISO 3166-1 alpha-2)
+T}@T{
+String
+T}
+T{
+\f[C]{country_name}\f[R]
+T}@T{
+Short country name
+T}@T{
+String
+T}
+T{
+\f[C]{country_code}\f[R]
+T}@T{
+Country code (2 letter, ISO 3166-1 alpha-2)
+T}@T{
+String
+T}
+T{
+\f[C]{country_code_iso3}\f[R]
+T}@T{
+Country code (3 letter, ISO 3166-1 alpha-3)
+T}@T{
+String
+T}
+T{
+\f[C]{country_capital}\f[R]
+T}@T{
+Capital of the country
+T}@T{
+String
+T}
+T{
+\f[C]{country_tld}\f[R]
+T}@T{
+Country specific TLD (top-level domain)
+T}@T{
+String
+T}
+T{
+\f[C]{continent_code}\f[R]
+T}@T{
+Continent code
+T}@T{
+String
+T}
+T{
+\f[C]{in_eu}\f[R]
+T}@T{
+Region code, such as \[lq]CA\[rq]
+T}@T{
+String
+T}
+T{
+\f[C]{postal}\f[R]
+T}@T{
+ZIP / Postal code
+T}@T{
+String
+T}
+T{
+\f[C]{latitude}\f[R]
+T}@T{
+Latitude
+T}@T{
+Float
+T}
+T{
+\f[C]{longitude}\f[R]
+T}@T{
+Longitude
+T}@T{
+Float
+T}
+T{
+\f[C]{timezone}\f[R]
+T}@T{
+City
+T}@T{
+String
+T}
+T{
+\f[C]{utc_offset}\f[R]
+T}@T{
+UTC offset (with daylight saving time) as +HHMM or -HHMM (HH is hours,
+MM is minutes)
+T}@T{
+String
+T}
+T{
+\f[C]{country_calling_code}\f[R]
+T}@T{
+Country calling code (dial in code, comma separated)
+T}@T{
+String
+T}
+T{
+\f[C]{currency}\f[R]
+T}@T{
+Currency code (ISO 4217)
+T}@T{
+String
+T}
+T{
+\f[C]{currency_name}\f[R]
+T}@T{
+Currency name
+T}@T{
+String
+T}
+T{
+\f[C]{languages}\f[R]
+T}@T{
+Languages spoken (comma separated 2 or 3 letter ISO 639 code with
+optional hyphen separated country suffix)
+T}@T{
+String
+T}
+T{
+\f[C]{country_area}\f[R]
+T}@T{
+Area of the country (in sq km)
+T}@T{
+Float
+T}
+T{
+\f[C]{country_population}\f[R]
+T}@T{
+Population of the country
+T}@T{
+Float
+T}
+T{
+\f[C]{timezone}\f[R]
+T}@T{
+Time zone
+T}@T{
+String
+T}
+T{
+\f[C]{org}\f[R]
+T}@T{
+Organization
+T}@T{
+String
+T}
+T{
+\f[C]{asn}\f[R]
+T}@T{
+Autonomous system (AS)
+T}@T{
+String
+T}
+T{
+\f[C]{country_flag}\f[R]
+T}@T{
+Flag of the country
+T}@T{
+String (glyph)
+T}
+.TE
+.SS Notes
+.PP
+All the information comes from https://ipapi.co/json/ Check their
+documentation here: https://ipapi.co/api/#complete-location5
+.PP
+The IP is queried, 1) When i3status-rs starts, 2) When a signal is
+received on D-Bus about a network configuration change, 3) Every 5
+minutes.
+This periodic refresh exists to catch IP updates that don\[cq]t trigger
+a notification, for example due to a IP refresh at the router.
+.PP
+Flags: They are not icons but unicode glyphs.
+You will need a font that includes them.
+Tested with: https://www.babelstone.co.uk/Fonts/Flags.html
 .SS Focused Window
 .PP
 Creates a block which displays the title or the active marks of the
@@ -2425,8 +2616,12 @@ to get the current layout - \f[C]localebus\f[R] which can read
 asynchronous updates from the systemd \f[C]org.freedesktop.locale1\f[R]
 D-Bus path - \f[C]kbddbus\f[R] which uses
 kbdd (https://github.com/qnikst/kbdd) to monitor per-window layout
-changes via DBus - \f[C]sway\f[R] which can read asynchronous updates
-from the sway IPC
+changes via DBus - \f[C]xkbswitch\f[R] which uses
+xkb-switch (https://github.com/grwlf/xkb-switch) to show the current
+layout and variant.
+This works when \f[C]setxkbmap\f[R] is used to set a comma separated
+list of layouts, such as \f[C]us,es,fr\f[R].
+- \f[C]sway\f[R] which can read asynchronous updates from the sway IPC
 .PP
 Which of these methods is appropriate will depend on your system setup.
 .SS Examples
@@ -2439,6 +2634,19 @@ Check \f[C]setxkbmap\f[R] every 15 seconds:
 block = \[dq]keyboard_layout\[dq]
 driver = \[dq]setxkbmap\[dq]
 interval = 15
+\f[R]
+.fi
+.PP
+Use the \f[C]xkb-switch\f[R] (https://github.com/grwlf/xkb-switch) X11
+tool to switch to next \f[C]setxkbmap\f[R] layout on click:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]keyboard_layout\[dq]
+driver = \[dq]setxkbmap\[dq]
+on_click = \[dq]xkb-switch -n\[dq]
+interval = 1
 \f[R]
 .fi
 .PP
@@ -2459,6 +2667,19 @@ Listen to kbdd for changes:
 [[block]]
 block = \[dq]keyboard_layout\[dq]
 driver = \[dq]kbddbus\[dq]
+\f[R]
+.fi
+.PP
+Poll \f[C]xkb-switch\f[R] for current layout and variant:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]keyboard_layout\[dq]
+driver = \[dq]xkbswitch\[dq]
+on_click = \[dq]xkb-switch -n\[dq]
+format = \[dq]{layout} {variant}\[dq]
+interval = 1
 \f[R]
 .fi
 .PP
@@ -2703,6 +2924,9 @@ T}
 .PP
 Creates a block which shows unread mails.
 Only supports maildir format.
+.PP
+NOTE: This block can only be used if you build with
+\f[C]cargo build --features=maildir\f[R]
 .SS Examples
 .IP
 .nf
@@ -2781,6 +3005,8 @@ T{
 \f[C]icon\f[R]
 T}@T{
 Whether or not to prepend the output with the mail icon.
+\f[B]Deprecated\f[R]: set \f[C]icons_format=\[dq]\[dq]\f[R] to hide the
+icon.
 T}@T{
 No
 T}@T{
@@ -2864,15 +3090,6 @@ T}@T{
 \f[C]\[dq]memory\[dq]\f[R]
 T}
 T{
-\f[C]icons\f[R]
-T}@T{
-Whether the format string should be prepended with icons.
-T}@T{
-No
-T}@T{
-\f[C]true\f[R]
-T}
-T{
 \f[C]clickable\f[R]
 T}@T{
 Whether the view should switch between memory and swap on click.
@@ -2927,6 +3144,32 @@ T}@T{
 No
 T}@T{
 \f[C]5\f[R]
+T}
+.TE
+.SS Deprecated options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]icons\f[R]
+T}@T{
+Whether the format string should be prepended with icons.
+Deprecated - set \f[C]icons_format = \[dq]\[dq]\f[R] to disable icons.
+T}@T{
+No
+T}@T{
+\f[C]true\f[R]
 T}
 .TE
 .SS Available Format Keys
@@ -3682,7 +3925,7 @@ A list of regex patterns for device interface names to ignore.
 T}@T{
 No
 T}@T{
-\[lq]\[rq]
+\f[C]\[dq]\[dq]\f[R]
 T}
 T{
 \f[C]interface_name_include\f[R]
@@ -3692,7 +3935,7 @@ interfaces that match at least one are shown).
 T}@T{
 No
 T}@T{
-\[lq]\[rq]
+\f[C]\[dq]\[dq]\f[R]
 T}
 .TE
 .SS AP format string
@@ -3985,6 +4228,8 @@ T{
 \f[C]no_icon\f[R]
 T}@T{
 Disable the mail icon.
+\f[B]Deprecated\f[R]: set \f[C]icons_format=\[dq]\[dq]\f[R] to disable
+hide the icon.
 T}@T{
 No
 T}@T{
@@ -4506,6 +4751,93 @@ T}
 \f[C]pomodoro_paused\f[R]
 .IP \[bu] 2
 \f[C]pomodoro_break\f[R]
+.SS Rofication
+.PP
+Creates a block with shows the number of pending notifications in
+rofication-daemon.
+A different color is used is there are critical notications.
+Left clicking the block opens the GUI.
+.SS Examples
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]rofication\[dq]
+interval = 1
+socket_path = \[dq]/tmp/rofi_notification_daemon\[dq]
+\f[R]
+.fi
+.SS Options
+.PP
+.TS
+tab(@);
+lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]interval\f[R]
+T}@T{
+Refresh rate in seconds.
+T}@T{
+No
+T}@T{
+\f[C]1\f[R]
+T}
+T{
+\f[C]format\f[R]
+T}@T{
+A string to customise the output of this block.
+See below for placeholders.
+Text may need to be escaped, refer to Escaping Text.
+T}@T{
+No
+T}@T{
+\f[C]\[dq]{num}\[dq]\f[R]
+T}
+T{
+\f[C]socket_path\f[R]
+T}@T{
+Socket path for the rofication daemon.
+T}@T{
+No
+T}@T{
+\[lq]/tmp/rofi_notification_daemon\[rq]
+T}
+.TE
+.SS Available Format Keys
+.PP
+.TS
+tab(@);
+l l l.
+T{
+Key
+T}@T{
+Value
+T}@T{
+Type
+T}
+_
+T{
+\f[C]{num}\f[R]
+T}@T{
+Number of pending notifications
+T}@T{
+Integer
+T}
+.TE
+.SS Icons Used
+.IP \[bu] 2
+\f[C]bell\f[R]
+.IP \[bu] 2
+\f[C]bell-slash\f[R]
 .SS Sound
 .PP
 Creates a block which displays the volume level (according to PulseAudio
@@ -4977,7 +5309,20 @@ No
 T}@T{
 \f[C]\[dq]{count}\[dq]\f[R]
 T}
+T{
+\f[C]data_location\f[R]
+T}@T{
+Directory in which taskwarrior stores its data files.
+T}@T{
+No
+T}@T{
+\[lq]\[ti]/.task\[rq]\[ga]
+T}
 .TE
+.PP
+Note: data_location is used to get instant notifications (changes in
+files inside that directory will trigger a check) only.
+The actual counts come from executing taskwarrior.
 .SS Available Format Keys
 .PP
 .TS
@@ -5791,8 +6136,9 @@ if that is not desirable then consider using the \f[C]backlight\f[R]
 block instead.
 .PP
 NOTE: Some users report issues
-(e.g.\ here (https://github.com/greshake/i3status-rust/issues/274) and
-here (https://github.com/greshake/i3status-rust/issues/668) when using
+(e.g.\ here (https://github.com/greshake/i3status-rust/issues/274),
+here (https://github.com/greshake/i3status-rust/issues/668) and
+here (https://github.com/greshake/i3status-rust/issues/1364)) when using
 this block.
 The cause is currently unknown, however setting a higher update interval
 may help.
@@ -5804,7 +6150,6 @@ may help.
 block = \[dq]xrandr\[dq]
 icons = true
 resolution = true
-interval = 2
 \f[R]
 .fi
 .SS Options
@@ -5812,6 +6157,96 @@ interval = 2
 .TS
 tab(@);
 lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Required
+T}@T{
+Default
+T}
+_
+T{
+\f[C]format\f[R]
+T}@T{
+A string to customise the output of this block.
+See below for available placeholders.
+Text may need to be escaped, refer to Escaping Text.
+T}@T{
+No
+T}@T{
+Depends on \f[C]icons\f[R] and \f[C]resolution\f[R].
+With default \f[C]icons\f[R] and \f[C]resolution\f[R] the default value
+is
+\f[C]\[dq]{display} {brightness_icon} {brightness}\[dq]\[ga]\[ga]\f[R]step_width\f[C]| The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | No |\f[R]5\f[C]\f[R]interval\f[C]| Update interval in seconds. | No |\f[R]5\[ga]
+T}
+.TE
+.PP
+.TS
+tab(@);
+l l l l.
+T{
+Placeholder
+T}@T{
+Value
+T}@T{
+Type
+T}@T{
+Unit
+T}
+_
+T{
+\f[C]{display}\f[R]
+T}@T{
+The name of a monitor
+T}@T{
+Text
+T}@T{
+-
+T}
+T{
+\f[C]{brightness}\f[R]
+T}@T{
+The brightness of a monitor
+T}@T{
+Number
+T}@T{
+%
+T}
+T{
+\f[C]{brightness_icon}\f[R]
+T}@T{
+A static icon
+T}@T{
+Icon
+T}@T{
+-
+T}
+T{
+\f[C]{resolution}\f[R]
+T}@T{
+The resolution of a monitor
+T}@T{
+Text
+T}@T{
+-
+T}
+T{
+\f[C]{res_icon}\f[R]
+T}@T{
+A static icon
+T}@T{
+Icon
+T}@T{
+-
+T}
+.TE
+.SS Deprecated options
+.PP
+.TS
+tab(@);
+l l l l.
 T{
 Key
 T}@T{
@@ -5839,25 +6274,6 @@ T}@T{
 No
 T}@T{
 \f[C]false\f[R]
-T}
-T{
-\f[C]step_width\f[R]
-T}@T{
-The steps brightness is in/decreased for the selected screen (When
-greater than 50 it gets limited to 50).
-T}@T{
-No
-T}@T{
-\f[C]5\f[R]
-T}
-T{
-\f[C]interval\f[R]
-T}@T{
-Update interval in seconds.
-T}@T{
-No
-T}@T{
-\f[C]5\f[R]
 T}
 .TE
 .SS Used Icons
