@@ -61,6 +61,8 @@ Notes:
 //TODO add an image
 * `nord-dark` (polar night)
 ![nord-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)
+* `dracula`
+![dracula](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/dracula.png)
 
 # Available icon sets
 
