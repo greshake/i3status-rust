@@ -3,7 +3,7 @@ name = "i3status-rs"
 description = "A feature-rich and resource-friendly replacement for i3status, written in Rust."
 repository = "https://github.com/greshake/i3status-rust/"
 readme = "README.md"
-license = "GPLv3"
+license = "GPL-3.0-only"
 version = "0.21.1"
 authors = ["Kai Greshake <development@kai-greshake.de>",
            "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
