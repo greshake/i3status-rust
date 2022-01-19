@@ -579,7 +579,7 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
-        let upower_type = self.get_upower_value("Type", -1)?;
+        let upower_type = self.get_upower_value("Type", 0_u32)?;
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
         // consider any peripheral, UPS and internal battery
         if upower_type == 1 {
@@ -592,7 +592,7 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn status(&self) -> Result<String> {
-        self.get_upower_value("State", -1).map(|status| 
+        self.get_upower_value("State", 0_u32).map(|status| 
         // https://upower.freedesktop.org/docs/Device.html#Device:State
         match status {
             1 => "Charging".to_string(),
