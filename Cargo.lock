@@ -385,14 +385,13 @@ dependencies = [
  "dbus-tree",
  "inotify",
  "lazy_static",
- "libc",
  "libpulse-binding",
- "libsensors-sys",
  "maildir",
  "nix",
  "nl80211",
  "notmuch",
  "regex",
+ "sensors",
  "serde",
  "serde_derive",
  "serde_json",
@@ -897,6 +896,16 @@ checksum = "8f05ba609c234e60bee0d547fe94a4c7e9da733d1c962cf6e59efa4cd9c8bc75"
 dependencies = [
  "lazy_static",
  "winapi",
+]
+
+[[package]]
+name = "sensors"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a3af4792f6a434642b5805ab1f086a621a369ad06a0d466ab89aeb556ddd6d0"
+dependencies = [
+ "libc",
+ "libsensors-sys",
 ]
 
 [[package]]

@@ -1,9 +1,9 @@
 use std::fs;
 use std::time::Duration;
 
-use crate::sensors::FeatureType::SENSORS_FEATURE_TEMP;
-use crate::sensors::Sensors;
-use crate::sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
+use sensors::FeatureType::SENSORS_FEATURE_TEMP;
+use sensors::Sensors;
+use sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
 
 use crossbeam_channel::Sender;
 use serde_derive::Deserialize;
@@ -201,16 +201,15 @@ impl Block for Temperature {
                         }
                         for subfeat in feat {
                             if *subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT {
-                                let value = subfeat
-                                    .get_value()
-                                    .block_error("temperature", "Failed to get input value")?;
-                                if value < -100.0 || value > 150.0 {
-                                    eprintln!(
-                                        "Temperature ({}) outside of range ([-100, 150])",
-                                        value
-                                    );
-                                } else {
-                                    temperatures.push(value);
+                                if let Ok(value) = subfeat.get_value() {
+                                    if (-100.0..150.0).contains(&value) {
+                                        temperatures.push(value);
+                                    } else {
+                                        eprintln!(
+                                            "Temperature ({}) outside of range ([-100, 150])",
+                                            value
+                                        );
+                                    }
                                 }
                             }
                         }
