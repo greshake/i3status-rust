@@ -1,3 +1,13 @@
+# i3status-rust 0.21.2
+
+## New Blocks and Features
+
+* Add dracula theme (#1408 by @welcoMattic)
+
+## Bug Fixes and Improvements
+
+* Battery block: Fix UPower property type mismatch (#1409 by @bim9262)
+
 # i3status-rust 0.21.0
 
 ## New Blocks and Features
