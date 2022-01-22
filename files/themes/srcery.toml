@@ -1,0 +1,13 @@
+idle_bg = "#1C1B19" # Black
+idle_fg = "#FCE8C3" # Bright White
+info_bg = "#1C1B19" # Black
+info_fg = "#FCE8C3" # Bright White
+good_bg = "#1C1B19" # Black
+good_fg = "#98BC37" # Bright Green
+warning_bg = "#1C1B19" # Black
+warning_fg = "#FED06E" # Bright Yellow
+critical_bg = "#1C1B19" # Black
+critical_fg = "#F75341" # Bright Red
+separator = ""
+separator_bg = "auto"
+separator_fg = "auto"
