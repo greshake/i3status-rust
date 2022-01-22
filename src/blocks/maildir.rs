@@ -1,123 +1,91 @@
-use std::time::Duration;
+//! Unread mail. Only supports maildir format.
+//!
+//! # Configuration
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `inboxes` | List of maildir inboxes to look for mails in. | Yes | None
+//! `threshold_warning` | Number of unread mails where state is set to warning. | No | `1`
+//! `threshold_critical` | Number of unread mails where state is set to critical. | No | `10`
+//! `interval` | Update interval, in seconds. | No | `5`
+//! `display_type` | Which part of the maildir to count: `"new"`, `"cur"`, or `"all"`. | No | `"new"`
+//!
+//! # Examples
+//!
+//! ```toml
+//! [[block]]
+//! block = "maildir"
+//! interval = 60
+//! inboxes = ["/home/user/mail/local", "/home/user/mail/gmail/Inbox"]
+//! threshold_warning = 1
+//! threshold_critical = 10
+//! display_type = "new"
+//! ```
+//!
+//! # Icons Used
+//! - `mail`
 
-use crossbeam_channel::Sender;
-use maildir::Maildir as ExtMaildir;
-use serde_derive::Deserialize;
+use super::prelude::*;
+use maildir::Maildir;
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::de::deserialize_duration;
-use crate::errors::*;
-use crate::scheduler::Task;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, State};
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum MailType {
-    New,
-    Cur,
-    All,
-}
-
-impl MailType {
-    fn count_mail(&self, maildir: &ExtMaildir) -> usize {
-        match self {
-            MailType::New => maildir.count_new(),
-            MailType::Cur => maildir.count_cur(),
-            MailType::All => maildir.count_new() + maildir.count_cur(),
-        }
-    }
-}
-
-pub struct Maildir {
-    id: usize,
-    text: TextWidget,
-    update_interval: Duration,
+//TODO add `format`
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields, default)]
+struct MaildirConfig {
+    interval: Seconds,
     inboxes: Vec<String>,
     threshold_warning: usize,
     threshold_critical: usize,
     display_type: MailType,
 }
 
-//TODO add `format`
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields, default)]
-pub struct MaildirConfig {
-    /// Update interval in seconds
-    #[serde(deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-    pub inboxes: Vec<String>,
-    pub threshold_warning: usize,
-    pub threshold_critical: usize,
-    pub display_type: MailType,
-    // DEPRECATED
-    pub icon: bool,
-}
-
 impl Default for MaildirConfig {
     fn default() -> Self {
         Self {
-            interval: Duration::from_secs(5),
+            interval: Seconds::new(5),
             inboxes: Vec::new(),
             threshold_warning: 1,
             threshold_critical: 10,
             display_type: MailType::New,
-            icon: true,
         }
     }
 }
 
-impl ConfigBlock for Maildir {
-    type Config = MaildirConfig;
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let config = MaildirConfig::deserialize(config).config_error()?;
+    api.set_icon("mail")?;
 
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
-    ) -> Result<Self> {
-        let widget = TextWidget::new(id, 0, shared_config).with_text("");
-        Ok(Maildir {
-            id,
-            update_interval: block_config.interval,
-            text: if block_config.icon {
-                widget.with_icon("mail")?
-            } else {
-                widget
-            },
-            inboxes: block_config.inboxes,
-            threshold_warning: block_config.threshold_warning,
-            threshold_critical: block_config.threshold_critical,
-            display_type: block_config.display_type,
-        })
-    }
-}
+    let mut timer = config.interval.timer();
 
-impl Block for Maildir {
-    fn update(&mut self) -> Result<Option<Update>> {
+    loop {
         let mut newmails = 0;
-        for inbox in &self.inboxes {
+        for inbox in &config.inboxes {
             let isl: &str = &inbox[..];
-            let maildir = ExtMaildir::from(isl);
-            newmails += self.display_type.count_mail(&maildir)
+            // TODO: spawn_blocking
+            let maildir = Maildir::from(isl);
+            newmails += match config.display_type {
+                MailType::New => maildir.count_new(),
+                MailType::Cur => maildir.count_cur(),
+                MailType::All => maildir.count_new() + maildir.count_cur(),
+            };
         }
         let mut state = State::Idle;
-        if newmails >= self.threshold_critical {
+        if newmails >= config.threshold_critical {
             state = State::Critical;
-        } else if newmails >= self.threshold_warning {
+        } else if newmails >= config.threshold_warning {
             state = State::Warning;
         }
-        self.text.set_state(state);
-        self.text.set_text(format!("{}", newmails));
-        Ok(Some(self.update_interval.into()))
+        api.set_state(state);
+        api.set_text(newmails.to_string().into());
+        api.flush().await?;
+        timer.tick().await;
     }
+}
 
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
-    }
-
-    fn id(&self) -> usize {
-        self.id
-    }
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum MailType {
+    New,
+    Cur,
+    All,
 }

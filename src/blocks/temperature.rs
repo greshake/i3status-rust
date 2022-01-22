@@ -1,330 +1,154 @@
+//! The system temperature
+//!
+//! This block displays the system temperature, based on `libsensors` library.
+//!
+//! This block has two modes: "collapsed", which uses only color as an indicator, and "expanded",
+//! which shows the content of a `format` string. The average, minimum, and maximum temperatures
+//! are computed using all sensors displayed by `sensors`, or optionally filtered by `chip` and
+//! `inputs`.
+//!
+//! Requires `libsensors` and appropriate kernel modules for your hardware.
+//!
+//! Run `sensors` command to list available chips and inputs.
+//!
+//! Note that the colour of the block is always determined by the maximum temperature across all
+//! sensors, not the average. You may need to keep this in mind if you have a misbehaving sensor.
+//!
+//! # Configuration
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders | No | `"$average avg, $max max|"`
+//! `interval` | Update interval in seconds | No | `5`
+//! `collapsed` | Whether the block will be collapsed by default | No | `false`
+//! `scale` | Either `"celsius"` or `"fahrenheit"` | No | `"celsius"`
+//! `good` | Maximum temperature to set state to good | No | `20` °C (`68` °F)
+//! `idle` | Maximum temperature to set state to idle | No | `45` °C (`113` °F)
+//! `info` | Maximum temperature to set state to info | No | `60` °C (`140` °F)
+//! `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | No | `80` °C (`176` °F)
+//! `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
+//! `inputs` | Narrows the results to individual inputs reported by each chip. | No | None
+//!
+//! Placeholder | Value                                | Type   | Unit
+//! ------------|--------------------------------------|--------|--------
+//! `min`       | Minimum temperature among all inputs | Number | Degrees
+//! `average`   | Average temperature among all inputs | Number | Degrees
+//! `max`       | Maximum temperature among all inputs | Number | Degrees
+//!
+//! Note that when block is collapsed, no placeholders are provided.
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "temperature"
+//! format = "{min} min, {max} max, {average} avg|"
+//! interval = 10
+//! chip = "*-isa-*"
+//! ```
+//!
+//! # Icons Used
+//! - `thermometer`
+
 use std::collections::HashMap;
-use std::fs;
-use std::process::Command;
-use std::time::Duration;
 
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
+use super::prelude::*;
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::de::deserialize_duration;
-use crate::errors::*;
-use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
-use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
-use crate::scheduler::Task;
-use crate::widgets::{text::TextWidget, I3BarWidget, Spacing, State};
+use sensors::FeatureType::SENSORS_FEATURE_TEMP;
+use sensors::Sensors;
+use sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq)]
+const DEFAULT_GOOD: f64 = 20.0;
+const DEFAULT_IDLE: f64 = 45.0;
+const DEFAULT_INFO: f64 = 60.0;
+const DEFAULT_WARN: f64 = 80.0;
+
+#[derive(Deserialize, Debug, Derivative)]
+#[serde(deny_unknown_fields, default)]
+#[derivative(Default)]
+struct TemperatureConfig {
+    format: FormatConfig,
+    #[derivative(Default(value = "5.into()"))]
+    interval: Seconds,
+    collapsed: bool,
+    scale: TemperatureScale,
+    good: Option<f64>,
+    idle: Option<f64>,
+    info: Option<f64>,
+    warning: Option<f64>,
+    chip: Option<String>,
+    inputs: Option<Vec<StdString>>,
+}
+
+#[derive(Deserialize, Debug, Derivative, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-pub enum TemperatureScale {
+#[derivative(Default)]
+enum TemperatureScale {
+    #[derivative(Default)]
     Celsius,
     Fahrenheit,
 }
 
-impl Default for TemperatureScale {
-    fn default() -> Self {
-        Self::Celsius
-    }
-}
-
-#[derive(Copy, Clone, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum TemperatureDriver {
-    Sysfs,
-    Sensors,
-}
-
-impl Default for TemperatureDriver {
-    fn default() -> Self {
-        TemperatureDriver::Sensors
-    }
-}
-
-pub struct Temperature {
-    id: usize,
-    text: TextWidget,
-    output: (String, Option<String>),
-    collapsed: bool,
-    update_interval: Duration,
-    scale: TemperatureScale,
-    maximum_good: f64,
-    maximum_idle: f64,
-    maximum_info: f64,
-    maximum_warning: f64,
-    format: FormatTemplate,
-    driver: TemperatureDriver,
-    chip: Option<String>,
-    inputs: Option<Vec<String>>,
-    fallback_required: bool,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields, default)]
-pub struct TemperatureConfig {
-    /// Update interval in seconds
-    #[serde(deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-
-    /// Collapsed by default?
-    pub collapsed: bool,
-
-    /// The temperature scale to use for display and thresholds
-    #[serde(default)]
-    pub scale: TemperatureScale,
-
-    /// Maximum temperature, below which state is set to good
-    #[serde(default)]
-    pub good: Option<f64>,
-
-    /// Maximum temperature, below which state is set to idle
-    #[serde(default)]
-    pub idle: Option<f64>,
-
-    /// Maximum temperature, below which state is set to info
-    #[serde(default)]
-    pub info: Option<f64>,
-
-    /// Maximum temperature, below which state is set to warning
-    #[serde(default)]
-    pub warning: Option<f64>,
-
-    /// Format override
-    pub format: FormatTemplate,
-
-    /// The "driver " to use for temperature block. One of "sysfs" or "sensors"
-    pub driver: TemperatureDriver,
-
-    /// Chip override
-    pub chip: Option<String>,
-
-    /// Inputs whitelist
-    pub inputs: Option<Vec<String>>,
-}
-
-impl Default for TemperatureConfig {
-    fn default() -> Self {
-        Self {
-            format: FormatTemplate::default(),
-            interval: Duration::from_secs(5),
-            collapsed: true,
-            scale: TemperatureScale::default(),
-            good: None,
-            idle: None,
-            info: None,
-            warning: None,
-            driver: TemperatureDriver::default(),
-            chip: None,
-            inputs: None,
+impl TemperatureScale {
+    #[allow(clippy::wrong_self_convention)]
+    pub fn from_celsius(self, val: f64) -> f64 {
+        match self {
+            Self::Celsius => val,
+            Self::Fahrenheit => val * 1.8 + 32.0,
         }
     }
 }
 
-impl ConfigBlock for Temperature {
-    type Config = TemperatureConfig;
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let mut events = api.get_events().await?;
+    let config = TemperatureConfig::deserialize(config).config_error()?;
+    let mut collapsed = config.collapsed;
+    api.set_format(config.format.with_default("$average avg, $max max")?);
+    api.set_icon("thermometer")?;
 
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
-    ) -> Result<Self> {
-        Ok(Temperature {
-            id,
-            update_interval: block_config.interval,
-            text: TextWidget::new(id, 0, shared_config)
-                .with_icon("thermometer")?
-                .with_spacing(if block_config.collapsed {
-                    Spacing::Hidden
-                } else {
-                    Spacing::Normal
-                }),
-            output: (String::new(), None),
-            collapsed: block_config.collapsed,
-            scale: block_config.scale,
-            maximum_good: block_config
-                .good
-                .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 20f64,
-                    TemperatureScale::Fahrenheit => 68f64,
-                }),
-            maximum_idle: block_config
-                .idle
-                .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 45f64,
-                    TemperatureScale::Fahrenheit => 113f64,
-                }),
-            maximum_info: block_config
-                .info
-                .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 60f64,
-                    TemperatureScale::Fahrenheit => 140f64,
-                }),
-            maximum_warning: block_config
-                .warning
-                .unwrap_or_else(|| match block_config.scale {
-                    TemperatureScale::Celsius => 80f64,
-                    TemperatureScale::Fahrenheit => 176f64,
-                }),
-            format: block_config
-                .format
-                .with_default("{average} avg, {max} max")?,
-            driver: block_config.driver,
-            chip: block_config.chip,
-            inputs: block_config.inputs,
-            fallback_required: match block_config.driver {
-                TemperatureDriver::Sysfs => false,
-                TemperatureDriver::Sensors => !Command::new("sensors")
-                    .args(&["--help"])
-                    .output()
-                    .block_error(
-                        "temperature",
-                        "Failed to check lm_sensors json output support. Is it installed?",
-                    )
-                    .and_then(|raw_output| {
-                        String::from_utf8(raw_output.stdout).block_error(
-                            "temperature",
-                            "Failed to check lm_sensors json output support.",
-                        )
-                    })
-                    .unwrap()
-                    .contains(" -j "),
-            },
-        })
-    }
-}
+    let good = config
+        .good
+        .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_GOOD));
+    let idle = config
+        .idle
+        .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_IDLE));
+    let info = config
+        .info
+        .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_INFO));
+    let warn = config
+        .warning
+        .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_WARN));
 
-type SensorsOutput = HashMap<String, HashMap<String, serde_json::Value>>;
-type InputReadings = HashMap<String, f64>;
-
-impl Block for Temperature {
-    fn update(&mut self) -> Result<Option<Update>> {
-        let mut temperatures: Vec<f64> = Vec::new();
-
-        match self.driver {
-            TemperatureDriver::Sensors => {
-                let mut args = if self.fallback_required {
-                    vec!["-u"]
-                } else {
-                    vec!["-j"]
-                };
-
-                if let Some(ref chip) = &self.chip {
-                    args.push(chip);
-                }
-                let output = Command::new("sensors")
-                    .args(&args)
-                    .output()
-                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-                    .unwrap_or_else(|e| e.to_string());
-
-                if self.fallback_required {
-                    for line in output.lines() {
-                        if let Some(rest) = line.strip_prefix("  temp") {
-                            let rest = rest
-                                .split('_')
-                                .flat_map(|x| x.split(' '))
-                                .flat_map(|x| x.split('.'))
-                                .collect::<Vec<_>>();
-
-                            if rest[1].starts_with("input") {
-                                match rest[2].parse::<f64>() {
-                                    Ok(t) if t == 0f64 => Ok(()),
-                                    Ok(t) if t > -101f64 && t < 151f64 => {
-                                        temperatures.push(t);
-                                        Ok(())
-                                    }
-                                    Ok(t) => {
-                                        // This error is recoverable and therefore should not stop the program
-                                        eprintln!(
-                                            "Temperature ({}) outside of range ([-100, 150])",
-                                            t
-                                        );
-                                        Ok(())
-                                    }
-                                    Err(_) => Err(BlockError(
-                                        "temperature".to_owned(),
-                                        "failed to parse temperature as an integer".to_owned(),
-                                    )),
-                                }?
-                            }
-                        }
+    loop {
+        // Perhaps it's better to just Box::leak() once and don't clone() every time?
+        let chip = config.chip.clone();
+        let inputs = config.inputs.clone();
+        let temp = tokio::task::spawn_blocking(move || {
+            let mut vals = Vec::new();
+            let sensors = Sensors::new();
+            let chips = match &chip {
+                Some(chip) => sensors
+                    .detected_chips(chip)
+                    .error("Failed to create chip iterator")?,
+                None => sensors.into_iter(),
+            };
+            for chip in chips {
+                for feat in chip {
+                    if *feat.feature_type() != SENSORS_FEATURE_TEMP {
+                        continue;
                     }
-                } else {
-                    let parsed: SensorsOutput = serde_json::from_str(&output)
-                        .block_error("temperature", "sensors output is invalid")?;
-                    for (_chip, inputs) in parsed {
-                        for (input_name, input_values) in inputs {
-                            if let Some(ref whitelist) = self.inputs {
-                                if !whitelist.contains(&input_name) {
-                                    continue;
-                                }
-                            }
-
-                            let values_parsed: InputReadings =
-                                match serde_json::from_value(input_values) {
-                                    Ok(values) => values,
-                                    Err(_) => continue, // probably the "Adapter" key, just ignore.
-                                };
-
-                            for (value_name, value) in values_parsed {
-                                if !value_name.starts_with("temp") || !value_name.ends_with("input")
-                                {
-                                    continue;
-                                }
-
-                                if value > -101f64 && value < 151f64 {
-                                    temperatures.push(value);
-                                } else {
-                                    // This error is recoverable and therefore should not stop the program
-                                    eprintln!(
-                                        "Temperature ({}) outside of range ([-100, 150])",
-                                        value
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            TemperatureDriver::Sysfs => {
-                for hwmon_dir in fs::read_dir("/sys/class/hwmon")? {
-                    let hwmon = &hwmon_dir?.path();
-                    if let Some(ref chip_name) = self.chip {
-                        // Narrow to hwmon names that are substrings of the given chip name or vice versa
-                        let hwmon_untrimmed = fs::read_to_string(hwmon.join("name"))?;
-                        let hwmon_name = hwmon_untrimmed.trim();
-                        if !(chip_name.contains(hwmon_name) || hwmon_name.contains(chip_name)) {
+                    if let Some(inputs) = &inputs {
+                        let label = feat.get_label().error("Failed to get input label")?;
+                        if !inputs.contains(&label) {
                             continue;
                         }
                     }
-                    for entry in hwmon.read_dir()? {
-                        let entry = entry?;
-                        if let Ok(name) = entry.file_name().into_string() {
-                            if name.starts_with("temp") && name.ends_with("label") {
-                                if let Some(ref whitelist) = self.inputs {
-                                    //narrow to labels that are an exact match for one of the inputs
-                                    if !whitelist.contains(
-                                        &fs::read_to_string(entry.path())?.trim().to_string(),
-                                    ) {
-                                        continue;
-                                    }
-                                }
-                                let value: f64 =
-                                    fs::read_to_string(hwmon.join(name.replace("label", "input")))?
-                                        .trim()
-                                        .parse::<f64>()
-                                        .block_error(
-                                            "temperature",
-                                            "failed to parse temperature as an integer",
-                                        )?
-                                        / 1000f64;
-
-                                if value > -101f64 && value < 151f64 {
-                                    temperatures.push(value);
+                    for subfeat in feat {
+                        if *subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT {
+                            if let Ok(value) = subfeat.get_value() {
+                                if (-100.0..=150.0).contains(&value) {
+                                    vals.push(config.scale.from_celsius(value));
                                 } else {
-                                    // This error is recoverable and therefore should not stop the program
                                     eprintln!(
                                         "Temperature ({}) outside of range ([-100, 150])",
                                         value
@@ -335,70 +159,104 @@ impl Block for Temperature {
                     }
                 }
             }
-        }
+            Ok(vals)
+        })
+        .await
+        .error("Failed to join tokio task")??;
 
-        if let TemperatureScale::Fahrenheit = self.scale {
-            temperatures
-                .iter_mut()
-                .for_each(|c| *c = *c * 9f64 / 5f64 + 32f64);
-        }
+        let min_temp = temp
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .cloned()
+            .unwrap_or(0.0);
+        let max_temp = temp
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .cloned()
+            .unwrap_or(0.0);
+        let avg_temp = temp.iter().sum::<f64>() / temp.len() as f64;
 
-        if !temperatures.is_empty() {
-            let max: f64 = temperatures
-                .iter()
-                .cloned()
-                .reduce(f64::max)
-                .block_error("temperature", "failed to get max temperature")?;
-            let min: f64 = temperatures
-                .iter()
-                .cloned()
-                .reduce(f64::min)
-                .block_error("temperature", "failed to get min temperature")?;
-            let avg: f64 = temperatures.iter().sum::<f64>() / temperatures.len() as f64;
+        api.set_state(match max_temp {
+            x if x <= good => State::Good,
+            x if x <= idle => State::Idle,
+            x if x <= info => State::Info,
+            x if x <= warn => State::Warning,
+            _ => State::Critical,
+        });
 
-            let values = map!(
-                "average" => Value::from_float(avg).degrees(),
-                "min" => Value::from_float(min).degrees(),
-                "max" => Value::from_float(max).degrees()
-            );
-
-            self.output = self.format.render(&values)?;
-            if !self.collapsed {
-                self.text.set_texts(self.output.clone());
-            }
-
-            let state = match max {
-                m if m <= self.maximum_good => State::Good,
-                m if m <= self.maximum_idle => State::Idle,
-                m if m <= self.maximum_info => State::Info,
-                m if m <= self.maximum_warning => State::Warning,
-                _ => State::Critical,
-            };
-
-            self.text.set_state(state);
-        }
-
-        Ok(Some(self.update_interval.into()))
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
-    }
-
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        if e.button == MouseButton::Left {
-            self.collapsed = !self.collapsed;
-            if self.collapsed {
-                self.text.set_text(String::new());
+        'outer: loop {
+            if collapsed {
+                api.set_values(HashMap::new());
             } else {
-                self.text.set_texts(self.output.clone());
+                api.set_values(map! {
+                    "average" => Value::degrees(avg_temp),
+                    "min" => Value::degrees(min_temp),
+                    "max" => Value::degrees(max_temp),
+                });
+            }
+
+            api.flush().await?;
+
+            loop {
+                tokio::select! {
+                    _ = sleep(config.interval.0) => break 'outer,
+                    Some(BlockEvent::Click(click)) = events.recv() => {
+                        if click.button == MouseButton::Left  {
+                            collapsed = !collapsed;
+                            break;
+                        }
+                    }
+                }
             }
         }
-
-        Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
+
+/*
+#[derive(Debug, Clone)]
+struct ChipInfo {
+    temp: Vec<i32>,
+}
+
+impl ChipInfo {
+    async fn new(name: &str) -> Result<Self> {
+        let mut sysfs_dir = read_dir("/sys/class/hwmon")
+            .await
+            .error("failed to read /sys/class/hwmon direcory")?;
+        while let Some(dir) = sysfs_dir
+            .next_entry()
+            .await
+            .error("failed to read /sys/class/hwmon direcory")?
+        {
+            if read_to_string(dir.path().join("name"))
+                .await
+                .map(|t| t.trim() == name)
+                .unwrap_or(false)
+            {
+                let mut chip_dir = read_dir(dir.path())
+                    .await
+                    .error("failed to read chip's sysfs direcory")?;
+                let mut temp = Vec::new();
+                while let Some(entry) = chip_dir
+                    .next_entry()
+                    .await
+                    .error("failed to read chip's sysfs direcory")?
+                {
+                    let entry_str = entry.file_name().to_str().unwrap().to_string();
+                    if entry_str.starts_with("temp") && entry_str.ends_with("_input") {
+                        let val: i32 = read_to_string(entry.path())
+                            .await
+                            .error("failed to read chip's temperature")?
+                            .trim()
+                            .parse()
+                            .error("temperature is not an integer")?;
+                        temp.push(val / 1000);
+                    }
+                }
+                return Ok(Self { temp });
+            }
+        }
+        Err(Error::new(format!("chip '{}' not found", name)))
+    }
+}
+*/

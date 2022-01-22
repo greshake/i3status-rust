@@ -1,139 +1,189 @@
-pub use std::error::Error as StdError;
+use std::borrow::Cow;
 use std::fmt;
+use std::sync::Arc;
+
+use crate::blocks::BlockType;
+
+pub use std::error::Error as StdError;
 pub use std::result::Result as StdResult;
 
-pub use self::Error::{BlockError, ConfigurationError, InternalError};
-
 /// Result type returned from functions that can have our `Error`s.
-pub type Result<T> = ::std::result::Result<T, Error>;
+pub type Result<T> = StdResult<T, Error>;
 
-// Why `ResultExtBlock` and `ResultExtInternal` are splitted?
-pub trait ResultExtBlock<T, E> {
-    fn block_error(self, block: &str, message: &str) -> Result<T>;
+type ErrorMsg = Cow<'static, str>;
+
+/// Error type
+#[derive(Debug, Clone)]
+pub struct Error {
+    pub kind: ErrorKind,
+    pub message: Option<ErrorMsg>,
+    pub cause: Option<Arc<dyn StdError + Send + Sync + 'static>>,
+    pub block: Option<(BlockType, usize)>,
 }
 
-pub trait ResultExtInternal<T, E> {
-    fn configuration_error(self, message: &str) -> Result<T>;
-    fn internal_error(self, context: &str, message: &str) -> Result<T>;
+/// A set of errors that can occur during the runtime
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ErrorKind {
+    Config,
+    Format,
+    Other,
 }
 
-impl<T, E> ResultExtBlock<T, E> for ::std::result::Result<T, E> {
-    fn block_error(self, block: &str, message: &str) -> Result<T> {
-        self.map_err(|_| BlockError(block.to_owned(), message.to_owned()))
+impl Error {
+    pub fn new<T: Into<ErrorMsg>>(message: T) -> Self {
+        Self {
+            kind: ErrorKind::Other,
+            message: Some(message.into()),
+            cause: None,
+            block: None,
+        }
+    }
+
+    pub fn new_format<T: Into<ErrorMsg>>(message: T) -> Self {
+        Self {
+            kind: ErrorKind::Format,
+            message: Some(message.into()),
+            cause: None,
+            block: None,
+        }
     }
 }
 
-impl<T, E> ResultExtInternal<T, E> for ::std::result::Result<T, E>
-where
-    E: fmt::Display + fmt::Debug,
-{
-    fn configuration_error(self, message: &str) -> Result<T> {
-        self.map_err(|e| ConfigurationError(message.to_owned(), format!("{}", e)))
+pub trait InBlock {
+    fn in_block(self, block: BlockType, block_id: usize) -> Self;
+}
+
+impl<T> InBlock for Result<T> {
+    fn in_block(self, block: BlockType, block_id: usize) -> Self {
+        self.map_err(|mut e| {
+            e.block = Some((block, block_id));
+            e
+        })
+    }
+}
+
+pub trait ResultExt<T> {
+    fn error<M: Into<ErrorMsg>>(self, message: M) -> Result<T>;
+    fn or_error<M: Into<ErrorMsg>, F: FnOnce() -> M>(self, f: F) -> Result<T>;
+    fn config_error(self) -> Result<T>;
+    fn format_error<M: Into<ErrorMsg>>(self, message: M) -> Result<T>;
+}
+
+impl<T, E: StdError + Send + Sync + 'static> ResultExt<T> for StdResult<T, E> {
+    fn error<M: Into<ErrorMsg>>(self, message: M) -> Result<T> {
+        self.map_err(|e| Error {
+            kind: ErrorKind::Other,
+            message: Some(message.into()),
+            cause: Some(Arc::new(e)),
+            block: None,
+        })
     }
 
-    fn internal_error(self, context: &str, message: &str) -> Result<T> {
-        self.map_err(|e| {
-            InternalError(
-                context.to_owned(),
-                message.to_owned(),
-                Some((format!("{}", e), format!("{:?}", e))),
-            )
+    fn or_error<M: Into<ErrorMsg>, F: FnOnce() -> M>(self, f: F) -> Result<T> {
+        self.map_err(|e| Error {
+            kind: ErrorKind::Other,
+            message: Some(f().into()),
+            cause: Some(Arc::new(e)),
+            block: None,
+        })
+    }
+
+    fn config_error(self) -> Result<T> {
+        self.map_err(|e| Error {
+            kind: ErrorKind::Config,
+            message: None,
+            cause: Some(Arc::new(e)),
+            block: None,
+        })
+    }
+
+    fn format_error<M: Into<ErrorMsg>>(self, message: M) -> Result<T> {
+        self.map_err(|e| Error {
+            kind: ErrorKind::Format,
+            message: Some(message.into()),
+            cause: Some(Arc::new(e)),
+            block: None,
         })
     }
 }
 
 pub trait OptionExt<T> {
-    fn block_error(self, block: &str, message: &str) -> Result<T>;
-    fn internal_error(self, context: &str, message: &str) -> Result<T>;
+    fn error<M: Into<ErrorMsg>>(self, message: M) -> Result<T>;
+    fn or_error<M: Into<ErrorMsg>, F: FnOnce() -> M>(self, f: F) -> Result<T>;
+    fn config_error(self) -> Result<T>;
+    fn format_error<M: Into<ErrorMsg>>(self, message: M) -> Result<T>;
 }
 
-impl<T> OptionExt<T> for ::std::option::Option<T> {
-    fn block_error(self, block: &str, message: &str) -> Result<T> {
-        self.ok_or_else(|| BlockError(block.to_owned(), message.to_owned()))
+impl<T> OptionExt<T> for Option<T> {
+    fn error<M: Into<ErrorMsg>>(self, message: M) -> Result<T> {
+        self.ok_or_else(|| Error {
+            kind: ErrorKind::Other,
+            message: Some(message.into()),
+            cause: None,
+            block: None,
+        })
     }
 
-    fn internal_error(self, context: &str, message: &str) -> Result<T> {
-        self.ok_or_else(|| InternalError(context.to_owned(), message.to_owned(), None))
+    fn or_error<M: Into<ErrorMsg>, F: FnOnce() -> M>(self, f: F) -> Result<T> {
+        self.ok_or_else(|| Error {
+            kind: ErrorKind::Other,
+            message: Some(f().into()),
+            cause: None,
+            block: None,
+        })
     }
-}
 
-/// A set of errors that can occur during the runtime of i3status-rs.
-/// TODO: rewrite using struct-like fields ("what is the order of InternalError again?")
-/// TODO: rename variants
-#[allow(clippy::enum_variant_names)]
-pub enum Error {
-    BlockError(String, String),
-    ConfigurationError(String, String),
-    InternalError(String, String, Option<(String, String)>),
+    fn config_error(self) -> Result<T> {
+        self.ok_or(Error {
+            kind: ErrorKind::Config,
+            message: None,
+            cause: None,
+            block: None,
+        })
+    }
+
+    fn format_error<M: Into<ErrorMsg>>(self, message: M) -> Result<T> {
+        self.ok_or_else(|| Error {
+            kind: ErrorKind::Format,
+            message: Some(message.into()),
+            cause: None,
+            block: None,
+        })
+    }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            BlockError(ref block, ref message) => {
-                f.write_str(&format!("Error in block '{}': {}", block, message))
+        match self.block {
+            Some(block) => {
+                match self.kind {
+                    ErrorKind::Config | ErrorKind::Format => f.write_str("Configuration errror")?,
+                    ErrorKind::Other => f.write_str("Error")?,
+                }
+
+                write!(f, " in {:?}", block.0)?;
+
+                if let Some(message) = &self.message {
+                    write!(f, ": {}", message)?;
+                }
+
+                if let Some(cause) = &self.cause {
+                    write!(f, ". (Cause: {})", cause)?;
+                }
             }
-            ConfigurationError(ref message, _) => {
-                f.write_str(&format!("Configuration error: {}", message))
+            None => {
+                f.write_str(self.message.as_deref().unwrap_or("Error"))?;
+                if let Some(cause) = &self.cause {
+                    write!(f, ". (Cause: {})", cause)?;
+                }
             }
-            InternalError(ref context, ref message, _) => f.write_str(&format!(
-                "Internal error in context '{}': {}",
-                context, message
-            )),
         }
+
+        Ok(())
     }
 }
 
-impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            BlockError(ref block, ref message) => {
-                f.write_str(&format!("Error in block '{}': {}", block, message))
-            }
-            ConfigurationError(ref message, ref cause) => f.write_str(&format!(
-                "Configuration error: {}. Cause: {}",
-                message, cause
-            )),
-            InternalError(ref context, ref message, Some((ref cause, _))) => f.write_str(&format!(
-                "Internal error in context '{}': {}. Cause: {}",
-                context, message, cause
-            )),
-            InternalError(ref context, ref message, None) => f.write_str(&format!(
-                "Internal error in context '{}': {}",
-                context, message
-            )),
-        }
-    }
-}
-
-impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            BlockError(_, _) => "Block error occurred in block '{}'",
-            ConfigurationError(_, _) => "Configuration error occurred",
-            InternalError(_, _, _) => "Internal error occurred",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn StdError> {
-        None
-    }
-}
-
-impl<T> From<::crossbeam_channel::SendError<T>> for Error
-where
-    T: Send,
-{
-    fn from(_err: ::crossbeam_channel::SendError<T>) -> Error {
-        InternalError("unknown".to_string(), "send error".to_string(), None)
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(_err: std::io::Error) -> Error {
-        InternalError("unknown".to_string(), "io error".to_string(), None)
-    }
-}
+impl StdError for Error {}
 
 pub trait ToSerdeError<T> {
     fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E>;
@@ -144,6 +194,6 @@ where
     F: fmt::Display,
 {
     fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E> {
-        self.map_err(|e| E::custom(e.to_string()))
+        self.map_err(E::custom)
     }
 }

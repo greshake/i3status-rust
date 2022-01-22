@@ -1,38 +1,157 @@
-use std::process::Command;
-use std::time::Duration;
+//! Manage display temperature
+//!
+//! This block displays the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.
+//! A left click on the block sets the color temperature to `click_temp` that is by default to `6500K`.
+//! A right click completely resets the color temperature to its default value (`6500K`).
+//!
+//! # Configuration
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `step`        | The step color temperature is in/decreased in Kelvin. | No | `100`
+//! `hue_shifter` | Program used to control screen color. | No | Detect automatically. |
+//! `max_temp`    | Max color temperature in Kelvin. | No | `10000`
+//! `min_temp`    | Min color temperature in Kelvin. | No | `1000`
+//! `click_temp`  | Left click color temperature in Kelvin. | No | `6500`
+//!
+//! # Available Hue Shifters
+//!
+//! Name | Supports
+//! -----|---------
+//! `"redshift"`  | X11
+//! `"sct"`       | X11
+//! `"gammastep"` | X11 and Wayland
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "hueshift"
+//! hue_shifter = "redshift"
+//! step = 50
+//! click_temp = 3500
+//! ```
+//!
+//! A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
+//! The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
 
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
-
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::config::{LogicalDirection, Scrolling};
-use crate::de::deserialize_duration;
-use crate::errors::*;
-use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
-use crate::scheduler::Task;
+use super::prelude::*;
 use crate::util::has_command;
-use crate::widgets::text::TextWidget;
-use crate::widgets::I3BarWidget;
+use std::process::Command;
 
-pub struct Hueshift {
-    id: usize,
-    text: TextWidget,
-    update_interval: Duration,
-    step: u16,
-    current_temp: u16,
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields, default)]
+struct HueshiftConfig {
+    interval: Seconds,
     max_temp: u16,
     min_temp: u16,
-    hue_shift_driver: Box<dyn HueShiftDriver>,
+    // TODO: Detect currently defined temperature
+    current_temp: u16,
+    hue_shifter: Option<HueShifter>,
+    step: u16,
     click_temp: u16,
-    scrolling: Scrolling,
+}
+
+impl Default for HueshiftConfig {
+    fn default() -> Self {
+        Self {
+            interval: Seconds::new(5),
+            max_temp: 10_000,
+            min_temp: 1_000,
+            current_temp: 6_500,
+            hue_shifter: None,
+            step: 100,
+            click_temp: 6_500,
+        }
+    }
+}
+
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let mut events = api.get_events().await?;
+    let config = HueshiftConfig::deserialize(config).config_error()?;
+
+    // limit too big steps at 500K to avoid too brutal changes
+    let step = config.step.max(500);
+    let max_temp = config.max_temp.min(10_000);
+    let min_temp = config.min_temp.clamp(1_000, max_temp);
+
+    let hue_shifter = match config.hue_shifter {
+        Some(driver) => driver,
+        None => {
+            if has_command("redshift").await? {
+                HueShifter::Redshift
+            } else if has_command("sct").await? {
+                HueShifter::Sct
+            } else if has_command("gammastep").await? {
+                HueShifter::Gammastep
+            } else if has_command("wlsunset").await? {
+                HueShifter::Wlsunset
+            } else {
+                return Err(Error::new("Cound not detect driver program"));
+            }
+        }
+    };
+
+    let driver: Box<dyn HueShiftDriver> = match hue_shifter {
+        HueShifter::Redshift => Box::new(Redshift),
+        HueShifter::Sct => Box::new(Sct),
+        HueShifter::Gammastep => Box::new(Gammastep),
+        HueShifter::Wlsunset => Box::new(Wlsunset),
+    };
+
+    let mut current_temp = config.current_temp;
+
+    loop {
+        api.set_text(current_temp.to_string().into());
+        api.flush().await?;
+
+        tokio::select! {
+            _ = sleep(config.interval.0) => (),
+            Some(BlockEvent::Click(click)) = events.recv() => {
+                match click.button {
+                    MouseButton::Left => {
+                        current_temp = config.click_temp;
+                        driver.update(current_temp)?;
+                    }
+                    MouseButton::Right => {
+                        if max_temp > 6500 {
+                            current_temp = 6500;
+                            driver.reset()?;
+                        } else {
+                            current_temp = max_temp;
+                            driver.update(current_temp)?;
+                        }
+                    }
+                    MouseButton::WheelUp => {
+                        current_temp = (current_temp + step).min(max_temp);
+                        driver.update(current_temp)?;
+                    }
+                    MouseButton::WheelDown => {
+                        current_temp = current_temp.saturating_sub(step).max(min_temp);
+                        driver.update(current_temp)?;
+                    }
+                    _ => (),
+                }
+            }
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+enum HueShifter {
+    Redshift,
+    Sct,
+    Gammastep,
+    Wlsunset,
 }
 
 trait HueShiftDriver {
     fn update(&self, temp: u16) -> Result<()>;
     fn reset(&self) -> Result<()>;
 }
-struct Redshift();
+
+struct Redshift;
 impl HueShiftDriver for Redshift {
     fn update(&self, temp: u16) -> Result<()> {
         Command::new("sh")
@@ -41,41 +160,37 @@ impl HueShiftDriver for Redshift {
                 format!("redshift -O {} -P >/dev/null 2>&1", temp).as_str(),
             ])
             .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using redshift.",
-            )?;
+            .error("Failed to set new color temperature using redshift.")?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
         Command::new("sh")
             .args(&["-c", "redshift -x >/dev/null 2>&1"])
             .spawn()
-            .block_error(
-                "redshift",
-                "Failed to set new color temperature using redshift.",
-            )?;
+            .error("Failed to set new color temperature using redshift.")?;
         Ok(())
     }
 }
-struct Sct();
+
+struct Sct;
 impl HueShiftDriver for Sct {
     fn update(&self, temp: u16) -> Result<()> {
         Command::new("sh")
             .args(&["-c", format!("sct {} >/dev/null 2>&1", temp).as_str()])
             .spawn()
-            .block_error("hueshift", "Failed to set new color temperature using sct.")?;
+            .error("Failed to set new color temperature using sct.")?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
         Command::new("sh")
             .args(&["-c", "sct >/dev/null 2>&1"])
             .spawn()
-            .block_error("hueshift", "Failed to set new color temperature using sct.")?;
+            .error("Failed to set new color temperature using sct.")?;
         Ok(())
     }
 }
-struct Gammastep();
+
+struct Gammastep;
 impl HueShiftDriver for Gammastep {
     fn update(&self, temp: u16) -> Result<()> {
         Command::new("sh")
@@ -84,24 +199,19 @@ impl HueShiftDriver for Gammastep {
                 &format!("killall gammastep; gammastep -O {} -P &", temp),
             ])
             .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using gammastep.",
-            )?;
+            .error("Failed to set new color temperature using gammastep.")?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
         Command::new("sh")
             .args(&["-c", "gammastep -x >/dev/null 2>&1"])
             .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using gammastep.",
-            )?;
+            .error("Failed to set new color temperature using gammastep.")?;
         Ok(())
     }
 }
-struct Wlsunset();
+
+struct Wlsunset;
 impl HueShiftDriver for Wlsunset {
     fn update(&self, temp: u16) -> Result<()> {
         Command::new("sh")
@@ -113,10 +223,7 @@ impl HueShiftDriver for Wlsunset {
                 &format!("killall wlsunset; wlsunset -T {} -t {} &", temp + 1, temp),
             ])
             .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using wlsunset.",
-            )?;
+            .error("Failed to set new color temperature using wlsunset.")?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
@@ -131,172 +238,7 @@ impl HueShiftDriver for Wlsunset {
             // getting set to 4000K.
             .args(&["-c", "killall wlsunset > /dev/null 2>&1"])
             .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using wlsunset.",
-            )?;
+            .error("Failed to set new color temperature using wlsunset.")?;
         Ok(())
-    }
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "lowercase")]
-pub enum HueShifter {
-    Redshift,
-    Sct,
-    Gammastep,
-    Wlsunset,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields, default)]
-pub struct HueshiftConfig {
-    /// Update interval in seconds
-    #[serde(deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-
-    pub max_temp: u16,
-    pub min_temp: u16,
-
-    // TODO: Detect currently defined temperature
-    /// Currently defined temperature default to 6500K.
-    pub current_temp: u16,
-
-    /// Can be set by user as an option.
-    pub hue_shifter: Option<HueShifter>,
-
-    /// Default to 100K, cannot go over 500K.
-    pub step: u16,
-    pub click_temp: u16,
-}
-
-impl Default for HueshiftConfig {
-    fn default() -> Self {
-        Self {
-            interval: Duration::from_secs(5),
-            max_temp: 10_000,
-            min_temp: 1_000,
-            current_temp: 6_500,
-            hue_shifter: if has_command("hueshift", "redshift").unwrap_or(false) {
-                Some(HueShifter::Redshift)
-            } else if has_command("hueshift", "sct").unwrap_or(false) {
-                Some(HueShifter::Sct)
-            } else if has_command("hueshift", "gammastep").unwrap_or(false) {
-                Some(HueShifter::Gammastep)
-            } else if has_command("hueshift", "wlsunset").unwrap_or(false) {
-                Some(HueShifter::Wlsunset)
-            } else {
-                None
-            },
-            step: 100,
-            click_temp: 6_500,
-        }
-    }
-}
-
-impl ConfigBlock for Hueshift {
-    type Config = HueshiftConfig;
-
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
-    ) -> Result<Self> {
-        let current_temp = block_config.current_temp;
-        let mut step = block_config.step;
-        let mut max_temp = block_config.max_temp;
-        let mut min_temp = block_config.min_temp;
-        // limit too big steps at 500K to avoid too brutal changes
-        if step > 500 {
-            step = 500;
-        }
-        if block_config.max_temp > 10_000 {
-            max_temp = 10_000;
-        }
-        if block_config.min_temp < 1000 || block_config.min_temp > block_config.max_temp {
-            min_temp = 1000;
-        }
-
-        let hue_shift_driver: Box<dyn HueShiftDriver> = match block_config
-            .hue_shifter
-            .block_error("hueshift", "Cound not detect driver program")?
-        {
-            HueShifter::Redshift => Box::new(Redshift {}),
-            HueShifter::Sct => Box::new(Sct {}),
-            HueShifter::Gammastep => Box::new(Gammastep {}),
-            HueShifter::Wlsunset => Box::new(Wlsunset {}),
-        };
-
-        Ok(Hueshift {
-            id,
-            update_interval: block_config.interval,
-            step,
-            max_temp,
-            min_temp,
-            current_temp,
-            hue_shift_driver,
-            click_temp: block_config.click_temp,
-            scrolling: shared_config.scrolling,
-            text: TextWidget::new(id, 0, shared_config).with_text(&current_temp.to_string()),
-        })
-    }
-}
-
-impl Block for Hueshift {
-    fn update(&mut self) -> Result<Option<Update>> {
-        self.text.set_text(self.current_temp.to_string());
-        Ok(Some(self.update_interval.into()))
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
-    }
-
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        match event.button {
-            MouseButton::Left => {
-                self.current_temp = self.click_temp;
-                self.hue_shift_driver.update(self.current_temp)?;
-                self.text.set_text(self.current_temp.to_string());
-            }
-            MouseButton::Right => {
-                if self.max_temp > 6500 {
-                    self.current_temp = 6500;
-                    self.hue_shift_driver.reset()?;
-                } else {
-                    self.current_temp = self.max_temp;
-                    self.hue_shift_driver.update(self.current_temp)?;
-                }
-                self.text.set_text(self.current_temp.to_string());
-            }
-            mb => {
-                use LogicalDirection::*;
-                let new_temp: u16;
-                match self.scrolling.to_logical_direction(mb) {
-                    Some(Up) => {
-                        new_temp = self.current_temp + self.step;
-                        if new_temp <= self.max_temp {
-                            self.hue_shift_driver.update(new_temp)?;
-                            self.current_temp = new_temp;
-                        }
-                    }
-                    Some(Down) => {
-                        new_temp = self.current_temp - self.step;
-                        if new_temp >= self.min_temp {
-                            self.hue_shift_driver.update(new_temp)?;
-                            self.current_temp = new_temp;
-                        }
-                    }
-                    None => return Ok(()), // avoid updating text
-                }
-                self.text.set_text(self.current_temp.to_string());
-            }
-        }
-        Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

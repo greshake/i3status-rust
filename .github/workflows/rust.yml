@@ -1,26 +1,72 @@
+on: [push, pull_request]
+
 name: Rust
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  build:
-    runs-on: ubuntu-20.04
+  check:
+    name: Check
+    runs-on: ubuntu-latest
     steps:
-    - name: Get required packages
-      run: sudo apt-get update && sudo apt-get install libdbus-1-dev libpulse-dev libgoogle-perftools-dev libnotmuch-dev pandoc
-    - uses: actions/checkout@v2
-    - name: Check formatting
-      run: cargo fmt -- --check
-    - name: Clippy lints
-      run: cargo clippy --all-features --all-targets
-    - name: Build all features (release)
-      run: cargo build --all-features --all-targets --verbose --release
-    - name: Run tests
-      run: cargo test --all-features --all-targets --verbose
+      - name: Get required packages
+        run: sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get required packages
+        run: sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get required packages
+        run: sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get required packages
+        run: sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings

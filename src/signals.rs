@@ -1,63 +1,45 @@
-use crate::errors::*;
-use crossbeam_channel::Sender;
-use std::thread;
+use futures::stream::StreamExt;
+use libc::{SIGRTMAX, SIGRTMIN};
+use signal_hook::consts::{SIGUSR1, SIGUSR2};
+use signal_hook_tokio::Signals;
+use tokio::sync::mpsc;
 
-/// Starts a thread that listens for provided signals and sends these on the provided channel
-pub fn process_signals(sender: Sender<i32>) {
-    thread::Builder::new()
-        .name("signals".into())
-        .spawn(move || {
-            let sigmin;
-            let sigmax;
-            unsafe {
-                sigmin = __libc_current_sigrtmin();
-                sigmax = __libc_current_sigrtmax();
-            }
-            loop {
-                let mut signals = (sigmin..sigmax).collect::<Vec<_>>();
-                signals.push(signal_hook::consts::SIGUSR1);
-                signals.push(signal_hook::consts::SIGUSR2);
-                let mut signals = signal_hook::iterator::Signals::new(&signals).unwrap();
-                for sig in signals.forever() {
-                    sender.send(sig).unwrap();
-                }
-            }
-        })
-        .unwrap();
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Signal {
+    Usr1,
+    Usr2,
+    Custom(i32),
 }
 
-pub fn convert_to_valid_signal(signal: i32) -> Result<i32> {
-    let sigmin;
-    let sigmax;
-    unsafe {
-        sigmin = __libc_current_sigrtmin();
-        sigmax = __libc_current_sigrtmax();
-    }
-    if signal < 0 || signal > sigmax - sigmin {
-        //NOTE If some important information is encoded in the third field of this error this might
-        //need to be added
-        Err(Error::ConfigurationError(
-            format!(
-            "A provided signal was out of bounds. An allowed signal needs to be between {} and {}",
-            0,
-            sigmax - sigmin
-        ),
-            format!(
-                "Provided signal is {} which is not between {} and {}",
-                signal,
-                0,
-                sigmax - sigmin
-            ),
-        ))
-    } else {
-        Ok(signal + sigmin)
-    }
-}
+/// Spawn a task that listens for signals and sends these on the returned channel
+pub fn signals_stream() -> mpsc::Receiver<Signal> {
+    let (tx, rx) = mpsc::channel(32);
 
-//TODO when libc exposes this through their library and even better when the nix crate does we
-//should be using that binding rather than a C-binding.
-///C bindings to SIGMIN and SIGMAX values
-extern "C" {
-    fn __libc_current_sigrtmin() -> i32;
-    fn __libc_current_sigrtmax() -> i32;
+    let (sigmin, sigmax) = (SIGRTMIN(), SIGRTMAX());
+    let mut signals = Signals::new((sigmin..sigmax).chain(Some(SIGUSR1)).chain(Some(SIGUSR2)))
+        .unwrap()
+        .fuse();
+
+    tokio::spawn(async move {
+        loop {
+            if tx
+                .send(match signals.next().await {
+                    Some(SIGUSR1) => Signal::Usr1,
+                    Some(SIGUSR2) => Signal::Usr2,
+                    Some(x) => Signal::Custom(x - sigmin),
+                    None => {
+                        eprintln!("signals.next() returned None: no more signals will be received");
+                        break;
+                    }
+                })
+                .await
+                .is_err()
+            {
+                // Receiver is dropped - no need to loop anymore
+                break;
+            }
+        }
+    });
+
+    rx
 }

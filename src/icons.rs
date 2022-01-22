@@ -1,10 +1,9 @@
-use std::collections::HashMap;
-use std::fmt;
-
+use crate::util;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use serde_derive::Deserialize;
-
-use crate::util;
+use smartstring::alias::String;
+use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct Icons(pub HashMap<String, String>);
@@ -12,7 +11,7 @@ pub struct Icons(pub HashMap<String, String>);
 impl Default for Icons {
     fn default() -> Self {
         // "none" icon set
-        Self(map_to_owned! {
+        Self(map! {
             "backlight_empty" => "BRIGHT",
             "backlight_full" => "BRIGHT",
             "backlight_1" =>  "BRIGHT",
@@ -43,6 +42,8 @@ impl Default for Icons {
             "calendar" => "CAL",
             "cogs" => "LOAD",
             "cpu" => "CPU",
+            "cpu_boost_on" => "BOOST ON",
+            "cpu_boost_off" => "BOOST OFF",
             "disk_drive" => "DISK",
             "docker" => "DOCKER",
             "github" => "GITHUB",
@@ -55,12 +56,10 @@ impl Default for Icons {
             "memory_swap" => "SWAP",
             "mouse" => "MOUSE",
             "music" => "MUSIC",
+            "music_next" => ">",
             "music_pause" => "||",
-            // these need to be pango escaped
-            // TODO: more general fix?
-            "music_play" => "&gt;",
-            "music_next" => "&gt;",
-            "music_prev" => "&lt;",
+            "music_play" => ">",
+            "music_prev" => "<",
             "net_down" => "DOWN",
             "net_loopback" => "LO",
             "net_up" => "UP ",
@@ -72,10 +71,6 @@ impl Default for Icons {
             "phone_disconnected" => "PHONE",
             "ping" => "PING",
             "pomodoro" => "POMODORO",
-            "pomodoro_break" => "",
-            "pomodoro_paused" => "PAUSED",
-            "pomodoro_started" => "STARTED",
-            "pomodoro_stopped" => "STOPPED",
             "resolution" => "RES",
             "tasks" => "TSK",
             "thermometer" => "TEMP",
@@ -98,9 +93,7 @@ impl Default for Icons {
             "weather_snow" => "SNOW",
             "weather_sun" => "SUNNY",
             "weather_thunder" => "STORM",
-            "xrandr" => "SCREEN",
-            "cpu_boost_on" => "ON",
-            "cpu_boost_off" => "OFF"
+            "xrandr" => "SCREEN"
         })
     }
 }
@@ -111,7 +104,7 @@ impl Icons {
             Some(Icons::default())
         } else {
             let file = util::find_file(file, Some("icons"), Some("toml"))?;
-            Some(Icons(util::deserialize_file(&file).ok()?))
+            Some(Icons(util::deserialize_toml_file(&file).ok()?))
         }
     }
 }

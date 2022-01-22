@@ -1,89 +1,43 @@
+// use crate::escape::JsonStr;
 use crate::themes::Color;
+use serde_derive::Serialize;
 
-/// Represent block as described in https://i3wm.org/docs/i3bar-protocol.html
-
-#[derive(Debug, Clone)]
+/// Represent block as described in <https://i3wm.org/docs/i3bar-protocol.html>
+#[derive(Serialize, Debug, Clone)]
 pub struct I3BarBlock {
     pub full_text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub short_text: Option<String>,
+    #[serde(skip_serializing_if = "Color::skip_ser")]
     pub color: Color,
+    #[serde(skip_serializing_if = "Color::skip_ser")]
     pub background: Color,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border_top: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border_right: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border_bottom: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border_left: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_width: Option<I3BarBlockMinWidth>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub align: Option<I3BarBlockAlign>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub instance: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub urgent: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub separator: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub separator_block_width: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub markup: Option<String>,
-}
-
-macro_rules! json_add_str {
-    ($retval:ident, $obj:expr, $name:expr) => {
-        if let Some(ref val) = $obj {
-            $retval.push_str(&format!(
-                "\"{}\":\"{}\",",
-                stringify!($name),
-                val.chars()
-                    .map(|c| match c {
-                        '\\' => "\\\\".to_string(),
-                        '\n' => "\\n".to_string(),
-                        '"' => "\\\"".to_string(),
-                        x => x.to_string(),
-                    })
-                    .collect::<String>(),
-            ));
-        }
-    };
-}
-macro_rules! json_add_val {
-    ($retval:ident, $obj:expr, $name:expr) => {
-        if let Some(val) = $obj {
-            $retval.push_str(&format!("\"{}\":{},", stringify!($name), val));
-        }
-    };
-}
-
-impl I3BarBlock {
-    pub fn render(&self) -> String {
-        let mut retval = String::from("{");
-
-        json_add_str!(retval, Some(&self.full_text), full_text);
-        json_add_str!(retval, self.short_text, short_text);
-        json_add_str!(retval, self.color.to_string(), color);
-        json_add_str!(retval, self.background.to_string(), background);
-        json_add_str!(retval, self.border, border);
-        json_add_val!(retval, self.border_top, border_top);
-        json_add_val!(retval, self.border_right, border_right);
-        json_add_val!(retval, self.border_bottom, border_bottom);
-        json_add_val!(retval, self.border_left, border_left);
-        match self.min_width {
-            Some(I3BarBlockMinWidth::Pixels(x)) => json_add_val!(retval, Some(x), min_width),
-            Some(I3BarBlockMinWidth::Text(ref x)) => json_add_str!(retval, Some(x), min_width),
-            None => {}
-        }
-        match self.align {
-            Some(I3BarBlockAlign::Center) => retval.push_str("\"align\":\"center\","),
-            Some(I3BarBlockAlign::Right) => retval.push_str("\"align\":\"right\","),
-            Some(I3BarBlockAlign::Left) => retval.push_str("\"align\":\"left\","),
-            None => {}
-        }
-        json_add_str!(retval, self.name, name);
-        json_add_str!(retval, self.instance, instance);
-        json_add_val!(retval, self.urgent, urgent);
-        json_add_val!(retval, self.separator, separator);
-        json_add_val!(retval, self.separator_block_width, separator_block_width);
-        json_add_str!(retval, self.markup, markup);
-
-        retval.pop();
-        retval.push('}');
-        retval
-    }
 }
 
 impl Default for I3BarBlock {
@@ -114,14 +68,18 @@ impl Default for I3BarBlock {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Debug, Clone, Copy)]
+#[allow(dead_code)]
+#[serde(rename_all = "lowercase")]
 pub enum I3BarBlockAlign {
     Center,
     Right,
     Left,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
+#[allow(dead_code)]
+#[serde(untagged)]
 pub enum I3BarBlockMinWidth {
     Pixels(usize),
     Text(String),

@@ -1,972 +1,354 @@
-use std::process::Command;
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::{Duration, Instant};
+//! [KDEConnect](https://community.kde.org/KDEConnect) indicator
+//!
+//! Display info from the currently connected device in KDEConnect, updated asynchronously.
+//!
+//! Block colours are updated based on the battery level, unless all bat_* thresholds are set to 0,
+//! in which case the block colours will depend on the notification count instead.
+//!
+//! # Configuration
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | No | Chooses the first found device, if any.
+//! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$name $bat_icon $bat_charge{ $notif_icon&vert;}"</code>
+//! `bat_info` | Min battery level below which state is set to info. | No | `60`
+//! `bat_good` | Min battery level below which state is set to good. | No | `60`
+//! `bat_warning` | Min battery level below which state is set to warning. | No | `30`
+//! `bat_critical` | Min battery level below which state is set to critical. | No | `15`
+//! `hide_disconnected` | Whether to hide this block when disconnected | No | `true`
+//!
+//! Placeholder   | Value                                                       | Type   | Unit
+//! --------------|-------------------------------------------------------------|--------|-----
+//! `bat_icon`    | Battery level indicator (only when connected)               | Icon   | -
+//! `bat_charge`  | Battery charge level (only when connected)                  | Number | %
+//! `notif_icon`  | Only when connected and there are notifications             | Icon   | -
+//! `notif_count` | Number of notifications on your phone (only when connected) | Number | -
+//! `name`        | Name of your device as reported by KDEConnect               | Text   | -
+//! `connected`   | Present if your device is connected                         | Flag   | -
+//!
+//! # Example
+//!
+//! Do not show the name, do not set the "good" state.
+//!
+//! ```toml
+//! [[block]]
+//! block = "kdeconnect"
+//! format = "$bat_icon $bat_charge{ $notif_icon|}"
+//! bat_good = 101
+//! ```
+//!
+//! # Icons Used
+//! - "bat_charging",
+//! - "bat_10",
+//! - "bat_20",
+//! - "bat_30",
+//! - "bat_40",
+//! - "bat_50",
+//! - "bat_60",
+//! - "bat_70",
+//! - "bat_80",
+//! - "bat_90",
+//! - "bat_full",
+//! - `notification`
+//! - `phone`
+//! - `phone_disconnected`
 
-use crossbeam_channel::Sender;
-use dbus::arg;
-use dbus::blocking::{stdintf::org_freedesktop_dbus::Properties, Connection};
-use dbus::Message;
-use serde_derive::Deserialize;
+use tokio::sync::mpsc;
+use zbus::dbus_proxy;
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::errors::*;
-use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
-use crate::scheduler::Task;
-use crate::util::battery_level_to_icon;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, State};
+use super::prelude::*;
+use crate::util::battery_level_icon;
 
-pub struct KDEConnect {
-    id: usize,
-    device_id: String,
-    device_name: Arc<Mutex<String>>,
-    battery_charge: Arc<Mutex<i32>>,
-    battery_state: Arc<Mutex<bool>>,
-    notif_count: Arc<Mutex<i32>>,
-    phone_reachable: Arc<Mutex<bool>>,
-    // TODO
-    //notif_text: Arc<Mutex<String>>,
-    bat_good: i32,
-    bat_info: i32,
-    bat_warning: i32,
-    bat_critical: i32,
-    format: FormatTemplate,
-    format_disconnected: FormatTemplate,
-    output: TextWidget,
-    shared_config: SharedConfig,
-}
-
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
-pub struct KDEConnectConfig {
-    pub device_id: Option<String>,
-
-    /// The threshold above which the remaining capacity is shown as good
-    pub bat_good: i32,
-
-    /// The threshold below which the remaining capacity is shown as info
-    pub bat_info: i32,
-
-    /// The threshold below which the remaining capacity is shown as warning
-    pub bat_warning: i32,
-
-    /// The threshold below which the remaining capacity is shown as critical
-    pub bat_critical: i32,
-
-    /// Format string for displaying phone information.
-    pub format: FormatTemplate,
-
-    /// Format string for displaying phone information when it is disconnected.
-    pub format_disconnected: FormatTemplate,
+struct Config {
+    device_id: Option<String>,
+    format: FormatConfig,
+    bat_good: u8,
+    bat_info: u8,
+    bat_warning: u8,
+    bat_critical: u8,
+    hide_disconnected: bool,
 }
 
-impl Default for KDEConnectConfig {
+impl Default for Config {
     fn default() -> Self {
         Self {
             device_id: None,
+            format: Default::default(),
             bat_good: 60,
             bat_info: 60,
             bat_warning: 30,
             bat_critical: 15,
-            format: FormatTemplate::default(),
-            format_disconnected: FormatTemplate::default(),
+            hide_disconnected: true,
         }
     }
 }
 
-impl ConfigBlock for KDEConnect {
-    type Config = KDEConnectConfig;
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let config = Config::deserialize(config).config_error()?;
+    let dbus_conn = api.get_dbus_connection().await?;
+    api.set_format(config.format.with_default("")?);
 
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        send: Sender<Task>,
-    ) -> Result<Self> {
-        let send2 = send.clone();
-        let send3 = send.clone();
-        let send4 = send.clone();
-        let send5 = send.clone();
-        let send6 = send.clone();
-        let send7 = send.clone();
+    let battery_state = (
+        config.bat_good,
+        config.bat_info,
+        config.bat_warning,
+        config.bat_critical,
+    ) != (0, 0, 0, 0);
 
-        let c = Connection::new_session().block_error(
-            "kdeconnect",
-            &"Failed to establish D-Bus connection".to_string(),
-        )?;
+    let id = match config.device_id {
+        Some(id) => id,
+        None => api.recoverable(|| any_device_id(&dbus_conn), "X").await?,
+    };
 
-        let device_id = if block_config.device_id.is_none() {
-            // If none specified in block config, just grab the first device found.
-            let p1 = c.with_proxy(
-                "org.kde.kdeconnect",
-                "/modules/kdeconnect",
-                Duration::from_millis(5000),
-            );
-            // method call opts: only_reachable=false, only_paired=true
-            let (devices,): (Vec<String>,) = p1
-                .method_call("org.kde.kdeconnect.daemon", "devices", (false, true))
-                .block_error(
-                    "kdeconnect",
-                    &"Couldn't connect to KDE Connect daemon".to_string(),
-                )?;
-            if devices.is_empty() {
-                return Err(BlockError(
-                    "kdeconnect".to_owned(),
-                    "No devices found.".to_owned(),
-                ));
-            }
-            devices[0].clone()
-        } else {
-            block_config.device_id.unwrap()
-        };
+    let (tx, mut rx) = mpsc::channel(8);
+    let device = Device::new(&dbus_conn, tx, &id).await?;
 
-        let p2 = c.with_proxy(
-            "org.kde.kdeconnect",
-            format!("/modules/kdeconnect/devices/{}", device_id),
-            Duration::from_millis(5000),
-        );
-        let initial_name: String = p2
-            .get("org.kde.kdeconnect.device", "name")
-            .unwrap_or_else(|_| String::from(""));
-        let initial_reachable: bool = p2
-            .get("org.kde.kdeconnect.device", "isReachable")
-            .unwrap_or(false);
+    loop {
+        let connected = device.connected().await?;
 
-        // Test whether we are dealing with kdeconnect v20.08.03 or older,
-        // or kdeconnect v20.11.80 or newer, so we can adapt to the differences.
-        //
-        // Starting with kdeconnect v20.11.80, the version output by the cli
-        // matches the versioning scheme used by Ubuntu, where as before that it
-        // was  1.3.x or 1.4.x.
-        let old_kdeconnect = Command::new("kdeconnect-cli")
-            .args(&["--version"])
-            .output()
-            .block_error(
-                "kdeconnect",
-                "Failed to check kdeconnect version. Is it installed?",
-            )
-            .and_then(|raw_output| {
-                String::from_utf8(raw_output.stdout)
-                    .block_error("kdeconnect", "Failed to check kdeconnect version.")
-            })
-            .unwrap()
-            .contains("kdeconnect-cli 1.");
+        if connected || !config.hide_disconnected {
+            let mut state = State::Idle;
 
-        let initial_charge = if old_kdeconnect {
-            let (charge,): (i32,) = p2
-                .method_call("org.kde.kdeconnect.device.battery", "charge", ())
-                .unwrap_or((0,));
-            charge
-        } else {
-            let p3 = c.with_proxy(
-                "org.kde.kdeconnect",
-                format!("/modules/kdeconnect/devices/{}/battery", device_id),
-                Duration::from_millis(5000),
-            );
-            let charge: i32 = p3
-                .get("org.kde.kdeconnect.device.battery", "charge")
-                .unwrap_or(0);
-            charge
-        };
+            let mut values = map! {
+                "name" => Value::text(device.name().await?),
+            };
+            if connected {
+                api.set_icon("phone")?;
+                values.insert("connected".into(), Value::Flag);
 
-        let initial_charging = if old_kdeconnect {
-            let (charging,): (bool,) = p2
-                .method_call("org.kde.kdeconnect.device.battery", "isCharging", ())
-                .unwrap_or((false,));
-            charging
-        } else {
-            let p3 = c.with_proxy(
-                "org.kde.kdeconnect",
-                format!("/modules/kdeconnect/devices/{}/battery", device_id),
-                Duration::from_millis(5000),
-            );
-            let charging: bool = p3
-                .get("org.kde.kdeconnect.device.battery", "isCharging")
-                .unwrap_or(false);
-            charging
-        };
-
-        let initial_notifications = if old_kdeconnect {
-            let (notifications,): (Vec<String>,) = p2
-                .method_call(
-                    "org.kde.kdeconnect.device.notifications",
-                    "activeNotifications",
-                    (),
-                )
-                .unwrap_or((vec![String::from("")],));
-            notifications
-        } else {
-            let p4 = c.with_proxy(
-                "org.kde.kdeconnect",
-                format!("/modules/kdeconnect/devices/{}/notifications", device_id),
-                Duration::from_millis(5000),
-            );
-            let (notifications,): (Vec<String>,) = p4
-                .method_call(
-                    "org.kde.kdeconnect.device.notifications",
-                    "activeNotifications",
-                    (),
-                )
-                .unwrap_or((vec![String::from("")],));
-            notifications
-        };
-
-        let device_id_copy = device_id.clone();
-        let device_name = Arc::new(Mutex::new(initial_name));
-        let device_name_copy = device_name.clone();
-        let charge = Arc::new(Mutex::new(initial_charge));
-        let charge_copy = charge.clone();
-        // TODO: revisit this lint
-        #[allow(clippy::mutex_atomic)]
-        let charging = Arc::new(Mutex::new(initial_charging));
-        let charging_copy = charging.clone();
-        let notif_count = Arc::new(Mutex::new(initial_notifications.len() as i32));
-        let notif_count_copy1 = notif_count.clone();
-        let notif_count_copy2 = notif_count.clone();
-        let notif_count_copy3 = notif_count.clone();
-        // TODO: revisit this lint
-        #[allow(clippy::mutex_atomic)]
-        let reachable = Arc::new(Mutex::new(initial_reachable));
-        let reachable_copy1 = reachable.clone();
-        let reachable_copy2 = reachable.clone();
-
-        // TODO: See if can reliably get the text and/or app of the most recent notification.
-        // Will need to see if the order of notifications is guaranteed or not.
-        // Also, need to call activeNotifications each time a notification is added/removed/updated,
-        // because the signal only gives us a 'public_id' and no other useful info
-        //let last_notif_text = if initial_notifications.get(0).is_none() {
-        //    Arc::new(Mutex::new("".to_string()))
-        //} else {
-        //    Arc::new(Mutex::new(initial_notifications.get(0).unwrap().to_string()))
-        //};
-
-        thread::Builder::new()
-            .name("kdeconnect".into())
-            .spawn(move || {
-                let c = Connection::new_session()
-                    .expect("Failed to establish D-Bus connection in thread");
-
-                let p1 = c.with_proxy(
-                    "org.kde.kdeconnect",
-                    format!("/modules/kdeconnect/devices/{}", device_id_copy),
-                    Duration::from_millis(5000),
+                let (level, charging) = device.battery().await?;
+                values.insert("bat_charge".into(), Value::percents(level));
+                values.insert(
+                    "bat_icon".into(),
+                    Value::Icon(
+                        api.get_icon(battery_level_icon(level, charging))?
+                            .trim()
+                            .into(),
+                    ),
                 );
-
-                let _device_name_handler = p1.match_signal(
-                    move |s: OrgKdeKdeconnectDeviceNameChanged, _: &Connection, _: &Message| {
-                        let mut name = device_name_copy.lock().unwrap();
-                        *name = s.name;
-
-                        // Tell block to update now.
-                        send2
-                            .send(Task {
-                                id,
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
-
-                        true
-                    },
-                );
-
-                let _phone_reachable_handler = p1.match_signal(
-                    move |s: OrgKdeKdeconnectDeviceReachableChanged,
-                          _: &Connection,
-                          _: &Message| {
-                        let mut reachable = reachable_copy1.lock().unwrap();
-                        *reachable = s.reachable;
-
-                        send6
-                            .send(Task {
-                                id,
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
-
-                        true
-                    },
-                );
-
-                if old_kdeconnect {
-                    let _battery_state_handler = p1.match_signal(
-                        move |s: OrgKdeKdeconnectDeviceBatteryStateChanged,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut charging = charging_copy.lock().unwrap();
-                            *charging = s.charging;
-
-                            // Tell block to update now.
-                            // The older KDEConnect emits both stateChanged and chargeChanged
-                            // whenever there is an update regardless of whether or
-                            // not they both changed. So we only need to send updates
-                            // in one of the two battery signal handlers.
-                            send.send(Task {
-                                id,
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
-
-                            true
-                        },
-                    );
-
-                    let _battery_charge_handler = p1.match_signal(
-                        move |s: OrgKdeKdeconnectDeviceBatteryChargeChanged,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut charge = charge_copy.lock().unwrap();
-                            *charge = s.charge;
-
-                            true
-                        },
-                    );
-                } else {
-                    let p2 = c.with_proxy(
-                        "org.kde.kdeconnect",
-                        format!("/modules/kdeconnect/devices/{}/battery", device_id_copy),
-                        Duration::from_millis(5000),
-                    );
-                    let _battery_state_handler = p2.match_signal(
-                        move |s: OrgKdeKdeconnectDeviceBatteryRefreshed,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut charging = charging_copy.lock().unwrap();
-                            *charging = s.is_charging;
-
-                            let mut charge = charge_copy.lock().unwrap();
-                            *charge = s.charge;
-
-                            send.send(Task {
-                                id,
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
-
-                            true
-                        },
-                    );
-                };
-
-                if old_kdeconnect {
-                    let _notification_added_handler = p1.match_signal(
-                        move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationPosted,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut notif_count = notif_count_copy1.lock().unwrap();
-                            *notif_count += 1;
-
-                            // Tell block to update now.
-                            send3
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
-
-                            true
-                        },
-                    );
-
-                    let _notification_removed_handler = p1.match_signal(
-                        move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationRemoved,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut notif_count = notif_count_copy2.lock().unwrap();
-                            *notif_count = if *notif_count - 1 < 0 {
-                                0
-                            } else {
-                                *notif_count - 1
-                            };
-
-                            // Tell block to update now.
-                            send4
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
-
-                            true
-                        },
-                    );
-
-                    let _notification_all_removed_handler = p1.match_signal(
-                        move |_s: OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut notif_count = notif_count_copy3.lock().unwrap();
-                            *notif_count = 0;
-
-                            // Tell block to update now.
-                            send5
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
-
-                            true
-                        },
-                    );
-                } else {
-                    let p3 = c.with_proxy(
-                        "org.kde.kdeconnect",
-                        format!(
-                            "/modules/kdeconnect/devices/{}/notifications",
-                            device_id_copy
-                        ),
-                        Duration::from_millis(5000),
-                    );
-
-                    let _notification_added_handler = p3.match_signal(
-                        move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationPosted,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut notif_count = notif_count_copy1.lock().unwrap();
-                            *notif_count += 1;
-
-                            // Tell block to update now.
-                            send3
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
-
-                            true
-                        },
-                    );
-
-                    let _notification_removed_handler = p3.match_signal(
-                        move |_s: OrgKdeKdeconnectDeviceNotificationsNotificationRemoved,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut notif_count = notif_count_copy2.lock().unwrap();
-                            *notif_count = if *notif_count - 1 < 0 {
-                                0
-                            } else {
-                                *notif_count - 1
-                            };
-
-                            // Tell block to update now.
-                            send4
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
-
-                            true
-                        },
-                    );
-
-                    let _notification_all_removed_handler = p3.match_signal(
-                        move |_s: OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved,
-                              _: &Connection,
-                              _: &Message| {
-                            let mut notif_count = notif_count_copy3.lock().unwrap();
-                            *notif_count = 0;
-
-                            // Tell block to update now.
-                            send5
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
-
-                            true
-                        },
-                    );
-
-                    //if notif_text is ever implemented this may be handy
-                    //OrgKdeKdeconnectDeviceNotificationsNotificationUpdated
-                };
-
-                let p4 = c.with_proxy(
-                    "org.kde.kdeconnect",
-                    "/modules/kdeconnect",
-                    Duration::from_millis(5000),
-                );
-
-                let _phone_visible_handler = p4.match_signal(
-                    move |s: OrgKdeKdeconnectDaemonDeviceVisibilityChanged,
-                          _: &Connection,
-                          _: &Message| {
-                        // TODO: check if s.id matches our device? Is visible same as reachable?
-                        let mut reachable = reachable_copy2.lock().unwrap();
-                        *reachable = s.is_visible;
-
-                        // Tell block to update now.
-                        send7
-                            .send(Task {
-                                id,
-                                update_time: Instant::now(),
-                            })
-                            .unwrap();
-
-                        true
-                    },
-                );
-
-                loop {
-                    c.process(Duration::from_millis(1000)).unwrap();
+                if battery_state {
+                    state = if charging {
+                        State::Good
+                    } else if level <= config.bat_critical {
+                        State::Critical
+                    } else if level <= config.bat_info {
+                        State::Info
+                    } else if level > config.bat_good {
+                        State::Good
+                    } else {
+                        State::Idle
+                    };
                 }
-            })
-            .unwrap();
 
-        Ok(KDEConnect {
-            id,
-            device_id,
-            device_name,
-            battery_charge: charge,
-            battery_state: charging,
-            notif_count,
-            // TODO
-            //notif_text,
-            phone_reachable: reachable,
-            bat_good: block_config.bat_good,
-            bat_info: block_config.bat_info,
-            bat_warning: block_config.bat_warning,
-            bat_critical: block_config.bat_critical,
-            format: block_config
-                .format
-                .with_default("{name} {bat_icon}{bat_charge} {notif_icon}{notif_count}")?,
-            format_disconnected: block_config.format_disconnected.with_default("{name}")?,
-            output: TextWidget::new(id, 0, shared_config.clone()).with_icon("phone")?,
-            shared_config,
-        })
-    }
-}
-
-impl Block for KDEConnect {
-    fn id(&self) -> usize {
-        self.id
-    }
-
-    fn update(&mut self) -> Result<Option<Update>> {
-        let charge = (*self
-            .battery_charge
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `charge`")?)
-            as i32;
-
-        let charging = *self
-            .battery_state
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `battery_state`")?;
-
-        let notif_count = *self
-            .notif_count
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `notif_count`")?;
-
-        // TODO
-        //let notif_text = (*self
-        //   .notif_text
-        //   .lock()
-        //   .block_error("kdeconnect", "failed to acquire lock for `notif_text`")?)
-        //   .clone();
-
-        let phone_reachable = *self
-            .phone_reachable
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `phone_reachable`")?;
-
-        let name = (*self
-            .device_name
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `name`")?)
-        .clone();
-
-        let bat_icon = self
-            .shared_config
-            .get_icon(if charging {
-                // TODO: there are icons for different states of charging
-                "bat_charging"
-            } else if charge < 0 {
-                // better than nothing I guess?
-                "bat_full"
+                let notif_count = device.notifications().await?;
+                if notif_count > 0 {
+                    values.insert("notif_count".into(), Value::number(notif_count));
+                    values.insert(
+                        "notif_icon".into(),
+                        Value::Icon(api.get_icon("notification")?.trim().into()),
+                    );
+                }
+                if !battery_state {
+                    state = if notif_count == 0 {
+                        State::Idle
+                    } else {
+                        State::Info
+                    };
+                }
             } else {
-                battery_level_to_icon(
-                    Ok(charge as u64),
-                    match self.shared_config.get_icon("bat_10") {
-                        Ok(_) => false,
-                        Err(_) => {
-                            eprintln!(
-                                "Icon bat_10 not found in your icons file. Please check NEWS.md"
-                            );
-                            true
-                        }
-                    },
-                )
-            })
-            .unwrap_or_default();
+                api.set_icon("phone_disconnected")?;
+            }
 
-        let values = map!(
-            "bat_icon" => Value::from_string(bat_icon.trim().to_string()),
-            "bat_charge" => Value::from_integer(charge.clamp(0,100) as i64).percents(),
-            "bat_state" => Value::from_string(charging.to_string()),
-            "notif_icon" => Value::from_string(self.shared_config.get_icon("notification").unwrap_or_default().trim().to_string()),
-            "notif_count" => Value::from_integer(notif_count as i64),
-            // TODO
-            //"notif_text" => notif_text,
-            "name" => Value::from_string(name),
-            "id" => Value::from_string(self.device_id.to_string()) // Not a String?
-        );
-
-        if (
-            self.bat_critical,
-            self.bat_warning,
-            self.bat_info,
-            self.bat_good,
-        ) == (0, 0, 0, 0)
-        {
-            self.output.set_state(match notif_count {
-                0 => State::Idle,
-                _ => State::Info,
-            })
-        } else if charging {
-            self.output.set_state(State::Good);
+            api.show();
+            api.set_values(values);
+            api.set_state(state);
         } else {
-            self.output.set_state(if charge <= self.bat_critical {
-                State::Critical
-            } else if charge <= self.bat_warning {
-                State::Warning
-            } else if charge <= self.bat_info {
-                State::Info
-            } else if charge > self.bat_good {
-                State::Good
-            } else {
-                State::Idle
-            });
+            api.hide();
         }
 
-        if !phone_reachable {
-            self.output.set_state(State::Critical);
-            self.output.set_icon("phone_disconnected")?;
-            self.output
-                .set_texts(self.format_disconnected.render(&values)?);
-        } else {
-            self.output.set_icon("phone")?;
-            self.output.set_texts(self.format.render(&values)?);
-        }
-
-        Ok(None)
-    }
-
-    // Returns the view of the block, comprised of widgets.
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
+        api.flush().await?;
+        rx.recv().await.error("tx dropped")?;
     }
 }
 
-// Code below generated using the command below and Results changed to explcitly use std::Result
-// `dbus-codegen-rust -d org.kde.kdeconnect -p /modules/kdeconnect/devices/mydeviceid/battery`
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceBatteryRefreshed {
-    pub is_charging: bool,
-    pub charge: i32,
+struct Device<'a> {
+    device_proxy: DeviceDbusProxy<'a>,
+    battery_proxy: BatteryDbusProxy<'a>,
+    notifications_proxy: NotificationsDbusProxy<'a>,
 }
 
-impl arg::AppendAll for OrgKdeKdeconnectDeviceBatteryRefreshed {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.is_charging, i);
-        arg::RefArg::append(&self.charge, i);
-    }
-}
+impl<'a> Device<'a> {
+    async fn new(
+        conn: &'a zbus::Connection,
+        tx: mpsc::Sender<()>,
+        id: &'_ str,
+    ) -> Result<Device<'a>> {
+        let device_path = format!("/modules/kdeconnect/devices/{}", id);
+        let battery_path = format!("{}/battery", device_path);
+        let notifications_path = format!("{}/notifications", device_path);
 
-impl arg::ReadAll for OrgKdeKdeconnectDeviceBatteryRefreshed {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceBatteryRefreshed {
-            is_charging: i.read()?,
-            charge: i.read()?,
+        let device_proxy = DeviceDbusProxy::builder(conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .path(device_path)
+            .error("Failed to set device path")?
+            .build()
+            .await
+            .error("Failed to create DeviceDbusProxy")?;
+        let battery_proxy = BatteryDbusProxy::builder(conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .path(battery_path)
+            .error("Failed to set battery path")?
+            .build()
+            .await
+            .error("Failed to create BatteryDbusProxy")?;
+        let notifications_proxy = NotificationsDbusProxy::builder(conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .path(notifications_path)
+            .error("Failed to set battery path")?
+            .build()
+            .await
+            .error("Failed to create BatteryDbusProxy")?;
+
+        let mut s1 = device_proxy
+            .receive_all_signals()
+            .await
+            .error("Failed to receive signals")?;
+        let mut s2 = battery_proxy
+            .receive_refreshed()
+            .await
+            .error("Failed to receive signals")?;
+        let mut s3 = notifications_proxy
+            .receive_all_signals()
+            .await
+            .error("Failed to receive signals")?;
+
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = s1.next() => tx.send(()).await.unwrap(),
+                    _ = s2.next() => tx.send(()).await.unwrap(),
+                    _ = s3.next() => tx.send(()).await.unwrap(),
+                }
+            }
+        });
+
+        Ok(Self {
+            device_proxy,
+            battery_proxy,
+            notifications_proxy,
         })
     }
-}
 
-// Code below generated using the command below and Results changed to explcitly use std::Result
-// `dbus-codegen-rust -d org.kde.kdeconnect -p /modules/kdeconnect/devices/mydeviceid/notifications`
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceNotificationsNotificationPosted {
-    pub public_id: String,
-}
+    async fn connected(&self) -> Result<bool> {
+        self.device_proxy
+            .is_reachable()
+            .await
+            .error("Failed to get is_reachable")
+    }
 
-impl arg::AppendAll for OrgKdeKdeconnectDeviceNotificationsNotificationPosted {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.public_id, i);
+    async fn name(&self) -> Result<String> {
+        self.device_proxy
+            .name()
+            .await
+            .error("Failed to get name")
+            .map(Into::into)
+    }
+
+    async fn battery(&self) -> Result<(u8, bool)> {
+        Ok((
+            self.battery_proxy
+                .charge()
+                .await
+                .error("Failed to read charge")?
+                .clamp(0, 100) as u8,
+            self.battery_proxy
+                .is_charging()
+                .await
+                .error("Failed to read isCharging")?,
+        ))
+    }
+
+    async fn notifications(&self) -> Result<usize> {
+        self.notifications_proxy
+            .active_notifications()
+            .await
+            .error("Failed to read notifications")
+            .map(|n| n.len())
     }
 }
 
-impl arg::ReadAll for OrgKdeKdeconnectDeviceNotificationsNotificationPosted {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceNotificationsNotificationPosted {
-            public_id: i.read()?,
-        })
-    }
+async fn any_device_id(conn: &zbus::Connection) -> Result<String> {
+    DaemonDbusProxy::new(conn)
+        .await
+        .error("Failed to create DaemonDbusProxy")?
+        .devices()
+        .await
+        .error("Failed to get devices")?
+        .into_iter()
+        .next()
+        .error("No devices found")
+        .map(Into::into)
 }
 
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceNotificationsNotificationPosted {
-    const NAME: &'static str = "notificationPosted";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device.notifications";
+#[dbus_proxy(
+    interface = "org.kde.kdeconnect.daemon",
+    default_service = "org.kde.kdeconnect",
+    default_path = "/modules/kdeconnect"
+)]
+trait DaemonDbus {
+    #[dbus_proxy(name = "devices")]
+    fn devices(&self) -> zbus::Result<Vec<StdString>>;
 }
 
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceNotificationsNotificationRemoved {
-    pub public_id: String,
+#[dbus_proxy(
+    interface = "org.kde.kdeconnect.device",
+    default_service = "org.kde.kdeconnect"
+)]
+trait DeviceDbus {
+    #[dbus_proxy(property, name = "isReachable")]
+    fn is_reachable(&self) -> zbus::Result<bool>;
+
+    #[dbus_proxy(signal, name = "reachableChanged")]
+    fn reachable_changed(&self, reachable: bool) -> zbus::Result<()>;
+
+    #[dbus_proxy(property, name = "name")]
+    fn name(&self) -> zbus::Result<StdString>;
+
+    #[dbus_proxy(signal, name = "nameChanged")]
+    fn name_changed_(&self, name: &str) -> zbus::Result<()>;
 }
 
-impl arg::AppendAll for OrgKdeKdeconnectDeviceNotificationsNotificationRemoved {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.public_id, i);
-    }
+#[dbus_proxy(
+    interface = "org.kde.kdeconnect.device.battery",
+    default_service = "org.kde.kdeconnect"
+)]
+trait BatteryDbus {
+    #[dbus_proxy(signal, name = "refreshed")]
+    fn refreshed(&self, is_charging: bool, charge: i32) -> zbus::Result<()>;
+
+    #[dbus_proxy(property, name = "charge")]
+    fn charge(&self) -> zbus::Result<i32>;
+
+    #[dbus_proxy(property, name = "isCharging")]
+    fn is_charging(&self) -> zbus::Result<bool>;
 }
 
-impl arg::ReadAll for OrgKdeKdeconnectDeviceNotificationsNotificationRemoved {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceNotificationsNotificationRemoved {
-            public_id: i.read()?,
-        })
-    }
-}
+#[dbus_proxy(
+    interface = "org.kde.kdeconnect.device.notifications",
+    default_service = "org.kde.kdeconnect"
+)]
+trait NotificationsDbus {
+    #[dbus_proxy(name = "activeNotifications")]
+    fn active_notifications(&self) -> zbus::Result<Vec<StdString>>;
 
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceNotificationsNotificationRemoved {
-    const NAME: &'static str = "notificationRemoved";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device.notifications";
-}
+    #[dbus_proxy(signal, name = "allNotificationsRemoved")]
+    fn all_notifications_removed(&self) -> zbus::Result<()>;
 
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceNotificationsNotificationUpdated {
-    pub public_id: String,
-}
+    #[dbus_proxy(signal, name = "notificationPosted")]
+    fn notification_posted(&self, id: &str) -> zbus::Result<()>;
 
-impl arg::AppendAll for OrgKdeKdeconnectDeviceNotificationsNotificationUpdated {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.public_id, i);
-    }
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDeviceNotificationsNotificationUpdated {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceNotificationsNotificationUpdated {
-            public_id: i.read()?,
-        })
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceNotificationsNotificationUpdated {
-    const NAME: &'static str = "notificationUpdated";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device.notifications";
-}
-
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved {}
-
-impl arg::AppendAll for OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved {
-    fn append(&self, _: &mut arg::IterAppend) {}
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved {
-    fn read(_: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved {})
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceNotificationsAllNotificationsRemoved {
-    const NAME: &'static str = "allNotificationsRemoved";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device.notifications";
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceBatteryRefreshed {
-    const NAME: &'static str = "refreshed";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device.battery";
-}
-
-// Code below generated using the command below and Results changed to explcitly use std::Result
-// `dbus-codegen-rust -d org.kde.kdeconnect -p /modules/kdeconnect/devices/mydeviceid`
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceNameChanged {
-    pub name: String,
-}
-
-impl arg::AppendAll for OrgKdeKdeconnectDeviceNameChanged {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.name, i);
-    }
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDeviceNameChanged {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceNameChanged { name: i.read()? })
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceNameChanged {
-    const NAME: &'static str = "nameChanged";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device";
-}
-
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceReachableChanged {
-    pub reachable: bool,
-}
-
-impl arg::AppendAll for OrgKdeKdeconnectDeviceReachableChanged {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.reachable, i);
-    }
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDeviceReachableChanged {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceReachableChanged {
-            reachable: i.read()?,
-        })
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceReachableChanged {
-    const NAME: &'static str = "reachableChanged";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device";
-}
-
-// This code was autogenerated using the command below and Results changed to explcitly use std::Result
-// `dbus-codegen-rust -d org.kde.kdeconnect -p /modules/kdeconnect`
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDaemonDeviceAdded {
-    pub id: String,
-}
-
-impl arg::AppendAll for OrgKdeKdeconnectDaemonDeviceAdded {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.id, i);
-    }
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDaemonDeviceAdded {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDaemonDeviceAdded { id: i.read()? })
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDaemonDeviceAdded {
-    const NAME: &'static str = "deviceAdded";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.daemon";
-}
-
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDaemonDeviceRemoved {
-    pub id: String,
-}
-
-impl arg::AppendAll for OrgKdeKdeconnectDaemonDeviceRemoved {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.id, i);
-    }
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDaemonDeviceRemoved {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDaemonDeviceRemoved { id: i.read()? })
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDaemonDeviceRemoved {
-    const NAME: &'static str = "deviceRemoved";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.daemon";
-}
-
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDaemonDeviceVisibilityChanged {
-    pub id: String,
-    pub is_visible: bool,
-}
-
-impl arg::AppendAll for OrgKdeKdeconnectDaemonDeviceVisibilityChanged {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.id, i);
-        arg::RefArg::append(&self.is_visible, i);
-    }
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDaemonDeviceVisibilityChanged {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDaemonDeviceVisibilityChanged {
-            id: i.read()?,
-            is_visible: i.read()?,
-        })
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDaemonDeviceVisibilityChanged {
-    const NAME: &'static str = "deviceVisibilityChanged";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.daemon";
-}
-
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDaemonDeviceListChanged {}
-
-impl arg::AppendAll for OrgKdeKdeconnectDaemonDeviceListChanged {
-    fn append(&self, _: &mut arg::IterAppend) {}
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDaemonDeviceListChanged {
-    fn read(_: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDaemonDeviceListChanged {})
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDaemonDeviceListChanged {
-    const NAME: &'static str = "deviceListChanged";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.daemon";
-}
-
-// these are for kdeconnect versions 20.08.3 and lower
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceBatteryStateChanged {
-    pub charging: bool,
-}
-
-impl arg::AppendAll for OrgKdeKdeconnectDeviceBatteryStateChanged {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.charging, i);
-    }
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDeviceBatteryStateChanged {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceBatteryStateChanged {
-            charging: i.read()?,
-        })
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceBatteryStateChanged {
-    const NAME: &'static str = "stateChanged";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device.battery";
-}
-
-#[derive(Debug)]
-pub struct OrgKdeKdeconnectDeviceBatteryChargeChanged {
-    pub charge: i32,
-}
-
-impl arg::AppendAll for OrgKdeKdeconnectDeviceBatteryChargeChanged {
-    fn append(&self, i: &mut arg::IterAppend) {
-        arg::RefArg::append(&self.charge, i);
-    }
-}
-
-impl arg::ReadAll for OrgKdeKdeconnectDeviceBatteryChargeChanged {
-    fn read(i: &mut arg::Iter) -> std::result::Result<Self, arg::TypeMismatchError> {
-        Ok(OrgKdeKdeconnectDeviceBatteryChargeChanged { charge: i.read()? })
-    }
-}
-
-impl dbus::message::SignalArgs for OrgKdeKdeconnectDeviceBatteryChargeChanged {
-    const NAME: &'static str = "chargeChanged";
-    const INTERFACE: &'static str = "org.kde.kdeconnect.device.battery";
+    #[dbus_proxy(signal, name = "notificationRemoved")]
+    fn notification_removed(&self, id: &str) -> zbus::Result<()>;
 }

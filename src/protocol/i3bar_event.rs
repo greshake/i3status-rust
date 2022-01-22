@@ -1,110 +1,110 @@
-use std::fmt;
-use std::io;
-use std::option::Option;
-use std::string::*;
-use std::thread;
+use std::os::unix::io::FromRawFd;
+use std::time::Duration;
 
-use crossbeam_channel::Sender;
-use serde::{de, Deserializer};
 use serde_derive::Deserialize;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum MouseButton {
-    Left,
-    Middle,
-    Right,
-    WheelUp,
-    WheelDown,
-    Forward, // On my mouse, these map to forward and back
-    Back,
-    Unknown,
-}
+use tokio::fs::File;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::sync::mpsc::{channel, Receiver};
+
+use crate::click::MouseButton;
 
 #[derive(Deserialize, Debug, Clone)]
 struct I3BarEventInternal {
     pub name: Option<String>,
     pub instance: Option<String>,
-    #[allow(dead_code)]
-    pub x: u64,
-    #[allow(dead_code)]
-    pub y: u64,
-
-    #[serde(deserialize_with = "deserialize_mousebutton")]
     pub button: MouseButton,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct I3BarEvent {
-    pub id: Option<usize>,
+    pub id: usize,
     pub instance: Option<usize>,
     pub button: MouseButton,
 }
 
-impl I3BarEvent {
-    pub fn matches_id(&self, other: usize) -> bool {
-        match self.id {
-            Some(id) => id == other,
-            _ => false,
-        }
-    }
-}
+fn unprocessed_events_stream(invert_scrolling: bool) -> Receiver<I3BarEvent> {
+    // Avoid spawning a blocking therad (why doesn't tokio do this too?)
+    // This should be safe given that this function is called only once
+    let stdin = unsafe { File::from_raw_fd(0) };
+    let mut stdin = BufReader::new(stdin);
 
-pub fn process_events(sender: Sender<I3BarEvent>) {
-    thread::Builder::new()
-        .name("input".into())
-        .spawn(move || loop {
-            let mut input = String::new();
-            io::stdin().read_line(&mut input).unwrap();
+    let mut buf = String::new();
+    let (tx, rx) = channel(32);
 
-            // Take only the valid JSON object betweem curly braces (cut off leading bracket, commas and whitespace)
-            let slice = input.trim_start_matches(|c| c != '{');
+    tokio::spawn(async move {
+        loop {
+            buf.clear();
+            stdin.read_line(&mut buf).await.unwrap();
+
+            // Take only the valid JSON object betweem curly braces (cut off leading bracket,
+            // commas and whitespace)
+            let slice = buf.trim_start_matches(|c| c != '{');
             let slice = slice.trim_end_matches(|c| c != '}');
 
             if !slice.is_empty() {
-                let e: I3BarEventInternal = serde_json::from_str(slice).unwrap();
-                sender
+                let event: I3BarEventInternal = serde_json::from_str(slice).unwrap();
+                let id = match event.name {
+                    Some(name) => name.parse().unwrap(),
+                    None => continue,
+                };
+                let instance = event.instance.map(|x| x.parse::<usize>().unwrap());
+
+                use MouseButton::*;
+                let button = match (event.button, invert_scrolling) {
+                    (WheelUp, false) | (WheelDown, true) => WheelUp,
+                    (WheelUp, true) | (WheelDown, false) => WheelDown,
+                    (other, _) => other,
+                };
+
+                if tx
                     .send(I3BarEvent {
-                        id: e.name.map(|x| x.parse::<usize>().unwrap()),
-                        instance: e.instance.map(|x| x.parse::<usize>().unwrap()),
-                        button: e.button,
+                        id,
+                        instance,
+                        button,
                     })
-                    .unwrap();
+                    .await
+                    .is_err()
+                {
+                    break;
+                }
             }
-        })
-        .unwrap();
+        }
+    });
+
+    rx
 }
 
-fn deserialize_mousebutton<'de, D>(deserializer: D) -> Result<MouseButton, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    struct MouseButtonVisitor;
+pub fn events_stream(invert_scrolling: bool, double_click_delay: Duration) -> Receiver<I3BarEvent> {
+    let mut events = unprocessed_events_stream(invert_scrolling);
+    let (tx, rx) = channel(32);
 
-    impl<'de> de::Visitor<'de> for MouseButtonVisitor {
-        type Value = MouseButton;
+    tokio::spawn(async move {
+        loop {
+            let mut event = events.recv().await.unwrap();
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("u64")
+            // Handle double clicks (for now only left)
+            if event.button == MouseButton::Left {
+                tokio::select! {
+                    _ = tokio::time::sleep(double_click_delay) => (),
+                    Some(new_event) = events.recv() => {
+                        if event == new_event {
+                            event.button = MouseButton::DoubleLeft;
+                        } else {
+                            if tx.send(event).await.is_err() {
+                                break;
+                            }
+                            event = new_event;
+                        }
+                    }
+                }
+            }
+
+            if tx.send(event).await.is_err() {
+                break;
+            }
         }
+    });
 
-        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            // TODO: put this behind `--debug` flag
-            //eprintln!("{}", value);
-            Ok(match value {
-                1 => MouseButton::Left,
-                2 => MouseButton::Middle,
-                3 => MouseButton::Right,
-                4 => MouseButton::WheelUp,
-                5 => MouseButton::WheelDown,
-                9 => MouseButton::Forward,
-                8 => MouseButton::Back,
-                _ => MouseButton::Unknown,
-            })
-        }
-    }
-
-    deserializer.deserialize_any(MouseButtonVisitor)
+    rx
 }

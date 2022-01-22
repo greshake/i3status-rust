@@ -1,278 +1,215 @@
-use std::env;
-use std::iter::{Cycle, Peekable};
-use std::process::Command;
-use std::thread;
-use std::time::{Duration, Instant};
-use std::vec;
+//! The output of a custom shell command
+//!
+//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  
+//! ```json
+//! {"icon": "...", "state": "...", "text": "...", "short_text": "..."}
+//! ```
+//! `icon` is optional (default "")  
+//! `state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
+//! `short_text` is optional.
+//!
+//! # Configuration
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `command` | Shell command to execute & display | No | None
+//! `cycle` | Commands to execute and change when the button is clicked | No | None
+//! `interval` | Update interval in seconds (or "once" to update only once) | No | `10`
+//! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
+//! `signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | No | None
+//! watch_files | Watch files to trigger update on file modification | No | None
+//! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | No | false
+//! `shell` | Specify the shell to use when running commands | No | `$SHELL` if set, otherwise fallback to `sh`
+//!
+//! # Examples
+//!
+//! Display temperature, update every 10 seconds:
+//!
+//! ```toml
+//! [[block]]
+//! block = "custom"
+//! command = ''' cat /sys/class/thermal/thermal_zone0/temp | awk '{printf("%.1f\n",$1/1000)}' '''
+//! ```
+//!
+//! Cycle between "ON" and "OFF", update every 1 second, run `<command>` when block is clicked:
+//!
+//! ```toml
+//! [[block]]
+//! block = "custom"
+//! cycle = ["echo ON", "echo OFF"]
+//! interval = 1
+//! [[block.click]]
+//! button = "left"
+//! cmd = "<command>"
+//! ```
+//!
+//! Use JSON output:
+//!
+//! ```toml
+//! [[block]]
+//! block = "custom"
+//! command = "echo '{\"icon\":\"weather_thunder\",\"state\":\"Critical\", \"text\": \"Danger!\"}'"
+//! json = true
+//! ```
+//!
+//! Display kernel, update the block only once:
+//!
+//! ```toml
+//! [[block]]
+//! block = "custom"
+//! command = "uname -r"
+//! interval = "once"
+//! ```
+//!
+//! Display the screen brightness on an intel machine and update this only when `pkill -SIGRTMIN+4 i3status-rs` is called:
+//!
+//! ```toml
+//! [[block]]
+//! block = "custom"
+//! command = ''' cat /sys/class/backlight/intel_backlight/brightness | awk '{print $1}' '''
+//! signal = 4
+//! interval = "once"
+//! ```
+//!
+//! Update block when one or more specified files are modified:
+//!
+//! ```toml
+//! [[block]]
+//! block = "custom"
+//! command = "cat custom_status"
+//! watch_files = ["custom_status"]
+//! interval = "once"
+//! ```
+//!
+//! # TODO:
+//! - Use `shellexpand`
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::de::deserialize_update;
-use crate::errors::*;
-use crate::protocol::i3bar_event::I3BarEvent;
-use crate::scheduler::Task;
-use crate::signals::convert_to_valid_signal;
-use crate::subprocess::spawn_child_async;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, State};
-use crossbeam_channel::Sender;
-use inotify::{EventMask, Inotify, WatchMask};
-use serde_derive::Deserialize;
+use super::prelude::*;
+use crate::signals::Signal;
+use inotify::{Inotify, WatchMask};
+use std::io;
+use tokio::{process::Command, time::Instant};
+use tokio_stream::wrappers::IntervalStream;
 
-pub struct Custom {
-    id: usize,
-    update_interval: Update,
-    output: TextWidget,
-    command: Option<String>,
-    on_click: Option<String>,
-    cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
-    signal: Option<i32>,
-    tx_update_request: Sender<Task>,
-    pub json: bool,
-    hide_when_empty: bool,
-    is_empty: bool,
-    shell: String,
-}
-
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Derivative)]
 #[serde(deny_unknown_fields, default)]
-pub struct CustomConfig {
-    /// Update interval in seconds
-    #[serde(deserialize_with = "deserialize_update")]
-    pub interval: Update,
-
-    /// Shell Command to execute & display
-    pub command: Option<String>,
-
-    /// Commands to execute and change when the button is clicked
-    pub cycle: Option<Vec<String>>,
-
-    /// Signal to update upon reception
-    pub signal: Option<i32>,
-
-    /// Files to watch for modifications and trigger update
-    pub watch_files: Option<Vec<String>>,
-
-    /// Parse command output if it contains valid bar JSON
-    pub json: bool,
-
-    pub hide_when_empty: bool,
-
-    // TODO make a global config option
-    pub shell: String,
+#[derivative(Default)]
+struct CustomConfig {
+    command: Option<StdString>,
+    cycle: Option<Vec<StdString>>,
+    #[derivative(Default(value = "10.into()"))]
+    interval: OnceDuration,
+    json: bool,
+    hide_when_empty: bool,
+    shell: Option<StdString>,
+    signal: Option<i32>,
+    watch_files: Vec<StdString>,
 }
 
-impl Default for CustomConfig {
-    fn default() -> Self {
-        Self {
-            interval: Update::Every(Duration::from_secs(10)),
-            command: None,
-            cycle: None,
-            signal: None,
-            watch_files: None,
-            json: false,
-            hide_when_empty: false,
-            shell: env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()),
-        }
-    }
-}
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let mut events = api.get_events().await?;
+    let config = CustomConfig::deserialize(config).config_error()?;
 
-impl ConfigBlock for Custom {
-    type Config = CustomConfig;
+    // let mut notify;
 
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        tx: Sender<Task>,
-    ) -> Result<Self> {
-        let mut custom = Custom {
-            id,
-            update_interval: block_config.interval,
-            output: TextWidget::new(id, 0, shared_config),
-            command: None,
-            on_click: None,
-            cycle: None,
-            signal: None,
-            tx_update_request: tx,
-            json: block_config.json,
-            hide_when_empty: block_config.hide_when_empty,
-            is_empty: true,
-            shell: block_config.shell,
-        };
+    type TimerStream = Pin<Box<dyn Stream<Item = Instant> + Send + Sync>>;
+    let mut timer: TimerStream = match config.interval {
+        OnceDuration::Once => Box::pin(futures::stream::pending()),
+        OnceDuration::Duration(dur) => Box::pin(IntervalStream::new(dur.timer())),
+    };
 
-        if let Some(signal) = block_config.signal {
-            // If the signal is not in the valid range we return an error
-            custom.signal = Some(convert_to_valid_signal(signal)?);
-        };
+    type FileStream = Pin<Box<dyn Stream<Item = io::Result<inotify::EventOwned>> + Send + Sync>>;
+    let mut file_updates: FileStream = match config.watch_files.as_slice() {
+        [] => Box::pin(futures::stream::pending()),
+        files => {
+            let mut notify = Inotify::init().error("Failed to start inotify")?;
+            // TODO: is there a way to avoid this leak?
+            let buf = Box::leak(Box::new([0; 1024]));
 
-        if let Some(paths) = block_config.watch_files {
-            let tx_inotify = custom.tx_update_request.clone();
-            let mut notify = Inotify::init().expect("Failed to start inotify");
-            for path in paths {
-                let path_expanded = shellexpand::full(&path).map_err(|e| {
-                    ConfigurationError(
-                        "custom".to_string(),
-                        format!("Failed to expand file path {}: {}", &path, e),
-                    )
-                })?;
+            for file in files {
                 notify
-                    .add_watch(&*path_expanded, WatchMask::MODIFY)
-                    .map_err(|e| {
-                        ConfigurationError(
-                            "custom".to_string(),
-                            format!("Failed to watch file {}: {}", &path, e),
-                        )
-                    })?;
+                    .add_watch(file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
+                    .error("Failed to file")?;
             }
-            thread::Builder::new()
-                .name("custom".into())
-                .spawn(move || {
-                    let mut buffer = [0; 1024];
-                    loop {
-                        let mut events = notify
-                            .read_events_blocking(&mut buffer)
-                            .expect("Error while reading inotify events");
+            Box::pin(
+                notify
+                    .event_stream(buf)
+                    .error("Failed to create event stream")?,
+            )
+        }
+    };
 
-                        if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
-                            tx_inotify
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap();
-                        }
+    // Choose the shell in this priority:
+    // 1) `shell` config option
+    // 2) `SHELL` environment varialble
+    // 3) `"sh"`
+    let shell = config
+        .shell
+        .or_else(|| std::env::var("SHELL").ok())
+        .unwrap_or_else(|| "sh".to_string());
 
-                        // Avoid update spam.
-                        thread::sleep(Duration::from_millis(250))
-                    }
-                })
-                .unwrap();
+    let mut cycle = config
+        .cycle
+        .or_else(|| config.command.clone().map(|cmd| vec![cmd]))
+        .error("either 'command' or 'cycle' must be specified")?
+        .into_iter()
+        .cycle();
+
+    loop {
+        // Run command
+        let output = Command::new(&shell)
+            .args(&["-c", &cycle.next().unwrap()])
+            .output()
+            .await
+            .error("failed to run command")?;
+        let stdout = std::str::from_utf8(&output.stdout)
+            .error("the output of command is invalid UTF-8")?
+            .trim();
+
+        if stdout.is_empty() && config.hide_when_empty {
+            api.hide();
+        } else if config.json {
+            let input: Input = serde_json::from_str(stdout).error("invalid JSON")?;
+
+            api.show();
+            api.set_icon(&input.icon)?;
+            api.set_state(input.state);
+            if let Some(short) = input.short_text {
+                api.set_texts(input.text, short);
+            } else {
+                api.set_text(input.text);
+            }
+        } else {
+            api.show();
+            api.set_text(stdout.into());
         };
+        api.flush().await?;
 
-        if block_config.cycle.is_some() && block_config.command.is_some() {
-            return Err(BlockError(
-                "custom".to_string(),
-                "`command` and `cycle` are mutually exclusive".to_string(),
-            ));
+        if config.interval == OnceDuration::Once && config.watch_files.is_empty() {
+            return Ok(());
         }
 
-        if let Some(cycle) = block_config.cycle {
-            custom.cycle = Some(cycle.into_iter().cycle().peekable());
-            return Ok(custom);
-        };
-
-        if let Some(command) = block_config.command {
-            custom.command = Some(command)
-        };
-
-        Ok(custom)
+        loop {
+            tokio::select! {
+                _ = timer.next() => break,
+                _ = file_updates.next() => break,
+                Some(event) = events.recv() => {
+                    match (event, config.signal) {
+                        (BlockEvent::Signal(Signal::Custom(s)), Some(signal)) if s == signal => break,
+                        (BlockEvent::Click(_), _) => break,
+                        _ => (),
+                    }
+                },
+            }
+        }
     }
-
-    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
-        Some(&mut self.on_click)
-    }
 }
 
-fn default_icon() -> String {
-    String::from("")
-}
-
-fn default_state() -> State {
-    State::Idle
-}
-
-#[derive(Deserialize)]
-struct Output {
-    #[serde(default = "default_icon")]
+#[derive(Deserialize, Debug, Default)]
+#[serde(default)]
+struct Input {
     icon: String,
-    #[serde(default = "default_state")]
     state: State,
     text: String,
-}
-
-impl Block for Custom {
-    fn update(&mut self) -> Result<Option<Update>> {
-        let command_str = self
-            .cycle
-            .as_mut()
-            .map(|c| c.peek().cloned().unwrap_or_else(|| "".to_owned()))
-            .or_else(|| self.command.clone())
-            .unwrap_or_else(|| "".to_owned());
-
-        let raw_output = match Command::new(&self.shell)
-            .args(&["-c", &command_str])
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-        {
-            Ok(output) => output,
-            Err(e) => return Err(BlockError("custom".to_string(), e.to_string())),
-        };
-
-        if self.json {
-            let output: Output = serde_json::from_str(&*raw_output).map_err(|e| {
-                BlockError("custom".to_string(), format!("Error parsing JSON: {}", e))
-            })?;
-            if output.icon.is_empty() {
-                self.output.unset_icon();
-            } else {
-                self.output.set_icon(&output.icon)?;
-            }
-            self.output.set_state(output.state);
-            self.is_empty = output.text.is_empty();
-            self.output.set_text(output.text);
-        } else {
-            self.is_empty = raw_output.is_empty();
-            self.output.set_text(raw_output);
-        }
-
-        Ok(Some(self.update_interval.clone()))
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if self.is_empty && self.hide_when_empty {
-            vec![]
-        } else {
-            vec![&self.output]
-        }
-    }
-
-    fn signal(&mut self, signal: i32) -> Result<()> {
-        if let Some(sig) = self.signal {
-            if sig == signal {
-                self.tx_update_request.send(Task {
-                    id: self.id,
-                    update_time: Instant::now(),
-                })?;
-            }
-        }
-        Ok(())
-    }
-
-    fn click(&mut self, _e: &I3BarEvent) -> Result<()> {
-        let mut update = false;
-
-        if let Some(ref on_click) = self.on_click {
-            spawn_child_async(&self.shell, &["-c", on_click]).ok();
-            update = true;
-        }
-
-        if let Some(ref mut cycle) = self.cycle {
-            cycle.next();
-            update = true;
-        }
-
-        if update {
-            self.tx_update_request.send(Task {
-                id: self.id,
-                update_time: Instant::now(),
-            })?;
-        }
-
-        Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
-    }
+    short_text: Option<String>,
 }

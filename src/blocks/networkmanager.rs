@@ -1,29 +1,101 @@
 use std::fmt;
 use std::net::Ipv4Addr;
-use std::result;
-use std::thread;
-use std::time::Instant;
 
-use crossbeam_channel::Sender;
-use dbus::arg::{Array, Iter, Variant};
-use dbus::{
-    arg::messageitem::MessageItem,
-    ffidisp::{BusType, Connection, ConnectionItem},
-    Message, Path,
-};
-use regex::Regex;
-use serde_derive::Deserialize;
+use zbus::dbus_proxy;
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::errors::*;
-use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
-use crate::scheduler::Task;
-use crate::util::escape_pango_text;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, Spacing, State};
+use super::prelude::*;
 
+#[derive(Deserialize, Debug, Default)]
+#[serde(deny_unknown_fields, default)]
+struct NetworkManagerConfig {
+    /// Whether to only show the primary connection, or all active connections.
+    primary_only: bool,
+    /// AP formatter
+    ap_format: FormatConfig,
+    /// Device formatter.
+    device_format: FormatConfig,
+    /// Connection formatter.
+    connection_format: FormatConfig,
+    /// Interface name regex patterns to ignore.
+    interface_name_exclude: Vec<String>,
+    /// Interface name regex patterns to include.
+    interface_name_include: Vec<String>,
+}
+
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let config = NetworkManagerConfig::deserialize(config).config_error()?;
+
+    /*
+    let dbus_conn = Connection::get_private(BusType::System)
+        .block_error("networkmanager", "failed to establish D-Bus connection")?;
+    let manager = ConnectionManager::new();
+
+    thread::Builder::new()
+        .name("networkmanager".into())
+        .spawn(move || {
+            let c = Connection::get_private(BusType::System).unwrap();
+
+            c.add_match(
+                "type='signal',\
+                    path='/org/freedesktop/NetworkManager',\
+                    interface='org.freedesktop.DBus.Properties',\
+                    member='PropertiesChanged'",
+            )
+            .unwrap();
+            c.add_match(
+                "type='signal',\
+                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
+                    interface='org.freedesktop.DBus.Properties',\
+                    member='PropertiesChanged'",
+            )
+            .unwrap();
+
+            loop {
+                let timeout = 300_000;
+
+                for event in c.iter(timeout) {
+                    match event {
+                        ConnectionItem::Nothing => (),
+                        _ => send
+                            .send(Task {
+                                id,
+                                update_time: Instant::now(),
+                            })
+                            .unwrap(),
+                    }
+                }
+            }
+        })
+        .unwrap();
+
+    fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
+        patterns.iter().map(|p| Regex::new(p)).collect()
+    }
+
+    let x = Ok(NetworkManager {
+        id,
+        indicator: TextWidget::new(id, 0, shared_config.clone()),
+        output: Vec::new(),
+        dbus_conn,
+        manager,
+        primary_only: block_config.primary_only,
+        ap_format: block_config.ap_format.with_default("{ssid}")?,
+        device_format: block_config
+            .device_format
+            .with_default("{icon}{ap} {ips}")?,
+        connection_format: block_config.connection_format.with_default("{devices}")?,
+        interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
+            .block_error("networkmanager", "failed to parse exclude patterns")?,
+        interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
+            .block_error("networkmanager", "failed to parse include patterns")?,
+        shared_config,
+    });
+    */
+
+    loop {}
+}
+
+#[derive(Debug)]
 enum NetworkState {
     Unknown,
     Asleep,
@@ -37,8 +109,8 @@ enum NetworkState {
 
 impl From<u32> for NetworkState {
     fn from(id: u32) -> Self {
+        // https://developer.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMState
         match id {
-            // https://developer.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMState
             10 => NetworkState::Asleep,
             20 => NetworkState::Disconnected,
             30 => NetworkState::Disconnecting,
@@ -51,6 +123,7 @@ impl From<u32> for NetworkState {
     }
 }
 
+#[derive(Debug)]
 enum ActiveConnectionState {
     Unknown,
     Activating,
@@ -61,8 +134,8 @@ enum ActiveConnectionState {
 
 impl From<u32> for ActiveConnectionState {
     fn from(id: u32) -> Self {
+        // https://developer.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMActiveConnectionState
         match id {
-            // https://developer.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMActiveConnectionState
             1 => ActiveConnectionState::Activating,
             2 => ActiveConnectionState::Activated,
             3 => ActiveConnectionState::Deactivating,
@@ -97,8 +170,8 @@ enum DeviceType {
 
 impl From<u32> for DeviceType {
     fn from(id: u32) -> Self {
+        // https://developer.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMDeviceType
         match id {
-            // https://developer.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMDeviceType
             1 => DeviceType::Ethernet,
             2 => DeviceType::Wifi,
             8 => DeviceType::Modem,
@@ -111,14 +184,14 @@ impl From<u32> for DeviceType {
 }
 
 impl DeviceType {
-    fn to_icon_name(&self) -> Option<String> {
+    fn to_icon_name(&self) -> Option<&'static str> {
         match self {
-            DeviceType::Ethernet => Some("net_wired".to_string()),
-            DeviceType::Wifi => Some("net_wireless".to_string()),
-            DeviceType::Modem => Some("net_modem".to_string()),
-            DeviceType::Bridge => Some("net_bridge".to_string()),
-            DeviceType::Tun => Some("net_bridge".to_string()),
-            DeviceType::Wireguard => Some("net_vpn".to_string()),
+            DeviceType::Ethernet => Some("net_wired"),
+            DeviceType::Wifi => Some("net_wireless"),
+            DeviceType::Modem => Some("net_modem"),
+            DeviceType::Bridge => Some("net_bridge"),
+            DeviceType::Tun => Some("net_bridge"),
+            DeviceType::Wireguard => Some("net_vpn"),
             _ => None,
         }
     }
@@ -128,8 +201,7 @@ impl DeviceType {
 struct Ipv4Address {
     address: Ipv4Addr,
     prefix: u32,
-    #[allow(dead_code)]
-    gateway: Ipv4Addr,
+    _gateway: Ipv4Addr,
 }
 
 trait ByteOrderSwap {
@@ -145,6 +217,7 @@ impl ByteOrderSwap for u32 {
     }
 }
 
+/*
 impl<'a> From<Array<'a, u32, Iter<'a>>> for Ipv4Address {
     fn from(s: Array<'a, u32, Iter<'a>>) -> Ipv4Address {
         let mut i = s;
@@ -155,6 +228,7 @@ impl<'a> From<Array<'a, u32, Iter<'a>>> for Ipv4Address {
         }
     }
 }
+*/
 
 impl fmt::Display for Ipv4Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -162,52 +236,20 @@ impl fmt::Display for Ipv4Address {
     }
 }
 
-struct ConnectionManager {}
+struct ConnectionManager;
 
 impl ConnectionManager {
-    pub fn new() -> Self {
-        ConnectionManager {}
+    async fn state(&self, c: &zbus::Connection) -> Result<NetworkState> {
+        let state = NetworkManagerProxy::new(c)
+            .await
+            .unwrap()
+            .state()
+            .await
+            .error("Failed to retrieve state")?;
+        Ok(state.into())
     }
 
-    fn get(c: &Connection, path: Path, t: &str, property: &str) -> Result<Message> {
-        let m = Message::new_method_call(
-            "org.freedesktop.NetworkManager",
-            path,
-            "org.freedesktop.DBus.Properties",
-            "Get",
-        )
-        .block_error("networkmanager", "Failed to create message")?
-        .append2(
-            MessageItem::Str(t.to_string()),
-            MessageItem::Str(property.to_string()),
-        );
-
-        let r = c.send_with_reply_and_block(m, 1000);
-
-        r.block_error("networkmanager", "Failed to retrieve property")
-    }
-
-    fn get_property(c: &Connection, property: &str) -> Result<Message> {
-        Self::get(
-            c,
-            "/org/freedesktop/NetworkManager".into(),
-            "org.freedesktop.NetworkManager",
-            property,
-        )
-    }
-
-    pub fn state(&self, c: &Connection) -> Result<NetworkState> {
-        let m = Self::get_property(c, "State")
-            .block_error("networkmanager", "Failed to retrieve state")?;
-
-        let state: Variant<u32> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read property")?;
-
-        Ok(NetworkState::from(state.0))
-    }
-
-    pub fn primary_connection(&self, c: &Connection) -> Result<NmConnection> {
+    async fn primary_connection(&self, c: &zbus::Connection) -> Result<NmConnection> {
         let m = Self::get_property(c, "PrimaryConnection")
             .block_error("networkmanager", "Failed to retrieve primary connection")?;
 
@@ -242,352 +284,222 @@ impl ConnectionManager {
     }
 }
 
-#[derive(Clone)]
-struct NmConnection<'a> {
-    path: Path<'a>,
-}
+// #[derive(Clone)]
+// struct NmConnection<'a> {
+//     path: Path<'a>,
+// }
 
-impl<'a> NmConnection<'a> {
-    fn state(&self, c: &Connection) -> Result<ActiveConnectionState> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "State",
-        )
-        .block_error("networkmanager", "Failed to retrieve connection state")?;
+// impl<'a> NmConnection<'a> {
+//     fn state(&self, c: &Connection) -> Result<ActiveConnectionState> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.Connection.Active",
+//             "State",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve connection state")?;
 
-        let state: Variant<u32> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read connection state")?;
-        Ok(ActiveConnectionState::from(state.0))
-    }
+//         let state: Variant<u32> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read connection state")?;
+//         Ok(ActiveConnectionState::from(state.0))
+//     }
 
-    fn vpn(&self, c: &Connection) -> Result<bool> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "Vpn",
-        )
-        .block_error("networkmanager", "Failed to retrieve connection vpn flag")?;
+//     fn vpn(&self, c: &Connection) -> Result<bool> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.Connection.Active",
+//             "Vpn",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve connection vpn flag")?;
 
-        let vpn: Variant<bool> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read connection vpn flag")?;
-        Ok(vpn.0)
-    }
+//         let vpn: Variant<bool> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read connection vpn flag")?;
+//         Ok(vpn.0)
+//     }
 
-    fn id(&self, c: &Connection) -> Result<String> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "Id",
-        )
-        .block_error("networkmanager", "Failed to retrieve connection ID")?;
+//     fn id(&self, c: &Connection) -> Result<String> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.Connection.Active",
+//             "Id",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve connection ID")?;
 
-        let id: Variant<String> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read Id")?;
-        Ok(id.0)
-    }
+//         let id: Variant<String> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read Id")?;
+//         Ok(id.0)
+//     }
 
-    fn devices(&self, c: &Connection) -> Result<Vec<NmDevice>> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "Devices",
-        )
-        .block_error("networkmanager", "Failed to retrieve connection device")?;
+//     fn devices(&self, c: &Connection) -> Result<Vec<NmDevice>> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.Connection.Active",
+//             "Devices",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve connection device")?;
 
-        let devices: Variant<Array<Path, Iter>> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read devices")?;
-        Ok(devices.0.map(|x| NmDevice { path: x }).collect())
-    }
-}
+//         let devices: Variant<Array<Path, Iter>> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read devices")?;
+//         Ok(devices.0.map(|x| NmDevice { path: x }).collect())
+//     }
+// }
 
-#[derive(Clone)]
-struct NmDevice<'a> {
-    path: Path<'a>,
-}
+// #[derive(Clone)]
+// struct NmDevice<'a> {
+//     path: Path<'a>,
+// }
 
-impl<'a> NmDevice<'a> {
-    fn device_type(&self, c: &Connection) -> Result<DeviceType> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Device",
-            "DeviceType",
-        )
-        .block_error("networkmanager", "Failed to retrieve device type")?;
+// impl<'a> NmDevice<'a> {
+//     fn device_type(&self, c: &Connection) -> Result<DeviceType> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.Device",
+//             "DeviceType",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve device type")?;
 
-        let device_type: Variant<u32> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read device type")?;
-        Ok(DeviceType::from(device_type.0))
-    }
+//         let device_type: Variant<u32> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read device type")?;
+//         Ok(DeviceType::from(device_type.0))
+//     }
 
-    fn interface_name(&self, c: &Connection) -> Result<String> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Device",
-            "Interface",
-        )
-        .block_error("networkmanager", "Failed to retrieve device interface name")?;
+//     fn interface_name(&self, c: &Connection) -> Result<String> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.Device",
+//             "Interface",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve device interface name")?;
 
-        let interface_name: Variant<String> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read interface name")?;
+//         let interface_name: Variant<String> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read interface name")?;
 
-        Ok(interface_name.0)
-    }
+//         Ok(interface_name.0)
+//     }
 
-    fn ip4config(&self, c: &Connection) -> Result<NmIp4Config> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Device",
-            "Ip4Config",
-        )
-        .block_error("networkmanager", "Failed to retrieve device ip4config")?;
+//     fn ip4config(&self, c: &Connection) -> Result<NmIp4Config> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.Device",
+//             "Ip4Config",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve device ip4config")?;
 
-        let ip4config: Variant<Path> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read ip4config")?;
-        Ok(NmIp4Config { path: ip4config.0 })
-    }
+//         let ip4config: Variant<Path> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read ip4config")?;
+//         Ok(NmIp4Config { path: ip4config.0 })
+//     }
 
-    fn active_access_point(&self, c: &Connection) -> Result<NmAccessPoint> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.Device.Wireless",
-            "ActiveAccessPoint",
-        )
-        .block_error(
-            "networkmanager",
-            "Failed to retrieve device active access point",
-        )?;
+//     fn active_access_point(&self, c: &Connection) -> Result<NmAccessPoint> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.Device.Wireless",
+//             "ActiveAccessPoint",
+//         )
+//         .block_error(
+//             "networkmanager",
+//             "Failed to retrieve device active access point",
+//         )?;
 
-        let active_ap: Variant<Path> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read active access point")?;
-        Ok(NmAccessPoint { path: active_ap.0 })
-    }
-}
+//         let active_ap: Variant<Path> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read active access point")?;
+//         Ok(NmAccessPoint { path: active_ap.0 })
+//     }
+// }
 
-#[derive(Clone)]
-struct NmAccessPoint<'a> {
-    path: Path<'a>,
-}
+// #[derive(Clone)]
+// struct NmAccessPoint<'a> {
+//     path: Path<'a>,
+// }
 
-impl<'a> NmAccessPoint<'a> {
-    fn ssid(&self, c: &Connection) -> Result<String> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.AccessPoint",
-            "Ssid",
-        )
-        .block_error("networkmanager", "Failed to retrieve SSID")?;
+// impl<'a> NmAccessPoint<'a> {
+//     fn ssid(&self, c: &Connection) -> Result<String> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.AccessPoint",
+//             "Ssid",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve SSID")?;
 
-        let ssid: Variant<Array<u8, Iter>> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read ssid")?;
-        Ok(std::str::from_utf8(&ssid.0.collect::<Vec<u8>>())
-            .block_error("networkmanager", "Failed to parse ssid")?
-            .to_string())
-    }
+//         let ssid: Variant<Array<u8, Iter>> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read ssid")?;
+//         Ok(std::str::from_utf8(&ssid.0.collect::<Vec<u8>>())
+//             .block_error("networkmanager", "Failed to parse ssid")?
+//             .to_string())
+//     }
 
-    fn strength(&self, c: &Connection) -> Result<u8> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.AccessPoint",
-            "Strength",
-        )
-        .block_error("networkmanager", "Failed to retrieve strength")?;
+//     fn strength(&self, c: &Connection) -> Result<u8> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.AccessPoint",
+//             "Strength",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve strength")?;
 
-        let strength: Variant<u8> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read strength")?;
-        Ok(strength.0)
-    }
+//         let strength: Variant<u8> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read strength")?;
+//         Ok(strength.0)
+//     }
 
-    fn frequency(&self, c: &Connection) -> Result<u32> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.AccessPoint",
-            "Frequency",
-        )
-        .block_error("networkmanager", "Failed to retrieve frequency")?;
+//     fn frequency(&self, c: &Connection) -> Result<u32> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.AccessPoint",
+//             "Frequency",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve frequency")?;
 
-        let frequency: Variant<u32> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read frequency")?;
-        Ok(frequency.0)
-    }
-}
+//         let frequency: Variant<u32> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read frequency")?;
+//         Ok(frequency.0)
+//     }
+// }
 
-#[derive(Clone)]
-struct NmIp4Config<'a> {
-    path: Path<'a>,
-}
+// #[derive(Clone)]
+// struct NmIp4Config<'a> {
+//     path: Path<'a>,
+// }
 
-impl<'a> NmIp4Config<'a> {
-    fn addresses(&self, c: &Connection) -> Result<Vec<Ipv4Address>> {
-        let m = ConnectionManager::get(
-            c,
-            self.path.clone(),
-            "org.freedesktop.NetworkManager.IP4Config",
-            "Addresses",
-        )
-        .block_error("networkmanager", "Failed to retrieve addresses")?;
+// impl<'a> NmIp4Config<'a> {
+//     fn addresses(&self, c: &Connection) -> Result<Vec<Ipv4Address>> {
+//         let m = ConnectionManager::get(
+//             c,
+//             self.path.clone(),
+//             "org.freedesktop.NetworkManager.IP4Config",
+//             "Addresses",
+//         )
+//         .block_error("networkmanager", "Failed to retrieve addresses")?;
 
-        let addresses: Variant<Array<Array<u32, Iter>, Iter>> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read addresses")?;
-        Ok(addresses.0.map(Ipv4Address::from).collect())
-    }
-}
+//         let addresses: Variant<Array<Array<u32, Iter>, Iter>> = m
+//             .get1()
+//             .block_error("networkmanager", "Failed to read addresses")?;
+//         Ok(addresses.0.map(Ipv4Address::from).collect())
+//     }
+// }
 
-pub struct NetworkManager {
-    id: usize,
-    indicator: TextWidget,
-    output: Vec<TextWidget>,
-    dbus_conn: Connection,
-    manager: ConnectionManager,
-    primary_only: bool,
-    ap_format: FormatTemplate,
-    device_format: FormatTemplate,
-    connection_format: FormatTemplate,
-    interface_name_exclude_regexps: Vec<Regex>,
-    interface_name_include_regexps: Vec<Regex>,
-    shared_config: SharedConfig,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields, default)]
-pub struct NetworkManagerConfig {
-    /// Whether to only show the primary connection, or all active connections.
-    pub primary_only: bool,
-
-    /// AP formatter
-    pub ap_format: FormatTemplate,
-
-    /// Device formatter.
-    pub device_format: FormatTemplate,
-
-    /// Connection formatter.
-    pub connection_format: FormatTemplate,
-
-    /// Interface name regex patterns to ignore.
-    pub interface_name_exclude: Vec<String>,
-
-    /// Interface name regex patterns to include.
-    pub interface_name_include: Vec<String>,
-}
-
-#[allow(clippy::derivable_impls)]
-impl Default for NetworkManagerConfig {
-    fn default() -> Self {
-        Self {
-            primary_only: false,
-            ap_format: FormatTemplate::default(),
-            device_format: FormatTemplate::default(),
-            connection_format: FormatTemplate::default(),
-            interface_name_exclude: Vec::new(),
-            interface_name_include: Vec::new(),
-        }
-    }
-}
-
-impl ConfigBlock for NetworkManager {
-    type Config = NetworkManagerConfig;
-
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        send: Sender<Task>,
-    ) -> Result<Self> {
-        let dbus_conn = Connection::get_private(BusType::System)
-            .block_error("networkmanager", "failed to establish D-Bus connection")?;
-        let manager = ConnectionManager::new();
-
-        thread::Builder::new()
-            .name("networkmanager".into())
-            .spawn(move || {
-                let c = Connection::get_private(BusType::System).unwrap();
-
-                c.add_match(
-                    "type='signal',\
-                    path='/org/freedesktop/NetworkManager',\
-                    interface='org.freedesktop.DBus.Properties',\
-                    member='PropertiesChanged'",
-                )
-                .unwrap();
-                c.add_match(
-                    "type='signal',\
-                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
-                    interface='org.freedesktop.DBus.Properties',\
-                    member='PropertiesChanged'",
-                )
-                .unwrap();
-
-                loop {
-                    let timeout = 300_000;
-
-                    for event in c.iter(timeout) {
-                        match event {
-                            ConnectionItem::Nothing => (),
-                            _ => send
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .unwrap(),
-                        }
-                    }
-                }
-            })
-            .unwrap();
-
-        fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
-            patterns.iter().map(|p| Regex::new(p)).collect()
-        }
-
-        Ok(NetworkManager {
-            id,
-            indicator: TextWidget::new(id, 0, shared_config.clone()),
-            output: Vec::new(),
-            dbus_conn,
-            manager,
-            primary_only: block_config.primary_only,
-            ap_format: block_config.ap_format.with_default("{ssid}")?,
-            device_format: block_config
-                .device_format
-                .with_default("{icon}{ap} {ips}")?,
-            connection_format: block_config.connection_format.with_default("{devices}")?,
-            interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
-                .block_error("networkmanager", "failed to parse exclude patterns")?,
-            interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
-                .block_error("networkmanager", "failed to parse include patterns")?,
-            shared_config,
-        })
-    }
-}
-
+/*
 impl Block for NetworkManager {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         let state = self.manager.state(&self.dbus_conn);
 
@@ -790,11 +702,56 @@ impl Block for NetworkManager {
         Ok(None)
     }
 
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        if self.output.is_empty() {
-            vec![&self.indicator]
-        } else {
-            self.output.iter().map(|x| x as &dyn I3BarWidget).collect()
-        }
-    }
+    // fn view(&self) -> Vec<&dyn I3BarWidget> {
+    //     if self.output.is_empty() {
+    //         vec![&self.indicator]
+    //     } else {
+    //         self.output.iter().map(|x| x as &dyn I3BarWidget).collect()
+    //     }
+    // }
+}
+*/
+
+// # DBus interface proxy for: `org.freedesktop.NetworkManager`
+//
+// This code was generated by `zbus-xmlgen` `2.0.0` from DBus introspection data.
+// Source: `11`.
+//
+// You may prefer to adapt it, instead of using it verbatim.
+//
+// More information can be found in the
+// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
+// section of the zbus documentation.
+//
+// This DBus object implements
+// [standard DBus interfaces](https://dbus.freedesktop.org/doc/dbus-specification.html),
+// (`org.freedesktop.DBus.*`) for which the following zbus proxies can be used:
+//
+// * [`zbus::fdo::PropertiesProxy`]
+// * [`zbus::fdo::IntrospectableProxy`]
+// * [`zbus::fdo::PeerProxy`]
+//
+// …consequently `zbus-xmlgen` did not generate code for the above interfaces.
+
+#[dbus_proxy(
+    interface = "org.freedesktop.NetworkManager",
+    default_path = "/org/freedesktop/NetworkManager",
+    default_service = "org.freedesktop.NetworkManager"
+)]
+trait NetworkManager {
+    /// ActiveConnections property
+    #[dbus_proxy(property)]
+    fn active_connections(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
+
+    /// Devices property
+    #[dbus_proxy(property)]
+    fn devices(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
+
+    /// PrimaryConnection property
+    #[dbus_proxy(property)]
+    fn primary_connection(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
+
+    /// State property
+    #[dbus_proxy(property)]
+    fn state(&self) -> zbus::Result<u32>;
 }
