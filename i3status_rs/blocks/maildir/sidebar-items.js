@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["MailType",""]],"fn":[["run",""]],"struct":[["MaildirConfig",""]]});

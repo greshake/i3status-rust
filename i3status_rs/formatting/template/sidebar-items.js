@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Token",""]],"fn":[["read_args",""],["read_format_template",""],["read_formatter",""],["read_placeholder_name",""],["read_text",""]],"struct":[["FormatTemplate",""],["TokenList",""]]});

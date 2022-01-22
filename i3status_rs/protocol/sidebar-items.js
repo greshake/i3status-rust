@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["init",""],["print_blocks",""]],"mod":[["i3bar_block",""],["i3bar_event",""]]});

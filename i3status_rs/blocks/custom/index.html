@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The output of a custom shell command"><meta name="keywords" content="rust, rustlang, rust-lang, custom"><title>i3status_rs::blocks::custom - Rust</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script>
+    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../i3status_rs/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a><h2 class="location">Module custom</h2><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="custom" data-ty="mod" data-relpath="./"></div><script defer src="./sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">custom</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../../src/i3status_rs/blocks/custom.rs.html#1-215" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The output of a custom shell command</p>
+<p>For further customisation, use the <code>json</code> option and have the shell command output valid JSON in the schema below:</p>
+<div class="example-wrap"><pre class="language-json"><code>{&quot;icon&quot;: &quot;...&quot;, &quot;state&quot;: &quot;...&quot;, &quot;text&quot;: &quot;...&quot;, &quot;short_text&quot;: &quot;...&quot;}</code></pre></div>
+<p><code>icon</code> is optional (default “”)<br />
+<code>state</code> is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)<br />
+<code>short_text</code> is optional.</p>
+<h2 id="configuration" class="section-header"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>command</code></td><td>Shell command to execute &amp; display</td><td>No</td><td>None</td></tr>
+<tr><td><code>cycle</code></td><td>Commands to execute and change when the button is clicked</td><td>No</td><td>None</td></tr>
+<tr><td><code>interval</code></td><td>Update interval in seconds (or “once” to update only once)</td><td>No</td><td><code>10</code></td></tr>
+<tr><td><code>json</code></td><td>Use JSON from command output to format the block. If the JSON is not valid, the block will error out.</td><td>No</td><td><code>false</code></td></tr>
+<tr><td><code>signal</code></td><td>Signal value that causes an update for this block with 0 corresponding to <code>-SIGRTMIN+0</code> and the largest value being <code>-SIGRTMAX</code></td><td>No</td><td>None</td></tr>
+<tr><td>watch_files</td><td>Watch files to trigger update on file modification</td><td>No</td><td>None</td></tr>
+<tr><td><code>hide_when_empty</code></td><td>Hides the block when the command output (or json text field) is empty</td><td>No</td><td>false</td></tr>
+<tr><td><code>shell</code></td><td>Specify the shell to use when running commands</td><td>No</td><td><code>$SHELL</code> if set, otherwise fallback to <code>sh</code></td></tr>
+</tbody></table>
+</div><h2 id="examples" class="section-header"><a href="#examples">Examples</a></h2>
+<p>Display temperature, update every 10 seconds:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;custom&quot;
+command = &#39;&#39;&#39; cat /sys/class/thermal/thermal_zone0/temp | awk &#39;{printf(&quot;%.1f\n&quot;,$1/1000)}&#39; &#39;&#39;&#39;</code></pre></div>
+<p>Cycle between “ON” and “OFF”, update every 1 second, run <code>&lt;command&gt;</code> when block is clicked:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;custom&quot;
+cycle = [&quot;echo ON&quot;, &quot;echo OFF&quot;]
+interval = 1
+[[block.click]]
+button = &quot;left&quot;
+cmd = &quot;&lt;command&gt;&quot;</code></pre></div>
+<p>Use JSON output:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;custom&quot;
+command = &quot;echo &#39;{\&quot;icon\&quot;:\&quot;weather_thunder\&quot;,\&quot;state\&quot;:\&quot;Critical\&quot;, \&quot;text\&quot;: \&quot;Danger!\&quot;}&#39;&quot;
+json = true</code></pre></div>
+<p>Display kernel, update the block only once:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;custom&quot;
+command = &quot;uname -r&quot;
+interval = &quot;once&quot;</code></pre></div>
+<p>Display the screen brightness on an intel machine and update this only when <code>pkill -SIGRTMIN+4 i3status-rs</code> is called:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;custom&quot;
+command = &#39;&#39;&#39; cat /sys/class/backlight/intel_backlight/brightness | awk &#39;{print $1}&#39; &#39;&#39;&#39;
+signal = 4
+interval = &quot;once&quot;</code></pre></div>
+<p>Update block when one or more specified files are modified:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;custom&quot;
+command = &quot;cat custom_status&quot;
+watch_files = [&quot;custom_status&quot;]
+interval = &quot;once&quot;</code></pre></div><h2 id="todo" class="section-header"><a href="#todo">TODO:</a></h2>
+<ul>
+<li>Use <code>shellexpand</code></li>
+</ul>
+</div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.CustomConfig.html" title="i3status_rs::blocks::custom::CustomConfig struct">CustomConfig</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Input.html" title="i3status_rs::blocks::custom::Input struct">Input</a></div><div class="item-right docblock-short"></div></div></div><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.run.html" title="i3status_rs::blocks::custom::run fn">run</a></div><div class="item-right docblock-short"></div></div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+</body></html>

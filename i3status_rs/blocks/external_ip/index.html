@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="External IP address and various information about it"><meta name="keywords" content="rust, rustlang, rust-lang, external_ip"><title>i3status_rs::blocks::external_ip - Rust</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script>
+    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../i3status_rs/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a><h2 class="location">Module external_ip</h2><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#constants">Constants</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="external_ip" data-ty="mod" data-relpath="./"></div><script defer src="./sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">external_ip</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../../src/i3status_rs/blocks/external_ip.rs.html#1-226" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>External IP address and various information about it</p>
+<h2 id="configuration" class="section-header"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;$ip $country_flag&quot;</code></td></tr>
+<tr><td><code>interval</code></td><td>Interval in seconds for automatic updates</td><td>No</td><td>300</td></tr>
+<tr><td><code>with_network_manager</code></td><td>If ‘true’, listen for NetworkManager events and update the IP immediately if there was a change</td><td>No</td><td>“true”</td></tr>
+</tbody></table>
+</div><div><table><thead><tr><th>Key</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
+<tr><td><code>ip</code></td><td>The external IP address, as seen from a remote server</td><td>Text</td><td>-</td></tr>
+<tr><td><code>version</code></td><td>IPv4 or IPv6</td><td>Text</td><td>-</td></tr>
+<tr><td><code>city</code></td><td>City name, such as “San Francisco”</td><td>Text</td><td>-</td></tr>
+<tr><td><code>region</code></td><td>Region name, such as “California”</td><td>Text</td><td>-</td></tr>
+<tr><td><code>region_code</code></td><td>Region code, such as “CA” for California</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country</code></td><td>Country code (2 letter, ISO 3166-1 alpha-2)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country_name</code></td><td>Short country name</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country_code</code></td><td>Country code (2 letter, ISO 3166-1 alpha-2)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country_code_iso3</code></td><td>Country code (3 letter, ISO 3166-1 alpha-3)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country_capital</code></td><td>Capital of the country</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country_tld</code></td><td>Country specific TLD (top-level domain)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>continent_code</code></td><td>Continent code</td><td>Text</td><td>-</td></tr>
+<tr><td><code>in_eu</code></td><td>Region code, such as “CA”</td><td>Flag</td><td>-</td></tr>
+<tr><td><code>postal</code></td><td>ZIP / Postal code</td><td>Text</td><td>-</td></tr>
+<tr><td><code>latitude</code></td><td>Latitude</td><td>Number</td><td>- (TOOD: make degrees?)</td></tr>
+<tr><td><code>longitude</code></td><td>Longitude</td><td>Number</td><td>- (TOOD: make degrees?)</td></tr>
+<tr><td><code>timezone</code></td><td>City</td><td>Text</td><td>-</td></tr>
+<tr><td><code>utc_offset</code></td><td>UTC offset (with daylight saving time) as +HHMM or -HHMM (HH is hours, MM is minutes)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country_calling_code</code></td><td>Country calling code (dial in code, comma separated)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>currency</code></td><td>Currency code (ISO 4217)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>currency_name</code></td><td>Currency name</td><td>Text</td><td>-</td></tr>
+<tr><td><code>languages</code></td><td>Languages spoken (comma separated 2 or 3 letter ISO 639 code with optional hyphen separated country suffix)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country_area</code></td><td>Area of the country (in sq km)</td><td>Number</td><td>-</td></tr>
+<tr><td><code>country_population</code></td><td>Population of the country</td><td>Number</td><td>-</td></tr>
+<tr><td><code>timezone</code></td><td>Time zone</td><td>Text</td><td>-</td></tr>
+<tr><td><code>org</code></td><td>Organization</td><td>Text</td><td>-</td></tr>
+<tr><td><code>asn</code></td><td>Autonomous system (AS)</td><td>Text</td><td>-</td></tr>
+<tr><td><code>country_flag</code></td><td>Flag of the country</td><td>Text (glyph)</td><td>-</td></tr>
+</tbody></table>
+</div><h2 id="example" class="section-header"><a href="#example">Example</a></h2><div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;external_ip&quot;
+format = &quot;$ip $country_code&quot;</code></pre></div><h2 id="notes" class="section-header"><a href="#notes">Notes</a></h2>
+<p>All the information comes from https://ipapi.co/json/
+Check their documentation here: https://ipapi.co/api/#complete-location5</p>
+<p>The IP is queried, 1) When i3status-rs starts, 2) When a signal is received
+on D-Bus about a network configuration change, 3) Every 5 minutes. This
+periodic refresh exists to catch IP updates that don’t trigger a notification,
+for example due to a IP refresh at the router.</p>
+<p>Flags: They are not icons but unicode glyphs. You will need a font that
+includes them. Tested with: https://www.babelstone.co.uk/Fonts/Flags.html</p>
+</div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.ExternalIpConfig.html" title="i3status_rs::blocks::external_ip::ExternalIpConfig struct">ExternalIpConfig</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.IPAddressInfo.html" title="i3status_rs::blocks::external_ip::IPAddressInfo struct">IPAddressInfo</a></div><div class="item-right docblock-short"></div></div></div><h2 id="constants" class="small-section-header"><a href="#constants">Constants</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.API_ENDPOINT.html" title="i3status_rs::blocks::external_ip::API_ENDPOINT constant">API_ENDPOINT</a></div><div class="item-right docblock-short"></div></div></div><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.run.html" title="i3status_rs::blocks::external_ip::run fn">run</a></div><div class="item-right docblock-short"></div></div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+</body></html>

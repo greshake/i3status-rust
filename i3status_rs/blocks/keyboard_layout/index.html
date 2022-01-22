@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Keyboard layout indicator"><meta name="keywords" content="rust, rustlang, rust-lang, keyboard_layout"><title>i3status_rs::blocks::keyboard_layout - Rust</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script>
+    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../i3status_rs/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a><h2 class="location">Module keyboard_layout</h2><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="keyboard_layout" data-ty="mod" data-relpath="./"></div><script defer src="./sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">keyboard_layout</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../../src/i3status_rs/blocks/keyboard_layout.rs.html#1-243" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Keyboard layout indicator</p>
+<p>Four drivers are available:</p>
+<ul>
+<li><code>setxkbmap</code> which polls setxkbmap to get the current layout</li>
+<li><code>localebus</code> which can read asynchronous updates from the systemd <code>org.freedesktop.locale1</code> D-Bus path</li>
+<li><code>kbddbus</code> which uses <a href="https://github.com/qnikst/kbdd">kbdd</a> to monitor per-window layout changes via DBus</li>
+<li><code>sway</code> which can read asynchronous updates from the sway IPC</li>
+</ul>
+<p>Which of these methods is appropriate will depend on your system setup.</p>
+<h2 id="configuration" class="section-header"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>driver</code></td><td>One of <code>&quot;setxkbmap&quot;</code>, <code>&quot;localebus&quot;</code>, <code>&quot;kbddbus&quot;</code> or <code>&quot;sway&quot;</code>, depending on your system.</td><td>No</td><td><code>&quot;setxkbmap&quot;</code></td></tr>
+<tr><td><code>interval</code></td><td>Update interval, in seconds. Only used by the <code>&quot;setxkbmap&quot;</code> driver.</td><td>No</td><td><code>60</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;$layout&quot;</code></td></tr>
+<tr><td><code>sway_kb_identifier</code></td><td>Identifier of the device you want to monitor, as found in the output of <code>swaymsg -t get_inputs</code>.</td><td>No</td><td>Defaults to first input found</td></tr>
+<tr><td><code>mappings</code></td><td>Map <code>layout (variant)</code> to custom short name.</td><td>No</td><td>None</td></tr>
+</tbody></table>
+</div><div><table><thead><tr><th>Key</th><th>Value</th><th>Type</th></tr></thead><tbody>
+<tr><td><code>layout</code></td><td>Keyboard layout name</td><td>String</td></tr>
+<tr><td><code>variant</code></td><td>Keyboard variant. Only <code>localebus</code> and <code>sway</code> are supported so far.</td><td>String</td></tr>
+</tbody></table>
+</div><h2 id="examples" class="section-header"><a href="#examples">Examples</a></h2>
+<p>Check <code>setxkbmap</code> every 15 seconds:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;keyboard_layout&quot;
+driver = &quot;setxkbmap&quot;
+interval = 15</code></pre></div>
+<p>Listen to D-Bus for changes:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;keyboard_layout&quot;
+driver = &quot;localebus&quot;</code></pre></div>
+<p>Listen to kbdd for changes:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;keyboard_layout&quot;
+driver = &quot;kbddbus&quot;</code></pre></div>
+<p>Listen to sway for changes:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;keyboard_layout&quot;
+driver = &quot;sway&quot;
+sway_kb_identifier = &quot;1133:49706:Gaming_Keyboard_G110&quot;</code></pre></div>
+<p>Listen to sway for changes and override mappings:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;keyboard_layout&quot;
+driver = &quot;sway&quot;
+format = &quot;$layout&quot;
+[block.mappings]
+&quot;English (Workman)&quot; = &quot;EN&quot;
+&quot;Russian (N/A)&quot; = &quot;RU&quot;</code></pre></div></div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.KeyboardLayoutConfig.html" title="i3status_rs::blocks::keyboard_layout::KeyboardLayoutConfig struct">KeyboardLayoutConfig</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.LocaleBusProxy.html" title="i3status_rs::blocks::keyboard_layout::LocaleBusProxy struct">LocaleBusProxy</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.LocaleBusProxyBlocking.html" title="i3status_rs::blocks::keyboard_layout::LocaleBusProxyBlocking struct">LocaleBusProxyBlocking</a></div><div class="item-right docblock-short"></div></div></div><h2 id="enums" class="small-section-header"><a href="#enums">Enums</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.KeyboardLayoutDriver.html" title="i3status_rs::blocks::keyboard_layout::KeyboardLayoutDriver enum">KeyboardLayoutDriver</a></div><div class="item-right docblock-short"></div></div></div><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.parse_sway_layout.html" title="i3status_rs::blocks::keyboard_layout::parse_sway_layout fn">parse_sway_layout</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.run.html" title="i3status_rs::blocks::keyboard_layout::run fn">run</a></div><div class="item-right docblock-short"></div></div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+</body></html>

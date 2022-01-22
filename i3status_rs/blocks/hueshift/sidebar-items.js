@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["HueShifter",""]],"fn":[["run",""]],"struct":[["Gammastep",""],["HueshiftConfig",""],["Redshift",""],["Sct",""],["Wlsunset",""]],"trait":[["HueShiftDriver",""]]});

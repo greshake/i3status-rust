@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A Toggle block"><meta name="keywords" content="rust, rustlang, rust-lang, toggle"><title>i3status_rs::blocks::toggle - Rust</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script>
+    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../i3status_rs/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a><h2 class="location">Module toggle</h2><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="toggle" data-ty="mod" data-relpath="./"></div><script defer src="./sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">toggle</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../../src/i3status_rs/blocks/toggle.rs.html#1-149" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A Toggle block</p>
+<p>You can add commands to be executed to disable the toggle (<code>command_off</code>), and to enable it
+(<code>command_on</code>). If these command exit with a non-zero status, the block will not be toggled and
+the block state will be changed to give a visual warning of the failure. You also need to
+specify a command to determine the state of the toggle (<code>command_state</code>). When the command outputs
+nothing, the toggle is disabled, otherwise enabled. By specifying the interval property you can
+let the command_state be executed continuously.</p>
+<p>To run those commands, the shell form <code>$SHELL</code> environment variable is used. If such variable
+is not presented, <code>sh</code> is used.</p>
+<h2 id="configuration" class="section-header"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>text</code></td><td>A label next to the icon</td><td>No</td><td><code>&quot;&quot;</code></td></tr>
+<tr><td><code>command_on</code></td><td>Shell command to enable the toggle</td><td>Yes</td><td>N/A</td></tr>
+<tr><td><code>command_off</code></td><td>Shell command to disable the toggle</td><td>Yes</td><td>N/A</td></tr>
+<tr><td><code>command_state</code></td><td>Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes.</td><td>Yes</td><td>N/A</td></tr>
+<tr><td><code>icon_on</code></td><td>Icon override for the toggle button while on</td><td>No</td><td><code>&quot;toggle_on&quot;</code></td></tr>
+<tr><td><code>icon_off</code></td><td>Icon override for the toggle button while off</td><td>No</td><td><code>&quot;toggle_off&quot;</code></td></tr>
+<tr><td><code>interval</code></td><td>Update interval in seconds. If not set, <code>command_state</code> will run only on click.</td><td>No</td><td>None</td></tr>
+</tbody></table>
+</div><h2 id="examples" class="section-header"><a href="#examples">Examples</a></h2>
+<p>This is what can be used to toggle an external monitor configuration:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;toggle&quot;
+text = &quot;4k&quot;
+command_state = &quot;xrandr | grep &#39;DP1 connected 38&#39; | grep -v eDP1&quot;
+command_on = &quot;~/.screenlayout/4kmon_default.sh&quot;
+command_off = &quot;~/.screenlayout/builtin.sh&quot;
+interval = 5</code></pre></div><h2 id="icons-used" class="section-header"><a href="#icons-used">Icons Used</a></h2>
+<ul>
+<li><code>toggle_off</code></li>
+<li><code>toggle_on</code></li>
+</ul>
+</div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.ToggleConfig.html" title="i3status_rs::blocks::toggle::ToggleConfig struct">ToggleConfig</a></div><div class="item-right docblock-short"></div></div></div><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.run.html" title="i3status_rs::blocks::toggle::run fn">run</a></div><div class="item-right docblock-short"></div></div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+</body></html>

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["default_interface",""],["index_to_interface",""],["signal_percents","https://github.com/torvalds/linux/blob/9ff9b0d392ea08090cd1780fb196f36dbb586529/drivers/net/wireless/intel/ipw2x00/ipw2200.c#L4322-L4334"]],"struct":[["NetDevice",""]]});

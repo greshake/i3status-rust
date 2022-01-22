@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The number of GitHub notifications"><meta name="keywords" content="rust, rustlang, rust-lang, github"><title>i3status_rs::blocks::github - Rust</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script>
+    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../i3status_rs/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a><h2 class="location">Module github</h2><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="github" data-ty="mod" data-relpath="./"></div><script defer src="./sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">github</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../../src/i3status_rs/blocks/github.rs.html#1-177" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The number of GitHub notifications</p>
+<p>This block shows the unread notification count for a GitHub account. A GitHub <a href="https://github.com/settings/tokens/new">personal access token</a> with the “notifications” scope is required, and must be passed using the <code>I3RS_GITHUB_TOKEN</code> environment variable or <code>token</code> configuration option. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: <code>critical</code>,<code>warning</code>,<code>info</code>,<code>good</code></p>
+<h2 id="configuration" class="section-header"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;$total.eng(1)&quot;</code></td></tr>
+<tr><td><code>interval</code></td><td>Update interval in seconds</td><td>No</td><td><code>30</code></td></tr>
+<tr><td><code>token</code></td><td>A GitHub personal access token with the “notifications” scope</td><td>No</td><td>None</td></tr>
+<tr><td><code>hide_if_total_is_zero</code></td><td>Hide this block if the total count of notifications is zero</td><td>No</td><td><code>false</code></td></tr>
+<tr><td><code>critical</code></td><td>List of notification types that change the block to the critical colour</td><td>No</td><td>None</td></tr>
+<tr><td><code>warning</code></td><td>List of notification types that change the block to the warning colour</td><td>No</td><td>None</td></tr>
+<tr><td><code>info</code></td><td>List of notification types that change the block to the info colour</td><td>No</td><td>None</td></tr>
+<tr><td><code>good</code></td><td>List of notification types that change the block to the good colour</td><td>No</td><td>None</td></tr>
+</tbody></table>
+</div>
+<p>All the placeholders are numbers without a unit.</p>
+<div><table><thead><tr><th>Placeholder</th><th>Value</th></tr></thead><tbody>
+<tr><td><code>total</code></td><td>The total number of notifications</td></tr>
+<tr><td><code>assign</code></td><td>You were assigned to the issue</td></tr>
+<tr><td><code>author</code></td><td>You created the thread</td></tr>
+<tr><td><code>comment</code></td><td>You commented on the thread</td></tr>
+<tr><td><code>ci_activity</code></td><td>A GitHub Actions workflow run that you triggered was completed</td></tr>
+<tr><td><code>invitation</code></td><td>You accepted an invitation to contribute to the repository</td></tr>
+<tr><td><code>manual</code></td><td>You subscribed to the thread (via an issue or pull request)</td></tr>
+<tr><td><code>mention</code></td><td>You were specifically @mentioned in the content</td></tr>
+<tr><td><code>review_requested</code></td><td>You, or a team you’re a member of, were requested to review a pull request</td></tr>
+<tr><td><code>security_alert</code></td><td>GitHub discovered a security vulnerability in your repository</td></tr>
+<tr><td><code>state_change</code></td><td>You changed the thread state (for example, closing an issue or merging a pull request)</td></tr>
+<tr><td><code>subscribed</code></td><td>You’re watching the repository</td></tr>
+<tr><td><code>team_mention</code></td><td>You were on a team that was mentioned</td></tr>
+</tbody></table>
+</div><h2 id="examples" class="section-header"><a href="#examples">Examples</a></h2><div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;github&quot;
+format = &quot;$total.eng(1)|$mention.eng(1)&quot;
+interval = 60
+token = &quot;...&quot;</code></pre></div><div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;github&quot;
+token = &quot;...&quot;
+format = &quot;$total.eng(1)&quot;
+info = [&quot;total&quot;]
+warning = [&quot;mention&quot;,&quot;review_requested&quot;]
+hide_if_total_is_zero = true</code></pre></div><h2 id="icons-used" class="section-header"><a href="#icons-used">Icons Used</a></h2>
+<ul>
+<li><code>github</code></li>
+</ul>
+</div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.GithubConfig.html" title="i3status_rs::blocks::github::GithubConfig struct">GithubConfig</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Notification.html" title="i3status_rs::blocks::github::Notification struct">Notification</a></div><div class="item-right docblock-short"></div></div></div><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.get_on_page.html" title="i3status_rs::blocks::github::get_on_page fn">get_on_page</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.get_stats.html" title="i3status_rs::blocks::github::get_stats fn">get_stats</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.run.html" title="i3status_rs::blocks::github::run fn">run</a></div><div class="item-right docblock-short"></div></div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+</body></html>
