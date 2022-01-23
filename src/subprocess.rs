@@ -1,19 +1,30 @@
 use std::io;
+use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
-use std::thread;
 
-/// Spawns a new child process. This closes stdin and stdout, and returns to the caller after the
-/// child has been started, while a background thread waits for the child to exit.
-pub fn spawn_shell(cmd: &str) -> io::Result<()> {
-    let mut child = Command::new("sh")
-        .args(&["-c", cmd])
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .spawn()?;
-    thread::Builder::new()
-        .name("subprocess".into())
-        .spawn(move || child.wait())?;
+/// Spawn a new detached process
+pub fn spawn_process(cmd: &str, args: &[&str]) -> io::Result<()> {
+    let mut proc = Command::new(cmd);
+    proc.args(args);
+    proc.stdin(Stdio::null());
+    proc.stdin(Stdio::null());
+    // Safety: libc::daemon() is async-signal-safe
+    unsafe {
+        proc.pre_exec(|| match libc::daemon(0, 0) {
+            -1 => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Failed to detach new process",
+            )),
+            _ => Ok(()),
+        });
+    }
+    proc.spawn()?.wait()?;
     Ok(())
+}
+
+/// Spawn a new detached shell
+pub fn spawn_shell(cmd: &str) -> io::Result<()> {
+    spawn_process("sh", &["-c", cmd])
 }
 
 pub async fn spawn_shell_sync(cmd: &str) -> io::Result<()> {

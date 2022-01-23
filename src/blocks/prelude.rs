@@ -25,3 +25,5 @@ pub use futures::{Stream, StreamExt};
 pub use once_cell::sync::Lazy;
 
 pub use derivative::Derivative;
+
+pub use async_trait::async_trait;

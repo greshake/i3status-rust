@@ -18,9 +18,14 @@
 //!
 //! Name | Supports
 //! -----|---------
-//! `"redshift"`  | X11
-//! `"sct"`       | X11
-//! `"gammastep"` | X11 and Wayland
+//! `"redshift"`     | X11
+//! `"sct"`          | X11
+//! `"gammastep"`    | X11 and Wayland
+//! `"wlgammarelay"` | Wayland
+//!
+//! Note that at the moment, only [`wlgammarelay`](https://github.com/jeremija/wl-gammarelay)
+//! subscribes to the events and updates the bar when the temperature is modified extenrally. Also,
+//! it is the only driver at the moment that works under wayland without flickering.
 //!
 //! # Example
 //!
@@ -36,8 +41,15 @@
 //! The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
 
 use super::prelude::*;
+use crate::subprocess::{spawn_process, spawn_shell};
 use crate::util::has_command;
-use std::process::Command;
+
+use std::env;
+use std::path::PathBuf;
+
+use futures::future::pending;
+use tokio::io::{AsyncBufReadExt, BufStream};
+use tokio::net::UnixStream;
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
@@ -78,7 +90,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let hue_shifter = match config.hue_shifter {
         Some(driver) => driver,
         None => {
-            if has_command("redshift").await? {
+            if has_command("wl-gammarelay").await? {
+                HueShifter::WlGammarelay
+            } else if has_command("redshift").await? {
                 HueShifter::Redshift
             } else if has_command("sct").await? {
                 HueShifter::Sct
@@ -92,11 +106,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
     };
 
-    let driver: Box<dyn HueShiftDriver> = match hue_shifter {
+    let mut driver: Box<dyn HueShiftDriver> = match hue_shifter {
         HueShifter::Redshift => Box::new(Redshift),
         HueShifter::Sct => Box::new(Sct),
         HueShifter::Gammastep => Box::new(Gammastep),
         HueShifter::Wlsunset => Box::new(Wlsunset),
+        HueShifter::WlGammarelay => Box::new(WlGammarelay::new().await?),
     };
 
     let mut current_temp = config.current_temp;
@@ -107,28 +122,31 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         tokio::select! {
             _ = sleep(config.interval.0) => (),
+            update = driver.receive_update() => {
+                current_temp = update?;
+            }
             Some(BlockEvent::Click(click)) = events.recv() => {
                 match click.button {
                     MouseButton::Left => {
                         current_temp = config.click_temp;
-                        driver.update(current_temp)?;
+                        driver.update(current_temp).await?;
                     }
                     MouseButton::Right => {
                         if max_temp > 6500 {
                             current_temp = 6500;
-                            driver.reset()?;
+                            driver.reset().await?;
                         } else {
                             current_temp = max_temp;
-                            driver.update(current_temp)?;
+                            driver.update(current_temp).await?;
                         }
                     }
                     MouseButton::WheelUp => {
                         current_temp = (current_temp + step).min(max_temp);
-                        driver.update(current_temp)?;
+                        driver.update(current_temp).await?;
                     }
                     MouseButton::WheelDown => {
                         current_temp = current_temp.saturating_sub(step).max(min_temp);
-                        driver.update(current_temp)?;
+                        driver.update(current_temp).await?;
                     }
                     _ => (),
                 }
@@ -144,101 +162,184 @@ enum HueShifter {
     Sct,
     Gammastep,
     Wlsunset,
+    WlGammarelay,
 }
 
+#[async_trait]
 trait HueShiftDriver {
-    fn update(&self, temp: u16) -> Result<()>;
-    fn reset(&self) -> Result<()>;
+    async fn update(&mut self, temp: u16) -> Result<()>;
+
+    async fn reset(&mut self) -> Result<()>;
+
+    async fn receive_update(&mut self) -> Result<u16>;
 }
 
 struct Redshift;
+
+#[async_trait]
 impl HueShiftDriver for Redshift {
-    fn update(&self, temp: u16) -> Result<()> {
-        Command::new("sh")
-            .args(&[
-                "-c",
-                format!("redshift -O {} -P >/dev/null 2>&1", temp).as_str(),
-            ])
-            .spawn()
-            .error("Failed to set new color temperature using redshift.")?;
-        Ok(())
+    async fn update(&mut self, temp: u16) -> Result<()> {
+        spawn_process("redshift", &["-O", &temp.to_string(), "-P"])
+            .error("Failed to set new color temperature using redshift.")
     }
-    fn reset(&self) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", "redshift -x >/dev/null 2>&1"])
-            .spawn()
-            .error("Failed to set new color temperature using redshift.")?;
-        Ok(())
+    async fn reset(&mut self) -> Result<()> {
+        spawn_process("redshift", &["-x"])
+            .error("Failed to set new color temperature using redshift.")
+    }
+    async fn receive_update(&mut self) -> Result<u16> {
+        pending().await
     }
 }
 
 struct Sct;
+
+#[async_trait]
 impl HueShiftDriver for Sct {
-    fn update(&self, temp: u16) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", format!("sct {} >/dev/null 2>&1", temp).as_str()])
-            .spawn()
-            .error("Failed to set new color temperature using sct.")?;
-        Ok(())
+    async fn update(&mut self, temp: u16) -> Result<()> {
+        spawn_process("sct", &[&format!("sct {} >/dev/null 2>&1", temp)])
+            .error("Failed to set new color temperature using sct.")
     }
-    fn reset(&self) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", "sct >/dev/null 2>&1"])
-            .spawn()
-            .error("Failed to set new color temperature using sct.")?;
-        Ok(())
+    async fn reset(&mut self) -> Result<()> {
+        spawn_process("sct", &[]).error("Failed to set new color temperature using sct.")
+    }
+    async fn receive_update(&mut self) -> Result<u16> {
+        pending().await
     }
 }
 
 struct Gammastep;
+
+#[async_trait]
 impl HueShiftDriver for Gammastep {
-    fn update(&self, temp: u16) -> Result<()> {
-        Command::new("sh")
-            .args(&[
-                "-c",
-                &format!("killall gammastep; gammastep -O {} -P &", temp),
-            ])
-            .spawn()
-            .error("Failed to set new color temperature using gammastep.")?;
-        Ok(())
+    async fn update(&mut self, temp: u16) -> Result<()> {
+        spawn_shell(&format!("killall gammastep; gammastep -O {} -P &", temp))
+            .error("Failed to set new color temperature using gammastep.")
     }
-    fn reset(&self) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", "gammastep -x >/dev/null 2>&1"])
-            .spawn()
-            .error("Failed to set new color temperature using gammastep.")?;
-        Ok(())
+    async fn reset(&mut self) -> Result<()> {
+        spawn_process("gammastep", &["-x"])
+            .error("Failed to set new color temperature using gammastep.")
+    }
+    async fn receive_update(&mut self) -> Result<u16> {
+        pending().await
     }
 }
 
 struct Wlsunset;
+
+#[async_trait]
 impl HueShiftDriver for Wlsunset {
-    fn update(&self, temp: u16) -> Result<()> {
-        Command::new("sh")
-            // wlsunset does not have a oneshot option, so set both day and
-            // night temperature. wlsunset dose not allow for day and night
-            // temperatures to be the same, so increment the day temperature.
-            .args(&[
-                "-c",
-                &format!("killall wlsunset; wlsunset -T {} -t {} &", temp + 1, temp),
-            ])
-            .spawn()
-            .error("Failed to set new color temperature using wlsunset.")?;
-        Ok(())
+    async fn update(&mut self, temp: u16) -> Result<()> {
+        // wlsunset does not have a oneshot option, so set both day and
+        // night temperature. wlsunset dose not allow for day and night
+        // temperatures to be the same, so increment the day temperature.
+        spawn_shell(&format!(
+            "killall wlsunset; wlsunset -T {} -t {} &",
+            temp + 1,
+            temp
+        ))
+        .error("Failed to set new color temperature using wlsunset.")
     }
-    fn reset(&self) -> Result<()> {
-        Command::new("sh")
-            // wlsunset does not have a reset option, so just kill the process.
-            // Trying to call wlsunset without any arguments uses the defaults:
-            // day temp: 6500K
-            // night temp: 4000K
-            // latitude/longitude: NaN
-            //     ^ results in sun_condition == POLAR_NIGHT at time of testing
-            // With these defaults, this results in the the color temperature
-            // getting set to 4000K.
-            .args(&["-c", "killall wlsunset > /dev/null 2>&1"])
-            .spawn()
-            .error("Failed to set new color temperature using wlsunset.")?;
-        Ok(())
+    async fn reset(&mut self) -> Result<()> {
+        // wlsunset does not have a reset option, so just kill the process.
+        // Trying to call wlsunset without any arguments uses the defaults:
+        // day temp: 6500K
+        // night temp: 4000K
+        // latitude/longitude: NaN
+        //     ^ results in sun_condition == POLAR_NIGHT at time of testing
+        // With these defaults, this results in the the color temperature
+        // getting set to 4000K.
+        spawn_process("killall", &["wlsunset"])
+            .error("Failed to set new color temperature using wlsunset.")
     }
+    async fn receive_update(&mut self) -> Result<u16> {
+        pending().await
+    }
+}
+
+struct WlGammarelay {
+    sock: BufStream<UnixStream>,
+    buf: Vec<u8>,
+}
+
+impl WlGammarelay {
+    async fn new() -> Result<Self> {
+        // Make sure the daemon is running
+        spawn_process("wl-gammarelay", &[]).error("Failed to start wl-gammarelay daemon")?;
+        sleep(Duration::from_millis(100)).await;
+
+        let mut sock_path: PathBuf = env::var("XDG_RUNTIME_DIR").unwrap().into();
+        sock_path.push("wl-gammarelay.sock");
+
+        let sock = UnixStream::connect(sock_path)
+            .await
+            .error("Failed to connect to socket")?;
+        let mut sock = BufStream::new(sock);
+
+        sock.write_all(b"{\"subscribe\":[\"color\"]}")
+            .await
+            .error("Failed to subscribe")?;
+        sock.flush().await.error("Failed to flush the stream")?;
+
+        Ok(Self {
+            sock,
+            buf: Vec::new(),
+        })
+    }
+}
+
+#[async_trait]
+impl HueShiftDriver for WlGammarelay {
+    async fn update(&mut self, temp: u16) -> Result<()> {
+        let buf = format!("{{\"color\":{{\"temperature\":\"{}\"}}}}\n", temp);
+        self.sock
+            .write_all(buf.as_bytes())
+            .await
+            .error("Filed to send request")?;
+        self.sock.flush().await.error("Failed to flush the stream")
+    }
+
+    async fn reset(&mut self) -> Result<()> {
+        self.update(6500).await
+    }
+
+    async fn receive_update(&mut self) -> Result<u16> {
+        loop {
+            self.sock
+                .read_until(b'\n', &mut self.buf)
+                .await
+                .error("Failed to read from socket")?;
+            let response: WlGammarelayResponse =
+                serde_json::from_slice(&self.buf).error("Failed to deserialize repsonse")?;
+            self.buf.clear();
+
+            if let Some(updates) = response.updates {
+                if let Some(color) = updates.into_iter().filter_map(|u| u.color).next() {
+                    return color.temperature.parse().error("Failed to parse response");
+                }
+            }
+
+            if let Some(message) = response.message {
+                return Err(Error::new(format!("wl-gammarelay error: {}", message)));
+            }
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct WlGammarelayResponse {
+    #[serde(default)]
+    message: Option<String>,
+    #[serde(default)]
+    updates: Option<Vec<WlGammarelayUpdate>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct WlGammarelayUpdate {
+    #[serde(default)]
+    color: Option<WlGammarelayColor>,
+}
+
+#[derive(Debug, Deserialize)]
+struct WlGammarelayColor {
+    temperature: String,
 }
