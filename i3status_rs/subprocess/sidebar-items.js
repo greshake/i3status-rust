@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["spawn_shell","Spawns a new child process. This closes stdin and stdout, and returns to the caller after the child has been started, while a background thread waits for the child to exit."],["spawn_shell_sync",""]]});
+initSidebarItems({"fn":[["spawn_process","Spawn a new detached process"],["spawn_shell","Spawn a new detached shell"],["spawn_shell_sync",""]]});
