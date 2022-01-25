@@ -18,14 +18,16 @@
 //!
 //! Name | Supports
 //! -----|---------
-//! `"redshift"`     | X11
-//! `"sct"`          | X11
-//! `"gammastep"`    | X11 and Wayland
-//! `"wlgammarelay"` | Wayland
+//! `"redshift"`         | X11
+//! `"sct"`              | X11
+//! `"gammastep"`        | X11 and Wayland
+//! `"wl_gammarelay"`    | Wayland
+//! `"wl_gammarelay_rs"` | Wayland
 //!
-//! Note that at the moment, only [`wlgammarelay`](https://github.com/jeremija/wl-gammarelay)
-//! subscribes to the events and updates the bar when the temperature is modified extenrally. Also,
-//! it is the only driver at the moment that works under wayland without flickering.
+//! Note that at the moment, only [`wl_gammarelay`](https://github.com/jeremija/wl-gammarelay) and
+//! [`wl_gammarelay_rs`](https://github.com/MaxVerevkin/wl-gammarelay-rs)
+//! subscribe to the events and update the bar when the temperature is modified extenrally. Also,
+//! these are the only drivers at the moment that work under wayland without flickering.
 //!
 //! # Example
 //!
@@ -90,7 +92,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let hue_shifter = match config.hue_shifter {
         Some(driver) => driver,
         None => {
-            if has_command("wl-gammarelay").await? {
+            if has_command("wl-gammarelay-rs").await? {
+                HueShifter::WlGammarelayRs
+            } else if has_command("wl-gammarelay").await? {
                 HueShifter::WlGammarelay
             } else if has_command("redshift").await? {
                 HueShifter::Redshift
@@ -112,6 +116,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         HueShifter::Gammastep => Box::new(Gammastep),
         HueShifter::Wlsunset => Box::new(Wlsunset),
         HueShifter::WlGammarelay => Box::new(WlGammarelay::new().await?),
+        HueShifter::WlGammarelayRs => Box::new(WlGammarelayRs::new().await?),
     };
 
     let mut current_temp = config.current_temp;
@@ -156,13 +161,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 enum HueShifter {
     Redshift,
     Sct,
     Gammastep,
     Wlsunset,
     WlGammarelay,
+    WlGammarelayRs,
 }
 
 #[async_trait]
@@ -342,4 +348,64 @@ struct WlGammarelayUpdate {
 #[derive(Debug, Deserialize)]
 struct WlGammarelayColor {
     temperature: String,
+}
+
+struct WlGammarelayRs {
+    proxy: WlGammarelayRsBusProxy<'static>,
+    updates: zbus::PropertyStream<'static, u16>,
+}
+
+impl WlGammarelayRs {
+    async fn new() -> Result<Self> {
+        // Make sure the daemon is running
+        spawn_process("wl-gammarelay-rs", &[]).error("Failed to start wl-gammarelay daemon")?;
+        sleep(Duration::from_millis(100)).await;
+
+        let conn = crate::util::new_dbus_connection().await?;
+        let proxy = WlGammarelayRsBusProxy::new(&conn)
+            .await
+            .error("Failed to create wl-gammarelay-rs DBus proxy")?;
+        let updates = proxy.receive_temperature_changed().await;
+        Ok(Self { proxy, updates })
+    }
+}
+
+#[async_trait]
+impl HueShiftDriver for WlGammarelayRs {
+    async fn update(&mut self, temp: u16) -> Result<()> {
+        self.proxy
+            .set_temperature(temp)
+            .await
+            .error("Failed to set temperature")
+    }
+
+    async fn reset(&mut self) -> Result<()> {
+        self.update(6500).await
+    }
+
+    async fn receive_update(&mut self) -> Result<u16> {
+        let update = self.updates.next().await.error("No next update")?;
+        update.get().await.error("Failed to get temperature")
+    }
+}
+
+use zbus::dbus_proxy;
+
+#[dbus_proxy(
+    interface = "rs.wl.gammarelay",
+    default_service = "rs.wl-gammarelay",
+    default_path = "/"
+)]
+trait WlGammarelayRsBus {
+    /// Brightness property
+    #[dbus_proxy(property)]
+    fn brightness(&self) -> zbus::Result<f64>;
+    #[dbus_proxy(property)]
+    fn set_brightness(&self, value: f64) -> zbus::Result<()>;
+
+    /// Temperature property
+    #[dbus_proxy(property)]
+    fn temperature(&self) -> zbus::Result<u16>;
+    #[dbus_proxy(property)]
+    fn set_temperature(&self, value: u16) -> zbus::Result<()>;
 }
