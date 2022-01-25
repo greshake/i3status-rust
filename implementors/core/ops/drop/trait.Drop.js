@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["i3status_rs"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.58.0/core/ops/drop/trait.Drop.html\" title=\"trait core::ops::drop::Drop\">Drop</a> for <a class=\"struct\" href=\"i3status_rs/formatting/struct.Handles.html\" title=\"struct i3status_rs::formatting::Handles\">Handles</a>","synthetic":false,"types":["i3status_rs::formatting::Handles"]}];
+implementors["i3status_rs"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.58.1/core/ops/drop/trait.Drop.html\" title=\"trait core::ops::drop::Drop\">Drop</a> for <a class=\"struct\" href=\"i3status_rs/formatting/struct.Handles.html\" title=\"struct i3status_rs::formatting::Handles\">Handles</a>","synthetic":false,"types":["i3status_rs::formatting::Handles"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
