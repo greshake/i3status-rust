@@ -542,27 +542,21 @@ impl UpowerDevice {
         fallback_value: T,
     ) -> Result<T> {
         if let Some(device_path) = &self.device_path {
-            self.con
+            if let Ok(value) = self
+                .con
                 .with_path("org.freedesktop.UPower", device_path, 1000)
                 .get::<T>("org.freedesktop.UPower.Device", key)
-                .or_else(|_| {
-                    if self.allow_missing {
-                        return Ok(fallback_value);
-                    }
-                    Err(BlockError(
-                        "battery".into(),
-                        format!("Failed to read UPower {} property.", key),
-                    ))
-                })
-        } else {
-            if self.allow_missing {
-                return Ok(fallback_value);
+            {
+                return Ok(value);
             }
-            Err(BlockError(
-                "battery".into(),
-                format!("Failed to read UPower {} property.", key),
-            ))
         }
+        if self.allow_missing {
+            return Ok(fallback_value);
+        }
+        Err(BlockError(
+            "battery".into(),
+            format!("Failed to read UPower {} property.", key),
+        ))
     }
 
     // Get device path. Raises exception if dbus communication fails.
