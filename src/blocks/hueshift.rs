@@ -45,13 +45,7 @@
 use super::prelude::*;
 use crate::subprocess::{spawn_process, spawn_shell};
 use crate::util::has_command;
-
-use std::env;
-use std::path::PathBuf;
-
 use futures::future::pending;
-use tokio::io::{AsyncBufReadExt, BufStream};
-use tokio::net::UnixStream;
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
@@ -115,8 +109,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         HueShifter::Sct => Box::new(Sct),
         HueShifter::Gammastep => Box::new(Gammastep),
         HueShifter::Wlsunset => Box::new(Wlsunset),
-        HueShifter::WlGammarelay => Box::new(WlGammarelay::new().await?),
-        HueShifter::WlGammarelayRs => Box::new(WlGammarelayRs::new().await?),
+        HueShifter::WlGammarelay => Box::new(WlGammarelayRs::new("wl-gammarelay").await?),
+        HueShifter::WlGammarelayRs => Box::new(WlGammarelayRs::new("wl-gammarelay-rs").await?),
     };
 
     let mut current_temp = config.current_temp;
@@ -262,103 +256,15 @@ impl HueShiftDriver for Wlsunset {
     }
 }
 
-struct WlGammarelay {
-    sock: BufStream<UnixStream>,
-    buf: Vec<u8>,
-}
-
-impl WlGammarelay {
-    async fn new() -> Result<Self> {
-        // Make sure the daemon is running
-        spawn_process("wl-gammarelay", &[]).error("Failed to start wl-gammarelay daemon")?;
-        sleep(Duration::from_millis(100)).await;
-
-        let mut sock_path: PathBuf = env::var("XDG_RUNTIME_DIR").unwrap().into();
-        sock_path.push("wl-gammarelay.sock");
-
-        let sock = UnixStream::connect(sock_path)
-            .await
-            .error("Failed to connect to socket")?;
-        let mut sock = BufStream::new(sock);
-
-        sock.write_all(b"{\"subscribe\":[\"color\"]}")
-            .await
-            .error("Failed to subscribe")?;
-        sock.flush().await.error("Failed to flush the stream")?;
-
-        Ok(Self {
-            sock,
-            buf: Vec::new(),
-        })
-    }
-}
-
-#[async_trait]
-impl HueShiftDriver for WlGammarelay {
-    async fn update(&mut self, temp: u16) -> Result<()> {
-        let buf = format!("{{\"color\":{{\"temperature\":\"{}\"}}}}\n", temp);
-        self.sock
-            .write_all(buf.as_bytes())
-            .await
-            .error("Filed to send request")?;
-        self.sock.flush().await.error("Failed to flush the stream")
-    }
-
-    async fn reset(&mut self) -> Result<()> {
-        self.update(6500).await
-    }
-
-    async fn receive_update(&mut self) -> Result<u16> {
-        loop {
-            self.sock
-                .read_until(b'\n', &mut self.buf)
-                .await
-                .error("Failed to read from socket")?;
-            let response: WlGammarelayResponse =
-                serde_json::from_slice(&self.buf).error("Failed to deserialize repsonse")?;
-            self.buf.clear();
-
-            if let Some(updates) = response.updates {
-                if let Some(color) = updates.into_iter().filter_map(|u| u.color).next() {
-                    return color.temperature.parse().error("Failed to parse response");
-                }
-            }
-
-            if let Some(message) = response.message {
-                return Err(Error::new(format!("wl-gammarelay error: {}", message)));
-            }
-        }
-    }
-}
-
-#[derive(Debug, Deserialize)]
-struct WlGammarelayResponse {
-    #[serde(default)]
-    message: Option<String>,
-    #[serde(default)]
-    updates: Option<Vec<WlGammarelayUpdate>>,
-}
-
-#[derive(Debug, Deserialize)]
-struct WlGammarelayUpdate {
-    #[serde(default)]
-    color: Option<WlGammarelayColor>,
-}
-
-#[derive(Debug, Deserialize)]
-struct WlGammarelayColor {
-    temperature: String,
-}
-
 struct WlGammarelayRs {
     proxy: WlGammarelayRsBusProxy<'static>,
     updates: zbus::PropertyStream<'static, u16>,
 }
 
 impl WlGammarelayRs {
-    async fn new() -> Result<Self> {
+    async fn new(cmd: &str) -> Result<Self> {
         // Make sure the daemon is running
-        spawn_process("wl-gammarelay-rs", &[]).error("Failed to start wl-gammarelay daemon")?;
+        spawn_process(cmd, &[]).error("Failed to start wl-gammarelay daemon")?;
         sleep(Duration::from_millis(100)).await;
 
         let conn = crate::util::new_dbus_connection().await?;
