@@ -53,10 +53,12 @@ pub(super) struct BaseBlockConfig {
 
     pub theme_overrides: Option<HashMap<String, String>>,
     pub icons_format: Option<String>,
+    pub if_command: Option<String>,
 }
 
 impl BaseBlockConfig {
-    const FIELDS: &'static [&'static str] = &["on_click", "theme_overrides", "icons_format"];
+    const FIELDS: &'static [&'static str] =
+        &["on_click", "theme_overrides", "icons_format", "if_command"];
 
     // FIXME: this function is to paper over https://github.com/serde-rs/serde/issues/1957
     pub(super) fn extract(config: &mut Value) -> Value {

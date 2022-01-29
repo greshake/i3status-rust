@@ -86,6 +86,7 @@ use self::watson::*;
 use self::weather::*;
 use self::xrandr::*;
 
+use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -192,6 +193,18 @@ macro_rules! block {
         let mut common_config = BaseBlockConfig::deserialize(common_config)
             .configuration_error("Failed to deserialize common block config.")?;
 
+        // Run if_command if present
+        if let Some(ref cmd) = common_config.if_command {
+            if !Command::new("sh")
+                .args(["-c", cmd])
+                .output()?
+                .status
+                .success()
+            {
+                return Ok(None);
+            }
+        }
+
         // Apply theme overrides if presented
         if let Some(ref overrides) = common_config.theme_overrides {
             $shared_config.theme_override(overrides)?;
@@ -209,11 +222,11 @@ macro_rules! block {
             *overrided = common_config.on_click.take();
         }
 
-        Ok(Box::new(BaseBlock {
+        Ok(Some(Box::new(BaseBlock {
             name: stringify!($block_type).to_string(),
             inner: block,
             on_click: common_config.on_click,
-        }) as Box<dyn Block>)
+        }) as Box<dyn Block>))
     }};
 }
 
@@ -223,7 +236,7 @@ pub fn create_block(
     mut block_config: Value,
     mut shared_config: SharedConfig,
     update_request: Sender<Task>,
-) -> Result<Box<dyn Block>> {
+) -> Result<Option<Box<dyn Block>>> {
     match name {
         // Please keep these in alphabetical order.
         "apt" => block!(Apt, id, block_config, shared_config, update_request),
