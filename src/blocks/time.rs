@@ -67,6 +67,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
+        if timezone.is_none() {
+            // Update timezone because `chrono` will not do that for us.
+            // https://github.com/chronotope/chrono/issues/272
+            unsafe { tzset() };
+        }
+
         let full_time = get_time(format, timezone, locale);
         let short_time = format_short.map(|f| get_time(f, timezone, locale));
 
@@ -103,4 +109,12 @@ fn get_time(format: &str, timezone: Option<Tz>, locale: Option<Locale>) -> Strin
             None => Local::now().format(format).to_string().into(),
         },
     }
+}
+
+extern "C" {
+    /// The tzset function initializes the tzname variable from the value of the TZ environment
+    /// variable. It is not usually necessary for your program to call this function, because it is
+    /// called automatically when you use the other time conversion functions that depend on the
+    /// time zone.
+    fn tzset();
 }
