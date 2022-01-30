@@ -17,7 +17,7 @@ use crate::widgets::{I3BarWidget, State};
 use chrono::offset::Local;
 use chrono::DateTime;
 use crossbeam_channel::Sender;
-use inotify::{EventMask, Inotify, WatchMask};
+use inotify::{Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 pub struct Watson {
@@ -95,7 +95,7 @@ impl ConfigBlock for Watson {
             // previous state file and then renames the new state file. This means that we're
             // always looking for `CREATE` events with the name of the state file.
             notify
-                .add_watch(&parent_dir, WatchMask::CREATE)
+                .add_watch(&parent_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
                 .expect("failed to watch watson state file");
 
             let mut buffer = [0; 1024];
@@ -104,18 +104,13 @@ impl ConfigBlock for Watson {
                     .read_events_blocking(&mut buffer)
                     .expect("error while reading inotify events");
 
-                for event in events {
-                    match event.mask {
-                        EventMask::CREATE if event.name == Some(&file_name) => {
-                            tx_update_request
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .expect("unable to send task from watson watcher");
-                        }
-                        _ => {}
-                    }
+                for _event in events.filter(|e| e.name == Some(&file_name)) {
+                    tx_update_request
+                        .send(Task {
+                            id,
+                            update_time: Instant::now(),
+                        })
+                        .expect("unable to send task from watson watcher");
                 }
             }
         });
