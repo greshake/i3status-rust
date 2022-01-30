@@ -106,6 +106,8 @@ i3status-rs can also be restarted in place (useful for testing changes to the co
 
 We welcome new contributors! Take a gander at [CONTRIBUTING.md](CONTRIBUTING.md).
 
+Note that new development is taking place in the `async` branch.
+
 ## License
 
 This project is licensed under the GPLv3. See the [LICENSE](LICENSE) file for details.
