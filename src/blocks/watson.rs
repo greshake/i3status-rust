@@ -78,7 +78,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut notify = Inotify::init().error("Failed to start inotify")?;
     let mut buffer = [0; 1024];
     notify
-        .add_watch(&state_dir, WatchMask::CREATE)
+        .add_watch(&state_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
         .error("Failed to watch watson state directory")?;
     let mut state_updates = notify
         .event_stream(&mut buffer)
