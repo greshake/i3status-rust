@@ -107,6 +107,12 @@ impl Time {
 
 impl Block for Time {
     fn update(&mut self) -> Result<Option<Update>> {
+        if self.timezone.is_none() {
+            // Update timezone because `chrono` will not do that for us.
+            // https://github.com/chronotope/chrono/issues/272
+            unsafe { tzset() };
+        }
+
         let full = self.get_formatted_time(&self.formats.0)?;
         let short = match &self.formats.1 {
             Some(short_fmt) => Some(self.get_formatted_time(short_fmt)?),
@@ -123,4 +129,12 @@ impl Block for Time {
     fn id(&self) -> usize {
         self.id
     }
+}
+
+extern "C" {
+    /// The tzset function initializes the tzname variable from the value of the TZ environment
+    /// variable. It is not usually necessary for your program to call this function, because it is
+    /// called automatically when you use the other time conversion functions that depend on the
+    /// time zone.
+    fn tzset();
 }

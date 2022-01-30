@@ -458,11 +458,8 @@ pub struct UpowerDevice {
 
 impl UpowerDevice {
     /// Create the UPower device from the `device` string, which is converted to
-    /// the path `"/org/freedesktop/UPower/devices/battery_<device>"`, except if
-    /// `device` equals `"DisplayDevice"`, in which case it is converted to the
-    /// path `"/org/freedesktop/UPower/devices/DisplayDevice"`. Raises an error
-    /// if D-Bus cannot connect to this device, or if the device is not a
-    /// battery.
+    /// the path `"/org/freedesktop/UPower/devices/<device>"`. Raises an error
+    /// if D-Bus does not respond.
     pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
         let device_path = format!("/org/freedesktop/UPower/devices/{}", device);
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
@@ -538,6 +535,9 @@ impl UpowerDevice {
             .unwrap();
     }
 
+    // Get a value from the UPower device. If there is a failure in doing so
+    // Then either a fallback value is used, if allow_missing is true, or
+    // and exception is raised.
     fn get_upower_value<T: for<'b> dbus::arg::Get<'b>>(
         &self,
         key: &str,
@@ -579,7 +579,7 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
-        let upower_type = self.get_upower_value("Type", -1)?;
+        let upower_type = self.get_upower_value("Type", 0_u32)?;
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
         // consider any peripheral, UPS and internal battery
         if upower_type == 1 {
@@ -592,7 +592,7 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn status(&self) -> Result<String> {
-        self.get_upower_value("State", -1).map(|status| 
+        self.get_upower_value("State", 0_u32).map(|status| 
         // https://upower.freedesktop.org/docs/Device.html#Device:State
         match status {
             1 => "Charging".to_string(),

@@ -1,4 +1,3 @@
-use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -11,6 +10,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::subprocess::spawn_child_async;
 use crate::util::has_command;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
@@ -35,42 +35,39 @@ trait HueShiftDriver {
 struct Redshift();
 impl HueShiftDriver for Redshift {
     fn update(&self, temp: u16) -> Result<()> {
-        Command::new("sh")
-            .args(&[
+        spawn_child_async(
+            "sh",
+            &[
                 "-c",
                 format!("redshift -O {} -P >/dev/null 2>&1", temp).as_str(),
-            ])
-            .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using redshift.",
-            )?;
+            ],
+        )
+        .block_error(
+            "hueshift",
+            "Failed to set new color temperature using redshift.",
+        )?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", "redshift -x >/dev/null 2>&1"])
-            .spawn()
-            .block_error(
-                "redshift",
-                "Failed to set new color temperature using redshift.",
-            )?;
+        spawn_child_async("sh", &["-c", "redshift -x >/dev/null 2>&1"]).block_error(
+            "redshift",
+            "Failed to set new color temperature using redshift.",
+        )?;
         Ok(())
     }
 }
 struct Sct();
 impl HueShiftDriver for Sct {
     fn update(&self, temp: u16) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", format!("sct {} >/dev/null 2>&1", temp).as_str()])
-            .spawn()
-            .block_error("hueshift", "Failed to set new color temperature using sct.")?;
+        spawn_child_async(
+            "sh",
+            &["-c", format!("sct {} >/dev/null 2>&1", temp).as_str()],
+        )
+        .block_error("hueshift", "Failed to set new color temperature using sct.")?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", "sct >/dev/null 2>&1"])
-            .spawn()
+        spawn_child_async("sh", &["-c", "sct >/dev/null 2>&1"])
             .block_error("hueshift", "Failed to set new color temperature using sct.")?;
         Ok(())
     }
@@ -78,63 +75,59 @@ impl HueShiftDriver for Sct {
 struct Gammastep();
 impl HueShiftDriver for Gammastep {
     fn update(&self, temp: u16) -> Result<()> {
-        Command::new("sh")
-            .args(&[
+        spawn_child_async(
+            "sh",
+            &[
                 "-c",
                 &format!("pkill gammastep; gammastep -O {} -P &", temp),
-            ])
-            .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using gammastep.",
-            )?;
+            ],
+        )
+        .block_error(
+            "hueshift",
+            "Failed to set new color temperature using gammastep.",
+        )?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
-        Command::new("sh")
-            .args(&["-c", "gammastep -x >/dev/null 2>&1"])
-            .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using gammastep.",
-            )?;
+        spawn_child_async("sh", &["-c", "gammastep -x >/dev/null 2>&1"]).block_error(
+            "hueshift",
+            "Failed to set new color temperature using gammastep.",
+        )?;
         Ok(())
     }
 }
 struct Wlsunset();
 impl HueShiftDriver for Wlsunset {
     fn update(&self, temp: u16) -> Result<()> {
-        Command::new("sh")
-            // wlsunset does not have a oneshot option, so set both day and
-            // night temperature. wlsunset dose not allow for day and night
-            // temperatures to be the same, so increment the day temperature.
-            .args(&[
+        // wlsunset does not have a oneshot option, so set both day and
+        // night temperature. wlsunset dose not allow for day and night
+        // temperatures to be the same, so increment the day temperature.
+        spawn_child_async(
+            "sh",
+            &[
                 "-c",
                 &format!("pkill wlsunset; wlsunset -T {} -t {} &", temp + 1, temp),
-            ])
-            .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using wlsunset.",
-            )?;
+            ],
+        )
+        .block_error(
+            "hueshift",
+            "Failed to set new color temperature using wlsunset.",
+        )?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
-        Command::new("sh")
-            // wlsunset does not have a reset option, so just kill the process.
-            // Trying to call wlsunset without any arguments uses the defaults:
-            // day temp: 6500K
-            // night temp: 4000K
-            // latitude/longitude: NaN
-            //     ^ results in sun_condition == POLAR_NIGHT at time of testing
-            // With these defaults, this results in the the color temperature
-            // getting set to 4000K.
-            .args(&["-c", "pkill wlsunset > /dev/null 2>&1"])
-            .spawn()
-            .block_error(
-                "hueshift",
-                "Failed to set new color temperature using wlsunset.",
-            )?;
+        // wlsunset does not have a reset option, so just kill the process.
+        // Trying to call wlsunset without any arguments uses the defaults:
+        // day temp: 6500K
+        // night temp: 4000K
+        // latitude/longitude: NaN
+        //     ^ results in sun_condition == POLAR_NIGHT at time of testing
+        // With these defaults, this results in the the color temperature
+        // getting set to 4000K.
+        spawn_child_async("sh", &["-c", "pkill wlsunset > /dev/null 2>&1"]).block_error(
+            "hueshift",
+            "Failed to set new color temperature using wlsunset.",
+        )?;
         Ok(())
     }
 }

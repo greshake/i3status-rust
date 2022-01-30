@@ -17,7 +17,7 @@ use crate::widgets::{I3BarWidget, State};
 use chrono::offset::Local;
 use chrono::DateTime;
 use crossbeam_channel::Sender;
-use inotify::{EventMask, Inotify, WatchMask};
+use inotify::{Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 pub struct Watson {
@@ -95,7 +95,7 @@ impl ConfigBlock for Watson {
             // previous state file and then renames the new state file. This means that we're
             // always looking for `CREATE` events with the name of the state file.
             notify
-                .add_watch(&parent_dir, WatchMask::CREATE)
+                .add_watch(&parent_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
                 .expect("failed to watch watson state file");
 
             let mut buffer = [0; 1024];
@@ -104,18 +104,13 @@ impl ConfigBlock for Watson {
                     .read_events_blocking(&mut buffer)
                     .expect("error while reading inotify events");
 
-                for event in events {
-                    match event.mask {
-                        EventMask::CREATE if event.name == Some(&file_name) => {
-                            tx_update_request
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .expect("unable to send task from watson watcher");
-                        }
-                        _ => {}
-                    }
+                for _event in events.filter(|e| e.name == Some(&file_name)) {
+                    tx_update_request
+                        .send(Task {
+                            id,
+                            update_time: Instant::now(),
+                        })
+                        .expect("unable to send task from watson watcher");
                 }
             }
         });
@@ -151,12 +146,8 @@ impl Block for Watson {
                 if let Some(prev_state @ WatsonState::Active { .. }) = &self.prev_state {
                     // The previous state was active, which means that we just now stopped the time
                     // tracking. This means that we could show some statistics.
-                    self.show_time = true;
-                    self.text.set_text(prev_state.format(
-                        self.show_time,
-                        "stopped",
-                        format_delta_after,
-                    ));
+                    self.text
+                        .set_text(prev_state.format(true, "stopped", format_delta_after));
                     self.text.set_state(State::Idle);
                     self.prev_state = Some(state);
 
@@ -166,17 +157,11 @@ impl Block for Watson {
                     // File is empty which means that there is currently no active time tracking,
                     // and the previous state wasn't time tracking neither so we reset the
                     // contents.
-                    self.show_time = false;
                     self.text.set_state(State::Idle);
                     self.text.set_text(String::new());
 
                     self.prev_state = Some(state);
-                    Ok(if self.show_time {
-                        // regular updates if time is enabled
-                        Some(Duration::from_secs(60).into())
-                    } else {
-                        None
-                    })
+                    Ok(None)
                 }
             }
         }

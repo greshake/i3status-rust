@@ -1,3 +1,25 @@
+# i3status-rust 0.21.3
+
+## Bug Fixes and Improvements
+
+* Temperature: use libsensors bindings instead of sensors binary (#1375 by @MaxVerevkin)
+* Hueshift: do not leave zombies (#1411 by @Naarakah)
+* Time: reflect timezone changes (72a7284)
+* Watson: fix automatic updates (0b810cb and 0b810cb)
+
+## Deprecation Warnings
+* Temperature: `sysfs` driver will be removed in a future release.
+
+# i3status-rust 0.21.2
+
+## New Blocks and Features
+
+* Add dracula theme (#1408 by @welcoMattic)
+
+## Bug Fixes and Improvements
+
+* Battery block: Fix UPower property type mismatch (#1409 by @bim9262)
+
 # i3status-rust 0.21.0
 
 ## New Blocks and Features

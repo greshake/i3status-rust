@@ -22,7 +22,7 @@ Stable releases are packaged on some distributions:
 
 * On Arch Linux: `sudo pacman -Syu i3status-rust`. The latest development version can be installed from the [AUR](https://aur.archlinux.org/packages/i3status-rust-git).
 
-* On Fedora 31+: `sudo dnf install i3status-rs`. For older releases and CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
+* On Fedora/CentOS: you can install the package from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
 
 * On Void Linux: `xbps-install -S i3status-rust`
 
@@ -106,6 +106,8 @@ i3status-rs can also be restarted in place (useful for testing changes to the co
 
 We welcome new contributors! Take a gander at [CONTRIBUTING.md](CONTRIBUTING.md).
 
+Note that new development is taking place in the `async` branch.
+
 ## License
 
-This project is licensed under the GPLv3. See the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the GPLv3. See the [LICENSE](LICENSE) file for details.
