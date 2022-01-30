@@ -298,7 +298,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notify</span> <span class="op">=</span> <span class="ident">Inotify::init</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buffer</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">1024</span>];
     <span class="ident">notify</span>
-        .<span class="ident">add_watch</span>(<span class="kw-2">&amp;</span><span class="ident">state_dir</span>, <span class="ident">WatchMask::CREATE</span>)
+        .<span class="ident">add_watch</span>(<span class="kw-2">&amp;</span><span class="ident">state_dir</span>, <span class="ident">WatchMask::CREATE</span> <span class="op">|</span> <span class="ident">WatchMask::MOVED_TO</span>)
         .<span class="ident">error</span>(<span class="string">&quot;Failed to watch watson state directory&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state_updates</span> <span class="op">=</span> <span class="ident">notify</span>
         .<span class="ident">event_stream</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buffer</span>)
