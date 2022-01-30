@@ -102,20 +102,16 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 if let Some(prev @ WatsonState::Active { .. }) = &prev_state {
                     // The previous state was active, which means that we just now stopped the time
                     // tracking. This means that we could show some statistics.
-                    show_time = true;
                     api.set_text(prev.format(true, "stopped", format_delta_after));
                     api.set_state(State::Idle {});
-                    prev_state = Some(state);
                 } else {
                     // File is empty which means that there is currently no active time tracking,
                     // and the previous state wasn't time tracking neither so we reset the
                     // contents.
-                    show_time = false;
                     api.set_state(State::Idle {});
                     api.set_text(String::new());
-
-                    prev_state = Some(state);
                 }
+                prev_state = Some(state);
             }
         }
 
