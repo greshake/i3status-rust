@@ -146,12 +146,8 @@ impl Block for Watson {
                 if let Some(prev_state @ WatsonState::Active { .. }) = &self.prev_state {
                     // The previous state was active, which means that we just now stopped the time
                     // tracking. This means that we could show some statistics.
-                    self.show_time = true;
-                    self.text.set_text(prev_state.format(
-                        self.show_time,
-                        "stopped",
-                        format_delta_after,
-                    ));
+                    self.text
+                        .set_text(prev_state.format(true, "stopped", format_delta_after));
                     self.text.set_state(State::Idle);
                     self.prev_state = Some(state);
 
@@ -161,17 +157,11 @@ impl Block for Watson {
                     // File is empty which means that there is currently no active time tracking,
                     // and the previous state wasn't time tracking neither so we reset the
                     // contents.
-                    self.show_time = false;
                     self.text.set_state(State::Idle);
                     self.text.set_text(String::new());
 
                     self.prev_state = Some(state);
-                    Ok(if self.show_time {
-                        // regular updates if time is enabled
-                        Some(Duration::from_secs(60).into())
-                    } else {
-                        None
-                    })
+                    Ok(None)
                 }
             }
         }
