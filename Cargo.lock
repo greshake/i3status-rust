@@ -53,18 +53,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "buffering"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27613a6e00ca92c1d3e1180e6be860dc590401985d8ef49000329952adc09e85"
-
-[[package]]
-name = "buffering"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e64c1c8b8b4ae23f4bfb012a67b943c992f10ff88cd5d37fb38be92209f2aff2"
-
-[[package]]
 name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -381,12 +369,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hex"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
-
-[[package]]
 name = "i3status-rs"
 version = "0.21.3"
 dependencies = [
@@ -402,8 +384,8 @@ dependencies = [
  "lazy_static",
  "libpulse-binding",
  "maildir",
+ "neli-wifi",
  "nix",
- "nl80211",
  "notmuch",
  "regex",
  "sensors",
@@ -597,13 +579,37 @@ dependencies = [
 
 [[package]]
 name = "neli"
-version = "0.4.4"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e85e9782bd259f916321a71dc0292aa6b0fbb63ff949a6f5e45167b793b6b6d3"
+checksum = "9a489e24ce66fbc213b8db39e6b1fc0a33a3814561bc7bfd0a90d892541ace38"
 dependencies = [
- "buffering 0.4.2",
  "byteorder",
  "libc",
+ "log",
+ "neli-proc-macros",
+]
+
+[[package]]
+name = "neli-proc-macros"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fd8cb6bcd1e9652fa45b7cf83c117ff5b9d6dbd02842af324b1802e19680411"
+dependencies = [
+ "either",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "syn",
+]
+
+[[package]]
+name = "neli-wifi"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "342ee899cfb0b55606096420120734a625792c7ff12fa0840a290fa1f9212e34"
+dependencies = [
+ "neli",
+ "neli-proc-macros",
 ]
 
 [[package]]
@@ -617,17 +623,6 @@ dependencies = [
  "cfg-if",
  "libc",
  "memoffset",
-]
-
-[[package]]
-name = "nl80211"
-version = "0.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0d746206acdf0c6088e5dbf64691eaabe641f54235f4c98260028e0b108fd49"
-dependencies = [
- "buffering 0.3.4",
- "hex",
- "neli",
 ]
 
 [[package]]
