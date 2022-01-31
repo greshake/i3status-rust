@@ -260,7 +260,7 @@
 
     <span class="doccomment">/// Queries the wireless SSID of this device, if it is connected to one.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">wifi_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">socket</span> <span class="op">=</span> <span class="ident">nl80211::Socket::connect</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to open nl80211 socket&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">socket</span> <span class="op">=</span> <span class="ident">neli_wifi::Socket::connect</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to open nl80211 socket&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">interfaces</span> <span class="op">=</span> <span class="ident">socket</span>
             .<span class="ident">get_interfaces_info</span>()
             .<span class="ident">error</span>(<span class="string">&quot;Failed to get nl80211 interfaces&quot;</span>)<span class="question-mark">?</span>;
