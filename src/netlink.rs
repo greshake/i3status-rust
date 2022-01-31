@@ -76,7 +76,7 @@ impl NetDevice {
 
     /// Queries the wireless SSID of this device, if it is connected to one.
     pub fn wifi_info(&self) -> Result<(Option<String>, Option<f64>, Option<f64>)> {
-        let mut socket = nl80211::Socket::connect().error("Failed to open nl80211 socket")?;
+        let mut socket = neli_wifi::Socket::connect().error("Failed to open nl80211 socket")?;
         let interfaces = socket
             .get_interfaces_info()
             .error("Failed to get nl80211 interfaces")?;

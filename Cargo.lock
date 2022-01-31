@@ -709,8 +709,8 @@ dependencies = [
  "libpulse-binding",
  "maildir",
  "neli",
+ "neli-wifi",
  "nix",
- "nl80211",
  "notmuch",
  "once_cell",
  "regex",
@@ -986,6 +986,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "neli-wifi"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "342ee899cfb0b55606096420120734a625792c7ff12fa0840a290fa1f9212e34"
+dependencies = [
+ "neli",
+ "neli-proc-macros",
+]
+
+[[package]]
 name = "nix"
 version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -996,15 +1006,6 @@ dependencies = [
  "cfg-if",
  "libc",
  "memoffset",
-]
-
-[[package]]
-name = "nl80211"
-version = "0.0.2"
-source = "git+https://github.com/MaxVerevkin/nl80211#2460b7070f80a07e3d81d6cbd22c8affd8c81eaf"
-dependencies = [
- "neli",
- "neli-proc-macros",
 ]
 
 [[package]]

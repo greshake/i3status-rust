@@ -41,7 +41,7 @@ crossbeam-channel = "0.5"
 libpulse-binding = { version = "2.0", default-features = false }
 
 neli = "0.6"
-nl80211 = { git = "https://github.com/MaxVerevkin/nl80211" }
+neli-wifi = "0.1"
 
 # swayipc-async = { path = "../swayipc-rs/async", default-features = false, features = ["tokio"] }
 swayipc-async = "2.0"
