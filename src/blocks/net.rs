@@ -160,28 +160,30 @@ impl NetworkDevice {
             return Ok((None, None, None));
         }
 
-        let interfaces = nl80211::Socket::connect()
-            .block_error("net", "nl80211: failed to connect to the socket")?
+        let mut sock = neli_wifi::Socket::connect()
+            .block_error("net", "nl80211: failed to connect to the socket")?;
+
+        let interfaces = sock
             .get_interfaces_info()
             .block_error("net", "nl80211: failed to get interfaces' information")?;
 
         for interface in interfaces {
-            if let Ok(ap) = interface.get_station_info() {
-                // SSID is `None` when not connected
-                if let (Some(ssid), Some(device)) = (interface.ssid, interface.name) {
-                    let device = String::from_utf8_lossy(&device);
-                    let device = device.trim_matches(char::from(0));
-                    if device != self.device {
-                        continue;
+            if let Some(index) = &interface.index {
+                if let Ok(ap) = sock.get_station_info(index) {
+                    // SSID is `None` when not connected
+                    if let (Some(ssid), Some(device)) = (interface.ssid, interface.name) {
+                        let device = String::from_utf8_lossy(&device);
+                        let device = device.trim_matches(char::from(0));
+                        if device != self.device {
+                            continue;
+                        }
+
+                        let ssid = Some(escape_pango_text(&decode_escaped_unicode(&ssid)));
+                        let freq = interface.frequency.map(|f| f as f64 * 1e6);
+                        let signal = ap.signal.map(signal_percents);
+
+                        return Ok((ssid, freq, signal));
                     }
-
-                    let ssid = Some(escape_pango_text(&decode_escaped_unicode(&ssid)));
-                    let freq = interface
-                        .frequency
-                        .map(|f| nl80211::parse_u32(&f) as f64 * 1e6);
-                    let signal = ap.signal.map(|s| signal_percents(nl80211::parse_i8(&s)));
-
-                    return Ok((ssid, freq, signal));
                 }
             }
         }

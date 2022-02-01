@@ -4,7 +4,7 @@ description = "A feature-rich and resource-friendly replacement for i3status, wr
 repository = "https://github.com/greshake/i3status-rust/"
 readme = "README.md"
 license = "GPL-3.0-only"
-version = "0.21.3"
+version = "0.21.4"
 authors = ["Kai Greshake <development@kai-greshake.de>",
            "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
 edition = "2018"
@@ -22,7 +22,7 @@ dbus = "0.9"
 dbus-tree = "0.9"
 lazy_static = "1.0"
 nix = "0.23.0"
-nl80211 = "0.0.2"
+neli-wifi = "0.1"
 sensors = "0.2.2"
 serde = "1.0"
 serde_derive = "1.0"

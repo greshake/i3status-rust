@@ -5,6 +5,7 @@
 //! internal power supply.
 
 use std::collections::HashMap;
+use std::fs::{read_dir, read_to_string};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -320,14 +321,10 @@ pub struct ApcUpsDevice {
 
 impl ApcUpsDevice {
     pub fn from_device(device: &str, allow_missing: bool) -> Result<ApcUpsDevice> {
-        let mut device_addr = device;
-        if !device_addr.contains(':') {
-            device_addr = "localhost:3551";
-        }
         Ok(ApcUpsDevice {
-            con: ApcAccess::new(device_addr, 1).block_error(
+            con: ApcAccess::new(device, 1).block_error(
                 "battery",
-                &format!("Could not create a apcaccess connection to {}", device_addr),
+                &format!("Could not create a apcaccess connection to {}", device),
             )?,
             status: None,
             allow_missing,
@@ -451,7 +448,8 @@ impl BatteryDevice for ApcUpsDevice {
 }
 
 pub struct UpowerDevice {
-    device_path: String,
+    device: String,
+    device_path: Option<String>,
     con: dbus::ffidisp::Connection,
     allow_missing: bool,
 }
@@ -461,51 +459,48 @@ impl UpowerDevice {
     /// the path `"/org/freedesktop/UPower/devices/<device>"`. Raises an error
     /// if D-Bus does not respond.
     pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
-        let device_path = format!("/org/freedesktop/UPower/devices/{}", device);
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
-        Ok(UpowerDevice {
-            device_path,
+        let mut out = UpowerDevice {
+            device: device.to_string(),
+            device_path: None,
             con,
             allow_missing,
-        })
+        };
+        out.device_path = out.get_device_path()?;
+        Ok(out)
     }
 
     /// Monitor UPower property changes in a separate thread and send updates
     /// via the `update_request` channel.
     pub fn monitor(&self, id: usize, update_request: Sender<Task>) {
-        let path = self.device_path.clone();
         thread::Builder::new()
             .name("battery".into())
             .spawn(move || {
                 let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
                     .expect("Failed to establish D-Bus connection.");
-                let properties_changed_rule = format!(
-                    "type='signal',\
-                 path='{}',\
+                let properties_changed_rule = "type='signal',\
                  interface='org.freedesktop.DBus.Properties',\
-                 member='PropertiesChanged'",
-                    path
-                );
+                 member='PropertiesChanged'";
+
                 let device_removed_rule = "type='signal',\
-                 interface='org.freedesktop.UPower',\
-                 member='DeviceRemoved'";
+                    interface='org.freedesktop.UPower',\
+                    member='DeviceRemoved'";
                 let device_added_rule = "type='signal',\
-                 interface='org.freedesktop.UPower',\
-                 member='DeviceAdded'";
+                    interface='org.freedesktop.UPower',\
+                    member='DeviceAdded'";
 
                 // First we're going to get an (irrelevant) NameAcquired event.
                 con.incoming(10_000).next();
 
-                con.add_match(&properties_changed_rule)
+                con.add_match(properties_changed_rule)
                     .expect("Failed to add D-Bus match rule.");
                 con.add_match(device_removed_rule)
                     .expect("Failed to add D-Bus match rule.");
                 con.add_match(device_added_rule)
                     .expect("Failed to add D-Bus match rule.");
 
-                let device_path = dbus::Path::from(&path);
                 loop {
                     if let Some(msg) = con.incoming(10_000).next() {
                         if let Some(interface) =
@@ -515,7 +510,7 @@ impl UpowerDevice {
                                 && msg
                                     .get1::<dbus::Path>()
                                     .expect("Unable to get objectpath argument")
-                                    == device_path)
+                                    .starts_with("/org/freedesktop/UPower/devices/"))
                                 || interface == "org.freedesktop.DBus.Properties"
                             {
                                 update_request
@@ -543,18 +538,63 @@ impl UpowerDevice {
         key: &str,
         fallback_value: T,
     ) -> Result<T> {
-        self.con
-            .with_path("org.freedesktop.UPower", &self.device_path, 1000)
-            .get::<T>("org.freedesktop.UPower.Device", key)
-            .or_else(|_| {
-                if self.allow_missing {
-                    return Ok(fallback_value);
+        if let Some(device_path) = &self.device_path {
+            if let Ok(value) = self
+                .con
+                .with_path("org.freedesktop.UPower", device_path, 1000)
+                .get::<T>("org.freedesktop.UPower.Device", key)
+            {
+                return Ok(value);
+            }
+        }
+        if self.allow_missing {
+            return Ok(fallback_value);
+        }
+        Err(BlockError(
+            "battery".into(),
+            format!("Failed to read UPower {} property.", key),
+        ))
+    }
+
+    // Get device path. Raises exception if dbus communication fails.
+    // If the device doesn't exist an exception raised unless allow_missing == true
+    fn get_device_path(&self) -> Result<Option<String>> {
+        if self.device == "DisplayDevice" {
+            Ok(Some(String::from(
+                "/org/freedesktop/UPower/devices/DisplayDevice",
+            )))
+        } else {
+            let msg = dbus::Message::new_method_call(
+                "org.freedesktop.UPower",
+                "/org/freedesktop/UPower",
+                "org.freedesktop.UPower",
+                "EnumerateDevices",
+            )
+            .block_error("battery", "Failed to create DBus message")?;
+
+            let dbus_reply = self
+                .con
+                .send_with_reply_and_block(msg, 2000)
+                .block_error("battery", "Failed to retrieve DBus reply")?;
+
+            // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
+            let mut paths: Array<dbus::Path, _> = dbus_reply
+                .get1()
+                .block_error("battery", "Failed to read DBus reply")?;
+
+            match paths.find(|entry| entry.ends_with(self.device.as_str())) {
+                Some(path) => Ok(Some(path.to_string())),
+                _ => {
+                    if self.allow_missing {
+                        return Ok(None);
+                    }
+                    Err(BlockError(
+                        "battery".to_string(),
+                        "UPower device could not be found.".to_string(),
+                    ))
                 }
-                Err(BlockError(
-                    "battery".into(),
-                    format!("Failed to read UPower {} property.", key),
-                ))
-            })
+            }
+        }
     }
 }
 
@@ -569,9 +609,17 @@ impl BatteryDevice for UpowerDevice {
             if let Ok(dbus_reply) = self.con.send_with_reply_and_block(msg, 2000) {
                 // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
                 if let Some(mut paths) = dbus_reply.get1::<Array<dbus::Path, _>>() {
-                    // Target device path
-                    let device_path = dbus::Path::from(&self.device_path);
-                    return paths.any(|entry| entry == device_path);
+                    if let Some(device_path) = match self.get_device_path() {
+                        Ok(latest_device_path) => latest_device_path,
+                        _ => self.device_path.as_ref().cloned(),
+                    } {
+                        if device_path == "/org/freedesktop/UPower/devices/DisplayDevice" {
+                            return true;
+                        }
+                        // Target device path
+                        let device_path = dbus::Path::from(device_path);
+                        return paths.any(|entry| entry == device_path);
+                    }
                 }
             }
         }
@@ -579,6 +627,8 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
+        self.device_path = self.get_device_path()?;
+
         let upower_type = self.get_upower_value("Type", 0_u32)?;
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
         // consider any peripheral, UPS and internal battery
@@ -676,7 +726,7 @@ pub struct BatteryConfig {
     pub interval: Duration,
 
     /// The internal power supply device in `/sys/class/power_supply/` to read from.
-    pub device: String,
+    pub device: Option<String>,
 
     /// Format string for displaying battery information.
     /// placeholders: {percentage}, {bar}, {time} and {power}
@@ -715,27 +765,11 @@ pub struct BatteryConfig {
     pub hide_missing: bool,
 }
 
-fn default_device() -> String {
-    let mut res = "BAT0".to_string();
-    let mut found = false;
-    if let Ok(dir) = std::fs::read_dir("/sys/class/power_supply") {
-        for entry in dir.flatten() {
-            if let Some(f) = entry.file_name().to_str() {
-                if f.starts_with("BAT") && (!found || f < res.as_str()) {
-                    found = true;
-                    res = f.to_string();
-                }
-            }
-        }
-    }
-    res
-}
-
 impl Default for BatteryConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(10),
-            device: default_device(),
+            device: None,
             format: FormatTemplate::default(),
             full_format: FormatTemplate::default(),
             missing_format: FormatTemplate::default(),
@@ -760,19 +794,44 @@ impl ConfigBlock for Battery {
         shared_config: SharedConfig,
         update_request: Sender<Task>,
     ) -> Result<Self> {
+        let device_str = match block_config.device {
+            Some(d) => d,
+            None => match block_config.driver {
+                BatteryDriver::ApcAccess => "localhost:3551".to_string(),
+                BatteryDriver::Upower => "DisplayDevice".to_string(),
+                _ => {
+                    let sysfs_dir = read_dir("/sys/class/power_supply").block_error(
+                        "battery",
+                        "failed to read /sys/class/power_supply direcory",
+                    )?;
+                    let mut device = None;
+                    for entry in sysfs_dir {
+                        let dir = entry?;
+                        if read_to_string(dir.path().join("type"))
+                            .map(|t| t.trim() == "Battery")
+                            .unwrap_or(false)
+                        {
+                            device = Some(dir.file_name().to_str().unwrap().to_string());
+                            break;
+                        }
+                    }
+                    device.block_error("battery", "failed to determine default battery - please set your battery device in the configuration file")?
+                }
+            },
+        };
+
         let device: Box<dyn BatteryDevice> = match block_config.driver {
             BatteryDriver::ApcAccess => Box::new(ApcUpsDevice::from_device(
-                &block_config.device,
+                &device_str,
                 block_config.allow_missing,
             )?),
             BatteryDriver::Upower => {
-                let out =
-                    UpowerDevice::from_device(&block_config.device, block_config.allow_missing)?;
+                let out = UpowerDevice::from_device(&device_str, block_config.allow_missing)?;
                 out.monitor(id, update_request);
                 Box::new(out)
             }
             BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(
-                &block_config.device,
+                &device_str,
                 block_config.allow_missing,
             )?),
         };

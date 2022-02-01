@@ -1,3 +1,10 @@
+# i3status-rust 0.21.4
+
+## Bug Fixes and Improvements
+
+* Battery: fix issues with finding battery device paths (#1417 by @bim9262)
+* Battery: better default values for `device` (c6824727020090bf6eb59cd3bf6f4de0f10179fa)
+
 # i3status-rust 0.21.3
 
 ## Bug Fixes and Improvements
