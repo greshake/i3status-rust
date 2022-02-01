@@ -5,6 +5,7 @@
 //! internal power supply.
 
 use std::collections::HashMap;
+use std::fs::{read_dir, read_to_string};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -320,14 +321,10 @@ pub struct ApcUpsDevice {
 
 impl ApcUpsDevice {
     pub fn from_device(device: &str, allow_missing: bool) -> Result<ApcUpsDevice> {
-        let mut device_addr = device;
-        if !device_addr.contains(':') {
-            device_addr = "localhost:3551";
-        }
         Ok(ApcUpsDevice {
-            con: ApcAccess::new(device_addr, 1).block_error(
+            con: ApcAccess::new(device, 1).block_error(
                 "battery",
-                &format!("Could not create a apcaccess connection to {}", device_addr),
+                &format!("Could not create a apcaccess connection to {}", device),
             )?,
             status: None,
             allow_missing,
@@ -729,7 +726,7 @@ pub struct BatteryConfig {
     pub interval: Duration,
 
     /// The internal power supply device in `/sys/class/power_supply/` to read from.
-    pub device: String,
+    pub device: Option<String>,
 
     /// Format string for displaying battery information.
     /// placeholders: {percentage}, {bar}, {time} and {power}
@@ -768,27 +765,11 @@ pub struct BatteryConfig {
     pub hide_missing: bool,
 }
 
-fn default_device() -> String {
-    let mut res = "BAT0".to_string();
-    let mut found = false;
-    if let Ok(dir) = std::fs::read_dir("/sys/class/power_supply") {
-        for entry in dir.flatten() {
-            if let Some(f) = entry.file_name().to_str() {
-                if f.starts_with("BAT") && (!found || f < res.as_str()) {
-                    found = true;
-                    res = f.to_string();
-                }
-            }
-        }
-    }
-    res
-}
-
 impl Default for BatteryConfig {
     fn default() -> Self {
         Self {
             interval: Duration::from_secs(10),
-            device: default_device(),
+            device: None,
             format: FormatTemplate::default(),
             full_format: FormatTemplate::default(),
             missing_format: FormatTemplate::default(),
@@ -813,19 +794,44 @@ impl ConfigBlock for Battery {
         shared_config: SharedConfig,
         update_request: Sender<Task>,
     ) -> Result<Self> {
+        let device_str = match block_config.device {
+            Some(d) => d,
+            None => match block_config.driver {
+                BatteryDriver::ApcAccess => "localhost:3551".to_string(),
+                BatteryDriver::Upower => "DisplayDevice".to_string(),
+                _ => {
+                    let sysfs_dir = read_dir("/sys/class/power_supply").block_error(
+                        "battery",
+                        "failed to read /sys/class/power_supply direcory",
+                    )?;
+                    let mut device = None;
+                    for entry in sysfs_dir {
+                        let dir = entry?;
+                        if read_to_string(dir.path().join("type"))
+                            .map(|t| t.trim() == "Battery")
+                            .unwrap_or(false)
+                        {
+                            device = Some(dir.file_name().to_str().unwrap().to_string());
+                            break;
+                        }
+                    }
+                    device.block_error("battery", "failed to determine default battery - please set your battery device in the configuration file")?
+                }
+            },
+        };
+
         let device: Box<dyn BatteryDevice> = match block_config.driver {
             BatteryDriver::ApcAccess => Box::new(ApcUpsDevice::from_device(
-                &block_config.device,
+                &device_str,
                 block_config.allow_missing,
             )?),
             BatteryDriver::Upower => {
-                let out =
-                    UpowerDevice::from_device(&block_config.device, block_config.allow_missing)?;
+                let out = UpowerDevice::from_device(&device_str, block_config.allow_missing)?;
                 out.monitor(id, update_request);
                 Box::new(out)
             }
             BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(
-                &block_config.device,
+                &device_str,
                 block_config.allow_missing,
             )?),
         };
