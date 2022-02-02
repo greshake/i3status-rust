@@ -845,6 +845,9 @@ Name | Supports
 `"redshift"`  | X11
 `"sct"`       | X11
 `"gammastep"` | X11 and Wayland
+`"wlsunset"` | Wayland
+`"wl-gammarelay-rs"` | Wayland
+`"wl-gammarelay"` | Wayland
 
 
 A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
