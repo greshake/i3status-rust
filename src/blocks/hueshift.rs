@@ -1,6 +1,11 @@
-use std::time::Duration;
+use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crossbeam_channel::Sender;
+use dbus::arg::RefArg;
+use dbus::ffidisp::stdintf::OrgFreedesktopDBusProperties;
 use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
@@ -18,11 +23,12 @@ use crate::widgets::I3BarWidget;
 pub struct Hueshift {
     id: usize,
     text: TextWidget,
-    update_interval: Duration,
+    // update_interval: Duration,
     step: u16,
     current_temp: u16,
     max_temp: u16,
     min_temp: u16,
+    hue_shifter: HueShifter,
     hue_shift_driver: Box<dyn HueShiftDriver>,
     click_temp: u16,
     scrolling: Scrolling,
@@ -31,6 +37,9 @@ pub struct Hueshift {
 trait HueShiftDriver {
     fn update(&self, temp: u16) -> Result<()>;
     fn reset(&self) -> Result<()>;
+    fn get_current_temperature(&mut self) -> Result<Option<u16>> {
+        Ok(None)
+    }
 }
 struct Redshift();
 impl HueShiftDriver for Redshift {
@@ -132,6 +141,123 @@ impl HueShiftDriver for Wlsunset {
     }
 }
 
+struct WlGammarelay {
+    con: dbus::ffidisp::Connection,
+    current_temperature: Arc<AtomicU16>,
+}
+
+impl WlGammarelay {
+    fn attempt_to_get_current_temperature(
+        con: &dbus::ffidisp::Connection,
+        delay: u64,
+        max_attempts: usize,
+    ) -> Result<u16> {
+        for attempt in 1..=max_attempts {
+            match con
+                .with_path("rs.wl-gammarelay", "/", 1000)
+                .get::<u16>("rs.wl.gammarelay", "Temperature")
+            {
+                Ok(temperature) => {
+                    return Ok(temperature);
+                }
+                Err(_) => {
+                    if attempt == max_attempts {
+                        return Err(BlockError(
+                            "hueshift".to_string(),
+                            "Unable to get current temperature for rs.wl.gammarelay".to_string(),
+                        ));
+                    } else {
+                        thread::sleep(Duration::from_millis(delay));
+                    }
+                }
+            }
+        }
+        Ok(0)
+    }
+
+    fn new(command: &str, id: usize, update_request: Sender<Task>) -> Result<Self> {
+        spawn_child_async(
+            "sh",
+            &["-c", format!("{} >/dev/null 2>&1", command).as_str()],
+        )
+        .block_error("hueshift", format!("Failed to start {}.", command).as_str())?;
+        let con = dbus::ffidisp::Connection::new_session()
+            .block_error("hueshift", "Failed to establish D-Bus connection.")?;
+
+        let current_temperature: Arc<AtomicU16> = Arc::new(AtomicU16::new(
+            WlGammarelay::attempt_to_get_current_temperature(&con, 100, 5)?,
+        ));
+
+        {
+            let current_temperature = current_temperature.clone();
+            thread::Builder::new()
+                .name("hueshift".into())
+                .spawn(move || {
+                    let con = dbus::ffidisp::Connection::new_session()
+                        .expect("Failed to establish D-Bus connection.");
+
+                    con.add_match(
+                        "type='signal',\
+                            interface='org.freedesktop.DBus.Properties',\
+                            member='PropertiesChanged',\
+                            arg0namespace='rs.wl.gammarelay'",
+                    )
+                    .expect("Failed to add D-Bus match rule.");
+
+                    // First we're going to get an (irrelevant) NameAcquired event.
+                    con.incoming(10_000).next();
+
+                    loop {
+                        if let Some(message) = con.incoming(10_000).next() {
+                            if let (_, Some(changed_properties)) =
+                                message.get2::<String, dbus::arg::PropMap>()
+                            {
+                                if let Some(temperature_variant) =
+                                    changed_properties.get("Temperature")
+                                {
+                                    if let Some(temperature) = temperature_variant.as_u64() {
+                                        let temperature = temperature as u16;
+                                        current_temperature.store(temperature, Ordering::SeqCst);
+                                        update_request
+                                            .send(Task {
+                                                id,
+                                                update_time: Instant::now(),
+                                            })
+                                            .unwrap();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+                .unwrap();
+        }
+
+        Ok(WlGammarelay {
+            con,
+            current_temperature,
+        })
+    }
+}
+
+impl HueShiftDriver for WlGammarelay {
+    fn update(&self, temp: u16) -> Result<()> {
+        self.con
+            .with_path("rs.wl-gammarelay", "/", 1000)
+            .set("rs.wl.gammarelay", "Temperature", temp)
+            .map_err(|e| BlockError("hueshift".to_string(), e.to_string()))?;
+        Ok(())
+    }
+    fn reset(&self) -> Result<()> {
+        // wl-gammarelay does not have a reset option just set the temp back to 6500
+        self.update(6500)
+    }
+
+    fn get_current_temperature(&mut self) -> Result<Option<u16>> {
+        Ok(Some(self.current_temperature.load(Ordering::SeqCst)))
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum HueShifter {
@@ -139,6 +265,8 @@ pub enum HueShifter {
     Sct,
     Gammastep,
     Wlsunset,
+    WlGammarelay,
+    WlGammarelayRs,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -178,6 +306,10 @@ impl Default for HueshiftConfig {
                 Some(HueShifter::Gammastep)
             } else if has_command("hueshift", "wlsunset").unwrap_or(false) {
                 Some(HueShifter::Wlsunset)
+            } else if has_command("hueshift", "wl-gammarelay-rs").unwrap_or(false) {
+                Some(HueShifter::WlGammarelayRs)
+            } else if has_command("hueshift", "wl-gammarelay").unwrap_or(false) {
+                Some(HueShifter::WlGammarelay)
             } else {
                 None
             },
@@ -194,7 +326,7 @@ impl ConfigBlock for Hueshift {
         id: usize,
         block_config: Self::Config,
         shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
+        update_request: Sender<Task>,
     ) -> Result<Self> {
         let current_temp = block_config.current_temp;
         let mut step = block_config.step;
@@ -211,23 +343,31 @@ impl ConfigBlock for Hueshift {
             min_temp = 1000;
         }
 
-        let hue_shift_driver: Box<dyn HueShiftDriver> = match block_config
+        let hue_shifter = block_config
             .hue_shifter
-            .block_error("hueshift", "Cound not detect driver program")?
-        {
+            .block_error("hueshift", "Cound not detect driver program")?;
+
+        let hue_shift_driver: Box<dyn HueShiftDriver> = match hue_shifter {
             HueShifter::Redshift => Box::new(Redshift {}),
             HueShifter::Sct => Box::new(Sct {}),
             HueShifter::Gammastep => Box::new(Gammastep {}),
             HueShifter::Wlsunset => Box::new(Wlsunset {}),
+            HueShifter::WlGammarelayRs => {
+                Box::new(WlGammarelay::new("wl-gammarelay-rs", id, update_request)?)
+            }
+            HueShifter::WlGammarelay => {
+                Box::new(WlGammarelay::new("wl-gammarelay", id, update_request)?)
+            }
         };
 
         Ok(Hueshift {
             id,
-            update_interval: block_config.interval,
+            // update_interval: block_config.interval,
             step,
             max_temp,
             min_temp,
             current_temp,
+            hue_shifter,
             hue_shift_driver,
             click_temp: block_config.click_temp,
             scrolling: shared_config.scrolling,
@@ -238,8 +378,21 @@ impl ConfigBlock for Hueshift {
 
 impl Block for Hueshift {
     fn update(&mut self) -> Result<Option<Update>> {
+        if let Some(current_temp) = self.hue_shift_driver.get_current_temperature()? {
+            self.current_temp = current_temp;
+        }
         self.text.set_text(self.current_temp.to_string());
-        Ok(Some(self.update_interval.into()))
+        // If drivers have a way of polling for the current temperature then it
+        // makes sense to have an update interval otherwise it has no effect.
+        // None of the drivers besides WlGammarelay has a mechanism to get the
+        // current temperature if they are changed outside of the statusbar.
+        // Although WlGammarelay can get the current temperature it doesn't need
+        // to run update on an update interval as it is listening to dbus events.
+        // Something like this:
+        Ok(match self.hue_shifter {
+            // HueShifter::X | HueShifter::Y => Some(self.update_interval.into()),
+            _ => None,
+        })
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
