@@ -27,7 +27,7 @@ You may find that the block you desire is not in the list below. In that case, f
 - [Custom DBus](#custom-dbus)
 - [Disk Space](#disk-space)
 - [Docker](#docker)
-- [ExternalIP](#external-ip)
+- [ExternalIP](#externalip)
 - [Focused Window](#focused-window)
 - [GitHub](#github)
 - [Hueshift](#hueshift)
