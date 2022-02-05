@@ -883,11 +883,6 @@
 <span id="882">882</span>
 <span id="883">883</span>
 <span id="884">884</span>
-<span id="885">885</span>
-<span id="886">886</span>
-<span id="887">887</span>
-<span id="888">888</span>
-<span id="889">889</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.</span>
@@ -967,13 +962,10 @@
 
 <span class="kw">use</span> <span class="ident">crossbeam_channel</span>::{<span class="ident">unbounded</span>, <span class="ident">Sender</span>};
 
-<span class="kw">use</span> <span class="ident">std::cell::RefCell</span>;
 <span class="kw">use</span> <span class="ident">std::cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>};
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 <span class="kw">use</span> <span class="ident">std::convert</span>::{<span class="ident">TryFrom</span>, <span class="ident">TryInto</span>};
-<span class="kw">use</span> <span class="ident">std::ops::Deref</span>;
 <span class="kw">use</span> <span class="ident">std::process::Stdio</span>;
-<span class="kw">use</span> <span class="ident">std::rc::Rc</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Mutex</span>;
 <span class="kw">use</span> <span class="ident">std::thread</span>;
 
@@ -1300,8 +1292,8 @@
 }
 
 <span class="kw">struct</span> <span class="ident">PulseAudioConnection</span> {
-    <span class="ident">mainloop</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Mainloop</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">context</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Context</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">mainloop</span>: <span class="ident">Mainloop</span>,
+    <span class="ident">context</span>: <span class="ident">Context</span>,
 }
 
 <span class="kw">struct</span> <span class="ident">PulseAudioClient</span> {
@@ -1399,17 +1391,16 @@
             .<span class="ident">set_str</span>(<span class="ident">properties::APPLICATION_NAME</span>, <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>))
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error::new</span>(<span class="string">&quot;Could not set pulseaudio APPLICATION_NAME property&quot;</span>))<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">mainloop</span> <span class="op">=</span> <span class="ident">Rc::new</span>(<span class="ident">RefCell::new</span>(
-            <span class="ident">Mainloop::new</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to create pulseaudio mainloop&quot;</span>)<span class="question-mark">?</span>,
-        ));
+        <span class="kw">let</span> <span class="ident">mainloop</span> <span class="op">=</span> <span class="ident">Mainloop::new</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to create pulseaudio mainloop&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">Rc::new</span>(<span class="ident">RefCell::new</span>(
-            <span class="ident">Context::new_with_proplist</span>(<span class="ident">mainloop</span>.<span class="ident">borrow</span>().<span class="ident">deref</span>(), <span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>), <span class="string">&quot;_context&quot;</span>), <span class="kw-2">&amp;</span><span class="ident">proplist</span>)
-                .<span class="ident">error</span>(<span class="string">&quot;Failed to create new pulseaudio context&quot;</span>)<span class="question-mark">?</span>,
-        ));
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">Context::new_with_proplist</span>(
+            <span class="kw-2">&amp;</span><span class="ident">mainloop</span>,
+            <span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>), <span class="string">&quot;_context&quot;</span>),
+            <span class="kw-2">&amp;</span><span class="ident">proplist</span>,
+        )
+        .<span class="ident">error</span>(<span class="string">&quot;Failed to create new pulseaudio context&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="ident">context</span>
-            .<span class="ident">borrow_mut</span>()
             .<span class="ident">connect</span>(<span class="prelude-val">None</span>, <span class="ident">FlagSet::NOFLAGS</span>, <span class="prelude-val">None</span>)
             .<span class="ident">error</span>(<span class="string">&quot;Failed to connect to pulseaudio context&quot;</span>)<span class="question-mark">?</span>;
 
@@ -1418,7 +1409,7 @@
         <span class="comment">// Wait for context to be ready</span>
         <span class="kw">loop</span> {
             <span class="ident">connection</span>.<span class="ident">iterate</span>(<span class="bool-val">false</span>)<span class="question-mark">?</span>;
-            <span class="kw">match</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">borrow</span>().<span class="ident">get_state</span>() {
+            <span class="kw">match</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">get_state</span>() {
                 <span class="ident">PulseState::Ready</span> =&gt; {
                     <span class="kw">break</span>;
                 }
@@ -1433,7 +1424,7 @@
     }
 
     <span class="kw">fn</span> <span class="ident">iterate</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">blocking</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">mainloop</span>.<span class="ident">borrow_mut</span>().<span class="ident">iterate</span>(<span class="ident">blocking</span>) {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">mainloop</span>.<span class="ident">iterate</span>(<span class="ident">blocking</span>) {
             <span class="ident">IterateResult::Quit</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">IterateResult::Err</span>(<span class="kw">_</span>) =&gt; {
                 <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="string">&quot;failed to iterate pulseaudio state&quot;</span>))
             }
@@ -1471,7 +1462,7 @@
                     <span class="comment">// make sure mainloop dispatched everything</span>
                     <span class="kw">loop</span> {
                         <span class="ident">connection</span>.<span class="ident">iterate</span>(<span class="bool-val">false</span>).<span class="ident">unwrap</span>();
-                        <span class="kw">if</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">borrow</span>().<span class="ident">get_state</span>() <span class="op">==</span> <span class="ident">PulseState::Ready</span> {
+                        <span class="kw">if</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">get_state</span>() <span class="op">==</span> <span class="ident">PulseState::Ready</span> {
                             <span class="kw">break</span>;
                         }
                     }
@@ -1480,7 +1471,7 @@
                         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {}
                         <span class="prelude-val">Ok</span>(<span class="ident">req</span>) =&gt; {
                             <span class="kw">use</span> <span class="ident">PulseAudioClientRequest</span>::<span class="kw-2">*</span>;
-                            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">introspector</span> <span class="op">=</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">borrow_mut</span>().<span class="ident">introspect</span>();
+                            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">introspector</span> <span class="op">=</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">introspect</span>();
 
                             <span class="kw">match</span> <span class="ident">req</span> {
                                 <span class="ident">GetDefaultDevice</span> =&gt; {
@@ -1541,19 +1532,18 @@
         <span class="ident">thread::Builder::new</span>()
             .<span class="ident">name</span>(<span class="string">&quot;sound_pulseaudio_sub&quot;</span>.<span class="ident">into</span>())
             .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">connection</span> <span class="op">=</span> <span class="ident">new_connection</span>(<span class="ident">send_result2</span>);
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">connection</span> <span class="op">=</span> <span class="ident">new_connection</span>(<span class="ident">send_result2</span>);
 
                 <span class="comment">// subcribe for events</span>
                 <span class="ident">connection</span>
                     .<span class="ident">context</span>
-                    .<span class="ident">borrow_mut</span>()
                     .<span class="ident">set_subscribe_callback</span>(<span class="prelude-val">Some</span>(<span class="ident">Box::new</span>(<span class="ident">PulseAudioClient::subscribe_callback</span>)));
-                <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">borrow_mut</span>().<span class="ident">subscribe</span>(
+                <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">subscribe</span>(
                     <span class="ident">InterestMaskSet::SERVER</span> <span class="op">|</span> <span class="ident">InterestMaskSet::SINK</span> <span class="op">|</span> <span class="ident">InterestMaskSet::SOURCE</span>,
                     <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {},
                 );
 
-                <span class="ident">connection</span>.<span class="ident">mainloop</span>.<span class="ident">borrow_mut</span>().<span class="ident">run</span>().<span class="ident">unwrap</span>();
+                <span class="ident">connection</span>.<span class="ident">mainloop</span>.<span class="ident">run</span>().<span class="ident">unwrap</span>();
             })
             .<span class="ident">unwrap</span>();
         <span class="ident">recv_result</span>
