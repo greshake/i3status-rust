@@ -77,13 +77,10 @@ use libpulse_binding::volume::{ChannelVolumes, Volume};
 
 use crossbeam_channel::{unbounded, Sender};
 
-use std::cell::RefCell;
 use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
-use std::ops::Deref;
 use std::process::Stdio;
-use std::rc::Rc;
 use std::sync::Mutex;
 use std::thread;
 
@@ -410,8 +407,8 @@ impl SoundDevice for AlsaSoundDevice {
 }
 
 struct PulseAudioConnection {
-    mainloop: Rc<RefCell<Mainloop>>,
-    context: Rc<RefCell<Context>>,
+    mainloop: Mainloop,
+    context: Context,
 }
 
 struct PulseAudioClient {
@@ -509,17 +506,16 @@ impl PulseAudioConnection {
             .set_str(properties::APPLICATION_NAME, env!("CARGO_PKG_NAME"))
             .map_err(|_| Error::new("Could not set pulseaudio APPLICATION_NAME property"))?;
 
-        let mainloop = Rc::new(RefCell::new(
-            Mainloop::new().error("Failed to create pulseaudio mainloop")?,
-        ));
+        let mainloop = Mainloop::new().error("Failed to create pulseaudio mainloop")?;
 
-        let context = Rc::new(RefCell::new(
-            Context::new_with_proplist(mainloop.borrow().deref(), concat!(env!("CARGO_PKG_NAME"), "_context"), &proplist)
-                .error("Failed to create new pulseaudio context")?,
-        ));
+        let mut context = Context::new_with_proplist(
+            &mainloop,
+            concat!(env!("CARGO_PKG_NAME"), "_context"),
+            &proplist,
+        )
+        .error("Failed to create new pulseaudio context")?;
 
         context
-            .borrow_mut()
             .connect(None, FlagSet::NOFLAGS, None)
             .error("Failed to connect to pulseaudio context")?;
 
@@ -528,7 +524,7 @@ impl PulseAudioConnection {
         // Wait for context to be ready
         loop {
             connection.iterate(false)?;
-            match connection.context.borrow().get_state() {
+            match connection.context.get_state() {
                 PulseState::Ready => {
                     break;
                 }
@@ -543,7 +539,7 @@ impl PulseAudioConnection {
     }
 
     fn iterate(&mut self, blocking: bool) -> Result<()> {
-        match self.mainloop.borrow_mut().iterate(blocking) {
+        match self.mainloop.iterate(blocking) {
             IterateResult::Quit(_) | IterateResult::Err(_) => {
                 Err(Error::new("failed to iterate pulseaudio state"))
             }
@@ -581,7 +577,7 @@ impl PulseAudioClient {
                     // make sure mainloop dispatched everything
                     loop {
                         connection.iterate(false).unwrap();
-                        if connection.context.borrow().get_state() == PulseState::Ready {
+                        if connection.context.get_state() == PulseState::Ready {
                             break;
                         }
                     }
@@ -590,7 +586,7 @@ impl PulseAudioClient {
                         Err(_) => {}
                         Ok(req) => {
                             use PulseAudioClientRequest::*;
-                            let mut introspector = connection.context.borrow_mut().introspect();
+                            let mut introspector = connection.context.introspect();
 
                             match req {
                                 GetDefaultDevice => {
@@ -651,19 +647,18 @@ impl PulseAudioClient {
         thread::Builder::new()
             .name("sound_pulseaudio_sub".into())
             .spawn(move || {
-                let connection = new_connection(send_result2);
+                let mut connection = new_connection(send_result2);
 
                 // subcribe for events
                 connection
                     .context
-                    .borrow_mut()
                     .set_subscribe_callback(Some(Box::new(PulseAudioClient::subscribe_callback)));
-                connection.context.borrow_mut().subscribe(
+                connection.context.subscribe(
                     InterestMaskSet::SERVER | InterestMaskSet::SINK | InterestMaskSet::SOURCE,
                     |_| {},
                 );
 
-                connection.mainloop.borrow_mut().run().unwrap();
+                connection.mainloop.run().unwrap();
             })
             .unwrap();
         recv_result
