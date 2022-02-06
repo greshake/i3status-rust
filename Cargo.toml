@@ -50,7 +50,7 @@ version = "2.31"
 default-features = false
 
 [dependencies.inotify]
-version = "0.9"
+version = "0.10"
 default-features = false
 
 [dependencies.regex]
