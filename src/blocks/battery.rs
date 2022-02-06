@@ -815,7 +815,11 @@ impl ConfigBlock for Battery {
                             break;
                         }
                     }
-                    device.block_error("battery", "failed to determine default battery - please set your battery device in the configuration file")?
+                    if device.is_none() && block_config.allow_missing {
+                        "BAT0".to_string()
+                    } else {
+                        device.block_error("battery", "failed to determine default battery - please set your battery device in the configuration file")?
+                    }
                 }
             },
         };
