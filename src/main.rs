@@ -132,13 +132,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
     // Initialize the blocks
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
     for &(ref block_name, ref block_config) in &config.blocks {
-        blocks.push(create_block(
+        let block = create_block(
             blocks.len(),
             block_name,
             block_config.clone(),
             shared_config.clone(),
             tx_update_requests.clone(),
-        )?);
+        )?;
+
+        if let Some(block) = block {
+            blocks.push(block);
+        }
     }
 
     let mut scheduler = UpdateScheduler::new(&blocks);
