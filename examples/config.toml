@@ -36,4 +36,4 @@ format = "%a %d/%m %R"
 
 [[block]]
 block = "battery"
-if_command = "test -f /sys/class/power_supply/BAT0"
+if_command = "test -e /sys/class/power_supply/BAT0"
