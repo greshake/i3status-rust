@@ -1,3 +1,13 @@
+# i3status-rust 0.21.5
+
+## New Blocks and Features
+
+* Add `if_command` field to block config to allow conditional enabling of blocks on startup (#1415 by LordMZTE) 
+ 
+## Bug Fixes and Improvements
+
+* Battery: revert to previous default device discovery behaviour (d6fbfd06cc4d078efccb1c559e7eb934d36ffe7a)
+
 # i3status-rust 0.21.4
 
 ## Bug Fixes and Improvements
