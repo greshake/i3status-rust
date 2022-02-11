@@ -242,7 +242,7 @@ format = "{percentage} {time}"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`device` | `sysfs`: The device in `/sys/class/power_supply/` to read from.<br />`apcaccess`: IPv4Address/hostname:port<br/>`UPower`: this can be `"DisplayDevice"` or any of the other paths found by running `upower --enumerate`. | No | `sysfs`: the first battery device found in `/sys/class/power_supply`, usually "BAT0".<br />`apcaccess`: "localhost:3551"<br />`upower`:  `DisplayDevice``
+`device` | `sysfs`: The device in `/sys/class/power_supply/` to read from.<br />`apcaccess`: IPv4Address/hostname:port<br/>`UPower`: this can be `"DisplayDevice"` or any of the other paths found by running `upower --enumerate`. | No | `sysfs`: the first battery device found in `/sys/class/power_supply`, with "BATx" or "CMBx" entries taking precedence.<br />`apcaccess`: "localhost:3551"<br />`upower`:  `DisplayDevice``
 `driver` | One of `"sysfs"`, `"apcaccess"`, or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs" \|\| "apcaccess"`. | No | `10`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}"`
