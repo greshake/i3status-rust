@@ -5,12 +5,13 @@ Define blocks in your config file in the following format:
 block = "insert-block-name-here"
 ```
 
-Each block has different required or optional parameters that may be specified.
-These are listed in the docs for each block below.
+Each block has different required or optional parameters that may be specified.  
+In addition, there are some global config directives that can be applied to any block:
 
-In addition, there are some global config directives that can be applied to any block.  
-`on_click`: this can be set for any block to run a command when the block is left clicked.
-This will override any default actions the block already has.
+Config | Description | Default
+-------|-------------|--------
+`on_click` | Runs the specified command when the block is left clicked. This will override any default actions the block already has for left click. | None
+`if_command` | Only enables the block if the specified command has a return code of 0. | None
 
 Some blocks support format strings - refer to the [formatting section](#formatting) to see how to customize formatting strings' placeholders.
 
