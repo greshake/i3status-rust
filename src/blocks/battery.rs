@@ -804,21 +804,39 @@ impl ConfigBlock for Battery {
                         "battery",
                         "failed to read /sys/class/power_supply direcory",
                     )?;
-                    let mut device = None;
+                    let mut found_battery_devices = Vec::<String>::new();
                     for entry in sysfs_dir {
                         let dir = entry?;
                         if read_to_string(dir.path().join("type"))
                             .map(|t| t.trim() == "Battery")
                             .unwrap_or(false)
                         {
-                            device = Some(dir.file_name().to_str().unwrap().to_string());
-                            break;
+                            found_battery_devices
+                                .push(dir.file_name().to_str().unwrap().to_string());
                         }
                     }
-                    if device.is_none() && block_config.allow_missing {
-                        "BAT0".to_string()
+
+                    // Better to default to the system battery, rather than possibly a keyboard or mouse battery.
+                    // System batteries usually start with BAT or CMB.
+                    // Otherwise, just grab the first one from the list.
+                    let chosen_device = if let Some(preferred_device) = found_battery_devices
+                        .iter()
+                        .find(|&s| s.starts_with("BAT") || s.starts_with("CMB"))
+                    {
+                        Some(preferred_device)
                     } else {
-                        device.block_error("battery", "failed to determine default battery - please set your battery device in the configuration file")?
+                        found_battery_devices.iter().nth(0)
+                    };
+
+                    match chosen_device {
+                        Some(d) => d.to_string(),
+                        None => {
+                            if block_config.allow_missing {
+                                "BAT0".to_string()
+                            } else {
+                                return Err(BlockError("battery".to_string(), "failed to determine default battery - please set your battery device in the configuration file".to_string()));
+                            }
+                        }
                     }
                 }
             },
