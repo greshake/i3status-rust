@@ -832,6 +832,8 @@ impl ConfigBlock for Battery {
                         Some(d) => d.to_string(),
                         None => {
                             if block_config.allow_missing {
+                                // TODO: If the battery isn't actually BAT0, then even if it appears again we will never update
+                                // Need to implement device refresh
                                 "BAT0".to_string()
                             } else {
                                 return Err(BlockError("battery".to_string(), "failed to determine default battery - please set your battery device in the configuration file".to_string()));
