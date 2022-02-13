@@ -1,3 +1,13 @@
+# i3status-rust 0.21.6
+
+## New Blocks and Features
+
+* Hueshift: Add wl-gammarelay driver (#1421 by bim9262)
+ 
+## Bug Fixes and Improvements
+
+* Battery: prefer system batteries (BATx/CMBx) when doing auto discovery (3db119a5a2dd12a65a499377cf849d418bfee308)
+
 # i3status-rust 0.21.5
 
 ## New Blocks and Features
