@@ -5,6 +5,7 @@
 <p>When a message is received over a AF_UNIX socket, it may contain associated FDs. To prevent
 the message from closing those FDs on drop, call this method that returns all the received
 FDs with their ownership.</p>
+<p>This function is Unix-specific.</p>
 <p>Note: the message will continue to reference the files, so you must keep them open for as
 long as the message itself.</p>
 </div></details><details class="rustdoc-toggle method-toggle" open><summary><div id="method.body_signature" class="method has-srclink"><div class="rightside"></div><a href="#method.body_signature" class="anchor"></a><h4 class="code-header">pub fn <a href="#method.body_signature" class="fnname">body_signature</a>(&amp;self) -&gt; <a class="enum" href="../../../errors/enum.StdResult.html" title="enum i3status_rs::errors::StdResult">Result</a>&lt;Signature&lt;'_&gt;, Error&gt;</h4></div></summary><div class="docblock"><p>The signature of the body.</p>

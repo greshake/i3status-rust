@@ -276,7 +276,7 @@
 
     <span class="kw">let</span> (<span class="ident">state_dir</span>, <span class="ident">state_file</span>, <span class="ident">state_path</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">state_path</span> {
         <span class="prelude-val">Some</span>(<span class="ident">p</span>) =&gt; {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">p</span>: <span class="ident">PathBuf</span> <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">p</span>.<span class="ident">expand</span>()<span class="question-mark">?</span>).<span class="ident">into</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">p</span>: <span class="ident">PathBuf</span> <span class="op">=</span> (<span class="kw-2">*</span><span class="ident">p</span>.<span class="ident">expand</span>()<span class="question-mark">?</span>).<span class="ident">into</span>();
             <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">p</span>.<span class="ident">clone</span>();
             <span class="kw">let</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">p</span>.<span class="ident">file_name</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to parse state_dir&quot;</span>)<span class="question-mark">?</span>.<span class="ident">to_owned</span>();
             <span class="ident">p</span>.<span class="ident">pop</span>();
