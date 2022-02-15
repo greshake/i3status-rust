@@ -221,6 +221,8 @@
 <span id="220">220</span>
 <span id="221">221</span>
 <span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::env</span>;
 <span class="kw">use</span> <span class="ident">std::fs::File</span>;
 <span class="kw">use</span> <span class="ident">std::io::prelude</span>::<span class="kw-2">*</span>;
@@ -291,12 +293,14 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new_dbus_connection</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span> {
-    <span class="ident">zbus::Connection::session</span>().<span class="kw">await</span>
+    <span class="ident">zbus::Connection::session</span>()
+        .<span class="kw">await</span>
         .<span class="ident">error</span>(<span class="string">&quot;Failed to open DBus session connection&quot;</span>)
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new_system_dbus_connection</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span> {
-    <span class="ident">zbus::Connection::system</span>().<span class="kw">await</span>
+    <span class="ident">zbus::Connection::system</span>()
+        .<span class="kw">await</span>
         .<span class="ident">error</span>(<span class="string">&quot;Failed to open DBus system connection&quot;</span>)
 }
 
