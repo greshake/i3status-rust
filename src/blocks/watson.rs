@@ -60,7 +60,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     let (state_dir, state_file, state_path) = match config.state_path {
         Some(p) => {
-            let mut p: PathBuf = (&*p.expand()?).into();
+            let mut p: PathBuf = (*p.expand()?).into();
             let path = p.clone();
             let file = p.file_name().error("Failed to parse state_dir")?.to_owned();
             p.pop();

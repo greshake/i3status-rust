@@ -50,7 +50,7 @@ swayipc-async = "2.0"
 # zvariant = { path = "../zbus/zvariant" }
 # zbus = { git = "https://gitlab.freedesktop.org/dbus/zbus.git" }
 # zvariant = { git = "https://gitlab.freedesktop.org/dbus/zbus.git" }
-zbus = { version = "2.0", features = ["tokio"]}
+zbus = { version = "2.1", default-features = false, features = ["tokio"]}
 zvariant = "3.0"
 
 # TODO: remove
