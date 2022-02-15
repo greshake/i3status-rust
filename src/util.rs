@@ -68,12 +68,14 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
 }
 
 pub async fn new_dbus_connection() -> Result<zbus::Connection> {
-    zbus::Connection::session().await
+    zbus::Connection::session()
+        .await
         .error("Failed to open DBus session connection")
 }
 
 pub async fn new_system_dbus_connection() -> Result<zbus::Connection> {
-    zbus::Connection::system().await
+    zbus::Connection::system()
+        .await
         .error("Failed to open DBus system connection")
 }
 
