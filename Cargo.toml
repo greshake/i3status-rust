@@ -12,6 +12,8 @@ edition = "2018"
 [features]
 default = ["pulseaudio"]
 pulseaudio = ["libpulse-binding"]
+# Make the project compile with 'x86_64-unknown-linux-musl'
+static = ["curl/static-curl", "openssl/vendored"]
 # Make widgets' borders visible. (for debugging purposes)
 debug_borders = []
 
@@ -36,6 +38,9 @@ toml = "0.5"
 libpulse-binding = { optional = true, version = "2.0", default-features = false }
 notmuch = { optional = true, version = "0.7.0" }
 maildir = { optional = true, version = "0.5" }
+
+# Sub-dependency of curl
+openssl = { optional = true, version = "*" }
 
 [dependencies.chrono]
 version = "0.4"
