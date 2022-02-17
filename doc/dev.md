@@ -15,4 +15,6 @@ $ cargo install --path .
 $ ./install.sh
 ```
 
+**Note**: On targets requiring statically linked system libraries (like _Alpine Linux_), you _need_ to activate the `static` feature by using the `--features static` switch on `cargo install`.
+
 By default, this will install the binary to `~/.cargo/bin/i3status-rs`.
