@@ -33,9 +33,10 @@ shellexpand = "2.1"
 hyper = "0.14"
 sensors = "0.2.2"
 
+notmuch = { version = "0.7", optional = true }
+
 # TODO: make optional
 maildir = "0.5"
-notmuch = "0.7"
 
 crossbeam-channel = "0.5"
 libpulse-binding = { version = "2.0", default-features = false }

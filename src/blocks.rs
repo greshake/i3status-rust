@@ -22,12 +22,18 @@ use crate::widget::State;
 use crate::{Request, RequestCmd};
 
 macro_rules! define_blocks {
-    ($($block:ident,)*) => {
-        $(pub mod $block;)*
+    {
+        $( $(#[cfg($attr: meta)])? $block: ident $(,)? )*
+    } => {
+        $(
+            $(#[cfg($attr)])?
+            pub mod $block;
+        )*
 
         #[derive(Deserialize, Debug, Clone, Copy)]
         pub enum BlockType {
             $(
+                $(#[cfg($attr)])?
                 #[allow(non_camel_case_types)]
                 $block,
             )*
@@ -38,6 +44,7 @@ macro_rules! define_blocks {
                 let id = api.id;
                 match self {
                     $(
+                        $(#[cfg($attr)])?
                         Self::$block => {
                             $block::run(config, api).await.in_block(self, id)
                         }
@@ -72,6 +79,7 @@ define_blocks!(
     net,
     // networkmanager,
     notify,
+    #[cfg(feature = "notmuch")]
     notmuch,
     pacman,
     pomodoro,
