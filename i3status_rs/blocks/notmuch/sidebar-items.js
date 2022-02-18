@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["run",""],["run_query",""]],"struct":[["NotmuchConfig",""]]});
