@@ -4,6 +4,11 @@
 //!
 //! The simplest configuration will return the total count of messages in the notmuch database stored at $HOME/.mail
 //!
+//! Note that you need to enable `notmuch` feature to use this block:
+//! ```sh
+//! cargo build --release --feature notmuch
+//! ```
+//!
 //! # Configuration
 //!
 //! Key | Values | Required | Default
