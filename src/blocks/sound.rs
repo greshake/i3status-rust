@@ -48,8 +48,8 @@ trait SoundDevice {
     fn muted(&self) -> bool;
     fn output_name(&self) -> String;
     fn output_description(&self) -> Option<String>;
-    fn active_port(&self) -> Option<String>;
-    fn form_factor(&self) -> Option<String>;
+    fn active_port(&self) -> Option<&str>;
+    fn form_factor(&self) -> Option<&str>;
 
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
@@ -94,10 +94,10 @@ impl SoundDevice for AlsaSoundDevice {
         // TODO Does Alsa has something similar like descripitons in Pulse?
         None
     }
-    fn active_port(&self) -> Option<String> {
+    fn active_port(&self) -> Option<&str> {
         None
     }
-    fn form_factor(&self) -> Option<String> {
+    fn form_factor(&self) -> Option<&str> {
         None
     }
 
@@ -659,12 +659,12 @@ impl SoundDevice for PulseAudioSoundDevice {
         self.description.clone()
     }
 
-    fn active_port(&self) -> Option<String> {
-        self.active_port.clone()
+    fn active_port(&self) -> Option<&str> {
+        self.active_port.as_deref()
     }
 
-    fn form_factor(&self) -> Option<String> {
-        self.form_factor.clone()
+    fn form_factor(&self) -> Option<&str> {
+        self.form_factor.as_deref()
     }
 
     fn get_info(&mut self) -> Result<()> {
