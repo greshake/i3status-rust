@@ -93,10 +93,8 @@ impl ConfigBlock for KDEConnect {
         let send6 = send.clone();
         let send7 = send.clone();
 
-        let c = Connection::new_session().block_error(
-            "kdeconnect",
-            "Failed to establish D-Bus connection",
-        )?;
+        let c = Connection::new_session()
+            .block_error("kdeconnect", "Failed to establish D-Bus connection")?;
 
         let device_id = if block_config.device_id.is_none() {
             // If none specified in block config, just grab the first device found.
@@ -108,10 +106,7 @@ impl ConfigBlock for KDEConnect {
             // method call opts: only_reachable=false, only_paired=true
             let (devices,): (Vec<String>,) = p1
                 .method_call("org.kde.kdeconnect.daemon", "devices", (false, true))
-                .block_error(
-                    "kdeconnect",
-                    "Couldn't connect to KDE Connect daemon",
-                )?;
+                .block_error("kdeconnect", "Couldn't connect to KDE Connect daemon")?;
             if devices.is_empty() {
                 return Err(BlockError(
                     "kdeconnect".to_owned(),

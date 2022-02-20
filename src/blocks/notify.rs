@@ -44,20 +44,17 @@ impl ConfigBlock for Notify {
         shared_config: SharedConfig,
         send: Sender<Task>,
     ) -> Result<Self> {
-        let c = Connection::get_private(BusType::Session).block_error(
-            "notify",
-            "Failed to establish D-Bus connection",
-        )?;
+        let c = Connection::get_private(BusType::Session)
+            .block_error("notify", "Failed to establish D-Bus connection")?;
 
         let p = c.with_path(
             "org.freedesktop.Notifications",
             "/org/freedesktop/Notifications",
             5000,
         );
-        let initial_state: bool = p.get("org.dunstproject.cmd0", "paused").block_error(
-            "notify",
-            "Failed to get dunst state. Is it running?",
-        )?;
+        let initial_state: bool = p
+            .get("org.dunstproject.cmd0", "paused")
+            .block_error("notify", "Failed to get dunst state. Is it running?")?;
 
         let icon = if initial_state { "bell-slash" } else { "bell" };
 
@@ -136,10 +133,8 @@ impl Block for Notify {
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let MouseButton::Left = e.button {
-            let c = Connection::get_private(BusType::Session).block_error(
-                "notify",
-                "Failed to establish D-Bus connection",
-            )?;
+            let c = Connection::get_private(BusType::Session)
+                .block_error("notify", "Failed to establish D-Bus connection")?;
 
             let p = c.with_path(
                 "org.freedesktop.Notifications",

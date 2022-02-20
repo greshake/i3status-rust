@@ -83,7 +83,8 @@ fn find_ip_location() -> Result<Option<String>> {
 
     let city = http_call_result
         .content
-        .pointer("/city").and_then(|v| v.as_str())
+        .pointer("/city")
+        .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
     Ok(city)

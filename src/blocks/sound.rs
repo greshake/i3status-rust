@@ -266,7 +266,8 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
                     .map(|description| description.into_owned()),
                 active_port: source_info
                     .active_port
-                    .as_ref().and_then(|a| a.name.as_ref().map(|n| n.to_string())),
+                    .as_ref()
+                    .and_then(|a| a.name.as_ref().map(|n| n.to_string())),
                 form_factor: source_info.proplist.get_str(DEVICE_FORM_FACTOR),
             }),
         }
@@ -290,7 +291,8 @@ impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
                     .map(|description| description.into_owned()),
                 active_port: sink_info
                     .active_port
-                    .as_ref().and_then(|a| a.name.as_ref().map(|n| n.to_string())),
+                    .as_ref()
+                    .and_then(|a| a.name.as_ref().map(|n| n.to_string())),
                 form_factor: sink_info.proplist.get_str(DEVICE_FORM_FACTOR),
             }),
         }
