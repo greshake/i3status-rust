@@ -46,7 +46,7 @@ impl ConfigBlock for Notify {
     ) -> Result<Self> {
         let c = Connection::get_private(BusType::Session).block_error(
             "notify",
-            &"Failed to establish D-Bus connection".to_string(),
+            "Failed to establish D-Bus connection",
         )?;
 
         let p = c.with_path(
@@ -56,7 +56,7 @@ impl ConfigBlock for Notify {
         );
         let initial_state: bool = p.get("org.dunstproject.cmd0", "paused").block_error(
             "notify",
-            &"Failed to get dunst state. Is it running?".to_string(),
+            "Failed to get dunst state. Is it running?",
         )?;
 
         let icon = if initial_state { "bell-slash" } else { "bell" };
@@ -138,7 +138,7 @@ impl Block for Notify {
         if let MouseButton::Left = e.button {
             let c = Connection::get_private(BusType::Session).block_error(
                 "notify",
-                &"Failed to establish D-Bus connection".to_string(),
+                "Failed to establish D-Bus connection",
             )?;
 
             let p = c.with_path(
@@ -154,10 +154,10 @@ impl Block for Notify {
 
             if paused == 1 {
                 p.set("org.dunstproject.cmd0", "paused", false)
-                    .block_error("notify", &"Failed to query D-Bus".to_string())?;
+                    .block_error("notify", "Failed to query D-Bus")?;
             } else {
                 p.set("org.dunstproject.cmd0", "paused", true)
-                    .block_error("notify", &"Failed to query D-Bus".to_string())?;
+                    .block_error("notify", "Failed to query D-Bus")?;
             }
 
             // block will auto-update due to monitoring the bus

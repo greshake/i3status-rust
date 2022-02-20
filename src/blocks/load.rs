@@ -102,7 +102,7 @@ impl Block for Load {
         f.read_to_string(&mut loadavg)
             .block_error("load", "Failed to read the load average of your system!")?;
 
-        let split: Vec<f64> = (&loadavg)
+        let split: Vec<f64> = loadavg
             .split(' ')
             .take(3)
             .map(|x| x.parse().unwrap())

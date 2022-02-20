@@ -250,7 +250,7 @@ fn get_pacman_available_updates() -> Result<String> {
         ])
         .stdout(Stdio::null())
         .status()
-        .block_error("pacman", &"Failed to run command".to_string())?;
+        .block_error("pacman", "Failed to run command")?;
 
     // Get updates list
     String::from_utf8(

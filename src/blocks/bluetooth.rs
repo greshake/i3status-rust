@@ -81,7 +81,7 @@ impl BluetoothDevice {
             dbus::strings::Path::new(format!(
                 "/org/bluez/{}/dev_{}",
                 controller_id,
-                mac.replace(":", "_")
+                mac.replace(':', "_")
             ))
             .unwrap()
         }

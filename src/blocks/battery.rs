@@ -825,7 +825,7 @@ impl ConfigBlock for Battery {
                     {
                         Some(preferred_device)
                     } else {
-                        found_battery_devices.iter().nth(0)
+                        found_battery_devices.first()
                     };
 
                     match chosen_device {

@@ -368,7 +368,7 @@ fn get_ibus_address() -> Result<String> {
             .next()
             .block_error(
                 "ibus",
-                &"Could not find an IBus socket file matching $DISPLAY.".to_string(),
+                "Could not find an IBus socket file matching $DISPLAY.",
             )?;
         socket_dir.join(candidate)
     };

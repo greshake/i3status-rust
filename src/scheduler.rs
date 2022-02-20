@@ -74,7 +74,7 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(&mut self, blocks: &mut Vec<Box<dyn Block>>) -> Result<()> {
+    pub fn do_scheduled_updates(&mut self, blocks: &mut [Box<dyn Block>]) -> Result<()> {
         let t = self
             .schedule
             .pop()

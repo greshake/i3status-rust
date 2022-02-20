@@ -95,7 +95,7 @@ impl ConfigBlock for KDEConnect {
 
         let c = Connection::new_session().block_error(
             "kdeconnect",
-            &"Failed to establish D-Bus connection".to_string(),
+            "Failed to establish D-Bus connection",
         )?;
 
         let device_id = if block_config.device_id.is_none() {
@@ -110,7 +110,7 @@ impl ConfigBlock for KDEConnect {
                 .method_call("org.kde.kdeconnect.daemon", "devices", (false, true))
                 .block_error(
                     "kdeconnect",
-                    &"Couldn't connect to KDE Connect daemon".to_string(),
+                    "Couldn't connect to KDE Connect daemon",
                 )?;
             if devices.is_empty() {
                 return Err(BlockError(
