@@ -842,7 +842,7 @@ impl Default for SoundConfig {
 impl Sound {
     fn icon(&self, volume: u32) -> String {
         if self.headphones_indicator && self.device_kind == DeviceKind::Sink {
-            let headphones = match self.device.form_factor().as_deref() {
+            let headphones = match self.device.form_factor() {
                 // form_factor's possible values are listed at:
                 // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
                 Some("headset") | Some("headphone") | Some("hands-free") | Some("portable") => true,
@@ -853,8 +853,7 @@ impl Sound {
                 None => self
                     .device
                     .active_port()
-                    .map(|p| p.contains("headphones"))
-                    .unwrap_or(false),
+                    .map_or(false, |p| p.contains("headphones")),
                 // form_factor is present and is some non-headphone value
                 _ => false,
             };
