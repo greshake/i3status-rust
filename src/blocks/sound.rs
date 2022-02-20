@@ -1,3 +1,13 @@
+use std::cmp::{max, min};
+use std::collections::BTreeMap;
+use std::io::Read;
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
+
+use crossbeam_channel::Sender;
+use serde_derive::Deserialize;
+
 #[cfg(feature = "pulseaudio")]
 use {
     crate::pulse::callbacks::ListResult,
@@ -8,6 +18,7 @@ use {
     },
     crate::pulse::mainloop::standard::IterateResult,
     crate::pulse::mainloop::standard::Mainloop,
+    crate::pulse::proplist::properties::DEVICE_FORM_FACTOR,
     crate::pulse::proplist::{properties, Proplist},
     crate::pulse::volume::{ChannelVolumes, Volume},
     crossbeam_channel::unbounded,
@@ -19,16 +30,6 @@ use {
     std::rc::Rc,
     std::sync::Mutex,
 };
-
-use std::cmp::{max, min};
-use std::collections::BTreeMap;
-use std::io::Read;
-use std::process::{Command, Stdio};
-use std::thread;
-use std::time::{Duration, Instant};
-
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
@@ -47,7 +48,8 @@ trait SoundDevice {
     fn muted(&self) -> bool;
     fn output_name(&self) -> String;
     fn output_description(&self) -> Option<String>;
-    fn active_port(&self) -> Option<String>;
+    fn active_port(&self) -> Option<&str>;
+    fn form_factor(&self) -> Option<&str>;
 
     fn get_info(&mut self) -> Result<()>;
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
@@ -92,7 +94,10 @@ impl SoundDevice for AlsaSoundDevice {
         // TODO Does Alsa has something similar like descripitons in Pulse?
         None
     }
-    fn active_port(&self) -> Option<String> {
+    fn active_port(&self) -> Option<&str> {
+        None
+    }
+    fn form_factor(&self) -> Option<&str> {
         None
     }
 
@@ -226,6 +231,7 @@ struct PulseAudioSoundDevice {
     name: Option<String>,
     description: Option<String>,
     active_port: Option<String>,
+    form_factor: Option<String>,
     device_kind: DeviceKind,
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
@@ -240,6 +246,7 @@ struct PulseAudioVolInfo {
     name: String,
     description: Option<String>,
     active_port: Option<String>,
+    form_factor: Option<String>,
 }
 
 #[cfg(feature = "pulseaudio")]
@@ -262,6 +269,7 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
                     .as_ref()
                     .map(|a| a.name.as_ref().map(|n| n.to_string()))
                     .flatten(),
+                form_factor: source_info.proplist.get_str(DEVICE_FORM_FACTOR),
             }),
         }
     }
@@ -287,6 +295,7 @@ impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
                     .as_ref()
                     .map(|a| a.name.as_ref().map(|n| n.to_string()))
                     .flatten(),
+                form_factor: sink_info.proplist.get_str(DEVICE_FORM_FACTOR),
             }),
         }
     }
@@ -605,6 +614,7 @@ impl PulseAudioSoundDevice {
             name,
             description: None,
             active_port: None,
+            form_factor: None,
             device_kind,
             volume: None,
             volume_avg: 0,
@@ -649,8 +659,12 @@ impl SoundDevice for PulseAudioSoundDevice {
         self.description.clone()
     }
 
-    fn active_port(&self) -> Option<String> {
-        self.active_port.clone()
+    fn active_port(&self) -> Option<&str> {
+        self.active_port.as_deref()
+    }
+
+    fn form_factor(&self) -> Option<&str> {
+        self.form_factor.as_deref()
     }
 
     fn get_info(&mut self) -> Result<()> {
@@ -661,6 +675,7 @@ impl SoundDevice for PulseAudioSoundDevice {
             self.muted = info.mute;
             self.description = info.description.clone();
             self.active_port = info.active_port.clone();
+            self.form_factor = info.form_factor.clone();
         }
 
         Ok(())
@@ -825,9 +840,26 @@ impl Default for SoundConfig {
 }
 
 impl Sound {
-    fn icon(&self, volume: u32, headphones: bool) -> String {
-        if self.headphones_indicator && self.device_kind == DeviceKind::Sink && headphones {
-            return String::from("headphones");
+    fn icon(&self, volume: u32) -> String {
+        if self.headphones_indicator && self.device_kind == DeviceKind::Sink {
+            let headphones = match self.device.form_factor() {
+                // form_factor's possible values are listed at:
+                // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
+                Some("headset") | Some("headphone") | Some("hands-free") | Some("portable") => true,
+                // Per discussion at
+                // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
+                // some sinks may not have the form_factor property, so we should fall back to the
+                // active_port if that property is not present.
+                None => self
+                    .device
+                    .active_port()
+                    .map_or(false, |p| p.contains("headphones")),
+                // form_factor is present and is some non-headphone value
+                _ => false,
+            };
+            if headphones {
+                return String::from("headphones");
+            }
         }
 
         let prefix = match self.device_kind {
@@ -945,17 +977,8 @@ impl Block for Sound {
         );
         let texts = self.format.render(&values)?;
 
-        // TODO: Query port names instead? See https://github.com/greshake/i3status-rust/pull/1363#issue-1069904082
-        // Reference: PulseAudio port name definitions are the first item in the well_known_descriptions struct:
-        // https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0ce3008605e5f644fac4bb5edbb1443110201ec1/src/modules/alsa/alsa-mixer.c#L2709-L2731
-        let headphones = self
-            .device
-            .active_port()
-            .map(|p| p.contains("headphones"))
-            .unwrap_or(false);
-
         if self.device.muted() {
-            self.text.set_icon(&self.icon(0, headphones))?;
+            self.text.set_icon(&self.icon(0))?;
             if self.show_volume_when_muted {
                 self.text.set_texts(texts);
             } else {
@@ -963,7 +986,7 @@ impl Block for Sound {
             }
             self.text.set_state(State::Warning);
         } else {
-            self.text.set_icon(&self.icon(volume, headphones))?;
+            self.text.set_icon(&self.icon(volume))?;
             self.text.set_state(State::Idle);
             self.text.set_texts(texts);
         }
