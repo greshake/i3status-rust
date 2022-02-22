@@ -180,7 +180,15 @@ impl NetworkDevice {
 
                         let ssid = Some(escape_pango_text(&decode_escaped_unicode(&ssid)));
                         let freq = interface.frequency.map(|f| f as f64 * 1e6);
-                        let signal = ap.signal.map(signal_percents);
+                        let signal = ap
+                            .signal
+                            .or_else(|| {
+                                sock.get_bss_info(index)
+                                    .ok()
+                                    .and_then(|bss| bss.signal)
+                                    .map(|s| (s / 100) as i8)
+                            })
+                            .map(signal_percents);
 
                         return Ok((ssid, freq, signal));
                     }
