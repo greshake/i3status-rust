@@ -485,7 +485,6 @@ impl UpowerDevice {
     pub fn monitor(&self, id: usize, update_request: Sender<Task>) {
         let device = self.device.clone();
         let device_path = self.device_path.clone();
-        let allow_missing = self.allow_missing;
         thread::Builder::new()
             .name("battery".into())
             .spawn(move || {
@@ -525,9 +524,8 @@ impl UpowerDevice {
                                     .expect("Unable to get objectpath argument")
                                     .starts_with("/org/freedesktop/UPower/devices/");
 
-                            // If allow_missing and a device has been added or removed
-                            // Then update the device path
-                            if allow_missing && device_changed {
+                            // If has been added or removed update the device path
+                            if device_changed {
                                 *device_path.lock().unwrap() =
                                     UpowerDevice::get_device_path(&device, &enumerate_con).unwrap();
                             }
@@ -607,26 +605,7 @@ impl UpowerDevice {
 
 impl BatteryDevice for UpowerDevice {
     fn is_available(&self) -> bool {
-        if self.device == "DisplayDevice" {
-            return true;
-        }
-        if let Ok(msg) = dbus::Message::new_method_call(
-            "org.freedesktop.UPower",
-            "/org/freedesktop/UPower",
-            "org.freedesktop.UPower",
-            "EnumerateDevices",
-        ) {
-            if let Ok(dbus_reply) = self.con.send_with_reply_and_block(msg, 2000) {
-                // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
-                if let Some(mut paths) = dbus_reply.get1::<Array<dbus::Path, _>>() {
-                    if let Some(device_path) = &*self.device_path.lock().unwrap() {
-                        // Target device path
-                        return paths.any(|entry| entry == dbus::Path::from(device_path));
-                    }
-                }
-            }
-        }
-        false
+        self.device_path.lock().unwrap().is_some()
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
