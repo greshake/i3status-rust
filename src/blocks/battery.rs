@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 use std::fs::{read_dir, read_to_string};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -449,7 +450,7 @@ impl BatteryDevice for ApcUpsDevice {
 
 pub struct UpowerDevice {
     device: String,
-    device_path: Option<String>,
+    device_path: Arc<Mutex<Option<String>>>,
     con: dbus::ffidisp::Connection,
     allow_missing: bool,
 }
@@ -459,26 +460,37 @@ impl UpowerDevice {
     /// the path `"/org/freedesktop/UPower/devices/<device>"`. Raises an error
     /// if D-Bus does not respond.
     pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
-        let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
+        let con = dbus::ffidisp::Connection::new_system()
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
-        let mut out = UpowerDevice {
-            device: device.to_string(),
-            device_path: None,
-            con,
-            allow_missing,
-        };
-        out.device_path = out.get_device_path()?;
-        Ok(out)
+        let device_path = UpowerDevice::get_device_path(device, &con)?;
+
+        if device_path.is_some() || allow_missing {
+            Ok(UpowerDevice {
+                device: device.to_string(),
+                device_path: Arc::new(Mutex::new(device_path)),
+                con,
+                allow_missing,
+            })
+        } else {
+            Err(BlockError(
+                "battery".to_string(),
+                "UPower device could not be found.".to_string(),
+            ))
+        }
     }
 
     /// Monitor UPower property changes in a separate thread and send updates
     /// via the `update_request` channel.
     pub fn monitor(&self, id: usize, update_request: Sender<Task>) {
+        let device = self.device.clone();
+        let device_path = self.device_path.clone();
         thread::Builder::new()
             .name("battery".into())
             .spawn(move || {
-                let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
+                let con = dbus::ffidisp::Connection::new_system()
+                    .expect("Failed to establish D-Bus connection.");
+                let enumerate_con = dbus::ffidisp::Connection::new_system()
                     .expect("Failed to establish D-Bus connection.");
                 let properties_changed_rule = "type='signal',\
                  interface='org.freedesktop.DBus.Properties',\
@@ -506,13 +518,19 @@ impl UpowerDevice {
                         if let Some(interface) =
                             msg.interface().map(|interface| interface.to_string())
                         {
-                            if (interface == "org.freedesktop.UPower"
+                            let device_changed = interface == "org.freedesktop.UPower"
                                 && msg
                                     .get1::<dbus::Path>()
                                     .expect("Unable to get objectpath argument")
-                                    .starts_with("/org/freedesktop/UPower/devices/"))
-                                || interface == "org.freedesktop.DBus.Properties"
-                            {
+                                    .starts_with("/org/freedesktop/UPower/devices/");
+
+                            // If has been added or removed update the device path
+                            if device_changed {
+                                *device_path.lock().unwrap() =
+                                    UpowerDevice::get_device_path(&device, &enumerate_con).unwrap();
+                            }
+
+                            if device_changed || interface == "org.freedesktop.DBus.Properties" {
                                 update_request
                                     .send(Task {
                                         id,
@@ -521,9 +539,6 @@ impl UpowerDevice {
                                     .unwrap();
                             }
                         }
-                        // Avoid update spam.
-                        // TODO: Is this necessary?
-                        thread::sleep(Duration::from_millis(1000))
                     }
                 }
             })
@@ -538,7 +553,7 @@ impl UpowerDevice {
         key: &str,
         fallback_value: T,
     ) -> Result<T> {
-        if let Some(device_path) = &self.device_path {
+        if let Some(device_path) = &*self.device_path.lock().unwrap() {
             if let Ok(value) = self
                 .con
                 .with_path("org.freedesktop.UPower", device_path, 1000)
@@ -558,8 +573,8 @@ impl UpowerDevice {
 
     // Get device path. Raises exception if dbus communication fails.
     // If the device doesn't exist an exception raised unless allow_missing == true
-    fn get_device_path(&self) -> Result<Option<String>> {
-        if self.device == "DisplayDevice" {
+    fn get_device_path(device: &str, con: &dbus::ffidisp::Connection) -> Result<Option<String>> {
+        if device == "DisplayDevice" {
             Ok(Some(String::from(
                 "/org/freedesktop/UPower/devices/DisplayDevice",
             )))
@@ -572,8 +587,7 @@ impl UpowerDevice {
             )
             .block_error("battery", "Failed to create DBus message")?;
 
-            let dbus_reply = self
-                .con
+            let dbus_reply = con
                 .send_with_reply_and_block(msg, 2000)
                 .block_error("battery", "Failed to retrieve DBus reply")?;
 
@@ -582,53 +596,19 @@ impl UpowerDevice {
                 .get1()
                 .block_error("battery", "Failed to read DBus reply")?;
 
-            match paths.find(|entry| entry.ends_with(self.device.as_str())) {
-                Some(path) => Ok(Some(path.to_string())),
-                _ => {
-                    if self.allow_missing {
-                        return Ok(None);
-                    }
-                    Err(BlockError(
-                        "battery".to_string(),
-                        "UPower device could not be found.".to_string(),
-                    ))
-                }
-            }
+            Ok(paths
+                .find(|entry| entry.ends_with(device))
+                .map(|path| path.to_string()))
         }
     }
 }
 
 impl BatteryDevice for UpowerDevice {
     fn is_available(&self) -> bool {
-        if let Ok(msg) = dbus::Message::new_method_call(
-            "org.freedesktop.UPower",
-            "/org/freedesktop/UPower",
-            "org.freedesktop.UPower",
-            "EnumerateDevices",
-        ) {
-            if let Ok(dbus_reply) = self.con.send_with_reply_and_block(msg, 2000) {
-                // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
-                if let Some(mut paths) = dbus_reply.get1::<Array<dbus::Path, _>>() {
-                    if let Some(device_path) = match self.get_device_path() {
-                        Ok(latest_device_path) => latest_device_path,
-                        _ => self.device_path.as_ref().cloned(),
-                    } {
-                        if device_path == "/org/freedesktop/UPower/devices/DisplayDevice" {
-                            return true;
-                        }
-                        // Target device path
-                        let device_path = dbus::Path::from(device_path);
-                        return paths.any(|entry| entry == device_path);
-                    }
-                }
-            }
-        }
-        false
+        self.device_path.lock().unwrap().is_some()
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
-        self.device_path = self.get_device_path()?;
-
         let upower_type = self.get_upower_value("Type", 0_u32)?;
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
         // consider any peripheral, UPS and internal battery
