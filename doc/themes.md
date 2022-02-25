@@ -96,7 +96,7 @@ bat_discharging = " |v| "
 
 Example configurations can be found as `example_theme.toml` and `example_icon.toml`.
 
-Besides global overrides you may also use per-block overrides using the `theme_overrides` and `icons_format` options available for all blocks.
+Besides global overrides you may also use per-block overrides using the `theme_overrides`, `icons_overrides` and `icons_format` options available for all blocks.
 For example:
 ```toml
 [[block]]
@@ -105,6 +105,9 @@ icons_format = "{icon}" # Remove spaces aroud icons for this block.
 [block.theme_overrides]
 idle_bg = "#123456"
 idle_fg = "#abcdef"
+[block.icons_overrides]
+cpu_boost_on = "ON"
+cpu_boost_off = "OFF"
 ```
 
 # Available theme overrides
