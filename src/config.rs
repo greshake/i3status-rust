@@ -39,6 +39,12 @@ impl SharedConfig {
         Ok(())
     }
 
+    pub fn icons_override(&mut self, overrides: HashMap<String, String>) {
+        let mut icons = self.icons.as_ref().clone();
+        icons.0.extend(overrides);
+        self.icons = Rc::new(icons);
+    }
+
     pub fn get_icon(&self, icon: &str) -> crate::errors::Result<String> {
         use crate::errors::OptionExt;
         Ok(self.icons_format.clone().replace(

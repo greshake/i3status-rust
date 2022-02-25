@@ -212,6 +212,9 @@ macro_rules! block {
         if let Some(overrides) = common_config.icons_format {
             $shared_config.icons_format_override(overrides);
         }
+        if let Some(overrides) = common_config.icons_overrides {
+            $shared_config.icons_override(overrides);
+        }
 
         // Extract block-specific config
         let block_config = <$block_type as ConfigBlock>::Config::deserialize($block_config)
