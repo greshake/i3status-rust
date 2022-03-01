@@ -2,7 +2,7 @@
 
 ### New Blocks and Features
 
-* Icons can now be overriden per block with `icon_overrides` (97a66195f16469a4011a1521fb991bbe943196b6)
+* Icons can now be overriden per block with `icons_overrides` (97a66195f16469a4011a1521fb991bbe943196b6)
  
 ### Bug Fixes and Improvements
 
