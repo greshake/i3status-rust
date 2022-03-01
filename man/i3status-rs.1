@@ -6913,8 +6913,8 @@ Example configurations can be found as \f[V]example_theme.toml\f[R] and
 \f[V]example_icon.toml\f[R].
 .PP
 Besides global overrides you may also use per-block overrides using the
-\f[V]theme_overrides\f[R] and \f[V]icons_format\f[R] options available
-for all blocks.
+\f[V]theme_overrides\f[R], \f[V]icons_overrides\f[R] and
+\f[V]icons_format\f[R] options available for all blocks.
 For example:
 .IP
 .nf
@@ -6925,6 +6925,9 @@ icons_format = \[dq]{icon}\[dq] # Remove spaces aroud icons for this block.
 [block.theme_overrides]
 idle_bg = \[dq]#123456\[dq]
 idle_fg = \[dq]#abcdef\[dq]
+[block.icons_overrides]
+cpu_boost_on = \[dq]ON\[dq]
+cpu_boost_off = \[dq]OFF\[dq]
 \f[R]
 .fi
 .SS Available theme overrides
