@@ -1,3 +1,14 @@
+# i3status-rust 0.21.7
+
+### New Blocks and Features
+
+* Icons can now be overriden per block with `icon_overrides` (97a66195f16469a4011a1521fb991bbe943196b6)
+ 
+### Bug Fixes and Improvements
+
+* Net: use bss signal if wifi signal info is incomplete (4f11d68b1d5147fe2b5285d68653e7091f44f628)
+* Sound: check DEVICE_FORM_FACTOR property to determine icons (#1438 by kevinmos)
+
 # i3status-rust 0.21.6
 
 ### New Blocks and Features
