@@ -6,6 +6,7 @@
  
 ### Bug Fixes and Improvements
 
+* Battery: be more efficient by enumerating devices less often (#1437 by bim9262)
 * Net: use bss signal if wifi signal info is incomplete (4f11d68b1d5147fe2b5285d68653e7091f44f628)
 * Sound: check DEVICE_FORM_FACTOR property to determine icons (#1438 by kevinmos)
 
