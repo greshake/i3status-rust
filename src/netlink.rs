@@ -75,14 +75,16 @@ impl NetDevice {
     }
 
     /// Queries the wireless SSID of this device, if it is connected to one.
-    pub fn wifi_info(&self) -> Result<(Option<String>, Option<f64>, Option<f64>)> {
-        let mut socket = neli_wifi::Socket::connect().error("Failed to open nl80211 socket")?;
+    pub async fn wifi_info(&self) -> Result<(Option<String>, Option<f64>, Option<f64>)> {
+        let mut socket =
+            neli_wifi::AsyncSocket::connect().error("Failed to open nl80211 socket")?;
         let interfaces = socket
             .get_interfaces_info()
+            .await
             .error("Failed to get nl80211 interfaces")?;
         for interface in interfaces {
             if let Some(index) = &interface.index {
-                if let Ok(ap) = socket.get_station_info(index) {
+                if let Ok(ap) = socket.get_station_info(index).await {
                     // SSID is `None` when not connected
                     if let (Some(ssid), Some(device)) = (interface.ssid, interface.name) {
                         let device = String::from_utf8_lossy(&device);

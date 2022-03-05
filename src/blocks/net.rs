@@ -109,7 +109,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         push_to_hist(&mut rx_hist, speed_down);
         push_to_hist(&mut tx_hist, speed_up);
 
-        let wifi = device.wifi_info()?;
+        let wifi = device.wifi_info().await?;
 
         let mut values = map! {
             "speed_down" => Value::bytes(speed_down).icon(api.get_icon("net_down")?),
