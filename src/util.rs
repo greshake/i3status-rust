@@ -5,6 +5,7 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::String;
 
+use dirs_next::{config_dir, data_dir};
 use serde::de::DeserializeOwned;
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
@@ -13,8 +14,8 @@ use crate::errors::*;
 
 /// Tries to find a file in standard locations:
 /// - Fist try to find a file by full path
-/// - Then try XDG_CONFIG_HOME
-/// - Then try `~/.local/share/`
+/// - Then try XDG_CONFIG_HOME (`~/.config`)
+/// - Then try XDG_DATA_HOME (`~/.local/share/`)
 /// - Then try `/usr/share/`
 ///
 /// Automaticaly append an extension if not presented.
@@ -30,36 +31,36 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
         return Some(file);
     }
 
-    // Try XDG_CONFIG_HOME
-    if let Some(xdg_config) = xdg_config_home() {
-        let mut xdg_config = xdg_config.join("i3status-rust");
+    // Try XDG_CONFIG_HOME (`~/.config`)
+    if let Some(mut xdg_config) = config_dir() {
+        xdg_config.push("i3status-rust");
         if let Some(subdir) = subdir {
-            xdg_config = xdg_config.join(subdir);
+            xdg_config.push(subdir);
         }
-        xdg_config = xdg_config.join(&file);
+        xdg_config.push(&file);
         if xdg_config.exists() {
             return Some(xdg_config);
         }
     }
 
-    // Try `~/.local/share/`
-    if let Ok(home) = env::var("HOME") {
-        let mut local_share_path = PathBuf::from(home).join(".local/share/i3status-rust");
+    // Try XDG_DATA_HOME (`~/.local/share/`)
+    if let Ok(mut xdg_data) = data_dir() {
+        xdg_data.push("i3status-rust");
         if let Some(subdir) = subdir {
-            local_share_path = local_share_path.join(subdir);
+            xdg_data.push(subdir);
         }
-        local_share_path = local_share_path.join(&file);
-        if local_share_path.exists() {
-            return Some(local_share_path);
+        xdg_data.push(&file);
+        if xdg_data.exists() {
+            return Some(xdg_data);
         }
     }
 
     // Try `/usr/share/`
     let mut usr_share_path = PathBuf::from("/usr/share/i3status-rust");
     if let Some(subdir) = subdir {
-        usr_share_path = usr_share_path.join(subdir);
+        usr_share_path.push(subdir);
     }
-    usr_share_path = usr_share_path.join(&file);
+    usr_share_path.push(&file);
     if usr_share_path.exists() {
         return Some(usr_share_path);
     }
@@ -94,18 +95,6 @@ pub fn battery_level_icon(level: u8, charging: bool) -> &'static str {
         (81..=90, _) => "bat_90",
         _ => "bat_full",
     }
-}
-
-pub fn xdg_config_home() -> Option<PathBuf> {
-    // If XDG_CONFIG_HOME is not set, fall back to use HOME/.config
-    env::var("XDG_CONFIG_HOME")
-        .ok()
-        .or_else(|| {
-            env::var("HOME")
-                .ok()
-                .map(|home| format!("{}/.config", home))
-        })
-        .map(PathBuf::from)
 }
 
 pub fn deserialize_toml_file<T>(path: &Path) -> Result<T>
@@ -155,7 +144,7 @@ macro_rules! map {
 //     }};
 // }
 
-pub fn format_vec_to_bar_graph(content: &[f64]) -> smartstring::alias::String {
+pub fn format_bar_graph(content: &[f64]) -> smartstring::alias::String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     static BARS: [char; 8] = [
         '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
@@ -165,13 +154,9 @@ pub fn format_vec_to_bar_graph(content: &[f64]) -> smartstring::alias::String {
     // Find min and max
     let mut min = std::f64::INFINITY;
     let mut max = -std::f64::INFINITY;
-    for v in content {
-        if *v < min {
-            min = *v;
-        }
-        if *v > max {
-            max = *v;
-        }
+    for &v in content {
+        min = min.min(v);
+        max = max.max(v);
     }
 
     let range = max - min;

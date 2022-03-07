@@ -735,6 +735,7 @@ dependencies = [
  "color_space",
  "crossbeam-channel",
  "derivative",
+ "dirs-next",
  "futures",
  "hyper",
  "inotify",

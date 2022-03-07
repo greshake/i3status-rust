@@ -22,17 +22,15 @@
 //! # TODO
 //! - Extend functionality: start / stop watson using this block
 
+use chrono::offset::Local;
+use chrono::DateTime;
+use dirs_next::config_dir;
+use inotify::{Inotify, WatchMask};
 use std::path::PathBuf;
 use tokio::fs::read_to_string;
 
-use inotify::{Inotify, WatchMask};
-
-use chrono::offset::Local;
-use chrono::DateTime;
-
 use super::prelude::*;
 use crate::de::deserialize_local_timestamp;
-use crate::util::xdg_config_home;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, default)]
@@ -67,7 +65,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             (p, file, path)
         }
         None => {
-            let mut path = xdg_config_home().error("XDG_CONFIG directory not found")?;
+            let mut path = config_dir().error("xdg config directory not found")?;
             path.push("watson");
             let dir = path.clone();
             path.push("state");

@@ -30,6 +30,7 @@ async-trait = "0.1"
 regex = "1.5"
 once_cell = "1"
 shellexpand = "2.1"
+dirs-next = "2.0" # is dependency of shellexpand
 hyper = "0.14"
 sensors = "0.2.2"
 
