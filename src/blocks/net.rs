@@ -97,12 +97,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             (Some(_), None) => stats = None,
             // All stats available
             (Some(old_stats), Some(new_stats)) => {
-                let rx_bytes = new_stats.0.saturating_sub(old_stats.0);
-                let tx_bytes = new_stats.1.saturating_sub(old_stats.1);
+                let diff = new_stats - old_stats;
                 let elapsed = timer.elapsed().as_secs_f64();
                 timer = Instant::now();
-                speed_down = rx_bytes as f64 / elapsed;
-                speed_up = tx_bytes as f64 / elapsed;
+                speed_down = diff.rx_bytes as f64 / elapsed;
+                speed_up = diff.tx_bytes as f64 / elapsed;
                 stats = Some(new_stats);
             }
         }

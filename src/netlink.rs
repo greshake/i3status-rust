@@ -6,6 +6,7 @@ use neli::{
     types::RtBuffer,
 };
 
+use std::ops;
 use std::path::{Path, PathBuf};
 
 use crate::errors::*;
@@ -13,8 +14,9 @@ use crate::util;
 
 #[derive(Debug)]
 pub struct NetDevice {
+    rx_stat_path: PathBuf,
+    tx_stat_path: PathBuf,
     pub interface: String,
-    pub path: PathBuf,
     pub wireless: bool,
     pub tun: bool,
     pub wg: bool,
@@ -52,8 +54,9 @@ impl NetDevice {
         };
 
         NetDevice {
+            rx_stat_path: path.join("statistics/rx_bytes"),
+            tx_stat_path: path.join("statistics/tx_bytes"),
             interface,
-            path,
             wireless,
             tun,
             wg,
@@ -62,16 +65,16 @@ impl NetDevice {
         }
     }
 
-    pub async fn read_stats(&self) -> Option<(u64, u64)> {
-        let rx: u64 = util::read_file(&self.path.join("statistics/rx_bytes"))
-            .await
-            .ok()
-            .and_then(|x| x.parse().ok())?;
-        let tx: u64 = util::read_file(&self.path.join("statistics/tx_bytes"))
-            .await
-            .ok()
-            .and_then(|x| x.parse().ok())?;
-        Some((rx, tx))
+    pub async fn read_stats(&self) -> Option<NetDeviceStats> {
+        let (rx, tx) = futures::try_join!(
+            util::read_file(&self.rx_stat_path),
+            util::read_file(&self.tx_stat_path)
+        )
+        .ok()?;
+        Some(NetDeviceStats {
+            rx_bytes: rx.parse().ok()?,
+            tx_bytes: tx.parse().ok()?,
+        })
     }
 
     /// Queries the wireless SSID of this device, if it is connected to one.
@@ -173,6 +176,22 @@ pub fn default_interface() -> Option<String> {
     }
 
     None
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct NetDeviceStats {
+    pub rx_bytes: u64,
+    pub tx_bytes: u64,
+}
+
+impl ops::Sub for NetDeviceStats {
+    type Output = Self;
+
+    fn sub(mut self, rhs: Self) -> Self::Output {
+        self.rx_bytes = self.rx_bytes.saturating_sub(rhs.rx_bytes);
+        self.tx_bytes = self.tx_bytes.saturating_sub(rhs.tx_bytes);
+        self
+    }
 }
 
 /// <https://github.com/torvalds/linux/blob/9ff9b0d392ea08090cd1780fb196f36dbb586529/drivers/net/wireless/intel/ipw2x00/ipw2200.c#L4322-L4334>
