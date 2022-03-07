@@ -165,11 +165,6 @@
 <span id="163">163</span>
 <span id="164">164</span>
 <span id="165">165</span>
-<span id="166">166</span>
-<span id="167">167</span>
-<span id="168">168</span>
-<span id="169">169</span>
-<span id="170">170</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Network information</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.</span>
@@ -225,7 +220,7 @@
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">format_alt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FormatConfig</span><span class="op">&gt;</span>,
-    <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -251,14 +246,10 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">speed_up</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">0.0</span>;
 
         <span class="comment">// Get interface name</span>
-        <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">NetDevice::from_interface</span>(
-            <span class="ident">config</span>
-                .<span class="ident">device</span>
-                .<span class="ident">clone</span>()
-                .<span class="ident">map</span>(<span class="ident">Into::into</span>)
-                .<span class="ident">or_else</span>(<span class="ident">default_interface</span>)
-                .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;lo&quot;</span>.<span class="ident">into</span>()),
-        )
+        <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">NetDevice::from_interface</span>(<span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">device</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">i</span>) =&gt; <span class="ident">i</span>.<span class="ident">clone</span>(),
+            <span class="prelude-val">None</span> =&gt; <span class="ident">default_interface</span>().<span class="kw">await</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;lo&quot;</span>.<span class="ident">into</span>()),
+        })
         .<span class="kw">await</span>;
 
         <span class="comment">// Calculate speed</span>
@@ -269,12 +260,11 @@
             (<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>) =&gt; <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">None</span>,
             <span class="comment">// All stats available</span>
             (<span class="prelude-val">Some</span>(<span class="ident">old_stats</span>), <span class="prelude-val">Some</span>(<span class="ident">new_stats</span>)) =&gt; {
-                <span class="kw">let</span> <span class="ident">rx_bytes</span> <span class="op">=</span> <span class="ident">new_stats</span>.<span class="number">0</span>.<span class="ident">saturating_sub</span>(<span class="ident">old_stats</span>.<span class="number">0</span>);
-                <span class="kw">let</span> <span class="ident">tx_bytes</span> <span class="op">=</span> <span class="ident">new_stats</span>.<span class="number">1</span>.<span class="ident">saturating_sub</span>(<span class="ident">old_stats</span>.<span class="number">1</span>);
+                <span class="kw">let</span> <span class="ident">diff</span> <span class="op">=</span> <span class="ident">new_stats</span> <span class="op">-</span> <span class="ident">old_stats</span>;
                 <span class="kw">let</span> <span class="ident">elapsed</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f64</span>();
                 <span class="ident">timer</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
-                <span class="ident">speed_down</span> <span class="op">=</span> <span class="ident">rx_bytes</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">elapsed</span>;
-                <span class="ident">speed_up</span> <span class="op">=</span> <span class="ident">tx_bytes</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">elapsed</span>;
+                <span class="ident">speed_down</span> <span class="op">=</span> <span class="ident">diff</span>.<span class="ident">rx_bytes</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">elapsed</span>;
+                <span class="ident">speed_up</span> <span class="op">=</span> <span class="ident">diff</span>.<span class="ident">tx_bytes</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">elapsed</span>;
                 <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">new_stats</span>);
             }
         }
@@ -286,8 +276,8 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span> {
             <span class="string">&quot;speed_down&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">speed_down</span>).<span class="ident">icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;net_down&quot;</span>)<span class="question-mark">?</span>),
             <span class="string">&quot;speed_up&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">speed_up</span>).<span class="ident">icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;net_up&quot;</span>)<span class="question-mark">?</span>),
-            <span class="string">&quot;graph_down&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">util::format_vec_to_bar_graph</span>(<span class="kw-2">&amp;</span><span class="ident">rx_hist</span>)),
-            <span class="string">&quot;graph_up&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">util::format_vec_to_bar_graph</span>(<span class="kw-2">&amp;</span><span class="ident">tx_hist</span>)),
+            <span class="string">&quot;graph_down&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">util::format_bar_graph</span>(<span class="kw-2">&amp;</span><span class="ident">rx_hist</span>)),
+            <span class="string">&quot;graph_up&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">util::format_bar_graph</span>(<span class="kw-2">&amp;</span><span class="ident">tx_hist</span>)),
             <span class="string">&quot;device&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">device</span>.<span class="ident">interface</span>.<span class="ident">into</span>()),
         };
         <span class="ident">wifi</span>.<span class="number">0</span>

@@ -207,30 +207,11 @@
 <span id="205">205</span>
 <span id="206">206</span>
 <span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::env</span>;
-<span class="kw">use</span> <span class="ident">std::fs::File</span>;
-<span class="kw">use</span> <span class="ident">std::io::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std::io::BufReader</span>;
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::fs::File</span>;
+<span class="kw">use</span> <span class="ident">std::io</span>::{<span class="self">self</span>, <span class="ident">BufReader</span>, <span class="ident">Read</span>};
 <span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
-<span class="kw">use</span> <span class="ident">std::prelude::v1::String</span>;
 
+<span class="kw">use</span> <span class="ident">dirs_next</span>::{<span class="ident">config_dir</span>, <span class="ident">data_dir</span>};
 <span class="kw">use</span> <span class="ident">serde::de::DeserializeOwned</span>;
 <span class="kw">use</span> <span class="ident">tokio::io::AsyncReadExt</span>;
 <span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
@@ -239,8 +220,8 @@
 
 <span class="doccomment">/// Tries to find a file in standard locations:</span>
 <span class="doccomment">/// - Fist try to find a file by full path</span>
-<span class="doccomment">/// - Then try XDG_CONFIG_HOME</span>
-<span class="doccomment">/// - Then try `~/.local/share/`</span>
+<span class="doccomment">/// - Then try XDG_CONFIG_HOME (`~/.config`)</span>
+<span class="doccomment">/// - Then try XDG_DATA_HOME (`~/.local/share/`)</span>
 <span class="doccomment">/// - Then try `/usr/share/`</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Automaticaly append an extension if not presented.</span>
@@ -256,36 +237,36 @@
         <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">file</span>);
     }
 
-    <span class="comment">// Try XDG_CONFIG_HOME</span>
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">xdg_config</span>) <span class="op">=</span> <span class="ident">xdg_config_home</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xdg_config</span> <span class="op">=</span> <span class="ident">xdg_config</span>.<span class="ident">join</span>(<span class="string">&quot;i3status-rust&quot;</span>);
+    <span class="comment">// Try XDG_CONFIG_HOME (`~/.config`)</span>
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">xdg_config</span>) <span class="op">=</span> <span class="ident">config_dir</span>() {
+        <span class="ident">xdg_config</span>.<span class="ident">push</span>(<span class="string">&quot;i3status-rust&quot;</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subdir</span>) <span class="op">=</span> <span class="ident">subdir</span> {
-            <span class="ident">xdg_config</span> <span class="op">=</span> <span class="ident">xdg_config</span>.<span class="ident">join</span>(<span class="ident">subdir</span>);
+            <span class="ident">xdg_config</span>.<span class="ident">push</span>(<span class="ident">subdir</span>);
         }
-        <span class="ident">xdg_config</span> <span class="op">=</span> <span class="ident">xdg_config</span>.<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
+        <span class="ident">xdg_config</span>.<span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
         <span class="kw">if</span> <span class="ident">xdg_config</span>.<span class="ident">exists</span>() {
             <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">xdg_config</span>);
         }
     }
 
-    <span class="comment">// Try `~/.local/share/`</span>
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">home</span>) <span class="op">=</span> <span class="ident">env::var</span>(<span class="string">&quot;HOME&quot;</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">local_share_path</span> <span class="op">=</span> <span class="ident">PathBuf::from</span>(<span class="ident">home</span>).<span class="ident">join</span>(<span class="string">&quot;.local/share/i3status-rust&quot;</span>);
+    <span class="comment">// Try XDG_DATA_HOME (`~/.local/share/`)</span>
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">xdg_data</span>) <span class="op">=</span> <span class="ident">data_dir</span>() {
+        <span class="ident">xdg_data</span>.<span class="ident">push</span>(<span class="string">&quot;i3status-rust&quot;</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subdir</span>) <span class="op">=</span> <span class="ident">subdir</span> {
-            <span class="ident">local_share_path</span> <span class="op">=</span> <span class="ident">local_share_path</span>.<span class="ident">join</span>(<span class="ident">subdir</span>);
+            <span class="ident">xdg_data</span>.<span class="ident">push</span>(<span class="ident">subdir</span>);
         }
-        <span class="ident">local_share_path</span> <span class="op">=</span> <span class="ident">local_share_path</span>.<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
-        <span class="kw">if</span> <span class="ident">local_share_path</span>.<span class="ident">exists</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">local_share_path</span>);
+        <span class="ident">xdg_data</span>.<span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
+        <span class="kw">if</span> <span class="ident">xdg_data</span>.<span class="ident">exists</span>() {
+            <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">xdg_data</span>);
         }
     }
 
     <span class="comment">// Try `/usr/share/`</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">usr_share_path</span> <span class="op">=</span> <span class="ident">PathBuf::from</span>(<span class="string">&quot;/usr/share/i3status-rust&quot;</span>);
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subdir</span>) <span class="op">=</span> <span class="ident">subdir</span> {
-        <span class="ident">usr_share_path</span> <span class="op">=</span> <span class="ident">usr_share_path</span>.<span class="ident">join</span>(<span class="ident">subdir</span>);
+        <span class="ident">usr_share_path</span>.<span class="ident">push</span>(<span class="ident">subdir</span>);
     }
-    <span class="ident">usr_share_path</span> <span class="op">=</span> <span class="ident">usr_share_path</span>.<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
+    <span class="ident">usr_share_path</span>.<span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
     <span class="kw">if</span> <span class="ident">usr_share_path</span>.<span class="ident">exists</span>() {
         <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">usr_share_path</span>);
     }
@@ -322,18 +303,6 @@
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xdg_config_home</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span> {
-    <span class="comment">// If XDG_CONFIG_HOME is not set, fall back to use HOME/.config</span>
-    <span class="ident">env::var</span>(<span class="string">&quot;XDG_CONFIG_HOME&quot;</span>)
-        .<span class="ident">ok</span>()
-        .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> {
-            <span class="ident">env::var</span>(<span class="string">&quot;HOME&quot;</span>)
-                .<span class="ident">ok</span>()
-                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">home</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}/.config&quot;</span>, <span class="ident">home</span>))
-        })
-        .<span class="ident">map</span>(<span class="ident">PathBuf::from</span>)
-}
-
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize_toml_file</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">T</span>: <span class="ident">DeserializeOwned</span>,
@@ -346,7 +315,7 @@
     <span class="ident">toml::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">contents</span>).<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Failed to deserialize file: {}&quot;</span>, <span class="ident">path</span>.<span class="ident">display</span>()))
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_file</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="ident">StdResult</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">std::io::Error</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_file</span>(<span class="ident">path</span>: <span class="kw">impl</span> <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">Path</span><span class="op">&gt;</span>) -&gt; <span class="ident">io::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">tokio::fs::File::open</span>(<span class="ident">path</span>).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">content</span> <span class="op">=</span> <span class="ident">String::new</span>();
     <span class="ident">file</span>.<span class="ident">read_to_string</span>(<span class="kw-2">&amp;mut</span> <span class="ident">content</span>).<span class="kw">await</span><span class="question-mark">?</span>;
@@ -381,7 +350,7 @@
 <span class="comment">//     }};</span>
 <span class="comment">// }</span>
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">format_vec_to_bar_graph</span>(<span class="ident">content</span>: <span class="kw-2">&amp;</span>[<span class="ident">f64</span>]) -&gt; <span class="ident">smartstring::alias::String</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">format_bar_graph</span>(<span class="ident">content</span>: <span class="kw-2">&amp;</span>[<span class="ident">f64</span>]) -&gt; <span class="ident">smartstring::alias::String</span> {
     <span class="comment">// (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements</span>
     <span class="kw">static</span> <span class="ident">BARS</span>: [<span class="ident">char</span>; <span class="number">8</span>] <span class="op">=</span> [
         <span class="string">&#39;\u{2581}&#39;</span>, <span class="string">&#39;\u{2582}&#39;</span>, <span class="string">&#39;\u{2583}&#39;</span>, <span class="string">&#39;\u{2584}&#39;</span>, <span class="string">&#39;\u{2585}&#39;</span>, <span class="string">&#39;\u{2586}&#39;</span>, <span class="string">&#39;\u{2587}&#39;</span>,
@@ -391,13 +360,9 @@
     <span class="comment">// Find min and max</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">min</span> <span class="op">=</span> <span class="ident">std::f64::INFINITY</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">max</span> <span class="op">=</span> <span class="op">-</span><span class="ident">std::f64::INFINITY</span>;
-    <span class="kw">for</span> <span class="ident">v</span> <span class="kw">in</span> <span class="ident">content</span> {
-        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">v</span> <span class="op">&lt;</span> <span class="ident">min</span> {
-            <span class="ident">min</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">v</span>;
-        }
-        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">v</span> <span class="op">&gt;</span> <span class="ident">max</span> {
-            <span class="ident">max</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">v</span>;
-        }
+    <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="ident">v</span> <span class="kw">in</span> <span class="ident">content</span> {
+        <span class="ident">min</span> <span class="op">=</span> <span class="ident">min</span>.<span class="ident">min</span>(<span class="ident">v</span>);
+        <span class="ident">max</span> <span class="op">=</span> <span class="ident">max</span>.<span class="ident">max</span>(<span class="ident">v</span>);
     }
 
     <span class="kw">let</span> <span class="ident">range</span> <span class="op">=</span> <span class="ident">max</span> <span class="op">-</span> <span class="ident">min</span>;
@@ -409,18 +374,19 @@
 
 <span class="doccomment">/// Convert 2 letter country code to Unicode</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">country_flag_from_iso_code</span>(<span class="ident">country_code</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">String</span> {
-    <span class="kw">if</span> <span class="ident">country_code</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">2</span> <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">country_code</span>.<span class="ident">chars</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span>.<span class="ident">is_ascii_uppercase</span>()) {
-        <span class="kw">return</span> <span class="ident">country_code</span>.<span class="ident">to_string</span>();
+    <span class="kw">let</span> [<span class="kw-2">mut</span> <span class="ident">b1</span>, <span class="kw-2">mut</span> <span class="ident">b2</span>]: [<span class="ident">u8</span>; <span class="number">2</span>] <span class="op">=</span> <span class="ident">country_code</span>.<span class="ident">as_bytes</span>().<span class="ident">try_into</span>().<span class="ident">unwrap_or</span>([<span class="number">0</span>, <span class="number">0</span>]);
+
+    <span class="kw">if</span> <span class="op">!</span><span class="ident">b1</span>.<span class="ident">is_ascii_uppercase</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">b2</span>.<span class="ident">is_ascii_uppercase</span>() {
+        <span class="kw">return</span> <span class="ident">country_code</span>.<span class="ident">into</span>();
     }
-    <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">country_code</span>.<span class="ident">as_bytes</span>(); <span class="comment">// Sane as we verified before that it&#39;s ASCII</span>
 
     <span class="comment">// Each char is encoded as 1F1E6 to 1F1FF for A-Z</span>
-    <span class="kw">let</span> <span class="ident">c1</span> <span class="op">=</span> <span class="ident">bytes</span>[<span class="number">0</span>] <span class="op">+</span> <span class="number">0xa5</span>;
-    <span class="kw">let</span> <span class="ident">c2</span> <span class="op">=</span> <span class="ident">bytes</span>[<span class="number">1</span>] <span class="op">+</span> <span class="number">0xa5</span>;
+    <span class="ident">b1</span> <span class="op">+</span><span class="op">=</span> <span class="number">0xa5</span>;
+    <span class="ident">b2</span> <span class="op">+</span><span class="op">=</span> <span class="number">0xa5</span>;
     <span class="comment">// The last byte will always start with 101 (0xa0) and then the 5 least</span>
     <span class="comment">// significant bits from the previous result</span>
-    <span class="kw">let</span> <span class="ident">b1</span> <span class="op">=</span> <span class="number">0xa0</span> <span class="op">|</span> (<span class="ident">c1</span> <span class="op">&amp;</span> <span class="number">0x1f</span>);
-    <span class="kw">let</span> <span class="ident">b2</span> <span class="op">=</span> <span class="number">0xa0</span> <span class="op">|</span> (<span class="ident">c2</span> <span class="op">&amp;</span> <span class="number">0x1f</span>);
+    <span class="ident">b1</span> <span class="op">=</span> <span class="number">0xa0</span> <span class="op">|</span> (<span class="ident">b1</span> <span class="op">&amp;</span> <span class="number">0x1f</span>);
+    <span class="ident">b2</span> <span class="op">=</span> <span class="number">0xa0</span> <span class="op">|</span> (<span class="ident">b2</span> <span class="op">&amp;</span> <span class="number">0x1f</span>);
     <span class="comment">// Get the flag string from the UTF-8 representation of our Unicode characters.</span>
     <span class="ident">String::from_utf8</span>(<span class="macro">vec!</span>[<span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, <span class="ident">b1</span>, <span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, <span class="ident">b2</span>]).<span class="ident">unwrap</span>()
 }
