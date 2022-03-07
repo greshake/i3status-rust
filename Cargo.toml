@@ -42,7 +42,7 @@ maildir = "0.5"
 crossbeam-channel = "0.5"
 libpulse-binding = { version = "2.0", default-features = false }
 
-neli = "0.6"
+neli = { version = "0.6", features = ["async"] }
 neli-wifi = { version = "0.3", features = ["async"] }
 
 # swayipc-async = { path = "../swayipc-rs/async", default-features = false, features = ["tokio"] }

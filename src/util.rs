@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufReader, self, Read};
+use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
 
 use dirs_next::{config_dir, data_dir};

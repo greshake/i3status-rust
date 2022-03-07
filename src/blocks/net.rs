@@ -53,7 +53,7 @@ struct NetConfig {
     interval: Seconds,
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
-    device: Option<String>,
+    device: Option<StdString>,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -79,14 +79,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let mut speed_up: f64 = 0.0;
 
         // Get interface name
-        let device = NetDevice::from_interface(
-            config
-                .device
-                .clone()
-                .map(Into::into)
-                .or_else(default_interface)
-                .unwrap_or_else(|| "lo".into()),
-        )
+        let device = NetDevice::from_interface(match &config.device {
+            Some(i) => i.clone(),
+            None => default_interface().await.unwrap_or_else(|| "lo".into()),
+        })
         .await;
 
         // Calculate speed

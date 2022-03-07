@@ -2,7 +2,7 @@ use neli::{
     consts::{nl::*, rtnl::*, socket::*},
     nl::{NlPayload, Nlmsghdr},
     rtnl::*,
-    socket::*,
+    socket::{tokio::NlSocket, NlSocketHandle},
     types::RtBuffer,
 };
 
@@ -28,20 +28,20 @@ impl NetDevice {
     /// Use the network device `device`. Raises an error if a directory for that
     /// device is not found.
     pub async fn from_interface(interface: String) -> Self {
-        let path = Path::new("/sys/class/net").join(interface.clone());
+        let path = Path::new("/sys/class/net").join(&interface);
 
         // I don't believe that this should ever change, so set it now:
         let wireless = path.join("wireless").exists();
-        let tun = path.join("tun_flags").exists()
-            || interface.starts_with("tun")
-            || interface.starts_with("tap");
+        let tun = interface.starts_with("tun")
+            || interface.starts_with("tap")
+            || path.join("tun_flags").exists();
 
         let uevent_path = path.join("uevent");
         let uevent_content = util::read_file(&uevent_path).await;
 
-        let (wg, ppp) = uevent_content
-            .map(|c| (c.contains("wireguard"), c.contains("ppp")))
-            .unwrap_or((false, false));
+        let (wg, ppp) = uevent_content.map_or((false, false), |c| {
+            (c.contains("wireguard"), c.contains("ppp"))
+        });
 
         let icon = if wireless {
             "net_wireless"
@@ -122,9 +122,9 @@ fn index_to_interface(index: u32) -> String {
         .to_string()
 }
 
-// TODO FIXME make async
-pub fn default_interface() -> Option<String> {
-    let mut socket = NlSocketHandle::connect(NlFamily::Route, None, &[]).ok()?;
+pub async fn default_interface() -> Option<String> {
+    let mut socket =
+        NlSocket::new(NlSocketHandle::connect(NlFamily::Route, None, &[]).ok()?).ok()?;
 
     let rtmsg = Rtmsg {
         rtm_family: RtAddrFamily::Inet,
@@ -148,10 +148,11 @@ pub fn default_interface() -> Option<String> {
         Nlmsghdr::new(len, nl_type, flags, seq, pid, NlPayload::Payload(payload))
     };
 
-    socket.send(nlhdr).ok()?;
+    socket.send(&nlhdr).await.ok()?;
 
-    for rtm_result in socket.iter(false) {
-        let rtm: Nlmsghdr<NlTypeWrapper, Rtmsg> = rtm_result.ok()?;
+    let mut buf = Vec::new();
+    let msgs = socket.recv::<NlTypeWrapper, Rtmsg>(&mut buf).await.ok()?;
+    for rtm in msgs {
         if let NlTypeWrapper::Rtm(_) = rtm.nl_type {
             let payload = rtm.get_payload().ok()?;
             if payload.rtm_table == RtTable::Main {
