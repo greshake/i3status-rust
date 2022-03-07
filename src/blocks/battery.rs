@@ -260,7 +260,7 @@ impl Default for BatteryStatus {
 impl FromStr for BatteryStatus {
     type Err = Infallible;
 
-    fn from_str(s: &str) -> StdResult<Self, Infallible> {
+    fn from_str(s: &str) -> Result<Self, Infallible> {
         Ok(match s {
             "Charging" => Self::Charging,
             "Discharging" => Self::Discharging,

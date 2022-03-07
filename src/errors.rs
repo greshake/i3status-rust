@@ -5,10 +5,9 @@ use std::sync::Arc;
 use crate::blocks::BlockType;
 
 pub use std::error::Error as StdError;
-pub use std::result::Result as StdResult;
 
 /// Result type returned from functions that can have our `Error`s.
-pub type Result<T> = StdResult<T, Error>;
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 type ErrorMsg = Cow<'static, str>;
 
@@ -69,7 +68,7 @@ pub trait ResultExt<T> {
     fn format_error<M: Into<ErrorMsg>>(self, message: M) -> Result<T>;
 }
 
-impl<T, E: StdError + Send + Sync + 'static> ResultExt<T> for StdResult<T, E> {
+impl<T, E: StdError + Send + Sync + 'static> ResultExt<T> for Result<T, E> {
     fn error<M: Into<ErrorMsg>>(self, message: M) -> Result<T> {
         self.map_err(|e| Error {
             kind: ErrorKind::Other,
@@ -186,14 +185,14 @@ impl fmt::Display for Error {
 impl StdError for Error {}
 
 pub trait ToSerdeError<T> {
-    fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E>;
+    fn serde_error<E: serde::de::Error>(self) -> Result<T, E>;
 }
 
-impl<T, F> ToSerdeError<T> for StdResult<T, F>
+impl<T, F> ToSerdeError<T> for Result<T, F>
 where
     F: fmt::Display,
 {
-    fn serde_error<E: serde::de::Error>(self) -> StdResult<T, E> {
+    fn serde_error<E: serde::de::Error>(self) -> Result<T, E> {
         self.map_err(E::custom)
     }
 }

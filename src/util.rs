@@ -1,9 +1,6 @@
-use std::env;
 use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
+use std::io::{BufReader, self, Read};
 use std::path::{Path, PathBuf};
-use std::prelude::v1::String;
 
 use dirs_next::{config_dir, data_dir};
 use serde::de::DeserializeOwned;
@@ -44,7 +41,7 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
     }
 
     // Try XDG_DATA_HOME (`~/.local/share/`)
-    if let Ok(mut xdg_data) = data_dir() {
+    if let Some(mut xdg_data) = data_dir() {
         xdg_data.push("i3status-rust");
         if let Some(subdir) = subdir {
             xdg_data.push(subdir);
@@ -109,7 +106,7 @@ where
     toml::from_str(&contents).or_error(|| format!("Failed to deserialize file: {}", path.display()))
 }
 
-pub async fn read_file(path: impl AsRef<Path>) -> StdResult<String, std::io::Error> {
+pub async fn read_file(path: impl AsRef<Path>) -> io::Result<String> {
     let mut file = tokio::fs::File::open(path).await?;
     let mut content = String::new();
     file.read_to_string(&mut content).await?;
@@ -168,18 +165,19 @@ pub fn format_bar_graph(content: &[f64]) -> smartstring::alias::String {
 
 /// Convert 2 letter country code to Unicode
 pub fn country_flag_from_iso_code(country_code: &str) -> String {
-    if country_code.len() != 2 || !country_code.chars().all(|c| c.is_ascii_uppercase()) {
-        return country_code.to_string();
+    let [mut b1, mut b2]: [u8; 2] = country_code.as_bytes().try_into().unwrap_or([0, 0]);
+
+    if !b1.is_ascii_uppercase() || !b2.is_ascii_uppercase() {
+        return country_code.into();
     }
-    let bytes = country_code.as_bytes(); // Sane as we verified before that it's ASCII
 
     // Each char is encoded as 1F1E6 to 1F1FF for A-Z
-    let c1 = bytes[0] + 0xa5;
-    let c2 = bytes[1] + 0xa5;
+    b1 += 0xa5;
+    b2 += 0xa5;
     // The last byte will always start with 101 (0xa0) and then the 5 least
     // significant bits from the previous result
-    let b1 = 0xa0 | (c1 & 0x1f);
-    let b2 = 0xa0 | (c2 & 0x1f);
+    b1 = 0xa0 | (b1 & 0x1f);
+    b2 = 0xa0 | (b2 & 0x1f);
     // Get the flag string from the UTF-8 representation of our Unicode characters.
     String::from_utf8(vec![0xf0, 0x9f, 0x87, b1, 0xf0, 0x9f, 0x87, b2]).unwrap()
 }

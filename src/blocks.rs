@@ -230,7 +230,7 @@ impl CommonApi {
     pub async fn recoverable<Fn, Fut, T, E, Msg>(&mut self, mut f: Fn, msg: Msg) -> Result<T>
     where
         Fn: FnMut() -> Fut,
-        Fut: Future<Output = StdResult<T, E>>,
+        Fut: Future<Output = Result<T, E>>,
         E: StdError,
         Msg: Clone + Into<String>,
     {
