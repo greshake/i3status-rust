@@ -21,6 +21,7 @@
 //! block = "rofication"
 //! interval = 1
 //! socket_path = "/tmp/rofi_notification_daemon"
+//! ```
 //!
 //! # Icons Used
 //! - `bell`
