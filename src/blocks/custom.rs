@@ -13,6 +13,7 @@
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
 //! `command` | Shell command to execute & display | No | None
+//! `persistent` | Run command in the background; update display for each output line of the command | No | false
 //! `cycle` | Commands to execute and change when the button is clicked | No | None
 //! `interval` | Update interval in seconds (or "once" to update only once) | No | `10`
 //! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
@@ -88,7 +89,8 @@ use super::prelude::*;
 use crate::signals::Signal;
 use inotify::{Inotify, WatchMask};
 use std::io;
-use tokio::{process::Command, time::Instant};
+use std::process::Stdio;
+use tokio::{io::{BufReader, AsyncBufReadExt}, process::Command, time::Instant};
 use tokio_stream::wrappers::IntervalStream;
 
 #[derive(Deserialize, Debug, Derivative)]
@@ -96,6 +98,7 @@ use tokio_stream::wrappers::IntervalStream;
 #[derivative(Default)]
 struct CustomConfig {
     command: Option<StdString>,
+    persistent: bool,
     cycle: Option<Vec<StdString>>,
     #[derivative(Default(value = "10.into()"))]
     interval: OnceDuration,
@@ -104,6 +107,29 @@ struct CustomConfig {
     shell: Option<StdString>,
     signal: Option<i32>,
     watch_files: Vec<StdString>,
+}
+
+async fn update_bar(stdout: &str, hide_when_empty: bool, json: bool, api: &mut CommonApi) -> Result<()> {
+    if stdout.is_empty() && hide_when_empty {
+        api.hide();
+    } else if json {
+        let input: Input = serde_json::from_str(stdout).error("invalid JSON")?;
+
+        api.show();
+        api.set_icon(&input.icon)?;
+        api.set_state(input.state);
+        if let Some(short) = input.short_text {
+            api.set_texts(input.text, short);
+        } else {
+            api.set_text(input.text);
+        }
+    } else {
+        api.show();
+        api.set_text(stdout.into());
+    };
+    api.flush().await?;
+
+    Ok(())
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -155,51 +181,58 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .into_iter()
         .cycle();
 
-    loop {
-        // Run command
-        let output = Command::new(&shell)
-            .args(&["-c", &cycle.next().unwrap()])
-            .output()
-            .await
-            .error("failed to run command")?;
-        let stdout = std::str::from_utf8(&output.stdout)
-            .error("the output of command is invalid UTF-8")?
-            .trim();
+    if config.persistent {
+        let mut process = Command::new(&shell)
+            .args(&["-c", &config.command.clone().error("'command' must be specified when 'persistent' is set")?])
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("failed to run command");
 
-        if stdout.is_empty() && config.hide_when_empty {
-            api.hide();
-        } else if config.json {
-            let input: Input = serde_json::from_str(stdout).error("invalid JSON")?;
+        let stdout = process.stdout.take()
+            .expect("child did not have a handle to stdout");
+        let mut reader = BufReader::new(stdout).lines();
 
-            api.show();
-            api.set_icon(&input.icon)?;
-            api.set_state(input.state);
-            if let Some(short) = input.short_text {
-                api.set_texts(input.text, short);
-            } else {
-                api.set_text(input.text);
-            }
-        } else {
-            api.show();
-            api.set_text(stdout.into());
-        };
-        api.flush().await?;
+        tokio::spawn(async move {
+            process.wait().await
+                .expect("child process encountered an error");
+        });
 
-        if config.interval == OnceDuration::Once && config.watch_files.is_empty() {
-            return Ok(());
+        while let Some(line) = reader.next_line().await
+            .error("error reading line from child process")? {
+
+            update_bar(&line, config.hide_when_empty, config.json, &mut api).await?;
         }
 
+        Ok(())
+    } else {
         loop {
-            tokio::select! {
-                _ = timer.next() => break,
-                _ = file_updates.next() => break,
-                Some(event) = events.recv() => {
-                    match (event, config.signal) {
-                        (BlockEvent::Signal(Signal::Custom(s)), Some(signal)) if s == signal => break,
-                        (BlockEvent::Click(_), _) => break,
-                        _ => (),
-                    }
-                },
+            // Run command
+            let output = Command::new(&shell)
+                .args(&["-c", &cycle.next().unwrap()])
+                .output()
+                .await
+                .error("failed to run command")?;
+            let stdout = std::str::from_utf8(&output.stdout)
+                .error("the output of command is invalid UTF-8")?
+                .trim();
+
+            update_bar(stdout, config.hide_when_empty, config.json, &mut api).await?;
+
+            if config.interval == OnceDuration::Once && config.watch_files.is_empty() {
+                return Ok(());
+            }
+            loop {
+                tokio::select! {
+                    _ = timer.next() => break,
+                    _ = file_updates.next() => break,
+                    Some(event) = events.recv() => {
+                        match (event, config.signal) {
+                            (BlockEvent::Signal(Signal::Custom(s)), Some(signal)) if s == signal => break,
+                            (BlockEvent::Click(_), _) => break,
+                            _ => (),
+                        }
+                    },
+                }
             }
         }
     }
