@@ -94,6 +94,7 @@
 <span class="kw">use</span> <span class="ident">toml::value</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::blocks::BlockType</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::icons::Icons</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes::Theme</span>;
 
@@ -108,8 +109,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">SharedConfig</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident"><span class="kw">crate</span>::errors::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors::OptionExt</span>;
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">icons_format</span>.<span class="ident">replace</span>(
             <span class="string">&quot;{icon}&quot;</span>,
             <span class="self">self</span>.<span class="ident">icons</span>

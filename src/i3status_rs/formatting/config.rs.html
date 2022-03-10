@@ -97,7 +97,7 @@
 <span id="95">95</span>
 <span id="96">96</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">template::FormatTemplate</span>, <span class="ident">Format</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors::ToSerdeError</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="ident">MapAccess</span>, <span class="ident">Visitor</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">de</span>, <span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>};
 <span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
@@ -111,7 +111,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Config</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_default</span>(<span class="self">self</span>, <span class="ident">default_full</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident"><span class="kw">crate</span>::errors::Result</span><span class="op">&lt;</span><span class="ident">Format</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_default</span>(<span class="self">self</span>, <span class="ident">default_full</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Format</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">full</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">full</span> {
             <span class="prelude-val">Some</span>(<span class="ident">full</span>) =&gt; <span class="ident">full</span>,
             <span class="prelude-val">None</span> =&gt; <span class="ident">default_full</span>.<span class="ident">parse</span>()<span class="question-mark">?</span>,
