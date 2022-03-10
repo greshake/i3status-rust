@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["run",""]],"struct":[["CustomConfig",""],["Input",""]]});
+initSidebarItems({"fn":[["run",""],["update_bar",""]],"struct":[["CustomConfig",""],["Input",""]]});
