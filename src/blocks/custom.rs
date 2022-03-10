@@ -136,8 +136,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut events = api.get_events().await?;
     let config = CustomConfig::deserialize(config).config_error()?;
 
-    // let mut notify;
-
     type TimerStream = Pin<Box<dyn Stream<Item = Instant> + Send + Sync>>;
     let mut timer: TimerStream = match config.interval {
         OnceDuration::Once => Box::pin(futures::stream::pending()),
@@ -149,9 +147,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         [] => Box::pin(futures::stream::pending()),
         files => {
             let mut notify = Inotify::init().error("Failed to start inotify")?;
-            // TODO: is there a way to avoid this leak?
-            let buf = Box::leak(Box::new([0; 1024]));
-
             for file in files {
                 notify
                     .add_watch(file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
@@ -159,7 +154,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             Box::pin(
                 notify
-                    .event_stream(buf)
+                    .event_stream([0;1024])
                     .error("Failed to create event stream")?,
             )
         }
