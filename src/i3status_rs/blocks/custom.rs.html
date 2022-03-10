@@ -243,11 +243,6 @@
 <span id="241">241</span>
 <span id="242">242</span>
 <span id="243">243</span>
-<span id="244">244</span>
-<span id="245">245</span>
-<span id="246">246</span>
-<span id="247">247</span>
-<span id="248">248</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  </span>
@@ -386,8 +381,6 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">CustomConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
 
-    <span class="comment">// let mut notify;</span>
-
     <span class="kw">type</span> <span class="ident">TimerStream</span> <span class="op">=</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Instant</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span>: <span class="ident">TimerStream</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">interval</span> {
         <span class="ident">OnceDuration::Once</span> =&gt; <span class="ident">Box::pin</span>(<span class="ident">futures::stream::pending</span>()),
@@ -399,9 +392,6 @@
         [] =&gt; <span class="ident">Box::pin</span>(<span class="ident">futures::stream::pending</span>()),
         <span class="ident">files</span> =&gt; {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notify</span> <span class="op">=</span> <span class="ident">Inotify::init</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
-            <span class="comment">// TODO: is there a way to avoid this leak?</span>
-            <span class="kw">let</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">Box::leak</span>(<span class="ident">Box::new</span>([<span class="number">0</span>; <span class="number">1024</span>]));
-
             <span class="kw">for</span> <span class="ident">file</span> <span class="kw">in</span> <span class="ident">files</span> {
                 <span class="ident">notify</span>
                     .<span class="ident">add_watch</span>(<span class="ident">file</span>, <span class="ident">WatchMask::MODIFY</span> <span class="op">|</span> <span class="ident">WatchMask::CLOSE_WRITE</span>)
@@ -409,7 +399,7 @@
             }
             <span class="ident">Box::pin</span>(
                 <span class="ident">notify</span>
-                    .<span class="ident">event_stream</span>(<span class="ident">buf</span>)
+                    .<span class="ident">event_stream</span>([<span class="number">0</span>;<span class="number">1024</span>])
                     .<span class="ident">error</span>(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>,
             )
         }
