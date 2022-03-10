@@ -1,5 +1,5 @@
 use super::{template::FormatTemplate, Format};
-use crate::errors::ToSerdeError;
+use crate::errors::*;
 use serde::de::{MapAccess, Visitor};
 use serde::{de, Deserialize, Deserializer};
 use smartstring::alias::String;
@@ -13,7 +13,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn with_default(self, default_full: &str) -> crate::errors::Result<Format> {
+    pub fn with_default(self, default_full: &str) -> Result<Format> {
         let full = match self.full {
             Some(full) => full,
             None => default_full.parse()?,

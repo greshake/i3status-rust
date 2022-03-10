@@ -88,9 +88,12 @@
 use super::prelude::*;
 use crate::signals::Signal;
 use inotify::{Inotify, WatchMask};
-use std::io;
 use std::process::Stdio;
-use tokio::{io::{BufReader, AsyncBufReadExt}, process::Command, time::Instant};
+use tokio::{
+    io::{AsyncBufReadExt, BufReader, self},
+    process::Command,
+    time::Instant,
+};
 use tokio_stream::wrappers::IntervalStream;
 
 #[derive(Deserialize, Debug, Derivative)]
@@ -109,7 +112,12 @@ struct CustomConfig {
     watch_files: Vec<StdString>,
 }
 
-async fn update_bar(stdout: &str, hide_when_empty: bool, json: bool, api: &mut CommonApi) -> Result<()> {
+async fn update_bar(
+    stdout: &str,
+    hide_when_empty: bool,
+    json: bool,
+    api: &mut CommonApi,
+) -> Result<()> {
     if stdout.is_empty() && hide_when_empty {
         api.hide();
     } else if json {
@@ -154,7 +162,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             Box::pin(
                 notify
-                    .event_stream([0;1024])
+                    .event_stream([0; 1024])
                     .error("Failed to create event stream")?,
             )
         }
@@ -178,23 +186,32 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     if config.persistent {
         let mut process = Command::new(&shell)
-            .args(&["-c", &config.command.clone().error("'command' must be specified when 'persistent' is set")?])
+            .args(&[
+                "-c",
+                config
+                    .command
+                    .as_deref()
+                    .error("'command' must be specified when 'persistent' is set")?,
+            ])
             .stdout(Stdio::piped())
             .spawn()
-            .expect("failed to run command");
+            .error("failed to run command")?;
 
-        let stdout = process.stdout.take()
+        let stdout = process
+            .stdout
+            .take()
             .expect("child did not have a handle to stdout");
         let mut reader = BufReader::new(stdout).lines();
 
         tokio::spawn(async move {
-            process.wait().await
-                .expect("child process encountered an error");
+            let _ = process.wait().await;
         });
 
-        while let Some(line) = reader.next_line().await
-            .error("error reading line from child process")? {
-
+        while let Some(line) = reader
+            .next_line()
+            .await
+            .error("error reading line from child process")?
+        {
             update_bar(&line, config.hide_when_empty, config.json, &mut api).await?;
         }
 

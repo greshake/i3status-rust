@@ -9,7 +9,7 @@ use serde::{Serialize, Serializer};
 use serde_derive::Deserialize;
 use smartstring::alias::String;
 
-use crate::errors::{self, OptionExt, ResultExt, ToSerdeError};
+use crate::errors::*;
 use crate::util;
 use crate::widget::State;
 
@@ -93,7 +93,8 @@ impl Add for Color {
 }
 
 impl FromStr for Color {
-    type Err = crate::errors::Error;
+    type Err = Error;
+
     fn from_str(color: &str) -> Result<Self, Self::Err> {
         Ok(if color == "none" || color.is_empty() {
             Color::None
@@ -166,7 +167,7 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn from_file(file: &str) -> errors::Result<Theme> {
+    pub fn from_file(file: &str) -> Result<Theme> {
         let file = util::find_file(file, Some("themes"), Some("toml"))
             .or_error(|| format!("Theme '{}' not found", file))?;
         let map: HashMap<String, String> = util::deserialize_toml_file(&file)?;
@@ -185,10 +186,7 @@ impl Theme {
         }
     }
 
-    pub fn apply_overrides(
-        &mut self,
-        overrides: &HashMap<String, String>,
-    ) -> Result<(), crate::errors::Error> {
+    pub fn apply_overrides(&mut self, overrides: &HashMap<String, String>) -> Result<()> {
         if let Some(separator) = overrides.get("separator") {
             self.separator = Some(separator.clone());
         }

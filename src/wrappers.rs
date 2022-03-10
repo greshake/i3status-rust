@@ -1,3 +1,4 @@
+use crate::errors::{Result, ResultExt};
 use serde::de::{self, Deserialize, Deserializer};
 use std::borrow::Cow;
 use std::time::Duration;
@@ -157,8 +158,7 @@ impl ShellString {
         Self(value.into())
     }
 
-    pub fn expand(&self) -> crate::errors::Result<Cow<str>> {
-        use crate::errors::ResultExt;
+    pub fn expand(&self) -> Result<Cow<str>> {
         shellexpand::full(&self.0).error("Failed to expand string")
     }
 }

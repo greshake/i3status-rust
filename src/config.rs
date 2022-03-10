@@ -5,6 +5,7 @@ use std::sync::Arc;
 use toml::value;
 
 use crate::blocks::BlockType;
+use crate::errors::*;
 use crate::icons::Icons;
 use crate::themes::Theme;
 
@@ -19,8 +20,7 @@ pub struct SharedConfig {
 }
 
 impl SharedConfig {
-    pub fn get_icon(&self, icon: &str) -> crate::errors::Result<String> {
-        use crate::errors::OptionExt;
+    pub fn get_icon(&self, icon: &str) -> Result<String> {
         Ok(self.icons_format.replace(
             "{icon}",
             self.icons
