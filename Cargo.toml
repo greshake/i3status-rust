@@ -24,7 +24,7 @@ serde_derive = "1.0"
 serde_json = "1.0"
 toml = "0.5"
 libc = "0.2"
-inotify = "0.9"
+inotify = "0.10"
 tokio-stream = "0.1"
 async-trait = "0.1"
 regex = "1.5"
@@ -66,7 +66,7 @@ version = "1.7"
 features = ["union", "const_generics"]
 
 [dependencies.smartstring]
-version = "0.2"
+version = "1.0"
 features = ["serde"]
 
 [dependencies.serde]
@@ -100,7 +100,7 @@ default-features = false
 features = ["clock", "unstable-locales"]
 
 [dependencies.chrono-tz]
-version = "0.5"
+version = "0.6"
 features = ["serde"]
 
 [dependencies.signal-hook-tokio]
