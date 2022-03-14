@@ -132,15 +132,18 @@ where
     toml::from_str(&contents).configuration_error("failed to parse TOML from file contents")
 }
 
-pub fn read_file(blockname: &str, path: &Path) -> Result<String> {
-    let mut f = OpenOptions::new().read(true).open(path).block_error(
-        blockname,
-        &format!("failed to open file {}", path.to_string_lossy()),
-    )?;
+pub fn read_file(blockname: &str, path: impl AsRef<Path>) -> Result<String> {
+    let mut f = OpenOptions::new()
+        .read(true)
+        .open(path.as_ref())
+        .block_error(
+            blockname,
+            &format!("failed to open file {}", path.as_ref().display()),
+        )?;
     let mut content = String::new();
     f.read_to_string(&mut content).block_error(
         blockname,
-        &format!("failed to read {}", path.to_string_lossy()),
+        &format!("failed to read {}", path.as_ref().display()),
     )?;
     // Removes trailing newline
     content.pop();

@@ -86,7 +86,11 @@ impl PowerSupplyDevice {
 
 impl BatteryDevice for PowerSupplyDevice {
     fn is_available(&self) -> bool {
-        self.device_path.exists()
+        let path = self.device_path.join("present");
+        if !path.exists() {
+            return false;
+        }
+        read_file("battery", path).map_or(false, |x| x == "1")
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
