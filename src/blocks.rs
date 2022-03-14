@@ -72,6 +72,7 @@ define_blocks!(
     hueshift,
     kdeconnect,
     load,
+    #[cfg(feature = "maildir")]
     maildir,
     menu,
     memory,

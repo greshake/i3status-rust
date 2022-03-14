@@ -6,7 +6,7 @@
 //!
 //! Note that you need to enable `notmuch` feature to use this block:
 //! ```sh
-//! cargo build --release --feature notmuch
+//! cargo build --release --features notmuch
 //! ```
 //!
 //! # Configuration

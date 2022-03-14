@@ -1,5 +1,10 @@
 //! Unread mail. Only supports maildir format.
 //!
+//! Note that you need to enable `maildir` feature to use this block:
+//! ```sh
+//! cargo build --release --features maildir
+//! ```
+//!
 //! # Configuration
 //!
 //! Key | Values | Required | Default
