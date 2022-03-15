@@ -4,7 +4,7 @@ description = "A feature-rich and resource-friendly replacement for i3status, wr
 repository = "https://github.com/greshake/i3status-rust/"
 readme = "README.md"
 license = "GPL-3.0-only"
-version = "0.21.7"
+version = "0.21.8"
 authors = ["Kai Greshake <development@kai-greshake.de>",
            "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
 edition = "2018"
@@ -35,7 +35,7 @@ toml = "0.5"
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.0", default-features = false }
 notmuch = { optional = true, version = "0.7.0" }
-maildir = { optional = true, version = "0.5" }
+maildir = { optional = true, version = "0.6" }
 
 [dependencies.chrono]
 version = "0.4"
