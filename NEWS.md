@@ -1,3 +1,10 @@
+# i3status-rust 0.21.8
+
+### Bug Fixes and Improvements
+
+* Net: WiFi information should be more reliable now ([e7e2836f](https://github.com/greshake/i3status-rust/commit/e7e2836f823e35ecb507e4af7108dec110cbedaa))
+* Battery: fix missing battery detection for `sysfs` driver ([24f432f](https://github.com/greshake/i3status-rust/commit/24f432fb67e5ba3cadddf5084b60c15e392f5e44))
+
 # i3status-rust 0.21.7
 
 ### New Blocks and Features
