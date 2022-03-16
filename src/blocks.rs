@@ -122,14 +122,6 @@ impl CommonApi {
         self.cmd_buf.push(RequestCmd::Hide);
     }
 
-    pub fn hide_buttons(&mut self) {
-        self.cmd_buf.push(RequestCmd::HideButtons);
-    }
-
-    pub fn show_buttons(&mut self) {
-        self.cmd_buf.push(RequestCmd::ShowButtons);
-    }
-
     pub fn show(&mut self) {
         self.cmd_buf.push(RequestCmd::Show);
     }
@@ -171,18 +163,6 @@ impl CommonApi {
         self.cmd_buf.push(RequestCmd::SetFormat(
             format.run(&self.request_sender, self.id),
         ));
-    }
-
-    pub fn add_button(&mut self, instance: usize, icon: &str) -> Result<()> {
-        self.cmd_buf
-            .push(RequestCmd::AddButton(instance, self.get_icon(icon)?));
-        Ok(())
-    }
-
-    pub fn set_button(&mut self, instance: usize, icon: &str) -> Result<()> {
-        self.cmd_buf
-            .push(RequestCmd::SetButton(instance, self.get_icon(icon)?));
-        Ok(())
     }
 
     pub fn set_full_screen(&mut self, value: bool) {

@@ -47,7 +47,6 @@ impl Source {
 
 #[derive(Debug)]
 pub struct Widget {
-    instance: Option<usize>,
     pub icon: String,
     pub shared_config: SharedConfig,
     pub state: State,
@@ -65,7 +64,6 @@ impl Widget {
         };
 
         Widget {
-            instance: None,
             icon: String::new(),
             shared_config,
             state: State::Idle,
@@ -79,17 +77,6 @@ impl Widget {
     /*
      * Builders
      */
-
-    pub fn with_instance(mut self, instance: usize) -> Self {
-        self.instance = Some(instance);
-        self.inner.instance = Some(instance.to_string());
-        self
-    }
-
-    pub fn with_icon_str(mut self, icon: String) -> Self {
-        self.icon = icon;
-        self
-    }
 
     pub fn with_text(mut self, text: String) -> Self {
         self.source = Source::Text(text);
@@ -124,14 +111,6 @@ impl Widget {
         if let Source::Format(_, values) = &mut self.source {
             *values = Some(new_values);
         }
-    }
-
-    /*
-     * Getters
-     */
-
-    pub fn get_instance(&self) -> Option<usize> {
-        self.instance
     }
 
     /*

@@ -137,9 +137,7 @@ pub struct RunningBlock {
     click_handler: ClickHandler,
 
     hidden: bool,
-    buttons_hidden: bool,
     widget: Widget,
-    buttons: Vec<Widget>,
 }
 
 pub struct FailedBlock {
@@ -173,12 +171,6 @@ pub enum RequestCmd {
 
     SetFormat(RunningFormat),
     SetValues(HashMap<String, Value>),
-
-    // TODO: remove this API
-    AddButton(usize, String),
-    SetButton(usize, String),
-    HideButtons,
-    ShowButtons,
 
     SetFullScreen(bool),
 
@@ -260,9 +252,7 @@ impl BarState {
             click_handler: common_config.click,
 
             hidden: false,
-            buttons_hidden: false,
             widget: Widget::new(api.id, api.shared_config.clone()),
-            buttons: Vec::new(),
         });
 
         self.running_blocks
@@ -287,10 +277,7 @@ impl BarState {
         for cmd in request.cmds {
             match cmd {
                 RequestCmd::Hide => block.hidden = true,
-                RequestCmd::Show => {
-                    block.hidden = false;
-                    block.buttons_hidden = false;
-                }
+                RequestCmd::Show => block.hidden = false,
                 RequestCmd::GetEvents(tx) => {
                     let (sender, receiver) = mpsc::channel(64);
                     block.event_sender = Some(sender);
@@ -299,28 +286,9 @@ impl BarState {
                 RequestCmd::SetIcon(icon) => block.widget.icon = icon,
                 RequestCmd::SetText(text) => block.widget.set_text(text),
                 RequestCmd::SetTexts(full, short) => block.widget.set_texts(full, short),
-                RequestCmd::SetState(state) => {
-                    block.widget.state = state;
-                    for b in &mut block.buttons {
-                        b.state = state;
-                    }
-                }
+                RequestCmd::SetState(state) => block.widget.state = state,
                 RequestCmd::SetFormat(format) => block.widget.set_format(format),
                 RequestCmd::SetValues(values) => block.widget.set_values(values),
-                RequestCmd::AddButton(instance, icon) => block.buttons.push(
-                    Widget::new(request.block_id, block.widget.shared_config.clone())
-                        .with_instance(instance)
-                        .with_icon_str(icon),
-                ),
-                RequestCmd::HideButtons => block.buttons_hidden = true,
-                RequestCmd::ShowButtons => block.buttons_hidden = false,
-                RequestCmd::SetButton(instance, icon) => {
-                    for b in &mut block.buttons {
-                        if b.get_instance() == Some(instance) {
-                            b.icon = icon.clone();
-                        }
-                    }
-                }
                 RequestCmd::SetFullScreen(value) => {
                     if self.fullscreen_block.is_none() && value {
                         self.fullscreen_block = Some(block.id)
@@ -358,14 +326,10 @@ impl BarState {
         }
 
         let data = &mut self.blocks_render_cache[block.id];
-        data.clear();
         if !block.hidden {
-            data.extend(block.widget.get_data().in_block(*block_type, block.id)?);
-            if !block.buttons_hidden {
-                for button in &block.buttons {
-                    data.extend(button.get_data().in_block(*block_type, block.id)?);
-                }
-            }
+            *data = block.widget.get_data().in_block(*block_type, block.id)?;
+        } else {
+            data.clear();
         }
 
         Ok(())
