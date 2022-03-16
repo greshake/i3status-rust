@@ -195,27 +195,6 @@
 <span id="193">193</span>
 <span id="194">194</span>
 <span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
-<span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Rendered</span>, <span class="ident">RunningFormat</span>, <span class="ident">Values</span>};
@@ -265,7 +244,6 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Widget</span> {
-    <span class="ident">instance</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">icon</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">shared_config</span>: <span class="ident">SharedConfig</span>,
     <span class="kw">pub</span> <span class="ident">state</span>: <span class="ident">State</span>,
@@ -283,7 +261,6 @@
         };
 
         <span class="ident">Widget</span> {
-            <span class="ident">instance</span>: <span class="prelude-val">None</span>,
             <span class="ident">icon</span>: <span class="ident">String::new</span>(),
             <span class="ident">shared_config</span>,
             <span class="ident">state</span>: <span class="ident">State::Idle</span>,
@@ -297,17 +274,6 @@
     <span class="comment">/*
      * Builders
      */</span>
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_instance</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">instance</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">instance</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">instance</span>);
-        <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">instance</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">instance</span>.<span class="ident">to_string</span>());
-        <span class="self">self</span>
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_icon_str</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">icon</span>: <span class="ident">String</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">icon</span> <span class="op">=</span> <span class="ident">icon</span>;
-        <span class="self">self</span>
-    }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_text</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">text</span>: <span class="ident">String</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">source</span> <span class="op">=</span> <span class="ident">Source::Text</span>(<span class="ident">text</span>);
@@ -342,14 +308,6 @@
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Source::Format</span>(<span class="kw">_</span>, <span class="ident">values</span>) <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">source</span> {
             <span class="kw-2">*</span><span class="ident">values</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">new_values</span>);
         }
-    }
-
-    <span class="comment">/*
-     * Getters
-     */</span>
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_instance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">instance</span>
     }
 
     <span class="comment">/*
