@@ -304,21 +304,6 @@
 <span id="302">302</span>
 <span id="303">303</span>
 <span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">zbus::fdo::DBusProxy</span>;
 <span class="kw">use</span> <span class="ident">zbus::names</span>::{<span class="ident">OwnedBusName</span>, <span class="ident">OwnedInterfaceName</span>};
 <span class="kw">use</span> <span class="ident">zbus::zvariant</span>::{<span class="ident">Optional</span>, <span class="ident">OwnedValue</span>, <span class="ident">Type</span>};
@@ -337,20 +322,8 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">MusicConfig</span> {
-    <span class="comment">// TODO add stuff here</span>
-    <span class="ident">buttons</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
 }
-
-<span class="comment">// impl Default for MusicConfig {</span>
-<span class="comment">//     fn default() -&gt; Self {</span>
-<span class="comment">//         Self {</span>
-<span class="comment">//             buttons: Vec::new(),</span>
-<span class="comment">//             format: Default::default(),</span>
-<span class="comment">//         }</span>
-<span class="comment">//     }</span>
-<span class="comment">// }</span>
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Type</span>, <span class="ident">serde_derive::Deserialize</span>)]</span>
 <span class="kw">struct</span> <span class="ident">PropChange</span> {
@@ -373,15 +346,15 @@
     <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$title_artist.rot-str()|&quot;</span>)<span class="question-mark">?</span>);
     <span class="ident">api</span>.<span class="ident">set_icon</span>(<span class="string">&quot;music&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="comment">// Init buttons</span>
-    <span class="kw">for</span> <span class="ident">button</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">buttons</span> {
-        <span class="kw">match</span> <span class="ident">button</span>.<span class="ident">as_str</span>() {
-            <span class="string">&quot;play&quot;</span> =&gt; <span class="ident">api</span>.<span class="ident">add_button</span>(<span class="ident">PLAY_PAUSE_BTN</span>, <span class="string">&quot;music_play&quot;</span>)<span class="question-mark">?</span>,
-            <span class="string">&quot;next&quot;</span> =&gt; <span class="ident">api</span>.<span class="ident">add_button</span>(<span class="ident">NEXT_BTN</span>, <span class="string">&quot;music_next&quot;</span>)<span class="question-mark">?</span>,
-            <span class="string">&quot;prev&quot;</span> =&gt; <span class="ident">api</span>.<span class="ident">add_button</span>(<span class="ident">PREV_BTN</span>, <span class="string">&quot;music_prev&quot;</span>)<span class="question-mark">?</span>,
-            <span class="ident">x</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown button: &#39;{}&#39;&quot;</span>, <span class="ident">x</span>))),
-        }
-    }
+    <span class="kw">let</span> <span class="ident">new_btn</span> <span class="op">=</span> <span class="op">|</span><span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">id</span>: <span class="ident">usize</span>, <span class="ident">api</span>: <span class="kw-2">&amp;mut</span> <span class="ident">CommonApi</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">icon</span>)<span class="question-mark">?</span>.<span class="ident">trim</span>().<span class="ident">into</span>()).<span class="ident">with_instance</span>(<span class="ident">id</span>))
+    };
+
+    <span class="kw">let</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span> {
+        <span class="string">&quot;play&quot;</span> =&gt; <span class="ident">new_btn</span>(<span class="string">&quot;music_play&quot;</span>, <span class="ident">PLAY_PAUSE_BTN</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>,
+        <span class="string">&quot;next&quot;</span> =&gt; <span class="ident">new_btn</span>(<span class="string">&quot;music_next&quot;</span>, <span class="ident">NEXT_BTN</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>,
+        <span class="string">&quot;prev&quot;</span> =&gt; <span class="ident">new_btn</span>(<span class="string">&quot;music_prev&quot;</span>, <span class="ident">PREV_BTN</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>,
+    };
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">players</span> <span class="op">=</span> <span class="ident">get_all_players</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cur_player</span> <span class="op">=</span> <span class="prelude-val">None</span>;
@@ -407,7 +380,12 @@
         <span class="kw">let</span> <span class="ident">player</span> <span class="op">=</span> <span class="ident">cur_player</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">players</span>.<span class="ident">get_mut</span>(<span class="ident">c</span>).<span class="ident">unwrap</span>());
         <span class="kw">match</span> <span class="ident">player</span> {
             <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">player</span>) =&gt; {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="ident">HashMap::new</span>();
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="ident">values</span>.<span class="ident">clone</span>();
+                <span class="kw">let</span> (<span class="ident">state</span>, <span class="ident">play_icon</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">player</span>.<span class="ident">status</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">PlaybackStatus::Playing</span>) =&gt; (<span class="ident">State::Info</span>, <span class="string">&quot;music_pause&quot;</span>),
+                    <span class="kw">_</span> =&gt; (<span class="ident">State::Idle</span>, <span class="string">&quot;music_play&quot;</span>),
+                };
+                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;play&quot;</span>.<span class="ident">into</span>(), <span class="ident">new_btn</span>(<span class="ident">play_icon</span>, <span class="ident">PLAY_PAUSE_BTN</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>);
                 <span class="ident">player</span>
                     .<span class="ident">title</span>
                     .<span class="ident">clone</span>()
@@ -434,18 +412,10 @@
                     <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;title_artist&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::text</span>(<span class="ident">t</span>));
                 }
                 <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
-                <span class="ident">api</span>.<span class="ident">show_buttons</span>();
-
-                <span class="kw">let</span> (<span class="ident">state</span>, <span class="ident">play_icon</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">player</span>.<span class="ident">status</span> {
-                    <span class="prelude-val">Some</span>(<span class="ident">PlaybackStatus::Playing</span>) =&gt; (<span class="ident">State::Info</span>, <span class="string">&quot;music_pause&quot;</span>),
-                    <span class="kw">_</span> =&gt; (<span class="ident">State::Idle</span>, <span class="string">&quot;music_play&quot;</span>),
-                };
                 <span class="ident">api</span>.<span class="ident">set_state</span>(<span class="ident">state</span>);
-                <span class="ident">api</span>.<span class="ident">set_button</span>(<span class="ident">PLAY_PAUSE_BTN</span>, <span class="ident">play_icon</span>)<span class="question-mark">?</span>;
             }
             <span class="prelude-val">None</span> =&gt; {
                 <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">HashMap::new</span>());
-                <span class="ident">api</span>.<span class="ident">hide_buttons</span>();
                 <span class="ident">api</span>.<span class="ident">set_state</span>(<span class="ident">State::Idle</span>);
             }
         }

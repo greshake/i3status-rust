@@ -168,9 +168,9 @@
             <span class="ident">serde_json::from_str</span>(<span class="ident">output</span>).<span class="ident">error</span>(<span class="string">&quot;&#39;speedtest-cli&#39; produced wrong JSON&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;ping&quot;</span> =&gt; <span class="ident">Value::seconds</span>(<span class="ident">output</span>.<span class="ident">ping</span> <span class="op">*</span> <span class="number">1e-3</span>).<span class="ident">icon</span>(<span class="ident">icon_ping</span>.<span class="ident">clone</span>()),
-            <span class="string">&quot;speed_down&quot;</span> =&gt; <span class="ident">Value::bits</span>(<span class="ident">output</span>.<span class="ident">download</span>).<span class="ident">icon</span>(<span class="ident">icon_down</span>.<span class="ident">clone</span>()),
-            <span class="string">&quot;speed_up&quot;</span> =&gt; <span class="ident">Value::bits</span>(<span class="ident">output</span>.<span class="ident">upload</span>).<span class="ident">icon</span>(<span class="ident">icon_up</span>.<span class="ident">clone</span>()),
+            <span class="string">&quot;ping&quot;</span> =&gt; <span class="ident">Value::seconds</span>(<span class="ident">output</span>.<span class="ident">ping</span> <span class="op">*</span> <span class="number">1e-3</span>).<span class="ident">with_icon</span>(<span class="ident">icon_ping</span>.<span class="ident">clone</span>()),
+            <span class="string">&quot;speed_down&quot;</span> =&gt; <span class="ident">Value::bits</span>(<span class="ident">output</span>.<span class="ident">download</span>).<span class="ident">with_icon</span>(<span class="ident">icon_down</span>.<span class="ident">clone</span>()),
+            <span class="string">&quot;speed_up&quot;</span> =&gt; <span class="ident">Value::bits</span>(<span class="ident">output</span>.<span class="ident">upload</span>).<span class="ident">with_icon</span>(<span class="ident">icon_up</span>.<span class="ident">clone</span>()),
         });
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>).<span class="kw">await</span>;

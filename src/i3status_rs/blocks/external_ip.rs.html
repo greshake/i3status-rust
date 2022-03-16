@@ -385,7 +385,7 @@
         <span class="ident">info</span>.<span class="ident">postal</span>
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;postal&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::text</span>(<span class="ident">x</span>)));
         <span class="kw">if</span> <span class="ident">info</span>.<span class="ident">in_eu</span> {
-            <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;in_eu&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::Flag</span>);
+            <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;in_eu&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::flag</span>());
         }
         <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;

@@ -347,7 +347,7 @@
             <span class="string">&quot;frequency&quot;</span> =&gt; <span class="ident">Value::hertz</span>(<span class="ident">freq_avg</span>),
             <span class="string">&quot;utilization&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">utilization_avg</span> <span class="op">*</span> <span class="number">100.</span>),
         );
-        <span class="ident">boost</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;boost&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::Icon</span>(<span class="ident">b</span>)));
+        <span class="ident">boost</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;boost&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::icon</span>(<span class="ident">b</span>)));
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">freq</span>) <span class="kw">in</span> <span class="ident">freqs</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="ident">values</span>.<span class="ident">insert</span>(<span class="macro">format!</span>(<span class="string">&quot;frequency{}&quot;</span>, <span class="ident">i</span> <span class="op">+</span> <span class="number">1</span>).<span class="ident">into</span>(), <span class="ident">Value::hertz</span>(<span class="kw-2">*</span><span class="ident">freq</span>));
         }

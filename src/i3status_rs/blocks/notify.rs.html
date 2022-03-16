@@ -229,7 +229,7 @@
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="ident">HashMap::new</span>();
         <span class="kw">if</span> <span class="ident">is_paused</span> {
-            <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;paused&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::Flag</span>);
+            <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;paused&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::flag</span>());
         }
         <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;

@@ -298,9 +298,9 @@
                 <span class="string">&quot;display&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">mon</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
                 <span class="string">&quot;brightness&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">mon</span>.<span class="ident">brightness</span>),
                 <span class="comment">//TODO: change `brightness_icon` based on `brightness`</span>
-                <span class="string">&quot;brightness_icon&quot;</span> =&gt; <span class="ident">Value::Icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;backlight_full&quot;</span>)<span class="question-mark">?</span>),
+                <span class="string">&quot;brightness_icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;backlight_full&quot;</span>)<span class="question-mark">?</span>),
                 <span class="string">&quot;resolution&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">mon</span>.<span class="ident">resolution</span>.<span class="ident">clone</span>()),
-                <span class="string">&quot;res_icon&quot;</span> =&gt; <span class="ident">Value::Icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;resolution&quot;</span>)<span class="question-mark">?</span>),
+                <span class="string">&quot;res_icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;resolution&quot;</span>)<span class="question-mark">?</span>),
             });
         } <span class="kw">else</span> {
             <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">HashMap::new</span>());

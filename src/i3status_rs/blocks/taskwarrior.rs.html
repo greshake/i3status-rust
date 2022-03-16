@@ -265,9 +265,9 @@
                 <span class="string">&quot;filter_name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">filter</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
             );
             <span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">==</span> <span class="number">0</span> {
-                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;done&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::Flag</span>);
+                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;done&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::flag</span>());
             } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">==</span> <span class="number">1</span> {
-                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;single&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::Flag</span>);
+                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;single&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::flag</span>());
             }
             <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
 
