@@ -73,9 +73,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             serde_json::from_str(output).error("'speedtest-cli' produced wrong JSON")?;
 
         api.set_values(map! {
-            "ping" => Value::seconds(output.ping * 1e-3).icon(icon_ping.clone()),
-            "speed_down" => Value::bits(output.download).icon(icon_down.clone()),
-            "speed_up" => Value::bits(output.upload).icon(icon_up.clone()),
+            "ping" => Value::seconds(output.ping * 1e-3).with_icon(icon_ping.clone()),
+            "speed_down" => Value::bits(output.download).with_icon(icon_down.clone()),
+            "speed_up" => Value::bits(output.upload).with_icon(icon_up.clone()),
         });
         api.flush().await?;
         sleep(config.interval.0).await;

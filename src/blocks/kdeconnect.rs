@@ -116,13 +116,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             };
             if connected {
                 api.set_icon("phone")?;
-                values.insert("connected".into(), Value::Flag);
+                values.insert("connected".into(), Value::flag());
 
                 let (level, charging) = device.battery().await?;
                 values.insert("bat_charge".into(), Value::percents(level));
                 values.insert(
                     "bat_icon".into(),
-                    Value::Icon(
+                    Value::icon(
                         api.get_icon(battery_level_icon(level, charging))?
                             .trim()
                             .into(),
@@ -147,7 +147,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     values.insert("notif_count".into(), Value::number(notif_count));
                     values.insert(
                         "notif_icon".into(),
-                        Value::Icon(api.get_icon("notification")?.trim().into()),
+                        Value::icon(api.get_icon("notification")?.trim().into()),
                     );
                 }
                 if !battery_state {

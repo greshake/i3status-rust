@@ -80,7 +80,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 if connected || !config.hide_disconnected {
                     let mut values = map! {
                         "name" => Value::text(device.name().await?),
-                        "available" => Value::Flag,
+                        "available" => Value::flag(),
                     };
                     device
                         .percentage()
@@ -88,7 +88,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         .map(|p| values.insert("percentage".into(), Value::percents(p)));
                     if connected {
                         api.set_state(State::Good);
-                        values.insert("connected".into(), Value::Flag);
+                        values.insert("connected".into(), Value::flag());
                     } else {
                         api.set_state(State::Idle);
                     }

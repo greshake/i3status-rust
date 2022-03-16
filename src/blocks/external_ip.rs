@@ -157,7 +157,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         info.postal
             .map(|x| values.insert("postal".into(), Value::text(x)));
         if info.in_eu {
-            values.insert("in_eu".into(), Value::Flag);
+            values.insert("in_eu".into(), Value::flag());
         }
         api.set_values(values);
         api.flush().await?;

@@ -1,18 +1,9 @@
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::formatting::{RunningFormat, Values};
+use crate::formatting::{Rendered, RunningFormat, Values};
 use crate::protocol::i3bar_block::I3BarBlock;
 use serde_derive::Deserialize;
 use smartstring::alias::String;
-
-/// Spacing around the widget
-#[derive(Debug, Clone, Copy)]
-pub enum Spacing {
-    /// Add a leading and trailing space around the widget contents
-    Normal,
-    /// Hide both leading and trailing spaces when widget is hidden
-    Hidden,
-}
 
 /// State of the widget. Affects the theming.
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -42,12 +33,14 @@ enum Source {
 }
 
 impl Source {
-    fn render(&self) -> Result<(String, Option<String>)> {
+    fn render(&self) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
         match self {
-            Source::Text(text) => Ok((text.clone(), None)),
-            Source::TextWithShort(full, short) => Ok((full.clone(), Some(short.clone()))),
+            Source::Text(text) => Ok((vec![text.clone().into()], vec![])),
+            Source::TextWithShort(full, short) => {
+                Ok((vec![full.clone().into()], vec![short.clone().into()]))
+            }
             Source::Format(format, Some(values)) => format.render(values),
-            Source::Format(_, None) => Ok((String::new(), None)),
+            Source::Format(_, None) => Ok((vec![], vec![])),
         }
     }
 }
@@ -160,55 +153,64 @@ impl Widget {
     }
 
     /// Constuct `I3BarBlock` from this widget
-    pub fn get_data(&self) -> Result<I3BarBlock> {
-        let mut data = self.inner.clone();
-
+    pub fn get_data(&self) -> Result<Vec<I3BarBlock>> {
+        // Create a "template" block
+        let mut template = self.inner.clone();
         let (key_bg, key_fg) = self.shared_config.theme.get_colors(self.state);
-        data.background = key_bg;
-        data.color = key_fg;
-
         let (full, short) = self.source.render()?;
-        let full_spacing = if full.is_empty() {
-            Spacing::Hidden
-        } else {
-            Spacing::Normal
-        };
-        let short_spacing = if short.as_ref().map(String::is_empty).unwrap_or(true) {
-            Spacing::Hidden
-        } else {
-            Spacing::Normal
-        };
+        template.background = key_bg;
+        template.color = key_fg;
 
-        data.full_text = format!(
-            "{}{}{}",
-            match (self.icon.as_str(), full_spacing) {
-                ("", Spacing::Normal) => " ",
-                ("", Spacing::Hidden) => "",
-                (icon, _) => icon,
-            },
-            full,
-            match full_spacing {
-                Spacing::Normal => " ",
-                Spacing::Hidden => "",
+        // Collect all the pieces into "parts"
+        let mut parts = Vec::new();
+
+        // Icon block
+        if !self.icon.is_empty() {
+            let mut data = template.clone();
+            data.full_text = self.icon.clone().into();
+            parts.push(data);
+        }
+
+        if full.is_empty() {
+            return Ok(parts);
+        }
+
+        let mut padding = template.clone();
+        padding.full_text = " ".into();
+
+        if self.icon.is_empty() {
+            parts.push(padding.clone());
+        }
+
+        // If short text is available, it's necessary to hide all full blocks. `swaybar`/`i3bar`
+        // will switch a block to "short mode" only if it's "short_text" is set to a non-empty
+        // string "<span/>" is a non-empty string and it doesn't display anything. It's kinda hacky,
+        // but it works.
+        if !short.is_empty() {
+            template.short_text = "<span/>".into();
+        }
+
+        for full in full {
+            let mut data = template.clone();
+            data.full_text = full.text.into();
+            if let Some(i) = full.metadata.instance {
+                data.instance = Some(i.to_string());
             }
-        );
+            parts.push(data);
+        }
 
-        data.short_text = short.as_ref().map(|short_text| {
-            format!(
-                "{}{}{}",
-                match (self.icon.as_str(), short_spacing) {
-                    ("", Spacing::Normal) => " ",
-                    ("", Spacing::Hidden) => "",
-                    (icon, _) => icon,
-                },
-                short_text,
-                match short_spacing {
-                    Spacing::Normal => " ",
-                    Spacing::Hidden => "",
-                }
-            )
-        });
+        template.full_text = "<span/>".into();
+        for short in short {
+            let mut data = template.clone();
+            data.short_text = short.text.into();
+            if let Some(i) = short.metadata.instance {
+                data.instance = Some(i.to_string());
+            }
+            parts.push(data);
+        }
 
-        Ok(data)
+        parts.push(padding);
+
+        Ok(parts)
     }
 }

@@ -6,8 +6,8 @@ use serde_derive::Serialize;
 #[derive(Serialize, Debug, Clone)]
 pub struct I3BarBlock {
     pub full_text: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub short_text: Option<String>,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub short_text: String,
     #[serde(skip_serializing_if = "Color::skip_ser")]
     pub color: Color,
     #[serde(skip_serializing_if = "Color::skip_ser")]
@@ -48,7 +48,7 @@ impl Default for I3BarBlock {
         let border = Some("#ff0000".to_string());
         Self {
             full_text: String::new(),
-            short_text: None,
+            short_text: String::new(),
             color: Color::None,
             background: Color::None,
             border,

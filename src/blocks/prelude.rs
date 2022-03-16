@@ -3,7 +3,7 @@ pub use super::{BlockEvent, CommonApi};
 pub use crate::click::MouseButton;
 pub use crate::errors::*;
 pub use crate::formatting::{config::Config as FormatConfig, value::Value};
-pub use crate::widget::{Spacing, State, Widget};
+pub use crate::widget::{State, Widget};
 pub use crate::wrappers::{OnceDuration, Seconds, ShellString};
 pub use crate::REQWEST_CLIENT;
 

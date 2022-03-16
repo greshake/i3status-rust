@@ -104,9 +104,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 "filter_name" => Value::text(filter.name.clone()),
             );
             if number_of_tasks == 0 {
-                values.insert("done".into(), Value::Flag);
+                values.insert("done".into(), Value::flag());
             } else if number_of_tasks == 1 {
-                values.insert("single".into(), Value::Flag);
+                values.insert("single".into(), Value::flag());
             }
             api.set_values(values);
 

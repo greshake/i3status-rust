@@ -76,9 +76,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 "display" => Value::text(mon.name.clone()),
                 "brightness" => Value::percents(mon.brightness),
                 //TODO: change `brightness_icon` based on `brightness`
-                "brightness_icon" => Value::Icon(api.get_icon("backlight_full")?),
+                "brightness_icon" => Value::icon(api.get_icon("backlight_full")?),
                 "resolution" => Value::text(mon.resolution.clone()),
-                "res_icon" => Value::Icon(api.get_icon("resolution")?),
+                "res_icon" => Value::icon(api.get_icon("resolution")?),
             });
         } else {
             api.set_values(HashMap::new());

@@ -16,20 +16,8 @@ const PREV_BTN: usize = 3;
 #[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]
 struct MusicConfig {
-    // TODO add stuff here
-    buttons: Vec<String>,
-
     format: FormatConfig,
 }
-
-// impl Default for MusicConfig {
-//     fn default() -> Self {
-//         Self {
-//             buttons: Vec::new(),
-//             format: Default::default(),
-//         }
-//     }
-// }
 
 #[derive(Debug, Clone, Type, serde_derive::Deserialize)]
 struct PropChange {
@@ -52,15 +40,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     api.set_format(config.format.with_default("$title_artist.rot-str()|")?);
     api.set_icon("music")?;
 
-    // Init buttons
-    for button in &config.buttons {
-        match button.as_str() {
-            "play" => api.add_button(PLAY_PAUSE_BTN, "music_play")?,
-            "next" => api.add_button(NEXT_BTN, "music_next")?,
-            "prev" => api.add_button(PREV_BTN, "music_prev")?,
-            x => return Err(Error::new(format!("Unknown button: '{}'", x))),
-        }
-    }
+    let new_btn = |icon: &str, id: usize, api: &mut CommonApi| -> Result<Value> {
+        Ok(Value::icon(api.get_icon(icon)?.trim().into()).with_instance(id))
+    };
+
+    let values = map! {
+        "play" => new_btn("music_play", PLAY_PAUSE_BTN, &mut api)?,
+        "next" => new_btn("music_next", NEXT_BTN, &mut api)?,
+        "prev" => new_btn("music_prev", PREV_BTN, &mut api)?,
+    };
 
     let mut players = get_all_players(&dbus_conn).await?;
     let mut cur_player = None;
@@ -86,7 +74,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
         match player {
             Some(ref player) => {
-                let mut values = HashMap::new();
+                let mut values = values.clone();
+                let (state, play_icon) = match player.status {
+                    Some(PlaybackStatus::Playing) => (State::Info, "music_pause"),
+                    _ => (State::Idle, "music_play"),
+                };
+                values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN, &mut api)?);
                 player
                     .title
                     .clone()
@@ -113,18 +106,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     values.insert("title_artist".into(), Value::text(t));
                 }
                 api.set_values(values);
-                api.show_buttons();
-
-                let (state, play_icon) = match player.status {
-                    Some(PlaybackStatus::Playing) => (State::Info, "music_pause"),
-                    _ => (State::Idle, "music_play"),
-                };
                 api.set_state(state);
-                api.set_button(PLAY_PAUSE_BTN, play_icon)?;
             }
             None => {
                 api.set_values(HashMap::new());
-                api.hide_buttons();
                 api.set_state(State::Idle);
             }
         }

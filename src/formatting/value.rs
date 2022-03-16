@@ -1,8 +1,15 @@
 use super::unit::Unit;
+use super::Metadata;
 use smartstring::alias::String;
 
 #[derive(Debug, Clone)]
-pub enum Value {
+pub struct Value {
+    pub inner: ValueInner,
+    pub metadata: Metadata,
+}
+
+#[derive(Debug, Clone)]
+pub enum ValueInner {
     Text(String),
     Icon(String),
     Number { val: f64, unit: Unit, icon: String },
@@ -28,16 +35,31 @@ impl_into_f64!(f64, f32, i64, u64, i32, u32, i16, u16, i8, u8, usize, isize);
 
 /// Constuctors
 impl Value {
+    pub fn new(val: ValueInner) -> Self {
+        Self {
+            inner: val,
+            metadata: Default::default(),
+        }
+    }
+
+    pub fn flag() -> Self {
+        Self::new(ValueInner::Flag)
+    }
+
+    pub fn icon(icon: String) -> Self {
+        Self::new(ValueInner::Icon(icon))
+    }
+
     pub fn text(text: String) -> Self {
-        Self::Text(text)
+        Self::new(ValueInner::Text(text))
     }
 
     pub fn number_unit(val: impl IntoF64, unit: Unit) -> Self {
-        Self::Number {
+        Self::new(ValueInner::Number {
             val: val.into_f64(),
             unit,
             icon: String::new(),
-        }
+        })
     }
 
     pub fn bytes(val: impl IntoF64) -> Self {
@@ -68,10 +90,15 @@ impl Value {
 
 /// Set options
 impl Value {
-    pub fn icon(self, icon: String) -> Self {
-        match self {
-            Self::Number { val, unit, .. } => Self::Number { val, unit, icon },
-            _ => todo!(),
+    pub fn with_icon(mut self, i: String) -> Self {
+        if let ValueInner::Number { icon, .. } = &mut self.inner {
+            *icon = i;
         }
+        self
+    }
+
+    pub fn with_instance(mut self, instance: usize) -> Self {
+        self.metadata.instance = Some(instance);
+        self
     }
 }

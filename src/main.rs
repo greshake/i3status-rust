@@ -174,6 +174,7 @@ pub enum RequestCmd {
     SetFormat(RunningFormat),
     SetValues(HashMap<String, Value>),
 
+    // TODO: remove this API
     AddButton(usize, String),
     SetButton(usize, String),
     HideButtons,
@@ -359,10 +360,10 @@ impl BarState {
         let data = &mut self.blocks_render_cache[block.id];
         data.clear();
         if !block.hidden {
-            data.push(block.widget.get_data().in_block(*block_type, block.id)?);
+            data.extend(block.widget.get_data().in_block(*block_type, block.id)?);
             if !block.buttons_hidden {
                 for button in &block.buttons {
-                    data.push(button.get_data().in_block(*block_type, block.id)?);
+                    data.extend(button.get_data().in_block(*block_type, block.id)?);
                 }
             }
         }
@@ -413,9 +414,7 @@ impl BarState {
                             block.error.to_string().into()
                         };
                         block.error_widget.set_text(text);
-                        let data = &mut self.blocks_render_cache[block.id];
-                        data.clear();
-                        data.push(block.error_widget.get_data()?);
+                        self.blocks_render_cache[block.id] = block.error_widget.get_data()?;
                         self.render()?;
                     }
                 }
@@ -455,9 +454,7 @@ impl BarState {
                             error,
                         };
 
-                        let data = &mut self.blocks_render_cache[block.id];
-                        data.clear();
-                        data.push(block.error_widget.get_data()?);
+                        self.blocks_render_cache[block.id] = block.error_widget.get_data()?;
 
                         self.render()?;
 

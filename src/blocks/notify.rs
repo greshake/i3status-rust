@@ -74,7 +74,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         let mut values = HashMap::new();
         if is_paused {
-            values.insert("paused".into(), Value::Flag);
+            values.insert("paused".into(), Value::flag());
         }
         api.set_values(values);
         api.flush().await?;

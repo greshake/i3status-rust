@@ -106,7 +106,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "frequency" => Value::hertz(freq_avg),
             "utilization" => Value::percents(utilization_avg * 100.),
         );
-        boost.map(|b| values.insert("boost".into(), Value::Icon(b)));
+        boost.map(|b| values.insert("boost".into(), Value::icon(b)));
         for (i, freq) in freqs.iter().enumerate() {
             values.insert(format!("frequency{}", i + 1).into(), Value::hertz(*freq));
         }

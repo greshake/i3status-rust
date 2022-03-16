@@ -25,13 +25,12 @@
 //! # Icons Used
 //! - `time`
 
-use std::collections::HashMap;
-
 use chrono::offset::{Local, Utc};
 use chrono::Locale;
 use chrono_tz::Tz;
 
 use super::prelude::*;
+use crate::formatting::config::DummyConfig as FormatConfig;
 
 #[derive(Deserialize, Debug, Derivative)]
 #[serde(deny_unknown_fields, default)]
@@ -48,15 +47,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TimeConfig::deserialize(config).config_error()?;
     api.set_icon("time")?;
 
-    // `FormatTemplate` doesn't do much stuff here - we just want to get the original "full" and
-    // "short" formats, so we "render" it without providing any placeholders.
-    let (format, format_short) = config
-        .format
-        .with_default("%a %d/%m %R")?
-        .run_no_init()
-        .render(&HashMap::new())?;
-    let format = format.as_str();
-    let format_short = format_short.as_deref();
+    let format = config.format.full.as_deref().unwrap_or("%a %d/%m %R");
+    let format_short = config.format.short.as_deref();
 
     let timezone = config.timezone;
     let locale = match config.locale.as_deref() {

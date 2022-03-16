@@ -9,7 +9,7 @@ use tokio::sync::mpsc::Sender;
 
 use super::prefix::Prefix;
 use super::unit::Unit;
-use super::value::Value;
+use super::value::ValueInner as Value;
 use super::Handles;
 use crate::errors::*;
 use crate::escape::CollectEscaped;

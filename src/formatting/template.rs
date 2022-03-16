@@ -2,7 +2,8 @@ use super::formatter::{
     new_formatter, Formatter, DEFAULT_FLAG_FORMATTER, DEFAULT_NUMBER_FORMATTER,
     DEFAULT_STRING_FORMATTER,
 };
-use super::value::Value;
+use super::value::ValueInner;
+use super::{Rendered, Values};
 use crate::errors::*;
 use crate::Request;
 
@@ -10,7 +11,6 @@ use tokio::sync::mpsc::Sender;
 
 use smartstring::alias::String;
 
-use std::collections::HashMap;
 use std::iter::Peekable;
 use std::str::FromStr;
 
@@ -41,7 +41,7 @@ impl FormatTemplate {
         })
     }
 
-    pub fn render(&self, vars: &HashMap<String, Value>) -> Result<String> {
+    pub fn render(&self, vars: &Values) -> Result<Vec<Rendered>> {
         for (i, token_list) in self.0.iter().enumerate() {
             match token_list.render(vars) {
                 Ok(res) => return Ok(res),
@@ -50,7 +50,7 @@ impl FormatTemplate {
                 _ => (),
             }
         }
-        Ok(String::new())
+        Ok(Vec::new())
     }
 
     pub fn init(&self, tx: &Sender<Request>, block_id: usize, handles: &mut super::Handles) {
@@ -69,30 +69,63 @@ impl FormatTemplate {
 }
 
 impl TokenList {
-    pub fn render(&self, vars: &HashMap<String, Value>) -> Result<String> {
-        let mut retval = String::new();
+    pub fn render(&self, vars: &Values) -> Result<Vec<Rendered>> {
+        let mut retval = Vec::new();
+        let mut cur = Rendered::default();
         for token in &self.0 {
             match token {
-                Token::Text(text) => retval.push_str(text),
-                Token::Recursive(rec) => retval.push_str(&rec.render(vars)?),
+                Token::Text(text) => {
+                    if cur.metadata.is_default() {
+                        cur.text.push_str(text);
+                    } else {
+                        let cur = std::mem::replace(&mut cur, Rendered::new(text.clone()));
+                        if !cur.text.is_empty() {
+                            retval.push(cur);
+                        }
+                    }
+                }
+                Token::Recursive(rec) => {
+                    if !cur.text.is_empty() {
+                        retval.push(std::mem::take(&mut cur));
+                    }
+                    retval.extend(rec.render(vars)?);
+                    cur = retval.pop().unwrap_or_default();
+                }
                 Token::Var { name, formatter } => {
                     let var = vars
                         .get(name)
                         .format_error(format!("Placeholder with name '{}' not found", name))?;
-                    let formatter =
-                        formatter
-                            .as_ref()
-                            .map(|x| x.as_ref())
-                            .unwrap_or_else(|| match var {
-                                Value::Text(_) => &DEFAULT_STRING_FORMATTER,
-                                Value::Icon(_) => &DEFAULT_STRING_FORMATTER,
-                                Value::Number { .. } => &DEFAULT_NUMBER_FORMATTER,
-                                Value::Flag => &DEFAULT_FLAG_FORMATTER,
-                            });
-                    retval.push_str(&formatter.format(var)?);
+                    let formatter = formatter.as_ref().map(|x| x.as_ref()).unwrap_or_else(|| {
+                        match &var.inner {
+                            ValueInner::Text(_) => &DEFAULT_STRING_FORMATTER,
+                            ValueInner::Icon(_) => &DEFAULT_STRING_FORMATTER,
+                            ValueInner::Number { .. } => &DEFAULT_NUMBER_FORMATTER,
+                            ValueInner::Flag => &DEFAULT_FLAG_FORMATTER,
+                        }
+                    });
+                    let formatted = formatter.format(&var.inner)?;
+                    if var.metadata == cur.metadata {
+                        cur.text.push_str(&formatted);
+                    } else {
+                        let cur = std::mem::replace(
+                            &mut cur,
+                            Rendered {
+                                text: formatted,
+                                metadata: var.metadata,
+                            },
+                        );
+                        if !cur.text.is_empty() {
+                            retval.push(cur);
+                        }
+                    }
                 }
             }
         }
+
+        if !cur.text.is_empty() {
+            retval.push(cur);
+        }
+
         Ok(retval)
     }
 }

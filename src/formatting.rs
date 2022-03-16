@@ -124,13 +124,48 @@ impl Drop for Handles {
 pub struct RunningFormat(Format, Handles);
 
 impl RunningFormat {
-    pub fn render(&self, vars: &Values) -> Result<(String, Option<String>)> {
+    pub fn render(&self, vars: &Values) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
         let (full, short) = self.0 .0.as_ref();
         let full = full.render(vars).error("Failed to render full text")?;
         let short = match short {
-            Some(short) => Some(short.render(vars).error("Failed to render short text")?),
-            None => None,
+            Some(short) => short.render(vars).error("Failed to render short text")?,
+            None => vec![],
         };
         Ok((full, short))
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct Rendered {
+    pub text: String,
+    pub metadata: Metadata,
+}
+
+impl Rendered {
+    pub fn new(text: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            metadata: Default::default(),
+        }
+    }
+}
+
+impl From<String> for Rendered {
+    fn from(text: String) -> Self {
+        Self {
+            text,
+            metadata: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct Metadata {
+    pub instance: Option<usize>,
+}
+
+impl Metadata {
+    pub fn is_default(&self) -> bool {
+        *self == Default::default()
     }
 }
