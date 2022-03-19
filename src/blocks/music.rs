@@ -95,7 +95,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     (Some(t), Some(a)) => {
                         values.insert(
                             "title_artist".into(),
-                            Value::text(format!("{}|{}", t, a).into()),
+                            Value::text(format!("{t}|{a}").into()),
                         );
                     }
                     _ => (),

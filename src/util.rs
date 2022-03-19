@@ -117,11 +117,11 @@ pub async fn has_command(command: &str) -> Result<bool> {
     Command::new("sh")
         .args(&[
             "-c",
-            format!("command -v {} >/dev/null 2>&1", command).as_ref(),
+            format!("command -v {command} >/dev/null 2>&1").as_ref(),
         ])
         .status()
         .await
-        .or_error(|| format!("Failed to check {} presence", command))
+        .or_error(|| format!("Failed to check {command} presence"))
         .map(|status| status.success())
 }
 

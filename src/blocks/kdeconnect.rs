@@ -185,9 +185,9 @@ impl<'a> Device<'a> {
         tx: mpsc::Sender<()>,
         id: &'_ str,
     ) -> Result<Device<'a>> {
-        let device_path = format!("/modules/kdeconnect/devices/{}", id);
-        let battery_path = format!("{}/battery", device_path);
-        let notifications_path = format!("{}/notifications", device_path);
+        let device_path = format!("/modules/kdeconnect/devices/{id}");
+        let battery_path = format!("{device_path}/battery");
+        let notifications_path = format!("{device_path}/notifications");
 
         let device_proxy = DeviceDbusProxy::builder(conn)
             .cache_properties(zbus::CacheProperties::No)

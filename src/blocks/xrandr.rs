@@ -172,7 +172,7 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
     let regex = active_monitors
         .lines()
         .filter_map(|line| line.split_ascii_whitespace().last())
-        .map(|name| format!("{} connected", name))
+        .map(|name| format!("{name} connected"))
         .chain(Some("Brightness:".into()));
     let regex = RegexSet::new(regex).error("Failed to create RegexSet")?;
 

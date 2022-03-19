@@ -66,13 +66,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         seconds %= 60;
 
         let text = if weeks > 0 {
-            format!("{}w {}d", weeks, days)
+            format!("{weeks}w {days}d")
         } else if days > 0 {
-            format!("{}d {}h", days, hours)
+            format!("{days}d {hours}h")
         } else if hours > 0 {
-            format!("{}h {}m", hours, minutes)
+            format!("{hours}h {minutes}m")
         } else {
-            format!("{}m {}s", minutes, seconds)
+            format!("{minutes}m {seconds}s")
         };
 
         api.set_text(text.into());

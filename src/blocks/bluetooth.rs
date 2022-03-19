@@ -295,7 +295,7 @@ impl Device {
             .await
             .error("Failed to get the list of devices")?;
         for (path, interfaces) in devices {
-            if !path.starts_with(&format!("{}/", root_oject)) {
+            if !path.starts_with(&format!("{root_oject}/")) {
                 continue;
             }
 

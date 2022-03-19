@@ -75,7 +75,7 @@ impl Block {
             "good" => self.api.set_state(State::Good),
             "warning" => self.api.set_state(State::Warning),
             "critical" => self.api.set_state(State::Critical),
-            _ => return format!("'{}' is not a valid state", state),
+            _ => return format!("'{state}' is not a valid state"),
         }
         if let Err(e) = self.api.flush().await {
             return e.to_string();

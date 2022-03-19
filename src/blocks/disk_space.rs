@@ -81,7 +81,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         Some("MB") => Some(Prefix::Mega),
         Some("KB") => Some(Prefix::Kilo),
         Some("B") => Some(Prefix::One),
-        Some(x) => return Err(Error::new(format!("Unknown unit: '{}'", x))),
+        Some(x) => return Err(Error::new(format!("Unknown unit: '{x}'"))),
         None => None,
     };
 

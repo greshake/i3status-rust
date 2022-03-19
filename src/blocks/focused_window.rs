@@ -108,8 +108,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         if updated {
             if title.is_some() || !config.autohide {
                 let mut values = map! {
-                    "marks" => Value::text(marks.iter().map(|m| format!("[{}]",m)).collect()),
-                    "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{}]",m)).collect()),
+                    "marks" => Value::text(marks.iter().map(|m| format!("[{m}]")).collect()),
+                    "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{m}]")).collect()),
                 };
                 title
                     .clone()

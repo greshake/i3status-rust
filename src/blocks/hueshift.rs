@@ -196,7 +196,7 @@ struct Sct;
 #[async_trait]
 impl HueShiftDriver for Sct {
     async fn update(&mut self, temp: u16) -> Result<()> {
-        spawn_process("sct", &[&format!("sct {} >/dev/null 2>&1", temp)])
+        spawn_process("sct", &[&format!("sct {temp} >/dev/null 2>&1")])
             .error("Failed to set new color temperature using sct.")
     }
     async fn reset(&mut self) -> Result<()> {
@@ -212,7 +212,7 @@ struct Gammastep;
 #[async_trait]
 impl HueShiftDriver for Gammastep {
     async fn update(&mut self, temp: u16) -> Result<()> {
-        spawn_shell(&format!("killall gammastep; gammastep -O {} -P &", temp))
+        spawn_shell(&format!("killall gammastep; gammastep -O {temp} -P &",))
             .error("Failed to set new color temperature using gammastep.")
     }
     async fn reset(&mut self) -> Result<()> {

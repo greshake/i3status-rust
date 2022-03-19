@@ -163,10 +163,9 @@ async fn get_on_page(token: &str, page: usize) -> Result<Vec<Notification>> {
     // https://docs.github.com/en/rest/reference/activity#notifications
     let request = REQWEST_CLIENT
         .get(format!(
-            "https://api.github.com/notifications?per_page=100&page={}",
-            page
+            "https://api.github.com/notifications?per_page=100&page={page}",
         ))
-        .header("Authorization", format!("token {}", token));
+        .header("Authorization", format!("token {token}"));
     request
         .send()
         .await

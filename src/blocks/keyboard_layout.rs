@@ -110,7 +110,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let send = move |(mut layout, variant): (String, Option<String>), api: &mut CommonApi| {
         let variant = variant.unwrap_or_else(|| "N/A".into());
         if let Some(mappings) = &config.mappings {
-            if let Some(mapped) = mappings.get(&format!("{} ({})", layout, variant)) {
+            if let Some(mapped) = mappings.get(&format!("{layout} ({variant})")) {
                 layout = mapped.clone();
             }
         }

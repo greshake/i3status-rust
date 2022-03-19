@@ -233,8 +233,7 @@ impl WeatherService {
 
         let api_key = api_key.as_ref().or_error(|| {
             format!(
-                "missing key 'service.api_key' and environment variable {}",
-                OPEN_WEATHER_MAP_API_KEY_ENV
+                "missing key 'service.api_key' and environment variable {OPEN_WEATHER_MAP_API_KEY_ENV}",
             )
         })?;
 
@@ -245,28 +244,24 @@ impl WeatherService {
         };
 
         let location_query = {
-            city.map(|x| format!("q={}", x))
-                .or_else(|| city_id.as_ref().map(|x| format!("id={}", x)))
-                .or_else(|| place.as_ref().map(|x| format!("q={}", x)))
+            city.map(|x| format!("q={x}"))
+                .or_else(|| city_id.as_ref().map(|x| format!("id={x}")))
+                .or_else(|| place.as_ref().map(|x| format!("q={x}")))
                 .or_else(|| {
                     coordinates
                         .as_ref()
-                        .map(|(lat, lon)| format!("lat={}&lon={}", lat, lon))
+                        .map(|(lat, lon)| format!("lat={lat}&lon={lon}"))
                 })
                 .error("no localization was provided")?
         };
 
         // Refer to https://openweathermap.org/current
-        let url = &format!(
-            "{}?{}&appid={}&units={}&lang={}",
-            OPEN_WEATHER_MAP_URL,
-            location_query,
-            api_key,
-            match *units {
+        let url = format!(
+            "{OPEN_WEATHER_MAP_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
+            units = match *units {
                 UnitSystem::Metric => "metric",
                 UnitSystem::Imperial => "imperial",
             },
-            lang,
         );
 
         reqwest::get(url)

@@ -242,7 +242,7 @@ impl CommonApi {
                     // the error
                     loop {
                         if focused {
-                            self.set_text(format!("{}", err).into());
+                            self.set_text(err.to_string().into());
                             self.set_full_screen(true);
                         } else {
                             self.set_text(

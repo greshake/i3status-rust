@@ -300,7 +300,7 @@ fn get_updates_db_dir() -> Result<PathBuf> {
         None => {
             let mut path = env::temp_dir();
             let user = env::var("USER").unwrap_or_default();
-            path.push(format!("checkup-db-{}", user));
+            path.push(format!("checkup-db-{user}"));
             Ok(path)
         }
     }
@@ -367,7 +367,7 @@ async fn get_aur_available_updates(aur_command: &str) -> Result<StdString> {
         .args(&["-c", aur_command])
         .output()
         .await
-        .or_error(|| format!("aur command: {} failed", aur_command))?
+        .or_error(|| format!("aur command: {aur_command} failed"))?
         .stdout;
     StdString::from_utf8(stdout)
         .error("There was a problem while converting the aur command output to a string")

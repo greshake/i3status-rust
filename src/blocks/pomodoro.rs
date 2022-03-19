@@ -103,7 +103,7 @@ impl Block {
 
     async fn read_u64(&mut self, mut number: u64, msg: &str) -> Result<u64> {
         loop {
-            self.set_text(format!("{} {}", msg, number).into()).await?;
+            self.set_text(format!("{msg} {number}").into()).await?;
             if let Some(BlockEvent::Click(click)) = self.events_receiver.recv().await {
                 match click.button {
                     MouseButton::Left => break,

@@ -365,7 +365,7 @@ impl SoundDevice for AlsaSoundDevice {
         if self.natural_mapping {
             args.push("-M")
         };
-        let vol_str = format!("{}%", capped_volume);
+        let vol_str = format!("{capped_volume}%");
         args.extend(&["-D", &self.device, "set", &self.name, &vol_str]);
 
         Command::new("amixer")
@@ -675,8 +675,7 @@ impl PulseAudioClient {
                 Ok(())
             }
             Err(err) => Err(Error::new(format!(
-                "pulseaudio connection failed with error: {}",
-                err
+                "pulseaudio connection failed with error: {err}",
             ))),
         }
     }
