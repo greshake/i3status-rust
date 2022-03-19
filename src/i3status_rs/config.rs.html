@@ -67,15 +67,11 @@
 <span id="65">65</span>
 <span id="66">66</span>
 <span id="67">67</span>
-<span id="68">68</span>
-<span id="69">69</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>};
-<span class="kw">use</span> <span class="ident">serde_derive::Deserialize</span>;
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">serde_derive::Deserialize</span>;
 <span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">toml::value</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::blocks::BlockType</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::icons::Icons</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes::Theme</span>;
@@ -97,7 +93,7 @@
             <span class="self">self</span>.<span class="ident">icons</span>
                 .<span class="number">0</span>
                 .<span class="ident">get</span>(<span class="ident">icon</span>)
-                .<span class="ident">error</span>(<span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{}&#39; not found: please check your icons file or open a new issue on GitHub if you use precompiled icons&quot;</span>, <span class="ident">icon</span>))<span class="question-mark">?</span>,
+                .<span class="ident">error</span>(<span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{icon}&#39; not found: please check your icons file or open a new issue on GitHub if you use precompiled icons&quot;</span>))<span class="question-mark">?</span>,
         ).<span class="ident">into</span>())
     }
 }
