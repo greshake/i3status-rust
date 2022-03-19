@@ -2,7 +2,7 @@
 
 pub mod prelude;
 
-use serde::de::Deserialize;
+use serde::de::{self, Deserialize, Deserializer};
 use serde_derive::Deserialize;
 use smallvec::SmallVec;
 use smartstring::alias::String;
@@ -30,7 +30,7 @@ macro_rules! define_blocks {
             pub mod $block;
         )*
 
-        #[derive(Deserialize, Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy)]
         pub enum BlockType {
             $(
                 $(#[cfg($attr)])?
@@ -52,6 +52,43 @@ macro_rules! define_blocks {
                 }
             }
         }
+
+        impl<'de> Deserialize<'de> for BlockType {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct Visitor;
+
+                impl<'de> de::Visitor<'de> for Visitor {
+                    type Value = BlockType;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        formatter.write_str("a block name")
+                    }
+
+                    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+                    where
+                        E: de::Error,
+                    {
+                        match v {
+                            $(
+                            $(#[cfg($attr)])?
+                            stringify!($block) => Ok(BlockType::$block),
+                            $(
+                            #[cfg(not($attr))]
+                            stringify!($block) => Err(E::custom(format!("Block '{}' has to be enabled at the compile time", stringify!($block)))),
+                            )?
+                            )*
+                            unknown => Err(E::custom(format!("Unknown block '{unknown}'")))
+                        }
+                    }
+                }
+
+                deserializer.deserialize_str(Visitor)
+            }
+        }
+
     };
 }
 
@@ -273,6 +310,8 @@ impl CommonApi {
 
 #[derive(Deserialize, Debug)]
 pub struct CommonConfig {
+    pub block: BlockType,
+
     #[serde(default)]
     pub click: ClickHandler,
     #[serde(default)]
@@ -293,6 +332,7 @@ impl CommonConfig {
 
     pub fn new(from: &mut toml::Value) -> Result<Self> {
         const FIELDS: &[&str] = &[
+            "block",
             "click",
             "theme_overrides",
             "icons_format",

@@ -91,8 +91,8 @@ fn main() {
 
         // Spawn blocks
         let mut bar = BarState::new(config.shared, args);
-        for (block_type, block_config) in config.block {
-            bar.spawn_block(block_type, block_config)?;
+        for block_config in config.blocks {
+            bar.spawn_block(block_config)?;
         }
 
         // Run main loop
@@ -222,8 +222,9 @@ impl BarState {
         }
     }
 
-    fn spawn_block(&mut self, block_type: BlockType, mut block_config: toml::Value) -> Result<()> {
+    fn spawn_block(&mut self, mut block_config: toml::Value) -> Result<()> {
         let common_config = CommonConfig::new(&mut block_config)?;
+        let block_type = common_config.block;
         let mut shared_config = self.shared_config.clone();
 
         // Overrides
