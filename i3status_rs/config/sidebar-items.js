@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["deserialize_blocks",""]],"struct":[["Config",""],["SharedConfig",""]]});
+initSidebarItems({"struct":[["Config",""],["SharedConfig",""]]});

@@ -456,6 +456,7 @@
 <span id="454">454</span>
 <span id="455">455</span>
 <span id="456">456</span>
+<span id="457">457</span>
 </pre><pre class="rust"><code><span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">mod</span> <span class="ident">util</span>;
 <span class="kw">mod</span> <span class="ident">blocks</span>;
@@ -549,8 +550,8 @@
 
         <span class="comment">// Spawn blocks</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bar</span> <span class="op">=</span> <span class="ident">BarState::new</span>(<span class="ident">config</span>.<span class="ident">shared</span>, <span class="ident">args</span>);
-        <span class="kw">for</span> (<span class="ident">block_type</span>, <span class="ident">block_config</span>) <span class="kw">in</span> <span class="ident">config</span>.<span class="ident">block</span> {
-            <span class="ident">bar</span>.<span class="ident">spawn_block</span>(<span class="ident">block_type</span>, <span class="ident">block_config</span>)<span class="question-mark">?</span>;
+        <span class="kw">for</span> <span class="ident">block_config</span> <span class="kw">in</span> <span class="ident">config</span>.<span class="ident">blocks</span> {
+            <span class="ident">bar</span>.<span class="ident">spawn_block</span>(<span class="ident">block_config</span>)<span class="question-mark">?</span>;
         }
 
         <span class="comment">// Run main loop</span>
@@ -680,8 +681,9 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">spawn_block</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">block_type</span>: <span class="ident">BlockType</span>, <span class="kw-2">mut</span> <span class="ident">block_config</span>: <span class="ident">toml::Value</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">spawn_block</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">block_config</span>: <span class="ident">toml::Value</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">common_config</span> <span class="op">=</span> <span class="ident">CommonConfig::new</span>(<span class="kw-2">&amp;mut</span> <span class="ident">block_config</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">block_type</span> <span class="op">=</span> <span class="ident">common_config</span>.<span class="ident">block</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_config</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>();
 
         <span class="comment">// Overrides</span>

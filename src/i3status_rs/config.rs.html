@@ -69,24 +69,6 @@
 <span id="67">67</span>
 <span id="68">68</span>
 <span id="69">69</span>
-<span id="70">70</span>
-<span id="71">71</span>
-<span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
-<span id="76">76</span>
-<span id="77">77</span>
-<span id="78">78</span>
-<span id="79">79</span>
-<span id="80">80</span>
-<span id="81">81</span>
-<span id="82">82</span>
-<span id="83">83</span>
-<span id="84">84</span>
-<span id="85">85</span>
-<span id="86">86</span>
-<span id="87">87</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>};
 <span class="kw">use</span> <span class="ident">serde_derive::Deserialize</span>;
 <span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
@@ -143,8 +125,8 @@
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Config::default_double_click_delay&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">double_click_delay</span>: <span class="ident">u64</span>,
 
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;deserialize_blocks&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">block</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">BlockType</span>, <span class="ident">value::Value</span>)<span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;block&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">blocks</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">value::Value</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Config</span> {
@@ -155,24 +137,6 @@
     <span class="kw">fn</span> <span class="ident">default_double_click_delay</span>() -&gt; <span class="ident">u64</span> {
         <span class="number">200</span>
     }
-}
-
-<span class="kw">fn</span> <span class="ident">deserialize_blocks</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">BlockType</span>, <span class="ident">value::Value</span>)<span class="op">&gt;</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
-{
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">blocks</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">BlockType</span>, <span class="ident">value::Value</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-    <span class="kw">let</span> <span class="ident">raw_blocks</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">value::Table</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Deserialize::deserialize</span>(<span class="ident">deserializer</span>)<span class="question-mark">?</span>;
-    <span class="kw">for</span> <span class="kw-2">mut</span> <span class="ident">entry</span> <span class="kw">in</span> <span class="ident">raw_blocks</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">name</span>) <span class="op">=</span> <span class="ident">entry</span>.<span class="ident">remove</span>(<span class="string">&quot;block&quot;</span>) {
-            <span class="kw">let</span> <span class="ident">name_str</span> <span class="op">=</span> <span class="ident">name</span>.<span class="ident">to_string</span>();
-            <span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">BlockType::deserialize</span>(<span class="ident">name</span>)
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">serde::de::Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown block &#39;{}&#39;&quot;</span>, <span class="ident">name_str</span>)))<span class="question-mark">?</span>;
-            <span class="ident">blocks</span>.<span class="ident">push</span>((<span class="ident">block</span>, <span class="ident">value::Value::Table</span>(<span class="ident">entry</span>)));
-        }
-    }
-
-    <span class="prelude-val">Ok</span>(<span class="ident">blocks</span>)
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.59.0 (9d1b2106e 2022-02-23)" ></div>
