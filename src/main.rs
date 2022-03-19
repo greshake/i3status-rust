@@ -114,7 +114,7 @@ fn main() {
     if let Err(error) = result {
         let error_widget = Widget::new(0, Default::default()).with_text(error.to_string().into());
         println!(
-            "[{}],",
+            "{},",
             serde_json::to_string(&error_widget.get_data().unwrap()).unwrap()
         );
         eprintln!("\n\n{}\n\n", error);
