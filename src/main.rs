@@ -228,7 +228,7 @@ impl BarState {
 
         // Overrides
         if let Some(icons_format) = common_config.icons_format {
-            *Arc::make_mut(&mut shared_config.icons_format) = icons_format;
+            shared_config.icons_format = Arc::new(icons_format);
         }
         if let Some(theme_overrides) = common_config.theme_overrides {
             Arc::make_mut(&mut shared_config.theme).apply_overrides(&theme_overrides)?;
