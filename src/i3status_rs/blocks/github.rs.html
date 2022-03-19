@@ -176,7 +176,6 @@
 <span id="174">174</span>
 <span id="175">175</span>
 <span id="176">176</span>
-<span id="177">177</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of GitHub notifications</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the &quot;notifications&quot; scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable or `token` configuration option. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: `critical`,`warning`,`info`,`good`</span>
@@ -342,10 +341,9 @@
     <span class="comment">// https://docs.github.com/en/rest/reference/activity#notifications</span>
     <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">REQWEST_CLIENT</span>
         .<span class="ident">get</span>(<span class="macro">format!</span>(
-            <span class="string">&quot;https://api.github.com/notifications?per_page=100&amp;page={}&quot;</span>,
-            <span class="ident">page</span>
+            <span class="string">&quot;https://api.github.com/notifications?per_page=100&amp;page={page}&quot;</span>,
         ))
-        .<span class="ident">header</span>(<span class="string">&quot;Authorization&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;token {}&quot;</span>, <span class="ident">token</span>));
+        .<span class="ident">header</span>(<span class="string">&quot;Authorization&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;token {token}&quot;</span>));
     <span class="ident">request</span>
         .<span class="ident">send</span>()
         .<span class="kw">await</span>

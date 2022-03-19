@@ -213,55 +213,6 @@
 <span id="211">211</span>
 <span id="212">212</span>
 <span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
-<span id="225">225</span>
-<span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
-<span id="234">234</span>
-<span id="235">235</span>
-<span id="236">236</span>
-<span id="237">237</span>
-<span id="238">238</span>
-<span id="239">239</span>
-<span id="240">240</span>
-<span id="241">241</span>
-<span id="242">242</span>
-<span id="243">243</span>
-<span id="244">244</span>
-<span id="245">245</span>
-<span id="246">246</span>
-<span id="247">247</span>
-<span id="248">248</span>
-<span id="249">249</span>
-<span id="250">250</span>
-<span id="251">251</span>
-<span id="252">252</span>
-<span id="253">253</span>
-<span id="254">254</span>
-<span id="255">255</span>
-<span id="256">256</span>
-<span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The system temperature</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the system temperature, based on `libsensors` library.</span>
@@ -475,55 +426,6 @@
         }
     }
 }
-
-<span class="comment">/*
-#[derive(Debug, Clone)]
-struct ChipInfo {
-    temp: Vec&lt;i32&gt;,
-}
-
-impl ChipInfo {
-    async fn new(name: &amp;str) -&gt; Result&lt;Self&gt; {
-        let mut sysfs_dir = read_dir(&quot;/sys/class/hwmon&quot;)
-            .await
-            .error(&quot;failed to read /sys/class/hwmon direcory&quot;)?;
-        while let Some(dir) = sysfs_dir
-            .next_entry()
-            .await
-            .error(&quot;failed to read /sys/class/hwmon direcory&quot;)?
-        {
-            if read_to_string(dir.path().join(&quot;name&quot;))
-                .await
-                .map(|t| t.trim() == name)
-                .unwrap_or(false)
-            {
-                let mut chip_dir = read_dir(dir.path())
-                    .await
-                    .error(&quot;failed to read chip&#39;s sysfs direcory&quot;)?;
-                let mut temp = Vec::new();
-                while let Some(entry) = chip_dir
-                    .next_entry()
-                    .await
-                    .error(&quot;failed to read chip&#39;s sysfs direcory&quot;)?
-                {
-                    let entry_str = entry.file_name().to_str().unwrap().to_string();
-                    if entry_str.starts_with(&quot;temp&quot;) &amp;&amp; entry_str.ends_with(&quot;_input&quot;) {
-                        let val: i32 = read_to_string(entry.path())
-                            .await
-                            .error(&quot;failed to read chip&#39;s temperature&quot;)?
-                            .trim()
-                            .parse()
-                            .error(&quot;temperature is not an integer&quot;)?;
-                        temp.push(val / 1000);
-                    }
-                }
-                return Ok(Self { temp });
-            }
-        }
-        Err(Error::new(format!(&quot;chip &#39;{}&#39; not found&quot;, name)))
-    }
-}
-*/</span>
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.59.0 (9d1b2106e 2022-02-23)" ></div>
 </body></html>

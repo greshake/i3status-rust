@@ -235,7 +235,7 @@
         <span class="prelude-val">Some</span>(<span class="string">&quot;MB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Prefix::Mega</span>),
         <span class="prelude-val">Some</span>(<span class="string">&quot;KB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Prefix::Kilo</span>),
         <span class="prelude-val">Some</span>(<span class="string">&quot;B&quot;</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Prefix::One</span>),
-        <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown unit: &#39;{}&#39;&quot;</span>, <span class="ident">x</span>))),
+        <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown unit: &#39;{x}&#39;&quot;</span>))),
         <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
     };
 

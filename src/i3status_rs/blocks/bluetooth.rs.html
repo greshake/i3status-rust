@@ -701,7 +701,7 @@
             .<span class="kw">await</span>
             .<span class="ident">error</span>(<span class="string">&quot;Failed to get the list of devices&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">for</span> (<span class="ident">path</span>, <span class="ident">interfaces</span>) <span class="kw">in</span> <span class="ident">devices</span> {
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">path</span>.<span class="ident">starts_with</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{}/&quot;</span>, <span class="ident">root_oject</span>)) {
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">path</span>.<span class="ident">starts_with</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{root_oject}/&quot;</span>)) {
                 <span class="kw">continue</span>;
             }
 

@@ -326,11 +326,11 @@
     <span class="ident">Command::new</span>(<span class="string">&quot;sh&quot;</span>)
         .<span class="ident">args</span>(<span class="kw-2">&amp;</span>[
             <span class="string">&quot;-c&quot;</span>,
-            <span class="macro">format!</span>(<span class="string">&quot;command -v {} &gt;/dev/null 2&gt;&amp;1&quot;</span>, <span class="ident">command</span>).<span class="ident">as_ref</span>(),
+            <span class="macro">format!</span>(<span class="string">&quot;command -v {command} &gt;/dev/null 2&gt;&amp;1&quot;</span>).<span class="ident">as_ref</span>(),
         ])
         .<span class="ident">status</span>()
         .<span class="kw">await</span>
-        .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Failed to check {} presence&quot;</span>, <span class="ident">command</span>))
+        .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Failed to check {command} presence&quot;</span>))
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">success</span>())
 }
 

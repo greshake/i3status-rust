@@ -394,7 +394,7 @@
     <span class="kw">let</span> <span class="ident">regex</span> <span class="op">=</span> <span class="ident">active_monitors</span>
         .<span class="ident">lines</span>()
         .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">line</span><span class="op">|</span> <span class="ident">line</span>.<span class="ident">split_ascii_whitespace</span>().<span class="ident">last</span>())
-        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">name</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{} connected&quot;</span>, <span class="ident">name</span>))
+        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">name</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{name} connected&quot;</span>))
         .<span class="ident">chain</span>(<span class="prelude-val">Some</span>(<span class="string">&quot;Brightness:&quot;</span>.<span class="ident">into</span>()));
     <span class="kw">let</span> <span class="ident">regex</span> <span class="op">=</span> <span class="ident">RegexSet::new</span>(<span class="ident">regex</span>).<span class="ident">error</span>(<span class="string">&quot;Failed to create RegexSet&quot;</span>)<span class="question-mark">?</span>;
 

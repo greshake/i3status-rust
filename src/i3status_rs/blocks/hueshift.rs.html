@@ -515,7 +515,7 @@
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">HueShiftDriver</span> <span class="kw">for</span> <span class="ident">Sct</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">temp</span>: <span class="ident">u16</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">spawn_process</span>(<span class="string">&quot;sct&quot;</span>, <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;sct {} &gt;/dev/null 2&gt;&amp;1&quot;</span>, <span class="ident">temp</span>)])
+        <span class="ident">spawn_process</span>(<span class="string">&quot;sct&quot;</span>, <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;sct {temp} &gt;/dev/null 2&gt;&amp;1&quot;</span>)])
             .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using sct.&quot;</span>)
     }
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -531,7 +531,7 @@
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">HueShiftDriver</span> <span class="kw">for</span> <span class="ident">Gammastep</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">temp</span>: <span class="ident">u16</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">spawn_shell</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;killall gammastep; gammastep -O {} -P &amp;&quot;</span>, <span class="ident">temp</span>))
+        <span class="ident">spawn_shell</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;killall gammastep; gammastep -O {temp} -P &amp;&quot;</span>,))
             .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using gammastep.&quot;</span>)
     }
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

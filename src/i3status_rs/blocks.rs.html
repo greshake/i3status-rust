@@ -557,7 +557,7 @@
                     <span class="comment">// the error</span>
                     <span class="kw">loop</span> {
                         <span class="kw">if</span> <span class="ident">focused</span> {
-                            <span class="self">self</span>.<span class="ident">set_text</span>(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>).<span class="ident">into</span>());
+                            <span class="self">self</span>.<span class="ident">set_text</span>(<span class="ident">err</span>.<span class="ident">to_string</span>().<span class="ident">into</span>());
                             <span class="self">self</span>.<span class="ident">set_full_screen</span>(<span class="bool-val">true</span>);
                         } <span class="kw">else</span> {
                             <span class="self">self</span>.<span class="ident">set_text</span>(

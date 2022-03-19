@@ -541,9 +541,9 @@
         <span class="ident">tx</span>: <span class="ident">mpsc::Sender</span><span class="op">&lt;</span>()<span class="op">&gt;</span>,
         <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;_</span> <span class="ident">str</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Device</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">device_path</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;/modules/kdeconnect/devices/{}&quot;</span>, <span class="ident">id</span>);
-        <span class="kw">let</span> <span class="ident">battery_path</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{}/battery&quot;</span>, <span class="ident">device_path</span>);
-        <span class="kw">let</span> <span class="ident">notifications_path</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{}/notifications&quot;</span>, <span class="ident">device_path</span>);
+        <span class="kw">let</span> <span class="ident">device_path</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;/modules/kdeconnect/devices/{id}&quot;</span>);
+        <span class="kw">let</span> <span class="ident">battery_path</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{device_path}/battery&quot;</span>);
+        <span class="kw">let</span> <span class="ident">notifications_path</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{device_path}/notifications&quot;</span>);
 
         <span class="kw">let</span> <span class="ident">device_proxy</span> <span class="op">=</span> <span class="ident">DeviceDbusProxy::builder</span>(<span class="ident">conn</span>)
             .<span class="ident">cache_properties</span>(<span class="ident">zbus::CacheProperties::No</span>)

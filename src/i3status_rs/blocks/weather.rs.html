@@ -348,11 +348,6 @@
 <span id="346">346</span>
 <span id="347">347</span>
 <span id="348">348</span>
-<span id="349">349</span>
-<span id="350">350</span>
-<span id="351">351</span>
-<span id="352">352</span>
-<span id="353">353</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Current weather</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays local weather and temperature information. In order to use this block, you</span>
@@ -588,8 +583,7 @@
 
         <span class="kw">let</span> <span class="ident">api_key</span> <span class="op">=</span> <span class="ident">api_key</span>.<span class="ident">as_ref</span>().<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> {
             <span class="macro">format!</span>(
-                <span class="string">&quot;missing key &#39;service.api_key&#39; and environment variable {}&quot;</span>,
-                <span class="ident">OPEN_WEATHER_MAP_API_KEY_ENV</span>
+                <span class="string">&quot;missing key &#39;service.api_key&#39; and environment variable {OPEN_WEATHER_MAP_API_KEY_ENV}&quot;</span>,
             )
         })<span class="question-mark">?</span>;
 
@@ -600,28 +594,24 @@
         };
 
         <span class="kw">let</span> <span class="ident">location_query</span> <span class="op">=</span> {
-            <span class="ident">city</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;q={}&quot;</span>, <span class="ident">x</span>))
-                .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">city_id</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;id={}&quot;</span>, <span class="ident">x</span>)))
-                .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">place</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;q={}&quot;</span>, <span class="ident">x</span>)))
+            <span class="ident">city</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;q={x}&quot;</span>))
+                .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">city_id</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;id={x}&quot;</span>)))
+                .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">place</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;q={x}&quot;</span>)))
                 .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> {
                     <span class="ident">coordinates</span>
                         .<span class="ident">as_ref</span>()
-                        .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">lat</span>, <span class="ident">lon</span>)<span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;lat={}&amp;lon={}&quot;</span>, <span class="ident">lat</span>, <span class="ident">lon</span>))
+                        .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">lat</span>, <span class="ident">lon</span>)<span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;lat={lat}&amp;lon={lon}&quot;</span>))
                 })
                 .<span class="ident">error</span>(<span class="string">&quot;no localization was provided&quot;</span>)<span class="question-mark">?</span>
         };
 
         <span class="comment">// Refer to https://openweathermap.org/current</span>
-        <span class="kw">let</span> <span class="ident">url</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(
-            <span class="string">&quot;{}?{}&amp;appid={}&amp;units={}&amp;lang={}&quot;</span>,
-            <span class="ident">OPEN_WEATHER_MAP_URL</span>,
-            <span class="ident">location_query</span>,
-            <span class="ident">api_key</span>,
-            <span class="kw">match</span> <span class="kw-2">*</span><span class="ident">units</span> {
+        <span class="kw">let</span> <span class="ident">url</span> <span class="op">=</span> <span class="macro">format!</span>(
+            <span class="string">&quot;{OPEN_WEATHER_MAP_URL}?{location_query}&amp;appid={api_key}&amp;units={units}&amp;lang={lang}&quot;</span>,
+            <span class="ident">units</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">*</span><span class="ident">units</span> {
                 <span class="ident">UnitSystem::Metric</span> =&gt; <span class="string">&quot;metric&quot;</span>,
                 <span class="ident">UnitSystem::Imperial</span> =&gt; <span class="string">&quot;imperial&quot;</span>,
             },
-            <span class="ident">lang</span>,
         );
 
         <span class="ident">reqwest::get</span>(<span class="ident">url</span>)

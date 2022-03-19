@@ -151,13 +151,13 @@
         <span class="ident">seconds</span> <span class="op">%</span><span class="op">=</span> <span class="number">60</span>;
 
         <span class="kw">let</span> <span class="ident">text</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">weeks</span> <span class="op">&gt;</span> <span class="number">0</span> {
-            <span class="macro">format!</span>(<span class="string">&quot;{}w {}d&quot;</span>, <span class="ident">weeks</span>, <span class="ident">days</span>)
+            <span class="macro">format!</span>(<span class="string">&quot;{weeks}w {days}d&quot;</span>)
         } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">days</span> <span class="op">&gt;</span> <span class="number">0</span> {
-            <span class="macro">format!</span>(<span class="string">&quot;{}d {}h&quot;</span>, <span class="ident">days</span>, <span class="ident">hours</span>)
+            <span class="macro">format!</span>(<span class="string">&quot;{days}d {hours}h&quot;</span>)
         } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">hours</span> <span class="op">&gt;</span> <span class="number">0</span> {
-            <span class="macro">format!</span>(<span class="string">&quot;{}h {}m&quot;</span>, <span class="ident">hours</span>, <span class="ident">minutes</span>)
+            <span class="macro">format!</span>(<span class="string">&quot;{hours}h {minutes}m&quot;</span>)
         } <span class="kw">else</span> {
-            <span class="macro">format!</span>(<span class="string">&quot;{}m {}s&quot;</span>, <span class="ident">minutes</span>, <span class="ident">seconds</span>)
+            <span class="macro">format!</span>(<span class="string">&quot;{minutes}m {seconds}s&quot;</span>)
         };
 
         <span class="ident">api</span>.<span class="ident">set_text</span>(<span class="ident">text</span>.<span class="ident">into</span>());
