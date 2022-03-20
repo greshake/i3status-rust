@@ -17,28 +17,16 @@ pub fn init(never_pause: bool) {
 
 pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) -> Result<()> {
     let mut last_bg = Color::None;
-
     let mut rendered_blocks = vec![];
 
     // The right most block should never be alternated
-    let mut alt = true;
-    for x in blocks.iter() {
-        if !x.is_empty() {
-            alt = !alt;
-        }
-    }
+    let mut alt = blocks.iter().filter(|x| !x.is_empty()).count() % 2 == 0;
 
-    for widgets in blocks.iter() {
-        if widgets.is_empty() {
-            continue;
-        }
-
-        let mut rendered_widgets = widgets.clone();
-
+    for mut widgets in blocks.iter().filter(|x| !x.is_empty()).cloned() {
         // Apply tint for all widgets of every second block
         // TODO: Allow for other non-additive tints
         if alt {
-            for data in &mut rendered_widgets {
+            for data in &mut widgets {
                 data.background = data.background + config.theme.alternating_tint_bg;
                 data.color = data.color + config.theme.alternating_tint_fg;
             }
@@ -48,7 +36,7 @@ pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) -> Result
         if let Some(separator) = &config.theme.separator {
             // The first widget's BG is used to get the FG color for the current separator
             let sep_fg = if config.theme.separator_fg == Color::Auto {
-                rendered_widgets.first().unwrap().background
+                widgets.first().unwrap().background
             } else {
                 config.theme.separator_fg
             };
@@ -61,7 +49,7 @@ pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) -> Result
             };
 
             // The last widget's BG is used to get the BG color for the next separator
-            last_bg = rendered_widgets.last().unwrap().background;
+            last_bg = widgets.last().unwrap().background;
 
             let separator = I3BarBlock {
                 full_text: separator.clone().into(),
@@ -71,13 +59,13 @@ pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) -> Result
             };
 
             rendered_blocks.push(separator);
-            rendered_blocks.extend(rendered_widgets);
+            rendered_blocks.extend(widgets);
         } else {
             // Re-add native separator on last widget for native theme
-            rendered_widgets.last_mut().unwrap().separator = None;
-            rendered_widgets.last_mut().unwrap().separator_block_width = None;
+            widgets.last_mut().unwrap().separator = None;
+            widgets.last_mut().unwrap().separator_block_width = None;
 
-            rendered_blocks.extend(rendered_widgets);
+            rendered_blocks.extend(widgets);
         }
     }
 
