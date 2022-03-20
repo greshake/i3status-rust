@@ -22,15 +22,14 @@
 //! # TODO
 //! - Extend functionality: start / stop watson using this block
 
-use chrono::offset::Local;
-use chrono::DateTime;
+use chrono::{offset::Local, DateTime};
 use dirs_next::config_dir;
 use inotify::{Inotify, WatchMask};
+use serde::de::{Deserialize, Deserializer};
 use std::path::PathBuf;
 use tokio::fs::read_to_string;
 
 use super::prelude::*;
-use crate::de::deserialize_local_timestamp;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, default)]
@@ -210,4 +209,12 @@ impl WatsonState {
             panic!("WatsonState::Idle does not have a specified format")
         }
     }
+}
+
+pub fn deserialize_local_timestamp<'de, D>(deserializer: D) -> Result<DateTime<Local>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use chrono::TimeZone;
+    i64::deserialize(deserializer).map(|seconds| Local.timestamp(seconds, 0))
 }
