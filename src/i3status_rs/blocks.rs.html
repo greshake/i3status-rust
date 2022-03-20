@@ -351,6 +351,8 @@
 <span id="349">349</span>
 <span id="350">350</span>
 <span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
@@ -428,8 +430,10 @@
                             $(
                             $(<span class="attribute">#[<span class="ident">cfg</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>)]</span>)<span class="question-mark">?</span>
                             <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockType</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>),
-                            $(<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>))]</span>)<span class="question-mark">?</span>
+                            $(
+                            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>))]</span>
                             <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">E::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Block &#39;{}&#39; has to be enabled at the compile time&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>)))),
+                            )<span class="question-mark">?</span>
                             )<span class="op">*</span>
                             <span class="ident">unknown</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">E::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown block &#39;{unknown}&#39;&quot;</span>)))
                         }

@@ -213,6 +213,13 @@
 <span id="211">211</span>
 <span id="212">212</span>
 <span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Watson statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.</span>
@@ -237,15 +244,14 @@
 <span class="doccomment">//! # TODO</span>
 <span class="doccomment">//! - Extend functionality: start / stop watson using this block</span>
 
-<span class="kw">use</span> <span class="ident">chrono::offset::Local</span>;
-<span class="kw">use</span> <span class="ident">chrono::DateTime</span>;
+<span class="kw">use</span> <span class="ident">chrono</span>::{<span class="ident">offset::Local</span>, <span class="ident">DateTime</span>};
 <span class="kw">use</span> <span class="ident">dirs_next::config_dir</span>;
 <span class="kw">use</span> <span class="ident">inotify</span>::{<span class="ident">Inotify</span>, <span class="ident">WatchMask</span>};
+<span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>};
 <span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
 <span class="kw">use</span> <span class="ident">tokio::fs::read_to_string</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::de::deserialize_local_timestamp</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
@@ -425,6 +431,14 @@
             <span class="macro">panic!</span>(<span class="string">&quot;WatsonState::Idle does not have a specified format&quot;</span>)
         }
     }
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize_local_timestamp</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">DateTime</span><span class="op">&lt;</span><span class="ident">Local</span><span class="op">&gt;</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+{
+    <span class="kw">use</span> <span class="ident">chrono::TimeZone</span>;
+    <span class="ident">i64::deserialize</span>(<span class="ident">deserializer</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">seconds</span><span class="op">|</span> <span class="ident">Local</span>.<span class="ident">timestamp</span>(<span class="ident">seconds</span>, <span class="number">0</span>))
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.59.0 (9d1b2106e 2022-02-23)" ></div>

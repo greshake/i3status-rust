@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["WatsonState",""]],"fn":[["format_delta_after",""],["format_delta_past",""],["run",""]],"struct":[["WatsonConfig",""]]});
+initSidebarItems({"enum":[["WatsonState",""]],"fn":[["deserialize_local_timestamp",""],["format_delta_after",""],["format_delta_past",""],["run",""]],"struct":[["WatsonConfig",""]]});
