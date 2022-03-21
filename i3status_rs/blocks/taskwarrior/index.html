@@ -8,8 +8,8 @@
 <tr><td><code>critical_threshold</code></td><td>The threshold of pending (or started) tasks when the block turns into a critical state</td><td>No</td><td><code>20</code></td></tr>
 <tr><td><code>hide_when_zero</code></td><td>Whethere to hide the block when the number of tasks is zero</td><td>No</td><td><code>false</code></td></tr>
 <tr><td><code>filters</code></td><td>A list of tables with the keys <code>name</code> and <code>filter</code>. <code>filter</code> specifies the criteria that must be met for a task to be counted towards this filter.</td><td>No</td><td><code>[{name = &quot;pending&quot;, filter = &quot;-COMPLETED -DELETED&quot;}]</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td>`“$done</td></tr>
-<tr><td><code>data_location</code></td><td>Directory in which taskwarrior stores its data files.</td><td>No</td><td>“~/.task”`</td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;$done\|$count.eng(1)&quot;</code></td></tr>
+<tr><td><code>data_location</code></td><td>Directory in which taskwarrior stores its data files.</td><td>No</td><td><code>&quot;~/.task&quot;</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>count</code></td><td>The number of tasks matching current filter</td><td>Number</td><td>-</td></tr>
