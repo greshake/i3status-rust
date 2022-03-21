@@ -1,0 +1,209 @@
+use std::process::Stdio;
+use std::str::FromStr;
+
+use tokio::io::{BufReader, Lines};
+use tokio::process::Command;
+
+const MEM_BTN: usize = 1;
+const FAN_BTN: usize = 2;
+const QUERY: &str = "--query-gpu=name,memory.total,utilization.gpu,memory.used,temperature.gpu,fan.speed,clocks.current.graphics,power.draw,";
+const FORMAT: &str = "--format=csv,noheader,nounits";
+
+use super::prelude::*;
+
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields, default)]
+struct NvidiaGpuConfig {
+    format: FormatConfig,
+    interval: Seconds,
+    gpu_id: u64,
+    idle: u32,
+    good: u32,
+    info: u32,
+    warning: u32,
+}
+
+impl Default for NvidiaGpuConfig {
+    fn default() -> Self {
+        Self {
+            format: Default::default(),
+            interval: 3.into(),
+            gpu_id: 0,
+            idle: 50,
+            good: 70,
+            info: 75,
+            warning: 80,
+        }
+    }
+}
+
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let mut events = api.get_events().await?;
+    let config = NvidiaGpuConfig::deserialize(config).config_error()?;
+    api.set_format(
+        config
+            .format
+            .with_default("$utilization $memory $temperature")?,
+    );
+    api.set_icon("gpu")?;
+
+    // Run `nvidia-smi` command
+    let mut child = Command::new("nvidia-smi")
+        .args(&[
+            "-l",
+            &config.interval.seconds().to_string(),
+            "-i",
+            &config.gpu_id.to_string(),
+            QUERY,
+            FORMAT,
+        ])
+        .stdout(Stdio::piped())
+        .kill_on_drop(true)
+        .spawn()
+        .error("Failed to execute nvidia-smi")?;
+    let mut reader = BufReader::new(child.stdout.take().unwrap()).lines();
+
+    // Read the initial info
+    let mut info = GpuInfo::from_reader(&mut reader).await?;
+    let mut show_mem_total = false;
+    let mut fan_controlled = false;
+
+    loop {
+        // TODO temperature color
+        // TODO fans color (warning if contorlled)
+        api.set_values(map! {
+            "name" => Value::text(info.name.clone()),
+            "utilization" => Value::percents(info.utilization),
+            "momory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
+            "temperature" => Value::degrees(info.temperature),
+            "fan_speed" => Value::percents(info.fan_speed).with_instance(FAN_BTN),
+            "clocks" => Value::hertz(info.clocks),
+            "power" => Value::watts(info.power_draw),
+        });
+        api.flush().await?;
+
+        loop {
+            tokio::select! {
+                Some(BlockEvent::Click(click)) = events.recv() => {
+                    match click.instance {
+                        Some(MEM_BTN) if click.button == MouseButton::Left => {
+                            show_mem_total = !show_mem_total;
+                            break;
+                        }
+                        Some(FAN_BTN ) => match click.button {
+                            MouseButton::Left => {
+                                fan_controlled = !fan_controlled;
+                                set_fan_speed(config.gpu_id, fan_controlled.then(|| info.fan_speed)).await?;
+                                break;
+                            }
+                            MouseButton::WheelUp if fan_controlled && info.fan_speed < 100 => {
+                                info.fan_speed += 1;
+                                set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
+                                break;
+                            }
+                            MouseButton::WheelDown if fan_controlled && info.fan_speed > 0 => {
+                                info.fan_speed -= 1;
+                                set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
+                                break;
+                            }
+                            _ => (),
+                        }
+                        _ => (),
+                    }
+                }
+                new_info = GpuInfo::from_reader(&mut reader) => {
+                    info = new_info?;
+                    break;
+                }
+                code = child.wait() => {
+                    let code = code.error("failed to check nvidia-smi exit code")?;
+                    return Err(Error::new(format!("nvidia-smi exited with code {code}")));
+                }
+            }
+        }
+    }
+}
+
+struct GpuInfo {
+    name: String,
+    mem_total: f64,   // bytes
+    mem_used: f64,    // bytes
+    utilization: f64, // percents
+    temperature: u32, // degrees
+    fan_speed: u32,   // percents
+    clocks: f64,      // hertz
+    power_draw: f64,  // watts
+}
+
+impl GpuInfo {
+    /// Read a line from provided reader and parse it
+    ///
+    /// # Cancel safety
+    ///
+    /// This method should be cancellation safe, because it has only one `.await` and it is on `next_line`, which is cancellation safe.
+    async fn from_reader<B: AsyncBufRead + Unpin>(reader: &mut Lines<B>) -> Result<Self> {
+        const ERR_MSG: &str = "failed to read from nvidia-smi";
+        reader
+            .next_line()
+            .await
+            .error(ERR_MSG)?
+            .error(ERR_MSG)?
+            .parse::<GpuInfo>()
+            .error("failed to parse nvidia-smi output")
+    }
+}
+
+impl FromStr for GpuInfo {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        macro_rules! parse {
+            ($s:ident -> $($part:ident : $t:ident $(* $mul:expr)?),*) => {{
+                let mut parts = $s.trim().split(", ");
+                let info = GpuInfo {
+                    $(
+                    $part: {
+                    let $part = parts
+                        .next()
+                        .or_error(|| format!("missing property: '{}'", stringify!($part)))?
+                        .parse::<$t>()
+                        .or_error(|| format!("bad property '{}'", stringify!($part)))?;
+                    $(let $part = $part * $mul;)?
+                    $part
+                    },
+                    )*
+                };
+                Ok(info)
+            }}
+        }
+        // `memory` and `clocks` are initially in MB and MHz, so we have to divide them by 1_000_000
+        parse!(s -> name: String, mem_total: f64 * 1e-6, utilization: f64, mem_used: f64 * 1e-6, temperature: u32, fan_speed: u32, clocks: f64 * 1e-6, power_draw: f64)
+    }
+}
+
+async fn set_fan_speed(id: u64, speed: Option<u32>) -> Result<()> {
+    const ERR_MSG: &str = "Failed to execute nvidia-settings";
+    let mut cmd = Command::new("nvidia-settings");
+    if let Some(speed) = speed {
+        cmd.args(&[
+            "-a",
+            &format!("[gpu:{id}]/GPUFanControlState=1"),
+            "-a",
+            &format!("[fan:{id}]/GPUTargetFanSpeed={speed}"),
+        ]);
+    } else {
+        cmd.args(&["-a", &format!("[gpu:{id}]/GPUFanControlState=0")]);
+    }
+    if cmd
+        .spawn()
+        .error(ERR_MSG)?
+        .wait()
+        .await
+        .error(ERR_MSG)?
+        .success()
+    {
+        Ok(())
+    } else {
+        Err(Error::new(ERR_MSG))
+    }
+}

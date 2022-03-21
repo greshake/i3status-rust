@@ -80,6 +80,10 @@ impl Seconds {
         timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
         timer
     }
+
+    pub fn seconds(self) -> u64 {
+        self.0.as_secs()
+    }
 }
 
 impl<'de> Deserialize<'de> for Seconds {

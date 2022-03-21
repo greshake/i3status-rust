@@ -119,6 +119,7 @@ define_blocks!(
     notify,
     #[cfg(feature = "notmuch")]
     notmuch,
+    nvidia_gpu,
     pacman,
     pomodoro,
     rofication,
