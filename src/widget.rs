@@ -6,7 +6,7 @@ use serde_derive::Deserialize;
 use smartstring::alias::String;
 
 /// State of the widget. Affects the theming.
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
 pub enum State {
     Idle,
     Info,
@@ -175,6 +175,11 @@ impl Widget {
             if let Some(i) = full.metadata.instance {
                 data.instance = Some(i.to_string());
             }
+            if let Some(state) = full.metadata.state {
+                let (key_bg, key_fg) = self.shared_config.theme.get_colors(state);
+                data.background = key_bg;
+                data.color = key_fg;
+            }
             parts.push(data);
         }
 
@@ -184,6 +189,11 @@ impl Widget {
             data.short_text = short.text.into();
             if let Some(i) = short.metadata.instance {
                 data.instance = Some(i.to_string());
+            }
+            if let Some(state) = short.metadata.state {
+                let (key_bg, key_fg) = self.shared_config.theme.get_colors(state);
+                data.background = key_bg;
+                data.color = key_fg;
             }
             parts.push(data);
         }

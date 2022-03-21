@@ -1,5 +1,6 @@
 use super::unit::Unit;
 use super::Metadata;
+use crate::widget::State;
 use smartstring::alias::String;
 
 #[derive(Debug, Clone)]
@@ -99,6 +100,11 @@ impl Value {
 
     pub fn with_instance(mut self, instance: usize) -> Self {
         self.metadata.instance = Some(instance);
+        self
+    }
+
+    pub fn with_state(mut self, state: State) -> Self {
+        self.metadata.state = Some(state);
         self
     }
 }

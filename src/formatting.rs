@@ -81,6 +81,7 @@ use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 
 use crate::errors::*;
+use crate::widget::State;
 use crate::Request;
 use template::FormatTemplate;
 use value::Value;
@@ -162,6 +163,7 @@ impl From<String> for Rendered {
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Metadata {
     pub instance: Option<usize>,
+    pub state: Option<State>,
 }
 
 impl Metadata {
