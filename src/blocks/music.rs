@@ -1,22 +1,111 @@
+//! The current song title and artist
+//!
+//! Also provides buttons for play/pause, previous and next.
+//!
+//! Supports all music players that implement the [MediaPlayer2 Interface]. This includes:
+//!
+//! - Spotify
+//! - VLC
+//! - mpd (via [mpDris2](https://github.com/eonpatapon/mpDris2))
+//!
+//! and many others.
+//!
+//! By default the block tracks all players available on the MPRIS bus. Right clicking on the block
+//! will cycle it to the next player. You can pin the widget to a given player via the "player"
+//! setting.
+//!
+//! # Configuration
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"$combo $play\|"`
+//! `player` | Name of the music player MPRIS interface. Run `busctl --user list \| grep "org.mpris.MediaPlayer2." \| cut -d' ' -f1` and the name is the part after "org.mpris.MediaPlayer2.". | No | None
+//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | No | `[]`
+//! `separator` | String to insert between artist and title. | No | `" - "`
+//! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`
+//! `hide_when_empty` | Hides the block when there is no player available. | No | `false`
+//!
+//! Note: All placeholders can be absent. See the examples below to learn how to handle this.
+//!
+//! Placeholder | Value          | Type
+//! ------------|----------------|------
+//! `artist`    | Current artist | Text
+//! `title`     | Current title  | Text
+//! `combo`     | Resolves to "`$artist[sep]$title"`, `"$artist"`, or `"$title"` depending on what information is available. `[sep]` is set by `separator` option. | Text
+//! `player`    | Name of the current player (taken from the last part of its MPRIS bus name) | Text
+//! `avail`     | Total number of players available to switch between | Number
+//! `cur`       | Total number of players available to switch between | Number
+//! `play`      | Play/Pause button | Clickable icon
+//! `next`      | Next button | Clickable icon
+//! `prev`      | Previous button | Clickable icon
+//!
+//! # Examples
+//!
+//! Show the currently playing song on Spotify only, with play & next buttons and limit the width
+//! to 20 characters:
+//!
+//! ```toml
+//! [[block]]
+//! block = "music"
+//! format = "$combo.str(20) $play $next"
+//! player = "spotify"
+//! ```
+//!
+//! Same thing for any compatible player, takes the first active on the bus, but ignores "mpd" or anything with "kdeconnect" in the name:
+//!
+//! ```toml
+//! [[block]]
+//! block = "music"
+//! format = "$combo.str(20) $play $next"
+//! interface_name_exclude = [".*kdeconnect.*", "mpd"]
+//! ```
+//!
+//! Same as above, but displays with rotating text
+//!
+//! ```toml
+//! [[block]]
+//! block = "music"
+//! format = "$combo.rot-str(20) $play $next"
+//! interface_name_exclude = [".*kdeconnect.*", "mpd"]
+//! ```
+//!
+//! # Icons Used
+//! - `music`
+//! - `music_next`
+//! - `music_play`
+//! - `music_prev`
+//!
+//! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
+
 use zbus::fdo::DBusProxy;
 use zbus::names::{OwnedBusName, OwnedInterfaceName};
 use zbus::zvariant::{Optional, OwnedValue, Type};
 use zbus::MessageStream;
 
+use regex::Regex;
 use std::collections::HashMap;
 
 use super::prelude::*;
-mod zbus_mpris;
 use crate::util::new_dbus_connection;
+
+mod zbus_mpris;
 
 const PLAY_PAUSE_BTN: usize = 1;
 const NEXT_BTN: usize = 2;
 const PREV_BTN: usize = 3;
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Derivative)]
+#[derivative(Default)]
 #[serde(deny_unknown_fields, default)]
 struct MusicConfig {
     format: FormatConfig,
+    player: Option<String>,
+    interface_name_exclude: Vec<String>,
+    #[derivative(Default(value = "\" - \".into()"))]
+    separator: String,
+    #[derivative(Default(value = "1000"))]
+    seek_step: i64,
+    hide_when_empty: bool,
 }
 
 #[derive(Debug, Clone, Type, serde_derive::Deserialize)]
@@ -50,7 +139,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         "prev" => new_btn("music_prev", PREV_BTN, &mut api)?,
     };
 
-    let mut players = get_all_players(&dbus_conn).await?;
+    let fileter_name = config.player.as_deref();
+    let exclude_regex = config
+        .interface_name_exclude
+        .iter()
+        .map(|r| Regex::new(r))
+        .collect::<Result<Vec<_>, _>>()
+        .error("Invalid regex")?;
+
+    let mut players = get_players(&dbus_conn, fileter_name, &exclude_regex).await?;
     let mut cur_player = None;
     for (i, player) in players.iter().enumerate() {
         cur_player = Some(i);
@@ -71,44 +168,53 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut dbus_stream = MessageStream::from(&dbus_conn);
 
     loop {
+        let avail = players.len();
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
         match player {
             Some(ref player) => {
                 let mut values = values.clone();
+                values.insert("avail".into(), Value::number(avail));
+                values.insert("cur".into(), Value::number(cur_player.unwrap() + 1));
+                values.insert(
+                    "player".into(),
+                    Value::text(
+                        extract_player_name(player.bus_name.as_str())
+                            .unwrap()
+                            .into(),
+                    ),
+                );
                 let (state, play_icon) = match player.status {
                     Some(PlaybackStatus::Playing) => (State::Info, "music_pause"),
                     _ => (State::Idle, "music_play"),
                 };
                 values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN, &mut api)?);
-                player
-                    .title
-                    .clone()
-                    .map(|t| values.insert("title".into(), Value::text(t)));
-                player
-                    .artist
-                    .clone()
-                    .map(|t| values.insert("artist".into(), Value::text(t)));
                 match (&player.title, &player.artist) {
-                    (Some(x), None) | (None, Some(x)) => {
-                        values.insert("title_artist".into(), Value::text(x.clone()));
+                    (Some(t), None) => {
+                        values.insert("combo".into(), Value::text(t.clone()));
+                        values.insert("title".into(), Value::text(t.clone()));
+                    }
+                    (None, Some(a)) => {
+                        values.insert("combo".into(), Value::text(a.clone()));
+                        values.insert("artist".into(), Value::text(a.clone()));
                     }
                     (Some(t), Some(a)) => {
                         values.insert(
-                            "title_artist".into(),
-                            Value::text(format!("{t}|{a}").into()),
+                            "combo".into(),
+                            Value::text(format!("{t}{}{a}", config.separator).into()),
                         );
+                        values.insert("title".into(), Value::text(t.clone()));
+                        values.insert("artist".into(), Value::text(a.clone()));
                     }
                     _ => (),
                 }
-                if let (Some(mut t), Some(a)) = (player.title.clone(), &player.artist) {
-                    t.push('|');
-                    t.push_str(a);
-                    values.insert("title_artist".into(), Value::text(t));
-                }
+                api.show();
                 api.set_values(values);
                 api.set_state(state);
             }
             None => {
+                if config.hide_when_empty {
+                    api.hide();
+                }
                 api.set_values(HashMap::new());
                 api.set_state(State::Idle);
             }
@@ -144,7 +250,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         let old: Option<StdString> = body.old_owner.into();
                         let new: Option<StdString> = body.new_owner.into();
                         match (old, new) {
-                            (None, Some(new)) => if new != body.name.to_string() {
+                            (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), fileter_name, &exclude_regex) {
                                 players.push(Player::new(&dbus_conn, body.name, new).await?);
                                 cur_player = Some(players.len() - 1);
                             }
@@ -170,9 +276,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             // Wait for a click
             Some(BlockEvent::Click(click)) = events.recv() => {
-                match click.button {
-                    MouseButton::Left => {
-                        if let Some(ref player) = player {
+                if let Some(i) = cur_player {
+                    match click.button {
+                        MouseButton::Left => {
+                            let player = &mut players[i];
                             match click.instance {
                                 Some(PLAY_PAUSE_BTN) => player.play_pause().await?,
                                 Some(NEXT_BTN) => player.next().await?,
@@ -180,29 +287,32 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                                 _ => (),
                             }
                         }
-                    }
-                    MouseButton::WheelUp => {
-                        if let Some(cur) = cur_player {
-                            if cur > 0 {
-                                cur_player = Some(cur - 1);
+                        MouseButton::Right => {
+                            if i + 1 < players.len() {
+                                cur_player = Some(i + 1);
+                            } else {
+                                cur_player = Some(0);
                             }
                         }
-                    }
-                    MouseButton::WheelDown => {
-                        if let Some(cur) = cur_player {
-                            if cur + 1 < players.len() {
-                                cur_player = Some(cur + 1);
-                            }
+                        MouseButton::WheelUp => {
+                            players[i].seek(config.seek_step).await?;
                         }
+                        MouseButton::WheelDown => {
+                            players[i].seek(-config.seek_step).await?;
+                        }
+                        _ => (),
                     }
-                    _ => (),
                 }
             }
         }
     }
 }
 
-async fn get_all_players(dbus_conn: &zbus::Connection) -> Result<Vec<Player<'_>>> {
+async fn get_players(
+    dbus_conn: &zbus::Connection,
+    filter_name: Option<&str>,
+    exclude_regex: &[Regex],
+) -> Result<Vec<Player>> {
     let proxy = DBusProxy::new(dbus_conn)
         .await
         .error("failed to create DBusProxy")?;
@@ -210,10 +320,9 @@ async fn get_all_players(dbus_conn: &zbus::Connection) -> Result<Vec<Player<'_>>
         .list_names()
         .await
         .error("failed to list dbus names")?;
-
     let mut players = Vec::new();
     for name in names {
-        if name.starts_with("org.mpris.MediaPlayer2") {
+        if player_matches(name.as_str(), filter_name, exclude_regex) {
             let owner = proxy
                 .get_name_owner(name.as_ref())
                 .await
@@ -226,20 +335,21 @@ async fn get_all_players(dbus_conn: &zbus::Connection) -> Result<Vec<Player<'_>>
 }
 
 #[derive(Debug)]
-struct Player<'a> {
+struct Player {
     status: Option<PlaybackStatus>,
     owner: StdString,
-    player_proxy: zbus_mpris::PlayerProxy<'a>,
+    bus_name: OwnedBusName,
+    player_proxy: zbus_mpris::PlayerProxy<'static>,
     title: Option<String>,
     artist: Option<String>,
 }
 
-impl<'a> Player<'a> {
+impl Player {
     async fn new(
-        dbus_conn: &'a zbus::Connection,
+        dbus_conn: &zbus::Connection,
         bus_name: OwnedBusName,
         owner: StdString,
-    ) -> Result<Player<'a>> {
+    ) -> Result<Player> {
         let proxy = zbus_mpris::PlayerProxy::builder(dbus_conn)
             .destination(bus_name.clone())
             .error("failed to set proxy destination")?
@@ -258,6 +368,7 @@ impl<'a> Player<'a> {
         Ok(Self {
             status: PlaybackStatus::from_str(&status),
             owner,
+            bus_name,
             player_proxy: proxy,
             title: metadata.title().map(Into::into),
             artist: metadata.artist().map(Into::into),
@@ -283,6 +394,18 @@ impl<'a> Player<'a> {
     async fn next(&self) -> Result<()> {
         self.player_proxy.next().await.error("next() failed")
     }
+
+    async fn seek(&self, offset: i64) -> Result<()> {
+        match self.player_proxy.seek(offset).await {
+            Err(zbus::Error::MethodError(e, _, _))
+                if e == "org.freedesktop.DBus.Error.NotSupported" =>
+            {
+                // TODO show this error somehow
+                Ok(())
+            }
+            other => dbg!(other).error("seek() failed"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -300,5 +423,63 @@ impl PlaybackStatus {
             "Stopped" => Some(Self::Stopped),
             _ => None,
         }
+    }
+}
+
+fn extract_player_name(full_name: &str) -> Option<&str> {
+    const NAME_PREFIX: &str = "org.mpris.MediaPlayer2.";
+    full_name
+        .starts_with(NAME_PREFIX)
+        .then(|| &full_name[NAME_PREFIX.len()..])
+}
+
+fn player_matches(full_name: &str, filter_name: Option<&str>, exclude_regex: &[Regex]) -> bool {
+    let name = match extract_player_name(full_name) {
+        Some(name) => name,
+        None => return false,
+    };
+
+    filter_name.map_or(true, |f| name.starts_with(f))
+        && !exclude_regex.iter().any(|r| r.is_match(name))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_player_name_test() {
+        assert_eq!(
+            extract_player_name("org.mpris.MediaPlayer2.firefox.instance852"),
+            Some("firefox.instance852")
+        );
+        assert_eq!(
+            extract_player_name("not.org.mpris.MediaPlayer2.firefox.instance852"),
+            None,
+        );
+        assert_eq!(
+            extract_player_name("org.mpris.MediaPlayer3.firefox.instance852"),
+            None,
+        );
+    }
+
+    #[test]
+    fn player_matches_test() {
+        let exclude = vec![Regex::new("mpd").unwrap(), Regex::new("firefox.*").unwrap()];
+        assert!(player_matches(
+            "org.mpris.MediaPlayer2.playerctld",
+            None,
+            &exclude
+        ));
+        assert!(!player_matches(
+            "org.mpris.MediaPlayer2.playerctld",
+            Some("spotify"),
+            &exclude
+        ));
+        assert!(!player_matches(
+            "org.mpris.MediaPlayer2.firefox.instance852",
+            None,
+            &exclude
+        ));
     }
 }
