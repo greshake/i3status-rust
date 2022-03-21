@@ -19,7 +19,7 @@ const DEFAULT_STR_MIN_WIDTH: usize = 0;
 const DEFAULT_STR_MAX_WIDTH: Option<usize> = None;
 
 const DEFAULT_STRROT_WIDTH: usize = 15;
-const DEFAULT_STRROT_INTERVAL: f64 = 1.0;
+const DEFAULT_STRROT_INTERVAL: f64 = 0.5;
 
 const DEFAULT_BAR_WIDTH: usize = 5;
 const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
@@ -104,11 +104,14 @@ pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter + 
                 None => DEFAULT_STRROT_WIDTH,
             };
             let interval: f64 = match args.get(RotStrArgs::Interval as usize) {
-                Some(v) => v.parse().error("Interval must be a positive number")?,
+                Some(v) => v
+                    .trim()
+                    .parse()
+                    .error("Interval must be a positive number")?,
                 None => DEFAULT_STRROT_INTERVAL,
             };
             if interval < 0.1 {
-                return Err(Error::new("Interval must be a positive number"));
+                return Err(Error::new("Interval must be greater than 0.1"));
             }
             Ok(Box::new(RotStrFormatter {
                 width,
