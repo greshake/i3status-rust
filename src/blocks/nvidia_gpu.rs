@@ -1,3 +1,52 @@
+//! Display the stats of your NVidia GPU
+//!
+//! By default `show_temperature` shows the used memory. Clicking the left mouse on the
+//! "temperature" part of the block will alternate it between showing used or total available
+//! memory.
+//!
+//! Clicking the left mouse button on the "fan speed" part of the block will cause it to enter into
+//! a fan speed setting mode. In this mode you can scroll the mouse wheel over the block to change
+//! the fan speeds, and left click to exit the mode.
+//!
+//! Requires `nvidia-smi` for displaying info and `nvidia_settings` for setting fan speed.
+//!
+//! # Configuration
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `gpu_id` | GPU id in system. | No | `0`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$utilization $memory $temperature"`
+//! `interval` | Update interval in seconds. | No | `1`
+//! `idle` | Maximum temperature, below which state is set to idle | No | `50`
+//! `good` | Maximum temperature, below which state is set to good | No | `70`
+//! `info` | Maximum temperature, below which state is set to info | No | `75`
+//! `warning` | Maximum temperature, below which state is set to warning | No | `80`
+//!
+//! Placeholder   | Type   | Unit
+//! --------------|--------|---------------
+//! `name`        | Text   | -
+//! `utilization` | Number | Percents
+//! `memory`      | Number | Bytes
+//! `temperature` | Number | Degrees
+//! `fan_speed`   | Number | Percents
+//! `clocks`      | Number | Hertz
+//! `power`       | Number | Watts
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "nvidia_gpu"
+//! interval = 1
+//! format = "GT 1030 $utilization $temperature $clocks"
+//! ```
+//!
+//! # Icons Used
+//! - `gpu`
+//!
+//! # TODO
+//! - Provide a `mappings` option similar to `keyboard_layout`'s  to map GPU names to labels?
+
 use std::process::Stdio;
 use std::str::FromStr;
 
@@ -27,7 +76,7 @@ impl Default for NvidiaGpuConfig {
     fn default() -> Self {
         Self {
             format: Default::default(),
-            interval: 3.into(),
+            interval: 1.into(),
             gpu_id: 0,
             idle: 50,
             good: 70,
