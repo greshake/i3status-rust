@@ -18,7 +18,7 @@
 //!
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"$combo $play\|"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"$combo.rot-str() $play\|"`
 //! `player` | Name of the music player MPRIS interface. Run `busctl --user list \| grep "org.mpris.MediaPlayer2." \| cut -d' ' -f1` and the name is the part after "org.mpris.MediaPlayer2.". | No | None
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | No | `[]`
 //! `separator` | String to insert between artist and title. | No | `" - "`
@@ -126,7 +126,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let dbus_conn = new_dbus_connection().await?;
     let mut events = api.get_events().await?;
     let config = MusicConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$title_artist.rot-str()|")?);
+    api.set_format(config.format.with_default("$combo.rot-str() $play|")?);
     api.set_icon("music")?;
 
     let new_btn = |icon: &str, id: usize, api: &mut CommonApi| -> Result<Value> {
