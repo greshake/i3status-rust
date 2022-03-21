@@ -164,6 +164,10 @@
 <span id="162">162</span>
 <span id="163">163</span>
 <span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::{<span class="prelude-ty">Result</span>, <span class="ident">ResultExt</span>};
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>};
 <span class="kw">use</span> <span class="ident">std::borrow::Cow</span>;
@@ -245,6 +249,10 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">tokio::time::interval_at</span>(<span class="ident">tokio::time::Instant::now</span>() <span class="op">+</span> <span class="self">self</span>.<span class="number">0</span>, <span class="self">self</span>.<span class="number">0</span>);
         <span class="ident">timer</span>.<span class="ident">set_missed_tick_behavior</span>(<span class="ident">tokio::time::MissedTickBehavior::Delay</span>);
         <span class="ident">timer</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">seconds</span>(<span class="self">self</span>) -&gt; <span class="ident">u64</span> {
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_secs</span>()
     }
 }
 

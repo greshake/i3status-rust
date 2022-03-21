@@ -195,6 +195,16 @@
 <span id="193">193</span>
 <span id="194">194</span>
 <span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Rendered</span>, <span class="ident">RunningFormat</span>, <span class="ident">Values</span>};
@@ -203,7 +213,7 @@
 <span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
 
 <span class="doccomment">/// State of the widget. Affects the theming.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Deserialize</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">State</span> {
     <span class="ident">Idle</span>,
     <span class="ident">Info</span>,
@@ -372,6 +382,11 @@
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>) <span class="op">=</span> <span class="ident">full</span>.<span class="ident">metadata</span>.<span class="ident">instance</span> {
                 <span class="ident">data</span>.<span class="ident">instance</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>.<span class="ident">to_string</span>());
             }
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>) <span class="op">=</span> <span class="ident">full</span>.<span class="ident">metadata</span>.<span class="ident">state</span> {
+                <span class="kw">let</span> (<span class="ident">key_bg</span>, <span class="ident">key_fg</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">theme</span>.<span class="ident">get_colors</span>(<span class="ident">state</span>);
+                <span class="ident">data</span>.<span class="ident">background</span> <span class="op">=</span> <span class="ident">key_bg</span>;
+                <span class="ident">data</span>.<span class="ident">color</span> <span class="op">=</span> <span class="ident">key_fg</span>;
+            }
             <span class="ident">parts</span>.<span class="ident">push</span>(<span class="ident">data</span>);
         }
 
@@ -381,6 +396,11 @@
             <span class="ident">data</span>.<span class="ident">short_text</span> <span class="op">=</span> <span class="ident">short</span>.<span class="ident">text</span>.<span class="ident">into</span>();
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>) <span class="op">=</span> <span class="ident">short</span>.<span class="ident">metadata</span>.<span class="ident">instance</span> {
                 <span class="ident">data</span>.<span class="ident">instance</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>.<span class="ident">to_string</span>());
+            }
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>) <span class="op">=</span> <span class="ident">short</span>.<span class="ident">metadata</span>.<span class="ident">state</span> {
+                <span class="kw">let</span> (<span class="ident">key_bg</span>, <span class="ident">key_fg</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">theme</span>.<span class="ident">get_colors</span>(<span class="ident">state</span>);
+                <span class="ident">data</span>.<span class="ident">background</span> <span class="op">=</span> <span class="ident">key_bg</span>;
+                <span class="ident">data</span>.<span class="ident">color</span> <span class="op">=</span> <span class="ident">key_fg</span>;
             }
             <span class="ident">parts</span>.<span class="ident">push</span>(<span class="ident">data</span>);
         }

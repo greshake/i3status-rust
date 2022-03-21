@@ -48,7 +48,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">std::string::String</span> <span class="kw">as</span> <span class="ident">StdString</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tokio::io</span>::{<span class="ident">AsyncReadExt</span>, <span class="ident">AsyncWriteExt</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tokio::io</span>::{<span class="ident">AsyncBufRead</span>, <span class="ident">AsyncBufReadExt</span>, <span class="ident">AsyncReadExt</span>, <span class="ident">AsyncWriteExt</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tokio::time::sleep</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">Stream</span>, <span class="ident">StreamExt</span>};

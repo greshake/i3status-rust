@@ -171,6 +171,8 @@
 <span id="169">169</span>
 <span id="170">170</span>
 <span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Formatting system</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Many blocks have a `format` configuration option, which allows to heavily customize the block&#39;s</span>
@@ -254,6 +256,7 @@
 <span class="kw">use</span> <span class="ident">tokio::task::JoinHandle</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::widget::State</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Request</span>;
 <span class="kw">use</span> <span class="ident">template::FormatTemplate</span>;
 <span class="kw">use</span> <span class="ident">value::Value</span>;
@@ -335,6 +338,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Metadata</span> {
     <span class="kw">pub</span> <span class="ident">instance</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">state</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">State</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Metadata</span> {
