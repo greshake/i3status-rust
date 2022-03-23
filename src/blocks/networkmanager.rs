@@ -2,100 +2,109 @@ use std::fmt;
 use std::net::Ipv4Addr;
 
 use zbus::dbus_proxy;
+use zbus::fdo::DBusProxy;
+use zbus::zvariant::OwnedObjectPath;
 
 use super::prelude::*;
+
+// TODO add to icon sets
+const CROSS: &str = "×";
 
 #[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]
 struct NetworkManagerConfig {
-    /// Whether to only show the primary connection, or all active connections.
+    format: FormatConfig,
     primary_only: bool,
-    /// AP formatter
-    ap_format: FormatConfig,
-    /// Device formatter.
-    device_format: FormatConfig,
-    /// Connection formatter.
-    connection_format: FormatConfig,
-    /// Interface name regex patterns to ignore.
-    interface_name_exclude: Vec<String>,
-    /// Interface name regex patterns to include.
-    interface_name_include: Vec<String>,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let mut events = api.get_events().await?;
     let config = NetworkManagerConfig::deserialize(config).config_error()?;
+    api.set_format(config.format.with_default("TODO")?);
 
-    /*
-    let dbus_conn = Connection::get_private(BusType::System)
-        .block_error("networkmanager", "failed to establish D-Bus connection")?;
-    let manager = ConnectionManager::new();
+    let manager = ConnectionManager::new().await?;
+    let mut updates = create_updates_stream().await?;
+    let mut cur_connection: Option<usize> = None;
 
-    thread::Builder::new()
-        .name("networkmanager".into())
-        .spawn(move || {
-            let c = Connection::get_private(BusType::System).unwrap();
+    loop {
+        // Using a loop because of the early-returns
+        loop {
+            let state = manager.state().await?;
+            if matches!(
+                state,
+                NetworkState::Disconnected | NetworkState::Asleep | NetworkState::Unknown
+            ) {
+                api.set_icon_raw(CROSS.into());
+                api.set_state(State::Critical);
+                break;
+            }
 
-            c.add_match(
-                "type='signal',\
-                    path='/org/freedesktop/NetworkManager',\
-                    interface='org.freedesktop.DBus.Properties',\
-                    member='PropertiesChanged'",
-            )
-            .unwrap();
-            c.add_match(
-                "type='signal',\
-                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
-                    interface='org.freedesktop.DBus.Properties',\
-                    member='PropertiesChanged'",
-            )
-            .unwrap();
-
-            loop {
-                let timeout = 300_000;
-
-                for event in c.iter(timeout) {
-                    match event {
-                        ConnectionItem::Nothing => (),
-                        _ => send
-                            .send(Task {
-                                id,
-                                update_time: Instant::now(),
-                            })
-                            .unwrap(),
+            let connection = if config.primary_only {
+                let c = manager.primary_connection().await?;
+                cur_connection = c.as_ref().map(|_| 0);
+                c
+            } else {
+                let c_all = manager.active_connections().await?;
+                let mut c = Vec::new();
+                for c_all in c_all {
+                    // Hide vpn connection(s) since its devices are the devices of its parent
+                    // connection
+                    if !c_all.vpn().await? {
+                        c.push(c_all);
                     }
                 }
+                if !c.is_empty() {
+                    if let Some(cur) = &mut cur_connection {
+                        *cur = (*cur).min(c.len() - 1);
+                        c.into_iter().nth(*cur)
+                    } else {
+                        c.into_iter().next()
+                    }
+                } else {
+                    None
+                }
+            };
+            let connection = match connection {
+                Some(c) => c,
+                None => {
+                    api.set_icon_raw(CROSS.into());
+                    api.set_state(State::Warning);
+                    break;
+                }
+            };
+            api.set_state(match connection.state().await? {
+                ActiveConnectionState::Activated => State::Idle,
+                ActiveConnectionState::Activating => State::Warning,
+                ActiveConnectionState::Deactivating => State::Warning,
+                ActiveConnectionState::Deactivated => State::Critical,
+                ActiveConnectionState::Unknown => State::Critical,
+            });
+
+            let devices = connection.devices().await?;
+            dbg!(devices);
+
+            break;
+        }
+        api.flush().await?;
+
+        loop {
+            tokio::select! {
+                Some(BlockEvent::Click(_click)) = events.recv() => {
+                    // TODO
+                }
+                Some(update) = updates.next() => {
+                    // We don't care _what_ the update is.
+                    // But we probably should.
+                    // TODO: filter the updates.
+                    let _ = update.error("Bad update")?;
+                    break;
+                }
             }
-        })
-        .unwrap();
-
-    fn compile_regexps(patterns: Vec<String>) -> result::Result<Vec<Regex>, regex::Error> {
-        patterns.iter().map(|p| Regex::new(p)).collect()
+        }
     }
-
-    let x = Ok(NetworkManager {
-        id,
-        indicator: TextWidget::new(id, 0, shared_config.clone()),
-        output: Vec::new(),
-        dbus_conn,
-        manager,
-        primary_only: block_config.primary_only,
-        ap_format: block_config.ap_format.with_default("{ssid}")?,
-        device_format: block_config
-            .device_format
-            .with_default("{icon}{ap} {ips}")?,
-        connection_format: block_config.connection_format.with_default("{devices}")?,
-        interface_name_exclude_regexps: compile_regexps(block_config.interface_name_exclude)
-            .block_error("networkmanager", "failed to parse exclude patterns")?,
-        interface_name_include_regexps: compile_regexps(block_config.interface_name_include)
-            .block_error("networkmanager", "failed to parse include patterns")?,
-        shared_config,
-    });
-    */
-
-    loop {}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum NetworkState {
     Unknown,
     Asleep,
@@ -123,7 +132,7 @@ impl From<u32> for NetworkState {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ActiveConnectionState {
     Unknown,
     Activating,
@@ -141,18 +150,6 @@ impl From<u32> for ActiveConnectionState {
             3 => ActiveConnectionState::Deactivating,
             4 => ActiveConnectionState::Deactivated,
             _ => ActiveConnectionState::Unknown,
-        }
-    }
-}
-
-impl ActiveConnectionState {
-    fn to_state(&self, good: State) -> State {
-        match self {
-            ActiveConnectionState::Activated => good,
-            ActiveConnectionState::Activating => State::Warning,
-            ActiveConnectionState::Deactivating => State::Warning,
-            ActiveConnectionState::Deactivated => State::Critical,
-            ActiveConnectionState::Unknown => State::Critical,
         }
     }
 }
@@ -197,25 +194,25 @@ impl DeviceType {
     }
 }
 
-#[derive(Debug)]
-struct Ipv4Address {
-    address: Ipv4Addr,
-    prefix: u32,
-    _gateway: Ipv4Addr,
-}
-
-trait ByteOrderSwap {
-    fn swap(&self) -> Self;
-}
-
-impl ByteOrderSwap for u32 {
-    fn swap(&self) -> u32 {
-        ((self & 0x0000_00FF) << 24)
-            | ((self & 0x0000_FF00) << 8)
-            | ((self & 0x00FF_0000) >> 8)
-            | ((self & 0xFF00_0000) >> 24)
-    }
-}
+// #[derive(Debug)]
+// struct Ipv4Address {
+//     address: Ipv4Addr,
+//     prefix: u32,
+//     _gateway: Ipv4Addr,
+// }
+//
+// trait ByteOrderSwap {
+//     fn swap(&self) -> Self;
+// }
+//
+// impl ByteOrderSwap for u32 {
+//     fn swap(&self) -> u32 {
+//         ((self & 0x0000_00FF) << 24)
+//             | ((self & 0x0000_FF00) << 8)
+//             | ((self & 0x00FF_0000) >> 8)
+//             | ((self & 0xFF00_0000) >> 24)
+//     }
+// }
 
 /*
 impl<'a> From<Array<'a, u32, Iter<'a>>> for Ipv4Address {
@@ -230,131 +227,120 @@ impl<'a> From<Array<'a, u32, Iter<'a>>> for Ipv4Address {
 }
 */
 
-impl fmt::Display for Ipv4Address {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}/{}", self.address, self.prefix)
-    }
-}
+// impl fmt::Display for Ipv4Address {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "{}/{}", self.address, self.prefix)
+//     }
+// }
 
-struct ConnectionManager;
+/// An abstraction over NetworkManagerProxy
+struct ConnectionManager(NetworkManagerProxy<'static>);
 
 impl ConnectionManager {
-    async fn state(&self, c: &zbus::Connection) -> Result<NetworkState> {
-        let state = NetworkManagerProxy::new(c)
-            .await
-            .unwrap()
+    async fn new() -> Result<Self> {
+        let conn = new_system_dbus_connection().await?;
+        Ok(Self(
+            NetworkManagerProxy::new(&conn)
+                .await
+                .error("Failed to create NetworkManagerProxy")?,
+        ))
+    }
+
+    async fn state(&self) -> Result<NetworkState> {
+        self.0
             .state()
             .await
-            .error("Failed to retrieve state")?;
-        Ok(state.into())
+            .error("Failed to retrieve state")
+            .map(Into::into)
     }
 
-    async fn primary_connection(&self, c: &zbus::Connection) -> Result<NmConnection> {
-        let m = Self::get_property(c, "PrimaryConnection")
-            .block_error("networkmanager", "Failed to retrieve primary connection")?;
-
-        let primary_connection: Variant<Path> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read primary connection")?;
-
-        if primary_connection.0.to_string() == "/" {
-            return Err(BlockError(
-                "networkmanager".to_string(),
-                "No primary connection".to_string(),
-            ));
-        }
-
-        Ok(NmConnection {
-            path: primary_connection.0.clone(),
-        })
-    }
-
-    pub fn active_connections(&self, c: &Connection) -> Result<Vec<NmConnection>> {
-        let m = Self::get_property(c, "ActiveConnections")
-            .block_error("networkmanager", "Failed to retrieve active connections")?;
-
-        let active_connections: Variant<Array<Path, Iter>> = m
-            .get1()
-            .block_error("networkmanager", "Failed to read active connections")?;
-
-        Ok(active_connections
+    async fn primary_connection(&self) -> Result<Option<NmConnection>> {
+        let pc = self
             .0
-            .map(|x| NmConnection { path: x })
-            .collect())
+            .primary_connection()
+            .await
+            .error("Failed to retrieve primary connection")?;
+        if pc.as_str() != "/" {
+            NmConnection::new(self.0.connection(), pc).await.map(Some)
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn active_connections(&self) -> Result<Vec<NmConnection>> {
+        let paths = self
+            .0
+            .active_connections()
+            .await
+            .error("Failed to retrieve active connections")?;
+        let mut res = Vec::with_capacity(paths.len());
+        for path in paths {
+            res.push(NmConnection::new(self.0.connection(), path).await?);
+        }
+        Ok(res)
     }
 }
 
-// #[derive(Clone)]
-// struct NmConnection<'a> {
-//     path: Path<'a>,
-// }
+/// An abstraction over NetworkManagerConnectionProxy
+#[derive(Debug, Clone)]
+struct NmConnection(NetworkManagerConnectionProxy<'static>);
 
-// impl<'a> NmConnection<'a> {
-//     fn state(&self, c: &Connection) -> Result<ActiveConnectionState> {
-//         let m = ConnectionManager::get(
-//             c,
-//             self.path.clone(),
-//             "org.freedesktop.NetworkManager.Connection.Active",
-//             "State",
-//         )
-//         .block_error("networkmanager", "Failed to retrieve connection state")?;
+impl NmConnection {
+    async fn new(con: &zbus::Connection, path: OwnedObjectPath) -> Result<Self> {
+        NetworkManagerConnectionProxy::builder(con)
+            .path(path)
+            .error("Faled to set path")?
+            .build()
+            .await
+            .error("Failed to create NetworkManagerConnectionProxy")
+            .map(Self)
+    }
 
-//         let state: Variant<u32> = m
-//             .get1()
-//             .block_error("networkmanager", "Failed to read connection state")?;
-//         Ok(ActiveConnectionState::from(state.0))
-//     }
+    async fn state(&self) -> Result<ActiveConnectionState> {
+        self.0
+            .state()
+            .await
+            .error("Failed to retrieve connection state")
+            .map(Into::into)
+    }
 
-//     fn vpn(&self, c: &Connection) -> Result<bool> {
-//         let m = ConnectionManager::get(
-//             c,
-//             self.path.clone(),
-//             "org.freedesktop.NetworkManager.Connection.Active",
-//             "Vpn",
-//         )
-//         .block_error("networkmanager", "Failed to retrieve connection vpn flag")?;
+    async fn vpn(&self) -> Result<bool> {
+        self.0
+            .vpn()
+            .await
+            .error("Failed to retrieve connection vpn falg")
+    }
 
-//         let vpn: Variant<bool> = m
-//             .get1()
-//             .block_error("networkmanager", "Failed to read connection vpn flag")?;
-//         Ok(vpn.0)
-//     }
+    async fn id(&self) -> Result<String> {
+        self.0
+            .id()
+            .await
+            .error("Failed to retrieve connection ID")
+            .map(Into::into)
+    }
 
-//     fn id(&self, c: &Connection) -> Result<String> {
-//         let m = ConnectionManager::get(
-//             c,
-//             self.path.clone(),
-//             "org.freedesktop.NetworkManager.Connection.Active",
-//             "Id",
-//         )
-//         .block_error("networkmanager", "Failed to retrieve connection ID")?;
+    async fn devices(&self) -> Result<Vec<NmDevice>> {
+        let paths = self
+            .0
+            .devices()
+            .await
+            .error("Failed to retrieve connection device")?;
+        let mut res = Vec::with_capacity(paths.len());
+        for path in paths {
+            res.push(NmDevice::new(self.0.connection(), path).await?);
+        }
+        Ok(res)
+    }
+}
 
-//         let id: Variant<String> = m
-//             .get1()
-//             .block_error("networkmanager", "Failed to read Id")?;
-//         Ok(id.0)
-//     }
+#[derive(Debug, Clone)]
+struct NmDevice(OwnedObjectPath);
 
-//     fn devices(&self, c: &Connection) -> Result<Vec<NmDevice>> {
-//         let m = ConnectionManager::get(
-//             c,
-//             self.path.clone(),
-//             "org.freedesktop.NetworkManager.Connection.Active",
-//             "Devices",
-//         )
-//         .block_error("networkmanager", "Failed to retrieve connection device")?;
-
-//         let devices: Variant<Array<Path, Iter>> = m
-//             .get1()
-//             .block_error("networkmanager", "Failed to read devices")?;
-//         Ok(devices.0.map(|x| NmDevice { path: x }).collect())
-//     }
-// }
-
-// #[derive(Clone)]
-// struct NmDevice<'a> {
-//     path: Path<'a>,
-// }
+impl NmDevice {
+    async fn new(con: &zbus::Connection, path: OwnedObjectPath) -> Result<Self> {
+        Ok(Self(path))
+    }
+}
 
 // impl<'a> NmDevice<'a> {
 //     fn device_type(&self, c: &Connection) -> Result<DeviceType> {
@@ -712,27 +698,37 @@ impl Block for NetworkManager {
 }
 */
 
-// # DBus interface proxy for: `org.freedesktop.NetworkManager`
-//
-// This code was generated by `zbus-xmlgen` `2.0.0` from DBus introspection data.
-// Source: `11`.
-//
-// You may prefer to adapt it, instead of using it verbatim.
-//
-// More information can be found in the
-// [Writing a client proxy](https://dbus.pages.freedesktop.org/zbus/client.html)
-// section of the zbus documentation.
-//
-// This DBus object implements
-// [standard DBus interfaces](https://dbus.freedesktop.org/doc/dbus-specification.html),
-// (`org.freedesktop.DBus.*`) for which the following zbus proxies can be used:
-//
-// * [`zbus::fdo::PropertiesProxy`]
-// * [`zbus::fdo::IntrospectableProxy`]
-// * [`zbus::fdo::PeerProxy`]
-//
-// …consequently `zbus-xmlgen` did not generate code for the above interfaces.
+/// Returns a stream of dbus updates. Yes, it will trigger an update even for properties we don't
+/// care about, but it's _much_ easier.
+async fn create_updates_stream() -> Result<zbus::MessageStream> {
+    let conn = new_system_dbus_connection().await?;
+    let proxy = DBusProxy::new(&conn)
+        .await
+        .error("failed to cerate DBusProxy")?;
+    proxy
+        .add_match(
+            "type='signal',\
+                    path='/org/freedesktop/NetworkManager',\
+                    interface='org.freedesktop.DBus.Properties',\
+                    member='PropertiesChanged'",
+        )
+        .await
+        .error("failed to add match")?;
+    proxy
+        .add_match(
+            "type='signal',\
+                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
+                    interface='org.freedesktop.DBus.Properties',\
+                    member='PropertiesChanged'",
+        )
+        .await
+        .error("failed to add match")?;
+    Ok(conn.into())
+}
 
+/// DBus interface proxy for: `org.freedesktop.NetworkManager`
+///
+/// This code was generated by `zbus-xmlgen` `2.0.0` from DBus introspection data.
 #[dbus_proxy(
     interface = "org.freedesktop.NetworkManager",
     default_path = "/org/freedesktop/NetworkManager",
@@ -741,17 +737,38 @@ impl Block for NetworkManager {
 trait NetworkManager {
     /// ActiveConnections property
     #[dbus_proxy(property)]
-    fn active_connections(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
-
-    /// Devices property
-    #[dbus_proxy(property)]
-    fn devices(&self) -> zbus::Result<Vec<zbus::zvariant::OwnedObjectPath>>;
+    fn active_connections(&self) -> zbus::Result<Vec<OwnedObjectPath>>;
 
     /// PrimaryConnection property
     #[dbus_proxy(property)]
-    fn primary_connection(&self) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
+    fn primary_connection(&self) -> zbus::Result<OwnedObjectPath>;
 
     /// State property
     #[dbus_proxy(property)]
     fn state(&self) -> zbus::Result<u32>;
+}
+
+/// DBus interface proxy for: `org.freedesktop.NetworkManager.Connection.Active`
+///
+/// This code was generated by `zbus-xmlgen` `2.0.1` from DBus introspection data.
+#[dbus_proxy(
+    interface = "org.freedesktop.NetworkManager.Connection.Active",
+    default_service = "org.freedesktop.NetworkManager"
+)]
+trait NetworkManagerConnection {
+    /// Devices property
+    #[dbus_proxy(property)]
+    fn devices(&self) -> zbus::Result<Vec<OwnedObjectPath>>;
+
+    /// Id property
+    #[dbus_proxy(property)]
+    fn id(&self) -> zbus::Result<StdString>;
+
+    /// State property
+    #[dbus_proxy(property)]
+    fn state(&self) -> zbus::Result<u32>;
+
+    /// Vpn property
+    #[dbus_proxy(property)]
+    fn vpn(&self) -> zbus::Result<bool>;
 }

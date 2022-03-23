@@ -181,6 +181,10 @@ impl CommonApi {
         Ok(())
     }
 
+    pub fn set_icon_raw(&mut self, icon: String) {
+        self.cmd_buf.push(RequestCmd::SetIcon(icon));
+    }
+
     pub fn set_state(&mut self, state: State) {
         self.cmd_buf.push(RequestCmd::SetState(state));
     }

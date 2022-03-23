@@ -86,8 +86,6 @@ use regex::Regex;
 use std::collections::HashMap;
 
 use super::prelude::*;
-use crate::util::new_dbus_connection;
-
 mod zbus_mpris;
 
 const PLAY_PAUSE_BTN: usize = 1;
@@ -134,7 +132,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     };
 
     let values = map! {
-        "play" => new_btn("music_play", PLAY_PAUSE_BTN, &mut api)?,
         "next" => new_btn("music_next", NEXT_BTN, &mut api)?,
         "prev" => new_btn("music_prev", PREV_BTN, &mut api)?,
     };

@@ -169,34 +169,30 @@ impl Widget {
             template.short_text = "<span/>".into();
         }
 
-        for full in full {
+        parts.extend(full.into_iter().map(|w| {
             let mut data = template.clone();
-            data.full_text = full.text.into();
-            if let Some(i) = full.metadata.instance {
-                data.instance = Some(i.to_string());
-            }
-            if let Some(state) = full.metadata.state {
+            data.full_text = w.text.into();
+            data.instance = w.metadata.instance.map(|i| i.to_string());
+            if let Some(state) = w.metadata.state {
                 let (key_bg, key_fg) = self.shared_config.theme.get_colors(state);
                 data.background = key_bg;
                 data.color = key_fg;
             }
-            parts.push(data);
-        }
+            data
+        }));
 
         template.full_text = "<span/>".into();
-        for short in short {
+        parts.extend(short.into_iter().map(|w| {
             let mut data = template.clone();
-            data.short_text = short.text.into();
-            if let Some(i) = short.metadata.instance {
-                data.instance = Some(i.to_string());
-            }
-            if let Some(state) = short.metadata.state {
+            data.short_text = w.text.into();
+            data.instance = w.metadata.instance.map(|i| i.to_string());
+            if let Some(state) = w.metadata.state {
                 let (key_bg, key_fg) = self.shared_config.theme.get_colors(state);
                 data.background = key_bg;
                 data.color = key_fg;
             }
-            parts.push(data);
-        }
+            data
+        }));
 
         parts.push(padding);
 

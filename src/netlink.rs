@@ -1,10 +1,8 @@
-use neli::{
-    consts::{nl::*, rtnl::*, socket::*},
-    nl::{NlPayload, Nlmsghdr},
-    rtnl::*,
-    socket::{tokio::NlSocket, NlSocketHandle},
-    types::RtBuffer,
-};
+use neli::consts::{nl::*, rtnl::*, socket::*};
+use neli::nl::{NlPayload, Nlmsghdr};
+use neli::rtnl::Rtmsg;
+use neli::socket::{tokio::NlSocket, NlSocketHandle};
+use neli::types::RtBuffer;
 
 use std::ops;
 use std::path::{Path, PathBuf};
