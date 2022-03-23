@@ -482,9 +482,6 @@
 <span id="480">480</span>
 <span id="481">481</span>
 <span id="482">482</span>
-<span id="483">483</span>
-<span id="484">484</span>
-<span id="485">485</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Also provides buttons for play/pause, previous and next.</span>
@@ -573,8 +570,6 @@
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::new_dbus_connection</span>;
-
 <span class="kw">mod</span> <span class="ident">zbus_mpris</span>;
 
 <span class="kw">const</span> <span class="ident">PLAY_PAUSE_BTN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">1</span>;
@@ -621,7 +616,6 @@
     };
 
     <span class="kw">let</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span> {
-        <span class="string">&quot;play&quot;</span> =&gt; <span class="ident">new_btn</span>(<span class="string">&quot;music_play&quot;</span>, <span class="ident">PLAY_PAUSE_BTN</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>,
         <span class="string">&quot;next&quot;</span> =&gt; <span class="ident">new_btn</span>(<span class="string">&quot;music_next&quot;</span>, <span class="ident">NEXT_BTN</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>,
         <span class="string">&quot;prev&quot;</span> =&gt; <span class="ident">new_btn</span>(<span class="string">&quot;music_prev&quot;</span>, <span class="ident">PREV_BTN</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>,
     };

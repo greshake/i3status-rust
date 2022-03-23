@@ -203,15 +203,11 @@
 <span id="201">201</span>
 <span id="202">202</span>
 <span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">neli</span>::{
-    <span class="ident">consts</span>::{<span class="ident">nl</span>::<span class="kw-2">*</span>, <span class="ident">rtnl</span>::<span class="kw-2">*</span>, <span class="ident">socket</span>::<span class="kw-2">*</span>},
-    <span class="ident">nl</span>::{<span class="ident">NlPayload</span>, <span class="ident">Nlmsghdr</span>},
-    <span class="ident">rtnl</span>::<span class="kw-2">*</span>,
-    <span class="ident">socket</span>::{<span class="ident">tokio::NlSocket</span>, <span class="ident">NlSocketHandle</span>},
-    <span class="ident">types::RtBuffer</span>,
-};
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">neli::consts</span>::{<span class="ident">nl</span>::<span class="kw-2">*</span>, <span class="ident">rtnl</span>::<span class="kw-2">*</span>, <span class="ident">socket</span>::<span class="kw-2">*</span>};
+<span class="kw">use</span> <span class="ident">neli::nl</span>::{<span class="ident">NlPayload</span>, <span class="ident">Nlmsghdr</span>};
+<span class="kw">use</span> <span class="ident">neli::rtnl::Rtmsg</span>;
+<span class="kw">use</span> <span class="ident">neli::socket</span>::{<span class="ident">tokio::NlSocket</span>, <span class="ident">NlSocketHandle</span>};
+<span class="kw">use</span> <span class="ident">neli::types::RtBuffer</span>;
 
 <span class="kw">use</span> <span class="ident">std::ops</span>;
 <span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
