@@ -36,15 +36,18 @@ impl TryFrom<OwnedValue> for PlayerMetadata {
 
 impl PlayerMetadata {
     pub fn title(&self) -> Option<String> {
-        self.0
-            .get("xesam:title")?
-            .downcast_ref::<str>()
-            .map(Into::into)
+        let title = self.0.get("xesam:title")?.downcast_ref::<str>()?;
+        (!title.is_empty()).then(|| title.into())
     }
 
     pub fn artist(&self) -> Option<String> {
-        let mut artsts: Vec<String> = self.0.get("xesam:artist")?.clone().try_into().ok()?;
-        artsts.pop()
+        let artists = self
+            .0
+            .get("xesam:artist")?
+            .downcast_ref::<zvariant::Array>()?
+            .get();
+        let artist = artists.get(0)?.downcast_ref::<str>()?;
+        (!artist.is_empty()).then(|| artist.into())
     }
 }
 
