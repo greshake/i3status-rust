@@ -246,7 +246,7 @@ Key | Values | Required | Default
 `driver` | One of `"sysfs"`, `"apcaccess"`, or `"upower"`. | No | `"sysfs"`
 `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs" \|\| "apcaccess"`. | No | `10`
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}"`
-`full_format` | Same as `format` but for when the battery is full. | No | `"{percentage}"`
+`full_format` | Same as `format` but for when the battery is full. | No | `""`
 `missing_format` | Same as `format` but for when the specified battery is missing. | No | `"{percentage}"`
 `allow_missing` | Don't display errors when the battery cannot be found. | No | `false`
 `hide_missing` | Completely hide this block if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
