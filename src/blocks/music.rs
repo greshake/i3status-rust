@@ -186,6 +186,11 @@ pub struct MusicConfig {
     /// the block will track all players found.
     pub player: Option<String>,
 
+    /// Name of the music players. Same as the `player` field above but
+    /// for an array of players. The `player` field above is kept for
+    /// backward compatibility with older configurations.
+    pub players: Option<Vec<String>>,
+
     /// Max width of the block in characters, not including the buttons.
     pub max_width: usize,
 
@@ -236,6 +241,7 @@ impl Default for MusicConfig {
     fn default() -> Self {
         Self {
             player: None,
+            players: None,
             max_width: 21,
             dynamic_width: false,
             marquee: true,
@@ -287,13 +293,20 @@ impl ConfigBlock for Music {
                 500,
             )
             .unwrap();
+
+        let mut preferred_players = Vec::new();
+
+        // Add players found in `player` and `players` fields.
+        if let Some(player) = block_config.player.clone() {
+            preferred_players.push(player);
+        }
+        if let Some(players) = block_config.players.clone() {
+            preferred_players.extend(players);
+        }
+
         let names = list_names.get1::<Array<&str, _>>().unwrap().filter(|name| {
             // If an interface matches an exclude pattern, ignore it
-            !ignored_player(
-                name,
-                &interface_name_exclude_regexps,
-                block_config.player.clone(),
-            )
+            !ignored_player(name, &interface_name_exclude_regexps, &preferred_players)
         });
 
         let mut players = Vec::<Player>::new();
@@ -326,7 +339,6 @@ impl ConfigBlock for Music {
         let players = Arc::new(Mutex::new(players));
         let players_clone = players.clone();
         let send_clone = send.clone();
-        let preferred_player = block_config.player.clone();
 
         thread::Builder::new()
             .name("music".into())
@@ -393,7 +405,7 @@ impl ConfigBlock for Music {
                                 match (old_owner, new_owner) {
                                     ("", new_owner) => { // Add a new player
                                         // Skip if already presented (or ignored)
-                                        if !players.iter().any(|p| p.bus_name == new_owner) && !ignored_player(name, &interface_name_exclude_regexps, preferred_player.clone()) {
+                                        if !players.iter().any(|p| p.bus_name == new_owner) && !ignored_player(name, &interface_name_exclude_regexps, &preferred_players) {
                                             players.push(Player::new(&dbus_conn,name,new_owner));
                                             updated = true;
                                         }
@@ -781,13 +793,17 @@ fn extract_from_metadata(metadata: &dyn RefArg) -> Result<(Option<String>, Optio
 fn ignored_player(
     name: &str,
     interface_name_exclude_regexps: &[Regex],
-    preferred_player: Option<String>,
+    preferred_players: &[String],
 ) -> bool {
-    // If the player is specified in the config then we will ignore all others.
-    if let Some(p) = preferred_player {
-        if !name.starts_with(&format!("org.mpris.MediaPlayer2.{}", p)) {
-            return true;
+    // If some players are specified in the config then we will ignore all others.
+    if preferred_players.len() > 0 {
+        if preferred_players
+            .iter()
+            .any(|player| name.starts_with(&format!("org.mpris.MediaPlayer2.{}", player)))
+        {
+            return false;
         }
+        return true;
     }
 
     if !name.starts_with("org.mpris.MediaPlayer2") {
