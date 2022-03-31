@@ -179,17 +179,20 @@ impl Music {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum PlayerName {
+    PlayerName(String),
+    PlayerNames(Vec<String>),
+}
+
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct MusicConfig {
-    /// Name of the music player. Must be the same name the player is
-    /// registered with the MediaPlayer2 Interface. If not specified then
+    /// Name(s) of the music player(s). Must be the same name the player is
+    /// registered with the MediaPlayer2 Interface. This can be either a single
+    /// player name or an array of player names. If not specified then
     /// the block will track all players found.
-    pub player: Option<String>,
-
-    /// Name of the music players. Same as the `player` field above but
-    /// for an array of players. The `player` field above is kept for
-    /// backward compatibility with older configurations.
-    pub players: Option<Vec<String>>,
+    pub player: Option<PlayerName>,
 
     /// Max width of the block in characters, not including the buttons.
     pub max_width: usize,
@@ -241,7 +244,6 @@ impl Default for MusicConfig {
     fn default() -> Self {
         Self {
             player: None,
-            players: None,
             max_width: 21,
             dynamic_width: false,
             marquee: true,
@@ -296,12 +298,11 @@ impl ConfigBlock for Music {
 
         let mut preferred_players = Vec::new();
 
-        // Add players found in `player` and `players` fields.
-        if let Some(player) = block_config.player.clone() {
-            preferred_players.push(player);
-        }
-        if let Some(players) = block_config.players.clone() {
-            preferred_players.extend(players);
+        if let Some(player) = block_config.player {
+            match player {
+                PlayerName::PlayerName(player) => preferred_players.push(player.clone()),
+                PlayerName::PlayerNames(players) => preferred_players.extend(players.clone()),
+            }
         }
 
         let names = list_names.get1::<Array<&str, _>>().unwrap().filter(|name| {
