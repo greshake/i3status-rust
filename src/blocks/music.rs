@@ -300,8 +300,8 @@ impl ConfigBlock for Music {
 
         if let Some(player) = block_config.player {
             match player {
-                PlayerName::PlayerName(player) => preferred_players.push(player.clone()),
-                PlayerName::PlayerNames(players) => preferred_players.extend(players.clone()),
+                PlayerName::PlayerName(player) => preferred_players.push(player),
+                PlayerName::PlayerNames(players) => preferred_players = players,
             }
         }
 
