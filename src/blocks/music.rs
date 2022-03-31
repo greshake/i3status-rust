@@ -797,7 +797,7 @@ fn ignored_player(
     preferred_players: &[String],
 ) -> bool {
     // If some players are specified in the config then we will ignore all others.
-    if preferred_players.len() > 0 {
+    if !preferred_players.is_empty() {
         if preferred_players
             .iter()
             .any(|player| name.starts_with(&format!("org.mpris.MediaPlayer2.{}", player)))
