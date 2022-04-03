@@ -128,7 +128,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     api.set_icon("music")?;
 
     let new_btn = |icon: &str, id: usize, api: &mut CommonApi| -> Result<Value> {
-        Ok(Value::icon(api.get_icon(icon)?.trim().into()).with_instance(id))
+        Ok(Value::icon(api.get_icon(icon)?.into()).with_instance(id))
     };
 
     let values = map! {
