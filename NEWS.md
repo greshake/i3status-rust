@@ -1,3 +1,10 @@
+# i3status-rust 0.21.9
+
+### New Blocks and Features
+
+* New "awesome6" icon set
+* Music: `players` option can now accept a list of names (#1452 by @meryacine)
+
 # i3status-rust 0.21.8
 
 ### Bug Fixes and Improvements
