@@ -88,7 +88,17 @@ impl ConfigBlock for Notmuch {
         Ok(Notmuch {
             id,
             update_interval: block_config.interval,
-            db: block_config.maildir,
+            db: shellexpand::full(&block_config.maildir)
+                .map_err(|e| {
+                    ConfigurationError(
+                        "notmuch".to_string(),
+                        format!(
+                            "Failed to expand file path {}: {}",
+                            &block_config.maildir, e
+                        ),
+                    )
+                })?
+                .to_string(),
             query: block_config.query,
             threshold_info: block_config.threshold_info,
             threshold_good: block_config.threshold_good,

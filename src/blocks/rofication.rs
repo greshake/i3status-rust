@@ -80,7 +80,17 @@ impl ConfigBlock for Rofication {
             id,
             update_interval: block_config.interval,
             text,
-            socket_path: block_config.socket_path,
+            socket_path: shellexpand::full(&block_config.socket_path)
+                .map_err(|e| {
+                    ConfigurationError(
+                        "rofi".to_string(),
+                        format!(
+                            "Failed to expand socket path {}: {}",
+                            &block_config.socket_path, e
+                        ),
+                    )
+                })?
+                .to_string(),
             format: block_config.format.with_default("{num}")?,
         })
     }

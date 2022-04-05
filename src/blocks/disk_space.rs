@@ -138,7 +138,14 @@ impl ConfigBlock for DiskSpace {
             id,
             update_interval: block_config.interval,
             disk_space: TextWidget::new(id, 0, shared_config),
-            path: block_config.path,
+            path: shellexpand::full(&block_config.path)
+                .map_err(|e| {
+                    ConfigurationError(
+                        "disk_space".to_string(),
+                        format!("Failed to expand file path {}: {}", &block_config.path, e),
+                    )
+                })?
+                .to_string(),
             format: block_config.format.with_default("{available}")?,
             info_type: block_config.info_type,
             unit: match block_config.unit.as_str() {

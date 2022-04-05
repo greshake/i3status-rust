@@ -64,10 +64,25 @@ impl ConfigBlock for Watson {
         shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        let state_path_string: String = block_config
+            .state_path
+            .clone()
+            .into_os_string()
+            .into_string()
+            .unwrap();
         let watson = Watson {
             id,
             text: TextWidget::new(id, 0, shared_config),
-            state_path: block_config.state_path.clone(),
+            state_path: PathBuf::from(
+                shellexpand::full(&state_path_string)
+                    .map_err(|e| {
+                        ConfigurationError(
+                            "watson".to_string(),
+                            format!("Failed to expand state path {}: {}", &state_path_string, e),
+                        )
+                    })?
+                    .to_string(),
+            ),
             show_time: block_config.show_time,
             update_interval: block_config.interval,
             prev_state: None,
