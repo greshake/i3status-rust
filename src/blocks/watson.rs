@@ -64,12 +64,19 @@ impl ConfigBlock for Watson {
         shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        let state_path_string: String = block_config
-            .state_path
-            .clone()
-            .into_os_string()
-            .into_string()
-            .unwrap();
+        // TODO test if state_path PathBuf is being properly converted and erroring out if not
+        let state_path_string = match block_config.state_path.to_str() {
+            Some(str) => str,
+            None => {
+                return Err(BlockError(
+                    "watson".to_string(),
+                    format!(
+                        "Error converting state_path to unicode string: '{}'. Can you try renaming one of the folders?",
+                        block_config.state_path.to_string_lossy()
+                    ),
+                ))
+            }
+        };
         let watson = Watson {
             id,
             text: TextWidget::new(id, 0, shared_config),
