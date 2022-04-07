@@ -1,4 +1,3 @@
-use std::env;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -45,12 +44,7 @@ pub struct NotmuchConfig {
 
 impl Default for NotmuchConfig {
     fn default() -> Self {
-        #[allow(deprecated)]
-        let home_dir = match env::home_dir() {
-            Some(path) => path.into_os_string().into_string().unwrap(),
-            None => "".to_owned(),
-        };
-        let maildir = format!("{}/.mail", home_dir);
+        let maildir = "~/.mail".to_string();
 
         Self {
             interval: Duration::from_secs(10),
