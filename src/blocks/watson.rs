@@ -64,10 +64,32 @@ impl ConfigBlock for Watson {
         shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        // TODO test if state_path PathBuf is being properly converted and erroring out if not
+        let state_path_string = match block_config.state_path.to_str() {
+            Some(str) => str,
+            None => {
+                return Err(BlockError(
+                    "watson".to_string(),
+                    format!(
+                        "Error converting state_path to unicode string: '{}'. Can you try renaming one of the folders?",
+                        block_config.state_path.to_string_lossy()
+                    ),
+                ))
+            }
+        };
         let watson = Watson {
             id,
             text: TextWidget::new(id, 0, shared_config),
-            state_path: block_config.state_path.clone(),
+            state_path: PathBuf::from(
+                shellexpand::full(&state_path_string)
+                    .map_err(|e| {
+                        ConfigurationError(
+                            "watson".to_string(),
+                            format!("Failed to expand state path {}: {}", &state_path_string, e),
+                        )
+                    })?
+                    .to_string(),
+            ),
             show_time: block_config.show_time,
             update_interval: block_config.interval,
             prev_state: None,

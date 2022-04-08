@@ -73,10 +73,20 @@ impl ConfigBlock for Maildir {
 
     fn new(
         id: usize,
-        block_config: Self::Config,
+        mut block_config: Self::Config,
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
+        for inbox in &mut block_config.inboxes {
+            *inbox = shellexpand::full(inbox)
+                .map_err(|e| {
+                    ConfigurationError(
+                        "maildir".to_string(),
+                        format!("Failed to expand inbox path {}: {}", inbox, e),
+                    )
+                })?
+                .to_string();
+        }
         let widget = TextWidget::new(id, 0, shared_config).with_text("");
         Ok(Maildir {
             id,

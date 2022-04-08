@@ -534,7 +534,7 @@ Key | Values | Required | Default
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{available}"`
 `info_type` | Currently supported options are `"available"`, `"free"`, and `"used"` (sets value for alert and percentage calculation). | No | `"available"`
 `interval` | Update interval, in seconds. | No | `20`
-`path` | Path to collect information from. | No | `"/"`
+`path` | Path to collect information from. Supports path expansions e.g. `~`. | No | `"/"`
 `unit` | Unit that is used when `alert_absolute` is set for `warning` and `alert`. Options are `"B"`, `"KB"` `"MB"`, `"GB"`, `"TB"`. | No | `"GB"`
 `alert_absolute` | Use Unit values for warning and alert instead of percentages. | No | `false`
 
@@ -550,7 +550,7 @@ Key | Value | Type
 `{available}` | Available disk space (free disk space minus reserved system space) | Float
 `{free}` | Free disk space | Float
 `{icon}` | Disk drive icon | String
-`{path}` | Path used for capacity check | String
+`{path}` | Path used for capacity check. Supports shell expansions like `${VARIABLE}` and `~`. | String
 `{percentage}` | Percentage of disk used or free (depends on info_type setting) | Float
 `{total}` | Total disk space | Float
 `{used}` | Used disk space | Float
@@ -1101,7 +1101,7 @@ display_type = "new"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`inboxes` | List of maildir inboxes to look for mails in. | Yes | None
+`inboxes` | List of maildir inboxes to look for mails in. Supports path expansions e.g. `~`. | Yes | None
 `threshold_warning` | Number of unread mails where state is set to warning. | No | `1`
 `threshold_critical` | Number of unread mails where state is set to critical. | No | `10`
 `interval` | Update interval, in seconds. | No | `5`
@@ -1447,7 +1447,7 @@ name = "A"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`maildir` | Path to the directory containing the notmuch database. | No | `$HOME/.mail`
+`maildir` | Path to the directory containing the notmuch database. Supports path expansions e.g. `~`. | No | `$HOME/.mail`
 `query` | Query to run on the database. | No | `""`
 `threshold_critical` | Mail count that triggers `critical` state. | No | `99999`
 `threshold_warning` | Mail count that triggers `warning` state. | No | `99999`
@@ -1672,7 +1672,7 @@ Key | Values | Required | Default
 ----|--------|----------|--------
 `interval` | Refresh rate in seconds. | No | `1`
 `format` | A string to customise the output of this block. See below for placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{num}"`
-`socket_path` | Socket path for the rofication daemon. | No | "/tmp/rofi_notification_daemon"
+`socket_path` | Socket path for the rofication daemon. Supports path expansions e.g. `~`. | No | "/tmp/rofi_notification_daemon"
 
 ### Available Format Keys
 
@@ -2032,7 +2032,7 @@ state_path = "/home/user/.config/watson/state"
 Key | Values | Required | Default
 ----|--------|----------|--------
 `show_time` | Whether to show recorded time. | No | `false`
-`state_path` | Path to the Watson state file. | No | `$XDG_CONFIG_HOME/watson/state`
+`state_path` | Path to the Watson state file. Supports path expansions e.g. `~`. | No | `$XDG_CONFIG_HOME/watson/state`
 `interval` | Update interval, in seconds. | No | `60`
 
 ## Weather
