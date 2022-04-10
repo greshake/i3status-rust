@@ -452,10 +452,6 @@
 <span id="450">450</span>
 <span id="451">451</span>
 <span id="452">452</span>
-<span id="453">453</span>
-<span id="454">454</span>
-<span id="455">455</span>
-<span id="456">456</span>
 </pre><pre class="rust"><code><span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">mod</span> <span class="ident">util</span>;
 <span class="kw">mod</span> <span class="ident">blocks</span>;
@@ -476,20 +472,18 @@
 <span class="kw">use</span> <span class="ident">clap::Parser</span>;
 <span class="kw">use</span> <span class="ident">futures::stream::futures_unordered::FuturesUnordered</span>;
 <span class="kw">use</span> <span class="ident">futures::stream::StreamExt</span>;
-<span class="kw">use</span> <span class="ident">futures::Future</span>;
 <span class="kw">use</span> <span class="ident">once_cell::sync::Lazy</span>;
 <span class="kw">use</span> <span class="ident">protocol::i3bar_block::I3BarBlock</span>;
 <span class="kw">use</span> <span class="ident">protocol::i3bar_event::I3BarEvent</span>;
 <span class="kw">use</span> <span class="ident">smallvec::SmallVec</span>;
 <span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
-<span class="kw">use</span> <span class="ident">std::pin::Pin</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync::oneshot::Sender</span> <span class="kw">as</span> <span class="ident">OneshotSender</span>;
 
-<span class="kw">use</span> <span class="ident">blocks</span>::{<span class="ident">BlockEvent</span>, <span class="ident">BlockType</span>, <span class="ident">CommonApi</span>, <span class="ident">CommonConfig</span>};
+<span class="kw">use</span> <span class="ident">blocks</span>::{<span class="ident">BlockEvent</span>, <span class="ident">BlockFuture</span>, <span class="ident">BlockType</span>, <span class="ident">CommonApi</span>, <span class="ident">CommonConfig</span>};
 <span class="kw">use</span> <span class="ident">click::ClickHandler</span>;
 <span class="kw">use</span> <span class="ident">config::Config</span>;
 <span class="kw">use</span> <span class="ident">config::SharedConfig</span>;
@@ -646,8 +640,7 @@
 
     <span class="ident">blocks</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Block</span>, <span class="ident">BlockType</span>)<span class="op">&gt;</span>,
     <span class="ident">fullscreen_block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
-    <span class="comment">// TODO: find a way to avoid this `Box&lt;dyn Future&gt;`</span>
-    <span class="ident">running_blocks</span>: <span class="ident">FuturesUnordered</span><span class="op">&lt;</span><span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">running_blocks</span>: <span class="ident">FuturesUnordered</span><span class="op">&lt;</span><span class="ident">BlockFuture</span><span class="op">&gt;</span>,
 
     <span class="ident">blocks_render_cache</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">I3BarBlock</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 
@@ -713,8 +706,7 @@
             <span class="ident">widget</span>: <span class="ident">Widget::new</span>(<span class="ident">api</span>.<span class="ident">id</span>, <span class="ident">api</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>()),
         });
 
-        <span class="self">self</span>.<span class="ident">running_blocks</span>
-            .<span class="ident">push</span>(<span class="ident">Box::pin</span>(<span class="ident">block_type</span>.<span class="ident">run</span>(<span class="ident">block_config</span>, <span class="ident">api</span>)));
+        <span class="self">self</span>.<span class="ident">running_blocks</span>.<span class="ident">push</span>(<span class="ident">block_type</span>.<span class="ident">run</span>(<span class="ident">block_config</span>, <span class="ident">api</span>));
         <span class="self">self</span>.<span class="ident">blocks</span>.<span class="ident">push</span>((<span class="ident">block</span>, <span class="ident">block_type</span>));
         <span class="self">self</span>.<span class="ident">blocks_render_cache</span>.<span class="ident">push</span>(<span class="ident">Vec::new</span>());
         <span class="prelude-val">Ok</span>(())
