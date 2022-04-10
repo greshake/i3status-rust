@@ -18,20 +18,18 @@ mod wrappers;
 use clap::Parser;
 use futures::stream::futures_unordered::FuturesUnordered;
 use futures::stream::StreamExt;
-use futures::Future;
 use once_cell::sync::Lazy;
 use protocol::i3bar_block::I3BarBlock;
 use protocol::i3bar_event::I3BarEvent;
 use smallvec::SmallVec;
 use smartstring::alias::String;
 use std::collections::HashMap;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot::Sender as OneshotSender;
 
-use blocks::{BlockEvent, BlockType, CommonApi, CommonConfig};
+use blocks::{BlockEvent, BlockFuture, BlockType, CommonApi, CommonConfig};
 use click::ClickHandler;
 use config::Config;
 use config::SharedConfig;
@@ -188,8 +186,7 @@ struct BarState {
 
     blocks: Vec<(Block, BlockType)>,
     fullscreen_block: Option<usize>,
-    // TODO: find a way to avoid this `Box<dyn Future>`
-    running_blocks: FuturesUnordered<Pin<Box<dyn Future<Output = Result<()>>>>>,
+    running_blocks: FuturesUnordered<BlockFuture>,
 
     blocks_render_cache: Vec<Vec<I3BarBlock>>,
 
@@ -255,8 +252,7 @@ impl BarState {
             widget: Widget::new(api.id, api.shared_config.clone()),
         });
 
-        self.running_blocks
-            .push(Box::pin(block_type.run(block_config, api)));
+        self.running_blocks.push(block_type.run(block_config, api));
         self.blocks.push((block, block_type));
         self.blocks_render_cache.push(Vec::new());
         Ok(())

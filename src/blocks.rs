@@ -2,15 +2,18 @@
 
 pub mod prelude;
 
+use futures::future::FutureExt;
 use serde::de::{self, Deserialize, Deserializer};
 use serde_derive::Deserialize;
 use smallvec::SmallVec;
 use smartstring::alias::String;
-use std::collections::HashMap;
-use std::future::Future;
-use std::time::Duration;
 use tokio::sync::mpsc;
 use toml::value::Table;
+
+use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
+use std::time::Duration;
 
 use crate::click::{ClickHandler, MouseButton};
 use crate::config::SharedConfig;
@@ -40,13 +43,13 @@ macro_rules! define_blocks {
         }
 
         impl BlockType {
-            pub async fn run(self, config: toml::Value, api: CommonApi) -> Result<()> {
+            pub fn run(self, config: toml::Value, api: CommonApi) -> BlockFuture {
                 let id = api.id;
                 match self {
                     $(
                         $(#[cfg($attr)])?
                         Self::$block => {
-                            $block::run(config, api).await.in_block(self, id)
+                            $block::run(config, api).map(move |e| e.in_block(self, id)).boxed_local()
                         }
                     )*
                 }
@@ -137,6 +140,8 @@ define_blocks!(
 );
 
 pub type EventsRx = mpsc::Receiver<BlockEvent>;
+
+pub type BlockFuture = Pin<Box<dyn Future<Output = Result<()>>>>;
 
 #[derive(Debug, Clone, Copy)]
 pub enum BlockEvent {
@@ -280,6 +285,8 @@ impl CommonApi {
                     self.show();
                     self.set_state(State::Critical);
 
+                    let mut events = self.get_events().await?;
+
                     // TODO: do not toggle fullscreen if the block was already fullscreen before
                     // the error
                     loop {
@@ -294,9 +301,7 @@ impl CommonApi {
                             );
                             self.set_full_screen(false);
                         }
-
-                        // Note: self.get_events() calls flush() internally
-                        let mut events = self.get_events().await?;
+                        self.flush().await?;
 
                         tokio::select! {
                             _ = tokio::time::sleep_until(retry_at) => break,
