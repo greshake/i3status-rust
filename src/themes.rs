@@ -188,7 +188,11 @@ impl Theme {
 
     pub fn apply_overrides(&mut self, overrides: &HashMap<String, String>) -> Result<()> {
         if let Some(separator) = overrides.get("separator") {
-            self.separator = Some(separator.clone());
+            if separator == "native" {
+                self.separator = None;
+            } else {
+                self.separator = Some(separator.clone());
+            }
         }
         macro_rules! apply {
             ($prop:tt) => {
