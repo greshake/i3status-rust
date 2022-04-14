@@ -250,6 +250,7 @@ Key | Values | Required | Default
 `missing_format` | Same as `format` but for when the specified battery is missing. | No | `"{percentage}"`
 `allow_missing` | Don't display errors when the battery cannot be found. | No | `false`
 `hide_missing` | Completely hide this block if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
+`ignore_present` | Some power supplies under /sys/class/power_supply/ don't have a "present" sysfs file. This option disables the check for this file to make battery devices without that file work (e.g. logitech wireless mice).
 `full_threshold` | Percentage at which the battery is considered full (`full_format` shown) | No | `100`
 `good` | Minimum battery level, where state is set to good. | No | `60`
 `info` | Minimum battery level, where state is set to info. | No | `60`

@@ -511,7 +511,7 @@ entries taking precedence.\f[V]apcaccess\f[R]:
 \[lq]localhost:3551\[rq]\f[V]upower\f[R]:
 \f[V]DisplayDevice\[ga]\[ga]\f[R]driver\f[V]| One of\f[R]\[lq]sysfs\[rq]\f[V],\f[R]\[lq]apcaccess\[rq]\f[V], or\f[R]\[lq]upower\[rq]\f[V]. | No |\f[R]\[lq]sysfs\[rq]\f[V]\f[R]interval\f[V]| Update interval, in seconds. Only relevant for\f[R]driver
 = \[lq]sysfs\[rq] ||
-\[lq]apcaccess\[rq]\f[V]. | No |\f[R]10\f[V]\f[R]format\f[V]| A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No |\f[R]\[lq]{percentage}\[rq]\f[V]\f[R]full_format\f[V]| Same as\f[R]format\f[V]but for when the battery is full. | No |\f[R]\[lq]\[lq]\f[V]\f[R]missing_format\f[V]| Same as\f[R]format\f[V]but for when the specified battery is missing. | No |\f[R]\[rq]{percentage}\[lq]\f[V]\f[R]allow_missing\f[V]| Don\[aq]t display errors when the battery cannot be found. | No |\f[R]false\f[V]\f[R]hide_missing\f[V]| Completely hide this block if the battery cannot be found. Only works in combination with\f[R]allow_missing\f[V]. | No |\f[R]false\f[V]\f[R]full_threshold\f[V]| Percentage at which the battery is considered full (\f[R]full_format\f[V]shown) | No |\f[R]100\f[V]\f[R]good\f[V]| Minimum battery level, where state is set to good. | No |\f[R]60\f[V]\f[R]info\f[V]| Minimum battery level, where state is set to info. | No |\f[R]60\f[V]\f[R]warning\f[V]| Minimum battery level, where state is set to warning. | No |\f[R]30\f[V]\f[R]critical\f[V]| Minimum battery level, where state is set to critical. | No |\f[R]15\[ga]
+\[lq]apcaccess\[rq]\f[V]. | No |\f[R]10\f[V]\f[R]format\f[V]| A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No |\f[R]\[lq]{percentage}\[rq]\f[V]\f[R]full_format\f[V]| Same as\f[R]format\f[V]but for when the battery is full. | No |\f[R]\[lq]\[lq]\f[V]\f[R]missing_format\f[V]| Same as\f[R]format\f[V]but for when the specified battery is missing. | No |\f[R]\[rq]{percentage}\[lq]\f[V]\f[R]allow_missing\f[V]| Don\[aq]t display errors when the battery cannot be found. | No |\f[R]false\f[V]\f[R]hide_missing\f[V]| Completely hide this block if the battery cannot be found. Only works in combination with\f[R]allow_missing\f[V]. | No |\f[R]false\f[V]\f[R]ignore_present\f[V]| Some power supplies under /sys/class/power_supply/ don\[aq]t have a \[dq]present\[dq] sysfs file. This option disables the check for this file to make battery devices without that file work (e.g. logitech wireless mice).\f[R]full_threshold\f[V]| Percentage at which the battery is considered full (\f[R]full_format\f[V]shown) | No |\f[R]100\f[V]\f[R]good\f[V]| Minimum battery level, where state is set to good. | No |\f[R]60\f[V]\f[R]info\f[V]| Minimum battery level, where state is set to info. | No |\f[R]60\f[V]\f[R]warning\f[V]| Minimum battery level, where state is set to warning. | No |\f[R]30\f[V]\f[R]critical\f[V]| Minimum battery level, where state is set to critical. | No |\f[R]15\[ga]
 T}
 .TE
 .SS Available Format Keys
@@ -1233,6 +1233,7 @@ T{
 \f[V]path\f[R]
 T}@T{
 Path to collect information from.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 No
 T}@T{
@@ -1322,7 +1323,9 @@ T}
 T{
 \f[V]{path}\f[R]
 T}@T{
-Path used for capacity check
+Path used for capacity check.
+Supports shell expansions like \f[V]${VARIABLE}\f[R] and
+\f[V]\[ti]\f[R].
 T}@T{
 String
 T}
@@ -2973,6 +2976,7 @@ T{
 \f[V]inboxes\f[R]
 T}@T{
 List of maildir inboxes to look for mails in.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 Yes
 T}@T{
@@ -3413,7 +3417,9 @@ _
 T{
 \f[V]player\f[R]
 T}@T{
-Name of the music player MPRIS interface.
+Name(s) of the music player(s) MPRIS interface(s).
+This can be either a music player name or an array of music player
+names.
 Run
 \f[V]busctl --user list \[rs]| grep \[dq]org.mpris.MediaPlayer2.\[dq] \[rs]| cut -d\[aq] \[aq] -f1\f[R]
 and the name is the part after \[lq]org.mpris.MediaPlayer2.\[rq].
@@ -4179,6 +4185,7 @@ T{
 \f[V]maildir\f[R]
 T}@T{
 Path to the directory containing the notmuch database.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 No
 T}@T{
@@ -4820,6 +4827,7 @@ T{
 \f[V]socket_path\f[R]
 T}@T{
 Socket path for the rofication daemon.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 No
 T}@T{
@@ -5864,6 +5872,7 @@ T{
 \f[V]state_path\f[R]
 T}@T{
 Path to the Watson state file.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 No
 T}@T{
