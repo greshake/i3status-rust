@@ -94,34 +94,25 @@ impl PowerSupplyDevice {
                                 Err(glob_error) => {
                                     return Err(BlockError(
                                         "battery".into(),
-                                        format!("{}", glob_error)
+                                        format!("{}", glob_error),
                                     ));
-                                },
+                                }
                             }
                         }
                         Err(BlockError(
                             "battery".into(),
-                            format!(
-                                "Pattern \"{}\" didn't match any devices!",
-                                device,
-                            )
+                            format!("Pattern \"{}\" didn't match any devices!", device,),
                         ))
                     }
                     Err(pattern_error) => Err(BlockError(
                         "battery".into(),
-                        format!(
-                            "Invalid pattern: \"{}\": {}",
-                            device, pattern_error,
-                        )
+                        format!("Invalid pattern: \"{}\": {}", device, pattern_error,),
                     )),
                 }
             }
             None => Err(BlockError(
                 "battery".into(),
-                format!(
-                    "Invalid device path '{}'!",
-                    device
-                ),
+                format!("Invalid device path '{}'!", device),
             )),
         }
     }
