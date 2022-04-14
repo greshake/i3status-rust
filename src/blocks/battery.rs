@@ -75,8 +75,8 @@ impl PowerSupplyDevice {
         match Path::new("/sys/class/power_supply").join(device).to_str() {
             Some(device_path) => {
                 match glob(device_path) {
-                    Ok(device_paths) => {
-                        for entry in device_paths {
+                    Ok(mut device_paths) => {
+                        if let Some(entry) = device_paths.next() {
                             match entry {
                                 Ok(device_path) => {
                                     let device = PowerSupplyDevice {
