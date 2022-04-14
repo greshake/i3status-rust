@@ -130,14 +130,10 @@ impl PowerSupplyDevice {
 impl BatteryDevice for PowerSupplyDevice {
     fn is_available(&self) -> bool {
         let path = self.device_path.join("present");
-        if path.exists() {
-            return read_file("battery", path).map_or(false, |x| x == "1");
+        if !path.exists() {
+            return false;
         }
-        let path = self.device_path.join("online");
-        if path.exists() {
-            return read_file("battery", path).map_or(false, |x| x == "1");
-        }
-        return false;
+        read_file("battery", path).map_or(false, |x| x == "1")
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
