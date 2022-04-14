@@ -90,11 +90,7 @@ impl BatteryDevice for PowerSupplyDevice {
         if path.exists() {
             return read_file("battery", path).map_or(false, |x| x == "1");
         }
-        let path = self.device_path.join("online");
-        if path.exists() {
-            return read_file("battery", path).map_or(false, |x| x == "1");
-        }
-        return false;
+        return true;
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
