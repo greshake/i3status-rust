@@ -27,6 +27,7 @@ use crate::scheduler::Task;
 use crate::util::{battery_level_to_icon, read_file};
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
+use glob::glob;
 
 /// A battery device can be queried for a few properties relevant to the user.
 pub trait BatteryDevice {
@@ -71,16 +72,58 @@ impl PowerSupplyDevice {
     /// `/sys/class/power_supply` directory. Raises an error if the directory for
     /// that device cannot be found and `allow_missing` is `false`.
     pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
-        let device_path = Path::new("/sys/class/power_supply").join(device);
-
-        let device = PowerSupplyDevice {
-            device_path,
-            allow_missing,
-            charge_full: None,
-            energy_full: None,
-        };
-
-        Ok(device)
+        match Path::new("/sys/class/power_supply").join(device).to_str() {
+            Some(device_path) => {
+                match glob(device_path) {
+                    Ok(device_paths) => {
+                        for entry in device_paths {
+                            match entry {
+                                Ok(device_path) => {
+                                    let device = PowerSupplyDevice {
+                                        device_path,
+                                        allow_missing,
+                                        charge_full: None,
+                                        energy_full: None,
+                                    };
+                                    return Ok(device);
+                                }
+                                // we could technically also ignore GlobErrors
+                                // and continue with the next avaiale device
+                                // GlobErrors usually occur in case of I/O errors
+                                // (see https://docs.rs/glob/latest/glob/struct.Paths.html)
+                                Err(glob_error) => {
+                                    return Err(BlockError(
+                                        "battery".into(),
+                                        format!("{}", glob_error)
+                                    ));
+                                },
+                            }
+                        }
+                        Err(BlockError(
+                            "battery".into(),
+                            format!(
+                                "Pattern \"{}\" didn't match any devices!",
+                                device,
+                            )
+                        ))
+                    }
+                    Err(pattern_error) => Err(BlockError(
+                        "battery".into(),
+                        format!(
+                            "Invalid pattern: \"{}\": {}",
+                            device, pattern_error,
+                        )
+                    )),
+                }
+            }
+            None => Err(BlockError(
+                "battery".into(),
+                format!(
+                    "Invalid device path '{}'!",
+                    device
+                ),
+            )),
+        }
     }
 }
 
