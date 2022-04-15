@@ -62,7 +62,6 @@ pub trait BatteryDevice {
 pub struct PowerSupplyDevice {
     device_path: PathBuf,
     allow_missing: bool,
-    ignore_present: bool,
     charge_full: Option<u64>,
     energy_full: Option<u64>,
 }
@@ -71,13 +70,12 @@ impl PowerSupplyDevice {
     /// Use the power supply device `device`, as found in the
     /// `/sys/class/power_supply` directory. Raises an error if the directory for
     /// that device cannot be found and `allow_missing` is `false`.
-    pub fn from_device(device: &str, allow_missing: bool, ignore_present: bool) -> Result<Self> {
+    pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device);
 
         let device = PowerSupplyDevice {
             device_path,
             allow_missing,
-            ignore_present,
             charge_full: None,
             energy_full: None,
         };
@@ -92,7 +90,7 @@ impl BatteryDevice for PowerSupplyDevice {
         if path.exists() {
             return read_file("battery", path).map_or(false, |x| x == "1");
         }
-        return self.ignore_present;
+        return true;
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
@@ -749,9 +747,6 @@ pub struct BatteryConfig {
 
     /// If the battery device cannot be found, completely hide this block.
     pub hide_missing: bool,
-
-    // To allow using devices that don't have a "present" sysfs file
-    pub ignore_present: bool,
 }
 
 impl Default for BatteryConfig {
@@ -770,7 +765,6 @@ impl Default for BatteryConfig {
             critical: 15,
             allow_missing: false,
             hide_missing: false,
-            ignore_present: false,
         }
     }
 }
@@ -847,7 +841,6 @@ impl ConfigBlock for Battery {
             BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(
                 &device_str,
                 block_config.allow_missing,
-                block_config.ignore_present,
             )?),
         };
 
