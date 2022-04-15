@@ -297,16 +297,16 @@ mod tests {
 
         let bar = format.get("bar").0.unwrap();
         assert!(bar.name == "bar");
-        
+
         assert!(bar.min_width.value == Some(8));
         assert!(bar.min_width.pad_with == ' ');
 
         assert!(bar.max_width == Some(12));
-        
+
         assert!(bar.min_prefix.hidden);
         assert!(!bar.min_prefix.space);
         assert!(bar.min_prefix.value == Some(prefix::Prefix::Mega));
-        
+
         assert!(bar.unit.hidden);
         assert!(bar.unit.unit == Some(unit::Unit::Bits));
         assert!(bar.bar_max_value == Some(50_f64));

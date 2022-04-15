@@ -61,7 +61,7 @@ impl FromStr for Prefix {
 
 impl Prefix {
     pub fn convert(&self, into: Self) -> f64 {
-        self.to_f64() / into.to_f64()   
+        self.to_f64() / into.to_f64()
     }
 
     pub fn to_f64(&self) -> f64 {
