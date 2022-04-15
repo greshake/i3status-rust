@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::errors::*;
 
 use super::placeholder::{MinPrefixConfig, Placeholder};
@@ -18,6 +20,7 @@ enum InternalValue {
     Integer(i64),
     Float(f64),
     Boolean(bool),
+    Graph(VecDeque<f64>),
 }
 
 fn format_number(
@@ -124,6 +127,54 @@ fn format_bar(value: f64, length: usize) -> String {
         })
         .collect()
 }
+pub fn format_bar_graph<'a, T>(content: &'a T, min: Option<f64>, max: Option<f64>) -> String
+where
+    &'a T: IntoIterator<Item = &'a f64>,
+{
+    // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
+    static BARS: [char; 8] = [
+        '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
+        '\u{2588}',
+    ];
+
+    let min = min.unwrap_or_else(|| content.into_iter().fold(f64::INFINITY, |a, &b| a.min(b)));
+    let max = max.unwrap_or_else(|| {
+        content
+            .into_iter()
+            .fold(f64::NEG_INFINITY, |a, &b| a.max(b))
+    });
+    let extant = max - min;
+    if extant.is_normal() {
+        let length = BARS.len() as f64 - 1.0;
+        content
+            .into_iter()
+            .map(|x| BARS[((x.clamp(min, max) - min) / extant * length) as usize])
+            .collect()
+    } else {
+        content.into_iter().map(|_| BARS[0]).collect::<_>()
+    }
+}
+
+fn graph_max_from_placeholder(placeholder: &Placeholder) -> Result<Option<f64>> {
+    let unit = placeholder.unit.unit;
+    let min_prefix = placeholder.min_prefix.value;
+    let bar_max_value = placeholder.bar_max_value;
+
+    let mut bar_max_value = match bar_max_value {
+        Some(value) => value,
+        None => {
+            return Ok(None);
+        }
+    };
+    if let Some(unit) = unit {
+        bar_max_value *= unit.convert(Unit::Bytes)?;
+    }
+    if let Some(min_prefix) = min_prefix {
+        bar_max_value *= min_prefix.convert(Prefix::One);
+    }
+
+    Ok(Some(bar_max_value))
+}
 
 impl Value {
     // Constructors
@@ -157,6 +208,14 @@ impl Value {
             min_width: 2,
             unit: Unit::None,
             value: InternalValue::Boolean(value),
+        }
+    }
+    pub fn from_deque(value: VecDeque<f64>) -> Self {
+        Self {
+            icon: None,
+            min_width: 1,
+            unit: Unit::None,
+            value: InternalValue::Graph(value),
         }
     }
 
@@ -219,7 +278,7 @@ impl Value {
             }
         }
 
-        let value = match self.value {
+        let value = match &self.value {
             InternalValue::Text(ref text) => {
                 // Format text value. First pad it to the left with `pad_with` symbol. Then apply
                 // `max_width` option.
@@ -237,7 +296,7 @@ impl Value {
             InternalValue::Integer(value) => {
                 // Convert the value
                 // TODO better conversion mechanism
-                let value = (value as f64 * self.unit.convert(unit)?) as i64;
+                let value = (*value as f64 * self.unit.convert(unit)?) as i64;
 
                 // Pad the resulting string to the right
                 let text = value.to_string();
@@ -261,6 +320,10 @@ impl Value {
                 true => String::from("T"),
                 false => String::from("F"),
             },
+            InternalValue::Graph(value) => {
+                let max_val = graph_max_from_placeholder(var)?;
+                format_bar_graph(value, max_val.and(Some(0_f64)), max_val)
+            }
         };
 
         // We prepend the resulting string with the icon if it is set

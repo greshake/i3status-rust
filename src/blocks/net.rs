@@ -17,10 +17,10 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::formatting::placeholder::Placeholder;
 use crate::formatting::value::Value;
-use crate::formatting::{prefix, unit, FormatTemplate};
+use crate::formatting::FormatTemplate;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{escape_pango_text, format_to_bar_graph};
+use crate::util::escape_pango_text;
 use crate::widgets::{text::TextWidget, I3BarWidget, Spacing};
 
 lazy_static! {
@@ -324,13 +324,9 @@ pub struct Net {
     bitrate: Option<String>,
     speed_up: f64,
     speed_down: f64,
-    graph_tx: String,
-    graph_rx: String,
     update_interval: Duration,
     device: NetworkDevice,
     auto_device: bool,
-    tx_max_val: Option<f64>,
-    rx_max_val: Option<f64>,
     tx_buff: VecDeque<f64>,
     rx_buff: VecDeque<f64>,
     tx_bytes: u64,
@@ -427,32 +423,8 @@ impl ConfigBlock for Net {
 
         let tx_format = format.get("graph_up");
         let rx_format = format.get("graph_down");
-        // prefers the full option
-        let tx_format = match tx_format {
-            (full @ Some(_), _) => full,
-            (_, short @ Some(_)) => short,
-            _ => None,
-        };
-        let rx_format = match rx_format {
-            (full @ Some(_), _) => full,
-            (_, short @ Some(_)) => short,
-            _ => None,
-        };
-        let tx_graph_width = tx_format
-            .and_then(|placeholder| placeholder.min_width.value)
-            .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
-        let rx_graph_width = rx_format
-            .and_then(|placeholder| placeholder.min_width.value)
-            .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
-
-        let tx_max_val = match tx_format {
-            Some(placeholder) => Self::bar_max_from_placeholder(placeholder)?,
-            None => None,
-        };
-        let rx_max_val = match rx_format {
-            Some(placeholder) => Self::bar_max_from_placeholder(placeholder)?,
-            None => None,
-        };
+        let tx_graph_width = Self::max_min_width(tx_format).unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
+        let rx_graph_width = Self::max_min_width(rx_format).unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
 
         Ok(Net {
             id,
@@ -490,10 +462,6 @@ impl ConfigBlock for Net {
             .then(String::new),
             speed_up: 0.0,
             speed_down: 0.0,
-            tx_max_val,
-            rx_max_val,
-            graph_tx: String::new(),
-            graph_rx: String::new(),
             device,
             auto_device: block_config.device.is_none(),
             tx_buff: VecDeque::from(vec![0_f64; tx_graph_width]),
@@ -569,11 +537,6 @@ impl Net {
 
         self.tx_buff.pop_front();
         self.tx_buff.push_back(tx_bytes as f64);
-        self.graph_tx = format_to_bar_graph(
-            &self.tx_buff,
-            self.tx_max_val.and(Some(0_f64)),
-            self.tx_max_val,
-        );
 
         let current_rx = self.device.rx_bytes()?;
         let diff = current_rx.saturating_sub(self.rx_bytes);
@@ -584,34 +547,22 @@ impl Net {
 
         self.rx_buff.pop_front();
         self.rx_buff.push_back(rx_bytes as f64);
-        self.graph_rx = format_to_bar_graph(
-            &self.rx_buff,
-            self.rx_max_val.and(Some(0_f64)),
-            self.rx_max_val,
-        );
 
         Ok(())
     }
 
-    fn bar_max_from_placeholder(placeholder: &Placeholder) -> Result<Option<f64>> {
-        let unit = placeholder.unit.unit;
-        let min_prefix = placeholder.min_prefix.value;
-        let bar_max_value = placeholder.bar_max_value;
-
-        let mut bar_max_value = match bar_max_value {
-            Some(value) => value,
-            None => {
-                return Ok(None);
-            }
+    fn max_min_width(format: (Option<&Placeholder>, Option<&Placeholder>)) -> Option<usize> {
+        let format = match format {
+            (Some(full), Some(short)) => vec![full, short],
+            (Some(full), None) => vec![full],
+            (None, Some(short)) => vec![short],
+            (None, None) => vec![],
         };
-        if let Some(unit) = unit {
-            bar_max_value *= unit.convert(unit::Unit::Bytes)?;
-        }
-        if let Some(min_prefix) = min_prefix {
-            bar_max_value *= min_prefix.convert(prefix::Prefix::One);
-        }
+        let values = format
+            .iter()
+            .filter_map(|placeholder| placeholder.min_width.value);
 
-        Ok(Some(bar_max_value))
+        values.max()
     }
 }
 
@@ -688,8 +639,8 @@ impl Block for Net {
             "ipv6" => Value::from_string(self.ipv6_addr.clone().unwrap_or(empty_string)),
             "speed_up" => Value::from_float(self.speed_up).bytes().icon(self.shared_config.get_icon("net_up")?),
             "speed_down" => Value::from_float(self.speed_down).bytes().icon(self.shared_config.get_icon("net_down")?),
-            "graph_up" => Value::from_string(self.graph_tx.clone()),
-            "graph_down" => Value::from_string(self.graph_rx.clone()),
+            "graph_up" => Value::from_deque(self.tx_buff.clone()),
+            "graph_down" => Value::from_deque(self.rx_buff.clone()),
         );
 
         self.output.set_texts(self.format.render(&values)?);
