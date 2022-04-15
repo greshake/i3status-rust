@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::fmt;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
@@ -14,11 +15,12 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::placeholder::Placeholder;
 use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
+use crate::formatting::{prefix, unit, FormatTemplate};
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{escape_pango_text, format_vec_to_bar_graph};
+use crate::util::{escape_pango_text, format_to_bar_graph};
 use crate::widgets::{text::TextWidget, I3BarWidget, Spacing};
 
 lazy_static! {
@@ -225,8 +227,7 @@ impl NetworkDevice {
             .filter(|dev| dev.addr_info.is_some())
             .flat_map(|dev| &dev.addr_info)
             .flatten()
-            .filter_map(|addr| addr.local.clone())
-            .next();
+            .find_map(|addr| addr.local.clone());
 
         Ok(match ip {
             Some(addr) => Some(addr),
@@ -260,8 +261,7 @@ impl NetworkDevice {
             .filter(|dev| dev.addr_info.is_some())
             .flat_map(|dev| &dev.addr_info)
             .flatten()
-            .filter_map(|addr| addr.local.clone())
-            .next();
+            .find_map(|addr| addr.local.clone());
 
         Ok(match ip {
             Some(addr) => Some(addr),
@@ -329,8 +329,10 @@ pub struct Net {
     update_interval: Duration,
     device: NetworkDevice,
     auto_device: bool,
-    tx_buff: Vec<f64>,
-    rx_buff: Vec<f64>,
+    tx_max_val: Option<f64>,
+    rx_max_val: Option<f64>,
+    tx_buff: VecDeque<f64>,
+    rx_buff: VecDeque<f64>,
     tx_bytes: u64,
     rx_bytes: u64,
     active: bool,
@@ -423,6 +425,35 @@ impl ConfigBlock for Net {
             .with_default("{speed_down;K}{speed_up;K}")?;
         let format_alt = block_config.format_alt;
 
+        let tx_format = format.get("graph_up");
+        let rx_format = format.get("graph_down");
+        // prefers the full option
+        let tx_format = match tx_format {
+            (full @ Some(_), _) => full,
+            (_, short @ Some(_)) => short,
+            _ => None,
+        };
+        let rx_format = match rx_format {
+            (full @ Some(_), _) => full,
+            (_, short @ Some(_)) => short,
+            _ => None,
+        };
+        let tx_graph_width = tx_format
+            .and_then(|placeholder| placeholder.min_width.value)
+            .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
+        let rx_graph_width = rx_format
+            .and_then(|placeholder| placeholder.min_width.value)
+            .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
+
+        let tx_max_val = match tx_format {
+            Some(placeholder) => Self::bar_max_from_placeholder(placeholder)?,
+            None => None,
+        };
+        let rx_max_val = match rx_format {
+            Some(placeholder) => Self::bar_max_from_placeholder(placeholder)?,
+            None => None,
+        };
+
         Ok(Net {
             id,
             update_interval: block_config.interval,
@@ -459,12 +490,14 @@ impl ConfigBlock for Net {
             .then(String::new),
             speed_up: 0.0,
             speed_down: 0.0,
+            tx_max_val,
+            rx_max_val,
             graph_tx: String::new(),
             graph_rx: String::new(),
             device,
             auto_device: block_config.device.is_none(),
-            rx_buff: vec![0.; 10],
-            tx_buff: vec![0.; 10],
+            tx_buff: VecDeque::from(vec![0_f64; tx_graph_width]),
+            rx_buff: VecDeque::from(vec![0_f64; rx_graph_width]),
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
             active: true,
@@ -493,6 +526,8 @@ fn read_file(path: &Path) -> Result<String> {
 }
 
 impl Net {
+    const DEFAULT_GRAPH_WIDTH: usize = 10;
+
     fn update_bitrate(&mut self) -> Result<()> {
         if let Some(ref mut bitrate_string) = self.bitrate {
             let bitrate = self.device.bitrate()?;
@@ -532,9 +567,13 @@ impl Net {
 
         self.speed_up = tx_bytes as f64;
 
-        self.tx_buff.remove(0);
-        self.tx_buff.push(tx_bytes as f64);
-        self.graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
+        self.tx_buff.pop_front();
+        self.tx_buff.push_back(tx_bytes as f64);
+        self.graph_tx = format_to_bar_graph(
+            &self.tx_buff,
+            self.tx_max_val.and(Some(0_f64)),
+            self.tx_max_val,
+        );
 
         let current_rx = self.device.rx_bytes()?;
         let diff = current_rx.saturating_sub(self.rx_bytes);
@@ -543,11 +582,36 @@ impl Net {
 
         self.speed_down = rx_bytes as f64;
 
-        self.rx_buff.remove(0);
-        self.rx_buff.push(rx_bytes as f64);
-        self.graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
+        self.rx_buff.pop_front();
+        self.rx_buff.push_back(rx_bytes as f64);
+        self.graph_rx = format_to_bar_graph(
+            &self.rx_buff,
+            self.rx_max_val.and(Some(0_f64)),
+            self.rx_max_val,
+        );
 
         Ok(())
+    }
+
+    fn bar_max_from_placeholder(placeholder: &Placeholder) -> Result<Option<f64>> {
+        let unit = placeholder.unit.unit;
+        let min_prefix = placeholder.min_prefix.value;
+        let bar_max_value = placeholder.bar_max_value;
+
+        let mut bar_max_value = match bar_max_value {
+            Some(value) => value,
+            None => {
+                return Ok(None);
+            }
+        };
+        if let Some(unit) = unit {
+            bar_max_value *= unit.convert(unit::Unit::Bytes)?;
+        }
+        if let Some(min_prefix) = min_prefix {
+            bar_max_value *= min_prefix.convert(prefix::Prefix::One);
+        }
+
+        Ok(Some(bar_max_value))
     }
 }
 

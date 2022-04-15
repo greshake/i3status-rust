@@ -58,3 +58,23 @@ impl FromStr for Prefix {
         }
     }
 }
+
+impl Prefix {
+    pub fn convert(&self, into: Self) -> f64 {
+        self.to_f64() / into.to_f64()   
+    }
+
+    pub fn to_f64(&self) -> f64 {
+        match self {
+            Self::One => 1e0,
+            // SI prefixes
+            Self::Nano => 1e-9,
+            Self::Micro => 1e-6,
+            Self::Milli => 1e-3,
+            Self::Kilo => 1e3,
+            Self::Mega => 1e6,
+            Self::Giga => 1e9,
+            Self::Tera => 1e12,
+        }
+    }
+}

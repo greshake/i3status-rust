@@ -180,7 +180,10 @@ macro_rules! map_to_owned {
     }};
 }
 
-pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f64>) -> String {
+pub fn format_to_bar_graph<'a, T>(content: &'a T, min: Option<f64>, max: Option<f64>) -> String
+where
+    &'a T: IntoIterator<Item = &'a f64>,
+{
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     static BARS: [char; 8] = [
         '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
@@ -205,11 +208,11 @@ pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f6
     if extant.is_normal() {
         let length = BARS.len() as f64 - 1.0;
         content
-            .iter()
+            .into_iter()
             .map(|x| BARS[((x.clamp(min, max) - min) / extant * length) as usize])
             .collect()
     } else {
-        (0..content.len()).map(|_| BARS[0]).collect::<_>()
+        content.into_iter().map(|_| BARS[0]).collect::<_>()
     }
 }
 

@@ -202,7 +202,7 @@ impl Value {
 
     pub fn format(&self, var: &Placeholder) -> Result<String> {
         // Get user-specified min_width and pad_with values. Use defaults instead
-        let min_width = var.min_width.min_width.unwrap_or(self.min_width);
+        let min_width = var.min_width.value.unwrap_or(self.min_width);
         let pad_with = var.min_width.pad_with;
         // Apply unit override
         let unit = var.unit.unit.unwrap_or(self.unit);

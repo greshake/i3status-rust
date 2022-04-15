@@ -85,7 +85,7 @@ impl FromStr for Placeholder {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MinWidthConfig {
-    pub min_width: Option<usize>,
+    pub value: Option<usize>,
     pub pad_with: char,
 }
 
@@ -99,7 +99,7 @@ impl FromStr for MinWidthConfig {
         }
 
         Ok(MinWidthConfig {
-            min_width: if s.is_empty() {
+            value: if s.is_empty() {
                 None
             } else {
                 Some(s.parse().internal_error(
