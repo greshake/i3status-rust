@@ -937,30 +937,28 @@ impl Block for Battery {
 
             let status = self.device.status()?;
             let mut capacity = self.device.capacity();
-            let capacity_level = self.device.capacity_level();
-            if let Ok(capacity_level) = &capacity_level {
-                capacity = match capacity_level.as_str() {
-                    "Full" => Ok(100u64),
-                    "High" => Ok(75u64),
-                    "Normal" => Ok(50u64),
-                    "Low" => Ok(25u64),
-                    "Critical" => Ok(10u64),
-                    "Unknown" => Err(BlockError("battery".into(), "Unknown charge level".into())),
-                    _ => Err(BlockError(
-                        "battery".into(),
-                        "unexpected string from capacity_level file".into(),
-                    )),
-                };
-            }
 
             let values = map!(
                 "percentage" => match capacity {
                     Ok(capacity) => Value::from_integer(capacity as i64).percents(),
-                    _ => Value::from_string("×".into()),
-                },
-                "charge_level" => match capacity_level {
-                    Ok(capacity_level) => Value::from_string(capacity_level),
-                    _ => Value::from_string("×".into()),
+                    _ => match self.device.capacity_level() {
+                        Ok(capacity_level) => {
+                            capacity = match capacity_level.as_str() {
+                                "Full" => Ok(100u64),
+                                "High" => Ok(75u64),
+                                "Normal" => Ok(50u64),
+                                "Low" => Ok(25u64),
+                                "Critical" => Ok(10u64),
+                                "Unknown" => Err(BlockError("battery".into(), "Unknown charge level".into())),
+                                _ => Err(BlockError(
+                                    "battery".into(),
+                                    "unexpected string from capacity_level file".into(),
+                                )),
+                            };
+                            Value::from_string(capacity_level.into())
+                        },
+                        _ => Value::from_string("×".into()),
+                    }
                 },
                 "time" => match self.device.time_remaining() {
                     Ok(0) => Value::from_string("".into()),
