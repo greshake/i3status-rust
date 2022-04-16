@@ -20,7 +20,7 @@ enum InternalValue {
     Integer(i64),
     Float(f64),
     Boolean(bool),
-    Graph(VecDeque<f64>),
+    BarGraph(VecDeque<f64>),
 }
 
 fn format_number(
@@ -127,9 +127,9 @@ fn format_bar(value: f64, length: usize) -> String {
         })
         .collect()
 }
-pub fn format_bar_graph<'a, T>(content: &'a T, min: Option<f64>, max: Option<f64>) -> String
+pub fn format_bar_graph<'a, T>(content: T, min: Option<f64>, max: Option<f64>) -> String
 where
-    &'a T: IntoIterator<Item = &'a f64>,
+    T: Iterator<Item = &'a f64> + Clone,
 {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     static BARS: [char; 8] = [
@@ -137,12 +137,10 @@ where
         '\u{2588}',
     ];
 
-    let min = min.unwrap_or_else(|| content.into_iter().fold(f64::INFINITY, |a, &b| a.min(b)));
-    let max = max.unwrap_or_else(|| {
-        content
-            .into_iter()
-            .fold(f64::NEG_INFINITY, |a, &b| a.max(b))
-    });
+    let mut iter = content.clone();
+    let min = min.unwrap_or_else(|| iter.fold(f64::INFINITY, |a, &b| a.min(b)));
+    iter = content.clone();
+    let max = max.unwrap_or_else(|| iter.fold(f64::NEG_INFINITY, |a, &b| a.max(b)));
     let extant = max - min;
     if extant.is_normal() {
         let length = BARS.len() as f64 - 1.0;
@@ -215,7 +213,7 @@ impl Value {
             icon: None,
             min_width: 1,
             unit: Unit::None,
-            value: InternalValue::Graph(value),
+            value: InternalValue::BarGraph(value),
         }
     }
 
@@ -320,9 +318,13 @@ impl Value {
                 true => String::from("T"),
                 false => String::from("F"),
             },
-            InternalValue::Graph(value) => {
+            InternalValue::BarGraph(values) => {
                 let max_val = graph_max_from_placeholder(var)?;
-                format_bar_graph(value, max_val.and(Some(0_f64)), max_val)
+                format_bar_graph(
+                    values.iter().skip(values.len().saturating_sub(min_width)),
+                    max_val.and(Some(0_f64)),
+                    max_val,
+                )
             }
         };
 

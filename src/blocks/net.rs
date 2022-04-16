@@ -421,10 +421,10 @@ impl ConfigBlock for Net {
             .with_default("{speed_down;K}{speed_up;K}")?;
         let format_alt = block_config.format_alt;
 
-        let tx_format = format.get("graph_up");
-        let rx_format = format.get("graph_down");
-        let tx_graph_width = Self::max_min_width(tx_format).unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
-        let rx_graph_width = Self::max_min_width(rx_format).unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
+        let tx_graph_width = Self::max_format_width(&format, &format_alt, "graph_up")
+            .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
+        let rx_graph_width = Self::max_format_width(&format, &format_alt, "graph_down")
+            .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
 
         Ok(Net {
             id,
@@ -551,18 +551,25 @@ impl Net {
         Ok(())
     }
 
-    fn max_min_width(format: (Option<&Placeholder>, Option<&Placeholder>)) -> Option<usize> {
-        let format = match format {
-            (Some(full), Some(short)) => vec![full, short],
-            (Some(full), None) => vec![full],
-            (None, Some(short)) => vec![short],
-            (None, None) => vec![],
-        };
-        let values = format
-            .iter()
-            .filter_map(|placeholder| placeholder.min_width.value);
-
-        values.max()
+    fn max_placeholder_width(
+        placeholders: (Option<&Placeholder>, Option<&Placeholder>),
+    ) -> Option<usize> {
+        let values = [placeholders.0, placeholders.1].map(|o| o.map(|p| p.min_width.value));
+        values.iter().filter_map(|o| (*o)?).max()
+    }
+    fn max_format_width(
+        format_main: &FormatTemplate,
+        format_alt: &Option<FormatTemplate>,
+        name: &str,
+    ) -> Option<usize> {
+        let main = format_main.get(name);
+        let width_main = Self::max_placeholder_width(main);
+        if let Some(alt) = format_alt {
+            let width_alt = Self::max_placeholder_width(alt.get(name));
+            width_main.max(width_alt)
+        } else {
+            width_main
+        }
     }
 }
 

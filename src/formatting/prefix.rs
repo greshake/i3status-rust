@@ -64,7 +64,7 @@ impl Prefix {
         self.to_f64() / into.to_f64()
     }
 
-    pub fn to_f64(&self) -> f64 {
+    pub fn to_f64(self) -> f64 {
         match self {
             Self::One => 1e0,
             // SI prefixes
