@@ -44,6 +44,13 @@
 //! Unit - some values have a [unit](unit::Unit), and it is possible to convert them by setting this option. Perpend this with a space to split unit from number/prefix. Prepend this with a `_` to hide. | `auto`
 //! Prefix - specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix). Prepend this width a space to split prefix from number. Perpend this with a `_` to hide. Perpend this with a `!` to force the prefix. | `auto`
 //!
+//! ## `bar` - Display numbers as progress bars
+//!
+//! Argument | Default value
+//! ---------|--------------
+//! Width - the width of the bar (in characters) | `5`
+//! Max value - which value is treated as "full". For example, for battery level `100` is full. | `100`
+//!
 //! # Handling missing placeholders and incorrect types
 //!
 //! Some blocks allow missing placeholders, for example [bluetooth](crate::blocks::bluetooth)'s
