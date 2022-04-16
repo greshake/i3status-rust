@@ -60,6 +60,7 @@ pub trait BatteryDevice {
 
 /// Represents a physical power supply device, as known to sysfs.
 pub struct PowerSupplyDevice {
+    device: String,
     device_path: PathBuf,
     allow_missing: bool,
     charge_full: Option<u64>,
@@ -73,7 +74,9 @@ impl PowerSupplyDevice {
     pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device);
 
+        let device: String = device.into();
         let device = PowerSupplyDevice {
+            device,
             device_path,
             allow_missing,
             charge_full: None,
@@ -86,11 +89,27 @@ impl PowerSupplyDevice {
 
 impl BatteryDevice for PowerSupplyDevice {
     fn is_available(&self) -> bool {
+        // the problem with hid devices is, that in case they are 
+        // not plugged in the whole power_supply subdirectory doesn't exist
+        if self.device.starts_with("hid")
+        && !self.device_path.exists() {
+            return false;
+        }
+        // in case of human interface devices (scope=="Device")
+        // we don't check for present==1 because the device subdirectory
+        // being present already implies that the device is available
+        let path = self.device_path.join("scope");
+        if path.exists() && read_file("battery", path)
+            .map_or(false, |x| x == "Device") {
+            // device is a human interface device
+            return true;
+        }
+        // normal battery device -> check for present==1
         let path = self.device_path.join("present");
         if path.exists() {
             return read_file("battery", path).map_or(false, |x| x == "1");
         }
-        return true;
+        return false;
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
