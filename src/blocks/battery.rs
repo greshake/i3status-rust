@@ -466,7 +466,10 @@ impl BatteryDevice for ApcUpsDevice {
     }
 
     fn capacity_level(&self) -> Result<String> {
-        Err(BlockError("battery".to_string(), "charge_level not supported for apcups devices".into()))
+        Err(BlockError(
+            "battery".to_string(),
+            "charge_level not supported for apcups devices".into(),
+        ))
     }
 
     fn time_remaining(&self) -> Result<u64> {
@@ -678,7 +681,10 @@ impl BatteryDevice for UpowerDevice {
     }
 
     fn capacity_level(&self) -> Result<String> {
-        Err(BlockError("battery".to_string(), "charge_level not supported for upower devices".into()))
+        Err(BlockError(
+            "battery".to_string(),
+            "charge_level not supported for upower devices".into(),
+        ))
     }
 
     fn time_remaining(&self) -> Result<u64> {
@@ -940,7 +946,10 @@ impl Block for Battery {
                     "Low" => Ok(25 as u64),
                     "Critical" => Ok(10 as u64),
                     "Unknown" => Err(BlockError("battery".into(), "Unknown charge level".into())),
-                    _ => Err(BlockError("battery".into(), "unexpected string from capacity_level file".into()))
+                    _ => Err(BlockError(
+                        "battery".into(),
+                        "unexpected string from capacity_level file".into(),
+                    )),
                 };
             }
 
