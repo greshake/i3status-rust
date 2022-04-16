@@ -50,6 +50,9 @@ pub trait BatteryDevice {
     /// Query the device's current capacity, as a percent.
     fn capacity(&self) -> Result<u64>;
 
+    /// Query the device's current capacity level (for devices that don't report percentages)
+    fn capacity_level(&self) -> Result<String>;
+
     /// Query the estimated time remaining, in minutes, before (dis)charging is
     /// complete.
     fn time_remaining(&self) -> Result<u64>;
@@ -180,6 +183,18 @@ impl BatteryDevice for PowerSupplyDevice {
             // charge_now same as charge_full_design when the battery is full,
             // leading to >100% charge.
             _ => Ok(100),
+        }
+    }
+
+    fn capacity_level(&self) -> Result<String> {
+        let capacity_level_path = self.device_path.join("capacity_level");
+        if capacity_level_path.exists() {
+            read_file("battery", &capacity_level_path)
+        } else {
+            Err(BlockError(
+                "battery".to_string(),
+                "Device does not support reading capacity_level".to_string(),
+            ))
         }
     }
 
@@ -450,6 +465,10 @@ impl BatteryDevice for ApcUpsDevice {
         }
     }
 
+    fn capacity_level(&self) -> Result<String> {
+        Err(BlockError("battery".to_string(), "charge_level not supported for apcups devices".into()))
+    }
+
     fn time_remaining(&self) -> Result<u64> {
         Ok(self.time_left as u64)
     }
@@ -656,6 +675,10 @@ impl BatteryDevice for UpowerDevice {
                 capacity as u64
             }
         })
+    }
+
+    fn capacity_level(&self) -> Result<String> {
+        Err(BlockError("battery".to_string(), "charge_level not supported for upower devices".into()))
     }
 
     fn time_remaining(&self) -> Result<u64> {
@@ -907,10 +930,27 @@ impl Block for Battery {
             self.device.refresh_device_info()?;
 
             let status = self.device.status()?;
-            let capacity = self.device.capacity();
+            let mut capacity = self.device.capacity();
+            let capacity_level = self.device.capacity_level();
+            if let Ok(capacity_level) = &capacity_level {
+                capacity = match capacity_level.as_str() {
+                    "Full" => Ok(100 as u64),
+                    "High" => Ok(75 as u64),
+                    "Normal" => Ok(50 as u64),
+                    "Low" => Ok(25 as u64),
+                    "Critical" => Ok(10 as u64),
+                    "Unknown" => Err(BlockError("battery".into(), "Unknown charge level".into())),
+                    _ => Err(BlockError("battery".into(), "unexpected string from capacity_level file".into()))
+                };
+            }
+
             let values = map!(
                 "percentage" => match capacity {
                     Ok(capacity) => Value::from_integer(capacity as i64).percents(),
+                    _ => Value::from_string("×".into()),
+                },
+                "charge_level" => match capacity_level {
+                    Ok(capacity_level) => Value::from_string(capacity_level),
                     _ => Value::from_string("×".into()),
                 },
                 "time" => match self.device.time_remaining() {
