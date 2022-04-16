@@ -120,11 +120,20 @@ impl PowerSupplyDevice {
 
 impl BatteryDevice for PowerSupplyDevice {
     fn is_available(&self) -> bool {
-        let path = self.device_path.join("present");
-        if !path.exists() {
-            return false;
+        // in case of human interface devices (scope=="Device")
+        // we don't check for present==1 because the device subdirectory
+        // being present already implies that the device is available
+        let path = self.device_path.join("scope");
+        if path.exists() && read_file("battery", path).map_or(false, |x| x == "Device") {
+            // device is a human interface device
+            return true;
         }
-        read_file("battery", path).map_or(false, |x| x == "1")
+        // normal battery device -> check for present==1
+        let path = self.device_path.join("present");
+        if path.exists() {
+            return read_file("battery", path).map_or(false, |x| x == "1");
+        }
+        return false;
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
