@@ -60,7 +60,6 @@ pub trait BatteryDevice {
 
 /// Represents a physical power supply device, as known to sysfs.
 pub struct PowerSupplyDevice {
-    device: String,
     device_path: PathBuf,
     allow_missing: bool,
     charge_full: Option<u64>,
@@ -74,9 +73,7 @@ impl PowerSupplyDevice {
     pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device);
 
-        let device: String = device.into();
         let device = PowerSupplyDevice {
-            device,
             device_path,
             allow_missing,
             charge_full: None,
