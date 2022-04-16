@@ -89,11 +89,6 @@ impl PowerSupplyDevice {
 
 impl BatteryDevice for PowerSupplyDevice {
     fn is_available(&self) -> bool {
-        // the problem with hid devices is, that in case they are
-        // not plugged in the whole power_supply subdirectory doesn't exist
-        if self.device.starts_with("hid") && !self.device_path.exists() {
-            return false;
-        }
         // in case of human interface devices (scope=="Device")
         // we don't check for present==1 because the device subdirectory
         // being present already implies that the device is available
