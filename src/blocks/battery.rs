@@ -940,11 +940,11 @@ impl Block for Battery {
             let capacity_level = self.device.capacity_level();
             if let Ok(capacity_level) = &capacity_level {
                 capacity = match capacity_level.as_str() {
-                    "Full" => Ok(100 as u64),
-                    "High" => Ok(75 as u64),
-                    "Normal" => Ok(50 as u64),
-                    "Low" => Ok(25 as u64),
-                    "Critical" => Ok(10 as u64),
+                    "Full" => Ok(100u64),
+                    "High" => Ok(75u64),
+                    "Normal" => Ok(50u64),
+                    "Low" => Ok(25u64),
+                    "Critical" => Ok(10u64),
                     "Unknown" => Err(BlockError("battery".into(), "Unknown charge level".into())),
                     _ => Err(BlockError(
                         "battery".into(),
