@@ -1,9 +1,7 @@
 //! Currently focused window
 //!
-//! This block displays the title or the active marks of the currently focused window. Uses push
-//! updates from i3 IPC, so no need to worry about resource usage. The block only updates when the
-//! focused window changes title or the focus changes. Also works with sway, due to it having
-//! compatibility with i3's IPC.
+//! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently
+//! focused window. Supported WMs are: `sway`, `i3` and `river`. See `driver` option for more info.
 //!
 //! # Configuration
 //!
@@ -11,7 +9,7 @@
 //! ----|--------|----------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$title.rot-str(15)&vert;"</code>
 //! `autohide` | Whether to hide the block when no title is available | No | `true`
-//! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`, `auto` - try to automatically guess which driver to use. | No | `"auto"`
+//! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | No | `"auto"`
 //!
 //! Placeholder     | Value                                                                 | Type | Unit
 //! ----------------|-----------------------------------------------------------------------|------|-----
@@ -25,8 +23,8 @@
 //! [[block]]
 //! block = "focused_window"
 //! [block.format]
-//! full = "$title.rot-str(15)"
-//! short = "$title.rot-str(10)"
+//! full = "$title.rot-str(15)|"
+//! short = "$title.rot-str(10)|"
 //! ```
 
 use super::prelude::*;
