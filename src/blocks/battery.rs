@@ -152,6 +152,7 @@ impl BatteryDevice for PowerSupplyDevice {
         let capacity_path = self.device_path.join("capacity");
         let charge_path = self.device_path.join("charge_now");
         let energy_path = self.device_path.join("energy_now");
+        let capacity_level_path = self.device_path.join("capacity_level");
 
         let capacity = if capacity_path.exists() {
             read_file("battery", &capacity_path)?
@@ -167,10 +168,29 @@ impl BatteryDevice for PowerSupplyDevice {
                 .parse::<u64>()
                 .block_error("battery", "failed to parse energy_now")?;
             ((charge as f64 / self.energy_full.unwrap() as f64) * 100.0) as u64
+        } else if capacity_level_path.exists() {
+            let capacity_level = read_file("battery", &capacity_level_path)?;
+            match capacity_level.as_str() {
+                "Full" => 100u64,
+                "High" => 75u64,
+                "Normal" => 50u64,
+                "Low" => 25u64,
+                "Critical" => 5u64,
+                "Unknown" => {
+                    return Err(BlockError("battery".into(), "Unknown charge level".into()));
+                }
+                _ => {
+                    return Err(BlockError(
+                        "battery".into(),
+                        "unexpected string from capacity_level file".into(),
+                    ));
+                }
+            }
         } else {
             return Err(BlockError(
                 "battery".to_string(),
-                "Device does not support reading capacity, charge, or energy".to_string(),
+                "Device does not support reading capacity, charge, energy or capacity_level"
+                    .to_string(),
             ));
         };
 
