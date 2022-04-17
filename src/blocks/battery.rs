@@ -887,6 +887,8 @@ impl Block for Battery {
     fn update(&mut self) -> Result<Option<Update>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
+        // The device may have gone missing
+        // It may be a different battery now, thereby refresh the device specs.
         let refresh = self.device.refresh_device_info();
         let status = self.device.status();
 
@@ -909,8 +911,6 @@ impl Block for Battery {
                 return Err(e);
             }
             let status = status?;
-            // The device may have gone missing
-            // It may be a different battery now, thereby refresh the device specs.
             let capacity = self.device.capacity();
             let values = map!(
                 "percentage" => match capacity {
