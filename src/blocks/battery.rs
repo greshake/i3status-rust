@@ -890,6 +890,7 @@ impl Block for Battery {
         let mut available_before = self.device.is_available();
         let mut refresh;
         let mut status;
+        let mut capacity;
         // loop until available status before and after is the same
         // to prevent race conditions between is_available() and status()
         loop {
@@ -897,6 +898,7 @@ impl Block for Battery {
             // It may be a different battery now, thereby refresh the device specs.
             refresh = self.device.refresh_device_info();
             status = self.device.status();
+            capacity = self.device.capacity();
             let available_after = self.device.is_available();
             if available_before == available_after {
                 break;
@@ -923,7 +925,6 @@ impl Block for Battery {
                 return Err(e);
             }
             let status = status?;
-            let capacity = self.device.capacity();
             let values = map!(
                 "percentage" => match capacity {
                     Ok(capacity) => Value::from_integer(capacity as i64).percents(),
