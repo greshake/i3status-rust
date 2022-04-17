@@ -908,7 +908,7 @@ impl Block for Battery {
 
         // Exit early, if the battery device went missing, but the user
         // allows this device to go missing.
-        if !self.device.is_available() && self.allow_missing {
+        if !available_before && self.allow_missing {
             // Respect the original format string, even if the battery
             // cannot be found right now.
             let values = map!(
