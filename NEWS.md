@@ -1,3 +1,14 @@
+# i3status-rust 0.21.10 [not released]
+
+### New Blocks and Features
+
+* Expand paths (e.g. `~`->`$HOME`, just like in shell) for many blocks (#1453 by @Henriquelay) 
+
+### Bug Fixes and Improvements
+
+* Battery: fix availability check for some devices with `sysfs` driver (#1456 by @ferdinandschober) 
+* Battery: fallback to `charge_level` if `capacity` cannot be calculated (#1458 by @ferdinandschober) 
+
 # i3status-rust 0.21.9
 
 ### New Blocks and Features
