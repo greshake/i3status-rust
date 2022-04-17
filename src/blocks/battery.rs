@@ -229,6 +229,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
+#[async_trait]
+trait BatteryDevice {
+    async fn get_info(&self) -> Result<Option<BatteryInfo>>;
+    async fn wait_for_change(&mut self) -> Result<()>;
+}
+
 #[derive(Debug, Clone, Copy)]
 struct BatteryInfo {
     /// Current status, e.g. "charging", "discharging", etc.
@@ -272,10 +278,42 @@ impl FromStr for BatteryStatus {
     }
 }
 
-#[async_trait]
-trait BatteryDevice {
-    async fn get_info(&self) -> Result<Option<BatteryInfo>>;
-    async fn wait_for_change(&mut self) -> Result<()>;
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum CapacityLevel {
+    Full,
+    High,
+    Normal,
+    Low,
+    Critical,
+    Unknown,
+}
+
+impl FromStr for CapacityLevel {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Infallible> {
+        Ok(match s {
+            "Full" => Self::Full,
+            "High" => Self::High,
+            "Normal" => Self::Normal,
+            "Low" => Self::Low,
+            "Critical" => Self::Critical,
+            _ => Self::Unknown,
+        })
+    }
+}
+
+impl CapacityLevel {
+    fn percentage(self) -> Option<f64> {
+        match self {
+            CapacityLevel::Full => Some(100.0),
+            CapacityLevel::High => Some(75.0),
+            CapacityLevel::Normal => Some(50.0),
+            CapacityLevel::Low => Some(25.0),
+            CapacityLevel::Critical => Some(5.0),
+            CapacityLevel::Unknown => None,
+        }
+    }
 }
 
 /// Represents a physical power supply device, as known to sysfs.
@@ -293,18 +331,19 @@ impl PowerSupplyDevice {
         }
     }
 
-    async fn read_prop<T>(&self, prop: &str) -> Option<T>
-    where
-        T: FromStr + Send + Sync,
-    {
-        read_file(&self.device_path.join(prop))
+    async fn read_prop<T: FromStr + Send + Sync>(&self, prop: &str) -> Option<T> {
+        read_file(self.device_path.join(prop))
             .await
             .ok()
             .and_then(|x| x.parse().ok())
     }
 
     async fn present(&self) -> bool {
-        self.read_prop::<u8>("present").await == Some(1)
+        // If `scope` is `Device`, then this is HID, in which case we don't have to check the
+        // `present` property, because the existance of the device direcory implies that the device
+        // is available
+        self.read_prop::<String>("scope").await.as_deref() == Some("Device")
+            || self.read_prop::<u8>("present").await == Some(1)
     }
 }
 
@@ -319,6 +358,7 @@ impl BatteryDevice for PowerSupplyDevice {
         // Read all the necessary data
         let (
             status,
+            capacity_level,
             capacity,
             charge_now,
             charge_full,
@@ -331,6 +371,7 @@ impl BatteryDevice for PowerSupplyDevice {
             time_to_full,
         ) = tokio::join!(
             self.read_prop::<BatteryStatus>("status"),
+            self.read_prop::<CapacityLevel>("capacity_level"),
             self.read_prop::<f64>("capacity"),
             self.read_prop::<f64>("charge_now"),    // uAh
             self.read_prop::<f64>("charge_full"),   // uAh
@@ -357,6 +398,7 @@ impl BatteryDevice for PowerSupplyDevice {
         let capacity = capacity
             .or_else(|| charge_now.zip(charge_full).map(calc_capacity))
             .or_else(|| energy_now.zip(energy_full).map(calc_capacity))
+            .or_else(|| capacity_level.and_then(CapacityLevel::percentage))
             .error("Failed to get capacity")?;
 
         // A * V = W
