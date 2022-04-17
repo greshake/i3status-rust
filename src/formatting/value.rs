@@ -211,7 +211,7 @@ impl Value {
     pub fn from_deque(value: VecDeque<f64>) -> Self {
         Self {
             icon: None,
-            min_width: 1,
+            min_width: 10,
             unit: Unit::None,
             value: InternalValue::BarGraph(value),
         }

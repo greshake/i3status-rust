@@ -1273,18 +1273,28 @@ Key | Values | Required | Default
 
 Creates a block which displays the upload and download throughput for a network interface.
 
-`bitrate` requires either `ethtool` for wired devices or `iw` for wireless devices.  
-`ip` and `ipv6` require `ip`.  
+`bitrate` requires either `ethtool` for wired devices or `iw` for wireless devices.
+`ip` and `ipv6` require `ip`.
+
+Placeholder for the `graph_up` and `graph_down` is interpreted in the following manner:
+
+Part          | Meaning                                                                                                            | Default
+--------------|--------------------------------------------------------------------------------------------------------------------|----------
+`min_width`   | Sets width of the graph in characters.                                                                             | 10
+`max_width`   | Ignored.                                                                                                           | -
+`min_prefix`  | Determines how the `bar_max_val` value is interpreted.                                                             | No prefix
+`unit`        | Determines how the `bar_max_val` value is interpreted and how the unit is displayed after the graph.               | B
+`bar_max_val` | At what value the full bar is drawn. The unit of this value is determined from the `min_prefix` and `unit` fields. | Dynamic (set to largest value in graph)
 
 #### Examples
 
-Displays ssid, signal strength, ip, down speed and up speed as bits per second. Minimal prefix is set to `K` in order to prevent the block to change it's size.
+Displays ssid, signal strength, ip, download speed in bits and download speed graph. Minimal prefix on the `speed_down` block is set to `K` in order to prevent the `speed_down` block from changing it's size when switching between the `b` and `Kb` suffix. The graph in the example will be represented by 8 characters (40 seconds), will have the units hidden and will be on a constant scale from 0 to 50 Mb/s.
 
 ```toml
 [[block]]
 block = "net"
 device = "wlp2s0"
-format = "{ssid} {signal_strength} {ip} {speed_down;K*b} {graph_down;K*b}"
+format = "{ssid} {signal_strength} {ip} {speed_down;K*b} {graph_down:8;M*_b#50}"
 interval = 5
 ```
 
@@ -2206,7 +2216,7 @@ This is just a name of a placeholder. Each block that uses formatting will list 
 
 ### `[0]<min width>`
 
-Sets the minimum width of the content (in characters). If starts with a zero, `0` symbol will be used to pad the content. A space is used otherwise. Floats and Integers are shifted to the right, while Strings are to the left. Defaults to `0` for Strings, `2` for Integers and `3` for Floats.
+Sets the minimum width of the content (in characters). If starts with a zero, `0` symbol will be used to pad the content. A space is used otherwise. Floats and Integers are shifted to the right, while Strings are to the left. Defaults to `0` for Strings, `2` for Integers, `3` for Floats and `10` for bar graphs.
 
 #### Examples (spaces are shown as '□' to make the differences more obvious)
 
