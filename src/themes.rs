@@ -169,7 +169,11 @@ impl Theme {
         overrides: &HashMap<String, String>,
     ) -> Result<(), crate::errors::Error> {
         if let Some(separator) = overrides.get("separator") {
-            self.separator = Some(separator.clone());
+            if separator == "native" {
+                self.separator = None;
+            } else {
+                self.separator = Some(separator.clone());
+            }
         }
         macro_rules! apply {
             ($prop:tt) => {
