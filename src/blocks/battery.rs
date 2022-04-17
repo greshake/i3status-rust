@@ -887,10 +887,22 @@ impl Block for Battery {
     fn update(&mut self) -> Result<Option<Update>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
 
-        // The device may have gone missing
-        // It may be a different battery now, thereby refresh the device specs.
-        let refresh = self.device.refresh_device_info();
-        let status = self.device.status();
+        let mut available_before = self.device.is_available();
+        let mut refresh;
+        let mut status;
+        // loop until available status before and after is the same
+        // to prevent race conditions between is_available() and status()
+        loop {
+            // The device may have gone missing
+            // It may be a different battery now, thereby refresh the device specs.
+            refresh = self.device.refresh_device_info();
+            status = self.device.status();
+            let available_after = self.device.is_available();
+            if available_before == available_after {
+                break;
+            }
+            available_before = available_after;
+        }
 
         // Exit early, if the battery device went missing, but the user
         // allows this device to go missing.
