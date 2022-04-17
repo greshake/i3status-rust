@@ -8,6 +8,7 @@
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
 //! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | Any battery device
+//! `device_regex` | Set to `true` if you want `device` setting to be treated as regex | No | `false`
 //! `driver` | One of `"sysfs"` or `"upower"` | No | `"sysfs"`
 //! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$percentage&vert;"</code>
@@ -60,16 +61,18 @@
 //! - "bat_90",
 //! - "bat_full",
 
+use regex::Regex;
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use async_trait::async_trait;
-use tokio::fs::{read_dir, read_to_string};
+use tokio::fs::read_dir;
 use tokio::time::Interval;
 use zbus::fdo::DBusProxy;
 use zbus::MessageStream;
+use zvariant::OwnedObjectPath;
 
 use super::prelude::*;
 use crate::util::{battery_level_icon, new_system_dbus_connection, read_file};
@@ -86,7 +89,8 @@ const BATTERY_UNAVAILABLE_ICON: &str = "bat_not_available";
 #[serde(deny_unknown_fields, default)]
 #[derivative(Default)]
 struct BatteryConfig {
-    device: Option<StdString>,
+    device: Option<String>,
+    device_regex: bool,
     driver: BatteryDriver,
     #[derivative(Default(value = "10.into()"))]
     interval: Seconds,
@@ -121,39 +125,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let format = config.format.with_default("$percentage")?;
     let format_full = config.full_format.with_default("")?;
 
-    // Get _any_ battery device if not set in the config
-    let device = match config.device {
-        Some(d) => d,
-        None => {
-            let mut sysfs_dir = read_dir("/sys/class/power_supply")
-                .await
-                .error("failed to read /sys/class/power_supply direcory")?;
-            let mut device = None;
-            while let Some(dir) = sysfs_dir
-                .next_entry()
-                .await
-                .error("failed to read /sys/class/power_supply direcory")?
-            {
-                if read_to_string(dir.path().join("type"))
-                    .await
-                    .map(|t| t.trim() == "Battery")
-                    .unwrap_or(false)
-                {
-                    device = Some(dir.file_name().to_str().unwrap().to_string());
-                    break;
-                }
-            }
-            device.error("failed to determine default battery - please set your battery device in the configuration file")?
-        }
-    };
-
-    let dbus_conn;
+    let dev_name = StringPattern::new(config.device, config.device_regex)?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
-        BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(&device, config.interval)),
-        BatteryDriver::Upower => {
-            dbus_conn = new_system_dbus_connection().await?;
-            Box::new(UPowerDevice::from_device(&device, &dbus_conn).await?)
-        }
+        BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::new(dev_name, config.interval)),
+        BatteryDriver::Upower => Box::new(UPowerDevice::new(dev_name).await?),
     };
 
     loop {
@@ -229,10 +204,36 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
-#[async_trait]
-trait BatteryDevice {
-    async fn get_info(&self) -> Result<Option<BatteryInfo>>;
-    async fn wait_for_change(&mut self) -> Result<()>;
+enum StringPattern {
+    Any,
+    Exact(String),
+    Regex(Regex),
+}
+
+impl StringPattern {
+    fn new(pat: Option<String>, regex: bool) -> Result<Self> {
+        Ok(match (pat, regex) {
+            (None, _) => Self::Any,
+            (Some(pat), false) => Self::Exact(pat),
+            (Some(pat), true) => Self::Regex(pat.parse().error("failed to parse regex")?),
+        })
+    }
+
+    fn matches(&self, text: &str) -> bool {
+        match self {
+            Self::Any => true,
+            Self::Exact(pat) => pat == text,
+            Self::Regex(pat) => pat.is_match(text),
+        }
+    }
+
+    fn exact(&self) -> Option<&str> {
+        if let Self::Exact(pat) = self {
+            Some(pat)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -316,44 +317,81 @@ impl CapacityLevel {
     }
 }
 
+#[async_trait]
+trait BatteryDevice {
+    async fn get_info(&mut self) -> Result<Option<BatteryInfo>>;
+    async fn wait_for_change(&mut self) -> Result<()>;
+}
+
 /// Represents a physical power supply device, as known to sysfs.
 /// <https://www.kernel.org/doc/html/v5.15/power/power_supply_class.html>
 struct PowerSupplyDevice {
-    device_path: PathBuf,
+    dev_name: StringPattern,
+    dev_path: Option<PathBuf>,
     interval: Interval,
 }
 
 impl PowerSupplyDevice {
-    fn from_device(device: &str, interval: Seconds) -> Self {
+    fn new(dev_name: StringPattern, interval: Seconds) -> Self {
         Self {
-            device_path: Path::new(POWER_SUPPLY_DEVICES_PATH).join(device),
+            dev_name,
+            dev_path: None,
             interval: interval.timer(),
         }
     }
 
-    async fn read_prop<T: FromStr + Send + Sync>(&self, prop: &str) -> Option<T> {
-        read_file(self.device_path.join(prop))
+    async fn get_device_path(&mut self) -> Result<Option<&Path>> {
+        if let Some(path) = &self.dev_path {
+            if Self::device_available(path).await {
+                return Ok(self.dev_path.as_deref());
+            }
+        }
+
+        let mut sysfs_dir = read_dir(POWER_SUPPLY_DEVICES_PATH)
+            .await
+            .error("failed to read /sys/class/power_supply direcory")?;
+        while let Some(dir) = sysfs_dir
+            .next_entry()
+            .await
+            .error("failed to read /sys/class/power_supply direcory")?
+        {
+            if !self.dev_name.matches(dir.file_name().to_str().unwrap()) {
+                continue;
+            }
+            let path = dir.path();
+            if Self::read_prop::<String>(&path, "type").await.as_deref() == Some("Battery")
+                && Self::device_available(&path).await
+            {
+                return Ok(Some(self.dev_path.insert(path)));
+            }
+        }
+        Ok(None)
+    }
+
+    async fn read_prop<T: FromStr + Send + Sync>(path: &Path, prop: &str) -> Option<T> {
+        read_file(path.join(prop))
             .await
             .ok()
             .and_then(|x| x.parse().ok())
     }
 
-    async fn present(&self) -> bool {
+    async fn device_available(path: &Path) -> bool {
         // If `scope` is `Device`, then this is HID, in which case we don't have to check the
         // `present` property, because the existance of the device direcory implies that the device
         // is available
-        self.read_prop::<String>("scope").await.as_deref() == Some("Device")
-            || self.read_prop::<u8>("present").await == Some(1)
+        Self::read_prop::<String>(path, "scope").await.as_deref() == Some("Device")
+            || Self::read_prop::<u8>(path, "present").await == Some(1)
     }
 }
 
 #[async_trait]
 impl BatteryDevice for PowerSupplyDevice {
-    async fn get_info(&self) -> Result<Option<BatteryInfo>> {
+    async fn get_info(&mut self) -> Result<Option<BatteryInfo>> {
         // Check if the battery is available
-        if !self.present().await {
-            return Ok(None);
-        }
+        let path = match self.get_device_path().await? {
+            Some(path) => path,
+            None => return Ok(None),
+        };
 
         // Read all the necessary data
         let (
@@ -370,18 +408,18 @@ impl BatteryDevice for PowerSupplyDevice {
             time_to_empty,
             time_to_full,
         ) = tokio::join!(
-            self.read_prop::<BatteryStatus>("status"),
-            self.read_prop::<CapacityLevel>("capacity_level"),
-            self.read_prop::<f64>("capacity"),
-            self.read_prop::<f64>("charge_now"),    // uAh
-            self.read_prop::<f64>("charge_full"),   // uAh
-            self.read_prop::<f64>("energy_now"),    // uWh
-            self.read_prop::<f64>("energy_full"),   // uWh
-            self.read_prop::<f64>("power_now"),     // uW
-            self.read_prop::<f64>("current_now"),   // uA
-            self.read_prop::<f64>("voltage_now"),   // uV
-            self.read_prop::<f64>("time_to_empty"), // seconds
-            self.read_prop::<f64>("time_to_full"),  // seconds
+            Self::read_prop::<BatteryStatus>(path, "status"),
+            Self::read_prop::<CapacityLevel>(path, "capacity_level"),
+            Self::read_prop::<f64>(path, "capacity"),
+            Self::read_prop::<f64>(path, "charge_now"), // uAh
+            Self::read_prop::<f64>(path, "charge_full"), // uAh
+            Self::read_prop::<f64>(path, "energy_now"), // uWh
+            Self::read_prop::<f64>(path, "energy_full"), // uWh
+            Self::read_prop::<f64>(path, "power_now"),  // uW
+            Self::read_prop::<f64>(path, "current_now"), // uA
+            Self::read_prop::<f64>(path, "voltage_now"), // uV
+            Self::read_prop::<f64>(path, "time_to_empty"), // seconds
+            Self::read_prop::<f64>(path, "time_to_full"), // seconds
         );
 
         let charge_now = charge_now.map(|c| c * 1e-6); // uAh -> Ah
@@ -452,48 +490,60 @@ pub struct UPowerDevice<'a> {
 }
 
 impl<'a> UPowerDevice<'a> {
-    async fn from_device(
-        device: &str,
-        dbus_conn: &'a zbus::Connection,
-    ) -> Result<UPowerDevice<'a>> {
-        // Fetch device path
-        let device_path = {
-            if device == "DisplayDevice" {
-                "/org/freedesktop/UPower/devices/DisplayDevice"
+    async fn new(device: StringPattern) -> Result<UPowerDevice<'a>> {
+        let dbus_conn = new_system_dbus_connection().await?;
+        let (device_path, device_proxy) = {
+            if device.exact() == Some("DisplayDevice") {
+                let path: OwnedObjectPath = "/org/freedesktop/UPower/devices/DisplayDevice"
                     .try_into()
+                    .unwrap();
+                let proxy = zbus_upower::DeviceProxy::builder(&dbus_conn)
+                    .path(path.clone())
                     .unwrap()
+                    .build()
+                    .await
+                    .error("Failed to create DeviceProxy")?;
+                (path, proxy)
             } else {
-                zbus_upower::UPowerProxy::new(dbus_conn)
+                let mut res = None;
+                for path in zbus_upower::UPowerProxy::new(&dbus_conn)
                     .await
                     .error("Failed to create UPwerProxy")?
                     .enumerate_devices()
                     .await
                     .error("Failed to retrieve UPower devices")?
-                    .into_iter()
-                    .find(|entry| entry.ends_with(device))
-                    .error("UPower device could not be found")?
+                {
+                    let proxy = zbus_upower::DeviceProxy::builder(&dbus_conn)
+                        .path(path.clone())
+                        .unwrap()
+                        .build()
+                        .await
+                        .error("Failed to create DeviceProxy")?;
+                    // Verify device type
+                    // https://upower.freedesktop.org/docs/Device.html#Device:Type
+                    // consider any peripheral, UPS and internal battery
+                    let device_type = proxy.type_().await.error("Failed to get device's type")?;
+                    if device_type == 1 {
+                        continue;
+                    }
+                    let name = proxy
+                        .native_path()
+                        .await
+                        .error("Failed to get device's native path")?;
+                    if device.matches(&name) {
+                        res = Some((path, proxy));
+                        break;
+                    }
+                }
+                match res {
+                    Some(res) => res,
+                    // FIXME
+                    None => return Err(Error::new("UPower device could not be found")),
+                }
             }
         };
 
-        let device_proxy = zbus_upower::DeviceProxy::builder(dbus_conn)
-            .path(device_path.clone())
-            .error("Failed to set proxy's path")?
-            .build()
-            .await
-            .error("Failed to create DeviceProxy")?;
-
-        // Verify device name
-        // https://upower.freedesktop.org/docs/Device.html#Device:Type
-        // consider any peripheral, UPS and internal battery
-        let device_type = device_proxy
-            .type_()
-            .await
-            .error("Failed to get device's type")?;
-        if device_type == 1 {
-            return Err(Error::new("UPower device is not a battery."));
-        }
-
-        DBusProxy::new(dbus_conn)
+        DBusProxy::new(&dbus_conn)
             .await
             .error("failed to cerate DBusProxy")?
             .add_match(&format!("type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='{}'", device_path.as_str()))
@@ -510,7 +560,7 @@ impl<'a> UPowerDevice<'a> {
 
 #[async_trait]
 impl<'a> BatteryDevice for UPowerDevice<'a> {
-    async fn get_info(&self) -> Result<Option<BatteryInfo>> {
+    async fn get_info(&mut self) -> Result<Option<BatteryInfo>> {
         let capacity = self
             .device_proxy
             .percentage()
