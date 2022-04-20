@@ -1233,6 +1233,7 @@ T{
 \f[V]path\f[R]
 T}@T{
 Path to collect information from.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 No
 T}@T{
@@ -1322,7 +1323,9 @@ T}
 T{
 \f[V]{path}\f[R]
 T}@T{
-Path used for capacity check
+Path used for capacity check.
+Supports shell expansions like \f[V]${VARIABLE}\f[R] and
+\f[V]\[ti]\f[R].
 T}@T{
 String
 T}
@@ -2973,6 +2976,7 @@ T{
 \f[V]inboxes\f[R]
 T}@T{
 List of maildir inboxes to look for mails in.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 Yes
 T}@T{
@@ -3413,7 +3417,9 @@ _
 T{
 \f[V]player\f[R]
 T}@T{
-Name of the music player MPRIS interface.
+Name(s) of the music player(s) MPRIS interface(s).
+This can be either a music player name or an array of music player
+names.
 Run
 \f[V]busctl --user list \[rs]| grep \[dq]org.mpris.MediaPlayer2.\[dq] \[rs]| cut -d\[aq] \[aq] -f1\f[R]
 and the name is the part after \[lq]org.mpris.MediaPlayer2.\[rq].
@@ -4179,6 +4185,7 @@ T{
 \f[V]maildir\f[R]
 T}@T{
 Path to the directory containing the notmuch database.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 No
 T}@T{
@@ -4820,6 +4827,7 @@ T{
 \f[V]socket_path\f[R]
 T}@T{
 Socket path for the rofication daemon.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 No
 T}@T{
@@ -5864,6 +5872,7 @@ T{
 \f[V]state_path\f[R]
 T}@T{
 Path to the Watson state file.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 No
 T}@T{
