@@ -4,13 +4,13 @@
 //! display the status, capacity, and time remaining for (dis)charge for an
 //! internal power supply.
 
+use regex::Regex;
 use std::collections::HashMap;
 use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use regex::Regex;
 
 use crossbeam_channel::Sender;
 use dbus::arg::Array;
@@ -76,7 +76,6 @@ impl PowerSupplyDevice {
     /// `/sys/class/power_supply` directory. Raises an error if the directory for
     /// that device cannot be found and `allow_missing` is `false`.
     pub fn from_device(device_regex: &str, allow_missing: bool) -> Result<Self> {
-
         match Regex::new(device_regex) {
             Ok(device_regex) => {
                 let mut device = PowerSupplyDevice {
@@ -93,13 +92,11 @@ impl PowerSupplyDevice {
                 }
 
                 Ok(device)
-            },
-            Err(e) => {
-                Err(BlockError(
-                    "battery".into(),
-                    format!("Failed to parse Regex {}: {}", device_regex, e),
-                ))
             }
+            Err(e) => Err(BlockError(
+                "battery".into(),
+                format!("Failed to parse Regex {}: {}", device_regex, e),
+            )),
         }
     }
 }
@@ -128,13 +125,14 @@ impl BatteryDevice for PowerSupplyDevice {
         let sysfs_dir = "/sys/class/power_supply/";
         let entries = read_dir(sysfs_dir).block_error(
             "battery",
-            format!("failed to read {} directory", sysfs_dir).as_str()
+            format!("failed to read {} directory", sysfs_dir).as_str(),
         )?;
         for entry in entries {
             if let Ok(dir) = entry {
                 if read_to_string(dir.path().join("type"))
                     .map(|t| t.trim() != "Battery")
-                    .unwrap_or(false) {
+                    .unwrap_or(false)
+                {
                     continue;
                 }
                 let dirname = dir.file_name();
@@ -354,7 +352,10 @@ impl BatteryDevice for PowerSupplyDevice {
                     if time_to_full.is_ok() {
                         time_to_full
                     } else if full.is_some() && fill.is_ok() && usage.is_ok() {
-                        Ok((((full.unwrap() as f64 - fill.unwrap()) / usage.unwrap()) * 60.0) as u64)
+                        Ok(
+                            (((full.unwrap() as f64 - fill.unwrap()) / usage.unwrap()) * 60.0)
+                                as u64,
+                        )
                     } else {
                         Err(BlockError(
                             "battery".to_string(),
@@ -441,7 +442,7 @@ impl BatteryDevice for ApcUpsDevice {
     fn is_available(&self) -> bool {
         self.con.is_available(&self.con.get_status())
     }
-    
+
     fn rescan_device(&mut self) -> Result<()> {
         Ok(())
     }
