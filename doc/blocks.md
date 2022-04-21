@@ -248,8 +248,7 @@ Key | Values | Required | Default
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{percentage}"`
 `full_format` | Same as `format` but for when the battery is full. | No | `""`
 `missing_format` | Same as `format` but for when the specified battery is missing. | No | `"{percentage}"`
-`allow_missing` | Don't display errors when the battery cannot be found. | No | `false`
-`hide_missing` | Completely hide this block if the battery cannot be found. Only works in combination with `allow_missing`. | No | `false`
+`hide_missing` | Completely hide this block if the battery cannot be found. | No | `false`
 `full_threshold` | Percentage at which the battery is considered full (`full_format` shown) | No | `100`
 `good` | Minimum battery level, where state is set to good. | No | `60`
 `info` | Minimum battery level, where state is set to info. | No | `60`
