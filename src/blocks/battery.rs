@@ -13,7 +13,6 @@
 //! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$percentage&vert;"</code>
 //! `full_format` | Same as `format` but for when the battery is full | No | `""`
-//! `allow_missing` | Don't display errors when the battery cannot be found. Only works with the `sysfs` driver. | No | `false`
 //! `hide_missing` | Completely hide this block if the battery cannot be found. | No | `false`
 //! `hide_full` | Hide the block if battery is full | No | `false`
 //! `info` | Minimum battery level, where state is set to info | No | `60`
@@ -44,7 +43,6 @@
 //! [block]
 //! block = "battery"
 //! format = "$percentage|N/A"
-//! allow_missing = true
 //! ```
 //!
 //! # Icons Used
@@ -96,7 +94,6 @@ struct BatteryConfig {
     interval: Seconds,
     format: FormatConfig,
     full_format: FormatConfig,
-    allow_missing: bool,
     hide_missing: bool,
     hide_full: bool,
     #[derivative(Default(value = "60.0"))]
@@ -190,13 +187,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             None if config.hide_missing => {
                 api.hide();
             }
-            None if config.allow_missing => {
+            None => {
                 api.show();
                 api.set_icon(BATTERY_UNAVAILABLE_ICON)?;
                 api.set_values(HashMap::new());
                 api.set_format(format.clone());
             }
-            None => return Err(Error::new("Missing battery")),
         }
 
         api.flush().await?;
