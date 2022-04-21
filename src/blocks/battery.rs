@@ -127,20 +127,18 @@ impl BatteryDevice for PowerSupplyDevice {
             "battery",
             format!("failed to read {} directory", sysfs_dir).as_str(),
         )?;
-        for entry in entries {
-            if let Ok(dir) = entry {
-                if read_to_string(dir.path().join("type"))
-                    .map(|t| t.trim() != "Battery")
-                    .unwrap_or(false)
-                {
-                    continue;
-                }
-                let dirname = dir.file_name();
-                let dirname = dirname.to_str().unwrap();
-                if self.device_regex.is_match(dirname) {
-                    self.device_path = Some(PathBuf::from(sysfs_dir).join(dirname));
-                    return Ok(());
-                }
+        for dir in entries.flatten() {
+            if read_to_string(dir.path().join("type"))
+                .map(|t| t.trim() != "Battery")
+                .unwrap_or(false)
+            {
+                continue;
+            }
+            let dirname = dir.file_name();
+            let dirname = dirname.to_str().unwrap();
+            if self.device_regex.is_match(dirname) {
+                self.device_path = Some(PathBuf::from(sysfs_dir).join(dirname));
+                return Ok(());
             }
         }
         Err(BlockError(
