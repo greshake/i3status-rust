@@ -6,10 +6,11 @@
 
 use std::collections::HashMap;
 use std::fs::{read_dir, read_to_string};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+use regex::Regex;
 
 use crossbeam_channel::Sender;
 use dbus::arg::Array;
@@ -33,6 +34,9 @@ pub trait BatteryDevice {
     /// Query whether the device is available. Batteries can be hot-swappable
     /// and configurations may be used for multiple devices (desktop AND laptop).
     fn is_available(&self) -> bool;
+
+    /// Rescan devices to see if it has become available.
+    fn rescan_device(&mut self) -> Result<()>;
 
     /// Logic for getting some static battery specs.
     /// An error may be thrown when these specs cannot be found or
@@ -60,7 +64,8 @@ pub trait BatteryDevice {
 
 /// Represents a physical power supply device, as known to sysfs.
 pub struct PowerSupplyDevice {
-    device_path: PathBuf,
+    device_regex: Regex,
+    device_path: Option<PathBuf>,
     allow_missing: bool,
     charge_full: Option<u64>,
     energy_full: Option<u64>,
@@ -70,274 +75,336 @@ impl PowerSupplyDevice {
     /// Use the power supply device `device`, as found in the
     /// `/sys/class/power_supply` directory. Raises an error if the directory for
     /// that device cannot be found and `allow_missing` is `false`.
-    pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
-        let device_path = Path::new("/sys/class/power_supply").join(device);
+    pub fn from_device(device_regex: &str, allow_missing: bool) -> Result<Self> {
 
-        let device = PowerSupplyDevice {
-            device_path,
-            allow_missing,
-            charge_full: None,
-            energy_full: None,
-        };
+        match Regex::new(device_regex) {
+            Ok(device_regex) => {
+                let mut device = PowerSupplyDevice {
+                    device_regex,
+                    device_path: None,
+                    allow_missing,
+                    charge_full: None,
+                    energy_full: None,
+                };
+                if let Err(e) = device.rescan_device() {
+                    if !allow_missing {
+                        return Err(e);
+                    }
+                }
 
-        Ok(device)
+                Ok(device)
+            },
+            Err(e) => {
+                Err(BlockError(
+                    "battery".into(),
+                    format!("Failed to parse Regex {}: {}", device_regex, e),
+                ))
+            }
+        }
     }
 }
 
 impl BatteryDevice for PowerSupplyDevice {
     fn is_available(&self) -> bool {
-        // in case of human interface devices (scope=="Device")
-        // we don't check for present==1 because the device subdirectory
-        // being present already implies that the device is available
-        let path = self.device_path.join("scope");
-        if path.exists() && read_file("battery", path).map_or(false, |x| x == "Device") {
-            // device is a human interface device
-            return true;
+        if let Some(device_path) = &self.device_path {
+            // in case of human interface devices (scope=="Device")
+            // we don't check for present==1 because the device subdirectory
+            // being present already implies that the device is available
+            let path = device_path.join("scope");
+            if path.exists() && read_file("battery", path).map_or(false, |x| x == "Device") {
+                // device is a human interface device
+                return true;
+            }
+            // normal battery device -> check for present==1
+            let path = device_path.join("present");
+            if path.exists() {
+                return read_file("battery", path).map_or(false, |x| x == "1");
+            }
         }
-        // normal battery device -> check for present==1
-        let path = self.device_path.join("present");
-        if path.exists() {
-            return read_file("battery", path).map_or(false, |x| x == "1");
+        false
+    }
+
+    fn rescan_device(&mut self) -> Result<()> {
+        let sysfs_dir = "/sys/class/power_supply/";
+        let entries = read_dir(sysfs_dir).block_error(
+            "battery",
+            format!("failed to read {} directory", sysfs_dir).as_str()
+        )?;
+        for entry in entries {
+            if let Ok(dir) = entry {
+                if read_to_string(dir.path().join("type"))
+                    .map(|t| t.trim() != "Battery")
+                    .unwrap_or(false) {
+                    continue;
+                }
+                let dirname = dir.file_name();
+                let dirname = dirname.to_str().unwrap();
+                if self.device_regex.is_match(dirname) {
+                    self.device_path = Some(PathBuf::from(sysfs_dir).join(dirname));
+                    return Ok(());
+                }
+            }
         }
-        return false;
+        Err(BlockError(
+            "battery".into(),
+            format!("couldn't find any power supply devices matching {} - check your configuration file", self.device_regex),
+        ))
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
-        if !self.is_available() {
-            // The user indicated that it's ok for this battery to be missing/go away
-            if self.allow_missing {
-                self.charge_full = None;
-                self.energy_full = None;
-                return Ok(());
+        match &self.device_path {
+            None => {
+                // The user indicated that it's ok for this battery to be missing/go away
+                if self.allow_missing {
+                    self.charge_full = None;
+                    self.energy_full = None;
+                    return Ok(());
+                }
+                return Err(BlockError(
+                    "battery".into(),
+                    format!(
+                        "No power supply device matching '{}' found",
+                        self.device_regex,
+                    ),
+                ));
             }
-            return Err(BlockError(
-                "battery".into(),
-                format!(
-                    "Power supply device '{}' does not exist",
-                    self.device_path.to_string_lossy()
-                ),
-            ));
+            Some(device_path) => {
+                // Read charge_full exactly once, if it exists, units are µAh
+                self.charge_full = if device_path.join("charge_full").exists() {
+                    Some(
+                        read_file("battery", &device_path.join("charge_full"))?
+                            .parse::<u64>()
+                            .block_error("battery", "failed to parse charge_full")?,
+                    )
+                } else {
+                    None
+                };
+
+                // Read energy_full exactly once, if it exists. Units are µWh.
+                self.energy_full = if device_path.join("energy_full").exists() {
+                    Some(
+                        read_file("battery", &device_path.join("energy_full"))?
+                            .parse::<u64>()
+                            .block_error("battery", "failed to parse energy_full")?,
+                    )
+                } else {
+                    None
+                };
+
+                Ok(())
+            }
         }
-
-        // Read charge_full exactly once, if it exists, units are µAh
-        self.charge_full = if self.device_path.join("charge_full").exists() {
-            Some(
-                read_file("battery", &self.device_path.join("charge_full"))?
-                    .parse::<u64>()
-                    .block_error("battery", "failed to parse charge_full")?,
-            )
-        } else {
-            None
-        };
-
-        // Read energy_full exactly once, if it exists. Units are µWh.
-        self.energy_full = if self.device_path.join("energy_full").exists() {
-            Some(
-                read_file("battery", &self.device_path.join("energy_full"))?
-                    .parse::<u64>()
-                    .block_error("battery", "failed to parse energy_full")?,
-            )
-        } else {
-            None
-        };
-
-        Ok(())
     }
 
     fn status(&self) -> Result<String> {
-        read_file("battery", &self.device_path.join("status"))
+        if let Some(device_path) = &self.device_path {
+            read_file("battery", &device_path.join("status"))
+        } else {
+            Err(BlockError("battery".into(), "device missing".into()))
+        }
     }
 
     fn capacity(&self) -> Result<u64> {
-        let capacity_path = self.device_path.join("capacity");
-        let charge_path = self.device_path.join("charge_now");
-        let energy_path = self.device_path.join("energy_now");
-        let capacity_level_path = self.device_path.join("capacity_level");
+        if let Some(device_path) = &self.device_path {
+            let capacity_path = device_path.join("capacity");
+            let charge_path = device_path.join("charge_now");
+            let energy_path = device_path.join("energy_now");
+            let capacity_level_path = device_path.join("capacity_level");
 
-        let capacity = if capacity_path.exists() {
-            read_file("battery", &capacity_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse capacity")?
-        } else if charge_path.exists() && self.charge_full.is_some() {
-            let charge = read_file("battery", &charge_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse charge_now")?;
-            ((charge as f64 / self.charge_full.unwrap() as f64) * 100.0) as u64
-        } else if energy_path.exists() && self.energy_full.is_some() {
-            let charge = read_file("battery", &energy_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse energy_now")?;
-            ((charge as f64 / self.energy_full.unwrap() as f64) * 100.0) as u64
-        } else if capacity_level_path.exists() {
-            let capacity_level = read_file("battery", &capacity_level_path)?;
-            match capacity_level.as_str() {
-                "Full" => 100u64,
-                "High" => 75u64,
-                "Normal" => 50u64,
-                "Low" => 25u64,
-                "Critical" => 5u64,
-                "Unknown" => {
-                    return Err(BlockError("battery".into(), "Unknown charge level".into()));
+            let capacity = if capacity_path.exists() {
+                read_file("battery", &capacity_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse capacity")?
+            } else if charge_path.exists() && self.charge_full.is_some() {
+                let charge = read_file("battery", &charge_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse charge_now")?;
+                ((charge as f64 / self.charge_full.unwrap() as f64) * 100.0) as u64
+            } else if energy_path.exists() && self.energy_full.is_some() {
+                let charge = read_file("battery", &energy_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse energy_now")?;
+                ((charge as f64 / self.energy_full.unwrap() as f64) * 100.0) as u64
+            } else if capacity_level_path.exists() {
+                let capacity_level = read_file("battery", &capacity_level_path)?;
+                match capacity_level.as_str() {
+                    "Full" => 100u64,
+                    "High" => 75u64,
+                    "Normal" => 50u64,
+                    "Low" => 25u64,
+                    "Critical" => 5u64,
+                    "Unknown" => {
+                        return Err(BlockError("battery".into(), "Unknown charge level".into()));
+                    }
+                    _ => {
+                        return Err(BlockError(
+                            "battery".into(),
+                            "unexpected string from capacity_level file".into(),
+                        ));
+                    }
                 }
-                _ => {
-                    return Err(BlockError(
-                        "battery".into(),
-                        "unexpected string from capacity_level file".into(),
-                    ));
-                }
+            } else {
+                return Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support reading capacity, charge, energy or capacity_level"
+                        .to_string(),
+                ));
+            };
+
+            match capacity {
+                0..=100 => Ok(capacity),
+                // We need to cap it at 100, because the kernel may report
+                // charge_now same as charge_full_design when the battery is full,
+                // leading to >100% charge.
+                _ => Ok(100),
             }
         } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading capacity, charge, energy or capacity_level"
-                    .to_string(),
-            ));
-        };
-
-        match capacity {
-            0..=100 => Ok(capacity),
-            // We need to cap it at 100, because the kernel may report
-            // charge_now same as charge_full_design when the battery is full,
-            // leading to >100% charge.
-            _ => Ok(100),
+            Err(BlockError("battery".into(), "device missing".into()))
         }
     }
 
     fn time_remaining(&self) -> Result<u64> {
-        let time_to_empty_now_path = self.device_path.join("time_to_empty_now");
-        let time_to_empty = if time_to_empty_now_path.exists() {
-            read_file("battery", &time_to_empty_now_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse time to empty")
-        } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading time to empty directly".to_string(),
-            ))
-        };
-        let time_to_full_now_path = self.device_path.join("time_to_full_now");
-        let time_to_full = if time_to_full_now_path.exists() {
-            read_file("battery", &time_to_full_now_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse time to full")
-        } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading time to full directly".to_string(),
-            ))
-        };
+        if let Some(device_path) = &self.device_path {
+            let time_to_empty_now_path = device_path.join("time_to_empty_now");
+            let time_to_empty = if time_to_empty_now_path.exists() {
+                read_file("battery", &time_to_empty_now_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse time to empty")
+            } else {
+                Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support reading time to empty directly".to_string(),
+                ))
+            };
+            let time_to_full_now_path = device_path.join("time_to_full_now");
+            let time_to_full = if time_to_full_now_path.exists() {
+                read_file("battery", &time_to_full_now_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse time to full")
+            } else {
+                Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support reading time to full directly".to_string(),
+                ))
+            };
 
-        // Units are µWh
-        let full = if self.energy_full.is_some() {
-            self.energy_full
-        } else if self.charge_full.is_some() {
-            self.charge_full
-        } else {
-            None
-        };
+            // Units are µWh
+            let full = if self.energy_full.is_some() {
+                self.energy_full
+            } else if self.charge_full.is_some() {
+                self.charge_full
+            } else {
+                None
+            };
 
-        // Units are µWh/µAh
-        let energy_path = self.device_path.join("energy_now");
-        let charge_path = self.device_path.join("charge_now");
-        let fill = if energy_path.exists() {
-            read_file("battery", &energy_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse energy_now")
-        } else if charge_path.exists() {
-            read_file("battery", &charge_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse charge_now")
-        } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading energy".to_string(),
-            ))
-        };
+            // Units are µWh/µAh
+            let energy_path = device_path.join("energy_now");
+            let charge_path = device_path.join("charge_now");
+            let fill = if energy_path.exists() {
+                read_file("battery", &energy_path)?
+                    .parse::<f64>()
+                    .block_error("battery", "failed to parse energy_now")
+            } else if charge_path.exists() {
+                read_file("battery", &charge_path)?
+                    .parse::<f64>()
+                    .block_error("battery", "failed to parse charge_now")
+            } else {
+                Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support reading energy".to_string(),
+                ))
+            };
 
-        let power_path = self.device_path.join("power_now");
-        let current_path = self.device_path.join("current_now");
-        let usage = if power_path.exists() {
-            read_file("battery", &power_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse power_now")
-        } else if current_path.exists() {
-            read_file("battery", &current_path)?
-                .parse::<f64>()
-                .block_error("battery", "failed to parse current_now")
-        } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading power".to_string(),
-            ))
-        };
+            let power_path = device_path.join("power_now");
+            let current_path = device_path.join("current_now");
+            let usage = if power_path.exists() {
+                read_file("battery", &power_path)?
+                    .parse::<f64>()
+                    .block_error("battery", "failed to parse power_now")
+            } else if current_path.exists() {
+                read_file("battery", &current_path)?
+                    .parse::<f64>()
+                    .block_error("battery", "failed to parse current_now")
+            } else {
+                Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support reading power".to_string(),
+                ))
+            };
 
-        // If the device driver uses the combination of energy_full, energy_now and power_now,
-        // all values (full, fill, and usage) are in Watts, while if it uses charge_full, charge_now
-        // and current_now, they're in Amps. In all 3 equations below the units cancel out and
-        // we're left with a time value.
-        let status = self.status()?;
-        match status.as_str() {
-            "Discharging" => {
-                if time_to_empty.is_ok() {
-                    time_to_empty
-                } else if fill.is_ok() && usage.is_ok() {
-                    Ok(((fill.unwrap() / usage.unwrap()) * 60.0) as u64)
-                } else {
-                    Err(BlockError(
-                        "battery".to_string(),
-                        "Device does not support any method of calculating time to empty"
-                            .to_string(),
-                    ))
+            // If the device driver uses the combination of energy_full, energy_now and power_now,
+            // all values (full, fill, and usage) are in Watts, while if it uses charge_full, charge_now
+            // and current_now, they're in Amps. In all 3 equations below the units cancel out and
+            // we're left with a time value.
+            match self.status()?.as_str() {
+                "Discharging" => {
+                    if time_to_empty.is_ok() {
+                        time_to_empty
+                    } else if fill.is_ok() && usage.is_ok() {
+                        Ok(((fill.unwrap() / usage.unwrap()) * 60.0) as u64)
+                    } else {
+                        Err(BlockError(
+                            "battery".to_string(),
+                            "Device does not support any method of calculating time to empty"
+                                .to_string(),
+                        ))
+                    }
+                }
+                "Charging" => {
+                    if time_to_full.is_ok() {
+                        time_to_full
+                    } else if full.is_some() && fill.is_ok() && usage.is_ok() {
+                        Ok((((full.unwrap() as f64 - fill.unwrap()) / usage.unwrap()) * 60.0) as u64)
+                    } else {
+                        Err(BlockError(
+                            "battery".to_string(),
+                            "Device does not support any method of calculating time to full"
+                                .to_string(),
+                        ))
+                    }
+                }
+                _ => {
+                    // TODO: What should we return in this case? It seems that under
+                    // some conditions sysfs will return 0 for some readings (energy
+                    // or power), so perhaps the most natural thing to do is emulate
+                    // that.
+                    Ok(0)
                 }
             }
-            "Charging" => {
-                if time_to_full.is_ok() {
-                    time_to_full
-                } else if full.is_some() && fill.is_ok() && usage.is_ok() {
-                    Ok((((full.unwrap() as f64 - fill.unwrap()) / usage.unwrap()) * 60.0) as u64)
-                } else {
-                    Err(BlockError(
-                        "battery".to_string(),
-                        "Device does not support any method of calculating time to full"
-                            .to_string(),
-                    ))
-                }
-            }
-            _ => {
-                // TODO: What should we return in this case? It seems that under
-                // some conditions sysfs will return 0 for some readings (energy
-                // or power), so perhaps the most natural thing to do is emulate
-                // that.
-                Ok(0)
-            }
+        } else {
+            Err(BlockError("battery".into(), "device missing".into()))
         }
     }
 
     fn power_consumption(&self) -> Result<u64> {
-        // power consumption in µWh
-        let power_path = self.device_path.join("power_now");
-        // current consumption in µA
-        let current_path = self.device_path.join("current_now");
-        // voltage in µV
-        let voltage_path = self.device_path.join("voltage_now");
+        if let Some(device_path) = &self.device_path {
+            // power consumption in µWh
+            let power_path = device_path.join("power_now");
+            // current consumption in µA
+            let current_path = device_path.join("current_now");
+            // voltage in µV
+            let voltage_path = device_path.join("voltage_now");
 
-        if power_path.exists() {
-            Ok(read_file("battery", &power_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse power_now")?)
-        } else if current_path.exists() && voltage_path.exists() {
-            let current = read_file("battery", &current_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse current_now")?;
-            let voltage = read_file("battery", &voltage_path)?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse voltage_now")?;
-            Ok((current * voltage) / 1_000_000)
+            if power_path.exists() {
+                Ok(read_file("battery", &power_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse power_now")?)
+            } else if current_path.exists() && voltage_path.exists() {
+                let current = read_file("battery", &current_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse current_now")?;
+                let voltage = read_file("battery", &voltage_path)?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse voltage_now")?;
+                Ok((current * voltage) / 1_000_000)
+            } else {
+                Err(BlockError(
+                    "battery".to_string(),
+                    "Device does not support power consumption".to_string(),
+                ))
+            }
         } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support power consumption".to_string(),
-            ))
+            Err(BlockError("battery".into(), "device missing".into()))
         }
     }
 }
@@ -373,6 +440,10 @@ impl ApcUpsDevice {
 impl BatteryDevice for ApcUpsDevice {
     fn is_available(&self) -> bool {
         self.con.is_available(&self.con.get_status())
+    }
+    
+    fn rescan_device(&mut self) -> Result<()> {
+        Ok(())
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
@@ -641,6 +712,10 @@ impl BatteryDevice for UpowerDevice {
         self.device_path.lock().unwrap().is_some()
     }
 
+    fn rescan_device(&mut self) -> Result<()> {
+        Ok(())
+    }
+
     fn refresh_device_info(&mut self) -> Result<()> {
         let upower_type = self.get_upower_value("Type", 0_u32)?;
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
@@ -812,48 +887,7 @@ impl ConfigBlock for Battery {
             None => match block_config.driver {
                 BatteryDriver::ApcAccess => "localhost:3551".to_string(),
                 BatteryDriver::Upower => "DisplayDevice".to_string(),
-                _ => {
-                    let sysfs_dir = read_dir("/sys/class/power_supply").block_error(
-                        "battery",
-                        "failed to read /sys/class/power_supply direcory",
-                    )?;
-                    let mut found_battery_devices = Vec::<String>::new();
-                    for entry in sysfs_dir {
-                        let dir = entry?;
-                        if read_to_string(dir.path().join("type"))
-                            .map(|t| t.trim() == "Battery")
-                            .unwrap_or(false)
-                        {
-                            found_battery_devices
-                                .push(dir.file_name().to_str().unwrap().to_string());
-                        }
-                    }
-
-                    // Better to default to the system battery, rather than possibly a keyboard or mouse battery.
-                    // System batteries usually start with BAT or CMB.
-                    // Otherwise, just grab the first one from the list.
-                    let chosen_device = if let Some(preferred_device) = found_battery_devices
-                        .iter()
-                        .find(|&s| s.starts_with("BAT") || s.starts_with("CMB"))
-                    {
-                        Some(preferred_device)
-                    } else {
-                        found_battery_devices.first()
-                    };
-
-                    match chosen_device {
-                        Some(d) => d.to_string(),
-                        None => {
-                            if block_config.allow_missing {
-                                // TODO: If the battery isn't actually BAT0, then even if it appears again we will never update
-                                // Need to implement device refresh
-                                "BAT0".to_string()
-                            } else {
-                                return Err(BlockError("battery".to_string(), "failed to determine default battery - please set your battery device in the configuration file".to_string()));
-                            }
-                        }
-                    }
-                }
+                BatteryDriver::Sysfs => "BAT.*|CMB.*".to_string(),
             },
         };
 
@@ -906,6 +940,13 @@ impl ConfigBlock for Battery {
 impl Block for Battery {
     fn update(&mut self) -> Result<Option<Update>> {
         // TODO: Maybe use dbus to immediately signal when the battery state changes.
+        if !self.device.is_available() {
+            if let Err(e) = self.device.rescan_device() {
+                if !self.allow_missing {
+                    return Err(e);
+                }
+            }
+        }
 
         // Exit early, if the battery device went missing, but the user
         // allows this device to go missing.
