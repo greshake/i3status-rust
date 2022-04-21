@@ -213,9 +213,6 @@
 <span id="208">208</span>
 <span id="209">209</span>
 <span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The system temperature</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the system temperature, based on `libsensors` library.</span>
@@ -268,10 +265,7 @@
 <span class="doccomment">//! # Icons Used</span>
 <span class="doccomment">//! - `thermometer`</span>
 
-<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
-
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-
 <span class="kw">use</span> <span class="ident">sensors::FeatureType::SENSORS_FEATURE_TEMP</span>;
 <span class="kw">use</span> <span class="ident">sensors::Sensors</span>;
 <span class="kw">use</span> <span class="ident">sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT</span>;
@@ -404,7 +398,7 @@
 
         <span class="lifetime">&#39;outer</span>: <span class="kw">loop</span> {
             <span class="kw">if</span> <span class="ident">collapsed</span> {
-                <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">HashMap::new</span>());
+                <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
             } <span class="kw">else</span> {
                 <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
                     <span class="string">&quot;average&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">avg_temp</span>),

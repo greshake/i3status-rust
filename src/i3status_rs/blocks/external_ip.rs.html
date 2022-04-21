@@ -306,7 +306,7 @@
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">ExternalIpConfig</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">format</span>: <span class="ident">Default::default</span>(),
+            <span class="ident">format</span>: <span class="ident">default</span>(),
             <span class="ident">interval</span>: <span class="ident">Seconds::new</span>(<span class="number">300</span>),
             <span class="ident">with_network_manager</span>: <span class="bool-val">true</span>,
         }

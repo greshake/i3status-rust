@@ -155,7 +155,6 @@
 <span id="150">150</span>
 <span id="151">151</span>
 <span id="152">152</span>
-<span id="153">153</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Display and toggle the state of notifications daemon</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Right now only `dunst` is supported.</span>
@@ -189,7 +188,7 @@
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">async_trait::async_trait</span>;
-<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
+
 <span class="kw">use</span> <span class="ident">zbus::dbus_proxy</span>;
 <span class="kw">use</span> <span class="ident">zbus::PropertyStream</span>;
 
@@ -229,12 +228,11 @@
         <span class="kw">let</span> <span class="ident">is_paused</span> <span class="op">=</span> <span class="ident">driver</span>.<span class="ident">is_paused</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="ident">api</span>.<span class="ident">set_icon</span>(<span class="kw">if</span> <span class="ident">is_paused</span> { <span class="ident">ICON_OFF</span> } <span class="kw">else</span> { <span class="ident">ICON_ON</span> })<span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="ident">HashMap::new</span>();
-        <span class="kw">if</span> <span class="ident">is_paused</span> {
-            <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;paused&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::flag</span>());
-        }
-        <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
+        <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="kw">if</span> <span class="ident">is_paused</span> {
+            <span class="macro">map!</span>(<span class="string">&quot;paused&quot;</span> =&gt; <span class="ident">Value::flag</span>())
+        } <span class="kw">else</span> {
+            <span class="ident">default</span>()
+        });
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop</span> {

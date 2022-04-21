@@ -210,6 +210,13 @@
 <span id="205">205</span>
 <span id="206">206</span>
 <span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::fs::File</span>;
 <span class="kw">use</span> <span class="ident">std::io</span>::{<span class="self">self</span>, <span class="ident">BufReader</span>, <span class="ident">Read</span>};
 <span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
@@ -392,6 +399,13 @@
     <span class="ident">b2</span> <span class="op">=</span> <span class="number">0xa0</span> <span class="op">|</span> (<span class="ident">b2</span> <span class="op">&amp;</span> <span class="number">0x1f</span>);
     <span class="comment">// Get the flag string from the UTF-8 representation of our Unicode characters.</span>
     <span class="ident">String::from_utf8</span>(<span class="macro">vec!</span>[<span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, <span class="ident">b1</span>, <span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, <span class="ident">b2</span>]).<span class="ident">unwrap</span>()
+}
+
+<span class="doccomment">/// A shorcut for `Default::default()`</span>
+<span class="doccomment">/// See &lt;https://github.com/rust-lang/rust/issues/73014&gt;</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Default</span><span class="op">&gt;</span>() -&gt; <span class="ident">T</span> {
+    <span class="ident">Default::default</span>()
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>

@@ -679,7 +679,7 @@
 <span class="doccomment">//! - &quot;bat_full&quot;,</span>
 
 <span class="kw">use</span> <span class="ident">regex::Regex</span>;
-<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
+
 <span class="kw">use</span> <span class="ident">std::convert::Infallible</span>;
 <span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
 <span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
@@ -809,7 +809,7 @@
             <span class="prelude-val">None</span> =&gt; {
                 <span class="ident">api</span>.<span class="ident">show</span>();
                 <span class="ident">api</span>.<span class="ident">set_icon</span>(<span class="ident">BATTERY_UNAVAILABLE_ICON</span>)<span class="question-mark">?</span>;
-                <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">HashMap::new</span>());
+                <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
                 <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
             }
         }

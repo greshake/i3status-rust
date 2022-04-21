@@ -1377,9 +1377,9 @@
 
 <span class="kw">static</span> <span class="ident">PULSEAUDIO_CLIENT</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PulseAudioClient</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy::new</span>(<span class="ident">PulseAudioClient::new</span>);
 <span class="kw">static</span> <span class="ident">PULSEAUDIO_EVENT_LISTENER</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">tokio::sync::mpsc::Sender</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="ident">Lazy::new</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Mutex::new</span>(<span class="ident">Vec::new</span>()));
+    <span class="ident">Lazy::new</span>(<span class="ident">default</span>);
 <span class="kw">static</span> <span class="ident">PULSEAUDIO_DEVICES</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span>(<span class="ident">DeviceKind</span>, <span class="ident">String</span>), <span class="ident">PulseAudioVolInfo</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="ident">Lazy::new</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Mutex::new</span>(<span class="ident">HashMap::new</span>()));
+    <span class="ident">Lazy::new</span>(<span class="ident">default</span>);
 
 <span class="comment">// Default device names</span>
 <span class="kw">static</span> <span class="ident">PULSEAUDIO_DEFAULT_SOURCE</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
