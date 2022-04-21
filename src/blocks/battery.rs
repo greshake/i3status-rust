@@ -552,7 +552,7 @@ impl BatteryDevice for ApcUpsDevice {
 }
 
 pub struct UpowerDevice {
-    device: String,
+    device: Regex,
     device_path: Arc<Mutex<Option<String>>>,
     con: dbus::ffidisp::Connection,
     allow_missing: bool,
@@ -566,20 +566,28 @@ impl UpowerDevice {
         let con = dbus::ffidisp::Connection::new_system()
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
-        let device_path = UpowerDevice::get_device_path(device, &con)?;
+        match Regex::new(device) {
+            Ok(device) => {
+                let device_path = UpowerDevice::get_device_path(&device, &con)?;
 
-        if device_path.is_some() || allow_missing {
-            Ok(UpowerDevice {
-                device: device.to_string(),
-                device_path: Arc::new(Mutex::new(device_path)),
-                con,
-                allow_missing,
-            })
-        } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "UPower device could not be found.".to_string(),
-            ))
+                if device_path.is_some() || allow_missing {
+                    Ok(UpowerDevice {
+                        device,
+                        device_path: Arc::new(Mutex::new(device_path)),
+                        con,
+                        allow_missing,
+                    })
+                } else {
+                    Err(BlockError(
+                        "battery".to_string(),
+                        "UPower device could not be found.".to_string(),
+                    ))
+                }
+            }
+            Err(e) => Err(BlockError(
+                "battery".into(),
+                format!("Failed to parse Regex {}: {}", device, e),
+            )),
         }
     }
 
@@ -676,8 +684,8 @@ impl UpowerDevice {
 
     // Get device path. Raises exception if dbus communication fails.
     // If the device doesn't exist an exception raised unless allow_missing == true
-    fn get_device_path(device: &str, con: &dbus::ffidisp::Connection) -> Result<Option<String>> {
-        if device == "DisplayDevice" {
+    fn get_device_path(device: &Regex, con: &dbus::ffidisp::Connection) -> Result<Option<String>> {
+        if format!("{}", device) == "DisplayDevice" {
             Ok(Some(String::from(
                 "/org/freedesktop/UPower/devices/DisplayDevice",
             )))
@@ -700,7 +708,7 @@ impl UpowerDevice {
                 .block_error("battery", "Failed to read DBus reply")?;
 
             Ok(paths
-                .find(|entry| entry.ends_with(device))
+                .find(|entry| device.is_match(entry))
                 .map(|path| path.to_string()))
         }
     }
