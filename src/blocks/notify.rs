@@ -31,7 +31,7 @@
 
 use super::prelude::*;
 use async_trait::async_trait;
-use std::collections::HashMap;
+
 use zbus::dbus_proxy;
 use zbus::PropertyStream;
 
@@ -71,12 +71,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let is_paused = driver.is_paused().await?;
 
         api.set_icon(if is_paused { ICON_OFF } else { ICON_ON })?;
-
-        let mut values = HashMap::new();
-        if is_paused {
-            values.insert("paused".into(), Value::flag());
-        }
-        api.set_values(values);
+        api.set_values(if is_paused {
+            map!("paused" => Value::flag())
+        } else {
+            default()
+        });
         api.flush().await?;
 
         loop {

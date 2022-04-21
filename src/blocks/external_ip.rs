@@ -75,7 +75,7 @@ struct ExternalIpConfig {
 impl Default for ExternalIpConfig {
     fn default() -> Self {
         Self {
-            format: Default::default(),
+            format: default(),
             interval: Seconds::new(300),
             with_network_manager: true,
         }

@@ -44,7 +44,7 @@ struct SpeedtestConfig {
 impl Default for SpeedtestConfig {
     fn default() -> Self {
         Self {
-            format: Default::default(),
+            format: default(),
             interval: Seconds::new(1800),
         }
     }

@@ -212,7 +212,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 if config.hide_when_empty {
                     api.hide();
                 }
-                api.set_values(HashMap::new());
+                api.set_values(default());
                 api.set_state(State::Idle);
             }
         }

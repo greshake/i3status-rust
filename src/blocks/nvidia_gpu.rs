@@ -75,7 +75,7 @@ struct NvidiaGpuConfig {
 impl Default for NvidiaGpuConfig {
     fn default() -> Self {
         Self {
-            format: Default::default(),
+            format: default(),
             interval: 1.into(),
             gpu_id: 0,
             idle: 50,

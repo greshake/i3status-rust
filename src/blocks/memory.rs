@@ -80,8 +80,8 @@ struct MemoryConfig {
 impl Default for MemoryConfig {
     fn default() -> Self {
         Self {
-            format_mem: Default::default(),
-            format_swap: Default::default(),
+            format_mem: default(),
+            format_swap: default(),
             display_type: Memtype::Memory,
             clickable: true,
             interval: 5,

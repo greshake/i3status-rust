@@ -489,9 +489,9 @@ enum PulseAudioClientRequest {
 
 static PULSEAUDIO_CLIENT: Lazy<Result<PulseAudioClient>> = Lazy::new(PulseAudioClient::new);
 static PULSEAUDIO_EVENT_LISTENER: Lazy<Mutex<Vec<tokio::sync::mpsc::Sender<()>>>> =
-    Lazy::new(|| Mutex::new(Vec::new()));
+    Lazy::new(default);
 static PULSEAUDIO_DEVICES: Lazy<Mutex<HashMap<(DeviceKind, String), PulseAudioVolInfo>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+    Lazy::new(default);
 
 // Default device names
 static PULSEAUDIO_DEFAULT_SOURCE: Lazy<Mutex<String>> =

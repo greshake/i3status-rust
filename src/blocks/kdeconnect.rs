@@ -75,7 +75,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             device_id: None,
-            format: Default::default(),
+            format: default(),
             bat_good: 60,
             bat_info: 60,
             bat_warning: 30,

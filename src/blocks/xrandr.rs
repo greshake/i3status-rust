@@ -33,12 +33,9 @@
 //! - `backlight_full`
 //! - `resolution`
 
-use std::collections::HashMap;
 use tokio::process::Command;
-
 use super::prelude::*;
 use crate::subprocess::spawn_shell;
-
 use regex::RegexSet;
 
 #[derive(Deserialize, Debug)]
@@ -53,7 +50,7 @@ impl Default for XrandrConfig {
     fn default() -> Self {
         Self {
             interval: Seconds::new(5),
-            format: Default::default(),
+            format: default(),
             step_width: 5,
         }
     }
@@ -81,7 +78,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 "res_icon" => Value::icon(api.get_icon("resolution")?),
             });
         } else {
-            api.set_values(HashMap::new());
+            api.set_values(default());
         }
         Ok(())
     };

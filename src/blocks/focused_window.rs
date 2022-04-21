@@ -52,7 +52,7 @@ enum Driver {
 impl Default for FocusedWindowConfig {
     fn default() -> Self {
         Self {
-            format: Default::default(),
+            format: default(),
             autohide: true,
             driver: Driver::Auto,
         }

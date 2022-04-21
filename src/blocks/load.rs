@@ -45,7 +45,7 @@ struct LoadConfig {
 impl Default for LoadConfig {
     fn default() -> Self {
         Self {
-            format: Default::default(),
+            format: default(),
             interval: Seconds::new(3),
             info: 0.3,
             warning: 0.6,

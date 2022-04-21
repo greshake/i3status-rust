@@ -44,7 +44,7 @@ impl Default for RoficationConfig {
         Self {
             interval: Seconds::new(1),
             socket_path: ShellString::new("/tmp/rofi_notification_daemon"),
-            format: Default::default(),
+            format: default(),
         }
     }
 }

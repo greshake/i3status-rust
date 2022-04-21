@@ -45,7 +45,7 @@ impl Default for DockerConfig {
     fn default() -> Self {
         Self {
             interval: Seconds::new(5),
-            format: Default::default(),
+            format: default(),
             socket_path: ShellString::new("/var/run/docker.sock"),
         }
     }

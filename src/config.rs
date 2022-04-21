@@ -6,6 +6,7 @@ use toml::value;
 use crate::errors::*;
 use crate::icons::Icons;
 use crate::themes::Theme;
+use crate::util::default;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SharedConfig {
@@ -24,7 +25,7 @@ impl SharedConfig {
             self.icons
                 .0
                 .get(icon)
-                .error(format!("Icon '{icon}' not found: please check your icons file or open a new issue on GitHub if you use precompiled icons"))?,
+                .or_error(|| format!("Icon '{icon}' not found: please check your icons file or open a new issue on GitHub if you use precompiled icons"))?,
         ).into())
     }
 }
@@ -32,8 +33,8 @@ impl SharedConfig {
 impl Default for SharedConfig {
     fn default() -> Self {
         Self {
-            theme: Arc::new(Theme::default()),
-            icons: Arc::new(Icons::default()),
+            theme: default(),
+            icons: default(),
             icons_format: Arc::new(" {icon} ".into()),
         }
     }

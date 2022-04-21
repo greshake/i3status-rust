@@ -60,7 +60,7 @@
 //! - "bat_full",
 
 use regex::Regex;
-use std::collections::HashMap;
+
 use std::convert::Infallible;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -190,7 +190,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             None => {
                 api.show();
                 api.set_icon(BATTERY_UNAVAILABLE_ICON)?;
-                api.set_values(HashMap::new());
+                api.set_values(default());
                 api.set_format(format.clone());
             }
         }

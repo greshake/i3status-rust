@@ -50,10 +50,7 @@
 //! # Icons Used
 //! - `thermometer`
 
-use std::collections::HashMap;
-
 use super::prelude::*;
-
 use sensors::FeatureType::SENSORS_FEATURE_TEMP;
 use sensors::Sensors;
 use sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
@@ -186,7 +183,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         'outer: loop {
             if collapsed {
-                api.set_values(HashMap::new());
+                api.set_values(default());
             } else {
                 api.set_values(map! {
                     "average" => Value::degrees(avg_temp),

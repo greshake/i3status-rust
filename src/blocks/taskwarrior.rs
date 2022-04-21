@@ -71,7 +71,7 @@ impl Default for TaskwarriorConfig {
                 name: "pending".into(),
                 filter: "-COMPLETED -DELETED".into(),
             }],
-            format: FormatConfig::default(),
+            format: default(),
             data_location: ShellString::new("~/.task"),
         }
     }
