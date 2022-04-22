@@ -7,8 +7,7 @@
 //!
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
-//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. | No | Any battery device
-//! `device_regex` | Set to `true` if you want `device` setting to be treated as regex | No | `false`
+//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. Regular expressions can be used. | No | Any battery device
 //! `driver` | One of `"sysfs"` or `"upower"` | No | `"sysfs"`
 //! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$percentage&vert;"</code>
@@ -88,7 +87,6 @@ const BATTERY_UNAVAILABLE_ICON: &str = "bat_not_available";
 #[derivative(Default)]
 struct BatteryConfig {
     device: Option<String>,
-    device_regex: bool,
     driver: BatteryDriver,
     #[derivative(Default(value = "10.into()"))]
     interval: Seconds,
@@ -122,7 +120,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let format = config.format.with_default("$percentage")?;
     let format_full = config.full_format.with_default("")?;
 
-    let dev_name = StringPattern::new(config.device, config.device_regex)?;
+    let dev_name = DeviceName::new(config.device)?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
         BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::new(dev_name, config.interval)),
         BatteryDriver::Upower => Box::new(UPowerDevice::new(dev_name).await?),
@@ -200,34 +198,30 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
-enum StringPattern {
+enum DeviceName {
     Any,
-    Exact(String),
     Regex(Regex),
 }
 
-impl StringPattern {
-    fn new(pat: Option<String>, regex: bool) -> Result<Self> {
-        Ok(match (pat, regex) {
-            (None, _) => Self::Any,
-            (Some(pat), false) => Self::Exact(pat),
-            (Some(pat), true) => Self::Regex(pat.parse().error("failed to parse regex")?),
+impl DeviceName {
+    fn new(pat: Option<String>) -> Result<Self> {
+        Ok(match pat {
+            None => Self::Any,
+            Some(pat) => Self::Regex(pat.parse().error("failed to parse regex")?),
         })
     }
 
-    fn matches(&self, text: &str) -> bool {
+    fn matches(&self, name: &str) -> bool {
         match self {
             Self::Any => true,
-            Self::Exact(pat) => pat == text,
-            Self::Regex(pat) => pat.is_match(text),
+            Self::Regex(pat) => pat.is_match(name),
         }
     }
 
     fn exact(&self) -> Option<&str> {
-        if let Self::Exact(pat) = self {
-            Some(pat)
-        } else {
-            None
+        match self {
+            DeviceName::Any => None,
+            DeviceName::Regex(pat) => Some(pat.as_str()),
         }
     }
 }
@@ -322,13 +316,13 @@ trait BatteryDevice {
 /// Represents a physical power supply device, as known to sysfs.
 /// <https://www.kernel.org/doc/html/v5.15/power/power_supply_class.html>
 struct PowerSupplyDevice {
-    dev_name: StringPattern,
+    dev_name: DeviceName,
     dev_path: Option<PathBuf>,
     interval: Interval,
 }
 
 impl PowerSupplyDevice {
-    fn new(dev_name: StringPattern, interval: Seconds) -> Self {
+    fn new(dev_name: DeviceName, interval: Seconds) -> Self {
         Self {
             dev_name,
             dev_path: None,
@@ -418,6 +412,12 @@ impl BatteryDevice for PowerSupplyDevice {
             Self::read_prop::<f64>(path, "time_to_full"), // seconds
         );
 
+        if !Self::device_available(path).await {
+            // Device became unavailable while we were reading data from it. The simplest thing we
+            // can do now is to pretend it wasn't available to begin with.
+            return Ok(None);
+        }
+
         let charge_now = charge_now.map(|c| c * 1e-6); // uAh -> Ah
         let charge_full = charge_full.map(|c| c * 1e-6); // uAh -> Ah
         let energy_now = energy_now.map(|e| e * 1e-6); // uWh -> Wh
@@ -486,7 +486,7 @@ pub struct UPowerDevice<'a> {
 }
 
 impl<'a> UPowerDevice<'a> {
-    async fn new(device: StringPattern) -> Result<UPowerDevice<'a>> {
+    async fn new(device: DeviceName) -> Result<UPowerDevice<'a>> {
         let dbus_conn = new_system_dbus_connection().await?;
         let (device_path, device_proxy) = {
             if device.exact() == Some("DisplayDevice") {
@@ -539,6 +539,7 @@ impl<'a> UPowerDevice<'a> {
             }
         };
 
+        let dbus_conn = new_system_dbus_connection().await?;
         DBusProxy::new(&dbus_conn)
             .await
             .error("failed to cerate DBusProxy")?
