@@ -61,21 +61,18 @@ pub trait BatteryDevice {
 /// Represents a physical power supply device, as known to sysfs.
 pub struct PowerSupplyDevice {
     device_path: PathBuf,
-    allow_missing: bool,
     charge_full: Option<u64>,
     energy_full: Option<u64>,
 }
 
 impl PowerSupplyDevice {
     /// Use the power supply device `device`, as found in the
-    /// `/sys/class/power_supply` directory. Raises an error if the directory for
-    /// that device cannot be found and `allow_missing` is `false`.
-    pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
+    /// `/sys/class/power_supply` directory.
+    pub fn from_device(device: &str) -> Result<Self> {
         let device_path = Path::new("/sys/class/power_supply").join(device);
 
         let device = PowerSupplyDevice {
             device_path,
-            allow_missing,
             charge_full: None,
             energy_full: None,
         };
@@ -99,24 +96,14 @@ impl BatteryDevice for PowerSupplyDevice {
         if path.exists() {
             return read_file("battery", path).map_or(false, |x| x == "1");
         }
-        return false;
+        false
     }
 
     fn refresh_device_info(&mut self) -> Result<()> {
         if !self.is_available() {
-            // The user indicated that it's ok for this battery to be missing/go away
-            if self.allow_missing {
-                self.charge_full = None;
-                self.energy_full = None;
-                return Ok(());
-            }
-            return Err(BlockError(
-                "battery".into(),
-                format!(
-                    "Power supply device '{}' does not exist",
-                    self.device_path.to_string_lossy()
-                ),
-            ));
+            self.charge_full = None;
+            self.energy_full = None;
+            return Ok(());
         }
 
         // Read charge_full exactly once, if it exists, units are µAh
@@ -345,7 +332,6 @@ impl BatteryDevice for PowerSupplyDevice {
 /// Represents a battery known to apcaccess.
 pub struct ApcUpsDevice {
     con: ApcAccess,
-    allow_missing: bool,
     status: Option<String>,
     charge_percent: f64,
     time_left: f64,
@@ -354,14 +340,13 @@ pub struct ApcUpsDevice {
 }
 
 impl ApcUpsDevice {
-    pub fn from_device(device: &str, allow_missing: bool) -> Result<ApcUpsDevice> {
+    pub fn from_device(device: &str) -> Result<ApcUpsDevice> {
         Ok(ApcUpsDevice {
             con: ApcAccess::new(device, 1).block_error(
                 "battery",
                 &format!("Could not create a apcaccess connection to {}", device),
             )?,
             status: None,
-            allow_missing,
             charge_percent: 0.0,
             time_left: 0.0,
             nom_power: 0.0,
@@ -418,18 +403,11 @@ impl BatteryDevice for ApcUpsDevice {
         self.status = status_data.get("STATUS").map(String::from);
 
         if !self.con.is_available(&status_result) {
-            // The user indicated that it's ok for this battery to be missing/go away
-            if self.allow_missing {
-                self.charge_percent = 0.0;
-                self.time_left = 0.0;
-                self.nom_power = 0.0;
-                self.load_percent = 0.0;
-                return Ok(());
-            }
-            return Err(BlockError(
-                "battery".into(),
-                "Unable to communicate with apcupsd".to_string(),
-            ));
+            self.charge_percent = 0.0;
+            self.time_left = 0.0;
+            self.nom_power = 0.0;
+            self.load_percent = 0.0;
+            return Ok(());
         }
 
         // NOTE: Percentages are 0.0-100.0, not 0.0-1.0
@@ -485,32 +463,23 @@ pub struct UpowerDevice {
     device: String,
     device_path: Arc<Mutex<Option<String>>>,
     con: dbus::ffidisp::Connection,
-    allow_missing: bool,
 }
 
 impl UpowerDevice {
     /// Create the UPower device from the `device` string, which is converted to
     /// the path `"/org/freedesktop/UPower/devices/<device>"`. Raises an error
     /// if D-Bus does not respond.
-    pub fn from_device(device: &str, allow_missing: bool) -> Result<Self> {
+    pub fn from_device(device: &str) -> Result<Self> {
         let con = dbus::ffidisp::Connection::new_system()
             .block_error("battery", "Failed to establish D-Bus connection.")?;
 
         let device_path = UpowerDevice::get_device_path(device, &con)?;
 
-        if device_path.is_some() || allow_missing {
-            Ok(UpowerDevice {
-                device: device.to_string(),
-                device_path: Arc::new(Mutex::new(device_path)),
-                con,
-                allow_missing,
-            })
-        } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "UPower device could not be found.".to_string(),
-            ))
-        }
+        Ok(UpowerDevice {
+            device: device.to_string(),
+            device_path: Arc::new(Mutex::new(device_path)),
+            con,
+        })
     }
 
     /// Monitor UPower property changes in a separate thread and send updates
@@ -579,8 +548,7 @@ impl UpowerDevice {
     }
 
     // Get a value from the UPower device. If there is a failure in doing so
-    // Then either a fallback value is used, if allow_missing is true, or
-    // and exception is raised.
+    // Then either a fallback value is used or and exception is raised.
     fn get_upower_value<T: for<'b> dbus::arg::Get<'b>>(
         &self,
         key: &str,
@@ -595,17 +563,10 @@ impl UpowerDevice {
                 return Ok(value);
             }
         }
-        if self.allow_missing {
-            return Ok(fallback_value);
-        }
-        Err(BlockError(
-            "battery".into(),
-            format!("Failed to read UPower {} property.", key),
-        ))
+        Ok(fallback_value)
     }
 
     // Get device path. Raises exception if dbus communication fails.
-    // If the device doesn't exist an exception raised unless allow_missing == true
     fn get_device_path(device: &str, con: &dbus::ffidisp::Connection) -> Result<Option<String>> {
         if device == "DisplayDevice" {
             Ok(Some(String::from(
@@ -705,7 +666,6 @@ pub struct Battery {
     format: FormatTemplate,
     full_format: FormatTemplate,
     missing_format: FormatTemplate,
-    allow_missing: bool,
     hide_missing: bool,
     driver: BatteryDriver,
     full_threshold: u64,
@@ -771,9 +731,6 @@ pub struct BatteryConfig {
     /// The threshold below which the remaining capacity is shown as critical
     pub critical: u64,
 
-    /// If the battery device cannot be found, do not fail and show the block anyway.
-    pub allow_missing: bool,
-
     /// If the battery device cannot be found, completely hide this block.
     pub hide_missing: bool,
 }
@@ -792,7 +749,6 @@ impl Default for BatteryConfig {
             info: 60,
             warning: 30,
             critical: 15,
-            allow_missing: false,
             hide_missing: false,
         }
     }
@@ -832,25 +788,17 @@ impl ConfigBlock for Battery {
                     // Better to default to the system battery, rather than possibly a keyboard or mouse battery.
                     // System batteries usually start with BAT or CMB.
                     // Otherwise, just grab the first one from the list.
-                    let chosen_device = if let Some(preferred_device) = found_battery_devices
+                    let chosen_device = found_battery_devices
                         .iter()
                         .find(|&s| s.starts_with("BAT") || s.starts_with("CMB"))
-                    {
-                        Some(preferred_device)
-                    } else {
-                        found_battery_devices.first()
-                    };
+                        .or_else(|| found_battery_devices.first());
 
                     match chosen_device {
                         Some(d) => d.to_string(),
                         None => {
-                            if block_config.allow_missing {
-                                // TODO: If the battery isn't actually BAT0, then even if it appears again we will never update
-                                // Need to implement device refresh
-                                "BAT0".to_string()
-                            } else {
-                                return Err(BlockError("battery".to_string(), "failed to determine default battery - please set your battery device in the configuration file".to_string()));
-                            }
+                            // TODO: If the battery isn't actually BAT0, then even if it appears again we will never update
+                            // Need to implement device refresh
+                            "BAT0".to_string()
                         }
                     }
                 }
@@ -858,19 +806,13 @@ impl ConfigBlock for Battery {
         };
 
         let device: Box<dyn BatteryDevice> = match block_config.driver {
-            BatteryDriver::ApcAccess => Box::new(ApcUpsDevice::from_device(
-                &device_str,
-                block_config.allow_missing,
-            )?),
+            BatteryDriver::ApcAccess => Box::new(ApcUpsDevice::from_device(&device_str)?),
             BatteryDriver::Upower => {
-                let out = UpowerDevice::from_device(&device_str, block_config.allow_missing)?;
+                let out = UpowerDevice::from_device(&device_str)?;
                 out.monitor(id, update_request);
                 Box::new(out)
             }
-            BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(
-                &device_str,
-                block_config.allow_missing,
-            )?),
+            BatteryDriver::Sysfs => Box::new(PowerSupplyDevice::from_device(&device_str)?),
         };
 
         let fallback = match shared_config.get_icon("bat_10") {
@@ -889,7 +831,6 @@ impl ConfigBlock for Battery {
             format: block_config.format.with_default("{percentage}")?,
             full_format: block_config.full_format.with_default("")?,
             missing_format: block_config.missing_format.with_default("{percentage}")?,
-            allow_missing: block_config.allow_missing,
             hide_missing: block_config.hide_missing,
             driver: block_config.driver,
             full_threshold: block_config.full_threshold,
@@ -905,13 +846,8 @@ impl ConfigBlock for Battery {
 
 impl Block for Battery {
     fn update(&mut self) -> Result<Option<Update>> {
-        // TODO: Maybe use dbus to immediately signal when the battery state changes.
-
-        // Exit early, if the battery device went missing, but the user
-        // allows this device to go missing.
-        if !self.device.is_available() && self.allow_missing {
-            // Respect the original format string, even if the battery
-            // cannot be found right now.
+        if !self.device.is_available() {
+            // TODO: Remove (What's the point of setting these values if `missing_format` is used anyway?)
             let values = map!(
                 "percentage" => Value::from_string("X".to_string()),
                 "time" => Value::from_string("xx:xx".to_string()),
