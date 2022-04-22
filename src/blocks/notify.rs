@@ -30,8 +30,6 @@
 //! - `bell-slash`
 
 use super::prelude::*;
-use async_trait::async_trait;
-
 use zbus::dbus_proxy;
 use zbus::PropertyStream;
 
