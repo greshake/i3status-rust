@@ -685,7 +685,7 @@ impl UpowerDevice {
     // Get device path. Raises exception if dbus communication fails.
     // If the device doesn't exist an exception raised unless allow_missing == true
     fn get_device_path(device: &Regex, con: &dbus::ffidisp::Connection) -> Result<Option<String>> {
-        if format!("{}", device) == "DisplayDevice" {
+        if device.as_str() == "DisplayDevice" {
             Ok(Some(String::from(
                 "/org/freedesktop/UPower/devices/DisplayDevice",
             )))
