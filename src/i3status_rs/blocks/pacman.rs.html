@@ -684,20 +684,20 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">get_updates_db_dir</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">get_updates_db_dir</span>() -&gt; <span class="ident">PathBuf</span> {
     <span class="kw">match</span> <span class="ident">env::var_os</span>(<span class="string">&quot;CHECKUPDATES_DB&quot;</span>) {
-        <span class="prelude-val">Some</span>(<span class="ident">val</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">val</span>.<span class="ident">into</span>()),
+        <span class="prelude-val">Some</span>(<span class="ident">val</span>) =&gt; <span class="ident">val</span>.<span class="ident">into</span>(),
         <span class="prelude-val">None</span> =&gt; {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">env::temp_dir</span>();
             <span class="kw">let</span> <span class="ident">user</span> <span class="op">=</span> <span class="ident">env::var</span>(<span class="string">&quot;USER&quot;</span>).<span class="ident">unwrap_or_default</span>();
             <span class="ident">path</span>.<span class="ident">push</span>(<span class="macro">format!</span>(<span class="string">&quot;checkup-db-{user}&quot;</span>));
-            <span class="prelude-val">Ok</span>(<span class="ident">path</span>)
+            <span class="ident">path</span>
         }
     }
 }
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_pacman_available_updates</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">updates_db</span> <span class="op">=</span> <span class="ident">get_updates_db_dir</span>()<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">updates_db</span> <span class="op">=</span> <span class="ident">get_updates_db_dir</span>();
 
     <span class="comment">// Determine pacman database path</span>
     <span class="kw">let</span> <span class="ident">db_path</span> <span class="op">=</span> <span class="ident">env::var_os</span>(<span class="string">&quot;DBPath&quot;</span>)

@@ -300,14 +300,6 @@
 <span id="295">295</span>
 <span id="296">296</span>
 <span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
-<span id="304">304</span>
-<span id="305">305</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 <span class="kw">use</span> <span class="ident">std::fmt</span>;
 <span class="kw">use</span> <span class="ident">std::ops::Add</span>;
@@ -377,8 +369,7 @@
 
         <span class="kw">match</span> (<span class="self">self</span>, <span class="ident">rhs</span>) {
             <span class="comment">// Do nothing</span>
-            (<span class="ident">x</span>, <span class="ident">Color::None</span> <span class="op">|</span> <span class="ident">Color::Auto</span>) =&gt; <span class="ident">x</span>,
-            (<span class="ident">Color::None</span> <span class="op">|</span> <span class="ident">Color::Auto</span>, <span class="ident">x</span>) =&gt; <span class="ident">x</span>,
+            (<span class="ident">x</span>, <span class="ident"><span class="self">Self</span>::None</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Auto</span>) <span class="op">|</span> (<span class="ident"><span class="self">Self</span>::None</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Auto</span>, <span class="ident">x</span>) =&gt; <span class="ident">x</span>,
             <span class="comment">// Hsv + Hsv =&gt; Hsv</span>
             (<span class="ident">Color::Hsva</span>(<span class="ident">hsv1</span>, <span class="ident">a1</span>), <span class="ident">Color::Hsva</span>(<span class="ident">hsv2</span>, <span class="ident">a2</span>)) =&gt; {
                 <span class="ident">Color::Hsva</span>(<span class="ident">add_hsv</span>(<span class="ident">hsv1</span>, <span class="ident">hsv2</span>), <span class="ident">a1</span>.<span class="ident">saturating_add</span>(<span class="ident">a2</span>))
@@ -577,14 +568,7 @@
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">overrides</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
                 <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">key</span>) <span class="op">=</span> <span class="ident">map</span>.<span class="ident">next_key</span>()<span class="question-mark">?</span> {
                     <span class="kw">match</span> <span class="ident">key</span> {
-                        <span class="comment">// TODO merge name and file into one option (let&#39;s say &quot;theme&quot;)</span>
-                        <span class="ident">Field::Name</span> =&gt; {
-                            <span class="kw">if</span> <span class="ident">theme</span>.<span class="ident">is_some</span>() {
-                                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">de::Error::duplicate_field</span>(<span class="string">&quot;name or file&quot;</span>));
-                            }
-                            <span class="ident">theme</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">map</span>.<span class="ident">next_value</span>()<span class="question-mark">?</span>);
-                        }
-                        <span class="ident">Field::File</span> =&gt; {
+                        <span class="ident">Field::Name</span> <span class="op">|</span> <span class="ident">Field::File</span> =&gt; {
                             <span class="kw">if</span> <span class="ident">theme</span>.<span class="ident">is_some</span>() {
                                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">de::Error::duplicate_field</span>(<span class="string">&quot;name or file&quot;</span>));
                             }

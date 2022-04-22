@@ -563,11 +563,11 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_text</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">text</span>: <span class="ident">String</span>) {
-        <span class="self">self</span>.<span class="ident">cmd_buf</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::SetText</span>(<span class="ident">text</span>))
+        <span class="self">self</span>.<span class="ident">cmd_buf</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::SetText</span>(<span class="ident">text</span>));
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_texts</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">full</span>: <span class="ident">String</span>, <span class="ident">short</span>: <span class="ident">String</span>) {
-        <span class="self">self</span>.<span class="ident">cmd_buf</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::SetTexts</span>(<span class="ident">full</span>, <span class="ident">short</span>))
+        <span class="self">self</span>.<span class="ident">cmd_buf</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::SetTexts</span>(<span class="ident">full</span>, <span class="ident">short</span>));
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_values</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">values</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Value</span><span class="op">&gt;</span>) {

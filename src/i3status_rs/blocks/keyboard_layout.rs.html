@@ -392,7 +392,7 @@
                 <span class="ident">send</span>((<span class="ident">layout</span>.<span class="ident">into</span>(), <span class="prelude-val">None</span>), <span class="kw-2">&amp;mut</span> <span class="ident">api</span>);
                 <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
-                <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>).<span class="kw">await</span>
+                <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>).<span class="kw">await</span>;
             }
         }
         <span class="ident">KeyboardLayoutDriver::LocaleBus</span> =&gt; {

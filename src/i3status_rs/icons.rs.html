@@ -197,13 +197,6 @@
 <span id="192">192</span>
 <span id="193">193</span>
 <span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">MapAccess</span>, <span class="ident">Visitor</span>};
 <span class="kw">use</span> <span class="ident">serde_derive::Deserialize</span>;
@@ -364,14 +357,7 @@
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">overrides</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
                 <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">key</span>) <span class="op">=</span> <span class="ident">map</span>.<span class="ident">next_key</span>()<span class="question-mark">?</span> {
                     <span class="kw">match</span> <span class="ident">key</span> {
-                        <span class="comment">// TODO merge name and file into one option (let&#39;s say &quot;icons&quot;)</span>
-                        <span class="ident">Field::Name</span> =&gt; {
-                            <span class="kw">if</span> <span class="ident">icons</span>.<span class="ident">is_some</span>() {
-                                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">de::Error::duplicate_field</span>(<span class="string">&quot;name or file&quot;</span>));
-                            }
-                            <span class="ident">icons</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">map</span>.<span class="ident">next_value</span>()<span class="question-mark">?</span>);
-                        }
-                        <span class="ident">Field::File</span> =&gt; {
+                        <span class="ident">Field::Name</span> <span class="op">|</span> <span class="ident">Field::File</span> =&gt; {
                             <span class="kw">if</span> <span class="ident">icons</span>.<span class="ident">is_some</span>() {
                                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">de::Error::duplicate_field</span>(<span class="string">&quot;name or file&quot;</span>));
                             }

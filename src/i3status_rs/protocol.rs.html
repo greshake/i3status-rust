@@ -75,14 +75,10 @@
 <span id="70">70</span>
 <span id="71">71</span>
 <span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
 </pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">i3bar_block</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">i3bar_event</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes::Color</span>;
 
 <span class="kw">use</span> <span class="ident">i3bar_block::I3BarBlock</span>;
@@ -95,7 +91,7 @@
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_blocks</span>(<span class="ident">blocks</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">I3BarBlock</span><span class="op">&gt;</span>], <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">SharedConfig</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_blocks</span>(<span class="ident">blocks</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">I3BarBlock</span><span class="op">&gt;</span>], <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">SharedConfig</span>) {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_bg</span> <span class="op">=</span> <span class="ident">Color::None</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rendered_blocks</span> <span class="op">=</span> <span class="macro">vec!</span>[];
 
@@ -150,8 +146,6 @@
     }
 
     <span class="macro">println!</span>(<span class="string">&quot;{},&quot;</span>, <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">rendered_blocks</span>).<span class="ident">unwrap</span>());
-
-    <span class="prelude-val">Ok</span>(())
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.60.0 (7737e0b5c 2022-04-04)" ></div>
