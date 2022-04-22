@@ -16,9 +16,7 @@ pub fn signals_stream() -> mpsc::Receiver<Signal> {
     let (tx, rx) = mpsc::channel(32);
 
     let (sigmin, sigmax) = (SIGRTMIN(), SIGRTMAX());
-    let mut signals = Signals::new((sigmin..sigmax).chain(Some(SIGUSR1)).chain(Some(SIGUSR2)))
-        .unwrap()
-        .fuse();
+    let mut signals = Signals::new((sigmin..sigmax).chain([SIGUSR1, SIGUSR2])).unwrap();
 
     tokio::spawn(async move {
         loop {
