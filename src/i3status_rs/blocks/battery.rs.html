@@ -617,6 +617,7 @@
 <span id="612">612</span>
 <span id="613">613</span>
 <span id="614">614</span>
+<span id="615">615</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block can display the current battery state (Full, Charging or Discharging), percentage</span>
@@ -626,8 +627,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Required | Default</span>
 <span class="doccomment">//! ----|--------|----------|--------</span>
-<span class="doccomment">//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `&quot;DisplayDevice&quot;`. | No | Any battery device</span>
-<span class="doccomment">//! `device_regex` | Set to `true` if you want `device` setting to be treated as regex | No | `false`</span>
+<span class="doccomment">//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `&quot;DisplayDevice&quot;`. Regular expressions can be used. | No | Any battery device</span>
 <span class="doccomment">//! `driver` | One of `&quot;sysfs&quot;` or `&quot;upower&quot;` | No | `&quot;sysfs&quot;`</span>
 <span class="doccomment">//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;`. | No | `10`</span>
 <span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | No | &lt;code&gt;&quot;$percentage&amp;vert;&quot;&lt;/code&gt;</span>
@@ -707,7 +707,6 @@
 <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">BatteryConfig</span> {
     <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">device_regex</span>: <span class="ident">bool</span>,
     <span class="ident">driver</span>: <span class="ident">BatteryDriver</span>,
     <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;10.into()&quot;</span>))]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
@@ -741,7 +740,7 @@
     <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$percentage&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">format_full</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">full_format</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">dev_name</span> <span class="op">=</span> <span class="ident">StringPattern::new</span>(<span class="ident">config</span>.<span class="ident">device</span>, <span class="ident">config</span>.<span class="ident">device_regex</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">dev_name</span> <span class="op">=</span> <span class="ident">DeviceName::new</span>(<span class="ident">config</span>.<span class="ident">device</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">device</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BatteryDevice</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
         <span class="ident">BatteryDriver::Sysfs</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">PowerSupplyDevice::new</span>(<span class="ident">dev_name</span>, <span class="ident">config</span>.<span class="ident">interval</span>)),
         <span class="ident">BatteryDriver::Upower</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">UPowerDevice::new</span>(<span class="ident">dev_name</span>).<span class="kw">await</span><span class="question-mark">?</span>),
@@ -819,34 +818,30 @@
     }
 }
 
-<span class="kw">enum</span> <span class="ident">StringPattern</span> {
+<span class="kw">enum</span> <span class="ident">DeviceName</span> {
     <span class="ident">Any</span>,
-    <span class="ident">Exact</span>(<span class="ident">String</span>),
     <span class="ident">Regex</span>(<span class="ident">Regex</span>),
 }
 
-<span class="kw">impl</span> <span class="ident">StringPattern</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">pat</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">regex</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="kw">match</span> (<span class="ident">pat</span>, <span class="ident">regex</span>) {
-            (<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; <span class="ident"><span class="self">Self</span>::Any</span>,
-            (<span class="prelude-val">Some</span>(<span class="ident">pat</span>), <span class="bool-val">false</span>) =&gt; <span class="ident"><span class="self">Self</span>::Exact</span>(<span class="ident">pat</span>),
-            (<span class="prelude-val">Some</span>(<span class="ident">pat</span>), <span class="bool-val">true</span>) =&gt; <span class="ident"><span class="self">Self</span>::Regex</span>(<span class="ident">pat</span>.<span class="ident">parse</span>().<span class="ident">error</span>(<span class="string">&quot;failed to parse regex&quot;</span>)<span class="question-mark">?</span>),
+<span class="kw">impl</span> <span class="ident">DeviceName</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">pat</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">pat</span> {
+            <span class="prelude-val">None</span> =&gt; <span class="ident"><span class="self">Self</span>::Any</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">pat</span>) =&gt; <span class="ident"><span class="self">Self</span>::Regex</span>(<span class="ident">pat</span>.<span class="ident">parse</span>().<span class="ident">error</span>(<span class="string">&quot;failed to parse regex&quot;</span>)<span class="question-mark">?</span>),
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">matches</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">text</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">matches</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">bool</span> {
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident"><span class="self">Self</span>::Any</span> =&gt; <span class="bool-val">true</span>,
-            <span class="ident"><span class="self">Self</span>::Exact</span>(<span class="ident">pat</span>) =&gt; <span class="ident">pat</span> <span class="op">==</span> <span class="ident">text</span>,
-            <span class="ident"><span class="self">Self</span>::Regex</span>(<span class="ident">pat</span>) =&gt; <span class="ident">pat</span>.<span class="ident">is_match</span>(<span class="ident">text</span>),
+            <span class="ident"><span class="self">Self</span>::Regex</span>(<span class="ident">pat</span>) =&gt; <span class="ident">pat</span>.<span class="ident">is_match</span>(<span class="ident">name</span>),
         }
     }
 
     <span class="kw">fn</span> <span class="ident">exact</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident"><span class="self">Self</span>::Exact</span>(<span class="ident">pat</span>) <span class="op">=</span> <span class="self">self</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">pat</span>)
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">DeviceName::Any</span> =&gt; <span class="prelude-val">None</span>,
+            <span class="ident">DeviceName::Regex</span>(<span class="ident">pat</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">pat</span>.<span class="ident">as_str</span>()),
         }
     }
 }
@@ -941,13 +936,13 @@
 <span class="doccomment">/// Represents a physical power supply device, as known to sysfs.</span>
 <span class="doccomment">/// &lt;https://www.kernel.org/doc/html/v5.15/power/power_supply_class.html&gt;</span>
 <span class="kw">struct</span> <span class="ident">PowerSupplyDevice</span> {
-    <span class="ident">dev_name</span>: <span class="ident">StringPattern</span>,
+    <span class="ident">dev_name</span>: <span class="ident">DeviceName</span>,
     <span class="ident">dev_path</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
     <span class="ident">interval</span>: <span class="ident">Interval</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">PowerSupplyDevice</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">dev_name</span>: <span class="ident">StringPattern</span>, <span class="ident">interval</span>: <span class="ident">Seconds</span>) -&gt; <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">dev_name</span>: <span class="ident">DeviceName</span>, <span class="ident">interval</span>: <span class="ident">Seconds</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">dev_name</span>,
             <span class="ident">dev_path</span>: <span class="prelude-val">None</span>,
@@ -1037,6 +1032,12 @@
             <span class="ident"><span class="self">Self</span>::read_prop</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">path</span>, <span class="string">&quot;time_to_full&quot;</span>), <span class="comment">// seconds</span>
         );
 
+        <span class="kw">if</span> <span class="op">!</span><span class="ident"><span class="self">Self</span>::device_available</span>(<span class="ident">path</span>).<span class="kw">await</span> {
+            <span class="comment">// Device became unavailable while we were reading data from it. The simplest thing we</span>
+            <span class="comment">// can do now is to pretend it wasn&#39;t available to begin with.</span>
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+        }
+
         <span class="kw">let</span> <span class="ident">charge_now</span> <span class="op">=</span> <span class="ident">charge_now</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span> <span class="op">*</span> <span class="number">1e-6</span>); <span class="comment">// uAh -&gt; Ah</span>
         <span class="kw">let</span> <span class="ident">charge_full</span> <span class="op">=</span> <span class="ident">charge_full</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span> <span class="op">*</span> <span class="number">1e-6</span>); <span class="comment">// uAh -&gt; Ah</span>
         <span class="kw">let</span> <span class="ident">energy_now</span> <span class="op">=</span> <span class="ident">energy_now</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span> <span class="op">*</span> <span class="number">1e-6</span>); <span class="comment">// uWh -&gt; Wh</span>
@@ -1105,7 +1106,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">UPowerDevice</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">device</span>: <span class="ident">StringPattern</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UPowerDevice</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">device</span>: <span class="ident">DeviceName</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UPowerDevice</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">device_path</span>, <span class="ident">device_proxy</span>) <span class="op">=</span> {
             <span class="kw">if</span> <span class="ident">device</span>.<span class="ident">exact</span>() <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="string">&quot;DisplayDevice&quot;</span>) {
@@ -1158,6 +1159,7 @@
             }
         };
 
+        <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">DBusProxy::new</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>)
             .<span class="kw">await</span>
             .<span class="ident">error</span>(<span class="string">&quot;failed to cerate DBusProxy&quot;</span>)<span class="question-mark">?</span>
