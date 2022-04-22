@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::errors::*;
 
 use super::placeholder::{MinPrefixConfig, Placeholder};
@@ -18,6 +20,7 @@ enum InternalValue {
     Integer(i64),
     Float(f64),
     Boolean(bool),
+    BarGraph(VecDeque<f64>),
 }
 
 fn format_number(
@@ -124,6 +127,52 @@ fn format_bar(value: f64, length: usize) -> String {
         })
         .collect()
 }
+pub fn format_bar_graph<'a, T>(content: T, min: Option<f64>, max: Option<f64>) -> String
+where
+    T: Iterator<Item = &'a f64> + Clone,
+{
+    // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
+    static BARS: [char; 8] = [
+        '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
+        '\u{2588}',
+    ];
+
+    let mut iter = content.clone();
+    let min = min.unwrap_or_else(|| iter.fold(f64::INFINITY, |a, &b| a.min(b)));
+    iter = content.clone();
+    let max = max.unwrap_or_else(|| iter.fold(f64::NEG_INFINITY, |a, &b| a.max(b)));
+    let extant = max - min;
+    if extant.is_normal() {
+        let length = BARS.len() as f64 - 1.0;
+        content
+            .into_iter()
+            .map(|x| BARS[((x.clamp(min, max) - min) / extant * length) as usize])
+            .collect()
+    } else {
+        content.into_iter().map(|_| BARS[0]).collect::<_>()
+    }
+}
+
+fn graph_max_from_placeholder(placeholder: &Placeholder) -> Result<Option<f64>> {
+    let unit = placeholder.unit.unit;
+    let min_prefix = placeholder.min_prefix.value;
+    let bar_max_value = placeholder.bar_max_value;
+
+    let mut bar_max_value = match bar_max_value {
+        Some(value) => value,
+        None => {
+            return Ok(None);
+        }
+    };
+    if let Some(unit) = unit {
+        bar_max_value *= unit.convert(Unit::Bytes)?;
+    }
+    if let Some(min_prefix) = min_prefix {
+        bar_max_value *= min_prefix.convert(Prefix::One);
+    }
+
+    Ok(Some(bar_max_value))
+}
 
 impl Value {
     // Constructors
@@ -157,6 +206,14 @@ impl Value {
             min_width: 2,
             unit: Unit::None,
             value: InternalValue::Boolean(value),
+        }
+    }
+    pub fn from_deque(value: VecDeque<f64>) -> Self {
+        Self {
+            icon: None,
+            min_width: 10,
+            unit: Unit::None,
+            value: InternalValue::BarGraph(value),
         }
     }
 
@@ -202,7 +259,7 @@ impl Value {
 
     pub fn format(&self, var: &Placeholder) -> Result<String> {
         // Get user-specified min_width and pad_with values. Use defaults instead
-        let min_width = var.min_width.min_width.unwrap_or(self.min_width);
+        let min_width = var.min_width.value.unwrap_or(self.min_width);
         let pad_with = var.min_width.pad_with;
         // Apply unit override
         let unit = var.unit.unit.unwrap_or(self.unit);
@@ -219,7 +276,7 @@ impl Value {
             }
         }
 
-        let value = match self.value {
+        let value = match &self.value {
             InternalValue::Text(ref text) => {
                 // Format text value. First pad it to the left with `pad_with` symbol. Then apply
                 // `max_width` option.
@@ -237,7 +294,7 @@ impl Value {
             InternalValue::Integer(value) => {
                 // Convert the value
                 // TODO better conversion mechanism
-                let value = (value as f64 * self.unit.convert(unit)?) as i64;
+                let value = (*value as f64 * self.unit.convert(unit)?) as i64;
 
                 // Pad the resulting string to the right
                 let text = value.to_string();
@@ -261,6 +318,14 @@ impl Value {
                 true => String::from("T"),
                 false => String::from("F"),
             },
+            InternalValue::BarGraph(values) => {
+                let max_val = graph_max_from_placeholder(var)?;
+                format_bar_graph(
+                    values.iter().skip(values.len().saturating_sub(min_width)),
+                    max_val.and(Some(0_f64)),
+                    max_val,
+                )
+            }
         };
 
         // We prepend the resulting string with the icon if it is set

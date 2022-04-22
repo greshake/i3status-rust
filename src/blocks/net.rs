@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::fmt;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
@@ -14,11 +15,12 @@ use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
+use crate::formatting::placeholder::Placeholder;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
-use crate::util::{escape_pango_text, format_vec_to_bar_graph};
+use crate::util::escape_pango_text;
 use crate::widgets::{text::TextWidget, I3BarWidget, Spacing};
 
 lazy_static! {
@@ -225,8 +227,7 @@ impl NetworkDevice {
             .filter(|dev| dev.addr_info.is_some())
             .flat_map(|dev| &dev.addr_info)
             .flatten()
-            .filter_map(|addr| addr.local.clone())
-            .next();
+            .find_map(|addr| addr.local.clone());
 
         Ok(match ip {
             Some(addr) => Some(addr),
@@ -260,8 +261,7 @@ impl NetworkDevice {
             .filter(|dev| dev.addr_info.is_some())
             .flat_map(|dev| &dev.addr_info)
             .flatten()
-            .filter_map(|addr| addr.local.clone())
-            .next();
+            .find_map(|addr| addr.local.clone());
 
         Ok(match ip {
             Some(addr) => Some(addr),
@@ -324,13 +324,11 @@ pub struct Net {
     bitrate: Option<String>,
     speed_up: f64,
     speed_down: f64,
-    graph_tx: String,
-    graph_rx: String,
     update_interval: Duration,
     device: NetworkDevice,
     auto_device: bool,
-    tx_buff: Vec<f64>,
-    rx_buff: Vec<f64>,
+    tx_buff: VecDeque<f64>,
+    rx_buff: VecDeque<f64>,
     tx_bytes: u64,
     rx_bytes: u64,
     active: bool,
@@ -423,6 +421,11 @@ impl ConfigBlock for Net {
             .with_default("{speed_down;K}{speed_up;K}")?;
         let format_alt = block_config.format_alt;
 
+        let tx_graph_width = Self::max_format_width(&format, &format_alt, "graph_up")
+            .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
+        let rx_graph_width = Self::max_format_width(&format, &format_alt, "graph_down")
+            .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
+
         Ok(Net {
             id,
             update_interval: block_config.interval,
@@ -459,12 +462,10 @@ impl ConfigBlock for Net {
             .then(String::new),
             speed_up: 0.0,
             speed_down: 0.0,
-            graph_tx: String::new(),
-            graph_rx: String::new(),
             device,
             auto_device: block_config.device.is_none(),
-            rx_buff: vec![0.; 10],
-            tx_buff: vec![0.; 10],
+            tx_buff: VecDeque::from(vec![0_f64; tx_graph_width]),
+            rx_buff: VecDeque::from(vec![0_f64; rx_graph_width]),
             rx_bytes: init_rx_bytes,
             tx_bytes: init_tx_bytes,
             active: true,
@@ -493,6 +494,8 @@ fn read_file(path: &Path) -> Result<String> {
 }
 
 impl Net {
+    const DEFAULT_GRAPH_WIDTH: usize = 10;
+
     fn update_bitrate(&mut self) -> Result<()> {
         if let Some(ref mut bitrate_string) = self.bitrate {
             let bitrate = self.device.bitrate()?;
@@ -532,9 +535,8 @@ impl Net {
 
         self.speed_up = tx_bytes as f64;
 
-        self.tx_buff.remove(0);
-        self.tx_buff.push(tx_bytes as f64);
-        self.graph_tx = format_vec_to_bar_graph(&self.tx_buff, None, None);
+        self.tx_buff.pop_front();
+        self.tx_buff.push_back(tx_bytes as f64);
 
         let current_rx = self.device.rx_bytes()?;
         let diff = current_rx.saturating_sub(self.rx_bytes);
@@ -543,11 +545,31 @@ impl Net {
 
         self.speed_down = rx_bytes as f64;
 
-        self.rx_buff.remove(0);
-        self.rx_buff.push(rx_bytes as f64);
-        self.graph_rx = format_vec_to_bar_graph(&self.rx_buff, None, None);
+        self.rx_buff.pop_front();
+        self.rx_buff.push_back(rx_bytes as f64);
 
         Ok(())
+    }
+
+    fn max_placeholder_width(
+        placeholders: (Option<&Placeholder>, Option<&Placeholder>),
+    ) -> Option<usize> {
+        let values = [placeholders.0, placeholders.1].map(|o| o.map(|p| p.min_width.value));
+        values.iter().filter_map(|o| (*o)?).max()
+    }
+    fn max_format_width(
+        format_main: &FormatTemplate,
+        format_alt: &Option<FormatTemplate>,
+        name: &str,
+    ) -> Option<usize> {
+        let main = format_main.get(name);
+        let width_main = Self::max_placeholder_width(main);
+        if let Some(alt) = format_alt {
+            let width_alt = Self::max_placeholder_width(alt.get(name));
+            width_main.max(width_alt)
+        } else {
+            width_main
+        }
     }
 }
 
@@ -624,8 +646,8 @@ impl Block for Net {
             "ipv6" => Value::from_string(self.ipv6_addr.clone().unwrap_or(empty_string)),
             "speed_up" => Value::from_float(self.speed_up).bytes().icon(self.shared_config.get_icon("net_up")?),
             "speed_down" => Value::from_float(self.speed_down).bytes().icon(self.shared_config.get_icon("net_down")?),
-            "graph_up" => Value::from_string(self.graph_tx.clone()),
-            "graph_down" => Value::from_string(self.graph_rx.clone()),
+            "graph_up" => Value::from_deque(self.tx_buff.clone()),
+            "graph_down" => Value::from_deque(self.rx_buff.clone()),
         );
 
         self.output.set_texts(self.format.render(&values)?);

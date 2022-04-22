@@ -180,39 +180,6 @@ macro_rules! map_to_owned {
     }};
 }
 
-pub fn format_vec_to_bar_graph(content: &[f64], min: Option<f64>, max: Option<f64>) -> String {
-    // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
-    static BARS: [char; 8] = [
-        '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
-        '\u{2588}',
-    ];
-
-    // Find min and max
-    let mut min_v = std::f64::INFINITY;
-    let mut max_v = -std::f64::INFINITY;
-    for v in content {
-        if *v < min_v {
-            min_v = *v;
-        }
-        if *v > max_v {
-            max_v = *v;
-        }
-    }
-
-    let min = min.unwrap_or(min_v);
-    let max = max.unwrap_or(max_v);
-    let extant = max - min;
-    if extant.is_normal() {
-        let length = BARS.len() as f64 - 1.0;
-        content
-            .iter()
-            .map(|x| BARS[((x.clamp(min, max) - min) / extant * length) as usize])
-            .collect()
-    } else {
-        (0..content.len()).map(|_| BARS[0]).collect::<_>()
-    }
-}
-
 // Convert 2 letter country code to Unicode
 pub fn country_flag_from_iso_code(country_code: &str) -> String {
     if country_code.len() != 2 || !country_code.chars().all(|c| c.is_ascii_uppercase()) {

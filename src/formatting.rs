@@ -58,7 +58,13 @@ impl FormatTemplate {
 
     /// Whether the format string contains a given placeholder
     pub fn contains(&self, var: &str) -> bool {
-        Self::format_contains(&self.full, var) || Self::format_contains(&self.short, var)
+        Self::format_get(&self.full, var).is_some() || Self::format_get(&self.short, var).is_some()
+    }
+    /// Returns given placeholders if the format string contain them in the (full, short) order
+    pub fn get(&self, var: &str) -> (Option<&Placeholder>, Option<&Placeholder>) {
+        let full = Self::format_get(&self.full, var);
+        let short = Self::format_get(&self.short, var);
+        (full, short)
     }
 
     pub fn has_tokens(&self) -> bool {
@@ -66,17 +72,17 @@ impl FormatTemplate {
             || !self.short.as_ref().map(Vec::is_empty).unwrap_or(true)
     }
 
-    fn format_contains(format: &Option<Vec<Token>>, var: &str) -> bool {
+    fn format_get<'a>(format: &'a Option<Vec<Token>>, var: &str) -> Option<&'a Placeholder> {
         if let Some(tokens) = format {
             for token in tokens {
                 if let Token::Var(ref placeholder) = token {
                     if placeholder.name == var {
-                        return true;
+                        return Some(placeholder);
                     }
                 }
             }
         }
-        false
+        None
     }
 
     fn tokens_from_string(mut s: &str) -> Result<Vec<Token>> {
@@ -275,5 +281,34 @@ mod tests {
         assert!(format.contains("bar"));
         assert!(!format.contains("foobar"));
         assert!(!format.contains("random string"));
+    }
+
+    #[test]
+    fn get() {
+        let format = FormatTemplate::new("some text {foo} {bar:8^12;_M*_b#50} foobar", None);
+        assert!(format.is_ok());
+        let format = format.unwrap();
+        assert!(format.get("foo").1.is_none());
+
+        let foo = format.get("foo").0.unwrap();
+        let mut empty_foo = "".parse::<Placeholder>().unwrap();
+        empty_foo.name = "foo".to_owned();
+        assert!(foo == &empty_foo);
+
+        let bar = format.get("bar").0.unwrap();
+        assert!(bar.name == "bar");
+
+        assert!(bar.min_width.value == Some(8));
+        assert!(bar.min_width.pad_with == ' ');
+
+        assert!(bar.max_width == Some(12));
+
+        assert!(bar.min_prefix.hidden);
+        assert!(!bar.min_prefix.space);
+        assert!(bar.min_prefix.value == Some(prefix::Prefix::Mega));
+
+        assert!(bar.unit.hidden);
+        assert!(bar.unit.unit == Some(unit::Unit::Bits));
+        assert!(bar.bar_max_value == Some(50_f64));
     }
 }
