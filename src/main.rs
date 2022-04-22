@@ -443,7 +443,9 @@ fn restart() -> ! {
     let exe = CString::new(env::current_exe().unwrap().into_os_string().into_vec()).unwrap();
 
     // Get current arguments
-    let mut arg: Vec<CString> = env::args().map(|a| CString::new(a).unwrap()).collect();
+    let mut arg: Vec<CString> = env::args_os()
+        .map(|a| CString::new(a.into_vec()).unwrap())
+        .collect();
 
     // Add "--no-init" argument if not already added
     let no_init_arg = CString::new("--no-init").unwrap();
