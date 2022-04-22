@@ -181,7 +181,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
 
         api.flush().await?;
-        device.wait_for_change().await?
+        device.wait_for_change().await?;
     }
 }
 

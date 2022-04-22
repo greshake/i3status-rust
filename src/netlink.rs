@@ -162,7 +162,7 @@ pub async fn default_interface() -> Option<String> {
                         Rta::Oif => {
                             name = Some(index_to_interface(u32::from_le_bytes(
                                 attr.rta_payload.as_ref().try_into().unwrap(),
-                            )))
+                            )));
                         }
                         _ => (),
                     }

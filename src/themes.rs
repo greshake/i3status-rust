@@ -67,8 +67,7 @@ impl Add for Color {
 
         match (self, rhs) {
             // Do nothing
-            (x, Color::None | Color::Auto) => x,
-            (Color::None | Color::Auto, x) => x,
+            (x, Self::None | Self::Auto) | (Self::None | Self::Auto, x) => x,
             // Hsv + Hsv => Hsv
             (Color::Hsva(hsv1, a1), Color::Hsva(hsv2, a2)) => {
                 Color::Hsva(add_hsv(hsv1, hsv2), a1.saturating_add(a2))
@@ -267,14 +266,7 @@ impl<'de> Deserialize<'de> for Theme {
                 let mut overrides: Option<HashMap<String, String>> = None;
                 while let Some(key) = map.next_key()? {
                     match key {
-                        // TODO merge name and file into one option (let's say "theme")
-                        Field::Name => {
-                            if theme.is_some() {
-                                return Err(de::Error::duplicate_field("name or file"));
-                            }
-                            theme = Some(map.next_value()?);
-                        }
-                        Field::File => {
+                        Field::Name | Field::File => {
                             if theme.is_some() {
                                 return Err(de::Error::duplicate_field("name or file"));
                             }

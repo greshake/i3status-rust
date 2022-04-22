@@ -2,7 +2,6 @@ pub mod i3bar_block;
 pub mod i3bar_event;
 
 use crate::config::SharedConfig;
-use crate::errors::*;
 use crate::themes::Color;
 
 use i3bar_block::I3BarBlock;
@@ -15,7 +14,7 @@ pub fn init(never_pause: bool) {
     }
 }
 
-pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) -> Result<()> {
+pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) {
     let mut last_bg = Color::None;
     let mut rendered_blocks = vec![];
 
@@ -70,6 +69,4 @@ pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) -> Result
     }
 
     println!("{},", serde_json::to_string(&rendered_blocks).unwrap());
-
-    Ok(())
 }

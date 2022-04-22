@@ -1,3 +1,7 @@
+#![warn(clippy::match_same_arms)]
+#![warn(clippy::semicolon_if_nothing_returned)]
+#![warn(clippy::unnecessary_wraps)]
+
 #[macro_use]
 mod util;
 mod blocks;
@@ -287,7 +291,7 @@ impl BarState {
                 RequestCmd::SetValues(values) => block.widget.set_values(values),
                 RequestCmd::SetFullScreen(value) => {
                     if self.fullscreen_block.is_none() && value {
-                        self.fullscreen_block = Some(block.id)
+                        self.fullscreen_block = Some(block.id);
                     } else if self.fullscreen_block == Some(block.id) && !value {
                         self.fullscreen_block = None;
                     }
@@ -331,11 +335,11 @@ impl BarState {
         Ok(())
     }
 
-    fn render(&self) -> Result<()> {
+    fn render(&self) {
         if let Some(id) = self.fullscreen_block {
-            protocol::print_blocks(&[self.blocks_render_cache[id].clone()], &self.shared_config)
+            protocol::print_blocks(&[self.blocks_render_cache[id].clone()], &self.shared_config);
         } else {
-            protocol::print_blocks(&self.blocks_render_cache, &self.shared_config)
+            protocol::print_blocks(&self.blocks_render_cache, &self.shared_config);
         }
     }
 
@@ -352,7 +356,8 @@ impl BarState {
             // Recieve messages from blocks
             Some(request) = self.request_receiver.recv() => {
                 self.process_request(request).await?;
-                self.render()
+                self.render();
+                Ok(())
             }
             // Handle clicks
             Some(event) = events_receiver.recv() => {
@@ -375,7 +380,7 @@ impl BarState {
                         };
                         block.error_widget.set_text(text);
                         self.blocks_render_cache[block.id] = block.error_widget.get_data()?;
-                        self.render()?;
+                        self.render();
                     }
                 }
                 Ok(())
@@ -416,7 +421,7 @@ impl BarState {
 
                         self.blocks_render_cache[block.id] = block.error_widget.get_data()?;
 
-                        self.render()?;
+                        self.render();
 
                         self.blocks[id].0 = Block::Failed(block);
                         self.fullscreen_block = None;

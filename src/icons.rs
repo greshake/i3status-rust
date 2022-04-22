@@ -158,14 +158,7 @@ impl<'de> Deserialize<'de> for Icons {
                 let mut overrides: Option<HashMap<String, String>> = None;
                 while let Some(key) = map.next_key()? {
                     match key {
-                        // TODO merge name and file into one option (let's say "icons")
-                        Field::Name => {
-                            if icons.is_some() {
-                                return Err(de::Error::duplicate_field("name or file"));
-                            }
-                            icons = Some(map.next_value()?);
-                        }
-                        Field::File => {
+                        Field::Name | Field::File => {
                             if icons.is_some() {
                                 return Err(de::Error::duplicate_field("name or file"));
                             }

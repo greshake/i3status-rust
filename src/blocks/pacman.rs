@@ -294,20 +294,20 @@ async fn check_fakeroot_command_exists() -> Result<()> {
     }
 }
 
-fn get_updates_db_dir() -> Result<PathBuf> {
+fn get_updates_db_dir() -> PathBuf {
     match env::var_os("CHECKUPDATES_DB") {
-        Some(val) => Ok(val.into()),
+        Some(val) => val.into(),
         None => {
             let mut path = env::temp_dir();
             let user = env::var("USER").unwrap_or_default();
             path.push(format!("checkup-db-{user}"));
-            Ok(path)
+            path
         }
     }
 }
 
 async fn get_pacman_available_updates() -> Result<StdString> {
-    let updates_db = get_updates_db_dir()?;
+    let updates_db = get_updates_db_dir();
 
     // Determine pacman database path
     let db_path = env::var_os("DBPath")

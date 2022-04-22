@@ -195,11 +195,11 @@ impl CommonApi {
     }
 
     pub fn set_text(&mut self, text: String) {
-        self.cmd_buf.push(RequestCmd::SetText(text))
+        self.cmd_buf.push(RequestCmd::SetText(text));
     }
 
     pub fn set_texts(&mut self, full: String, short: String) {
-        self.cmd_buf.push(RequestCmd::SetTexts(full, short))
+        self.cmd_buf.push(RequestCmd::SetTexts(full, short));
     }
 
     pub fn set_values(&mut self, values: HashMap<String, Value>) {

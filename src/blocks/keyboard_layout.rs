@@ -144,7 +144,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 send((layout.into(), None), &mut api);
                 api.flush().await?;
 
-                sleep(config.interval.0).await
+                sleep(config.interval.0).await;
             }
         }
         KeyboardLayoutDriver::LocaleBus => {

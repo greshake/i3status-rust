@@ -97,8 +97,7 @@ impl TokenList {
                         .format_error(format!("Placeholder with name '{}' not found", name))?;
                     let formatter = formatter.as_ref().map(|x| x.as_ref()).unwrap_or_else(|| {
                         match &var.inner {
-                            ValueInner::Text(_) => &DEFAULT_STRING_FORMATTER,
-                            ValueInner::Icon(_) => &DEFAULT_STRING_FORMATTER,
+                            ValueInner::Text(_) | ValueInner::Icon(_) => &DEFAULT_STRING_FORMATTER,
                             ValueInner::Number { .. } => &DEFAULT_NUMBER_FORMATTER,
                             ValueInner::Flag => &DEFAULT_FLAG_FORMATTER,
                         }
@@ -165,7 +164,7 @@ fn read_format_template(it: &mut Peekable<impl Iterator<Item = char>>) -> Result
             }
             '$' => {
                 let _ = it.next();
-                let name = read_placeholder_name(it)?;
+                let name = read_placeholder_name(it);
                 let formatter = match it.peek() {
                     Some('.') => {
                         let _ = it.next();
@@ -176,13 +175,13 @@ fn read_format_template(it: &mut Peekable<impl Iterator<Item = char>>) -> Result
                 cur_list.push(Token::Var { name, formatter });
             }
             _ => {
-                cur_list.push(Token::Text(read_text(it)?));
+                cur_list.push(Token::Text(read_text(it)));
             }
         }
     }
 }
 
-fn read_text(it: &mut Peekable<impl Iterator<Item = char>>) -> Result<String> {
+fn read_text(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
     let mut retval = String::new();
     let mut escaped = false;
     while let Some(&c) = it.peek() {
@@ -204,10 +203,10 @@ fn read_text(it: &mut Peekable<impl Iterator<Item = char>>) -> Result<String> {
             }
         }
     }
-    Ok(retval)
+    retval
 }
 
-fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> Result<String> {
+fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
     let mut retval = String::new();
     let mut escaped = false;
     while let Some(&c) = it.peek() {
@@ -229,7 +228,7 @@ fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> Resul
             }
         }
     }
-    Ok(retval)
+    retval
 }
 
 fn read_formatter(it: &mut impl Iterator<Item = char>) -> Result<String> {

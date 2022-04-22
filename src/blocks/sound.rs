@@ -325,7 +325,7 @@ impl SoundDevice for AlsaSoundDevice {
     async fn get_info(&mut self) -> Result<()> {
         let mut args = Vec::new();
         if self.natural_mapping {
-            args.push("-M")
+            args.push("-M");
         };
         args.extend(&["-D", &self.device, "get", &self.name]);
 
@@ -363,7 +363,7 @@ impl SoundDevice for AlsaSoundDevice {
         };
         let mut args = Vec::new();
         if self.natural_mapping {
-            args.push("-M")
+            args.push("-M");
         };
         let vol_str = format!("{capped_volume}%");
         args.extend(&["-D", &self.device, "set", &self.name, &vol_str]);
@@ -382,7 +382,7 @@ impl SoundDevice for AlsaSoundDevice {
     async fn toggle(&mut self) -> Result<()> {
         let mut args = Vec::new();
         if self.natural_mapping {
-            args.push("-M")
+            args.push("-M");
         };
         args.extend(&["-D", &self.device, "set", &self.name, "toggle"]);
 
