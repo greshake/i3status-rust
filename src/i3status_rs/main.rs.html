@@ -460,6 +460,8 @@
 <span id="455">455</span>
 <span id="456">456</span>
 <span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
@@ -905,7 +907,9 @@
     <span class="kw">let</span> <span class="ident">exe</span> <span class="op">=</span> <span class="ident">CString::new</span>(<span class="ident">env::current_exe</span>().<span class="ident">unwrap</span>().<span class="ident">into_os_string</span>().<span class="ident">into_vec</span>()).<span class="ident">unwrap</span>();
 
     <span class="comment">// Get current arguments</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">arg</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CString</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">env::args</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">CString::new</span>(<span class="ident">a</span>).<span class="ident">unwrap</span>()).<span class="ident">collect</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">arg</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CString</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">env::args_os</span>()
+        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">CString::new</span>(<span class="ident">a</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap</span>())
+        .<span class="ident">collect</span>();
 
     <span class="comment">// Add &quot;--no-init&quot; argument if not already added</span>
     <span class="kw">let</span> <span class="ident">no_init_arg</span> <span class="op">=</span> <span class="ident">CString::new</span>(<span class="string">&quot;--no-init&quot;</span>).<span class="ident">unwrap</span>();

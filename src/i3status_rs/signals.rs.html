@@ -46,8 +46,6 @@
 <span id="41">41</span>
 <span id="42">42</span>
 <span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">futures::stream::StreamExt</span>;
 <span class="kw">use</span> <span class="ident">libc</span>::{<span class="ident">SIGRTMAX</span>, <span class="ident">SIGRTMIN</span>};
 <span class="kw">use</span> <span class="ident">signal_hook::consts</span>::{<span class="ident">SIGUSR1</span>, <span class="ident">SIGUSR2</span>};
@@ -66,9 +64,7 @@
     <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">mpsc::channel</span>(<span class="number">32</span>);
 
     <span class="kw">let</span> (<span class="ident">sigmin</span>, <span class="ident">sigmax</span>) <span class="op">=</span> (<span class="ident">SIGRTMIN</span>(), <span class="ident">SIGRTMAX</span>());
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signals</span> <span class="op">=</span> <span class="ident">Signals::new</span>((<span class="ident">sigmin</span>..<span class="ident">sigmax</span>).<span class="ident">chain</span>(<span class="prelude-val">Some</span>(<span class="ident">SIGUSR1</span>)).<span class="ident">chain</span>(<span class="prelude-val">Some</span>(<span class="ident">SIGUSR2</span>)))
-        .<span class="ident">unwrap</span>()
-        .<span class="ident">fuse</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signals</span> <span class="op">=</span> <span class="ident">Signals::new</span>((<span class="ident">sigmin</span>..<span class="ident">sigmax</span>).<span class="ident">chain</span>([<span class="ident">SIGUSR1</span>, <span class="ident">SIGUSR2</span>])).<span class="ident">unwrap</span>();
 
     <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
         <span class="kw">loop</span> {
