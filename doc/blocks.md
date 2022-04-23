@@ -299,7 +299,7 @@ format_unavailable = "Rowkin x"
 
 Key | Values | Required | Default
 ----|--------|----------|--------
-`mac` | MAC address of the Bluetooth device. | Yes | None
+`mac` | MAC address of the Bluetooth device. You can find this by running `bluetoothctl list` | Yes | None
 `hide_disconnected` | Hides the block when the device is disconnected. | No | `false`
 `format` | A string to customise the output of this block. See below for placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{label} {percentage}"`
 `format_unavailable` | A string to customise the output of this block when the bluetooth controller is unavailable. See below for placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{label} x"`
