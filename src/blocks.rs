@@ -3,8 +3,8 @@
 pub mod prelude;
 
 use futures::future::FutureExt;
-use serde::de::{self, Deserialize, Deserializer};
-use serde_derive::Deserialize;
+use serde::de::{self, Deserializer};
+use serde::Deserialize;
 use smallvec::SmallVec;
 use smartstring::alias::String;
 use tokio::sync::mpsc;

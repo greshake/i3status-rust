@@ -25,7 +25,7 @@
 use chrono::{offset::Local, DateTime};
 use dirs_next::config_dir;
 use inotify::{Inotify, WatchMask};
-use serde::de::{Deserialize, Deserializer};
+use serde::de::Deserializer;
 use std::path::PathBuf;
 use tokio::fs::read_to_string;
 

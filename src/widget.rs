@@ -2,7 +2,7 @@ use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::formatting::{Rendered, RunningFormat, Values};
 use crate::protocol::i3bar_block::I3BarBlock;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use smartstring::alias::String;
 
 /// State of the widget. Affects the theming.

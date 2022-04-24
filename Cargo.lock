@@ -772,7 +772,6 @@ dependencies = [
  "reqwest",
  "sensors",
  "serde",
- "serde_derive",
  "serde_json",
  "shellexpand",
  "signal-hook",

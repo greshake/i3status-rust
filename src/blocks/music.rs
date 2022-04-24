@@ -106,14 +106,14 @@ struct MusicConfig {
     hide_when_empty: bool,
 }
 
-#[derive(Debug, Clone, Type, serde_derive::Deserialize)]
+#[derive(Debug, Clone, Type, Deserialize)]
 struct PropChange {
     _interface_name: OwnedInterfaceName,
     changed_properties: HashMap<StdString, OwnedValue>,
     _invalidated_properties: Vec<StdString>,
 }
 
-#[derive(Debug, Clone, Type, serde_derive::Deserialize)]
+#[derive(Debug, Clone, Type, Deserialize)]
 struct OwnerChange {
     pub name: OwnedBusName,
     pub old_owner: Optional<StdString>,

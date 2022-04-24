@@ -8,8 +8,7 @@ pub use crate::widget::{State, Widget};
 pub use crate::wrappers::{OnceDuration, Seconds, ShellString};
 pub use crate::REQWEST_CLIENT;
 
-pub use serde::de::Deserialize;
-pub use serde_derive::Deserialize;
+pub use serde::Deserialize;
 
 pub use smartstring::alias::String;
 

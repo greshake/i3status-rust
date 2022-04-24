@@ -1,6 +1,6 @@
 // use crate::escape::JsonStr;
 use crate::themes::Color;
-use serde_derive::Serialize;
+use serde::Serialize;
 
 /// Represent block as described in <https://i3wm.org/docs/i3bar-protocol.html>
 #[derive(Serialize, Debug, Clone)]

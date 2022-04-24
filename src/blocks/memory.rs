@@ -195,7 +195,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
-#[derive(serde_derive::Deserialize, Clone, Copy, Debug)]
+#[derive(Deserialize, Clone, Copy, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum Memtype {
     Swap,

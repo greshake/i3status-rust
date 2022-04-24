@@ -1,4 +1,4 @@
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use smartstring::alias::String;
 use std::sync::Arc;
 use toml::value;

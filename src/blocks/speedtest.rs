@@ -82,7 +82,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
-#[derive(serde_derive::Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 struct SpeedtestCliOutput {
     /// Download speed in bits per second
     download: f64,

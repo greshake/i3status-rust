@@ -1,6 +1,7 @@
 use std::fmt;
 
-use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::de::{self, Deserializer, Visitor};
+use serde::Deserialize;
 
 use crate::errors::{Result, ResultExt};
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
@@ -19,11 +20,11 @@ pub enum MouseButton {
     DoubleLeft,
 }
 
-#[derive(serde_derive::Deserialize, Debug, Clone, Default)]
+#[derive(Deserialize, Debug, Clone, Default)]
 pub struct ClickHandler(Vec<ClickConfigEntry>);
 
 impl ClickHandler {
-    // Returns true if the block needs to be updated
+    /// Returns true if the block needs to be updated
     pub async fn handle(&self, button: MouseButton) -> Result<bool> {
         Ok(match self.0.iter().find(|e| e.button == button) {
             Some(entry) => {
@@ -44,7 +45,7 @@ impl ClickHandler {
     }
 }
 
-#[derive(serde_derive::Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ClickConfigEntry {
     /// Which button to handle
