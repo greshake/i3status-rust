@@ -593,14 +593,14 @@
     <span class="ident">hide_when_empty</span>: <span class="ident">bool</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Type</span>, <span class="ident">serde_derive::Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Type</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">struct</span> <span class="ident">PropChange</span> {
     <span class="ident">_interface_name</span>: <span class="ident">OwnedInterfaceName</span>,
     <span class="ident">changed_properties</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">StdString</span>, <span class="ident">OwnedValue</span><span class="op">&gt;</span>,
     <span class="ident">_invalidated_properties</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Type</span>, <span class="ident">serde_derive::Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Type</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">struct</span> <span class="ident">OwnerChange</span> {
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">OwnedBusName</span>,
     <span class="kw">pub</span> <span class="ident">old_owner</span>: <span class="ident">Optional</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span>,
