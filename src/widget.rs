@@ -24,6 +24,8 @@ impl Default for State {
 /// The source of text for widget
 #[derive(Debug)]
 enum Source {
+    /// Collapsed widget (only icon will be displayed)
+    None,
     /// Simple text
     Text(String),
     /// Full and short texts
@@ -35,12 +37,12 @@ enum Source {
 impl Source {
     fn render(&self) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
         match self {
-            Source::Text(text) => Ok((vec![text.clone().into()], vec![])),
-            Source::TextWithShort(full, short) => {
+            Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
+            Self::TextWithShort(full, short) => {
                 Ok((vec![full.clone().into()], vec![short.clone().into()]))
             }
-            Source::Format(format, Some(values)) => format.render(values),
-            Source::Format(_, None) => Ok((vec![], vec![])),
+            Self::Format(format, Some(values)) => format.render(values),
+            Self::None | Self::Format(_, None) => Ok((vec![], vec![])),
         }
     }
 }
@@ -93,7 +95,11 @@ impl Widget {
      */
 
     pub fn set_text(&mut self, text: String) {
-        self.source = Source::Text(text);
+        if text.is_empty() {
+            self.source = Source::None;
+        } else {
+            self.source = Source::Text(text);
+        }
     }
 
     pub fn set_texts(&mut self, short: String, full: String) {

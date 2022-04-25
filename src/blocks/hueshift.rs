@@ -75,7 +75,6 @@ impl Default for HueshiftConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = HueshiftConfig::deserialize(config).config_error()?;
 
     // limit too big steps at 500K to avoid too brutal changes
@@ -119,35 +118,38 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.set_text(current_temp.to_string().into());
         api.flush().await?;
 
-        tokio::select! {
+        select! {
             _ = sleep(config.interval.0) => (),
             update = driver.receive_update() => {
                 current_temp = update?;
             }
-            Some(BlockEvent::Click(click)) = events.recv() => {
-                match click.button {
-                    MouseButton::Left => {
-                        current_temp = config.click_temp;
-                        driver.update(current_temp).await?;
-                    }
-                    MouseButton::Right => {
-                        if max_temp > 6500 {
-                            current_temp = 6500;
-                            driver.reset().await?;
-                        } else {
-                            current_temp = max_temp;
+            event = api.event() => {
+                match event {
+                    Click(click) => match click.button {
+                        MouseButton::Left => {
+                            current_temp = config.click_temp;
                             driver.update(current_temp).await?;
                         }
+                        MouseButton::Right => {
+                            if max_temp > 6500 {
+                                current_temp = 6500;
+                                driver.reset().await?;
+                            } else {
+                                current_temp = max_temp;
+                                driver.update(current_temp).await?;
+                            }
+                        }
+                        MouseButton::WheelUp => {
+                            current_temp = (current_temp + step).min(max_temp);
+                            driver.update(current_temp).await?;
+                        }
+                        MouseButton::WheelDown => {
+                            current_temp = current_temp.saturating_sub(step).max(min_temp);
+                            driver.update(current_temp).await?;
+                        }
+                        _ => (),
                     }
-                    MouseButton::WheelUp => {
-                        current_temp = (current_temp + step).min(max_temp);
-                        driver.update(current_temp).await?;
-                    }
-                    MouseButton::WheelDown => {
-                        current_temp = current_temp.saturating_sub(step).max(min_temp);
-                        driver.update(current_temp).await?;
-                    }
-                    _ => (),
+                    UpdateRequest => (),
                 }
             }
         }

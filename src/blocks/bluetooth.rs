@@ -61,7 +61,6 @@ struct BluetoothConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = BluetoothConfig::deserialize(config).config_error()?;
     api.set_format(
         config
@@ -115,8 +114,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         loop {
-            tokio::select! {
-                Some(BlockEvent::Click(click)) = events.recv() => {
+            select! {
+                res = monitor.wait_for_change() => {
+                    res?;
+                    break;
+                },
+                Click(click) = api.event() => {
                     if click.button == MouseButton::Right {
                         if let Some(dev) = monitor.device() {
                             if let Ok(connected) = dev.connected().await {
@@ -129,10 +132,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         }
                     }
                 }
-                res = monitor.wait_for_change() => {
-                    res?;
-                    break;
-                },
             }
         }
     }
@@ -197,7 +196,7 @@ impl DeviceMonitor {
     async fn wait_for_change(&mut self) -> Result<()> {
         match &mut self.device {
             None => loop {
-                tokio::select! {
+                select! {
                     _ = self.interface_added.next() => {
                         if let Some(device) = Device::try_find(
                             &self.manager_proxy,
@@ -213,7 +212,7 @@ impl DeviceMonitor {
                 }
             },
             Some(device) if !device.available => loop {
-                tokio::select! {
+                select! {
                     Some(event) = self.interface_added.next() => {
                         let args = event.args().error("Failed to get the args")?;
                         if args.object_path() == device.device.path() {
@@ -231,7 +230,7 @@ impl DeviceMonitor {
                     .await
                     .error("Failed to receive updates")?;
                 loop {
-                    tokio::select! {
+                    select! {
                         _ = updates.next() => {
                             // avoid too frequent updates
                             let _ = tokio::time::timeout(Duration::from_millis(100), async {

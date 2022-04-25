@@ -134,8 +134,9 @@ fn main() {
 pub struct RunningBlock {
     id: usize,
 
-    event_sender: Option<mpsc::Sender<BlockEvent>>,
+    event_sender: mpsc::Sender<BlockEvent>,
     click_handler: ClickHandler,
+    signal: Option<i32>,
 
     hidden: bool,
     widget: Widget,
@@ -162,8 +163,6 @@ pub struct Request {
 pub enum RequestCmd {
     Hide,
     Show,
-
-    GetEvents(OneshotSender<blocks::EventsRx>),
 
     SetIcon(String),
     SetState(State),
@@ -235,9 +234,12 @@ impl BarState {
             Arc::make_mut(&mut shared_config.theme).apply_overrides(&theme_overrides)?;
         }
 
+        let (event_sender, event_receiver) = mpsc::channel(64);
+
         let api = CommonApi {
             id: self.blocks.len(),
             shared_config,
+            event_receiver,
 
             request_sender: self.request_sender.clone(),
             cmd_buf: SmallVec::new(),
@@ -249,8 +251,9 @@ impl BarState {
         let block = Block::Running(RunningBlock {
             id: api.id,
 
-            event_sender: None,
+            event_sender,
             click_handler: common_config.click,
+            signal: common_config.signal,
 
             hidden: false,
             widget: Widget::new(api.id, api.shared_config.clone()),
@@ -278,11 +281,6 @@ impl BarState {
             match cmd {
                 RequestCmd::Hide => block.hidden = true,
                 RequestCmd::Show => block.hidden = false,
-                RequestCmd::GetEvents(tx) => {
-                    let (sender, receiver) = mpsc::channel(64);
-                    block.event_sender = Some(sender);
-                    let _ = tx.send(receiver);
-                }
                 RequestCmd::SetIcon(icon) => block.widget.icon = icon,
                 RequestCmd::SetText(text) => block.widget.set_text(text),
                 RequestCmd::SetTexts(full, short) => block.widget.set_texts(full, short),
@@ -365,9 +363,7 @@ impl BarState {
                 match block {
                     Block::Running(block) => {
                         if block.click_handler.handle(event.button).await.in_block(*block_type, event.id)? {
-                            if let Some(sender) = &block.event_sender {
-                                let _ = sender.send(BlockEvent::Click(event)).await;
-                            }
+                                let _ = block.event_sender.send(BlockEvent::Click(event)).await;
                         }
                     }
                     Block::Failed(block) => {
@@ -387,12 +383,16 @@ impl BarState {
             }
             // Handle signals
             Some(signal) = signals_receiver.recv() => match signal {
+                Signal::Usr1 => {
+                    // TODO
+                    Ok(())
+                }
                 Signal::Usr2 => restart(),
-                signal => {
+                Signal::Custom(signal) => {
                     for (block, _) in &self.blocks {
                         if let Block::Running(block) = block {
-                            if let Some(sender) = &block.event_sender {
-                                let _ = sender.send(BlockEvent::Signal(signal)).await;
+                            if block.signal == Some(signal) {
+                                let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
                             }
                         }
                     }

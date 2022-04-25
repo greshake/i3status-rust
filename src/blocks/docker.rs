@@ -69,7 +69,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "images" =>  Value::number(status.images),
         });
         api.flush().await?;
-        timer.tick().await;
+
+        select! {
+            _ = timer.tick() => (),
+            UpdateRequest = api.event() => (),
+        }
     }
 }
 

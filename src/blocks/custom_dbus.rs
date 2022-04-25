@@ -85,6 +85,11 @@ impl Block {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    // This block doesn't listen for any events. Closing the channel is necessary, because channels
+    // are bounded by the number of pending messages, and if we don't close it now, main thread
+    // will get blocked while trying to send a new message.
+    api.event_receiver.close();
+
     let path = CustomDBusConfig::deserialize(config).config_error()?.path;
     let dbus_conn = api.get_dbus_connection().await?;
     dbus_conn

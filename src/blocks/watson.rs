@@ -51,8 +51,6 @@ impl Default for WatsonConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = WatsonConfig::deserialize(config).config_error()?;
-    let mut events = api.get_events().await?;
-
     let mut show_time = config.show_time;
 
     let (state_dir, state_file, state_path) = match config.state_path {
@@ -115,7 +113,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         loop {
-            tokio::select! {
+            select! {
                 _ = timer.tick() => break,
                 Some(update) = state_updates.next() => {
                     let update = update.error("Bad inoify update")?;
@@ -123,10 +121,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         break;
                     }
                 }
-                Some(BlockEvent::Click(event)) = events.recv() => {
-                    if event.button == MouseButton::Left {
-                        show_time = !show_time;
-                        break;
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left {
+                            show_time = !show_time;
+                            break;
+                        }
                     }
                 }
             }

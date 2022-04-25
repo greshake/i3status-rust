@@ -72,6 +72,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     api.set_icon("mail")?;
 
     let db = config.maildir.expand()?;
+    let mut timer = config.interval.timer();
 
     loop {
         // TODO: spawn_blocking
@@ -99,10 +100,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         loop {
             tokio::select! {
-                _ = sleep(config.interval.0) => break,
-                Some(BlockEvent::Click(click)) = events.recv() => {
-                    if click.button == MouseButton::Left {
-                        break;
+                _ = timer.tick() => break,
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left {
+                            break;
+                        }
                     }
                 }
             }

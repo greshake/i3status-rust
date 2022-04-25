@@ -118,4 +118,5 @@ tokio-test = "*"
 
 [profile.release]
 lto = "thin"
+strip = true
 debug = 1

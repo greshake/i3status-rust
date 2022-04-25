@@ -28,10 +28,13 @@
 //! ```
 
 use super::prelude::*;
-use swayipc_async::{Connection, Event, EventType, WindowChange, WorkspaceChange};
+use swayipc_async::{Connection, Event, EventStream, EventType, WindowChange, WorkspaceChange};
 
 use std::process::Stdio;
-use tokio::{io::BufReader, process::Command};
+use tokio::{
+    io::{BufReader, Lines},
+    process::{ChildStdout, Command},
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
@@ -63,132 +66,159 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = FocusedWindowConfig::deserialize(config).config_error()?;
     api.set_format(config.format.with_default("$title.rot-str(15)|")?);
 
-    match config.driver {
-        Driver::Auto => match Connection::new().await {
-            Ok(conn) => with_sway_ipc(conn, config.autohide, &mut api).await,
-            Err(_) => with_ristate(config.autohide, &mut api).await,
+    let mut backend: Box<dyn Backend> = match config.driver {
+        Driver::Auto => match SwayIpc::new().await {
+            Ok(swayipc) => Box::new(swayipc),
+            Err(_) => Box::new(Ristate::new()?),
         },
-        Driver::SwayIpc => {
-            with_sway_ipc(
-                Connection::new()
-                    .await
-                    .error("failed to open connection with swayipc")?,
-                config.autohide,
-                &mut api,
-            )
-            .await
-        }
-        Driver::Ristate => with_ristate(config.autohide, &mut api).await,
-    }
-}
-
-async fn with_sway_ipc(conn: Connection, autohide: bool, api: &mut CommonApi) -> Result<()> {
-    let mut title = String::new();
-    let mut marks = Vec::new();
-
-    let mut events = conn
-        .subscribe(&[EventType::Window, EventType::Workspace])
-        .await
-        .error("could not subscribe to window events")?;
+        Driver::SwayIpc => Box::new(SwayIpc::new().await?),
+        Driver::Ristate => Box::new(Ristate::new()?),
+    };
 
     loop {
-        let event = events
-            .next()
-            .await
-            .error("swayipc channel closed")?
-            .error("bad event")?;
-
-        let updated = match event {
-            Event::Window(e) => match e.change {
-                WindowChange::Mark => {
-                    marks = e.container.marks;
-                    true
+        select! {
+            _ = api.event() => (),
+            info = backend.get_info() => {
+                let Info { title, marks } = info?;
+                if !title.is_empty() || !config.autohide {
+                    api.set_values(map! {
+                        "title" => Value::text(title.clone()),
+                        "marks" => Value::text(marks.iter().map(|m| format!("[{m}]")).collect()),
+                        "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{m}]")).collect()),
+                    });
+                    api.show();
+                } else {
+                    api.hide();
                 }
-                WindowChange::Focus => {
-                    title.clear();
-                    if let Some(new_title) = &e.container.name {
-                        title.push_str(new_title);
-                    }
-                    marks = e.container.marks;
-                    true
-                }
-                WindowChange::Title => {
-                    if e.container.focused {
-                        title.clear();
-                        if let Some(new_title) = &e.container.name {
-                            title.push_str(new_title);
-                        }
-                        true
-                    } else {
-                        false
-                    }
-                }
-                WindowChange::Close => {
-                    title.clear();
-                    marks.clear();
-                    true
-                }
-                _ => false,
-            },
-            Event::Workspace(e) if e.change == WorkspaceChange::Init => {
-                title.clear();
-                marks.clear();
-                true
+                api.flush().await?;
             }
-            _ => false,
-        };
-
-        if updated {
-            if !title.is_empty() || !autohide {
-                api.set_values(map! {
-                    "title" => Value::text(title.clone()),
-                    "marks" => Value::text(marks.iter().map(|m| format!("[{m}]")).collect()),
-                    "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{m}]")).collect()),
-                });
-                api.show();
-            } else {
-                api.hide();
-            }
-            api.flush().await?;
         }
     }
 }
 
-async fn with_ristate(autohide: bool, api: &mut CommonApi) -> Result<()> {
-    #[derive(Deserialize, Debug)]
-    struct RistateOuput {
-        title: String,
+#[async_trait]
+trait Backend {
+    async fn get_info(&mut self) -> Result<Info>;
+}
+
+#[derive(Clone, Default)]
+struct Info {
+    title: String,
+    marks: Vec<StdString>,
+}
+
+struct SwayIpc {
+    events: EventStream,
+    info: Info,
+}
+
+impl SwayIpc {
+    async fn new() -> Result<Self> {
+        Ok(Self {
+            events: Connection::new()
+                .await
+                .error("failed to open connection with swayipc")?
+                .subscribe(&[EventType::Window, EventType::Workspace])
+                .await
+                .error("could not subscribe to window events")?,
+            info: default(),
+        })
     }
+}
 
-    let mut ristate = Command::new("ristate")
-        .arg("-w")
-        .stdout(Stdio::piped())
-        .spawn()
-        .error("failed to run ristate")?;
-    let mut stream = BufReader::new(ristate.stdout.take().unwrap()).lines();
+#[async_trait]
+impl Backend for SwayIpc {
+    async fn get_info(&mut self) -> Result<Info> {
+        loop {
+            let event = self
+                .events
+                .next()
+                .await
+                .error("swayipc channel closed")?
+                .error("bad event")?;
+            match event {
+                Event::Window(e) => match e.change {
+                    WindowChange::Mark => {
+                        self.info.marks = e.container.marks;
+                    }
+                    WindowChange::Focus => {
+                        self.info.title.clear();
+                        if let Some(new_title) = &e.container.name {
+                            self.info.title.push_str(new_title);
+                        }
+                        self.info.marks = e.container.marks;
+                    }
+                    WindowChange::Title => {
+                        if e.container.focused {
+                            self.info.title.clear();
+                            if let Some(new_title) = &e.container.name {
+                                self.info.title.push_str(new_title);
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
+                    WindowChange::Close => {
+                        self.info.title.clear();
+                        self.info.marks.clear();
+                    }
+                    _ => continue,
+                },
+                Event::Workspace(e) if e.change == WorkspaceChange::Init => {
+                    self.info.title.clear();
+                    self.info.marks.clear();
+                }
+                _ => continue,
+            }
 
-    tokio::spawn(async move {
-        let _ = ristate.wait().await;
-    });
+            return Ok(self.info.clone());
+        }
+    }
+}
 
-    while let Some(line) = stream
-        .next_line()
-        .await
-        .error("error reading line from ristate")?
-    {
+struct Ristate {
+    stream: Lines<BufReader<ChildStdout>>,
+}
+
+impl Ristate {
+    fn new() -> Result<Self> {
+        let mut ristate = Command::new("ristate")
+            .arg("-w")
+            .stdout(Stdio::piped())
+            .spawn()
+            .error("failed to run ristate")?;
+        let stream = BufReader::new(ristate.stdout.take().unwrap()).lines();
+
+        tokio::spawn(async move {
+            let _ = ristate.wait().await;
+        });
+
+        Ok(Self { stream })
+    }
+}
+
+#[async_trait]
+impl Backend for Ristate {
+    async fn get_info(&mut self) -> Result<Info> {
+        #[derive(Deserialize, Debug)]
+        struct RistateOuput {
+            title: String,
+        }
+
+        let line = self
+            .stream
+            .next_line()
+            .await
+            .error("ristate exited unexpectedly")?
+            .error("error reading line from ristate")?;
+
         let title = serde_json::from_str::<RistateOuput>(&line)
             .error("ristate produced invalid json")?
             .title;
-        if !title.is_empty() || !autohide {
-            api.set_values(map! {
-                "title" => Value::text(title.clone()),
-            });
-            api.show();
-        } else {
-            api.hide();
-        }
-        api.flush().await?;
-    }
 
-    Err(Error::new("ristate exited unexpectedly"))
+        Ok(Info {
+            title,
+            marks: default(),
+        })
+    }
 }

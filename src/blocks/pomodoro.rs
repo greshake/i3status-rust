@@ -46,7 +46,6 @@
 use super::prelude::*;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 use std::time::Instant;
-use tokio::sync::mpsc;
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
@@ -71,7 +70,6 @@ impl Default for PomodoroConfig {
 struct Block {
     api: CommonApi,
     block_config: PomodoroConfig,
-    events_receiver: mpsc::Receiver<BlockEvent>,
 }
 
 impl Block {
@@ -82,7 +80,7 @@ impl Block {
 
     async fn wait_for_click(&mut self, button: MouseButton) {
         loop {
-            if let Some(BlockEvent::Click(click)) = self.events_receiver.recv().await {
+            if let Click(click) = self.api.event().await {
                 if click.button == button {
                     break;
                 }
@@ -104,7 +102,7 @@ impl Block {
     async fn read_u64(&mut self, mut number: u64, msg: &str) -> Result<u64> {
         loop {
             self.set_text(format!("{msg} {number}").into()).await?;
-            if let Some(BlockEvent::Click(click)) = self.events_receiver.recv().await {
+            if let Click(click) = self.api.event().await {
                 match click.button {
                     MouseButton::Left => break,
                     MouseButton::WheelUp => number += 1,
@@ -142,9 +140,9 @@ impl Block {
                     )
                 };
                 self.set_text(text.into()).await?;
-                tokio::select! {
+                select! {
                     _ = sleep(Duration::from_secs(10)) => (),
-                    Some(BlockEvent::Click(click)) = self.events_receiver.recv() => {
+                    Click(click) = self.api.event() => {
                         if click.button == MouseButton::Middle {
                             return Ok(());
                         }
@@ -184,9 +182,9 @@ impl Block {
                 let left = break_len - elapsed;
                 self.set_text(format!("Break: {} min", (left.as_secs() + 59) / 60,).into())
                     .await?;
-                tokio::select! {
+                select! {
                     _ = sleep(Duration::from_secs(10)) => (),
-                    Some(BlockEvent::Click(click)) = self.events_receiver.recv() => {
+                    Click(click) = self.api.event() => {
                         if click.button == MouseButton::Middle {
                             return Ok(());
                         }
@@ -218,14 +216,9 @@ impl Block {
 }
 
 pub async fn run(block_config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let events = api.get_events().await?;
     let block_config = PomodoroConfig::deserialize(block_config).config_error()?;
     api.set_icon("pomodoro")?;
-    let mut block = Block {
-        api,
-        block_config,
-        events_receiver: events,
-    };
+    let mut block = Block { api, block_config };
 
     loop {
         // Send collaped block

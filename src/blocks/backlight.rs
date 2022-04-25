@@ -125,7 +125,6 @@ struct BacklightConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let dbus_conn = api.get_system_dbus_connection().await?;
 
     let config = BacklightConfig::deserialize(config).config_error()?;
@@ -167,11 +166,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         });
         api.flush().await?;
 
-        tokio::select! {
+        select! {
             _ = file_changes.next() => (),
-            Some(BlockEvent::Click(event)) = events.recv() => {
+            Click(click) = api.event() => {
                 let brightness = device.brightness().await?;
-                match event.button {
+                match click.button {
                     MouseButton::Left => {
                         if let Some(brightness) = cycle.next() {
                             device.set_brightness(brightness).await?;

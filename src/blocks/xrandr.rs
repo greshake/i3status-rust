@@ -33,10 +33,10 @@
 //! - `backlight_full`
 //! - `resolution`
 
-use tokio::process::Command;
 use super::prelude::*;
 use crate::subprocess::spawn_shell;
 use regex::RegexSet;
+use tokio::process::Command;
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
@@ -57,7 +57,6 @@ impl Default for XrandrConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = XrandrConfig::deserialize(config).config_error()?;
 
     api.set_format(
@@ -96,32 +95,35 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         loop {
-            tokio::select! {
+            select! {
                 _ = timer.tick() => break,
-                Some(BlockEvent::Click(click)) = events.recv() => {
-                    match click.button {
-                        MouseButton::Left => {
-                            cur_indx += 1;
-                            if cur_indx >= monitors.len() {
-                                cur_indx = 0;
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        match click.button {
+                            MouseButton::Left => {
+                                cur_indx += 1;
+                                if cur_indx >= monitors.len() {
+                                    cur_indx = 0;
+                                }
                             }
-                        }
-                        MouseButton::WheelUp => {
-                            if let Some(monitor) = monitors.get_mut(cur_indx) {
-                                let bright = (monitor.brightness + config.step_width).min(100);
-                                monitor.set_brightness(bright);
+                            MouseButton::WheelUp => {
+                                if let Some(monitor) = monitors.get_mut(cur_indx) {
+                                    let bright = (monitor.brightness + config.step_width).min(100);
+                                    monitor.set_brightness(bright);
+                                }
                             }
-                        }
-                        MouseButton::WheelDown => {
-                            if let Some(monitor) = monitors.get_mut(cur_indx) {
-                                let bright = monitor.brightness.saturating_sub(config.step_width);
-                                monitor.set_brightness(bright);
+                            MouseButton::WheelDown => {
+                                if let Some(monitor) = monitors.get_mut(cur_indx) {
+                                    let bright = monitor.brightness.saturating_sub(config.step_width);
+                                    monitor.set_brightness(bright);
+                                }
                             }
+                            _ => (),
                         }
-                        _ => (),
+                        display(monitors.get(cur_indx), &mut api)?;
+                        api.flush().await?;
                     }
-                    display(monitors.get(cur_indx), &mut api)?;
-                    api.flush().await?;
                 }
             }
         }

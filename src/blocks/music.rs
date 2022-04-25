@@ -122,7 +122,6 @@ struct OwnerChange {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let dbus_conn = new_dbus_connection().await?;
-    let mut events = api.get_events().await?;
     let config = MusicConfig::deserialize(config).config_error()?;
     api.set_format(config.format.with_default("$combo.rot-str() $play|")?);
     api.set_icon("music")?;
@@ -219,7 +218,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         api.flush().await?;
 
-        tokio::select! {
+        select! {
             // Wait for a DBUS event
             Some(msg) = dbus_stream.next() => {
                 let msg = msg.unwrap();
@@ -272,7 +271,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 }
             }
             // Wait for a click
-            Some(BlockEvent::Click(click)) = events.recv() => {
+            Click(click) = api.event() => {
                 if let Some(i) = cur_player {
                     match click.button {
                         MouseButton::Left => {

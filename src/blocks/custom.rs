@@ -17,8 +17,7 @@
 //! `cycle` | Commands to execute and change when the button is clicked | No | None
 //! `interval` | Update interval in seconds (or "once" to update only once) | No | `10`
 //! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
-//! `signal` | Signal value that causes an update for this block with 0 corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | No | None
-//! watch_files | Watch files to trigger update on file modification | No | None
+//! `watch_files` | Watch files to trigger update on file modification | No | None
 //! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | No | false
 //! `shell` | Specify the shell to use when running commands | No | `$SHELL` if set, otherwise fallback to `sh`
 //!
@@ -86,11 +85,10 @@
 //! - Use `shellexpand`
 
 use super::prelude::*;
-use crate::signals::Signal;
 use inotify::{Inotify, WatchMask};
 use std::process::Stdio;
 use tokio::{
-    io::{AsyncBufReadExt, BufReader, self},
+    io::{self, AsyncBufReadExt, BufReader},
     process::Command,
     time::Instant,
 };
@@ -108,7 +106,6 @@ struct CustomConfig {
     json: bool,
     hide_when_empty: bool,
     shell: Option<StdString>,
-    signal: Option<i32>,
     watch_files: Vec<StdString>,
 }
 
@@ -141,7 +138,6 @@ async fn update_bar(
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = CustomConfig::deserialize(config).config_error()?;
 
     type TimerStream = Pin<Box<dyn Stream<Item = Instant> + Send + Sync>>;
@@ -207,15 +203,16 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             let _ = process.wait().await;
         });
 
-        while let Some(line) = reader
-            .next_line()
-            .await
-            .error("error reading line from child process")?
-        {
-            update_bar(&line, config.hide_when_empty, config.json, &mut api).await?;
+        loop {
+            select! {
+                line = reader.next_line() => {
+                    let line = line.error("error reading line from child process")?.error("child process exited unexpectedly")?;
+                    update_bar(&line, config.hide_when_empty, config.json, &mut api).await?;
+                }
+                // events must be polled
+                _ = api.event() => (),
+            }
         }
-
-        Ok(())
     } else {
         loop {
             // Run command
@@ -233,18 +230,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             if config.interval == OnceDuration::Once && config.watch_files.is_empty() {
                 return Ok(());
             }
-            loop {
-                tokio::select! {
-                    _ = timer.next() => break,
-                    _ = file_updates.next() => break,
-                    Some(event) = events.recv() => {
-                        match (event, config.signal) {
-                            (BlockEvent::Signal(Signal::Custom(s)), Some(signal)) if s == signal => break,
-                            (BlockEvent::Click(_), _) => break,
-                            _ => (),
-                        }
-                    },
-                }
+
+            select! {
+                _ = timer.next() => (),
+                _ = file_updates.next() => (),
+                _ = api.event() => ()
             }
         }
     }

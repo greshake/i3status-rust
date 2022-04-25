@@ -101,6 +101,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         });
 
         api.flush().await?;
-        timer.tick().await;
+
+        select! {
+            _ = timer.tick() => (),
+            UpdateRequest = api.event() => (),
+        }
     }
 }

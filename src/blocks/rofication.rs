@@ -50,12 +50,12 @@ impl Default for RoficationConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = RoficationConfig::deserialize(config).config_error()?;
     api.set_format(config.format.with_default("$num.eng(1)")?);
     api.set_icon("bell")?;
 
     let path = config.socket_path.expand()?;
+    let mut timer = config.interval.timer();
 
     loop {
         let (num, crit) = api.recoverable(|| rofication_status(&path), "X").await?;
@@ -73,11 +73,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         loop {
             tokio::select! {
-                _ = sleep(config.interval.0) => break,
-                Some(BlockEvent::Click(click)) = events.recv() => {
-                    if click.button == MouseButton::Left {
-                        let _ = spawn_shell("rofication-gui");
-                        break;
+                _ = timer.tick() => break,
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left {
+                            let _ = spawn_shell("rofication-gui");
+                            break;
+                        }
                     }
                 }
             }

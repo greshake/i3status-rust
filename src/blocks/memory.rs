@@ -94,7 +94,6 @@ impl Default for MemoryConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = MemoryConfig::deserialize(config).config_error()?;
     let interval = Duration::from_secs(config.interval);
 
@@ -170,10 +169,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         api.flush().await?;
 
-        tokio::select! {
-            _ = sleep(interval) =>(),
-            event = events.recv() => {
-                if let BlockEvent::Click(click) = event.unwrap() {
+        loop {
+            select! {
+                _ = sleep(interval) => break,
+                Click(click) = api.event() => {
                     if click.button == MouseButton::Left && clickable {
                         match memtype {
                             Memtype::Swap => {
@@ -188,6 +187,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                             }
                         }
                         api.set_format(format.clone());
+                        break;
                     }
                 }
             }

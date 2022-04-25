@@ -55,7 +55,6 @@ struct CpuConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = CpuConfig::deserialize(config).config_error()?;
     let mut format = config.format.with_default("$utilization")?;
     let mut format_alt = match config.format_alt {
@@ -71,6 +70,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     // Store previous /proc/stat state
     let mut cputime = read_proc_stat().await?;
     let cores = cputime.1.len();
+
+    let mut timer = config.interval.timer();
 
     loop {
         let freqs = read_frequencies().await?;
@@ -126,13 +127,16 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         });
         api.flush().await?;
 
-        tokio::select! {
-            _ = sleep(config.interval.0) => (),
-            Some(BlockEvent::Click(click)) = events.recv() => {
-                if click.button == MouseButton::Left {
-                    if let Some(ref mut format_alt) = format_alt {
-                        std::mem::swap(format_alt, &mut format);
-                        api.set_format(format.clone());
+        loop {
+            select! {
+                _ = timer.tick() => break,
+                Click(click) = api.event() => {
+                    if click.button == MouseButton::Left {
+                        if let Some(ref mut format_alt) = format_alt {
+                            std::mem::swap(format_alt, &mut format);
+                            api.set_format(format.clone());
+                            break;
+                        }
                     }
                 }
             }

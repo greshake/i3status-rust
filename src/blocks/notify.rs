@@ -56,7 +56,6 @@ impl Default for DriverType {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = NotifyConfig::deserialize(config).config_error()?;
     api.set_format(config.format.with_default("")?);
 
@@ -77,13 +76,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         loop {
-            tokio::select! {
+            select! {
                 x = driver.wait_for_change() => {
                     x?;
                     break;
                 }
-                event = events.recv() => {
-                    if let BlockEvent::Click(click) = event.unwrap() {
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
                         if click.button == MouseButton::Left {
                             driver.set_paused(!is_paused).await?;
                         }

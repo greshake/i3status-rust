@@ -78,7 +78,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "speed_up" => Value::bits(output.upload).with_icon(icon_up.clone()),
         });
         api.flush().await?;
-        sleep(config.interval.0).await;
+
+        select! {
+            _ = sleep(config.interval.0) => (),
+            UpdateRequest = api.event() => (),
+        }
     }
 }
 

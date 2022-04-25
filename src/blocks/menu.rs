@@ -1,6 +1,5 @@
 use super::prelude::*;
 use crate::subprocess::spawn_shell;
-use tokio::sync::mpsc;
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -22,7 +21,6 @@ struct Block {
     api: CommonApi,
     text: String,
     items: Vec<Item>,
-    events_receiver: mpsc::Receiver<BlockEvent>,
 }
 
 impl Block {
@@ -37,8 +35,8 @@ impl Block {
 
     async fn wait_for_click(&mut self, button: MouseButton) {
         loop {
-            match self.events_receiver.recv().await.unwrap() {
-                BlockEvent::Click(c) if c.button == button => break,
+            match self.api.event().await {
+                Click(c) if c.button == button => break,
                 _ => (),
             }
         }
@@ -49,8 +47,8 @@ impl Block {
         loop {
             self.set_text(self.items[index].display.clone()).await?;
 
-            if let BlockEvent::Click(c) = self.events_receiver.recv().await.unwrap() {
-                match c.button {
+            if let Click(click) = self.api.event().await {
+                match click.button {
                     MouseButton::WheelUp => index += 1,
                     MouseButton::WheelDown => index += self.items.len() + 1,
                     MouseButton::Left => return Ok(Some(self.items[index].clone())),
@@ -65,22 +63,20 @@ impl Block {
     async fn confirm(&mut self, msg: String) -> Result<bool> {
         self.set_text(msg).await?;
         loop {
-            if let BlockEvent::Click(c) = self.events_receiver.recv().await.unwrap() {
-                return Ok(c.button == MouseButton::DoubleLeft);
+            if let Click(click) = self.api.event().await {
+                return Ok(click.button == MouseButton::DoubleLeft);
             }
         }
     }
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let events = api.get_events().await?;
+pub async fn run(config: toml::Value, api: CommonApi) -> Result<()> {
     let config = Config::deserialize(config).config_error()?;
 
     let mut block = Block {
         api,
         text: config.text,
         items: config.items,
-        events_receiver: events,
     };
 
     loop {

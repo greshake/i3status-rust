@@ -70,15 +70,11 @@
 //! "Russian (N/A)" = "RU"
 //! ```
 
-use std::collections::HashMap;
-
-use swayipc_async::{Connection, Event, EventType};
-
-use tokio::process::Command;
-
-use zbus::dbus_proxy;
-
 use super::prelude::*;
+use std::collections::HashMap;
+use swayipc_async::{Connection, Event, EventType};
+use tokio::process::Command;
+use zbus::dbus_proxy;
 
 #[derive(Deserialize, Debug, Derivative)]
 #[serde(default, deny_unknown_fields)]
@@ -107,7 +103,21 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = KeyboardLayoutConfig::deserialize(config).config_error()?;
     api.set_format(config.format.with_default("$layout")?);
 
-    let send = move |(mut layout, variant): (String, Option<String>), api: &mut CommonApi| {
+    let mut backend: Box<dyn Backend> = match config.driver {
+        KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap(config.interval)),
+        KeyboardLayoutDriver::LocaleBus => {
+            Box::new(LocaleBus::new(api.get_system_dbus_connection().await?).await?)
+        }
+        KeyboardLayoutDriver::KbddBus => return Err(Error::new("KbddBus is not implemented")),
+        KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
+    };
+
+    loop {
+        let Info {
+            mut layout,
+            variant,
+        } = backend.get_info().await?;
+
         let variant = variant.unwrap_or_else(|| "N/A".into());
         if let Some(mappings) = &config.mappings {
             if let Some(mapped) = mappings.get(&format!("{layout} ({variant})")) {
@@ -119,97 +129,165 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "layout" => Value::text(layout),
             "variant" => Value::text(variant),
         });
-    };
 
-    match config.driver {
-        // Just run "setxkbmap" commnad every N seconds and parse it's output
-        KeyboardLayoutDriver::SetXkbMap => {
-            loop {
-                let output = Command::new("setxkbmap")
-                    .arg("-query")
-                    .output()
-                    .await
-                    .error("Failed to execute setxkbmap")?;
-                let output = StdString::from_utf8(output.stdout)
-                    .error("setxkbmap produced a non-UTF8 output")?;
-                let layout = output
-                    .lines()
-                    // Find the "layout:    xxxx" entry.
-                    .find(|line| line.starts_with("layout"))
-                    .error("Could not find the layout entry from setxkbmap")?
-                    .split_ascii_whitespace()
-                    .last()
-                    .error("Could not read the layout entry from setxkbmap.")?;
-
-                send((layout.into(), None), &mut api);
-                api.flush().await?;
-
-                sleep(config.interval.0).await;
-            }
+        select! {
+            update = backend.wait_for_chagne() => update?,
+            UpdateRequest = api.event() => (),
         }
-        KeyboardLayoutDriver::LocaleBus => {
-            let conn = api.get_system_dbus_connection().await?;
-            let proxy = LocaleBusProxy::new(&conn)
-                .await
-                .error("Failed to create LocaleBusProxy")?;
-            let mut layout_updates = proxy.receive_layout_changed().await;
-            let mut variant_updates = proxy.receive_layout_changed().await;
-            loop {
-                // zbus does internal caching
-                let layout = proxy.layout().await.error("Failed to get layout")?;
-                let variant = proxy.variant().await.error("Failed to get layout")?;
-                send((layout.into(), Some(variant.into())), &mut api);
-                api.flush().await?;
-                tokio::select! {
-                    _ = layout_updates.next() => (),
-                    _ = variant_updates.next() => (),
+    }
+}
+
+#[async_trait]
+trait Backend {
+    async fn get_info(&mut self) -> Result<Info>;
+    async fn wait_for_chagne(&mut self) -> Result<()>;
+}
+
+struct Info {
+    layout: String,
+    variant: Option<String>,
+}
+
+struct SetXkbMap(Seconds);
+
+#[async_trait]
+impl Backend for SetXkbMap {
+    async fn get_info(&mut self) -> Result<Info> {
+        let output = Command::new("setxkbmap")
+            .arg("-query")
+            .output()
+            .await
+            .error("Failed to execute setxkbmap")?;
+        let output =
+            StdString::from_utf8(output.stdout).error("setxkbmap produced a non-UTF8 output")?;
+        let layout = output
+            .lines()
+            // Find the "layout:    xxxx" entry.
+            .find(|line| line.starts_with("layout"))
+            .error("Could not find the layout entry from setxkbmap")?
+            .split_ascii_whitespace()
+            .last()
+            .error("Could not read the layout entry from setxkbmap.")?;
+        Ok(Info {
+            layout: layout.into(),
+            variant: None,
+        })
+    }
+
+    async fn wait_for_chagne(&mut self) -> Result<()> {
+        sleep(self.0 .0).await;
+        Ok(())
+    }
+}
+
+struct LocaleBus {
+    proxy: LocaleBusInterfaceProxy<'static>,
+    stream1: zbus::PropertyStream<'static, StdString>,
+    stream2: zbus::PropertyStream<'static, StdString>,
+}
+
+impl LocaleBus {
+    async fn new(conn: zbus::Connection) -> Result<Self> {
+        let proxy = LocaleBusInterfaceProxy::new(&conn)
+            .await
+            .error("Failed to create LocaleBusProxy")?;
+        let layout_updates = proxy.receive_layout_changed().await;
+        let variant_updates = proxy.receive_layout_changed().await;
+        Ok(Self {
+            proxy,
+            stream1: layout_updates,
+            stream2: variant_updates,
+        })
+    }
+}
+
+#[async_trait]
+impl Backend for LocaleBus {
+    async fn get_info(&mut self) -> Result<Info> {
+        // zbus does internal caching
+        let layout = self.proxy.layout().await.error("Failed to get layout")?;
+        let variant = self.proxy.variant().await.error("Failed to get variant")?;
+        Ok(Info {
+            layout: layout.into(),
+            variant: Some(variant.into()),
+        })
+    }
+
+    async fn wait_for_chagne(&mut self) -> Result<()> {
+        select! {
+            _ = self.stream1.next() => (),
+            _ = self.stream2.next() => (),
+        }
+        Ok(())
+    }
+}
+
+struct Sway {
+    events: swayipc_async::EventStream,
+    cur_layout: StdString,
+    kbd: Option<String>,
+}
+
+impl Sway {
+    async fn new(kbd: Option<String>) -> Result<Self> {
+        let mut connection = Connection::new()
+            .await
+            .error("Failed to open swayipc connection")?;
+        let cur_layout = connection
+            .get_inputs()
+            .await
+            .error("failed to get current input")?
+            .iter()
+            .find_map(|i| {
+                if i.input_type == "keyboard"
+                    && kbd.as_deref().map_or(true, |id| id == i.identifier)
+                {
+                    i.xkb_active_layout_name.clone()
+                } else {
+                    None
                 }
-            }
-        }
-        KeyboardLayoutDriver::KbddBus => Err(Error::new("Not implemened")),
-        // Use sway's IPC to get async updates
-        KeyboardLayoutDriver::Sway => {
-            let mut connection = Connection::new()
-                .await
-                .error("Failed to open swayipc connection")?;
+            })
+            .error("Failed to get current input")?;
+        let events = connection
+            .subscribe(&[EventType::Input])
+            .await
+            .error("Failed to subscribe to events")?;
+        Ok(Self {
+            events,
+            cur_layout,
+            kbd,
+        })
+    }
+}
 
-            let mut layout = connection
-                .get_inputs()
-                .await
-                .error("failed to get current input")?
-                .iter()
-                .find_map(|i| {
-                    if i.input_type == "keyboard"
-                        && config
-                            .sway_kb_identifier
-                            .as_ref()
-                            .map_or(true, |id| id == &i.identifier)
-                    {
-                        i.xkb_active_layout_name.clone()
-                    } else {
-                        None
-                    }
-                })
-                .error("Failed to get current input")?;
-            send(parse_sway_layout(&layout), &mut api);
-            api.flush().await?;
+#[async_trait]
+impl Backend for Sway {
+    async fn get_info(&mut self) -> Result<Info> {
+        let (l, v) = parse_sway_layout(&self.cur_layout);
+        Ok(Info {
+            layout: l,
+            variant: v,
+        })
+    }
 
-            let mut events = connection
-                .subscribe(&[EventType::Input])
+    async fn wait_for_chagne(&mut self) -> Result<()> {
+        loop {
+            let event = self
+                .events
+                .next()
                 .await
-                .error("Failed to subscribe to events")?;
-            loop {
-                let event = events
-                    .next()
-                    .await
-                    .error("swayipc channel closed")?
-                    .error("bad event")?;
-                if let Event::Input(event) = event {
+                .error("swayipc channel closed")?
+                .error("bad event")?;
+            if let Event::Input(event) = event {
+                if self
+                    .kbd
+                    .as_deref()
+                    .map_or(true, |id| id == event.input.identifier)
+                {
                     if let Some(new_layout) = event.input.xkb_active_layout_name {
-                        if new_layout != layout {
-                            layout = new_layout;
-                            send(parse_sway_layout(&layout), &mut api);
-                            api.flush().await?;
+                        if new_layout != self.cur_layout {
+                            self.cur_layout = new_layout;
+                            return Ok(());
                         }
                     }
                 }
@@ -234,7 +312,7 @@ fn parse_sway_layout(layout: &str) -> (String, Option<String>) {
     default_service = "org.freedesktop.locale1",
     default_path = "/org/freedesktop/locale1"
 )]
-trait LocaleBus {
+trait LocaleBusInterface {
     #[dbus_proxy(property, name = "X11Layout")]
     fn layout(&self) -> zbus::Result<StdString>;
 

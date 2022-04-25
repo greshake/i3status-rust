@@ -78,7 +78,6 @@ impl Default for TaskwarriorConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = TaskwarriorConfig::deserialize(config).config_error()?;
     api.set_format(config.format.with_default("$done|$count.eng(1)")?);
     api.set_icon("tasks")?;
@@ -125,12 +124,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         api.flush().await?;
 
-        tokio::select! {
+        select! {
             _ = sleep(config.interval.0) =>(),
             _ = updates.next() => (),
-            Some(BlockEvent::Click(click)) = events.recv() => {
-                if click.button == MouseButton::Right {
-                    filter = filters.next().error("failed to get next filter")?;
+            event = api.event() => match event {
+                UpdateRequest => (),
+                Click(click) => {
+                    if click.button == MouseButton::Right {
+                        filter = filters.next().error("failed to get next filter")?;
+                    }
                 }
             }
         }

@@ -109,7 +109,6 @@ struct SoundConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = SoundConfig::deserialize(config).config_error()?;
     api.set_format(config.format.with_default("$volume.eng(2)|")?);
 
@@ -205,20 +204,26 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.set_values(values);
         api.flush().await?;
 
-        tokio::select! {
-            val = device.wait_for_update() => val?,
-            Some(BlockEvent::Click(click)) = events.recv() => {
-                match click.button {
-                    MouseButton::Right => {
-                        device.toggle().await?;
+        loop {
+            select! {
+                val = device.wait_for_update() => {
+                    val?;
+                    break;
+                }
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => match click.button {
+                        MouseButton::Right => {
+                            device.toggle().await?;
+                        }
+                        MouseButton::WheelUp => {
+                            device.set_volume(step_width, config.max_vol).await?;
+                        }
+                        MouseButton::WheelDown => {
+                            device.set_volume(-step_width, config.max_vol).await?;
+                        }
+                        _ => ()
                     }
-                    MouseButton::WheelUp => {
-                        device.set_volume(step_width, config.max_vol).await?;
-                    }
-                    MouseButton::WheelDown => {
-                        device.set_volume(-step_width, config.max_vol).await?;
-                    }
-                    _ => ()
                 }
             }
         }

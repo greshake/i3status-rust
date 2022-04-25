@@ -169,7 +169,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
 
         api.flush().await?;
-        rx.recv().await.error("tx dropped")?;
+
+        loop {
+            select! {
+                _ = rx.recv() => break,
+                _ = api.event() => (),
+            }
+        }
     }
 }
 

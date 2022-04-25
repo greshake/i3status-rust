@@ -83,7 +83,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.set_state(state);
         api.set_text(newmails.to_string().into());
         api.flush().await?;
-        timer.tick().await;
+
+        select! {
+            _ = timer.tick() => (),
+            UpdateRequest = api.event() => (),
+        }
     }
 }
 

@@ -57,7 +57,6 @@ struct NetConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = NetConfig::deserialize(config).config_error()?;
     let mut format = config
         .format
@@ -68,9 +67,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     };
     api.set_format(format.clone());
 
+    let mut timer = config.interval.timer();
+
     // Stats
     let mut stats = None;
-    let mut timer = Instant::now();
+    let mut stats_timer = Instant::now();
     let mut tx_hist = [0f64; 8];
     let mut rx_hist = [0f64; 8];
 
@@ -94,8 +95,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             // All stats available
             (Some(old_stats), Some(new_stats)) => {
                 let diff = new_stats - old_stats;
-                let elapsed = timer.elapsed().as_secs_f64();
-                timer = Instant::now();
+                let elapsed = stats_timer.elapsed().as_secs_f64();
+                stats_timer = Instant::now();
                 speed_down = diff.rx_bytes as f64 / elapsed;
                 speed_up = diff.tx_bytes as f64 / elapsed;
                 stats = Some(new_stats);
@@ -124,13 +125,19 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.set_icon(device.icon)?;
         api.flush().await?;
 
-        tokio::select! {
-            _ = sleep(config.interval.0) =>(),
-            Some(BlockEvent::Click(click)) = events.recv() => {
-                if click.button == MouseButton::Left {
-                    if let Some(ref mut format_alt) = format_alt {
-                        std::mem::swap(format_alt, &mut format);
-                        api.set_format(format.clone());
+        loop {
+            select! {
+                _ = timer.tick() => break,
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left {
+                            if let Some(ref mut format_alt) = format_alt {
+                                std::mem::swap(format_alt, &mut format);
+                                api.set_format(format.clone());
+                                break;
+                            }
+                        }
                     }
                 }
             }

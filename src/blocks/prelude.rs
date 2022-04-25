@@ -1,4 +1,4 @@
-pub use super::{BlockEvent, CommonApi};
+pub use super::{BlockEvent::*, CommonApi};
 
 pub use crate::click::MouseButton;
 pub use crate::errors::*;
@@ -18,6 +18,7 @@ pub use std::string::String as StdString;
 pub use std::time::Duration;
 
 pub use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
+pub use tokio::select;
 pub use tokio::time::sleep;
 
 pub use futures::{Stream, StreamExt};

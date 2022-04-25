@@ -20,7 +20,6 @@ use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::formatting::{value::Value, Format};
 use crate::protocol::i3bar_event::I3BarEvent;
-use crate::signals::Signal;
 use crate::widget::State;
 use crate::{Request, RequestCmd};
 
@@ -146,12 +145,13 @@ pub type BlockFuture = Pin<Box<dyn Future<Output = Result<()>>>>;
 #[derive(Debug, Clone, Copy)]
 pub enum BlockEvent {
     Click(I3BarEvent),
-    Signal(Signal),
+    UpdateRequest,
 }
 
 pub struct CommonApi {
     pub id: usize,
     pub shared_config: SharedConfig,
+    pub event_receiver: EventsRx,
 
     pub request_sender: mpsc::Sender<Request>,
     pub cmd_buf: SmallVec<[RequestCmd; 4]>,
@@ -169,11 +169,11 @@ impl CommonApi {
         self.cmd_buf.push(RequestCmd::Show);
     }
 
-    pub async fn get_events(&mut self) -> Result<EventsRx> {
-        let (sender, receiver) = tokio::sync::oneshot::channel();
-        self.cmd_buf.push(RequestCmd::GetEvents(sender));
-        self.flush().await?;
-        receiver.await.ok().error("Failed to get events receiver")
+    pub async fn event(&mut self) -> BlockEvent {
+        match self.event_receiver.recv().await {
+            Some(event) => event,
+            None => panic!("events stream ended"),
+        }
     }
 
     pub fn set_icon(&mut self, icon: &str) -> Result<()> {
@@ -285,8 +285,6 @@ impl CommonApi {
                     self.show();
                     self.set_state(State::Critical);
 
-                    let mut events = self.get_events().await?;
-
                     // TODO: do not toggle fullscreen if the block was already fullscreen before
                     // the error
                     loop {
@@ -305,7 +303,7 @@ impl CommonApi {
 
                         tokio::select! {
                             _ = tokio::time::sleep_until(retry_at) => break,
-                            Some(BlockEvent::Click(click)) = events.recv() => {
+                            BlockEvent::Click(click) = self.event() => {
                                 if click.button == MouseButton::Left {
                                     focused = !focused;
                                 }
@@ -324,6 +322,8 @@ pub struct CommonConfig {
 
     #[serde(default)]
     pub click: ClickHandler,
+    #[serde(default)]
+    pub signal: Option<i32>,
     #[serde(default)]
     pub icons_format: Option<String>,
     #[serde(default)]
@@ -344,6 +344,7 @@ impl CommonConfig {
         const FIELDS: &[&str] = &[
             "block",
             "click",
+            "signal",
             "theme_overrides",
             "icons_format",
             "error_interval",

@@ -162,7 +162,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.set_values(values);
         api.flush().await?;
 
-        tokio::select! {
+        select! {
             _ = sleep(config.interval.0) => (),
             _ = stream.next() => {
                 // avoid too frequent updates
@@ -170,6 +170,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     loop { let _ = stream.next().await; }
                 }).await;
             }
+            UpdateRequest = api.event() => (),
         }
     }
 }

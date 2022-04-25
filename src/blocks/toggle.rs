@@ -61,7 +61,6 @@ pub struct ToggleConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = ToggleConfig::deserialize(config).config_error()?;
     let interval = config.interval.map(Duration::from_secs);
 
@@ -97,32 +96,36 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         loop {
             match interval {
                 Some(interval) => {
-                    tokio::select! {
+                    select! {
                         _ = sleep(interval) => break,
-                        Some(BlockEvent::Click(click)) = events.recv() => {
-                            if click.button == MouseButton::Left {
-                                let cmd = if is_toggled {
-                                    &config.command_off
-                                } else {
-                                    &config.command_on
-                                };
-                                let output = Command::new(&shell)
-                                    .args(&["-c", cmd])
-                                    .output()
-                                    .await
-                                    .error("Failed to run command")?;
-                                if output.status.success() {
-                                    api.set_state(State::Idle);
-                                    break;
-                                } else {
-                                    api.set_state(State::Critical);
+                        event = api.event() => match event {
+                            UpdateRequest => break,
+                            Click(click) => {
+                                if click.button == MouseButton::Left {
+                                    let cmd = if is_toggled {
+                                        &config.command_off
+                                    } else {
+                                        &config.command_on
+                                    };
+                                    let output = Command::new(&shell)
+                                        .args(&["-c", cmd])
+                                        .output()
+                                        .await
+                                        .error("Failed to run command")?;
+                                    if output.status.success() {
+                                        api.set_state(State::Idle);
+                                        break;
+                                    } else {
+                                        api.set_state(State::Critical);
+                                    }
                                 }
                             }
-                        },
+                        }
                     }
                 }
-                None => {
-                    if let Some(BlockEvent::Click(click)) = events.recv().await {
+                None => match api.event().await {
+                    UpdateRequest => break,
+                    Click(click) => {
                         if click.button == MouseButton::Left {
                             let cmd = if is_toggled {
                                 &config.command_off
@@ -142,7 +145,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                             }
                         }
                     }
-                }
+                },
             }
         }
     }

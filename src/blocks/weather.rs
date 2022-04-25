@@ -139,6 +139,7 @@ impl WeatherService {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = WeatherConfig::deserialize(config).config_error()?;
     api.set_format(config.format.with_default("$weather $temp")?);
+    let mut timer = config.interval.timer();
 
     loop {
         if let Ok(data) = config.service.get(config.autolocate).await {
@@ -185,7 +186,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         api.flush().await?;
 
-        sleep(config.interval.0).await;
+        select! {
+            _ = timer.tick() => (),
+            UpdateRequest = api.event() => (),
+        }
     }
 }
 

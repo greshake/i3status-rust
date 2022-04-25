@@ -97,7 +97,6 @@ impl TemperatureScale {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = TemperatureConfig::deserialize(config).config_error()?;
     let mut collapsed = config.collapsed;
     api.set_format(config.format.with_default("$average avg, $max max")?);
@@ -195,12 +194,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             api.flush().await?;
 
             loop {
-                tokio::select! {
+                select! {
                     _ = sleep(config.interval.0) => break 'outer,
-                    Some(BlockEvent::Click(click)) = events.recv() => {
-                        if click.button == MouseButton::Left  {
-                            collapsed = !collapsed;
-                            break;
+                    event = api.event() => match event {
+                        UpdateRequest => break 'outer,
+                        Click(click) => {
+                            if click.button == MouseButton::Left  {
+                                collapsed = !collapsed;
+                                break;
+                            }
                         }
                     }
                 }

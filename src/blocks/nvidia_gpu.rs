@@ -87,7 +87,6 @@ impl Default for NvidiaGpuConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = NvidiaGpuConfig::deserialize(config).config_error()?;
     api.set_format(
         config
@@ -143,9 +142,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         loop {
-            tokio::select! {
-                Some(BlockEvent::Click(click)) = events.recv() => {
-                    match click.instance {
+            select! {
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => match click.instance {
                         Some(MEM_BTN) if click.button == MouseButton::Left => {
                             show_mem_total = !show_mem_total;
                             break;
@@ -170,7 +170,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         }
                         _ => (),
                     }
-                }
+                },
                 new_info = GpuInfo::from_reader(&mut reader) => {
                     info = new_info?;
                     break;

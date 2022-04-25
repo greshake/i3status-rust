@@ -65,7 +65,6 @@ struct AptConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = AptConfig::deserialize(config).config_error()?;
-    let mut events = api.get_events().await?;
     api.set_icon("update")?;
 
     let format = config.format.with_default("$count.eng(1)")?;
@@ -153,11 +152,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         loop {
-            tokio::select! {
+            select! {
                 _ = sleep(config.interval.0) => break,
-                Some(BlockEvent::Click(click)) = events.recv() => {
-                    if click.button == MouseButton::Left {
-                        break;
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left {
+                            break;
+                        }
                     }
                 }
             }
