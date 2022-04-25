@@ -1,3 +1,13 @@
+# i3status-rust 0.22.0 [not released]
+
+### Breaking changes
+
+* Battery: remove `allow_missing` config option (#1461 by @MaxVerevkin) 
+
+### New Blocks and Features
+
+* Net block: configurable graph_up/down formatting (#1457 by @veprolet)
+
 # i3status-rust 0.21.10
 
 ### New Blocks and Features
