@@ -198,6 +198,10 @@ pub fn country_flag_from_iso_code(country_code: &str) -> String {
     String::from_utf8(vec![0xf0, 0x9f, 0x87, b1, 0xf0, 0x9f, 0x87, b2]).unwrap()
 }
 
+pub fn notify(short: &str, long: &str) {
+    let _ = Command::new("notify-send").args([short, long]).output();
+}
+
 #[cfg(test)]
 mod tests {
     use crate::util::{country_flag_from_iso_code, has_command};

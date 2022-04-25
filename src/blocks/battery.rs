@@ -24,7 +24,7 @@ use crate::errors::*;
 use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::scheduler::Task;
-use crate::util::{battery_level_to_icon, read_file};
+use crate::util::{self, battery_level_to_icon, read_file};
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -733,6 +733,9 @@ pub struct BatteryConfig {
 
     /// If the battery device cannot be found, completely hide this block.
     pub hide_missing: bool,
+
+    // DEPRECATED since v0.22.0
+    allow_missing: Option<bool>,
 }
 
 impl Default for BatteryConfig {
@@ -750,6 +753,8 @@ impl Default for BatteryConfig {
             warning: 30,
             critical: 15,
             hide_missing: false,
+            // DEPRECATED since v0.22.0
+            allow_missing: None,
         }
     }
 }
@@ -763,6 +768,13 @@ impl ConfigBlock for Battery {
         shared_config: SharedConfig,
         update_request: Sender<Task>,
     ) -> Result<Self> {
+        if block_config.allow_missing.is_some() {
+            util::notify(
+                "i3status-rust: battery: allow_missing is deprecated",
+                "allow_missing is deprecated and will be removed in a future release",
+            );
+        }
+
         let device_str = match block_config.device {
             Some(d) => d,
             None => match block_config.driver {
