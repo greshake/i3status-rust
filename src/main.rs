@@ -384,7 +384,11 @@ impl BarState {
             // Handle signals
             Some(signal) = signals_receiver.recv() => match signal {
                 Signal::Usr1 => {
-                    // TODO
+                    for (block, _) in &self.blocks {
+                        if let Block::Running(block) = block {
+                            let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
+                        }
+                    }
                     Ok(())
                 }
                 Signal::Usr2 => restart(),
