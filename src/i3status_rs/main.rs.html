@@ -462,6 +462,10 @@
 <span id="457">457</span>
 <span id="458">458</span>
 <span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
@@ -848,7 +852,11 @@
             <span class="comment">// Handle signals</span>
             <span class="prelude-val">Some</span>(<span class="ident">signal</span>) <span class="op">=</span> <span class="ident">signals_receiver</span>.<span class="ident">recv</span>() =&gt; <span class="kw">match</span> <span class="ident">signal</span> {
                 <span class="ident">Signal::Usr1</span> =&gt; {
-                    <span class="comment">// TODO</span>
+                    <span class="kw">for</span> (<span class="ident">block</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">blocks</span> {
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Block::Running</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
+                            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">event_sender</span>.<span class="ident">send</span>(<span class="ident">BlockEvent::UpdateRequest</span>).<span class="kw">await</span>;
+                        }
+                    }
                     <span class="prelude-val">Ok</span>(())
                 }
                 <span class="ident">Signal::Usr2</span> =&gt; <span class="ident">restart</span>(),
