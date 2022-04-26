@@ -242,6 +242,10 @@
 <span id="237">237</span>
 <span id="238">238</span>
 <span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
 </pre><pre class="rust"><code><span class="doccomment">//! CPU statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -299,7 +303,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">CpuConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$utilization&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">format_alt</span> {
@@ -315,6 +318,8 @@
     <span class="comment">// Store previous /proc/stat state</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cputime</span> <span class="op">=</span> <span class="ident">read_proc_stat</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">cores</span> <span class="op">=</span> <span class="ident">cputime</span>.<span class="number">1</span>.<span class="ident">len</span>();
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
 
     <span class="kw">loop</span> {
         <span class="kw">let</span> <span class="ident">freqs</span> <span class="op">=</span> <span class="ident">read_frequencies</span>().<span class="kw">await</span><span class="question-mark">?</span>;
@@ -370,13 +375,16 @@
         });
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">tokio::select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
-            <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
-                <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span>) <span class="op">=</span> <span class="ident">format_alt</span> {
-                        <span class="ident">std::mem::swap</span>(<span class="ident">format_alt</span>, <span class="kw-2">&amp;mut</span> <span class="ident">format</span>);
-                        <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+        <span class="kw">loop</span> {
+            <span class="macro">select!</span> {
+                <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
+                <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; {
+                    <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span>) <span class="op">=</span> <span class="ident">format_alt</span> {
+                            <span class="ident">std::mem::swap</span>(<span class="ident">format_alt</span>, <span class="kw-2">&amp;mut</span> <span class="ident">format</span>);
+                            <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+                            <span class="kw">break</span>;
+                        }
                     }
                 }
             }

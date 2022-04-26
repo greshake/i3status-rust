@@ -120,6 +120,10 @@
 <span id="115">115</span>
 <span id="116">116</span>
 <span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Count of notmuch messages</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block queries a notmuch database and displays the count of messages.</span>
@@ -194,6 +198,7 @@
     <span class="ident">api</span>.<span class="ident">set_icon</span>(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">maildir</span>.<span class="ident">expand</span>()<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
 
     <span class="kw">loop</span> {
         <span class="comment">// TODO: spawn_blocking</span>
@@ -221,10 +226,13 @@
 
         <span class="kw">loop</span> {
             <span class="macro">tokio::select!</span> {
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; <span class="kw">break</span>,
-                <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
-                    <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                        <span class="kw">break</span>;
+                <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
+                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
+                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
+                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
+                        <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
+                            <span class="kw">break</span>;
+                        }
                     }
                 }
             }

@@ -109,6 +109,10 @@
 <span id="104">104</span>
 <span id="105">105</span>
 <span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
 </pre><pre class="rust"><code><span class="doccomment">//! System load average</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -212,7 +216,11 @@
         });
 
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">timer</span>.<span class="ident">tick</span>().<span class="kw">await</span>;
+
+        <span class="macro">select!</span> {
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; (),
+            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+        }
     }
 }
 </code></pre></div>

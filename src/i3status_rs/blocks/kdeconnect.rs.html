@@ -357,6 +357,12 @@
 <span id="352">352</span>
 <span id="353">353</span>
 <span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
 </pre><pre class="rust"><code><span class="doccomment">//! [KDEConnect](https://community.kde.org/KDEConnect) indicator</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Display info from the currently connected device in KDEConnect, updated asynchronously.</span>
@@ -528,7 +534,13 @@
         }
 
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">rx</span>.<span class="ident">recv</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;tx dropped&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">loop</span> {
+            <span class="macro">select!</span> {
+                <span class="kw">_</span> <span class="op">=</span> <span class="ident">rx</span>.<span class="ident">recv</span>() =&gt; <span class="kw">break</span>,
+                <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+            }
+        }
     }
 }
 

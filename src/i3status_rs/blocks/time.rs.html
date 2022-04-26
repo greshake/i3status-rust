@@ -115,6 +115,9 @@
 <span id="110">110</span>
 <span id="111">111</span>
 <span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current time.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -192,7 +195,10 @@
         }
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="ident">timer</span>.<span class="ident">tick</span>().<span class="kw">await</span>;
+        <span class="macro">select!</span> {
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; (),
+            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+        }
     }
 }
 

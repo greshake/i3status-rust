@@ -152,6 +152,9 @@
 <span id="147">147</span>
 <span id="148">148</span>
 <span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A Toggle block</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! You can add commands to be executed to disable the toggle (`command_off`), and to enable it</span>
@@ -215,7 +218,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ToggleConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">map</span>(<span class="ident">Duration::from_secs</span>);
 
@@ -251,32 +253,36 @@
         <span class="kw">loop</span> {
             <span class="kw">match</span> <span class="ident">interval</span> {
                 <span class="prelude-val">Some</span>(<span class="ident">interval</span>) =&gt; {
-                    <span class="macro">tokio::select!</span> {
+                    <span class="macro">select!</span> {
                         <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">interval</span>) =&gt; <span class="kw">break</span>,
-                        <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
-                            <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                                <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_toggled</span> {
-                                    <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_off</span>
-                                } <span class="kw">else</span> {
-                                    <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_on</span>
-                                };
-                                <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="kw-2">&amp;</span><span class="ident">shell</span>)
-                                    .<span class="ident">args</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;-c&quot;</span>, <span class="ident">cmd</span>])
-                                    .<span class="ident">output</span>()
-                                    .<span class="kw">await</span>
-                                    .<span class="ident">error</span>(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
-                                <span class="kw">if</span> <span class="ident">output</span>.<span class="ident">status</span>.<span class="ident">success</span>() {
-                                    <span class="ident">api</span>.<span class="ident">set_state</span>(<span class="ident">State::Idle</span>);
-                                    <span class="kw">break</span>;
-                                } <span class="kw">else</span> {
-                                    <span class="ident">api</span>.<span class="ident">set_state</span>(<span class="ident">State::Critical</span>);
+                        <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
+                            <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
+                            <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
+                                <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
+                                    <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_toggled</span> {
+                                        <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_off</span>
+                                    } <span class="kw">else</span> {
+                                        <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_on</span>
+                                    };
+                                    <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="kw-2">&amp;</span><span class="ident">shell</span>)
+                                        .<span class="ident">args</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;-c&quot;</span>, <span class="ident">cmd</span>])
+                                        .<span class="ident">output</span>()
+                                        .<span class="kw">await</span>
+                                        .<span class="ident">error</span>(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
+                                    <span class="kw">if</span> <span class="ident">output</span>.<span class="ident">status</span>.<span class="ident">success</span>() {
+                                        <span class="ident">api</span>.<span class="ident">set_state</span>(<span class="ident">State::Idle</span>);
+                                        <span class="kw">break</span>;
+                                    } <span class="kw">else</span> {
+                                        <span class="ident">api</span>.<span class="ident">set_state</span>(<span class="ident">State::Critical</span>);
+                                    }
                                 }
                             }
-                        },
+                        }
                     }
                 }
-                <span class="prelude-val">None</span> =&gt; {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>().<span class="kw">await</span> {
+                <span class="prelude-val">None</span> =&gt; <span class="kw">match</span> <span class="ident">api</span>.<span class="ident">event</span>().<span class="kw">await</span> {
+                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
+                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
                         <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
                             <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_toggled</span> {
                                 <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_off</span>
@@ -296,7 +302,7 @@
                             }
                         }
                     }
-                }
+                },
             }
         }
     }

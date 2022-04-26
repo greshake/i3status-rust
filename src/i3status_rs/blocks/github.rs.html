@@ -179,6 +179,10 @@
 <span id="174">174</span>
 <span id="175">175</span>
 <span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of GitHub notifications</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the &quot;notifications&quot; scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable or `token` configuration option. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: `critical`,`warning`,`info`,`good`</span>
@@ -301,7 +305,11 @@
             <span class="ident">api</span>.<span class="ident">hide</span>();
         }
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">interval</span>.<span class="ident">tick</span>().<span class="kw">await</span>;
+
+        <span class="macro">select!</span> {
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">interval</span>.<span class="ident">tick</span>() =&gt; (),
+            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+        }
     }
 }
 

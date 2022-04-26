@@ -108,7 +108,7 @@ in the buffer were written to this writer.</p>
 written to this writer.</p>
 <h5 id="cancel-safety"><a href="#cancel-safety">Cancel safety</a></h5>
 <p>This method is cancellation safe in the sense that if it is used as
-the event in a <a href="crate::select"><code>tokio::select!</code></a> statement and some
+the event in a <a href="macro.select.html"><code>tokio::select!</code></a> statement and some
 other branch completes first, then it is guaranteed that no data was
 written to this <code>AsyncWrite</code>.</p>
 <h5 id="examples"><a href="#examples">Examples</a></h5>
@@ -130,7 +130,7 @@ written to this <code>AsyncWrite</code>.</p>
 <p>See [<code>AsyncWrite::poll_write_vectored</code>] for more details.</p>
 <h5 id="cancel-safety-1"><a href="#cancel-safety-1">Cancel safety</a></h5>
 <p>This method is cancellation safe in the sense that if it is used as
-the event in a <a href="crate::select"><code>tokio::select!</code></a> statement and some
+the event in a <a href="macro.select.html"><code>tokio::select!</code></a> statement and some
 other branch completes first, then it is guaranteed that no data was
 written to this <code>AsyncWrite</code>.</p>
 <h5 id="examples-1"><a href="#examples-1">Examples</a></h5>
@@ -178,7 +178,7 @@ in the buffer were written to this writer.</p>
 written to this writer.</p>
 <h5 id="cancel-safety-2"><a href="#cancel-safety-2">Cancel safety</a></h5>
 <p>This method is cancellation safe in the sense that if it is used as
-the event in a <a href="crate::select"><code>tokio::select!</code></a> statement and some
+the event in a <a href="macro.select.html"><code>tokio::select!</code></a> statement and some
 other branch completes first, then it is guaranteed that no data was
 written to this <code>AsyncWrite</code>.</p>
 <h5 id="examples-2"><a href="#examples-2">Examples</a></h5>
@@ -222,7 +222,7 @@ first error generated will be returned.</p>
 <code>src.chunk()</code> will return the chunk that failed to write.</p>
 <h5 id="cancel-safety-3"><a href="#cancel-safety-3">Cancel safety</a></h5>
 <p>If <code>write_all_buf</code> is used as the event in a
-<a href="crate::select"><code>tokio::select!</code></a> statement and some other branch
+<a href="macro.select.html"><code>tokio::select!</code></a> statement and some other branch
 completes first, then the data in the provided buffer may have been
 partially written. However, it is guaranteed that the provided
 buffer has been <a href="bytes::Buf::advance">advanced</a> by the amount of bytes that have been
@@ -253,7 +253,7 @@ has been successfully written or such an error occurs. The first
 error generated from this method will be returned.</p>
 <h5 id="cancel-safety-4"><a href="#cancel-safety-4">Cancel safety</a></h5>
 <p>This method is not cancellation safe. If it is used as the event
-in a <a href="crate::select"><code>tokio::select!</code></a> statement and some other
+in a <a href="macro.select.html"><code>tokio::select!</code></a> statement and some other
 branch completes first, then the provided buffer may have been
 partially written, but future calls to <code>write_all</code> will start over
 from the beginning of the buffer.</p>

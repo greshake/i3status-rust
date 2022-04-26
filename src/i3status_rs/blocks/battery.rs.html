@@ -267,6 +267,10 @@
 <span id="262">262</span>
 <span id="263">263</span>
 <span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block can display the current battery state (Full, Charging or Discharging), percentage</span>
@@ -450,7 +454,11 @@
         }
 
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">device</span>.<span class="ident">wait_for_change</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="macro">select!</span> {
+            <span class="ident">update</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">wait_for_change</span>() =&gt; <span class="ident">update</span><span class="question-mark">?</span>,
+            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+        }
     }
 }
 

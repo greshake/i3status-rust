@@ -33,7 +33,7 @@ will otherwise return any errors returned by <a href="trait.AsyncBufRead.html#ty
 present in <code>buf</code> and its length will have been adjusted appropriately.</p>
 <h5 id="cancel-safety"><a href="#cancel-safety">Cancel safety</a></h5>
 <p>If the method is used as the event in a
-<a href="crate::select"><code>tokio::select!</code></a> statement and some other branch
+<a href="macro.select.html"><code>tokio::select!</code></a> statement and some other branch
 completes first, then some data may have been partially read. Any
 partially read bytes are appended to <code>buf</code>, and the method can be
 called again to continue reading until <code>byte</code>.</p>
@@ -97,7 +97,7 @@ error is encountered then <code>buf</code> may contain some bytes already read i
 the event that all data read so far was valid UTF-8.</p>
 <h5 id="cancel-safety-1"><a href="#cancel-safety-1">Cancel safety</a></h5>
 <p>This method is not cancellation safe. If the method is used as the
-event in a <a href="crate::select"><code>tokio::select!</code></a> statement and some
+event in a <a href="macro.select.html"><code>tokio::select!</code></a> statement and some
 other branch completes first, then some data may have been partially
 read, and this data is lost. There are no guarantees regarding the
 contents of <code>buf</code> when the call is cancelled. The current

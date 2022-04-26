@@ -484,7 +484,6 @@
 <span id="479">479</span>
 <span id="480">480</span>
 <span id="481">481</span>
-<span id="482">482</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Also provides buttons for play/pause, previous and next.</span>
@@ -609,7 +608,6 @@
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">MusicConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$combo.rot-str() $play|&quot;</span>)<span class="question-mark">?</span>);
     <span class="ident">api</span>.<span class="ident">set_icon</span>(<span class="string">&quot;music&quot;</span>)<span class="question-mark">?</span>;
@@ -706,7 +704,7 @@
 
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">tokio::select!</span> {
+        <span class="macro">select!</span> {
             <span class="comment">// Wait for a DBUS event</span>
             <span class="prelude-val">Some</span>(<span class="ident">msg</span>) <span class="op">=</span> <span class="ident">dbus_stream</span>.<span class="ident">next</span>() =&gt; {
                 <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">unwrap</span>();
@@ -759,7 +757,7 @@
                 }
             }
             <span class="comment">// Wait for a click</span>
-            <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
+            <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>) <span class="op">=</span> <span class="ident">cur_player</span> {
                     <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
                         <span class="ident">MouseButton::Left</span> =&gt; {

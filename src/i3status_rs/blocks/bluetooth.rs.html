@@ -406,7 +406,6 @@
 <span id="401">401</span>
 <span id="402">402</span>
 <span id="403">403</span>
-<span id="404">404</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the connectivity of a given Bluetooth device and the battery level if this</span>
@@ -470,7 +469,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">BluetoothConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="ident">api</span>.<span class="ident">set_format</span>(
         <span class="ident">config</span>
@@ -524,8 +522,12 @@
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop</span> {
-            <span class="macro">tokio::select!</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
+            <span class="macro">select!</span> {
+                <span class="ident">res</span> <span class="op">=</span> <span class="ident">monitor</span>.<span class="ident">wait_for_change</span>() =&gt; {
+                    <span class="ident">res</span><span class="question-mark">?</span>;
+                    <span class="kw">break</span>;
+                },
+                <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; {
                     <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Right</span> {
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">dev</span>) <span class="op">=</span> <span class="ident">monitor</span>.<span class="ident">device</span>() {
                             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">connected</span>) <span class="op">=</span> <span class="ident">dev</span>.<span class="ident">connected</span>().<span class="kw">await</span> {
@@ -538,10 +540,6 @@
                         }
                     }
                 }
-                <span class="ident">res</span> <span class="op">=</span> <span class="ident">monitor</span>.<span class="ident">wait_for_change</span>() =&gt; {
-                    <span class="ident">res</span><span class="question-mark">?</span>;
-                    <span class="kw">break</span>;
-                },
             }
         }
     }
@@ -606,7 +604,7 @@
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">device</span> {
             <span class="prelude-val">None</span> =&gt; <span class="kw">loop</span> {
-                <span class="macro">tokio::select!</span> {
+                <span class="macro">select!</span> {
                     <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_added</span>.<span class="ident">next</span>() =&gt; {
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="op">=</span> <span class="ident">Device::try_find</span>(
                             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manager_proxy</span>,
@@ -622,7 +620,7 @@
                 }
             },
             <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="kw">if</span> <span class="op">!</span><span class="ident">device</span>.<span class="ident">available</span> =&gt; <span class="kw">loop</span> {
-                <span class="macro">tokio::select!</span> {
+                <span class="macro">select!</span> {
                     <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_added</span>.<span class="ident">next</span>() =&gt; {
                         <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">args</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
                         <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">object_path</span>() <span class="op">==</span> <span class="ident">device</span>.<span class="ident">device</span>.<span class="ident">path</span>() {
@@ -640,7 +638,7 @@
                     .<span class="kw">await</span>
                     .<span class="ident">error</span>(<span class="string">&quot;Failed to receive updates&quot;</span>)<span class="question-mark">?</span>;
                 <span class="kw">loop</span> {
-                    <span class="macro">tokio::select!</span> {
+                    <span class="macro">select!</span> {
                         <span class="kw">_</span> <span class="op">=</span> <span class="ident">updates</span>.<span class="ident">next</span>() =&gt; {
                             <span class="comment">// avoid too frequent updates</span>
                             <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">tokio::time::timeout</span>(<span class="ident">Duration::from_millis</span>(<span class="number">100</span>), <span class="kw">async</span> {

@@ -162,6 +162,8 @@
 <span id="157">157</span>
 <span id="158">158</span>
 <span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of tasks from the taskwarrior list</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Clicking on the block updates the number of tasks immediately. Clicking the right mouse button on the icon cycles the view of the block through the user&#39;s filters.</span>
@@ -242,7 +244,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">TaskwarriorConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$done|$count.eng(1)&quot;</span>)<span class="question-mark">?</span>);
     <span class="ident">api</span>.<span class="ident">set_icon</span>(<span class="string">&quot;tasks&quot;</span>)<span class="question-mark">?</span>;
@@ -289,12 +290,15 @@
 
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">tokio::select!</span> {
+        <span class="macro">select!</span> {
             <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt;(),
             <span class="kw">_</span> <span class="op">=</span> <span class="ident">updates</span>.<span class="ident">next</span>() =&gt; (),
-            <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
-                <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Right</span> {
-                    <span class="ident">filter</span> <span class="op">=</span> <span class="ident">filters</span>.<span class="ident">next</span>().<span class="ident">error</span>(<span class="string">&quot;failed to get next filter&quot;</span>)<span class="question-mark">?</span>;
+            <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
+                <span class="ident">UpdateRequest</span> =&gt; (),
+                <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
+                    <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Right</span> {
+                        <span class="ident">filter</span> <span class="op">=</span> <span class="ident">filters</span>.<span class="ident">next</span>().<span class="ident">error</span>(<span class="string">&quot;failed to get next filter&quot;</span>)<span class="question-mark">?</span>;
+                    }
                 }
             }
         }

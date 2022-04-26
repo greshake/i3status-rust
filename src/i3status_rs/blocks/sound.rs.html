@@ -886,6 +886,11 @@
 <span id="881">881</span>
 <span id="882">882</span>
 <span id="883">883</span>
+<span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.</span>
@@ -997,7 +1002,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">SoundConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$volume.eng(2)|&quot;</span>)<span class="question-mark">?</span>);
 
@@ -1093,20 +1097,26 @@
         <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">tokio::select!</span> {
-            <span class="ident">val</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">wait_for_update</span>() =&gt; <span class="ident">val</span><span class="question-mark">?</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
-                <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                    <span class="ident">MouseButton::Right</span> =&gt; {
-                        <span class="ident">device</span>.<span class="ident">toggle</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">loop</span> {
+            <span class="macro">select!</span> {
+                <span class="ident">val</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">wait_for_update</span>() =&gt; {
+                    <span class="ident">val</span><span class="question-mark">?</span>;
+                    <span class="kw">break</span>;
+                }
+                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
+                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
+                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
+                        <span class="ident">MouseButton::Right</span> =&gt; {
+                            <span class="ident">device</span>.<span class="ident">toggle</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+                        }
+                        <span class="ident">MouseButton::WheelUp</span> =&gt; {
+                            <span class="ident">device</span>.<span class="ident">set_volume</span>(<span class="ident">step_width</span>, <span class="ident">config</span>.<span class="ident">max_vol</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        }
+                        <span class="ident">MouseButton::WheelDown</span> =&gt; {
+                            <span class="ident">device</span>.<span class="ident">set_volume</span>(<span class="op">-</span><span class="ident">step_width</span>, <span class="ident">config</span>.<span class="ident">max_vol</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        }
+                        <span class="kw">_</span> =&gt; ()
                     }
-                    <span class="ident">MouseButton::WheelUp</span> =&gt; {
-                        <span class="ident">device</span>.<span class="ident">set_volume</span>(<span class="ident">step_width</span>, <span class="ident">config</span>.<span class="ident">max_vol</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="ident">MouseButton::WheelDown</span> =&gt; {
-                        <span class="ident">device</span>.<span class="ident">set_volume</span>(<span class="op">-</span><span class="ident">step_width</span>, <span class="ident">config</span>.<span class="ident">max_vol</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="kw">_</span> =&gt; ()
                 }
             }
         }

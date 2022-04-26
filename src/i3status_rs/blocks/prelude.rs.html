@@ -32,7 +32,8 @@
 <span id="27">27</span>
 <span id="28">28</span>
 <span id="29">29</span>
-</pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">BlockEvent</span>, <span class="ident">CommonApi</span>};
+<span id="30">30</span>
+</pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">BlockEvent</span>::<span class="kw-2">*</span>, <span class="ident">CommonApi</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::click::MouseButton</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
@@ -52,6 +53,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tokio::io</span>::{<span class="ident">AsyncBufRead</span>, <span class="ident">AsyncBufReadExt</span>, <span class="ident">AsyncReadExt</span>, <span class="ident">AsyncWriteExt</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tokio::select</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tokio::time::sleep</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">Stream</span>, <span class="ident">StreamExt</span>};

@@ -211,7 +211,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">NotifyConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>);
 
@@ -232,13 +231,14 @@
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop</span> {
-            <span class="macro">tokio::select!</span> {
+            <span class="macro">select!</span> {
                 <span class="ident">x</span> <span class="op">=</span> <span class="ident">driver</span>.<span class="ident">wait_for_change</span>() =&gt; {
                     <span class="ident">x</span><span class="question-mark">?</span>;
                     <span class="kw">break</span>;
                 }
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="ident">event</span>.<span class="ident">unwrap</span>() {
+                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
+                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
+                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
                         <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
                             <span class="ident">driver</span>.<span class="ident">set_paused</span>(<span class="op">!</span><span class="ident">is_paused</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                         }

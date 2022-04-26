@@ -220,6 +220,8 @@
 <span id="215">215</span>
 <span id="216">216</span>
 <span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
 </pre><pre class="rust"><code><span class="doccomment">//! X11 screen information</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.</span>
@@ -255,10 +257,10 @@
 <span class="doccomment">//! - `backlight_full`</span>
 <span class="doccomment">//! - `resolution`</span>
 
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::subprocess::spawn_shell</span>;
 <span class="kw">use</span> <span class="ident">regex::RegexSet</span>;
+<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
@@ -279,7 +281,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">XrandrConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
 
     <span class="ident">api</span>.<span class="ident">set_format</span>(
@@ -318,32 +319,35 @@
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop</span> {
-            <span class="macro">tokio::select!</span> {
+            <span class="macro">select!</span> {
                 <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
-                <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
-                    <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                        <span class="ident">MouseButton::Left</span> =&gt; {
-                            <span class="ident">cur_indx</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-                            <span class="kw">if</span> <span class="ident">cur_indx</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">len</span>() {
-                                <span class="ident">cur_indx</span> <span class="op">=</span> <span class="number">0</span>;
+                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
+                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
+                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
+                        <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
+                            <span class="ident">MouseButton::Left</span> =&gt; {
+                                <span class="ident">cur_indx</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                                <span class="kw">if</span> <span class="ident">cur_indx</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">len</span>() {
+                                    <span class="ident">cur_indx</span> <span class="op">=</span> <span class="number">0</span>;
+                                }
                             }
-                        }
-                        <span class="ident">MouseButton::WheelUp</span> =&gt; {
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">monitor</span>) <span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">get_mut</span>(<span class="ident">cur_indx</span>) {
-                                <span class="kw">let</span> <span class="ident">bright</span> <span class="op">=</span> (<span class="ident">monitor</span>.<span class="ident">brightness</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">step_width</span>).<span class="ident">min</span>(<span class="number">100</span>);
-                                <span class="ident">monitor</span>.<span class="ident">set_brightness</span>(<span class="ident">bright</span>);
+                            <span class="ident">MouseButton::WheelUp</span> =&gt; {
+                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">monitor</span>) <span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">get_mut</span>(<span class="ident">cur_indx</span>) {
+                                    <span class="kw">let</span> <span class="ident">bright</span> <span class="op">=</span> (<span class="ident">monitor</span>.<span class="ident">brightness</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">step_width</span>).<span class="ident">min</span>(<span class="number">100</span>);
+                                    <span class="ident">monitor</span>.<span class="ident">set_brightness</span>(<span class="ident">bright</span>);
+                                }
                             }
-                        }
-                        <span class="ident">MouseButton::WheelDown</span> =&gt; {
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">monitor</span>) <span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">get_mut</span>(<span class="ident">cur_indx</span>) {
-                                <span class="kw">let</span> <span class="ident">bright</span> <span class="op">=</span> <span class="ident">monitor</span>.<span class="ident">brightness</span>.<span class="ident">saturating_sub</span>(<span class="ident">config</span>.<span class="ident">step_width</span>);
-                                <span class="ident">monitor</span>.<span class="ident">set_brightness</span>(<span class="ident">bright</span>);
+                            <span class="ident">MouseButton::WheelDown</span> =&gt; {
+                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">monitor</span>) <span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">get_mut</span>(<span class="ident">cur_indx</span>) {
+                                    <span class="kw">let</span> <span class="ident">bright</span> <span class="op">=</span> <span class="ident">monitor</span>.<span class="ident">brightness</span>.<span class="ident">saturating_sub</span>(<span class="ident">config</span>.<span class="ident">step_width</span>);
+                                    <span class="ident">monitor</span>.<span class="ident">set_brightness</span>(<span class="ident">bright</span>);
+                                }
                             }
+                            <span class="kw">_</span> =&gt; (),
                         }
-                        <span class="kw">_</span> =&gt; (),
+                        <span class="ident">display</span>(<span class="ident">monitors</span>.<span class="ident">get</span>(<span class="ident">cur_indx</span>), <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>;
+                        <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
                     }
-                    <span class="ident">display</span>(<span class="ident">monitors</span>.<span class="ident">get</span>(<span class="ident">cur_indx</span>), <span class="kw-2">&amp;mut</span> <span class="ident">api</span>)<span class="question-mark">?</span>;
-                    <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
                 }
             }
         }

@@ -197,6 +197,36 @@
 <span id="192">192</span>
 <span id="193">193</span>
 <span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Currently focused window</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently</span>
@@ -227,10 +257,13 @@
 <span class="doccomment">//! ```</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">swayipc_async</span>::{<span class="ident">Connection</span>, <span class="ident">Event</span>, <span class="ident">EventType</span>, <span class="ident">WindowChange</span>, <span class="ident">WorkspaceChange</span>};
+<span class="kw">use</span> <span class="ident">swayipc_async</span>::{<span class="ident">Connection</span>, <span class="ident">Event</span>, <span class="ident">EventStream</span>, <span class="ident">EventType</span>, <span class="ident">WindowChange</span>, <span class="ident">WorkspaceChange</span>};
 
 <span class="kw">use</span> <span class="ident">std::process::Stdio</span>;
-<span class="kw">use</span> <span class="ident">tokio</span>::{<span class="ident">io::BufReader</span>, <span class="ident">process::Command</span>};
+<span class="kw">use</span> <span class="ident">tokio</span>::{
+    <span class="ident">io</span>::{<span class="ident">BufReader</span>, <span class="ident">Lines</span>},
+    <span class="ident">process</span>::{<span class="ident">ChildStdout</span>, <span class="ident">Command</span>},
+};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
@@ -262,134 +295,161 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">FocusedWindowConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="ident">api</span>.<span class="ident">set_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$title.rot-str(15)|&quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
-        <span class="ident">Driver::Auto</span> =&gt; <span class="kw">match</span> <span class="ident">Connection::new</span>().<span class="kw">await</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">conn</span>) =&gt; <span class="ident">with_sway_ipc</span>(<span class="ident">conn</span>, <span class="ident">config</span>.<span class="ident">autohide</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>).<span class="kw">await</span>,
-            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">with_ristate</span>(<span class="ident">config</span>.<span class="ident">autohide</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>).<span class="kw">await</span>,
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">backend</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Backend</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
+        <span class="ident">Driver::Auto</span> =&gt; <span class="kw">match</span> <span class="ident">SwayIpc::new</span>().<span class="kw">await</span> {
+            <span class="prelude-val">Ok</span>(<span class="ident">swayipc</span>) =&gt; <span class="ident">Box::new</span>(<span class="ident">swayipc</span>),
+            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">Box::new</span>(<span class="ident">Ristate::new</span>()<span class="question-mark">?</span>),
         },
-        <span class="ident">Driver::SwayIpc</span> =&gt; {
-            <span class="ident">with_sway_ipc</span>(
-                <span class="ident">Connection::new</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;failed to open connection with swayipc&quot;</span>)<span class="question-mark">?</span>,
-                <span class="ident">config</span>.<span class="ident">autohide</span>,
-                <span class="kw-2">&amp;mut</span> <span class="ident">api</span>,
-            )
-            .<span class="kw">await</span>
-        }
-        <span class="ident">Driver::Ristate</span> =&gt; <span class="ident">with_ristate</span>(<span class="ident">config</span>.<span class="ident">autohide</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>).<span class="kw">await</span>,
-    }
-}
-
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">with_sway_ipc</span>(<span class="ident">conn</span>: <span class="ident">Connection</span>, <span class="ident">autohide</span>: <span class="ident">bool</span>, <span class="ident">api</span>: <span class="kw-2">&amp;mut</span> <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">title</span> <span class="op">=</span> <span class="ident">String::new</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">marks</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">conn</span>
-        .<span class="ident">subscribe</span>(<span class="kw-2">&amp;</span>[<span class="ident">EventType::Window</span>, <span class="ident">EventType::Workspace</span>])
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;could not subscribe to window events&quot;</span>)<span class="question-mark">?</span>;
+        <span class="ident">Driver::SwayIpc</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">SwayIpc::new</span>().<span class="kw">await</span><span class="question-mark">?</span>),
+        <span class="ident">Driver::Ristate</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">Ristate::new</span>()<span class="question-mark">?</span>),
+    };
 
     <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="ident">events</span>
-            .<span class="ident">next</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;swayipc channel closed&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">error</span>(<span class="string">&quot;bad event&quot;</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="ident">updated</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">event</span> {
-            <span class="ident">Event::Window</span>(<span class="ident">e</span>) =&gt; <span class="kw">match</span> <span class="ident">e</span>.<span class="ident">change</span> {
-                <span class="ident">WindowChange::Mark</span> =&gt; {
-                    <span class="ident">marks</span> <span class="op">=</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">marks</span>;
-                    <span class="bool-val">true</span>
+        <span class="macro">select!</span> {
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+            <span class="ident">info</span> <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">get_info</span>() =&gt; {
+                <span class="kw">let</span> <span class="ident">Info</span> { <span class="ident">title</span>, <span class="ident">marks</span> } <span class="op">=</span> <span class="ident">info</span><span class="question-mark">?</span>;
+                <span class="kw">if</span> <span class="op">!</span><span class="ident">title</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">autohide</span> {
+                    <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
+                        <span class="string">&quot;title&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">title</span>.<span class="ident">clone</span>()),
+                        <span class="string">&quot;marks&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">marks</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).<span class="ident">collect</span>()),
+                        <span class="string">&quot;visible_marks&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">marks</span>.<span class="ident">iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="op">!</span><span class="ident">m</span>.<span class="ident">starts_with</span>(<span class="string">&#39;_&#39;</span>)).<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).<span class="ident">collect</span>()),
+                    });
+                    <span class="ident">api</span>.<span class="ident">show</span>();
+                } <span class="kw">else</span> {
+                    <span class="ident">api</span>.<span class="ident">hide</span>();
                 }
-                <span class="ident">WindowChange::Focus</span> =&gt; {
-                    <span class="ident">title</span>.<span class="ident">clear</span>();
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">new_title</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">name</span> {
-                        <span class="ident">title</span>.<span class="ident">push_str</span>(<span class="ident">new_title</span>);
-                    }
-                    <span class="ident">marks</span> <span class="op">=</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">marks</span>;
-                    <span class="bool-val">true</span>
-                }
-                <span class="ident">WindowChange::Title</span> =&gt; {
-                    <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">focused</span> {
-                        <span class="ident">title</span>.<span class="ident">clear</span>();
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">new_title</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">name</span> {
-                            <span class="ident">title</span>.<span class="ident">push_str</span>(<span class="ident">new_title</span>);
-                        }
-                        <span class="bool-val">true</span>
-                    } <span class="kw">else</span> {
-                        <span class="bool-val">false</span>
-                    }
-                }
-                <span class="ident">WindowChange::Close</span> =&gt; {
-                    <span class="ident">title</span>.<span class="ident">clear</span>();
-                    <span class="ident">marks</span>.<span class="ident">clear</span>();
-                    <span class="bool-val">true</span>
-                }
-                <span class="kw">_</span> =&gt; <span class="bool-val">false</span>,
-            },
-            <span class="ident">Event::Workspace</span>(<span class="ident">e</span>) <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">change</span> <span class="op">==</span> <span class="ident">WorkspaceChange::Init</span> =&gt; {
-                <span class="ident">title</span>.<span class="ident">clear</span>();
-                <span class="ident">marks</span>.<span class="ident">clear</span>();
-                <span class="bool-val">true</span>
+                <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
             }
-            <span class="kw">_</span> =&gt; <span class="bool-val">false</span>,
-        };
-
-        <span class="kw">if</span> <span class="ident">updated</span> {
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">title</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">autohide</span> {
-                <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-                    <span class="string">&quot;title&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">title</span>.<span class="ident">clone</span>()),
-                    <span class="string">&quot;marks&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">marks</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).<span class="ident">collect</span>()),
-                    <span class="string">&quot;visible_marks&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">marks</span>.<span class="ident">iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="op">!</span><span class="ident">m</span>.<span class="ident">starts_with</span>(<span class="string">&#39;_&#39;</span>)).<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).<span class="ident">collect</span>()),
-                });
-                <span class="ident">api</span>.<span class="ident">show</span>();
-            } <span class="kw">else</span> {
-                <span class="ident">api</span>.<span class="ident">hide</span>();
-            }
-            <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
         }
     }
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">with_ristate</span>(<span class="ident">autohide</span>: <span class="ident">bool</span>, <span class="ident">api</span>: <span class="kw-2">&amp;mut</span> <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-    <span class="kw">struct</span> <span class="ident">RistateOuput</span> {
-        <span class="ident">title</span>: <span class="ident">String</span>,
+<span class="attribute">#[<span class="ident">async_trait</span>]</span>
+<span class="kw">trait</span> <span class="ident">Backend</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span>;
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Default</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Info</span> {
+    <span class="ident">title</span>: <span class="ident">String</span>,
+    <span class="ident">marks</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">struct</span> <span class="ident">SwayIpc</span> {
+    <span class="ident">events</span>: <span class="ident">EventStream</span>,
+    <span class="ident">info</span>: <span class="ident">Info</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">SwayIpc</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
+            <span class="ident">events</span>: <span class="ident">Connection::new</span>()
+                .<span class="kw">await</span>
+                .<span class="ident">error</span>(<span class="string">&quot;failed to open connection with swayipc&quot;</span>)<span class="question-mark">?</span>
+                .<span class="ident">subscribe</span>(<span class="kw-2">&amp;</span>[<span class="ident">EventType::Window</span>, <span class="ident">EventType::Workspace</span>])
+                .<span class="kw">await</span>
+                .<span class="ident">error</span>(<span class="string">&quot;could not subscribe to window events&quot;</span>)<span class="question-mark">?</span>,
+            <span class="ident">info</span>: <span class="ident">default</span>(),
+        })
     }
+}
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ristate</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;ristate&quot;</span>)
-        .<span class="ident">arg</span>(<span class="string">&quot;-w&quot;</span>)
-        .<span class="ident">stdout</span>(<span class="ident">Stdio::piped</span>())
-        .<span class="ident">spawn</span>()
-        .<span class="ident">error</span>(<span class="string">&quot;failed to run ristate&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">ristate</span>.<span class="ident">stdout</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>()).<span class="ident">lines</span>();
+<span class="attribute">#[<span class="ident">async_trait</span>]</span>
+<span class="kw">impl</span> <span class="ident">Backend</span> <span class="kw">for</span> <span class="ident">SwayIpc</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span> {
+        <span class="kw">loop</span> {
+            <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">events</span>
+                .<span class="ident">next</span>()
+                .<span class="kw">await</span>
+                .<span class="ident">error</span>(<span class="string">&quot;swayipc channel closed&quot;</span>)<span class="question-mark">?</span>
+                .<span class="ident">error</span>(<span class="string">&quot;bad event&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">match</span> <span class="ident">event</span> {
+                <span class="ident">Event::Window</span>(<span class="ident">e</span>) =&gt; <span class="kw">match</span> <span class="ident">e</span>.<span class="ident">change</span> {
+                    <span class="ident">WindowChange::Mark</span> =&gt; {
+                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">marks</span> <span class="op">=</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">marks</span>;
+                    }
+                    <span class="ident">WindowChange::Focus</span> =&gt; {
+                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">clear</span>();
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">new_title</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">name</span> {
+                            <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">push_str</span>(<span class="ident">new_title</span>);
+                        }
+                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">marks</span> <span class="op">=</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">marks</span>;
+                    }
+                    <span class="ident">WindowChange::Title</span> =&gt; {
+                        <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">focused</span> {
+                            <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">clear</span>();
+                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">new_title</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">name</span> {
+                                <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">push_str</span>(<span class="ident">new_title</span>);
+                            }
+                        } <span class="kw">else</span> {
+                            <span class="kw">continue</span>;
+                        }
+                    }
+                    <span class="ident">WindowChange::Close</span> =&gt; {
+                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">clear</span>();
+                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">marks</span>.<span class="ident">clear</span>();
+                    }
+                    <span class="kw">_</span> =&gt; <span class="kw">continue</span>,
+                },
+                <span class="ident">Event::Workspace</span>(<span class="ident">e</span>) <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">change</span> <span class="op">==</span> <span class="ident">WorkspaceChange::Init</span> =&gt; {
+                    <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">clear</span>();
+                    <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">marks</span>.<span class="ident">clear</span>();
+                }
+                <span class="kw">_</span> =&gt; <span class="kw">continue</span>,
+            }
 
-    <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">ristate</span>.<span class="ident">wait</span>().<span class="kw">await</span>;
-    });
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">info</span>.<span class="ident">clone</span>());
+        }
+    }
+}
 
-    <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">line</span>) <span class="op">=</span> <span class="ident">stream</span>
-        .<span class="ident">next_line</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;error reading line from ristate&quot;</span>)<span class="question-mark">?</span>
-    {
+<span class="kw">struct</span> <span class="ident">Ristate</span> {
+    <span class="ident">stream</span>: <span class="ident">Lines</span><span class="op">&lt;</span><span class="ident">BufReader</span><span class="op">&lt;</span><span class="ident">ChildStdout</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">Ristate</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ristate</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;ristate&quot;</span>)
+            .<span class="ident">arg</span>(<span class="string">&quot;-w&quot;</span>)
+            .<span class="ident">stdout</span>(<span class="ident">Stdio::piped</span>())
+            .<span class="ident">spawn</span>()
+            .<span class="ident">error</span>(<span class="string">&quot;failed to run ristate&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">ristate</span>.<span class="ident">stdout</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>()).<span class="ident">lines</span>();
+
+        <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
+            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">ristate</span>.<span class="ident">wait</span>().<span class="kw">await</span>;
+        });
+
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span> { <span class="ident">stream</span> })
+    }
+}
+
+<span class="attribute">#[<span class="ident">async_trait</span>]</span>
+<span class="kw">impl</span> <span class="ident">Backend</span> <span class="kw">for</span> <span class="ident">Ristate</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span> {
+        <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
+        <span class="kw">struct</span> <span class="ident">RistateOuput</span> {
+            <span class="ident">title</span>: <span class="ident">String</span>,
+        }
+
+        <span class="kw">let</span> <span class="ident">line</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">stream</span>
+            .<span class="ident">next_line</span>()
+            .<span class="kw">await</span>
+            .<span class="ident">error</span>(<span class="string">&quot;ristate exited unexpectedly&quot;</span>)<span class="question-mark">?</span>
+            .<span class="ident">error</span>(<span class="string">&quot;error reading line from ristate&quot;</span>)<span class="question-mark">?</span>;
+
         <span class="kw">let</span> <span class="ident">title</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>::<span class="op">&lt;</span><span class="ident">RistateOuput</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">line</span>)
             .<span class="ident">error</span>(<span class="string">&quot;ristate produced invalid json&quot;</span>)<span class="question-mark">?</span>
             .<span class="ident">title</span>;
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">title</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">autohide</span> {
-            <span class="ident">api</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-                <span class="string">&quot;title&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">title</span>.<span class="ident">clone</span>()),
-            });
-            <span class="ident">api</span>.<span class="ident">show</span>();
-        } <span class="kw">else</span> {
-            <span class="ident">api</span>.<span class="ident">hide</span>();
-        }
-        <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-    }
 
-    <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="string">&quot;ristate exited unexpectedly&quot;</span>))
+        <span class="prelude-val">Ok</span>(<span class="ident">Info</span> {
+            <span class="ident">title</span>,
+            <span class="ident">marks</span>: <span class="ident">default</span>(),
+        })
+    }
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.60.0 (7737e0b5c 2022-04-04)" ></div>

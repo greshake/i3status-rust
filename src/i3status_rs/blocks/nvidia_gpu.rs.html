@@ -361,7 +361,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_events</span>().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">NvidiaGpuConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="ident">api</span>.<span class="ident">set_format</span>(
         <span class="ident">config</span>
@@ -417,9 +416,10 @@
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop</span> {
-            <span class="macro">tokio::select!</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">BlockEvent::Click</span>(<span class="ident">click</span>)) <span class="op">=</span> <span class="ident">events</span>.<span class="ident">recv</span>() =&gt; {
-                    <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">instance</span> {
+            <span class="macro">select!</span> {
+                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
+                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
+                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">instance</span> {
                         <span class="prelude-val">Some</span>(<span class="ident">MEM_BTN</span>) <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> =&gt; {
                             <span class="ident">show_mem_total</span> <span class="op">=</span> <span class="op">!</span><span class="ident">show_mem_total</span>;
                             <span class="kw">break</span>;
@@ -444,7 +444,7 @@
                         }
                         <span class="kw">_</span> =&gt; (),
                     }
-                }
+                },
                 <span class="ident">new_info</span> <span class="op">=</span> <span class="ident">GpuInfo::from_reader</span>(<span class="kw-2">&amp;mut</span> <span class="ident">reader</span>) =&gt; {
                     <span class="ident">info</span> <span class="op">=</span> <span class="ident">new_info</span><span class="question-mark">?</span>;
                     <span class="kw">break</span>;

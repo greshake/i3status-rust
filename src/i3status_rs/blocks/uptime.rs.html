@@ -86,6 +86,9 @@
 <span id="81">81</span>
 <span id="82">82</span>
 <span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
 </pre><pre class="rust"><code><span class="doccomment">//! System&#39;s uptime</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays system uptime in terms of two biggest units, so minutes and seconds, or</span>
@@ -166,7 +169,10 @@
         <span class="ident">api</span>.<span class="ident">set_text</span>(<span class="ident">text</span>.<span class="ident">into</span>());
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="ident">timer</span>.<span class="ident">tick</span>().<span class="kw">await</span>;
+        <span class="macro">select!</span> {
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; (),
+            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+        }
     }
 }
 </code></pre></div>

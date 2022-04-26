@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["KeyboardLayoutDriver",""]],"fn":[["parse_sway_layout",""],["run",""]],"struct":[["KeyboardLayoutConfig",""],["LocaleBusProxy",""],["LocaleBusProxyBlocking",""]]});
+initSidebarItems({"enum":[["KeyboardLayoutDriver",""]],"fn":[["parse_sway_layout",""],["run",""]],"struct":[["Info",""],["KeyboardLayoutConfig",""],["LocaleBus",""],["LocaleBusInterfaceProxy",""],["LocaleBusInterfaceProxyBlocking",""],["SetXkbMap",""],["Sway",""]],"trait":[["Backend",""]]});

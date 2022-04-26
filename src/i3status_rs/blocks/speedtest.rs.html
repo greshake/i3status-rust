@@ -96,6 +96,10 @@
 <span id="91">91</span>
 <span id="92">92</span>
 <span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Ping, download, and upload speeds</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block which requires [`speedtest-cli`](https://github.com/sivel/speedtest-cli).</span>
@@ -176,7 +180,11 @@
             <span class="string">&quot;speed_up&quot;</span> =&gt; <span class="ident">Value::bits</span>(<span class="ident">output</span>.<span class="ident">upload</span>).<span class="ident">with_icon</span>(<span class="ident">icon_up</span>.<span class="ident">clone</span>()),
         });
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>).<span class="kw">await</span>;
+
+        <span class="macro">select!</span> {
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
+            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+        }
     }
 }
 

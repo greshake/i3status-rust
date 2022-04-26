@@ -139,7 +139,7 @@ variant will be returned. If an error is returned then it must be
 guaranteed that no bytes were read.</p>
 <h5 id="cancel-safety"><a href="#cancel-safety">Cancel safety</a></h5>
 <p>This method is cancel safe. If you use it as the event in a
-<a href="crate::select"><code>tokio::select!</code></a> statement and some other branch
+<a href="macro.select.html"><code>tokio::select!</code></a> statement and some other branch
 completes first, then it is guaranteed that no data was read.</p>
 <h5 id="examples-1"><a href="#examples-1">Examples</a></h5>
 <p>[<code>File</code>][crate::fs::File]s implement <code>Read</code>:</p>
@@ -183,7 +183,7 @@ variant will be returned. If an error is returned then it must be
 guaranteed that no bytes were read.</p>
 <h5 id="cancel-safety-1"><a href="#cancel-safety-1">Cancel safety</a></h5>
 <p>This method is cancel safe. If you use it as the event in a
-<a href="crate::select"><code>tokio::select!</code></a> statement and some other branch
+<a href="macro.select.html"><code>tokio::select!</code></a> statement and some other branch
 completes first, then it is guaranteed that no data was read.</p>
 <h5 id="examples-2"><a href="#examples-2">Examples</a></h5>
 <p><a href="crate::fs::File"><code>File</code></a> implements <code>Read</code> and <a href="bytes::BytesMut"><code>BytesMut</code></a> implements <a href="bytes::BufMut"><code>BufMut</code></a>:</p>
@@ -227,7 +227,7 @@ it has read, but it will never read more than would be necessary to
 completely fill the buffer.</p>
 <h5 id="cancel-safety-2"><a href="#cancel-safety-2">Cancel safety</a></h5>
 <p>This method is not cancellation safe. If the method is used as the
-event in a <a href="crate::select"><code>tokio::select!</code></a> statement and some
+event in a <a href="macro.select.html"><code>tokio::select!</code></a> statement and some
 other branch completes first, then some data may already have been
 read into <code>buf</code>.</p>
 <h5 id="examples-3"><a href="#examples-3">Examples</a></h5>
