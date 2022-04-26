@@ -138,8 +138,6 @@ define_blocks!(
     xrandr,
 );
 
-pub type EventsRx = mpsc::Receiver<BlockEvent>;
-
 pub type BlockFuture = Pin<Box<dyn Future<Output = Result<()>>>>;
 
 #[derive(Debug, Clone, Copy)]
@@ -151,7 +149,7 @@ pub enum BlockEvent {
 pub struct CommonApi {
     pub id: usize,
     pub shared_config: SharedConfig,
-    pub event_receiver: EventsRx,
+    pub event_receiver: mpsc::Receiver<BlockEvent>,
 
     pub request_sender: mpsc::Sender<Request>,
     pub cmd_buf: SmallVec<[RequestCmd; 4]>,
@@ -169,6 +167,28 @@ impl CommonApi {
         self.cmd_buf.push(RequestCmd::Show);
     }
 
+    /// Receive the next event, such as click notification or update request.
+    ///
+    /// This method should be called regularly to avoid sender blocking. Currently, the runtime is
+    /// single threaded, so full channel buffer will cause a deadlock. If receiving events is
+    /// impossible / meaningless, call `event_receiver.close()`.
+    ///
+    /// # Cancel safety
+    ///
+    /// This method is cancel safe.
+    ///
+    /// # Panics
+    ///
+    /// Panics if event sender is closed
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// tokio::select! {
+    ///     _ = timer.tick() => (),
+    ///     UpdateRequest = api.event() => (),
+    /// }
+    /// ```
     pub async fn event(&mut self) -> BlockEvent {
         match self.event_receiver.recv().await {
             Some(event) => event,
