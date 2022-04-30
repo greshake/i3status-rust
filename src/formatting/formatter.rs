@@ -1,19 +1,14 @@
-use smallvec::SmallVec;
 use smartstring::alias::String;
 use std::fmt::Debug;
 use std::iter::repeat;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
-use tokio::sync::mpsc::Sender;
-
 use super::prefix::Prefix;
 use super::unit::Unit;
 use super::value::ValueInner as Value;
-use super::Handles;
 use crate::errors::*;
 use crate::escape::CollectEscaped;
-use crate::{Request, RequestCmd};
 
 const DEFAULT_STR_MIN_WIDTH: usize = 0;
 const DEFAULT_STR_MAX_WIDTH: Option<usize> = None;
@@ -70,7 +65,9 @@ enum EngFixArgs {
 pub trait Formatter: Debug {
     fn format(&self, val: &Value) -> Result<String>;
 
-    fn init(&self, _tx: &Sender<Request>, _block_id: usize, _handles: &mut Handles) {}
+    fn interval(&self) -> Option<Duration> {
+        None
+    }
 }
 
 pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter + Send + Sync>> {
@@ -115,7 +112,7 @@ pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter + 
             }
             Ok(Box::new(RotStrFormatter {
                 width,
-                interval,
+                interval: (interval * 1000.0) as u64,
                 init_time: Instant::now(),
             }))
         }
@@ -167,7 +164,7 @@ impl Formatter for StrFormatter {
 #[derive(Debug)]
 pub struct RotStrFormatter {
     width: usize,
-    interval: f64,
+    interval: u64,
     init_time: Instant,
 }
 
@@ -184,8 +181,9 @@ impl Formatter for RotStrFormatter {
                         .collect_pango())
                 } else {
                     let full_width = full_width + 1; // Now we include '|' at the end
-                    let step = (self.init_time.elapsed().as_secs_f64() / self.interval
-                        % full_width as f64) as usize;
+                    let step = (self.init_time.elapsed().as_millis() as u64 / self.interval)
+                        as usize
+                        % full_width;
                     let w1 = self.width.min(full_width - step);
                     Ok(text
                         .chars()
@@ -209,20 +207,8 @@ impl Formatter for RotStrFormatter {
         }
     }
 
-    fn init(&self, tx: &Sender<Request>, block_id: usize, handles: &mut Handles) {
-        let tx = tx.clone();
-        let dur = Duration::from_secs_f64(self.interval);
-        let mut interval = tokio::time::interval_at(tokio::time::Instant::now() + dur, dur);
-        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-
-        handles.0.push(tokio::spawn(async move {
-            loop {
-                let mut cmds = SmallVec::new();
-                cmds.push(RequestCmd::Noop);
-                tx.send(Request { block_id, cmds }).await.unwrap();
-                interval.tick().await;
-            }
-        }));
+    fn interval(&self) -> Option<Duration> {
+        Some(Duration::from_millis(self.interval))
     }
 }
 

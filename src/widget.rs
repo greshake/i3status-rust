@@ -1,9 +1,10 @@
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::formatting::{Rendered, RunningFormat, Values};
+use crate::formatting::{Format, Rendered, Values};
 use crate::protocol::i3bar_block::I3BarBlock;
 use serde::Deserialize;
 use smartstring::alias::String;
+use tokio::sync::mpsc;
 
 /// State of the widget. Affects the theming.
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
@@ -31,7 +32,7 @@ enum Source {
     /// Full and short texts
     TextWithShort(String, String),
     /// A format template
-    Format(RunningFormat, Option<Values>),
+    Format(Format, Option<Values>),
 }
 
 impl Source {
@@ -45,13 +46,26 @@ impl Source {
             Self::None | Self::Format(_, None) => Ok((vec![], vec![])),
         }
     }
+
+    fn notify(&self, widget: &Widget) {
+        if let Some(tx) = &widget.widget_updates_sender {
+            let intervals = match self {
+                Self::Format(f, _) => f.intervals(),
+                _ => Vec::new(),
+            };
+            tx.send((widget.id, intervals)).unwrap();
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct Widget {
+    id: usize,
     pub icon: String,
     pub shared_config: SharedConfig,
     pub state: State,
+
+    widget_updates_sender: Option<mpsc::UnboundedSender<(usize, Vec<u64>)>>,
 
     inner: I3BarBlock,
     source: Source,
@@ -59,16 +73,23 @@ pub struct Widget {
 }
 
 impl Widget {
-    pub fn new(id: usize, shared_config: SharedConfig) -> Self {
+    pub fn new(
+        id: usize,
+        shared_config: SharedConfig,
+        widget_updates_sender: Option<mpsc::UnboundedSender<(usize, Vec<u64>)>>,
+    ) -> Self {
         let inner = I3BarBlock {
             name: Some(id.to_string()),
             ..I3BarBlock::default()
         };
 
         Widget {
+            id,
             icon: String::new(),
             shared_config,
             state: State::Idle,
+
+            widget_updates_sender,
 
             inner,
             source: Source::Text(String::new()),
@@ -100,17 +121,20 @@ impl Widget {
         } else {
             self.source = Source::Text(text);
         }
+        self.source.notify(self);
     }
 
     pub fn set_texts(&mut self, short: String, full: String) {
         self.source = Source::TextWithShort(short, full);
+        self.source.notify(self);
     }
 
-    pub fn set_format(&mut self, format: RunningFormat) {
+    pub fn set_format(&mut self, format: Format) {
         match &mut self.source {
             Source::Format(old, _) => *old = format,
             _ => self.source = Source::Format(format, None),
         }
+        self.source.notify(self);
     }
 
     pub fn set_values(&mut self, new_values: Values) {
@@ -128,6 +152,7 @@ impl Widget {
             std::mem::replace(&mut self.source, Source::Text(String::new())),
             self.state,
         ));
+        self.source.notify(self);
     }
 
     pub fn restore(&mut self) {
@@ -135,6 +160,7 @@ impl Widget {
             self.source = backup.0;
             self.state = backup.1;
         }
+        self.source.notify(self);
     }
 
     /// Constuct `I3BarBlock` from this widget

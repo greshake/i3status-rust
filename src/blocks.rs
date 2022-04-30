@@ -2,6 +2,7 @@
 
 pub mod prelude;
 
+use crate::BoxedFuture;
 use futures::future::FutureExt;
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
@@ -12,7 +13,6 @@ use toml::value::Table;
 
 use std::collections::HashMap;
 use std::future::Future;
-use std::pin::Pin;
 use std::time::Duration;
 
 use crate::click::{ClickHandler, MouseButton};
@@ -138,7 +138,7 @@ define_blocks!(
     xrandr,
 );
 
-pub type BlockFuture = Pin<Box<dyn Future<Output = Result<()>>>>;
+pub type BlockFuture = BoxedFuture<Result<()>>;
 
 #[derive(Debug, Clone, Copy)]
 pub enum BlockEvent {
@@ -227,9 +227,7 @@ impl CommonApi {
     }
 
     pub fn set_format(&mut self, format: Format) {
-        self.cmd_buf.push(RequestCmd::SetFormat(
-            format.run(&self.request_sender, self.id),
-        ));
+        self.cmd_buf.push(RequestCmd::SetFormat(format));
     }
 
     pub fn set_full_screen(&mut self, value: bool) {

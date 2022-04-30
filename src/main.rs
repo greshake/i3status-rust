@@ -21,13 +21,14 @@ mod wrappers;
 
 use clap::Parser;
 use futures::stream::futures_unordered::FuturesUnordered;
-use futures::stream::StreamExt;
+use futures::stream::{Stream, StreamExt};
 use once_cell::sync::Lazy;
 use protocol::i3bar_block::I3BarBlock;
 use protocol::i3bar_event::I3BarEvent;
 use smallvec::SmallVec;
 use smartstring::alias::String;
-use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
@@ -38,10 +39,14 @@ use click::ClickHandler;
 use config::Config;
 use config::SharedConfig;
 use errors::*;
-use formatting::{value::Value, RunningFormat};
+use formatting::scheduling;
+use formatting::{Format, Values};
 use protocol::i3bar_event::events_stream;
 use signals::{signals_stream, Signal};
 use widget::{State, Widget};
+
+pub type BoxedFuture<T> = Pin<Box<dyn Future<Output = T>>>;
+pub type BoxedStream<T> = Pin<Box<dyn Stream<Item = T>>>;
 
 pub static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
     const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
@@ -90,12 +95,6 @@ fn main() {
             .or_error(|| format!("Configuration file '{}' not found", args.config))?;
         let config: Config = util::deserialize_toml_file(&config_path).config_error()?;
 
-        // Spawn blocks
-        let mut bar = BarState::new(config.shared, args);
-        for block_config in config.blocks {
-            bar.spawn_block(block_config)?;
-        }
-
         // Run main loop
         tokio::runtime::Builder::new_current_thread()
             .max_blocking_threads(blocking_threads)
@@ -103,17 +102,17 @@ fn main() {
             .build()
             .unwrap()
             .block_on(async move {
-                let mut signals = signals_stream();
-                let mut events = events_stream(
-                    config.invert_scrolling,
-                    Duration::from_millis(config.double_click_delay),
-                );
-                bar.run_event_loop(&mut signals, &mut events).await
+                let mut bar = BarState::new(&config, args);
+                for block_config in config.blocks {
+                    bar.spawn_block(block_config)?;
+                }
+                bar.run_event_loop().await
             })
     })();
 
     if let Err(error) = result {
-        let error_widget = Widget::new(0, Default::default()).with_text(error.to_string().into());
+        let error_widget =
+            Widget::new(0, Default::default(), None).with_text(error.to_string().into());
         println!(
             "{},",
             serde_json::to_string(&error_widget.get_data().unwrap()).unwrap()
@@ -169,8 +168,8 @@ pub enum RequestCmd {
     SetText(String),
     SetTexts(String, String),
 
-    SetFormat(RunningFormat),
-    SetValues(HashMap<String, Value>),
+    SetFormat(Format),
+    SetValues(Values),
 
     SetFullScreen(bool),
 
@@ -191,30 +190,44 @@ struct BarState {
     fullscreen_block: Option<usize>,
     running_blocks: FuturesUnordered<BlockFuture>,
 
+    widget_updates_stream: BoxedStream<Vec<usize>>,
+    widget_updates_sender: mpsc::UnboundedSender<(usize, Vec<u64>)>,
     blocks_render_cache: Vec<Vec<I3BarBlock>>,
 
     request_sender: mpsc::Sender<Request>,
     request_receiver: mpsc::Receiver<Request>,
+
+    signals_stream: BoxedStream<Signal>,
+    events_stream: BoxedStream<I3BarEvent>,
 
     dbus_connection: Option<zbus::Connection>,
     system_dbus_connection: Option<zbus::Connection>,
 }
 
 impl BarState {
-    fn new(shared_config: SharedConfig, cli: CliArgs) -> Self {
+    fn new(config: &Config, cli: CliArgs) -> Self {
         let (request_sender, request_receiver) = mpsc::channel(64);
+        let (widget_updates_sender, widget_updates_stream) = scheduling::manage_widgets_updates();
         Self {
-            shared_config,
+            shared_config: config.shared.clone(),
             cli_args: cli,
 
             blocks: Vec::new(),
             fullscreen_block: None,
             running_blocks: FuturesUnordered::new(),
 
+            widget_updates_stream,
+            widget_updates_sender,
             blocks_render_cache: Vec::new(),
 
             request_sender,
             request_receiver,
+
+            signals_stream: signals_stream(),
+            events_stream: events_stream(
+                config.invert_scrolling,
+                Duration::from_millis(config.double_click_delay),
+            ),
 
             dbus_connection: None,
             system_dbus_connection: None,
@@ -256,7 +269,11 @@ impl BarState {
             signal: common_config.signal,
 
             hidden: false,
-            widget: Widget::new(api.id, api.shared_config.clone()),
+            widget: Widget::new(
+                api.id,
+                api.shared_config.clone(),
+                Some(self.widget_updates_sender.clone()),
+            ),
         });
 
         self.running_blocks.push(block_type.run(block_config, api));
@@ -341,11 +358,7 @@ impl BarState {
         }
     }
 
-    async fn process_event(
-        &mut self,
-        signals_receiver: &mut mpsc::Receiver<Signal>,
-        events_receiver: &mut mpsc::Receiver<I3BarEvent>,
-    ) -> Result<()> {
+    async fn process_event(&mut self) -> Result<()> {
         tokio::select! {
             // Handle blocks' errors
             Some(block_result) = self.running_blocks.next() => {
@@ -357,8 +370,24 @@ impl BarState {
                 self.render();
                 Ok(())
             }
+            // Handle scheduled updates
+            Some(ids) = self.widget_updates_stream.next() => {
+                for id in ids {
+                    let data = &mut self.blocks_render_cache[id];
+                    let (block, block_type) = &self.blocks[id];
+                    if let Block::Running(block) = block {
+                        if !block.hidden {
+                            *data = block.widget.get_data().in_block(*block_type, id)?;
+                        } else {
+                            data.clear();
+                        }
+                    }
+                }
+                self.render();
+                Ok(())
+            }
             // Handle clicks
-            Some(event) = events_receiver.recv() => {
+            Some(event) = self.events_stream.next() => {
                 let (block, block_type) = self.blocks.get_mut(event.id).error("Events receiver: ID out of bounds")?;
                 match block {
                     Block::Running(block) => {
@@ -382,7 +411,7 @@ impl BarState {
                 Ok(())
             }
             // Handle signals
-            Some(signal) = signals_receiver.recv() => match signal {
+            Some(signal) = self.signals_stream.next() => match signal {
                 Signal::Usr1 => {
                     for (block, _) in &self.blocks {
                         if let Block::Running(block) = block {
@@ -406,18 +435,14 @@ impl BarState {
         }
     }
 
-    async fn run_event_loop(
-        mut self,
-        signals_receiver: &mut mpsc::Receiver<Signal>,
-        events_receiver: &mut mpsc::Receiver<I3BarEvent>,
-    ) -> Result<()> {
+    async fn run_event_loop(mut self) -> Result<()> {
         loop {
-            if let Err(error) = self.process_event(signals_receiver, events_receiver).await {
+            if let Err(error) = self.process_event().await {
                 match error.block {
                     Some((_, id)) => {
                         let block = FailedBlock {
                             id,
-                            error_widget: Widget::new(id, self.shared_config.clone())
+                            error_widget: Widget::new(id, self.shared_config.clone(), None)
                                 .with_state(State::Critical)
                                 .with_text(error.message.as_deref().unwrap_or("Error").into()),
                             error,

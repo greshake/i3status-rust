@@ -3,14 +3,15 @@ use std::time::Duration;
 
 use serde::Deserialize;
 
+use futures::StreamExt;
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::sync::mpsc::{channel, Receiver};
 
 use crate::click::MouseButton;
+use crate::BoxedStream;
 
 #[derive(Deserialize, Debug, Clone)]
-struct I3BarEventInternal {
+struct I3BarEventRaw {
     pub name: Option<String>,
     pub instance: Option<String>,
     pub button: MouseButton,
@@ -23,88 +24,74 @@ pub struct I3BarEvent {
     pub button: MouseButton,
 }
 
-fn unprocessed_events_stream(invert_scrolling: bool) -> Receiver<I3BarEvent> {
+fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> {
     // Avoid spawning a blocking therad (why doesn't tokio do this too?)
     // This should be safe given that this function is called only once
     let stdin = unsafe { File::from_raw_fd(0) };
-    let mut stdin = BufReader::new(stdin);
+    let lines = BufReader::new(stdin).lines();
 
-    let mut buf = String::new();
-    let (tx, rx) = channel(32);
-
-    tokio::spawn(async move {
+    futures::stream::unfold(lines, move |mut lines| async move {
         loop {
-            buf.clear();
-            stdin.read_line(&mut buf).await.unwrap();
+            // Take only the valid JSON object betweem curly braces (cut off leading bracket, commas and whitespace)
+            let line = lines.next_line().await.ok().flatten()?;
+            let line = line.trim_start_matches(|c| c != '{');
+            let line = line.trim_end_matches(|c| c != '}');
 
-            // Take only the valid JSON object betweem curly braces (cut off leading bracket,
-            // commas and whitespace)
-            let slice = buf.trim_start_matches(|c| c != '{');
-            let slice = slice.trim_end_matches(|c| c != '}');
-
-            if !slice.is_empty() {
-                let event: I3BarEventInternal = serde_json::from_str(slice).unwrap();
-                let id = match event.name {
-                    Some(name) => name.parse().unwrap(),
-                    None => continue,
-                };
-                let instance = event.instance.map(|x| x.parse::<usize>().unwrap());
-
-                use MouseButton::*;
-                let button = match (event.button, invert_scrolling) {
-                    (WheelUp, false) | (WheelDown, true) => WheelUp,
-                    (WheelUp, true) | (WheelDown, false) => WheelDown,
-                    (other, _) => other,
-                };
-
-                if tx
-                    .send(I3BarEvent {
-                        id,
-                        instance,
-                        button,
-                    })
-                    .await
-                    .is_err()
-                {
-                    break;
-                }
+            if line.is_empty() {
+                continue;
             }
-        }
-    });
 
-    rx
+            let event: I3BarEventRaw = serde_json::from_str(line).unwrap();
+            let id = match event.name {
+                Some(name) => name.parse().unwrap(),
+                None => continue,
+            };
+            let instance = event.instance.map(|x| x.parse::<usize>().unwrap());
+
+            use MouseButton::*;
+            let button = match (event.button, invert_scrolling) {
+                (WheelUp, false) | (WheelDown, true) => WheelUp,
+                (WheelUp, true) | (WheelDown, false) => WheelDown,
+                (other, _) => other,
+            };
+
+            let event = I3BarEvent {
+                id,
+                instance,
+                button,
+            };
+
+            break Some((event, lines));
+        }
+    })
+    .boxed_local()
 }
 
-pub fn events_stream(invert_scrolling: bool, double_click_delay: Duration) -> Receiver<I3BarEvent> {
-    let mut events = unprocessed_events_stream(invert_scrolling);
-    let (tx, rx) = channel(32);
+pub fn events_stream(
+    invert_scrolling: bool,
+    double_click_delay: Duration,
+) -> BoxedStream<I3BarEvent> {
+    let events = unprocessed_events_stream(invert_scrolling);
+    futures::stream::unfold((events, None), move |(mut events, pending)| async move {
+        if let Some(pending) = pending {
+            return Some((pending, (events, None)));
+        }
 
-    tokio::spawn(async move {
-        loop {
-            let mut event = events.recv().await.unwrap();
+        let mut event = events.next().await?;
 
-            // Handle double clicks (for now only left)
-            if event.button == MouseButton::Left {
-                tokio::select! {
-                    _ = tokio::time::sleep(double_click_delay) => (),
-                    Some(new_event) = events.recv() => {
-                        if event == new_event {
-                            event.button = MouseButton::DoubleLeft;
-                        } else {
-                            if tx.send(event).await.is_err() {
-                                break;
-                            }
-                            event = new_event;
-                        }
-                    }
+        // Handle double clicks (for now only left)
+        if event.button == MouseButton::Left && !double_click_delay.is_zero() {
+            if let Ok(new_event) = tokio::time::timeout(double_click_delay, events.next()).await {
+                let new_event = new_event?;
+                if event == new_event {
+                    event.button = MouseButton::DoubleLeft;
+                } else {
+                    return Some((event, (events, Some(new_event))));
                 }
             }
-
-            if tx.send(event).await.is_err() {
-                break;
-            }
         }
-    });
 
-    rx
+        Some((event, (events, None)))
+    })
+    .boxed_local()
 }

@@ -2,7 +2,8 @@ use futures::stream::StreamExt;
 use libc::{SIGRTMAX, SIGRTMIN};
 use signal_hook::consts::{SIGUSR1, SIGUSR2};
 use signal_hook_tokio::Signals;
-use tokio::sync::mpsc;
+
+use crate::BoxedStream;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Signal {
@@ -11,33 +12,15 @@ pub enum Signal {
     Custom(i32),
 }
 
-/// Spawn a task that listens for signals and sends these on the returned channel
-pub fn signals_stream() -> mpsc::Receiver<Signal> {
-    let (tx, rx) = mpsc::channel(32);
-
+/// Returns an infinite stream of `Signal`s
+pub fn signals_stream() -> BoxedStream<Signal> {
     let (sigmin, sigmax) = (SIGRTMIN(), SIGRTMAX());
-    let mut signals = Signals::new((sigmin..sigmax).chain([SIGUSR1, SIGUSR2])).unwrap();
-
-    tokio::spawn(async move {
-        loop {
-            if tx
-                .send(match signals.next().await {
-                    Some(SIGUSR1) => Signal::Usr1,
-                    Some(SIGUSR2) => Signal::Usr2,
-                    Some(x) => Signal::Custom(x - sigmin),
-                    None => {
-                        eprintln!("signals.next() returned None: no more signals will be received");
-                        break;
-                    }
-                })
-                .await
-                .is_err()
-            {
-                // Receiver is dropped - no need to loop anymore
-                break;
-            }
-        }
-    });
-
-    rx
+    let signals = Signals::new((sigmin..sigmax).chain([SIGUSR1, SIGUSR2])).unwrap();
+    signals
+        .map(move |signal| match signal {
+            SIGUSR1 => Signal::Usr1,
+            SIGUSR2 => Signal::Usr2,
+            x => Signal::Custom(x - sigmin),
+        })
+        .boxed()
 }

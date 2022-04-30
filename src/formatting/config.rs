@@ -1,4 +1,4 @@
-use super::{template::FormatTemplate, Format};
+use super::{template::FormatTemplate, Format, FormatInner};
 use crate::errors::*;
 use serde::de::{MapAccess, Visitor};
 use serde::{de, Deserialize, Deserializer};
@@ -24,7 +24,20 @@ impl Config {
             Some(full) => full,
             None => default_full.parse()?,
         };
-        Ok(Format(Arc::new((full, self.short))))
+
+        let mut intervals = Vec::new();
+        full.init_intervals(&mut intervals);
+        if let Some(short) = &self.short {
+            short.init_intervals(&mut intervals);
+        }
+
+        Ok(Format {
+            inner: Arc::new(FormatInner {
+                full,
+                short: self.short,
+                intervals,
+            }),
+        })
     }
 }
 

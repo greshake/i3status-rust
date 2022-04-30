@@ -76,66 +76,57 @@
 pub mod config;
 pub mod formatter;
 pub mod prefix;
+pub mod scheduling;
 pub mod template;
 pub mod unit;
 pub mod value;
 
 use smartstring::alias::String;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::Arc;
-
-use tokio::sync::mpsc::Sender;
-use tokio::task::JoinHandle;
 
 use crate::errors::*;
 use crate::widget::State;
-use crate::Request;
 use template::FormatTemplate;
 use value::Value;
 
 pub type Values = HashMap<String, Value>;
 
 #[derive(Debug, Clone)]
-pub struct Format(Arc<(FormatTemplate, Option<FormatTemplate>)>);
+pub struct Format {
+    inner: Arc<FormatInner>,
+}
 
-impl Format {
-    pub fn run(self, tx: &Sender<Request>, block_id: usize) -> RunningFormat {
-        let mut handles = Handles(Vec::new());
-        self.0 .0.init(tx, block_id, &mut handles);
-        if let Some(short) = &self.0 .1 {
-            short.init(tx, block_id, &mut handles);
-        }
-        RunningFormat(self, handles)
-    }
+impl Deref for Format {
+    type Target = FormatInner;
 
-    pub fn run_no_init(self) -> RunningFormat {
-        RunningFormat(self, Handles::default())
-    }
-
-    pub fn contains_key(&self, key: &str) -> bool {
-        self.0 .0.contains_key(key) || self.0 .1.as_ref().map_or(false, |x| x.contains_key(key))
+    fn deref(&self) -> &Self::Target {
+        self.inner.as_ref()
     }
 }
 
-#[derive(Debug, Default)]
-pub struct Handles(Vec<JoinHandle<()>>);
-
-impl Drop for Handles {
-    fn drop(&mut self) {
-        for handle in &self.0 {
-            handle.abort();
-        }
+impl Format {
+    pub fn intervals(&self) -> Vec<u64> {
+        self.inner.intervals.clone()
     }
 }
 
 #[derive(Debug)]
-pub struct RunningFormat(Format, Handles);
+pub struct FormatInner {
+    full: FormatTemplate,
+    short: Option<FormatTemplate>,
+    intervals: Vec<u64>,
+}
 
-impl RunningFormat {
+impl FormatInner {
+    pub fn contains_key(&self, key: &str) -> bool {
+        self.full.contains_key(key) || self.short.as_ref().map_or(false, |x| x.contains_key(key))
+    }
+
     pub fn render(&self, vars: &Values) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
-        let (full, short) = self.0 .0.as_ref();
-        let full = full.render(vars).error("Failed to render full text")?;
-        let short = match short {
+        let full = self.full.render(vars).error("Failed to render full text")?;
+        let short = match &self.short {
             Some(short) => short.render(vars).error("Failed to render short text")?,
             None => vec![],
         };

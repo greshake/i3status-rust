@@ -5,9 +5,6 @@ use super::formatter::{
 use super::value::ValueInner;
 use super::{Rendered, Values};
 use crate::errors::*;
-use crate::Request;
-
-use tokio::sync::mpsc::Sender;
 
 use smartstring::alias::String;
 
@@ -53,14 +50,18 @@ impl FormatTemplate {
         Ok(Vec::new())
     }
 
-    pub fn init(&self, tx: &Sender<Request>, block_id: usize, handles: &mut super::Handles) {
+    pub fn init_intervals(&self, intervals: &mut Vec<u64>) {
         for tl in &self.0 {
             for t in &tl.0 {
                 match t {
-                    Token::Recursive(r) => r.init(tx, block_id, handles),
+                    Token::Recursive(r) => r.init_intervals(intervals),
                     Token::Var {
                         formatter: Some(f), ..
-                    } => f.init(tx, block_id, handles),
+                    } => {
+                        if let Some(i) = f.interval() {
+                            intervals.push(i.as_millis() as u64);
+                        }
+                    }
                     _ => (),
                 }
             }
