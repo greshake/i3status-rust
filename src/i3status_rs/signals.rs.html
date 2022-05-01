@@ -29,28 +29,12 @@
 <span id="24">24</span>
 <span id="25">25</span>
 <span id="26">26</span>
-<span id="27">27</span>
-<span id="28">28</span>
-<span id="29">29</span>
-<span id="30">30</span>
-<span id="31">31</span>
-<span id="32">32</span>
-<span id="33">33</span>
-<span id="34">34</span>
-<span id="35">35</span>
-<span id="36">36</span>
-<span id="37">37</span>
-<span id="38">38</span>
-<span id="39">39</span>
-<span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">futures::stream::StreamExt</span>;
 <span class="kw">use</span> <span class="ident">libc</span>::{<span class="ident">SIGRTMAX</span>, <span class="ident">SIGRTMIN</span>};
 <span class="kw">use</span> <span class="ident">signal_hook::consts</span>::{<span class="ident">SIGUSR1</span>, <span class="ident">SIGUSR2</span>};
 <span class="kw">use</span> <span class="ident">signal_hook_tokio::Signals</span>;
-<span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>;
+
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::BoxedStream</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Signal</span> {
@@ -59,35 +43,17 @@
     <span class="ident">Custom</span>(<span class="ident">i32</span>),
 }
 
-<span class="doccomment">/// Spawn a task that listens for signals and sends these on the returned channel</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">signals_stream</span>() -&gt; <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">Signal</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">mpsc::channel</span>(<span class="number">32</span>);
-
+<span class="doccomment">/// Returns an infinite stream of `Signal`s</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">signals_stream</span>() -&gt; <span class="ident">BoxedStream</span><span class="op">&lt;</span><span class="ident">Signal</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">sigmin</span>, <span class="ident">sigmax</span>) <span class="op">=</span> (<span class="ident">SIGRTMIN</span>(), <span class="ident">SIGRTMAX</span>());
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signals</span> <span class="op">=</span> <span class="ident">Signals::new</span>((<span class="ident">sigmin</span>..<span class="ident">sigmax</span>).<span class="ident">chain</span>([<span class="ident">SIGUSR1</span>, <span class="ident">SIGUSR2</span>])).<span class="ident">unwrap</span>();
-
-    <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-        <span class="kw">loop</span> {
-            <span class="kw">if</span> <span class="ident">tx</span>
-                .<span class="ident">send</span>(<span class="kw">match</span> <span class="ident">signals</span>.<span class="ident">next</span>().<span class="kw">await</span> {
-                    <span class="prelude-val">Some</span>(<span class="ident">SIGUSR1</span>) =&gt; <span class="ident">Signal::Usr1</span>,
-                    <span class="prelude-val">Some</span>(<span class="ident">SIGUSR2</span>) =&gt; <span class="ident">Signal::Usr2</span>,
-                    <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="ident">Signal::Custom</span>(<span class="ident">x</span> <span class="op">-</span> <span class="ident">sigmin</span>),
-                    <span class="prelude-val">None</span> =&gt; {
-                        <span class="macro">eprintln!</span>(<span class="string">&quot;signals.next() returned None: no more signals will be received&quot;</span>);
-                        <span class="kw">break</span>;
-                    }
-                })
-                .<span class="kw">await</span>
-                .<span class="ident">is_err</span>()
-            {
-                <span class="comment">// Receiver is dropped - no need to loop anymore</span>
-                <span class="kw">break</span>;
-            }
-        }
-    });
-
-    <span class="ident">rx</span>
+    <span class="kw">let</span> <span class="ident">signals</span> <span class="op">=</span> <span class="ident">Signals::new</span>((<span class="ident">sigmin</span>..<span class="ident">sigmax</span>).<span class="ident">chain</span>([<span class="ident">SIGUSR1</span>, <span class="ident">SIGUSR2</span>])).<span class="ident">unwrap</span>();
+    <span class="ident">signals</span>
+        .<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">signal</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">signal</span> {
+            <span class="ident">SIGUSR1</span> =&gt; <span class="ident">Signal::Usr1</span>,
+            <span class="ident">SIGUSR2</span> =&gt; <span class="ident">Signal::Usr2</span>,
+            <span class="ident">x</span> =&gt; <span class="ident">Signal::Custom</span>(<span class="ident">x</span> <span class="op">-</span> <span class="ident">sigmin</span>),
+        })
+        .<span class="ident">boxed</span>()
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.60.0 (7737e0b5c 2022-04-04)" ></div>

@@ -281,6 +281,7 @@
 <span id="276">276</span>
 <span id="277">277</span>
 <span id="278">278</span>
+<span id="279">279</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::formatter</span>::{
     <span class="ident">new_formatter</span>, <span class="ident">Formatter</span>, <span class="ident">DEFAULT_FLAG_FORMATTER</span>, <span class="ident">DEFAULT_NUMBER_FORMATTER</span>,
     <span class="ident">DEFAULT_STRING_FORMATTER</span>,
@@ -288,9 +289,6 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::value::ValueInner</span>;
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">Rendered</span>, <span class="ident">Values</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Request</span>;
-
-<span class="kw">use</span> <span class="ident">tokio::sync::mpsc::Sender</span>;
 
 <span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
 
@@ -336,14 +334,18 @@
         <span class="prelude-val">Ok</span>(<span class="ident">Vec::new</span>())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">tx</span>: <span class="kw-2">&amp;</span><span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">Request</span><span class="op">&gt;</span>, <span class="ident">block_id</span>: <span class="ident">usize</span>, <span class="ident">handles</span>: <span class="kw-2">&amp;mut</span> <span class="ident"><span class="kw">super</span>::Handles</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_intervals</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">intervals</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>) {
         <span class="kw">for</span> <span class="ident">tl</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span> {
             <span class="kw">for</span> <span class="ident">t</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">tl</span>.<span class="number">0</span> {
                 <span class="kw">match</span> <span class="ident">t</span> {
-                    <span class="ident">Token::Recursive</span>(<span class="ident">r</span>) =&gt; <span class="ident">r</span>.<span class="ident">init</span>(<span class="ident">tx</span>, <span class="ident">block_id</span>, <span class="ident">handles</span>),
+                    <span class="ident">Token::Recursive</span>(<span class="ident">r</span>) =&gt; <span class="ident">r</span>.<span class="ident">init_intervals</span>(<span class="ident">intervals</span>),
                     <span class="ident">Token::Var</span> {
                         <span class="ident">formatter</span>: <span class="prelude-val">Some</span>(<span class="ident">f</span>), ..
-                    } =&gt; <span class="ident">f</span>.<span class="ident">init</span>(<span class="ident">tx</span>, <span class="ident">block_id</span>, <span class="ident">handles</span>),
+                    } =&gt; {
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>) <span class="op">=</span> <span class="ident">f</span>.<span class="ident">interval</span>() {
+                            <span class="ident">intervals</span>.<span class="ident">push</span>(<span class="ident">i</span>.<span class="ident">as_millis</span>() <span class="kw">as</span> <span class="ident">u64</span>);
+                        }
+                    }
                     <span class="kw">_</span> =&gt; (),
                 }
             }

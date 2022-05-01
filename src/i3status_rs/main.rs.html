@@ -466,6 +466,31 @@
 <span id="461">461</span>
 <span id="462">462</span>
 <span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
@@ -489,13 +514,14 @@
 
 <span class="kw">use</span> <span class="ident">clap::Parser</span>;
 <span class="kw">use</span> <span class="ident">futures::stream::futures_unordered::FuturesUnordered</span>;
-<span class="kw">use</span> <span class="ident">futures::stream::StreamExt</span>;
+<span class="kw">use</span> <span class="ident">futures::stream</span>::{<span class="ident">Stream</span>, <span class="ident">StreamExt</span>};
 <span class="kw">use</span> <span class="ident">once_cell::sync::Lazy</span>;
 <span class="kw">use</span> <span class="ident">protocol::i3bar_block::I3BarBlock</span>;
 <span class="kw">use</span> <span class="ident">protocol::i3bar_event::I3BarEvent</span>;
 <span class="kw">use</span> <span class="ident">smallvec::SmallVec</span>;
 <span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
-<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
+<span class="kw">use</span> <span class="ident">std::future::Future</span>;
+<span class="kw">use</span> <span class="ident">std::pin::Pin</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>;
@@ -506,10 +532,14 @@
 <span class="kw">use</span> <span class="ident">config::Config</span>;
 <span class="kw">use</span> <span class="ident">config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident">errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">formatting</span>::{<span class="ident">value::Value</span>, <span class="ident">RunningFormat</span>};
+<span class="kw">use</span> <span class="ident">formatting::scheduling</span>;
+<span class="kw">use</span> <span class="ident">formatting</span>::{<span class="ident">Format</span>, <span class="ident">Values</span>};
 <span class="kw">use</span> <span class="ident">protocol::i3bar_event::events_stream</span>;
 <span class="kw">use</span> <span class="ident">signals</span>::{<span class="ident">signals_stream</span>, <span class="ident">Signal</span>};
 <span class="kw">use</span> <span class="ident">widget</span>::{<span class="ident">State</span>, <span class="ident">Widget</span>};
+
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BoxedFuture</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BoxedStream</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">REQWEST_CLIENT</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">reqwest::Client</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy::new</span>(<span class="op">|</span><span class="op">|</span> {
     <span class="kw">const</span> <span class="ident">APP_USER_AGENT</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>), <span class="string">&quot;/&quot;</span>, <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>),);
@@ -558,12 +588,6 @@
             .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Configuration file &#39;{}&#39; not found&quot;</span>, <span class="ident">args</span>.<span class="ident">config</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">config</span>: <span class="ident">Config</span> <span class="op">=</span> <span class="ident">util::deserialize_toml_file</span>(<span class="kw-2">&amp;</span><span class="ident">config_path</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
 
-        <span class="comment">// Spawn blocks</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bar</span> <span class="op">=</span> <span class="ident">BarState::new</span>(<span class="ident">config</span>.<span class="ident">shared</span>, <span class="ident">args</span>);
-        <span class="kw">for</span> <span class="ident">block_config</span> <span class="kw">in</span> <span class="ident">config</span>.<span class="ident">blocks</span> {
-            <span class="ident">bar</span>.<span class="ident">spawn_block</span>(<span class="ident">block_config</span>)<span class="question-mark">?</span>;
-        }
-
         <span class="comment">// Run main loop</span>
         <span class="ident">tokio::runtime::Builder::new_current_thread</span>()
             .<span class="ident">max_blocking_threads</span>(<span class="ident">blocking_threads</span>)
@@ -571,17 +595,17 @@
             .<span class="ident">build</span>()
             .<span class="ident">unwrap</span>()
             .<span class="ident">block_on</span>(<span class="kw">async</span> <span class="kw">move</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signals</span> <span class="op">=</span> <span class="ident">signals_stream</span>();
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">events_stream</span>(
-                    <span class="ident">config</span>.<span class="ident">invert_scrolling</span>,
-                    <span class="ident">Duration::from_millis</span>(<span class="ident">config</span>.<span class="ident">double_click_delay</span>),
-                );
-                <span class="ident">bar</span>.<span class="ident">run_event_loop</span>(<span class="kw-2">&amp;mut</span> <span class="ident">signals</span>, <span class="kw-2">&amp;mut</span> <span class="ident">events</span>).<span class="kw">await</span>
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bar</span> <span class="op">=</span> <span class="ident">BarState::new</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">args</span>);
+                <span class="kw">for</span> <span class="ident">block_config</span> <span class="kw">in</span> <span class="ident">config</span>.<span class="ident">blocks</span> {
+                    <span class="ident">bar</span>.<span class="ident">spawn_block</span>(<span class="ident">block_config</span>)<span class="question-mark">?</span>;
+                }
+                <span class="ident">bar</span>.<span class="ident">run_event_loop</span>().<span class="kw">await</span>
             })
     })();
 
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="ident">result</span> {
-        <span class="kw">let</span> <span class="ident">error_widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>(<span class="number">0</span>, <span class="ident">Default::default</span>()).<span class="ident">with_text</span>(<span class="ident">error</span>.<span class="ident">to_string</span>().<span class="ident">into</span>());
+        <span class="kw">let</span> <span class="ident">error_widget</span> <span class="op">=</span>
+            <span class="ident">Widget::new</span>(<span class="number">0</span>, <span class="ident">Default::default</span>(), <span class="prelude-val">None</span>).<span class="ident">with_text</span>(<span class="ident">error</span>.<span class="ident">to_string</span>().<span class="ident">into</span>());
         <span class="macro">println!</span>(
             <span class="string">&quot;{},&quot;</span>,
             <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">error_widget</span>.<span class="ident">get_data</span>().<span class="ident">unwrap</span>()).<span class="ident">unwrap</span>()
@@ -637,8 +661,8 @@
     <span class="ident">SetText</span>(<span class="ident">String</span>),
     <span class="ident">SetTexts</span>(<span class="ident">String</span>, <span class="ident">String</span>),
 
-    <span class="ident">SetFormat</span>(<span class="ident">RunningFormat</span>),
-    <span class="ident">SetValues</span>(<span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Value</span><span class="op">&gt;</span>),
+    <span class="ident">SetFormat</span>(<span class="ident">Format</span>),
+    <span class="ident">SetValues</span>(<span class="ident">Values</span>),
 
     <span class="ident">SetFullScreen</span>(<span class="ident">bool</span>),
 
@@ -659,30 +683,44 @@
     <span class="ident">fullscreen_block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
     <span class="ident">running_blocks</span>: <span class="ident">FuturesUnordered</span><span class="op">&lt;</span><span class="ident">BlockFuture</span><span class="op">&gt;</span>,
 
+    <span class="ident">widget_updates_stream</span>: <span class="ident">BoxedStream</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">widget_updates_sender</span>: <span class="ident">mpsc::UnboundedSender</span><span class="op">&lt;</span>(<span class="ident">usize</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
     <span class="ident">blocks_render_cache</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">I3BarBlock</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 
     <span class="ident">request_sender</span>: <span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">Request</span><span class="op">&gt;</span>,
     <span class="ident">request_receiver</span>: <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">Request</span><span class="op">&gt;</span>,
+
+    <span class="ident">signals_stream</span>: <span class="ident">BoxedStream</span><span class="op">&lt;</span><span class="ident">Signal</span><span class="op">&gt;</span>,
+    <span class="ident">events_stream</span>: <span class="ident">BoxedStream</span><span class="op">&lt;</span><span class="ident">I3BarEvent</span><span class="op">&gt;</span>,
 
     <span class="ident">dbus_connection</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span>,
     <span class="ident">system_dbus_connection</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">BarState</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">shared_config</span>: <span class="ident">SharedConfig</span>, <span class="ident">cli</span>: <span class="ident">CliArgs</span>) -&gt; <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">Config</span>, <span class="ident">cli</span>: <span class="ident">CliArgs</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">request_sender</span>, <span class="ident">request_receiver</span>) <span class="op">=</span> <span class="ident">mpsc::channel</span>(<span class="number">64</span>);
+        <span class="kw">let</span> (<span class="ident">widget_updates_sender</span>, <span class="ident">widget_updates_stream</span>) <span class="op">=</span> <span class="ident">scheduling::manage_widgets_updates</span>();
         <span class="self">Self</span> {
-            <span class="ident">shared_config</span>,
+            <span class="ident">shared_config</span>: <span class="ident">config</span>.<span class="ident">shared</span>.<span class="ident">clone</span>(),
             <span class="ident">cli_args</span>: <span class="ident">cli</span>,
 
             <span class="ident">blocks</span>: <span class="ident">Vec::new</span>(),
             <span class="ident">fullscreen_block</span>: <span class="prelude-val">None</span>,
             <span class="ident">running_blocks</span>: <span class="ident">FuturesUnordered::new</span>(),
 
+            <span class="ident">widget_updates_stream</span>,
+            <span class="ident">widget_updates_sender</span>,
             <span class="ident">blocks_render_cache</span>: <span class="ident">Vec::new</span>(),
 
             <span class="ident">request_sender</span>,
             <span class="ident">request_receiver</span>,
+
+            <span class="ident">signals_stream</span>: <span class="ident">signals_stream</span>(),
+            <span class="ident">events_stream</span>: <span class="ident">events_stream</span>(
+                <span class="ident">config</span>.<span class="ident">invert_scrolling</span>,
+                <span class="ident">Duration::from_millis</span>(<span class="ident">config</span>.<span class="ident">double_click_delay</span>),
+            ),
 
             <span class="ident">dbus_connection</span>: <span class="prelude-val">None</span>,
             <span class="ident">system_dbus_connection</span>: <span class="prelude-val">None</span>,
@@ -724,7 +762,11 @@
             <span class="ident">signal</span>: <span class="ident">common_config</span>.<span class="ident">signal</span>,
 
             <span class="ident">hidden</span>: <span class="bool-val">false</span>,
-            <span class="ident">widget</span>: <span class="ident">Widget::new</span>(<span class="ident">api</span>.<span class="ident">id</span>, <span class="ident">api</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>()),
+            <span class="ident">widget</span>: <span class="ident">Widget::new</span>(
+                <span class="ident">api</span>.<span class="ident">id</span>,
+                <span class="ident">api</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>(),
+                <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">widget_updates_sender</span>.<span class="ident">clone</span>()),
+            ),
         });
 
         <span class="self">self</span>.<span class="ident">running_blocks</span>.<span class="ident">push</span>(<span class="ident">block_type</span>.<span class="ident">run</span>(<span class="ident">block_config</span>, <span class="ident">api</span>));
@@ -809,11 +851,7 @@
         }
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_event</span>(
-        <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
-        <span class="ident">signals_receiver</span>: <span class="kw-2">&amp;mut</span> <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">Signal</span><span class="op">&gt;</span>,
-        <span class="ident">events_receiver</span>: <span class="kw-2">&amp;mut</span> <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">I3BarEvent</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_event</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">tokio::select!</span> {
             <span class="comment">// Handle blocks&#39; errors</span>
             <span class="prelude-val">Some</span>(<span class="ident">block_result</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">running_blocks</span>.<span class="ident">next</span>() =&gt; {
@@ -825,8 +863,24 @@
                 <span class="self">self</span>.<span class="ident">render</span>();
                 <span class="prelude-val">Ok</span>(())
             }
+            <span class="comment">// Handle scheduled updates</span>
+            <span class="prelude-val">Some</span>(<span class="ident">ids</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">widget_updates_stream</span>.<span class="ident">next</span>() =&gt; {
+                <span class="kw">for</span> <span class="ident">id</span> <span class="kw">in</span> <span class="ident">ids</span> {
+                    <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">blocks_render_cache</span>[<span class="ident">id</span>];
+                    <span class="kw">let</span> (<span class="ident">block</span>, <span class="ident">block_type</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">blocks</span>[<span class="ident">id</span>];
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Block::Running</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
+                        <span class="kw">if</span> <span class="op">!</span><span class="ident">block</span>.<span class="ident">hidden</span> {
+                            <span class="kw-2">*</span><span class="ident">data</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">widget</span>.<span class="ident">get_data</span>().<span class="ident">in_block</span>(<span class="kw-2">*</span><span class="ident">block_type</span>, <span class="ident">id</span>)<span class="question-mark">?</span>;
+                        } <span class="kw">else</span> {
+                            <span class="ident">data</span>.<span class="ident">clear</span>();
+                        }
+                    }
+                }
+                <span class="self">self</span>.<span class="ident">render</span>();
+                <span class="prelude-val">Ok</span>(())
+            }
             <span class="comment">// Handle clicks</span>
-            <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="ident">events_receiver</span>.<span class="ident">recv</span>() =&gt; {
+            <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">events_stream</span>.<span class="ident">next</span>() =&gt; {
                 <span class="kw">let</span> (<span class="ident">block</span>, <span class="ident">block_type</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">blocks</span>.<span class="ident">get_mut</span>(<span class="ident">event</span>.<span class="ident">id</span>).<span class="ident">error</span>(<span class="string">&quot;Events receiver: ID out of bounds&quot;</span>)<span class="question-mark">?</span>;
                 <span class="kw">match</span> <span class="ident">block</span> {
                     <span class="ident">Block::Running</span>(<span class="ident">block</span>) =&gt; {
@@ -850,7 +904,7 @@
                 <span class="prelude-val">Ok</span>(())
             }
             <span class="comment">// Handle signals</span>
-            <span class="prelude-val">Some</span>(<span class="ident">signal</span>) <span class="op">=</span> <span class="ident">signals_receiver</span>.<span class="ident">recv</span>() =&gt; <span class="kw">match</span> <span class="ident">signal</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">signal</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">signals_stream</span>.<span class="ident">next</span>() =&gt; <span class="kw">match</span> <span class="ident">signal</span> {
                 <span class="ident">Signal::Usr1</span> =&gt; {
                     <span class="kw">for</span> (<span class="ident">block</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">blocks</span> {
                         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Block::Running</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
@@ -874,18 +928,14 @@
         }
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run_event_loop</span>(
-        <span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">signals_receiver</span>: <span class="kw-2">&amp;mut</span> <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">Signal</span><span class="op">&gt;</span>,
-        <span class="ident">events_receiver</span>: <span class="kw-2">&amp;mut</span> <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">I3BarEvent</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run_event_loop</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">loop</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">process_event</span>(<span class="ident">signals_receiver</span>, <span class="ident">events_receiver</span>).<span class="kw">await</span> {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">process_event</span>().<span class="kw">await</span> {
                 <span class="kw">match</span> <span class="ident">error</span>.<span class="ident">block</span> {
                     <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">id</span>)) =&gt; {
                         <span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">FailedBlock</span> {
                             <span class="ident">id</span>,
-                            <span class="ident">error_widget</span>: <span class="ident">Widget::new</span>(<span class="ident">id</span>, <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>())
+                            <span class="ident">error_widget</span>: <span class="ident">Widget::new</span>(<span class="ident">id</span>, <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>(), <span class="prelude-val">None</span>)
                                 .<span class="ident">with_state</span>(<span class="ident">State::Critical</span>)
                                 .<span class="ident">with_text</span>(<span class="ident">error</span>.<span class="ident">message</span>.<span class="ident">as_deref</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;Error&quot;</span>).<span class="ident">into</span>()),
                             <span class="ident">error</span>,

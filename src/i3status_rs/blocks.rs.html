@@ -385,12 +385,11 @@
 <span id="380">380</span>
 <span id="381">381</span>
 <span id="382">382</span>
-<span id="383">383</span>
-<span id="384">384</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
 
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::BoxedFuture</span>;
 <span class="kw">use</span> <span class="ident">futures::future::FutureExt</span>;
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserializer</span>};
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
@@ -401,7 +400,6 @@
 
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 <span class="kw">use</span> <span class="ident">std::future::Future</span>;
-<span class="kw">use</span> <span class="ident">std::pin::Pin</span>;
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::click</span>::{<span class="ident">ClickHandler</span>, <span class="ident">MouseButton</span>};
@@ -527,7 +525,7 @@
     <span class="ident">xrandr</span>,
 );
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BlockFuture</span> <span class="op">=</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BlockFuture</span> <span class="op">=</span> <span class="ident">BoxedFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BlockEvent</span> {
@@ -616,9 +614,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_format</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">format</span>: <span class="ident">Format</span>) {
-        <span class="self">self</span>.<span class="ident">cmd_buf</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::SetFormat</span>(
-            <span class="ident">format</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">request_sender</span>, <span class="self">self</span>.<span class="ident">id</span>),
-        ));
+        <span class="self">self</span>.<span class="ident">cmd_buf</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::SetFormat</span>(<span class="ident">format</span>));
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_full_screen</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">value</span>: <span class="ident">bool</span>) {

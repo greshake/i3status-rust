@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Signal",""]],"fn":[["signals_stream","Spawn a task that listens for signals and sends these on the returned channel"]]});
+initSidebarItems({"enum":[["Signal",""]],"fn":[["signals_stream","Returns an infinite stream of `Signal`s"]]});

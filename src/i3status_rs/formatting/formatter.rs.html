@@ -458,36 +458,17 @@
 <span id="453">453</span>
 <span id="454">454</span>
 <span id="455">455</span>
-<span id="456">456</span>
-<span id="457">457</span>
-<span id="458">458</span>
-<span id="459">459</span>
-<span id="460">460</span>
-<span id="461">461</span>
-<span id="462">462</span>
-<span id="463">463</span>
-<span id="464">464</span>
-<span id="465">465</span>
-<span id="466">466</span>
-<span id="467">467</span>
-<span id="468">468</span>
-<span id="469">469</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">smallvec::SmallVec</span>;
-<span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
 <span class="kw">use</span> <span class="ident">std::fmt::Debug</span>;
 <span class="kw">use</span> <span class="ident">std::iter::repeat</span>;
 <span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
 <span class="kw">use</span> <span class="ident">std::time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>};
 
-<span class="kw">use</span> <span class="ident">tokio::sync::mpsc::Sender</span>;
-
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prefix::Prefix</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::unit::Unit</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::value::ValueInner</span> <span class="kw">as</span> <span class="ident">Value</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::Handles</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::escape::CollectEscaped</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Request</span>, <span class="ident">RequestCmd</span>};
 
 <span class="kw">const</span> <span class="ident">DEFAULT_STR_MIN_WIDTH</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">const</span> <span class="ident">DEFAULT_STR_MAX_WIDTH</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
@@ -544,7 +525,9 @@
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Formatter</span>: <span class="ident">Debug</span> {
     <span class="kw">fn</span> <span class="ident">format</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">val</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_tx</span>: <span class="kw-2">&amp;</span><span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">Request</span><span class="op">&gt;</span>, <span class="ident">_block_id</span>: <span class="ident">usize</span>, <span class="ident">_handles</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Handles</span>) {}
+    <span class="kw">fn</span> <span class="ident">interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span> {
+        <span class="prelude-val">None</span>
+    }
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_formatter</span>(<span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">String</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Formatter</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span> {
@@ -589,7 +572,7 @@
             }
             <span class="prelude-val">Ok</span>(<span class="ident">Box::new</span>(<span class="ident">RotStrFormatter</span> {
                 <span class="ident">width</span>,
-                <span class="ident">interval</span>,
+                <span class="ident">interval</span>: (<span class="ident">interval</span> <span class="op">*</span> <span class="number">1000.0</span>) <span class="kw">as</span> <span class="ident">u64</span>,
                 <span class="ident">init_time</span>: <span class="ident">Instant::now</span>(),
             }))
         }
@@ -641,7 +624,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RotStrFormatter</span> {
     <span class="ident">width</span>: <span class="ident">usize</span>,
-    <span class="ident">interval</span>: <span class="ident">f64</span>,
+    <span class="ident">interval</span>: <span class="ident">u64</span>,
     <span class="ident">init_time</span>: <span class="ident">Instant</span>,
 }
 
@@ -658,8 +641,9 @@
                         .<span class="ident">collect_pango</span>())
                 } <span class="kw">else</span> {
                     <span class="kw">let</span> <span class="ident">full_width</span> <span class="op">=</span> <span class="ident">full_width</span> <span class="op">+</span> <span class="number">1</span>; <span class="comment">// Now we include &#39;|&#39; at the end</span>
-                    <span class="kw">let</span> <span class="ident">step</span> <span class="op">=</span> (<span class="self">self</span>.<span class="ident">init_time</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f64</span>() <span class="op">/</span> <span class="self">self</span>.<span class="ident">interval</span>
-                        <span class="op">%</span> <span class="ident">full_width</span> <span class="kw">as</span> <span class="ident">f64</span>) <span class="kw">as</span> <span class="ident">usize</span>;
+                    <span class="kw">let</span> <span class="ident">step</span> <span class="op">=</span> (<span class="self">self</span>.<span class="ident">init_time</span>.<span class="ident">elapsed</span>().<span class="ident">as_millis</span>() <span class="kw">as</span> <span class="ident">u64</span> <span class="op">/</span> <span class="self">self</span>.<span class="ident">interval</span>)
+                        <span class="kw">as</span> <span class="ident">usize</span>
+                        <span class="op">%</span> <span class="ident">full_width</span>;
                     <span class="kw">let</span> <span class="ident">w1</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">width</span>.<span class="ident">min</span>(<span class="ident">full_width</span> <span class="op">-</span> <span class="ident">step</span>);
                     <span class="prelude-val">Ok</span>(<span class="ident">text</span>
                         .<span class="ident">chars</span>()
@@ -683,20 +667,8 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">tx</span>: <span class="kw-2">&amp;</span><span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">Request</span><span class="op">&gt;</span>, <span class="ident">block_id</span>: <span class="ident">usize</span>, <span class="ident">handles</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Handles</span>) {
-        <span class="kw">let</span> <span class="ident">tx</span> <span class="op">=</span> <span class="ident">tx</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">dur</span> <span class="op">=</span> <span class="ident">Duration::from_secs_f64</span>(<span class="self">self</span>.<span class="ident">interval</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">tokio::time::interval_at</span>(<span class="ident">tokio::time::Instant::now</span>() <span class="op">+</span> <span class="ident">dur</span>, <span class="ident">dur</span>);
-        <span class="ident">interval</span>.<span class="ident">set_missed_tick_behavior</span>(<span class="ident">tokio::time::MissedTickBehavior::Delay</span>);
-
-        <span class="ident">handles</span>.<span class="number">0</span>.<span class="ident">push</span>(<span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-            <span class="kw">loop</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cmds</span> <span class="op">=</span> <span class="ident">SmallVec::new</span>();
-                <span class="ident">cmds</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::Noop</span>);
-                <span class="ident">tx</span>.<span class="ident">send</span>(<span class="ident">Request</span> { <span class="ident">block_id</span>, <span class="ident">cmds</span> }).<span class="kw">await</span>.<span class="ident">unwrap</span>();
-                <span class="ident">interval</span>.<span class="ident">tick</span>().<span class="kw">await</span>;
-            }
-        }));
+    <span class="kw">fn</span> <span class="ident">interval</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">Duration::from_millis</span>(<span class="self">self</span>.<span class="ident">interval</span>))
     }
 }
 
