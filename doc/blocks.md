@@ -56,6 +56,7 @@ You may find that the block you desire is not in the list below. In that case, f
 - [Uptime](#uptime)
 - [Watson](#watson)
 - [Weather](#weather)
+- [Wttr](#wttr)
 - [Xrandr](#xrandr)
 
 ## Apt
@@ -2116,6 +2117,38 @@ in which case they must be provided in the environment variables
 - `weather_default` (in all other cases)
 
 ###### [↥ back to top](#list-of-available-blocks)
+
+## Wttr
+Simple text block to use the [wttr.in](https://github.com/chubin/wttr.in) service and show simple weather
+information optimized for single line status bar.
+
+#### Examples
+
+Show simple weather in London:
+
+```toml
+[[block]]
+block = "wttr"
+location = "London"
+```
+
+More complex/custom
+
+```toml
+[[block]]
+block = "wttr"
+location = "37.240,-115.811"
+query = "format=%c+%t+%m++%h+%w"
+on_click = "open https://wttr.in/37.240,-115.811"
+```
+
+#### Options
+
+Key | Values | Required | Default
+----|--------|----------|--------
+`interval` | Update interval, in seconds. | No | `900`
+`query` | The wttr.in query parameter to adjust the layout and get additional information. Pleaser refer to this [documentation](https://github.com/chubin/wttr.in#one-line-output).| No | "format=1"
+`location` | The wttr.in location information. Please refer to this [documentation](https://github.com/chubin/wttr.in#one-line-output). | No | None
 
 ## Xrandr
 

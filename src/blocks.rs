@@ -40,6 +40,7 @@ pub mod toggle;
 pub mod uptime;
 pub mod watson;
 pub mod weather;
+pub mod wttr;
 pub mod xrandr;
 
 use self::apt::*;
@@ -84,6 +85,7 @@ use self::toggle::*;
 use self::uptime::*;
 use self::watson::*;
 use self::weather::*;
+use self::wttr::*;
 use self::xrandr::*;
 
 use std::process::Command;
@@ -301,6 +303,7 @@ pub fn create_block(
         "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
         "watson" => block!(Watson, id, block_config, shared_config, update_request),
         "weather" => block!(Weather, id, block_config, shared_config, update_request),
+        "wttr" => block!(Wttr, id, block_config, shared_config, update_request),
         "xrandr" => block!(Xrandr, id, block_config, shared_config, update_request),
         other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
     }
