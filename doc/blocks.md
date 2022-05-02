@@ -153,7 +153,7 @@ Key | Values | Required | Default
 `device` | The `/sys/class/backlight` device to read brightness information from. | No | Default device
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{brightness}"`
 `step_width` | The brightness increment to use when scrolling, in percent. | No | `5`
-`minimum` | The minimum brightness that can be scrolled down to | No | `1`
+`minimum` | The minimum brightness that can be scrolled down to | No | `5`
 `maximum` | The maximum brightness that can be scrolled up to | No | `100`
 `cycle` | The brightnesses to cycle through on each click | No | `[minimum, maximum]`
 `root_scaling` | Scaling exponent reciprocal (ie. root). | No | `1.0`
