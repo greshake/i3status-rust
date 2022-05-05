@@ -94,6 +94,7 @@ microphone_full = "\uf86b" # nf-mdi-microphone
 microphone_half = "\uf86b" # nf-mdi-microphone
 microphone_empty = "\uf86d" # nf-mdi-microphone_outline
 microphone_muted = "\uf86c" # nf-mdi-microphone_off
+virtual-machine = "\ue14d" # nf-content_copy
 weather_clouds = "\ufa8f" # nf-mdi-weather_cloudy
 weather_default = "\ufa8f" # Cloud symbol as default
 weather_rain = "\ufa95" # nf-mdi-weather_pouring

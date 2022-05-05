@@ -89,6 +89,7 @@ microphone_full = "\uf3c9"
 microphone_half = "\uf3c9"
 microphone_empty = "\uf3c9"
 microphone_muted = "\uf539"
+virtual-machine = "\uf24d"        # fa-clone
 weather_clouds = "\uf0c2"
 weather_default = "\uf0c2"        # Cloud symbol as default
 weather_rain = "\uf043"

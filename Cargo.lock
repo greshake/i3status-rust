@@ -397,6 +397,7 @@ dependencies = [
  "signal-hook",
  "swayipc",
  "toml",
+ "virt",
 ]
 
 [[package]]
@@ -1142,6 +1143,15 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "virt"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06ce5cd536aa559d1088ddc531bbf3e55edc5db8ec0a5329dfb17f83a5b469ca"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "walkdir"

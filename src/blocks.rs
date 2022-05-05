@@ -1,5 +1,95 @@
+pub mod apt;
+pub mod backlight;
+pub mod battery;
+pub mod bluetooth;
+pub mod cpu;
+pub mod custom;
+pub mod custom_dbus;
+pub mod disk_space;
+pub mod dnf;
+pub mod docker;
+pub mod external_ip;
+pub mod focused_window;
+pub mod github;
+pub mod hueshift;
+pub mod ibus;
+pub mod kdeconnect;
+pub mod keyboard_layout;
+pub mod load;
+#[cfg(feature = "maildir")]
+pub mod maildir;
+pub mod memory;
+pub mod music;
+pub mod net;
+pub mod networkmanager;
+pub mod notify;
+#[cfg(feature = "notmuch")]
+pub mod notmuch;
+pub mod nvidia_gpu;
+pub mod pacman;
+pub mod pomodoro;
+pub mod rofication;
+pub mod sound;
+pub mod speedtest;
+pub mod taskwarrior;
+pub mod temperature;
+pub mod template;
+pub mod time;
+pub mod toggle;
+pub mod uptime;
+#[cfg(feature = "virt")]
+pub mod libvirt;
+pub mod watson;
+pub mod weather;
+pub mod xrandr;
+
 mod base_block;
 use base_block::*;
+
+use self::apt::*;
+use self::backlight::*;
+use self::battery::*;
+use self::bluetooth::*;
+use self::cpu::*;
+use self::custom::*;
+use self::custom_dbus::*;
+use self::disk_space::*;
+use self::dnf::*;
+use self::docker::*;
+use self::external_ip::*;
+use self::focused_window::*;
+use self::github::*;
+use self::hueshift::*;
+use self::ibus::*;
+use self::kdeconnect::*;
+use self::keyboard_layout::*;
+use self::load::*;
+#[cfg(feature = "maildir")]
+use self::maildir::*;
+use self::memory::*;
+use self::music::*;
+use self::net::*;
+use self::networkmanager::*;
+use self::notify::*;
+#[cfg(feature = "notmuch")]
+use self::notmuch::*;
+use self::nvidia_gpu::*;
+use self::pacman::*;
+use self::pomodoro::*;
+use self::rofication::*;
+use self::sound::*;
+use self::speedtest::*;
+use self::taskwarrior::*;
+use self::temperature::*;
+use self::template::*;
+use self::time::*;
+use self::toggle::*;
+use self::uptime::*;
+#[cfg(feature = "virt")]
+use self::libvirt::Libvirt;
+use self::watson::*;
+use self::weather::*;
+use self::xrandr::*;
 
 use std::process::Command;
 use std::time::Duration;
@@ -225,6 +315,7 @@ pub fn create_block_typed<B>(
     mut block_config: Value,
     mut shared_config: SharedConfig,
     update_request: Sender<Task>,
+<<<<<<< HEAD
 ) -> Result<Option<Box<dyn Block>>>
 where
     B: Block + ConfigBlock + 'static,
@@ -244,6 +335,74 @@ where
         {
             return Ok(None);
         }
+=======
+) -> Result<Option<Box<dyn Block>>> {
+    match name {
+        // Please keep these in alphabetical order.
+        "apt" => block!(Apt, id, block_config, shared_config, update_request),
+        "backlight" => block!(Backlight, id, block_config, shared_config, update_request),
+        "battery" => block!(Battery, id, block_config, shared_config, update_request),
+        "bluetooth" => block!(Bluetooth, id, block_config, shared_config, update_request),
+        "cpu" => block!(Cpu, id, block_config, shared_config, update_request),
+        "custom" => block!(Custom, id, block_config, shared_config, update_request),
+        "custom_dbus" => block!(CustomDBus, id, block_config, shared_config, update_request),
+        "disk_space" => block!(DiskSpace, id, block_config, shared_config, update_request),
+        "dnf" => block!(Dnf, id, block_config, shared_config, update_request),
+        "docker" => block!(Docker, id, block_config, shared_config, update_request), ///////
+        "external_ip" => block!(ExternalIP, id, block_config, shared_config, update_request),
+        "focused_window" => block!(
+            FocusedWindow,
+            id,
+            block_config,
+            shared_config,
+            update_request
+        ),
+        "github" => block!(Github, id, block_config, shared_config, update_request),
+        "hueshift" => block!(Hueshift, id, block_config, shared_config, update_request),
+        "ibus" => block!(IBus, id, block_config, shared_config, update_request),
+        "kdeconnect" => block!(KDEConnect, id, block_config, shared_config, update_request),
+        "keyboard_layout" => block!(
+            KeyboardLayout,
+            id,
+            block_config,
+            shared_config,
+            update_request
+        ),
+        "load" => block!(Load, id, block_config, shared_config, update_request),
+        #[cfg(feature = "maildir")]
+        "maildir" => block!(Maildir, id, block_config, shared_config, update_request),
+        "memory" => block!(Memory, id, block_config, shared_config, update_request),
+        "music" => block!(Music, id, block_config, shared_config, update_request),
+        "net" => block!(Net, id, block_config, shared_config, update_request),
+        "networkmanager" => block!(
+            NetworkManager,
+            id,
+            block_config,
+            shared_config,
+            update_request
+        ),
+        "notify" => block!(Notify, id, block_config, shared_config, update_request),
+        #[cfg(feature = "notmuch")]
+        "notmuch" => block!(Notmuch, id, block_config, shared_config, update_request),
+        "nvidia_gpu" => block!(NvidiaGpu, id, block_config, shared_config, update_request),
+        "pacman" => block!(Pacman, id, block_config, shared_config, update_request),
+        "pomodoro" => block!(Pomodoro, id, block_config, shared_config, update_request),
+        "rofication" => block!(Rofication, id, block_config, shared_config, update_request),
+        "sound" => block!(Sound, id, block_config, shared_config, update_request),
+        "speedtest" => block!(SpeedTest, id, block_config, shared_config, update_request),
+        "taskwarrior" => block!(Taskwarrior, id, block_config, shared_config, update_request),
+        "temperature" => block!(Temperature, id, block_config, shared_config, update_request),
+        "template" => block!(Template, id, block_config, shared_config, update_request),
+        "time" => block!(Time, id, block_config, shared_config, update_request), /////////
+        "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
+        "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
+        #[cfg(feature = "virt")]
+        "virt" => block!(Libvirt, id, block_config, shared_config, update_request),
+        "watson" => block!(Watson, id, block_config, shared_config, update_request),
+        "weather" => block!(Weather, id, block_config, shared_config, update_request),
+        "xrandr" => block!(Xrandr, id, block_config, shared_config, update_request),
+        other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
+>>>>>>> 89b36d9 (feat: add block for libvirtd/qemu)
     }
 
     // Apply theme overrides if presented

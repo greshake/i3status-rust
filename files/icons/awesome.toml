@@ -89,6 +89,7 @@ microphone_empty = "\uf130" # fa-microphone
 microphone_full = "\uf130" # fa-microphone
 microphone_half = "\uf130" # fa-microphone
 microphone_muted = "\uf131" # fa-microphone-slash
+virtual-machine = "\uf24d" # fa-clone
 weather_clouds = "\uf0c2" # fa-cloud
 weather_default = "\uf0c2" # fa-cloud
 weather_rain = "\uf043" # fa-tint

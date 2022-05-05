@@ -71,6 +71,7 @@ microphone_full = "\ue029" # mic
 microphone_half = "\ue029" # mic
 microphone_empty = "\ue02a" # mic_none
 microphone_muted = "\ue02b" # mic_off
+virtual-machine = "\ue14d" # content_copy
 weather_clouds = "\ue42d" # wb_cloudy
 weather_default = "\ue42d" # wb_cloudy
 weather_sun = "\ue430" # wb_sunny
