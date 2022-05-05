@@ -12,7 +12,7 @@ authors = [
 edition = "2018"
 
 [features]
-default = ["pulseaudio", "virt"]
+default = ["pulseaudio"]
 pulseaudio = ["libpulse-binding"]
 # Make widgets' borders visible. (for debugging purposes)
 debug_borders = []
