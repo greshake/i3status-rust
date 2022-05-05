@@ -15,6 +15,8 @@ pub mod hueshift;
 pub mod ibus;
 pub mod kdeconnect;
 pub mod keyboard_layout;
+#[cfg(feature = "virt")]
+pub mod libvirt;
 pub mod load;
 #[cfg(feature = "maildir")]
 pub mod maildir;
@@ -37,8 +39,6 @@ pub mod template;
 pub mod time;
 pub mod toggle;
 pub mod uptime;
-#[cfg(feature = "virt")]
-pub mod libvirt;
 pub mod watson;
 pub mod weather;
 pub mod xrandr;
@@ -63,6 +63,8 @@ use self::hueshift::*;
 use self::ibus::*;
 use self::kdeconnect::*;
 use self::keyboard_layout::*;
+#[cfg(feature = "virt")]
+use self::libvirt::Libvirt;
 use self::load::*;
 #[cfg(feature = "maildir")]
 use self::maildir::*;
@@ -85,8 +87,6 @@ use self::template::*;
 use self::time::*;
 use self::toggle::*;
 use self::uptime::*;
-#[cfg(feature = "virt")]
-use self::libvirt::Libvirt;
 use self::watson::*;
 use self::weather::*;
 use self::xrandr::*;
