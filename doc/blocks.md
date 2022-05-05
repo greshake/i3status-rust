@@ -54,6 +54,7 @@ You may find that the block you desire is not in the list below. In that case, f
 - [Time](#time)
 - [Toggle](#toggle)
 - [Uptime](#uptime)
+- [Virt](#virt)
 - [Watson](#watson)
 - [Weather](#weather)
 - [Xrandr](#xrandr)
@@ -2014,6 +2015,38 @@ Key | Values | Required | Default
 #### Used Icons
 
 - `uptime`
+
+###### [↥ back to top](#list-of-available-blocks)
+
+## Virt
+
+[Libvirt](https://libvirt.org/) is a virtualisation API wrapping QEMU and LXC, this block supports listing the number of active VMs, paused VMs, stopped VMs, and the number of images in your image stores
+
+#### Options
+
+Key        | Values                      | Required | Default
+-----------|-----------------------------|----------|--------
+`format`   | Display formatting          | No       | `{running}`
+`qemu_url` | Connection to libvirt       | No       | `qemu:///system`
+`interval` | Update interval in seconds. | No       | `5`
+
+#### Examples
+
+Display all availbale values:
+
+```toml
+[[block]]
+block = "virt"
+format = "Running VMS: {running}, Paused: {paused}, Stopped/Destroyed: {stopped}, Total: {total}, VirtualDisks/ISOs: {images}"
+```
+
+You can also connect to an external host (via any compatible libvirt URL, such as QEMU+SSH).
+
+```toml
+[[block]]
+block = "virt"
+qemu_url = "qemu+ssh://user@ip/system"
+```
 
 ###### [↥ back to top](#list-of-available-blocks)
 
