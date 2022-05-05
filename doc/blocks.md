@@ -2032,7 +2032,7 @@ Key        | Values                      | Required | Default
 
 #### Examples
 
-Display all availbale values:
+Display all available values:
 
 ```toml
 [[block]]
