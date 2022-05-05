@@ -88,15 +88,26 @@ impl ConfigBlock for Libvirt {
             text,
             format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
-            qemu_conn: Connect::open_read_only(&block_config.qemu_url).unwrap(),
+            qemu_conn: Connect::open_read_only(&block_config.qemu_url)
+                .expect("could not connect to libvirtd"),
         })
     }
 }
 
 impl Block for Libvirt {
     fn update(&mut self) -> Result<Option<Update>> {
-        if !self.qemu_conn.is_alive().unwrap() {
-            self.qemu_conn = Connect::open_read_only(&self.qemu_conn.get_uri().unwrap()).unwrap()
+        if !self
+            .qemu_conn
+            .is_alive()
+            .expect("unrecoverable error with qemu object")
+        {
+            self.qemu_conn = Connect::open_read_only(
+                &self
+                    .qemu_conn
+                    .get_uri()
+                    .expect("could not get URI from the currently connected QEMU object"),
+            )
+            .expect("could not re-connect to libvirtd")
         };
 
         let mut paused: i64 = 0;
@@ -123,7 +134,10 @@ impl Block for Libvirt {
         match self.qemu_conn.list_all_storage_pools(1 << 1) {
             Ok(pools) => {
                 for pool in pools {
-                    num_images += pool.num_of_volumes().unwrap() as i64;
+                    num_images += pool
+                        .num_of_volumes()
+                        .expect("could not get number of volumes in pool")
+                        as i64;
                 }
             }
             Err(e) => eprintln!("{}", e),
