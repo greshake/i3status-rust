@@ -60,13 +60,22 @@ impl ConfigBlock for Libvirt {
         let text = TextWidget::new(id, 0, shared_config)
             .with_text("vms")
             .with_icon("virtual-machine")?;
+
+        let qemu_conn = match Connect::open_read_only(&block_config.qemu_url)
+            .block_error("virt", "error when connecting to libvirt")
+        {
+            Ok(c) => c,
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
         Ok(Libvirt {
             id,
             text,
             format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
-            qemu_conn: Connect::open_read_only(&block_config.qemu_url)
-                .expect("could not connect to libvirtd"),
+            qemu_conn,
         })
     }
 }
