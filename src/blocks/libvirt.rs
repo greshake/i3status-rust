@@ -90,60 +90,36 @@ impl Block for Libvirt {
         {
             Ok(true) => {}
             Ok(false) => {
-                self.qemu_conn = match Connect::open_read_only(
+                self.qemu_conn = Connect::open_read_only(
                     &self
                         .qemu_conn
                         .get_uri()
                         .block_error("virt", "error in retrieving URI information from libvirt")
                         .unwrap(), /* Only happens if memory corruption; then we should panic anyway */
                 )
-                .block_error("virt", "error in reconnecting to libvirt socket")
-                {
-                    Ok(c) => c,
-                    Err(e) => return Err(e),
-                };
+                .block_error("virt", "error in reconnecting to libvirt socket")?;
             }
             Err(e) => {
-                self.text.set_state(State::Critical);
                 return Err(e);
             }
         };
 
-        let paused: i64 = match self
+        let paused: i64 = self
             .qemu_conn
             .list_all_domains(1 << 5)
-            .block_error("virt", "unable to get paused domains")
-        {
-            Ok(d) => d.len() as i64,
-            Err(e) => {
-                self.text.set_state(State::Critical);
-                return Err(e);
-            }
-        };
+            .block_error("virt", "unable to get paused domains")?
+            .len() as i64;
 
-        let stopped: i64 = match self
-            .qemu_conn
-            .num_of_defined_domains()
-            .block_error("virt", "unable to get stopped domains")
-        {
-            Ok(d) => d as i64,
-            Err(e) => {
-                self.text.set_state(State::Critical);
-                return Err(e);
-            }
-        };
+        let stopped: i64 =
+            self.qemu_conn
+                .num_of_defined_domains()
+                .block_error("virt", "unable to get stopped domains")? as i64;
 
-        let running = match self
+        let running = self
             .qemu_conn
             .list_all_domains(1 << 4)
-            .block_error("virt", "unable to get running domains")
-        {
-            Ok(d) => d.len() as i64,
-            Err(e) => {
-                self.text.set_state(State::Critical);
-                return Err(e);
-            }
-        };
+            .block_error("virt", "unable to get running domains")?
+            .len() as i64;
 
         let total = running + stopped + paused;
 
@@ -155,22 +131,13 @@ impl Block for Libvirt {
         {
             Ok(pools) => {
                 for pool in pools {
-                    num_images += match pool
+                    num_images += pool
                         .num_of_volumes()
-                        .block_error("virt", "could not count volumes in storage pool")
-                    {
-                        Ok(n) => n as i64,
-                        Err(e) => {
-                            self.text.set_state(State::Critical);
-                            return Err(e);
-                        }
-                    }
+                        .block_error("virt", "could not count volumes in storage pool")?
+                        as i64;
                 }
             }
-            Err(e) => {
-                self.text.set_state(State::Critical);
-                return Err(e);
-            }
+            Err(e) => return Err(e),
         };
 
         let values = map!(
