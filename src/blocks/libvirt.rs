@@ -22,6 +22,7 @@ pub struct Libvirt {
     format: FormatTemplate,
     update_interval: Duration,
     qemu_conn: Connect,
+    qemu_uri: String,
 }
 
 impl Libvirt {
@@ -31,13 +32,8 @@ impl Libvirt {
             .is_alive()
             .block_error("virt", "error when getting connection status to libvirt")?
         {
-            self.qemu_conn = Connect::open_read_only(
-                &self
-                    .qemu_conn
-                    .get_uri()
-                    .block_error("virt", "error in retrieving URI information from libvirt")?,
-            )
-            .block_error("virt", "error in reconnecting to libvirt socket")?;
+            self.qemu_conn = Connect::open_read_only(&self.qemu_uri)
+                .block_error("virt", "error in reconnecting to libvirt socket")?;
         };
         Ok(self)
     }
@@ -87,6 +83,7 @@ impl ConfigBlock for Libvirt {
             update_interval: block_config.interval,
             qemu_conn: Connect::open_read_only(&block_config.qemu_url)
                 .block_error("virt", "error when connecting to libvirt")?,
+            qemu_uri: block_config.qemu_url,
         })
     }
 }
