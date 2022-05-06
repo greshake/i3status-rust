@@ -25,29 +25,6 @@ pub struct Libvirt {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-struct Status {
-    #[allow(dead_code)]
-    #[serde(rename = "VMs")]
-    total: i64,
-
-    #[allow(dead_code)]
-    #[serde(rename = "VMsRunning")]
-    running: i64,
-
-    #[allow(dead_code)]
-    #[serde(rename = "VMsStopped")]
-    stopped: i64,
-
-    #[allow(dead_code)]
-    #[serde(rename = "VMsPaused")]
-    paused: i64,
-
-    #[allow(dead_code)]
-    #[serde(rename = "Images")]
-    images: i64,
-}
-
-#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct LibvirtConfig {
     /// Update interval in seconds
