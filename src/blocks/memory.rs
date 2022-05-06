@@ -235,7 +235,7 @@ impl Memstate {
             .error("failed to read /proc/meminfo")?
             != 0
         {
-            let mut words = line.trim().split_whitespace();
+            let mut words = line.split_whitespace();
 
             let name = match words.next() {
                 Some(name) => name,

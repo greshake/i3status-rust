@@ -162,7 +162,7 @@ async fn read_frequencies() -> Result<Vec<f64>> {
         if line.starts_with("cpu MHz") {
             let slice = line
                 .trim_end()
-                .trim_start_matches(|c: char| !c.is_digit(10));
+                .trim_start_matches(|c: char| !c.is_ascii_digit());
             freqs.push(f64::from_str(slice).error("failed to parse /proc/cpuinfo")? * 1e6);
         }
         line.clear();
