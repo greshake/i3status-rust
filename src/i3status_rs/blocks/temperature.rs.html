@@ -213,8 +213,6 @@
 <span id="208">208</span>
 <span id="209">209</span>
 <span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The system temperature</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the system temperature, based on `libsensors` library.</span>
@@ -277,12 +275,11 @@
 <span class="kw">const</span> <span class="ident">DEFAULT_INFO</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">60.0</span>;
 <span class="kw">const</span> <span class="ident">DEFAULT_WARN</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">80.0</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">TemperatureConfig</span> {
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;5.into()&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
     <span class="ident">collapsed</span>: <span class="ident">bool</span>,
     <span class="ident">scale</span>: <span class="ident">TemperatureScale</span>,
@@ -294,11 +291,10 @@
     <span class="ident">inputs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">enum</span> <span class="ident">TemperatureScale</span> {
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
+    <span class="attribute">#[<span class="ident">default</span>]</span>
     <span class="ident">Celsius</span>,
     <span class="ident">Fahrenheit</span>,
 }

@@ -157,7 +157,6 @@
 <span id="152">152</span>
 <span id="153">153</span>
 <span id="154">154</span>
-<span id="155">155</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -202,29 +201,28 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting::prefix::Prefix</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">InfoType</span> {
+    <span class="attribute">#[<span class="ident">default</span>]</span>
     <span class="ident">Available</span>,
     <span class="ident">Free</span>,
     <span class="ident">Used</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">DiskSpaceConfig</span> {
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">r#&quot;&quot;/&quot;.into()&quot;#</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;/&quot;</span>.<span class="ident">into</span>())]</span>
     <span class="ident">path</span>: <span class="ident">String</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;InfoType::Available&quot;</span>))]</span>
     <span class="ident">info_type</span>: <span class="ident">InfoType</span>,
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">alert_unit</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;20.into()&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">20</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;20.0&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">20.0</span>)]</span>
     <span class="ident">warning</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;10.0&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10.0</span>)]</span>
     <span class="ident">alert</span>: <span class="ident">f64</span>,
 }
 

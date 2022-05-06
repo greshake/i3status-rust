@@ -118,6 +118,18 @@
 <span id="113">113</span>
 <span id="114">114</span>
 <span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current time.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -152,12 +164,12 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting::config::DummyConfig</span> <span class="kw">as</span> <span class="ident">FormatConfig</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">TimeConfig</span> {
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;Seconds::new(10)&quot;</span>))]</span>
+    <span class="comment">// format_alt: Option&lt;FormatConfig&gt;,</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">1</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
     <span class="ident">timezone</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Tz</span><span class="op">&gt;</span>,
     <span class="ident">locale</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
@@ -167,8 +179,15 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">TimeConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="ident">api</span>.<span class="ident">set_icon</span>(<span class="string">&quot;time&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">full</span>.<span class="ident">as_deref</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;%a %d/%m %R&quot;</span>);
-    <span class="kw">let</span> <span class="ident">format_short</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">short</span>.<span class="ident">as_deref</span>();
+    <span class="kw">let</span> <span class="comment">/*mut*/</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">full</span>.<span class="ident">as_deref</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;%a %d/%m %R&quot;</span>);
+    <span class="kw">let</span> <span class="comment">/*mut*/</span> <span class="ident">format_short</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">short</span>.<span class="ident">as_deref</span>();
+
+    <span class="comment">// let mut format_alt = config.format_alt.as_ref().map(|a| {</span>
+    <span class="comment">//     (</span>
+    <span class="comment">//         a.full.as_deref().unwrap_or(&quot;%a %d/%m %R&quot;),</span>
+    <span class="comment">//         a.short.as_deref(),</span>
+    <span class="comment">//     )</span>
+    <span class="comment">// });</span>
 
     <span class="kw">let</span> <span class="ident">timezone</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">timezone</span>;
     <span class="kw">let</span> <span class="ident">locale</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">locale</span>.<span class="ident">as_deref</span>() {
@@ -179,6 +198,11 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
 
     <span class="kw">loop</span> {
+        <span class="comment">// if let Some(alt) = &amp;mut format_alt {</span>
+        <span class="comment">//     std::mem::swap(&amp;mut format, &amp;mut alt.0);</span>
+        <span class="comment">//     std::mem::swap(&amp;mut format_short, &amp;mut alt.1);</span>
+        <span class="comment">// }</span>
+
         <span class="kw">if</span> <span class="ident">timezone</span>.<span class="ident">is_none</span>() {
             <span class="comment">// Update timezone because `chrono` will not do that for us.</span>
             <span class="comment">// https://github.com/chronotope/chrono/issues/272</span>

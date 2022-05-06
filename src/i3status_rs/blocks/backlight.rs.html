@@ -304,7 +304,6 @@
 <span id="299">299</span>
 <span id="300">300</span>
 <span id="301">301</span>
-<span id="302">302</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block reads brightness information directly from the filesystem, so it works under both</span>
@@ -323,7 +322,7 @@
 <span class="doccomment">//! `device` | The `/sys/class/backlight` device to read brightness information from.  When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.| No | Default device</span>
 <span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `&quot;$brightness&quot;`</span>
 <span class="doccomment">//! `step_width` | The brightness increment to use when scrolling, in percent | No | `5`</span>
-<span class="doccomment">//! `minimum` | The minimum brightness that can be scrolled down to | No | `1`</span>
+<span class="doccomment">//! `minimum` | The minimum brightness that can be scrolled down to | No | `5`</span>
 <span class="doccomment">//! `maximum` | The maximum brightness that can be scrolled up to | No | `100`</span>
 <span class="doccomment">//! `cycle` | The brightnesses to cycle through on each click | No | `[minimum, maximum]`</span>
 <span class="doccomment">//! `root_scaling` | Scaling exponent reciprocal (ie. root) | No | `1.0`</span>
@@ -413,20 +412,19 @@
     <span class="string">&quot;backlight_full&quot;</span>,
 ];
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">BacklightConfig</span> {
     <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;5&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>)]</span>
     <span class="ident">step_width</span>: <span class="ident">u8</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;1&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>)]</span>
     <span class="ident">minimum</span>: <span class="ident">u8</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;100&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">100</span>)]</span>
     <span class="ident">maximum</span>: <span class="ident">u8</span>,
     <span class="ident">cycle</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;1.0&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">1.0</span>)]</span>
     <span class="ident">root_scaling</span>: <span class="ident">f64</span>,
     <span class="ident">invert_icons</span>: <span class="ident">bool</span>,
 }

@@ -214,14 +214,6 @@
 <span id="209">209</span>
 <span id="210">210</span>
 <span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
 </pre><pre class="rust"><code><span class="doccomment">//! X11 screen information</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.</span>
@@ -262,22 +254,14 @@
 <span class="kw">use</span> <span class="ident">regex::RegexSet</span>;
 <span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">XrandrConfig</span> {
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>)]</span>
     <span class="ident">step_width</span>: <span class="ident">u32</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">XrandrConfig</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">interval</span>: <span class="ident">Seconds::new</span>(<span class="number">5</span>),
-            <span class="ident">format</span>: <span class="ident">default</span>(),
-            <span class="ident">step_width</span>: <span class="number">5</span>,
-        }
-    }
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

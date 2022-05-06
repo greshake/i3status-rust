@@ -239,7 +239,6 @@
 <span id="234">234</span>
 <span id="235">235</span>
 <span id="236">236</span>
-<span id="237">237</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique)</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Technique</span>
@@ -259,10 +258,19 @@
 <span class="doccomment">//! ----|--------|----------|--------</span>
 <span class="doccomment">//! `message` | Message when timer expires | No | `Pomodoro over! Take a break!`</span>
 <span class="doccomment">//! `break_message` | Message when break is over | No | `Break over! Time to work!`</span>
-<span class="doccomment">//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | No | `swaynag -m &#39;{msg}&#39;`</span>
-<span class="doccomment">//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | No | `true`</span>
+<span class="doccomment">//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | No | None</span>
+<span class="doccomment">//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | No | `false`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Example</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Use `swaynag` as a notifier:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```toml</span>
+<span class="doccomment">//! [[block]]</span>
+<span class="doccomment">//! block = &quot;pomodoro&quot;</span>
+<span class="doccomment">//! notify_cmd = &quot;swaynag -m &#39;{msg}&#39;&quot;</span>
+<span class="doccomment">//! blocking_cmd = true</span>
+<span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Use `notify-send` as a notifier:</span>
 <span class="doccomment">//!</span>
@@ -272,7 +280,6 @@
 <span class="doccomment">//! notify_cmd = &quot;notify-send &#39;{msg}&#39;&quot;</span>
 <span class="doccomment">//! blocking_cmd = false</span>
 <span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
 <span class="doccomment">//! - `pomodoro`</span>
@@ -289,24 +296,15 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::subprocess</span>::{<span class="ident">spawn_shell</span>, <span class="ident">spawn_shell_sync</span>};
 <span class="kw">use</span> <span class="ident">std::time::Instant</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">PomodoroConfig</span> {
+    <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;Pomodoro over! Take a break!&quot;</span>.<span class="ident">into</span>())]</span>
     <span class="ident">message</span>: <span class="ident">String</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;Break over! Time to work!&quot;</span>.<span class="ident">into</span>())]</span>
     <span class="ident">break_message</span>: <span class="ident">String</span>,
     <span class="ident">notify_cmd</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">blocking_cmd</span>: <span class="ident">bool</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">PomodoroConfig</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">message</span>: <span class="string">&quot;Pomodoro over! Take a break!&quot;</span>.<span class="ident">into</span>(),
-            <span class="ident">break_message</span>: <span class="string">&quot;Break over! Time to work!&quot;</span>.<span class="ident">into</span>(),
-            <span class="ident">notify_cmd</span>: <span class="prelude-val">Some</span>(<span class="string">&quot;swaynag -m &#39;{msg}&#39;&quot;</span>.<span class="ident">into</span>()),
-            <span class="ident">blocking_cmd</span>: <span class="bool-val">true</span>,
-        }
-    }
 }
 
 <span class="kw">struct</span> <span class="ident">Block</span> {

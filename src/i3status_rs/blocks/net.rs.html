@@ -174,7 +174,6 @@
 <span id="169">169</span>
 <span id="170">170</span>
 <span id="171">171</span>
-<span id="172">172</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Network information</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.</span>
@@ -222,11 +221,10 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
 <span class="kw">use</span> <span class="ident">std::time::Instant</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">NetConfig</span> {
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;2.into()&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">2</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">format_alt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FormatConfig</span><span class="op">&gt;</span>,

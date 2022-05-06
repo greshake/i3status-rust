@@ -219,14 +219,6 @@
 <span id="214">214</span>
 <span id="215">215</span>
 <span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Currently focused window</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently</span>
@@ -265,30 +257,22 @@
     <span class="ident">process</span>::{<span class="ident">ChildStdout</span>, <span class="ident">Command</span>},
 };
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">FocusedWindowConfig</span> {
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="bool-val">true</span>)]</span>
     <span class="ident">autohide</span>: <span class="ident">bool</span>,
     <span class="ident">driver</span>: <span class="ident">Driver</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
 <span class="kw">enum</span> <span class="ident">Driver</span> {
+    <span class="attribute">#[<span class="ident">default</span>]</span>
     <span class="ident">Auto</span>,
     <span class="ident">SwayIpc</span>,
     <span class="ident">Ristate</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">FocusedWindowConfig</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">format</span>: <span class="ident">default</span>(),
-            <span class="ident">autohide</span>: <span class="bool-val">true</span>,
-            <span class="ident">driver</span>: <span class="ident">Driver::Auto</span>,
-        }
-    }
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

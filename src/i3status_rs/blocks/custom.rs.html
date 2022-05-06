@@ -252,7 +252,6 @@
 <span id="247">247</span>
 <span id="248">248</span>
 <span id="249">249</span>
-<span id="250">250</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  </span>
@@ -349,14 +348,13 @@
 };
 <span class="kw">use</span> <span class="ident">tokio_stream::wrappers::IntervalStream</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">CustomConfig</span> {
     <span class="ident">command</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span>,
     <span class="ident">persistent</span>: <span class="ident">bool</span>,
     <span class="ident">cycle</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;10.into()&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">OnceDuration</span>,
     <span class="ident">json</span>: <span class="ident">bool</span>,
     <span class="ident">hide_when_empty</span>: <span class="ident">bool</span>,

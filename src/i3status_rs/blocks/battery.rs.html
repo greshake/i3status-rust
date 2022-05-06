@@ -269,8 +269,6 @@
 <span id="264">264</span>
 <span id="265">265</span>
 <span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block can display the current battery state (Full, Charging or Discharging), percentage</span>
@@ -342,35 +340,33 @@
 <span class="kw">mod</span> <span class="ident">upower</span>;
 <span class="kw">mod</span> <span class="ident">zbus_upower</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">BatteryConfig</span> {
     <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">driver</span>: <span class="ident">BatteryDriver</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;10.into()&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">full_format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">hide_missing</span>: <span class="ident">bool</span>,
     <span class="ident">hide_full</span>: <span class="ident">bool</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;60.0&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">60.0</span>)]</span>
     <span class="ident">info</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;60.0&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">60.0</span>)]</span>
     <span class="ident">good</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;30.0&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">30.0</span>)]</span>
     <span class="ident">warning</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;15.0&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">15.0</span>)]</span>
     <span class="ident">critical</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>(<span class="ident">value</span> <span class="op">=</span> <span class="string">&quot;100.0&quot;</span>))]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">100.0</span>)]</span>
     <span class="ident">full_threshold</span>: <span class="ident">f64</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Derivative</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
-<span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">enum</span> <span class="ident">BatteryDriver</span> {
-    <span class="attribute">#[<span class="ident">derivative</span>(<span class="ident">Default</span>)]</span>
+    <span class="attribute">#[<span class="ident">default</span>]</span>
     <span class="ident">Sysfs</span>,
     <span class="ident">Upower</span>,
 }

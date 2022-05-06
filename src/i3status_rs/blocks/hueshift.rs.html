@@ -314,14 +314,6 @@
 <span id="309">309</span>
 <span id="310">310</span>
 <span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Manage display temperature</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.</span>
@@ -371,31 +363,23 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::has_command</span>;
 <span class="kw">use</span> <span class="ident">futures::future::pending</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">HueshiftConfig</span> {
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10_000</span>)]</span>
     <span class="ident">max_temp</span>: <span class="ident">u16</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">1_000</span>)]</span>
     <span class="ident">min_temp</span>: <span class="ident">u16</span>,
     <span class="comment">// TODO: Detect currently defined temperature</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">6_500</span>)]</span>
     <span class="ident">current_temp</span>: <span class="ident">u16</span>,
     <span class="ident">hue_shifter</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HueShifter</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">100</span>)]</span>
     <span class="ident">step</span>: <span class="ident">u16</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">6_500</span>)]</span>
     <span class="ident">click_temp</span>: <span class="ident">u16</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">HueshiftConfig</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">interval</span>: <span class="ident">Seconds::new</span>(<span class="number">5</span>),
-            <span class="ident">max_temp</span>: <span class="number">10_000</span>,
-            <span class="ident">min_temp</span>: <span class="number">1_000</span>,
-            <span class="ident">current_temp</span>: <span class="number">6_500</span>,
-            <span class="ident">hue_shifter</span>: <span class="prelude-val">None</span>,
-            <span class="ident">step</span>: <span class="number">100</span>,
-            <span class="ident">click_temp</span>: <span class="number">6_500</span>,
-        }
-    }
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

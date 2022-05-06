@@ -105,14 +105,6 @@
 <span id="100">100</span>
 <span id="101">101</span>
 <span id="102">102</span>
-<span id="103">103</span>
-<span id="104">104</span>
-<span id="105">105</span>
-<span id="106">106</span>
-<span id="107">107</span>
-<span id="108">108</span>
-<span id="109">109</span>
-<span id="110">110</span>
 </pre><pre class="rust"><code><span class="doccomment">//! System load average</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -147,26 +139,18 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
 <span class="kw">use</span> <span class="ident">std::path::Path</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">LoadConfig</span> {
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">3</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">0.3</span>)]</span>
     <span class="ident">info</span>: <span class="ident">f64</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">0.6</span>)]</span>
     <span class="ident">warning</span>: <span class="ident">f64</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">0.9</span>)]</span>
     <span class="ident">critical</span>: <span class="ident">f64</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">LoadConfig</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">format</span>: <span class="ident">default</span>(),
-            <span class="ident">interval</span>: <span class="ident">Seconds::new</span>(<span class="number">3</span>),
-            <span class="ident">info</span>: <span class="number">0.3</span>,
-            <span class="ident">warning</span>: <span class="number">0.6</span>,
-            <span class="ident">critical</span>: <span class="number">0.9</span>,
-        }
-    }
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

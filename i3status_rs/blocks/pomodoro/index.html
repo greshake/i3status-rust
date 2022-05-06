@@ -4,7 +4,7 @@
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"><a href="#">Module pomodoro</a></h2><div class="sidebar-elems"><section><div class="block"><ul><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></div></section><div id="sidebar-vars" data-name="pomodoro" data-ty="mod" data-relpath="./"></div><script defer src="./sidebar-items.js"></script></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
-    <h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">pomodoro</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../../src/i3status_rs/blocks/pomodoro.rs.html#1-237">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A <a href="https://en.wikipedia.org/wiki/Pomodoro_Technique">pomodoro timer</a></p>
+    <h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">pomodoro</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../../src/i3status_rs/blocks/pomodoro.rs.html#1-236">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A <a href="https://en.wikipedia.org/wiki/Pomodoro_Technique">pomodoro timer</a></p>
 <h2 id="technique"><a href="#technique">Technique</a></h2>
 <p>There are six steps in the original technique:</p>
 <ol>
@@ -18,10 +18,15 @@
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>message</code></td><td>Message when timer expires</td><td>No</td><td><code>Pomodoro over! Take a break!</code></td></tr>
 <tr><td><code>break_message</code></td><td>Message when break is over</td><td>No</td><td><code>Break over! Time to work!</code></td></tr>
-<tr><td><code>notify_cmd</code></td><td>A shell command to run as a notifier. <code>{msg}</code> will be substituted with either <code>message</code> or <code>break_message</code>.</td><td>No</td><td><code>swaynag -m '{msg}'</code></td></tr>
-<tr><td><code>blocking_cmd</code></td><td>Is <code>notify_cmd</code> blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed.</td><td>No</td><td><code>true</code></td></tr>
+<tr><td><code>notify_cmd</code></td><td>A shell command to run as a notifier. <code>{msg}</code> will be substituted with either <code>message</code> or <code>break_message</code>.</td><td>No</td><td>None</td></tr>
+<tr><td><code>blocking_cmd</code></td><td>Is <code>notify_cmd</code> blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed.</td><td>No</td><td><code>false</code></td></tr>
 </tbody></table>
 </div><h2 id="example"><a href="#example">Example</a></h2>
+<p>Use <code>swaynag</code> as a notifier:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;pomodoro&quot;
+notify_cmd = &quot;swaynag -m &#39;{msg}&#39;&quot;
+blocking_cmd = true</code></pre></div>
 <p>Use <code>notify-send</code> as a notifier:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;pomodoro&quot;
