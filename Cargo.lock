@@ -382,6 +382,7 @@ dependencies = [
  "dbus-tree",
  "inotify",
  "lazy_static",
+ "libc",
  "libpulse-binding",
  "maildir",
  "neli-wifi",

@@ -16,7 +16,6 @@ use crate::widgets::I3BarWidget;
 use crate::widgets::State;
 
 pub struct Docker {
-    id: usize,
     text: TextWidget,
     format: FormatTemplate,
     update_interval: Duration,
@@ -87,7 +86,6 @@ impl ConfigBlock for Docker {
             )
         })?;
         Ok(Docker {
-            id,
             text,
             format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
@@ -133,9 +131,5 @@ impl Block for Docker {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

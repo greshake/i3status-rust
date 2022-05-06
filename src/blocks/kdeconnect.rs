@@ -20,7 +20,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct KDEConnect {
-    id: usize,
     device_id: String,
     device_name: Arc<Mutex<String>>,
     battery_charge: Arc<Mutex<i32>>,
@@ -514,7 +513,6 @@ impl ConfigBlock for KDEConnect {
             .unwrap();
 
         Ok(KDEConnect {
-            id,
             device_id,
             device_name,
             battery_charge: charge,
@@ -538,10 +536,6 @@ impl ConfigBlock for KDEConnect {
 }
 
 impl Block for KDEConnect {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         let charge = (*self
             .battery_charge

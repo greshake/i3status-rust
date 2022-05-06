@@ -13,7 +13,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Notmuch {
-    id: usize,
     text: TextWidget,
     update_interval: Duration,
     query: String,
@@ -80,7 +79,6 @@ impl ConfigBlock for Notmuch {
             widget.set_icon("mail")?;
         }
         Ok(Notmuch {
-            id,
             update_interval: block_config.interval,
             db: shellexpand::full(&block_config.maildir)
                 .map_err(|e| {
@@ -150,9 +148,5 @@ impl Block for Notmuch {
         }
 
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

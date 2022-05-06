@@ -20,7 +20,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Apt {
-    id: usize,
     output: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
@@ -102,7 +101,6 @@ impl ConfigBlock for Apt {
         let output = TextWidget::new(id, 0, shared_config).with_icon("update")?;
 
         Ok(Apt {
-            id,
             update_interval: block_config.interval,
             format: block_config.format.with_default("{count:1}")?,
             format_singular: block_config.format_singular.with_default("{count:1}")?,
@@ -172,10 +170,6 @@ fn get_update_count(updates: &str) -> usize {
 }
 
 impl Block for Apt {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
     }

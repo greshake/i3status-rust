@@ -145,7 +145,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    let mut scheduler = UpdateScheduler::new(&blocks);
+    let mut scheduler = UpdateScheduler::new(blocks.len());
 
     // We wait for click events in a separate thread, to avoid blocking to wait for stdin
     let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =

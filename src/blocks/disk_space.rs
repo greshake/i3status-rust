@@ -24,7 +24,6 @@ pub enum InfoType {
 }
 
 pub struct DiskSpace {
-    id: usize,
     disk_space: TextWidget,
     update_interval: Duration,
     path: String,
@@ -135,7 +134,6 @@ impl ConfigBlock for DiskSpace {
         let icon = shared_config.get_icon("disk_drive")?;
 
         Ok(DiskSpace {
-            id,
             update_interval: block_config.interval,
             disk_space: TextWidget::new(id, 0, shared_config),
             path: shellexpand::full(&block_config.path)
@@ -235,9 +233,5 @@ impl Block for DiskSpace {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.disk_space]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

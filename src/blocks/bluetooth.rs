@@ -223,7 +223,6 @@ impl BluetoothDevice {
 }
 
 pub struct Bluetooth {
-    id: usize,
     output: TextWidget,
     device: BluetoothDevice,
     hide_disconnected: bool,
@@ -276,7 +275,6 @@ impl ConfigBlock for Bluetooth {
         device.monitor(id, send);
 
         Ok(Bluetooth {
-            id,
             output: TextWidget::new(id, 0, shared_config).with_icon(match device.icon {
                 Some(ref icon) if icon == "audio-card" => "headphones",
                 Some(ref icon) if icon == "input-gaming" => "joystick",
@@ -294,10 +292,6 @@ impl ConfigBlock for Bluetooth {
 }
 
 impl Block for Bluetooth {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         if self.device.available()? {
             let values = map!(

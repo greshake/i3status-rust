@@ -493,7 +493,6 @@ impl Default for KeyboardLayoutConfig {
 }
 
 pub struct KeyboardLayout {
-    id: usize,
     output: TextWidget,
     monitor: Box<dyn KeyboardLayoutMonitor>,
     update_interval: Option<Duration>,
@@ -536,7 +535,6 @@ impl ConfigBlock for KeyboardLayout {
         };
         let output = TextWidget::new(id, 0, shared_config);
         Ok(KeyboardLayout {
-            id,
             output,
             monitor,
             update_interval,
@@ -547,10 +545,6 @@ impl ConfigBlock for KeyboardLayout {
 }
 
 impl Block for KeyboardLayout {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         let mut layout = self.monitor.keyboard_layout()?;
         let variant = self.monitor.keyboard_variant()?;

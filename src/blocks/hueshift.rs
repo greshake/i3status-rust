@@ -21,7 +21,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 pub struct Hueshift {
-    id: usize,
     text: TextWidget,
     // update_interval: Duration,
     step: u16,
@@ -361,7 +360,6 @@ impl ConfigBlock for Hueshift {
         };
 
         Ok(Hueshift {
-            id,
             // update_interval: block_config.interval,
             step,
             max_temp,
@@ -440,9 +438,5 @@ impl Block for Hueshift {
             }
         }
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

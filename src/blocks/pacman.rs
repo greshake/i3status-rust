@@ -23,7 +23,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Pacman {
-    id: usize,
     output: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
@@ -145,7 +144,6 @@ impl ConfigBlock for Pacman {
         let fmt_up_to_date = block_config.format_up_to_date.with_default("{pacman}")?;
 
         Ok(Pacman {
-            id,
             update_interval: block_config.interval,
             output,
             warning_updates_regex: match block_config.warning_updates_regex {
@@ -300,10 +298,6 @@ fn has_critical_update(updates: &str, regex: &Regex) -> bool {
 }
 
 impl Block for Pacman {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         if self.uptodate && self.hide_when_uptodate {
             vec![]

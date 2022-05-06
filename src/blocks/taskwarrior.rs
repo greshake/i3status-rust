@@ -18,7 +18,6 @@ use crate::widgets::{I3BarWidget, State};
 use inotify::{EventMask, Inotify, WatchMask};
 
 pub struct Taskwarrior {
-    id: usize,
     output: TextWidget,
     update_interval: Duration,
     warning_threshold: u32,
@@ -172,7 +171,6 @@ impl ConfigBlock for Taskwarrior {
             .unwrap();
 
         Ok(Taskwarrior {
-            id,
             update_interval: block_config.interval,
             warning_threshold: block_config.warning_threshold,
             critical_threshold: block_config.critical_threshold,
@@ -274,9 +272,5 @@ impl Block for Taskwarrior {
         }
 
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

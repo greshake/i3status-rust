@@ -732,7 +732,6 @@ impl SoundDevice for PulseAudioSoundDevice {
 // TODO: Use the alsa control bindings to implement push updates
 pub struct Sound {
     text: TextWidget,
-    id: usize,
     device: Box<dyn SoundDevice>,
     device_kind: DeviceKind,
     step_width: u32,
@@ -916,7 +915,6 @@ impl ConfigBlock for Sound {
         };
 
         let mut sound = Self {
-            id,
             device,
             device_kind: block_config.device_kind,
             format: block_config.format.with_default("{volume}")?,
@@ -1020,9 +1018,5 @@ impl Block for Sound {
         }
         self.update()?;
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

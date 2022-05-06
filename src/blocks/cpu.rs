@@ -17,7 +17,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Cpu {
-    id: usize,
     output: TextWidget,
     prev_util: Vec<(u64, u64)>,
     update_interval: Duration,
@@ -71,7 +70,6 @@ impl ConfigBlock for Cpu {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Cpu {
-            id,
             update_interval: block_config.interval,
             prev_util: Vec::with_capacity(32),
             minimum_info: block_config.info,
@@ -205,10 +203,6 @@ impl Block for Cpu {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
 

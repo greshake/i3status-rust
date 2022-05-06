@@ -45,7 +45,6 @@ impl Default for TemperatureDriver {
 }
 
 pub struct Temperature {
-    id: usize,
     text: TextWidget,
     output: (String, Option<String>),
     collapsed: bool,
@@ -133,7 +132,6 @@ impl ConfigBlock for Temperature {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Temperature {
-            id,
             update_interval: block_config.interval,
             text: TextWidget::new(id, 0, shared_config)
                 .with_icon("thermometer")?
@@ -324,9 +322,5 @@ impl Block for Temperature {
         }
 
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

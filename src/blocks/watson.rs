@@ -21,7 +21,6 @@ use inotify::{Inotify, WatchMask};
 use serde_derive::Deserialize;
 
 pub struct Watson {
-    id: usize,
     text: TextWidget,
     state_path: PathBuf,
     show_time: bool,
@@ -78,7 +77,6 @@ impl ConfigBlock for Watson {
             }
         };
         let watson = Watson {
-            id,
             text: TextWidget::new(id, 0, shared_config),
             state_path: PathBuf::from(
                 shellexpand::full(&state_path_string)
@@ -197,10 +195,6 @@ impl Block for Watson {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
 

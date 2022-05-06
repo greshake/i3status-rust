@@ -584,10 +584,6 @@ impl ConfigBlock for NetworkManager {
 }
 
 impl Block for NetworkManager {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         let state = self.manager.state(&self.dbus_conn);
 

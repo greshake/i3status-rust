@@ -14,7 +14,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 pub struct Uptime {
-    id: usize,
     text: TextWidget,
     update_interval: Duration,
 }
@@ -45,7 +44,6 @@ impl ConfigBlock for Uptime {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Uptime {
-            id,
             update_interval: block_config.interval,
             text: TextWidget::new(id, 0, shared_config).with_icon("uptime")?,
         })
@@ -101,9 +99,5 @@ impl Block for Uptime {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

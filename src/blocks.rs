@@ -148,9 +148,6 @@ pub trait ConfigBlock: Block {
 
 /// The Block trait is used to interact with a block after it has been instantiated from ConfigBlock
 pub trait Block {
-    /// A unique id for the block (asigend by the constructor).
-    fn id(&self) -> usize;
-
     /// Use this function to return the widgets that comprise the UI of your component.
     ///
     /// The music block may, for example, be comprised of a text widget and multiple

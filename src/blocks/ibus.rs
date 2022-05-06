@@ -30,7 +30,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 pub struct IBus {
-    id: usize,
     text: TextWidget,
     engine: Arc<Mutex<String>>,
     mappings: Option<BTreeMap<String, String>>,
@@ -224,7 +223,6 @@ impl ConfigBlock for IBus {
 
         let text = TextWidget::new(id, 0, shared_config).with_text("IBus");
         Ok(IBus {
-            id,
             text,
             engine: engine_original,
             mappings: block_config.mappings,
@@ -234,10 +232,6 @@ impl ConfigBlock for IBus {
 }
 
 impl Block for IBus {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     // Updates the internal state of the block.
     fn update(&mut self) -> Result<Option<Update>> {
         let engine = (*self

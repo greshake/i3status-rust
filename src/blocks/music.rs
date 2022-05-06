@@ -525,10 +525,6 @@ impl ConfigBlock for Music {
 }
 
 impl Block for Music {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         let (rotation_in_progress, time_to_next_rotation) = if self.marquee {
             self.current_song_widget.next()?
