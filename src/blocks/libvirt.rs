@@ -61,21 +61,13 @@ impl ConfigBlock for Libvirt {
             .with_text("vms")
             .with_icon("virtual-machine")?;
 
-        let qemu_conn = match Connect::open_read_only(&block_config.qemu_url)
-            .block_error("virt", "error when connecting to libvirt")
-        {
-            Ok(c) => c,
-            Err(e) => {
-                return Err(e);
-            }
-        };
-
         Ok(Libvirt {
             id,
             text,
             format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
-            qemu_conn,
+            qemu_conn: Connect::open_read_only(&block_config.qemu_url)
+                .block_error("virt", "error when connecting to libvirt")?,
         })
     }
 }
