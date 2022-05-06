@@ -73,51 +73,95 @@ impl ConfigBlock for Libvirt {
 
 impl Block for Libvirt {
     fn update(&mut self) -> Result<Option<Update>> {
-        if !self
+        // Check if the connection is still active and re-instatiate it if it's not
+        match self
             .qemu_conn
             .is_alive()
-            .expect("unrecoverable error with qemu object")
+            .block_error("virt", "error when getting connection status to libvirt")
         {
-            self.qemu_conn = Connect::open_read_only(
-                &self
-                    .qemu_conn
-                    .get_uri()
-                    .expect("could not get URI from the currently connected QEMU object"),
-            )
-            .expect("could not re-connect to libvirtd")
+            Ok(true) => {}
+            Ok(false) => {
+                self.qemu_conn = match Connect::open_read_only(
+                    &self
+                        .qemu_conn
+                        .get_uri()
+                        .block_error("virt", "error in retrieving URI information from libvirt")
+                        .unwrap(), /* Only happens if memory corruption; then we should panic anyway */
+                )
+                .block_error("virt", "error in reconnecting to libvirt socket")
+                {
+                    Ok(c) => c,
+                    Err(e) => return Err(e),
+                };
+            }
+            Err(e) => {
+                self.text.set_state(State::Critical);
+                return Err(e);
+            }
         };
 
-        let mut paused: i64 = 0;
-        match self.qemu_conn.list_all_domains(1 << 5) {
-            Ok(d) => paused = d.len() as i64,
-            Err(e) => eprintln!("{}", e),
-        }
-
-        let mut stopped: i64 = 0;
-        match self.qemu_conn.num_of_defined_domains() {
-            Ok(d) => stopped = d as i64,
-            Err(e) => eprintln!("{}", e),
+        let paused: i64 = match self
+            .qemu_conn
+            .list_all_domains(1 << 5)
+            .block_error("virt", "unable to get paused domains")
+        {
+            Ok(d) => d.len() as i64,
+            Err(e) => {
+                self.text.set_state(State::Critical);
+                return Err(e);
+            }
         };
 
-        let mut running = 0;
-        match self.qemu_conn.list_all_domains(1 << 4) {
-            Ok(d) => running = d.len() as i64,
-            Err(e) => eprintln!("{}", e),
+        let stopped: i64 = match self
+            .qemu_conn
+            .num_of_defined_domains()
+            .block_error("virt", "unable to get stopped domains")
+        {
+            Ok(d) => d as i64,
+            Err(e) => {
+                self.text.set_state(State::Critical);
+                return Err(e);
+            }
+        };
+
+        let running = match self
+            .qemu_conn
+            .list_all_domains(1 << 4)
+            .block_error("virt", "unable to get running domains")
+        {
+            Ok(d) => d.len() as i64,
+            Err(e) => {
+                self.text.set_state(State::Critical);
+                return Err(e);
+            }
         };
 
         let total = running + stopped + paused;
 
         let mut num_images: i64 = 0;
-        match self.qemu_conn.list_all_storage_pools(1 << 1) {
+        match self
+            .qemu_conn
+            .list_all_storage_pools(1 << 1)
+            .block_error("virt", "could not get list of storage pools from libvirt")
+        {
             Ok(pools) => {
                 for pool in pools {
-                    num_images += pool
+                    num_images += match pool
                         .num_of_volumes()
-                        .expect("could not get number of volumes in pool")
-                        as i64;
+                        .block_error("virt", "could not count volumes in storage pool")
+                    {
+                        Ok(n) => n as i64,
+                        Err(e) => {
+                            self.text.set_state(State::Critical);
+                            return Err(e);
+                        }
+                    }
                 }
             }
-            Err(e) => eprintln!("{}", e),
+            Err(e) => {
+                self.text.set_state(State::Critical);
+                return Err(e);
+            }
         };
 
         let values = map!(
