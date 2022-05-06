@@ -24,6 +24,25 @@ pub struct Libvirt {
     qemu_conn: Connect,
 }
 
+impl Libvirt {
+    fn check_and_reconnect(&mut self) -> Result<&mut Self> {
+        if !self
+            .qemu_conn
+            .is_alive()
+            .block_error("virt", "error when getting connection status to libvirt")?
+        {
+            self.qemu_conn = Connect::open_read_only(
+                &self
+                    .qemu_conn
+                    .get_uri()
+                    .block_error("virt", "error in retrieving URI information from libvirt")?,
+            )
+            .block_error("virt", "error in reconnecting to libvirt socket")?;
+        };
+        Ok(self)
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct LibvirtConfig {
@@ -75,19 +94,8 @@ impl ConfigBlock for Libvirt {
 impl Block for Libvirt {
     fn update(&mut self) -> Result<Option<Update>> {
         // Check if the connection is still active and re-instatiate it if it's not
-        if !self
-            .qemu_conn
-            .is_alive()
-            .block_error("virt", "error when getting connection status to libvirt")?
-        {
-            self.qemu_conn = Connect::open_read_only(
-                &self
-                    .qemu_conn
-                    .get_uri()
-                    .block_error("virt", "error in retrieving URI information from libvirt")?,
-            )
-            .block_error("virt", "error in reconnecting to libvirt socket")?;
-        };
+
+        self.check_and_reconnect()?;
 
         let paused: i64 = self
             .qemu_conn
@@ -95,10 +103,14 @@ impl Block for Libvirt {
             .block_error("virt", "unable to get paused domains")?
             .len() as i64;
 
+        self.check_and_reconnect()?;
+
         let stopped: i64 =
             self.qemu_conn
                 .num_of_defined_domains()
                 .block_error("virt", "unable to get stopped domains")? as i64;
+
+        self.check_and_reconnect()?;
 
         let running = self
             .qemu_conn
@@ -107,6 +119,8 @@ impl Block for Libvirt {
             .len() as i64;
 
         let total = running + stopped + paused;
+
+        self.check_and_reconnect()?;
 
         let mut num_images: i64 = 0;
         match self
