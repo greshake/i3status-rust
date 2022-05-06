@@ -24,7 +24,8 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: check --all-features
+          command: check
+          args: --all-features
 
   test:
     name: Test Suite
@@ -40,7 +41,8 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: test --all-features
+          command: test
+          args: --all-features
 
   fmt:
     name: Rustfmt
