@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use serde::de::{Deserialize, Deserializer};
+use serde::de::{Deserialize, Deserializer, Error};
 use serde_derive::Deserialize;
 use toml::value;
 
+use crate::blocks::BlockType;
 use crate::errors;
 use crate::icons::Icons;
 use crate::protocol::i3bar_event::MouseButton;
@@ -99,7 +100,7 @@ pub struct Config {
     pub scrolling: Scrolling,
 
     #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
-    pub blocks: Vec<(String, value::Value)>,
+    pub blocks: Vec<(BlockType, value::Value)>,
 }
 
 impl Config {
@@ -152,19 +153,19 @@ impl Default for Scrolling {
     }
 }
 
-fn deserialize_blocks<'de, D>(deserializer: D) -> Result<Vec<(String, value::Value)>, D::Error>
+fn deserialize_blocks<'de, D>(deserializer: D) -> Result<Vec<(BlockType, value::Value)>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let mut blocks: Vec<(String, value::Value)> = Vec::new();
+    let mut blocks = Vec::new();
     let raw_blocks: Vec<value::Table> = Deserialize::deserialize(deserializer)?;
     for mut entry in raw_blocks {
         if let Some(name) = entry.remove("block") {
-            if let Some(name) = name.as_str() {
-                blocks.push((name.to_owned(), value::Value::Table(entry)))
-            }
+            blocks.push((
+                BlockType::deserialize(name).map_err(D::Error::custom)?,
+                value::Value::Table(entry),
+            ))
         }
     }
-
     Ok(blocks)
 }

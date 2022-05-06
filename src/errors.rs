@@ -5,7 +5,7 @@ pub use std::result::Result as StdResult;
 pub use self::Error::{BlockError, ConfigurationError, InternalError};
 
 /// Result type returned from functions that can have our `Error`s.
-pub type Result<T> = ::std::result::Result<T, Error>;
+pub type Result<T, E = Error> = ::std::result::Result<T, E>;
 
 // Why `ResultExtBlock` and `ResultExtInternal` are splitted?
 pub trait ResultExtBlock<T, E> {

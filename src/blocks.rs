@@ -1,96 +1,11 @@
-pub mod apt;
-pub mod backlight;
-pub mod base_block;
-pub mod battery;
-pub mod bluetooth;
-pub mod cpu;
-pub mod custom;
-pub mod custom_dbus;
-pub mod disk_space;
-pub mod dnf;
-pub mod docker;
-pub mod external_ip;
-pub mod focused_window;
-pub mod github;
-pub mod hueshift;
-pub mod ibus;
-pub mod kdeconnect;
-pub mod keyboard_layout;
-pub mod load;
-#[cfg(feature = "maildir")]
-pub mod maildir;
-pub mod memory;
-pub mod music;
-pub mod net;
-pub mod networkmanager;
-pub mod notify;
-#[cfg(feature = "notmuch")]
-pub mod notmuch;
-pub mod nvidia_gpu;
-pub mod pacman;
-pub mod pomodoro;
-pub mod rofication;
-pub mod sound;
-pub mod speedtest;
-pub mod taskwarrior;
-pub mod temperature;
-pub mod template;
-pub mod time;
-pub mod toggle;
-pub mod uptime;
-pub mod watson;
-pub mod weather;
-pub mod xrandr;
-
-use self::apt::*;
-use self::backlight::*;
-use self::base_block::*;
-use self::battery::*;
-use self::bluetooth::*;
-use self::cpu::*;
-use self::custom::*;
-use self::custom_dbus::*;
-use self::disk_space::*;
-use self::dnf::*;
-use self::docker::*;
-use self::external_ip::*;
-use self::focused_window::*;
-use self::github::*;
-use self::hueshift::*;
-use self::ibus::*;
-use self::kdeconnect::*;
-use self::keyboard_layout::*;
-use self::load::*;
-#[cfg(feature = "maildir")]
-use self::maildir::*;
-use self::memory::*;
-use self::music::*;
-use self::net::*;
-use self::networkmanager::*;
-use self::notify::*;
-#[cfg(feature = "notmuch")]
-use self::notmuch::*;
-use self::nvidia_gpu::*;
-use self::pacman::*;
-use self::pomodoro::*;
-use self::rofication::*;
-use self::sound::*;
-use self::speedtest::*;
-use self::taskwarrior::*;
-use self::temperature::*;
-use self::template::*;
-use self::time::*;
-use self::toggle::*;
-use self::uptime::*;
-use self::watson::*;
-use self::weather::*;
-use self::xrandr::*;
+mod base_block;
+use base_block::*;
 
 use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
-use serde::de::Deserialize;
+use serde::de::{self, Deserialize, DeserializeOwned};
 use toml::value::Value;
 
 use crate::config::SharedConfig;
@@ -128,7 +43,7 @@ impl From<Duration> for Update {
 /// the number of system calls by asynchronously waiting for events. A usage example can be found
 /// in the Music block, which updates only when dbus signals a new song.
 pub trait ConfigBlock: Block {
-    type Config;
+    type Config: DeserializeOwned;
 
     /// Creates a new block from the relevant configuration.
     fn new(
@@ -183,122 +98,177 @@ pub trait Block {
     }
 }
 
-macro_rules! block {
-    ($block_type:ident, $id:expr, $block_config:expr, $shared_config:expr, $update_request:expr) => {{
-        // Extract base(common) config
-        let common_config = BaseBlockConfig::extract(&mut $block_config);
-        let mut common_config = BaseBlockConfig::deserialize(common_config)
-            .configuration_error("Failed to deserialize common block config.")?;
+macro_rules! define_blocks {
+    {
+        $( $(#[cfg($attr: meta)])? $block: ident :: $block_type : ident $(,)? )*
+    } => {
+        $(
+            $(#[cfg($attr)])?
+            pub mod $block;
+        )*
 
-        // Run if_command if present
-        if let Some(ref cmd) = common_config.if_command {
-            if !Command::new("sh")
-                .args(["-c", cmd])
-                .output()?
-                .status
-                .success()
+        #[derive(Debug, Clone, Copy)]
+        pub enum BlockType {
+            $(
+                $(#[cfg($attr)])?
+                #[allow(non_camel_case_types)]
+                $block,
+            )*
+        }
+
+        impl BlockType {
+            pub fn create_block(
+                self,
+                id: usize,
+                block_config: Value,
+                shared_config: SharedConfig,
+                update_request: Sender<Task>,
+            ) -> Result<Option<Box<dyn Block>>>
             {
-                return Ok(None);
+                match self {
+                    $(
+                        $(#[cfg($attr)])?
+                        Self::$block => {
+                            create_block_typed::<$block::$block_type>(id, block_config, shared_config, update_request)
+                        }
+                    )*
+                }
             }
         }
 
-        // Apply theme overrides if presented
-        if let Some(ref overrides) = common_config.theme_overrides {
-            $shared_config.theme_override(overrides)?;
-        }
-        if let Some(overrides) = common_config.icons_format {
-            $shared_config.icons_format_override(overrides);
-        }
-        if let Some(overrides) = common_config.icons_overrides {
-            $shared_config.icons_override(overrides);
+        impl<'de> Deserialize<'de> for BlockType {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: de::Deserializer<'de>,
+            {
+                struct Visitor;
+
+                impl<'de> de::Visitor<'de> for Visitor {
+                    type Value = BlockType;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        formatter.write_str("a block name")
+                    }
+
+                    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+                    where
+                        E: de::Error,
+                    {
+                        match v {
+                            $(
+                            $(#[cfg($attr)])?
+                            stringify!($block) => Ok(BlockType::$block),
+                            $(
+                            #[cfg(not($attr))]
+                            stringify!($block) => Err(E::custom(format!("Block '{}' has to be enabled at the compile time", stringify!($block)))),
+                            )?
+                            )*
+                            unknown => Err(E::custom(format!("Unknown block '{unknown}'")))
+                        }
+                    }
+                }
+
+                deserializer.deserialize_str(Visitor)
+            }
         }
 
-        // Extract block-specific config
-        let block_config = <$block_type as ConfigBlock>::Config::deserialize($block_config)
-            .configuration_error("Failed to deserialize block config.")?;
-
-        let mut block = $block_type::new($id, block_config, $shared_config, $update_request)?;
-        if let Some(overrided) = block.override_on_click() {
-            *overrided = common_config.on_click.take();
-        }
-
-        Ok(Some(Box::new(BaseBlock {
-            name: stringify!($block_type).to_string(),
-            inner: block,
-            on_click: common_config.on_click,
-        }) as Box<dyn Block>))
-    }};
+    };
 }
 
-pub fn create_block(
+// Please keep these in alphabetical order.
+define_blocks!(
+    apt::Apt,
+    backlight::Backlight,
+    battery::Battery,
+    bluetooth::Bluetooth,
+    cpu::Cpu,
+    custom::Custom,
+    custom_dbus::CustomDBus,
+    disk_space::DiskSpace,
+    dnf::Dnf,
+    docker::Docker,
+    external_ip::ExternalIP,
+    focused_window::FocusedWindow,
+    github::Github,
+    hueshift::Hueshift,
+    ibus::IBus,
+    kdeconnect::KDEConnect,
+    keyboard_layout::KeyboardLayout,
+    load::Load,
+    #[cfg(feature = "maildir")]
+    maildir::Maildir,
+    memory::Memory,
+    music::Music,
+    net::Net,
+    networkmanager::NetworkManager,
+    notify::Notify,
+    #[cfg(feature = "notmuch")]
+    notmuch::Notmuch,
+    nvidia_gpu::NvidiaGpu,
+    pacman::Pacman,
+    pomodoro::Pomodoro,
+    rofication::Rofication,
+    sound::Sound,
+    speedtest::SpeedTest,
+    taskwarrior::Taskwarrior,
+    temperature::Temperature,
+    time::Time,
+    toggle::Toggle,
+    uptime::Uptime,
+    watson::Watson,
+    weather::Weather,
+    xrandr::Xrandr,
+);
+
+pub fn create_block_typed<B>(
     id: usize,
-    name: &str,
     mut block_config: Value,
     mut shared_config: SharedConfig,
     update_request: Sender<Task>,
-) -> Result<Option<Box<dyn Block>>> {
-    match name {
-        // Please keep these in alphabetical order.
-        "apt" => block!(Apt, id, block_config, shared_config, update_request),
-        "backlight" => block!(Backlight, id, block_config, shared_config, update_request),
-        "battery" => block!(Battery, id, block_config, shared_config, update_request),
-        "bluetooth" => block!(Bluetooth, id, block_config, shared_config, update_request),
-        "cpu" => block!(Cpu, id, block_config, shared_config, update_request),
-        "custom" => block!(Custom, id, block_config, shared_config, update_request),
-        "custom_dbus" => block!(CustomDBus, id, block_config, shared_config, update_request),
-        "disk_space" => block!(DiskSpace, id, block_config, shared_config, update_request),
-        "dnf" => block!(Dnf, id, block_config, shared_config, update_request),
-        "docker" => block!(Docker, id, block_config, shared_config, update_request), ///////
-        "external_ip" => block!(ExternalIP, id, block_config, shared_config, update_request),
-        "focused_window" => block!(
-            FocusedWindow,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "github" => block!(Github, id, block_config, shared_config, update_request),
-        "hueshift" => block!(Hueshift, id, block_config, shared_config, update_request),
-        "ibus" => block!(IBus, id, block_config, shared_config, update_request),
-        "kdeconnect" => block!(KDEConnect, id, block_config, shared_config, update_request),
-        "keyboard_layout" => block!(
-            KeyboardLayout,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "load" => block!(Load, id, block_config, shared_config, update_request),
-        #[cfg(feature = "maildir")]
-        "maildir" => block!(Maildir, id, block_config, shared_config, update_request),
-        "memory" => block!(Memory, id, block_config, shared_config, update_request),
-        "music" => block!(Music, id, block_config, shared_config, update_request),
-        "net" => block!(Net, id, block_config, shared_config, update_request),
-        "networkmanager" => block!(
-            NetworkManager,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "notify" => block!(Notify, id, block_config, shared_config, update_request),
-        #[cfg(feature = "notmuch")]
-        "notmuch" => block!(Notmuch, id, block_config, shared_config, update_request),
-        "nvidia_gpu" => block!(NvidiaGpu, id, block_config, shared_config, update_request),
-        "pacman" => block!(Pacman, id, block_config, shared_config, update_request),
-        "pomodoro" => block!(Pomodoro, id, block_config, shared_config, update_request),
-        "rofication" => block!(Rofication, id, block_config, shared_config, update_request),
-        "sound" => block!(Sound, id, block_config, shared_config, update_request),
-        "speedtest" => block!(SpeedTest, id, block_config, shared_config, update_request),
-        "taskwarrior" => block!(Taskwarrior, id, block_config, shared_config, update_request),
-        "temperature" => block!(Temperature, id, block_config, shared_config, update_request),
-        "template" => block!(Template, id, block_config, shared_config, update_request),
-        "time" => block!(Time, id, block_config, shared_config, update_request), /////////
-        "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
-        "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
-        "watson" => block!(Watson, id, block_config, shared_config, update_request),
-        "weather" => block!(Weather, id, block_config, shared_config, update_request),
-        "xrandr" => block!(Xrandr, id, block_config, shared_config, update_request),
-        other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
+) -> Result<Option<Box<dyn Block>>>
+where
+    B: Block + ConfigBlock + 'static,
+{
+    // Extract base(common) config
+    let common_config = BaseBlockConfig::extract(&mut block_config);
+    let mut common_config = BaseBlockConfig::deserialize(common_config)
+        .configuration_error("Failed to deserialize common block config.")?;
+
+    // Run if_command if present
+    if let Some(ref cmd) = common_config.if_command {
+        if !Command::new("sh")
+            .args(["-c", cmd])
+            .output()?
+            .status
+            .success()
+        {
+            return Ok(None);
+        }
     }
+
+    // Apply theme overrides if presented
+    if let Some(ref overrides) = common_config.theme_overrides {
+        shared_config.theme_override(overrides)?;
+    }
+    if let Some(overrides) = common_config.icons_format {
+        shared_config.icons_format_override(overrides);
+    }
+    if let Some(overrides) = common_config.icons_overrides {
+        shared_config.icons_override(overrides);
+    }
+
+    // Extract block-specific config
+    let block_config = <B as ConfigBlock>::Config::deserialize(block_config)
+        .configuration_error("Failed to deserialize block config.")?;
+
+    let mut block = B::new(id, block_config, shared_config, update_request)?;
+    if let Some(overrided) = block.override_on_click() {
+        *overrided = common_config.on_click.take();
+    }
+
+    Ok(Some(Box::new(BaseBlock {
+        name: stringify!($block_type).to_string(),
+        inner: block,
+        on_click: common_config.on_click,
+    })))
 }
