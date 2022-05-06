@@ -42,29 +42,28 @@ use nix::sys::statvfs::statvfs;
 use super::prelude::*;
 use crate::formatting::prefix::Prefix;
 
-#[derive(Copy, Clone, Debug, Deserialize)]
+#[derive(Copy, Clone, Debug, Deserialize, SmartDefault)]
 #[serde(rename_all = "lowercase")]
 pub enum InfoType {
+    #[default]
     Available,
     Free,
     Used,
 }
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct DiskSpaceConfig {
-    #[derivative(Default(value = r#""/".into()"#))]
+    #[default("/".into())]
     path: String,
-    #[derivative(Default(value = "InfoType::Available"))]
     info_type: InfoType,
     format: FormatConfig,
     alert_unit: Option<String>,
-    #[derivative(Default(value = "20.into()"))]
+    #[default(20.into())]
     interval: Seconds,
-    #[derivative(Default(value = "20.0"))]
+    #[default(20.0)]
     warning: f64,
-    #[derivative(Default(value = "10.0"))]
+    #[default(10.0)]
     alert: f64,
 }
 

@@ -16,7 +16,7 @@
 //! `device` | The `/sys/class/backlight` device to read brightness information from.  When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.| No | Default device
 //! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$brightness"`
 //! `step_width` | The brightness increment to use when scrolling, in percent | No | `5`
-//! `minimum` | The minimum brightness that can be scrolled down to | No | `1`
+//! `minimum` | The minimum brightness that can be scrolled down to | No | `5`
 //! `maximum` | The maximum brightness that can be scrolled up to | No | `100`
 //! `cycle` | The brightnesses to cycle through on each click | No | `[minimum, maximum]`
 //! `root_scaling` | Scaling exponent reciprocal (ie. root) | No | `1.0`
@@ -106,20 +106,19 @@ const BACKLIGHT_ICONS: &[&str] = &[
     "backlight_full",
 ];
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct BacklightConfig {
     device: Option<String>,
     format: FormatConfig,
-    #[derivative(Default(value = "5"))]
+    #[default(5)]
     step_width: u8,
-    #[derivative(Default(value = "1"))]
+    #[default(5)]
     minimum: u8,
-    #[derivative(Default(value = "100"))]
+    #[default(100)]
     maximum: u8,
     cycle: Option<Vec<u8>>,
-    #[derivative(Default(value = "1.0"))]
+    #[default(1.0)]
     root_scaling: f64,
     invert_icons: bool,
 }

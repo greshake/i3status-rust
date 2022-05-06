@@ -59,30 +59,21 @@ use zbus::dbus_proxy;
 use super::prelude::*;
 use crate::util::battery_level_icon;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct Config {
     device_id: Option<String>,
     format: FormatConfig,
+    #[default(60)]
     bat_good: u8,
+    #[default(60)]
     bat_info: u8,
+    #[default(30)]
     bat_warning: u8,
+    #[default(15)]
     bat_critical: u8,
+    #[default(true)]
     hide_disconnected: bool,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            device_id: None,
-            format: default(),
-            bat_good: 60,
-            bat_info: 60,
-            bat_warning: 30,
-            bat_critical: 15,
-            hide_disconnected: true,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

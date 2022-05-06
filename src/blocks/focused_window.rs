@@ -36,30 +36,22 @@ use tokio::{
     process::{ChildStdout, Command},
 };
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct FocusedWindowConfig {
     format: FormatConfig,
+    #[default(true)]
     autohide: bool,
     driver: Driver,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "snake_case")]
 enum Driver {
+    #[default]
     Auto,
     SwayIpc,
     Ristate,
-}
-
-impl Default for FocusedWindowConfig {
-    fn default() -> Self {
-        Self {
-            format: default(),
-            autohide: true,
-            driver: Driver::Auto,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

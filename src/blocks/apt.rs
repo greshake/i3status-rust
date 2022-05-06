@@ -49,11 +49,10 @@ use tokio::process::Command;
 
 use super::prelude::*;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct AptConfig {
-    #[derivative(Default(value = "600.into()"))]
+    #[default(600.into())]
     interval: Seconds,
     format: FormatConfig,
     format_singular: FormatConfig,

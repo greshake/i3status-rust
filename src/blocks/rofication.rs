@@ -31,22 +31,14 @@ use tokio::net::UnixStream;
 use super::prelude::*;
 use crate::subprocess::spawn_shell;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct RoficationConfig {
+    #[default(1.into())]
     interval: Seconds,
+    #[default("/tmp/rofi_notification_daemon".into())]
     socket_path: ShellString,
     format: FormatConfig,
-}
-
-impl Default for RoficationConfig {
-    fn default() -> Self {
-        Self {
-            interval: Seconds::new(1),
-            socket_path: ShellString::new("/tmp/rofi_notification_daemon"),
-            format: default(),
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

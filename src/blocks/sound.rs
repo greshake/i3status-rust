@@ -90,16 +90,15 @@ use super::prelude::*;
 
 const FILTER: &[char] = &['[', ']', '%'];
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct SoundConfig {
     driver: SoundDriver,
     name: Option<String>,
     device: Option<String>,
     device_kind: DeviceKind,
     natural_mapping: bool,
-    #[derivative(Default(value = "5"))]
+    #[default(5)]
     step_width: u32,
     format: FormatConfig,
     headphones_indicator: bool,
@@ -230,21 +229,19 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
-#[derive(Deserialize, Debug, Derivative, Clone, Copy)]
+#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum SoundDriver {
-    #[derivative(Default)]
+    #[default]
     Auto,
     Alsa,
     PulseAudio,
 }
 
-#[derive(Deserialize, Debug, Derivative, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum DeviceKind {
-    #[derivative(Default)]
+    #[default]
     Sink,
     Source,
 }

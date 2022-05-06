@@ -38,32 +38,23 @@
 
 use super::prelude::*;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct NotmuchConfig {
+    #[default(10.into())]
     interval: Seconds,
+    #[default("~/.mail".into())]
     maildir: ShellString,
     query: String,
+    #[default(u32::MAX)]
     threshold_warning: u32,
+    #[default(u32::MAX)]
     threshold_critical: u32,
+    #[default(u32::MAX)]
     threshold_info: u32,
+    #[default(u32::MAX)]
     threshold_good: u32,
     name: Option<String>,
-}
-
-impl Default for NotmuchConfig {
-    fn default() -> Self {
-        Self {
-            interval: Seconds::new(10),
-            maildir: ShellString::new("~/.mail"),
-            query: "".into(),
-            threshold_warning: std::u32::MAX,
-            threshold_critical: std::u32::MAX,
-            threshold_info: std::u32::MAX,
-            threshold_good: std::u32::MAX,
-            name: None,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

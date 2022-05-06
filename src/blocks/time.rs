@@ -32,12 +32,12 @@ use chrono_tz::Tz;
 use super::prelude::*;
 use crate::formatting::config::DummyConfig as FormatConfig;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct TimeConfig {
     format: FormatConfig,
-    #[derivative(Default(value = "Seconds::new(10)"))]
+    // format_alt: Option<FormatConfig>,
+    #[default(1.into())]
     interval: Seconds,
     timezone: Option<Tz>,
     locale: Option<String>,
@@ -47,8 +47,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TimeConfig::deserialize(config).config_error()?;
     api.set_icon("time")?;
 
-    let format = config.format.full.as_deref().unwrap_or("%a %d/%m %R");
-    let format_short = config.format.short.as_deref();
+    let /*mut*/ format = config.format.full.as_deref().unwrap_or("%a %d/%m %R");
+    let /*mut*/ format_short = config.format.short.as_deref();
+
+    // let mut format_alt = config.format_alt.as_ref().map(|a| {
+    //     (
+    //         a.full.as_deref().unwrap_or("%a %d/%m %R"),
+    //         a.short.as_deref(),
+    //     )
+    // });
 
     let timezone = config.timezone;
     let locale = match config.locale.as_deref() {
@@ -59,6 +66,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
+        // if let Some(alt) = &mut format_alt {
+        //     std::mem::swap(&mut format, &mut alt.0);
+        //     std::mem::swap(&mut format_short, &mut alt.1);
+        // }
+
         if timezone.is_none() {
             // Update timezone because `chrono` will not do that for us.
             // https://github.com/chronotope/chrono/issues/272

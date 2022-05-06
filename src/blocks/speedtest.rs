@@ -34,20 +34,12 @@
 use super::prelude::*;
 use tokio::process::Command;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct SpeedtestConfig {
     format: FormatConfig,
+    #[default(1800.into())]
     interval: Seconds,
-}
-
-impl Default for SpeedtestConfig {
-    fn default() -> Self {
-        Self {
-            format: default(),
-            interval: Seconds::new(1800),
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

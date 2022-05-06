@@ -61,11 +61,10 @@ use std::collections::HashMap;
 
 use super::prelude::*;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct GithubConfig {
-    #[derivative(Default(value = "60.into()"))]
+    #[default(60.into())]
     interval: Seconds,
     format: FormatConfig,
     token: Option<StdString>,

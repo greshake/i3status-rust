@@ -38,22 +38,14 @@ use crate::subprocess::spawn_shell;
 use regex::RegexSet;
 use tokio::process::Command;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct XrandrConfig {
+    #[default(5.into())]
     interval: Seconds,
     format: FormatConfig,
+    #[default(5)]
     step_width: u32,
-}
-
-impl Default for XrandrConfig {
-    fn default() -> Self {
-        Self {
-            interval: Seconds::new(5),
-            format: default(),
-            step_width: 5,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

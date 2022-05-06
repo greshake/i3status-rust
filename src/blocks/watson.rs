@@ -31,22 +31,13 @@ use tokio::fs::read_to_string;
 
 use super::prelude::*;
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct WatsonConfig {
     state_path: Option<ShellString>,
+    #[default(60.into())]
     interval: Seconds,
     show_time: bool,
-}
-
-impl Default for WatsonConfig {
-    fn default() -> Self {
-        Self {
-            state_path: None,
-            interval: Seconds::new(60),
-            show_time: false,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

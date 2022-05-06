@@ -32,26 +32,18 @@ use super::prelude::*;
 use crate::util;
 use std::path::Path;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct LoadConfig {
     format: FormatConfig,
+    #[default(3.into())]
     interval: Seconds,
+    #[default(0.3)]
     info: f64,
+    #[default(0.6)]
     warning: f64,
+    #[default(0.9)]
     critical: f64,
-}
-
-impl Default for LoadConfig {
-    fn default() -> Self {
-        Self {
-            format: default(),
-            interval: Seconds::new(3),
-            info: 0.3,
-            warning: 0.6,
-            critical: 0.9,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

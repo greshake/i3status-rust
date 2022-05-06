@@ -105,11 +105,10 @@ use tokio::process::Command;
 use super::prelude::*;
 use crate::util::has_command;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct PacmanConfig {
-    #[derivative(Default(value = "600.into()"))]
+    #[default(600.into())]
     interval: Seconds,
     format: FormatConfig,
     format_singular: FormatConfig,

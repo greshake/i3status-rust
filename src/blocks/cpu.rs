@@ -44,13 +44,12 @@ use crate::util::read_file;
 const CPU_BOOST_PATH: &str = "/sys/devices/system/cpu/cpufreq/boost";
 const CPU_NO_TURBO_PATH: &str = "/sys/devices/system/cpu/intel_pstate/no_turbo";
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct CpuConfig {
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
-    #[derivative(Default(value = "5.into()"))]
+    #[default(5.into())]
     interval: Seconds,
 }
 

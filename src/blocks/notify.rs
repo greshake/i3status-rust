@@ -43,16 +43,11 @@ struct NotifyConfig {
     format: FormatConfig,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "lowercase")]
 enum DriverType {
+    #[default]
     Dunst,
-}
-
-impl Default for DriverType {
-    fn default() -> Self {
-        Self::Dunst
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

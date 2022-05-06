@@ -41,11 +41,10 @@ use super::prelude::*;
 use regex::Regex;
 use tokio::process::Command;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct DnfConfig {
-    #[derivative(Default(value = "600.into()"))]
+    #[default(600.into())]
     interval: Seconds,
     format: FormatConfig,
     format_singular: FormatConfig,

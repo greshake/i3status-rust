@@ -76,23 +76,21 @@ use swayipc_async::{Connection, Event, EventType};
 use tokio::process::Command;
 use zbus::dbus_proxy;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default, deny_unknown_fields)]
-#[derivative(Default)]
 struct KeyboardLayoutConfig {
     format: FormatConfig,
     driver: KeyboardLayoutDriver,
-    #[derivative(Default(value = "60.into()"))]
+    #[default(60.into())]
     interval: Seconds,
     sway_kb_identifier: Option<String>,
     mappings: Option<HashMap<StdString, String>>,
 }
 
-#[derive(Deserialize, Debug, Derivative, Clone, Copy)]
+#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum KeyboardLayoutDriver {
-    #[derivative(Default)]
+    #[default]
     SetXkbMap,
     LocaleBus,
     KbddBus,

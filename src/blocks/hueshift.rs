@@ -47,31 +47,23 @@ use crate::subprocess::{spawn_process, spawn_shell};
 use crate::util::has_command;
 use futures::future::pending;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct HueshiftConfig {
+    #[default(5.into())]
     interval: Seconds,
+    #[default(10_000)]
     max_temp: u16,
+    #[default(1_000)]
     min_temp: u16,
     // TODO: Detect currently defined temperature
+    #[default(6_500)]
     current_temp: u16,
     hue_shifter: Option<HueShifter>,
+    #[default(100)]
     step: u16,
+    #[default(6_500)]
     click_temp: u16,
-}
-
-impl Default for HueshiftConfig {
-    fn default() -> Self {
-        Self {
-            interval: Seconds::new(5),
-            max_temp: 10_000,
-            min_temp: 1_000,
-            current_temp: 6_500,
-            hue_shifter: None,
-            step: 100,
-            click_temp: 6_500,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

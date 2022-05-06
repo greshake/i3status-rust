@@ -60,12 +60,11 @@ const DEFAULT_IDLE: f64 = 45.0;
 const DEFAULT_INFO: f64 = 60.0;
 const DEFAULT_WARN: f64 = 80.0;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct TemperatureConfig {
     format: FormatConfig,
-    #[derivative(Default(value = "5.into()"))]
+    #[default(5.into())]
     interval: Seconds,
     collapsed: bool,
     scale: TemperatureScale,
@@ -77,11 +76,10 @@ struct TemperatureConfig {
     inputs: Option<Vec<StdString>>,
 }
 
-#[derive(Deserialize, Debug, Derivative, Clone, Copy, PartialEq, Eq)]
+#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum TemperatureScale {
-    #[derivative(Default)]
+    #[default]
     Celsius,
     Fahrenheit,
 }

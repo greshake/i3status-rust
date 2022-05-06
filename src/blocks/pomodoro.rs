@@ -17,10 +17,19 @@
 //! ----|--------|----------|--------
 //! `message` | Message when timer expires | No | `Pomodoro over! Take a break!`
 //! `break_message` | Message when break is over | No | `Break over! Time to work!`
-//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | No | `swaynag -m '{msg}'`
-//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | No | `true`
+//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | No | None
+//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | No | `false`
 //!
 //! # Example
+//!
+//! Use `swaynag` as a notifier:
+//!
+//! ```toml
+//! [[block]]
+//! block = "pomodoro"
+//! notify_cmd = "swaynag -m '{msg}'"
+//! blocking_cmd = true
+//! ```
 //!
 //! Use `notify-send` as a notifier:
 //!
@@ -30,7 +39,6 @@
 //! notify_cmd = "notify-send '{msg}'"
 //! blocking_cmd = false
 //! ```
-//!
 //!
 //! # Icons Used
 //! - `pomodoro`
@@ -47,24 +55,15 @@ use super::prelude::*;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 use std::time::Instant;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct PomodoroConfig {
+    #[default("Pomodoro over! Take a break!".into())]
     message: String,
+    #[default("Break over! Time to work!".into())]
     break_message: String,
     notify_cmd: Option<String>,
     blocking_cmd: bool,
-}
-
-impl Default for PomodoroConfig {
-    fn default() -> Self {
-        Self {
-            message: "Pomodoro over! Take a break!".into(),
-            break_message: "Break over! Time to work!".into(),
-            notify_cmd: Some("swaynag -m '{msg}'".into()),
-            blocking_cmd: true,
-        }
-    }
 }
 
 struct Block {

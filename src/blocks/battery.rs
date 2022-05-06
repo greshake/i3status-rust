@@ -69,35 +69,33 @@ mod sysfs;
 mod upower;
 mod zbus_upower;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct BatteryConfig {
     device: Option<String>,
     driver: BatteryDriver,
-    #[derivative(Default(value = "10.into()"))]
+    #[default(10.into())]
     interval: Seconds,
     format: FormatConfig,
     full_format: FormatConfig,
     hide_missing: bool,
     hide_full: bool,
-    #[derivative(Default(value = "60.0"))]
+    #[default(60.0)]
     info: f64,
-    #[derivative(Default(value = "60.0"))]
+    #[default(60.0)]
     good: f64,
-    #[derivative(Default(value = "30.0"))]
+    #[default(30.0)]
     warning: f64,
-    #[derivative(Default(value = "15.0"))]
+    #[default(15.0)]
     critical: f64,
-    #[derivative(Default(value = "100.0"))]
+    #[default(100.0)]
     full_threshold: f64,
 }
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum BatteryDriver {
-    #[derivative(Default)]
+    #[default]
     Sysfs,
     Upower,
 }

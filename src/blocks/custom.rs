@@ -94,14 +94,13 @@ use tokio::{
 };
 use tokio_stream::wrappers::IntervalStream;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct CustomConfig {
     command: Option<StdString>,
     persistent: bool,
     cycle: Option<Vec<StdString>>,
-    #[derivative(Default(value = "10.into()"))]
+    #[default(10.into())]
     interval: OnceDuration,
     json: bool,
     hide_when_empty: bool,

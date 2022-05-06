@@ -60,30 +60,22 @@ const FORMAT: &str = "--format=csv,noheader,nounits";
 
 use super::prelude::*;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct NvidiaGpuConfig {
     format: FormatConfig,
+    #[default(1.into())]
     interval: Seconds,
+    #[default(0)]
     gpu_id: u64,
+    #[default(50)]
     idle: u32,
+    #[default(70)]
     good: u32,
+    #[default(75)]
     info: u32,
+    #[default(80)]
     warning: u32,
-}
-
-impl Default for NvidiaGpuConfig {
-    fn default() -> Self {
-        Self {
-            format: default(),
-            interval: 1.into(),
-            gpu_id: 0,
-            idle: 50,
-            good: 70,
-            info: 75,
-            warning: 80,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

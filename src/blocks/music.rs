@@ -92,16 +92,15 @@ const PLAY_PAUSE_BTN: usize = 1;
 const NEXT_BTN: usize = 2;
 const PREV_BTN: usize = 3;
 
-#[derive(Deserialize, Debug, Derivative)]
-#[derivative(Default)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct MusicConfig {
     format: FormatConfig,
     player: Option<String>,
     interface_name_exclude: Vec<String>,
-    #[derivative(Default(value = "\" - \".into()"))]
+    #[default(" - ".into())]
     separator: String,
-    #[derivative(Default(value = "1000"))]
+    #[default(1_000)]
     seek_step: i64,
     hide_when_empty: bool,
 }

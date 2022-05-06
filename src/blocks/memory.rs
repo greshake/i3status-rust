@@ -63,39 +63,29 @@ use regex::Regex;
 use super::prelude::*;
 use crate::util::read_file;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct MemoryConfig {
     format_mem: FormatConfig,
     format_swap: FormatConfig,
+    #[default(Memtype::Memory)]
     display_type: Memtype,
+    #[default(true)]
     clickable: bool,
-    interval: u64,
+    #[default(5.into())]
+    interval: Seconds,
+    #[default(80.0)]
     warning_mem: f64,
+    #[default(80.0)]
     warning_swap: f64,
+    #[default(95.0)]
     critical_mem: f64,
+    #[default(95.0)]
     critical_swap: f64,
-}
-
-impl Default for MemoryConfig {
-    fn default() -> Self {
-        Self {
-            format_mem: default(),
-            format_swap: default(),
-            display_type: Memtype::Memory,
-            clickable: true,
-            interval: 5,
-            warning_mem: 80.,
-            warning_swap: 80.,
-            critical_mem: 95.,
-            critical_swap: 95.,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = MemoryConfig::deserialize(config).config_error()?;
-    let interval = Duration::from_secs(config.interval);
 
     let format_mem = config.format_mem.with_default(
         "$mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2))",
@@ -117,6 +107,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
     };
     api.set_format(format.clone());
+
+    let mut timer = config.interval.timer();
 
     loop {
         let mem_state = Memstate::new().await?;
@@ -171,7 +163,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         loop {
             select! {
-                _ = sleep(interval) => break,
+                _ = timer.tick() => break,
                 Click(click) = api.event() => {
                     if click.button == MouseButton::Left && clickable {
                         match memtype {

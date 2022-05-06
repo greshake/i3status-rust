@@ -33,22 +33,14 @@ use super::prelude::*;
 use std::path::Path;
 use tokio::net::UnixStream;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct DockerConfig {
+    #[default(5.into())]
     interval: Seconds,
     format: FormatConfig,
+    #[default("/var/run/docker.sock".into())]
     socket_path: ShellString,
-}
-
-impl Default for DockerConfig {
-    fn default() -> Self {
-        Self {
-            interval: Seconds::new(5),
-            format: default(),
-            socket_path: ShellString::new("/var/run/docker.sock"),
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

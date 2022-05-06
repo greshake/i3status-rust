@@ -277,11 +277,10 @@ impl WeatherService {
     }
 }
 
-#[derive(Derivative, Copy, Clone, Debug, Deserialize, PartialEq)]
+#[derive(SmartDefault, Copy, Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
-#[derivative(Default)]
 enum UnitSystem {
-    #[derivative(Default)]
+    #[default]
     Metric,
     Imperial,
 }

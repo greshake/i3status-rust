@@ -64,22 +64,14 @@ use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
 const API_ENDPOINT: &str = "https://ipapi.co/json/";
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct ExternalIpConfig {
     format: FormatConfig,
+    #[default(300.into())]
     interval: Seconds,
+    #[default(true)]
     with_network_manager: bool,
-}
-
-impl Default for ExternalIpConfig {
-    fn default() -> Self {
-        Self {
-            format: default(),
-            interval: Seconds::new(300),
-            with_network_manager: true,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

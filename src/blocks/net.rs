@@ -45,11 +45,10 @@ use crate::netlink::{default_interface, NetDevice};
 use crate::util;
 use std::time::Instant;
 
-#[derive(Deserialize, Debug, Derivative)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-#[derivative(Default)]
 struct NetConfig {
-    #[derivative(Default(value = "2.into()"))]
+    #[default(2.into())]
     interval: Seconds,
     format: FormatConfig,
     format_alt: Option<FormatConfig>,

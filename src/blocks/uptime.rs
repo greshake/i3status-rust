@@ -26,18 +26,11 @@
 use super::prelude::*;
 use tokio::fs::read_to_string;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct UptimeConfig {
+    #[default(60.into())]
     interval: Seconds,
-}
-
-impl Default for UptimeConfig {
-    fn default() -> Self {
-        Self {
-            interval: Seconds::new(60),
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

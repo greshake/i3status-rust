@@ -27,33 +27,27 @@
 //! display_type = "new"
 //! ```
 //!
+//! # TODO
+//! - Add `format` option.
+//!
 //! # Icons Used
 //! - `mail`
 
 use super::prelude::*;
 use maildir::Maildir;
 
-//TODO add `format`
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct MaildirConfig {
+    #[default(5.into())]
     interval: Seconds,
     inboxes: Vec<String>,
+    #[default(1)]
     threshold_warning: usize,
+    #[default(10)]
     threshold_critical: usize,
+    #[default(MailType::New)]
     display_type: MailType,
-}
-
-impl Default for MaildirConfig {
-    fn default() -> Self {
-        Self {
-            interval: Seconds::new(5),
-            inboxes: Vec::new(),
-            threshold_warning: 1,
-            threshold_critical: 10,
-            display_type: MailType::New,
-        }
-    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {

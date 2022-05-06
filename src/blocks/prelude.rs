@@ -12,6 +12,7 @@ pub use serde::Deserialize;
 
 pub use smartstring::alias::String;
 
+pub use std::borrow::Cow;
 pub use std::fmt::Write;
 pub use std::pin::Pin;
 pub use std::string::String as StdString;
@@ -25,6 +26,6 @@ pub use futures::{Stream, StreamExt};
 
 pub use once_cell::sync::Lazy;
 
-pub use derivative::Derivative;
+pub use smart_default::SmartDefault;
 
 pub use async_trait::async_trait;
