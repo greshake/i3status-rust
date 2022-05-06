@@ -83,25 +83,18 @@ impl ConfigBlock for Libvirt {
 impl Block for Libvirt {
     fn update(&mut self) -> Result<Option<Update>> {
         // Check if the connection is still active and re-instatiate it if it's not
-        match self
+        if !self
             .qemu_conn
             .is_alive()
-            .block_error("virt", "error when getting connection status to libvirt")
+            .block_error("virt", "error when getting connection status to libvirt")?
         {
-            Ok(true) => {}
-            Ok(false) => {
-                self.qemu_conn = Connect::open_read_only(
-                    &self
-                        .qemu_conn
-                        .get_uri()
-                        .block_error("virt", "error in retrieving URI information from libvirt")
-                        .unwrap(), /* Only happens if memory corruption; then we should panic anyway */
-                )
-                .block_error("virt", "error in reconnecting to libvirt socket")?;
-            }
-            Err(e) => {
-                return Err(e);
-            }
+            self.qemu_conn = Connect::open_read_only(
+                &self
+                    .qemu_conn
+                    .get_uri()
+                    .block_error("virt", "error in retrieving URI information from libvirt")?,
+            )
+            .block_error("virt", "error in reconnecting to libvirt socket")?;
         };
 
         let paused: i64 = self
