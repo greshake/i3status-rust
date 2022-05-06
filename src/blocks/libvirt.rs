@@ -26,7 +26,7 @@ pub struct Libvirt {
 }
 
 impl Libvirt {
-    fn check_and_reconnect(&mut self) -> Result<&mut Self> {
+    fn check_and_reconnect(&mut self) -> Result<()> {
         if !self
             .qemu_conn
             .is_alive()
@@ -35,7 +35,7 @@ impl Libvirt {
             self.qemu_conn = Connect::open_read_only(&self.qemu_uri)
                 .block_error("virt", "error in reconnecting to libvirt socket")?;
         };
-        Ok(self)
+        Ok(())
     }
 }
 
