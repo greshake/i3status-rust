@@ -27,19 +27,10 @@ pub fn convert_to_valid_signal(signal: i32) -> Result<i32> {
     if signal < 0 || signal > sigmax - sigmin {
         //NOTE If some important information is encoded in the third field of this error this might
         //need to be added
-        Err(Error::ConfigurationError(
-            format!(
-            "A provided signal was out of bounds. An allowed signal needs to be between {} and {}",
-            0,
+        Err(Error::new(format!(
+            "A provided signal was out of bounds. An allowed signal needs to be between 0 and {}",
             sigmax - sigmin
-        ),
-            format!(
-                "Provided signal is {} which is not between {} and {}",
-                signal,
-                0,
-                sigmax - sigmin
-            ),
-        ))
+        )))
     } else {
         Ok(signal + sigmin)
     }

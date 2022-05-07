@@ -69,7 +69,7 @@ pub struct Weather {
 }
 
 fn malformed_json_error() -> Error {
-    BlockError("weather".to_string(), "Malformed JSON.".to_string())
+    Error::new("Malformed JSON")
 }
 
 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
@@ -144,10 +144,6 @@ fn convert_wind_direction(direction_opt: Option<f64>) -> String {
     }
 }
 
-fn configuration_error(msg: &str) -> Result<()> {
-    Err(ConfigurationError("weather".to_owned(), msg.to_owned()))
-}
-
 impl Weather {
     fn update_weather(&mut self) -> Result<()> {
         match &self.service {
@@ -160,9 +156,9 @@ impl Weather {
                 lang,
             } => {
                 if api_key_opt.is_none() {
-                    return configuration_error(&format!(
+                    return Err(Error::new(format!(
                         "Missing member 'service.api_key'. Add the member or configure with the environment variable {}",
-                        OPENWEATHERMAP_API_KEY_ENV));
+                        OPENWEATHERMAP_API_KEY_ENV)));
                 }
 
                 let api_key = api_key_opt.as_ref().unwrap();
@@ -182,14 +178,14 @@ impl Weather {
                 } else if let Some((lat, lon)) = coordinates {
                     format!("lat={}&lon={}", lat, lon)
                 } else if self.autolocate {
-                    return configuration_error(
+                    return Err(Error::new(
                         "weather is configured to use geolocation, but it could not be obtained",
-                    );
+                    ));
                 } else {
-                    return configuration_error(&format!(
+                    return Err(Error::new(format!(
                         "Either 'service.city_id' or 'service.place' must be provided. Add one to your config file or set with the environment variables {} or {}",
                         OPENWEATHERMAP_CITY_ID_ENV,
-                        OPENWEATHERMAP_PLACE_ENV));
+                        OPENWEATHERMAP_PLACE_ENV)));
                 };
 
                 // This uses the "Current Weather Data" API endpoint
@@ -211,20 +207,17 @@ impl Weather {
                 // All 300-399 and >500 http codes should be considered as temporary error,
                 // and not result in block error, i.e. leave the output empty.
                 if (output.code >= 300 && output.code < 400) || output.code >= 500 {
-                    return Err(BlockError(
-                        "weather".to_owned(),
-                        format!("Invalid result from curl: {}", output.code),
-                    ));
+                    return Err(Error::new(format!(
+                        "Invalid result from curl: {}",
+                        output.code
+                    )));
                 };
 
                 let json = output.content;
 
                 // Try to convert an API error into a block error.
                 if let Some(val) = json.get("message") {
-                    return Err(BlockError(
-                        "weather".to_string(),
-                        format!("API Error: {}", val.as_str().unwrap()),
-                    ));
+                    return Err(Error::new(format!("API Error: {}", val.as_str().unwrap())));
                 };
 
                 let raw_weather = json
@@ -343,6 +336,10 @@ impl ConfigBlock for Weather {
 }
 
 impl Block for Weather {
+    fn name(&self) -> &'static str {
+        "weather"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         match self.update_weather() {
             Ok(_) => {
@@ -350,7 +347,7 @@ impl Block for Weather {
                     .set_texts(self.format.render(&self.weather_keys)?);
                 self.weather.set_state(State::Idle)
             }
-            Err(BlockError(block, _)) | Err(InternalError(block, _, _)) if block == "curl" => {
+            Err(Error::Curl(_)) => {
                 // Ignore curl/api errors
                 self.weather.set_icon("weather_default")?;
                 self.weather.set_text("×".to_string());

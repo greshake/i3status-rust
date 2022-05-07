@@ -118,11 +118,7 @@ impl FormatTemplate {
                     match after.split_once('}') {
                         // No matching `}`!
                         None => {
-                            return Err(InternalError(
-                                "format parser".to_string(),
-                                "missing '}'".to_string(),
-                                None,
-                            ));
+                            return Err(Error::new("missing '}'"));
                         }
                         // Found the entire placeholder
                         Some((placeholder, rest)) => {
@@ -163,10 +159,9 @@ impl FormatTemplate {
                 Token::Var(var) => rendered.push_str(
                     &vars
                         .get(&*var.name)
-                        .internal_error(
-                            "util",
-                            &format!("Unknown placeholder in format string: '{}'", var.name),
-                        )?
+                        .map_error_msg(|| {
+                            format!("Unknown placeholder in format string: '{}'", var.name)
+                        })?
                         .format(var)?,
                 ),
             }
@@ -176,7 +171,7 @@ impl FormatTemplate {
 }
 
 impl<'de> Deserialize<'de> for FormatTemplate {
-    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -201,7 +196,7 @@ impl<'de> Deserialize<'de> for FormatTemplate {
             /// ```toml
             /// format = "{layout}"
             /// ```
-            fn visit_str<E>(self, full: &str) -> StdResult<FormatTemplate, E>
+            fn visit_str<E>(self, full: &str) -> Result<FormatTemplate, E>
             where
                 E: de::Error,
             {
@@ -215,7 +210,7 @@ impl<'de> Deserialize<'de> for FormatTemplate {
             /// full = "{layout}"
             /// short = "{layout^2}"
             /// ```
-            fn visit_map<V>(self, mut map: V) -> StdResult<FormatTemplate, V::Error>
+            fn visit_map<V>(self, mut map: V) -> Result<FormatTemplate, V::Error>
             where
                 V: MapAccess<'de>,
             {

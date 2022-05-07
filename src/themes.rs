@@ -7,7 +7,7 @@ use std::str::FromStr;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use serde_derive::Deserialize;
 
-use crate::errors::ToSerdeError;
+use crate::errors::*;
 use crate::util;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,24 +36,24 @@ impl Add for Color {
 }
 
 impl FromStr for Color {
-    type Err = crate::errors::Error;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
         if s == "none" || s.is_empty() {
             Ok(Color::None)
         } else if s == "auto" {
             Ok(Color::Auto)
         } else {
-            use crate::errors::{OptionExt, ResultExtInternal};
-            let err_msg = "invaild RGBA color";
-            let r = s.get(1..3).internal_error("color parser", err_msg)?;
-            let g = s.get(3..5).internal_error("color parser", err_msg)?;
-            let b = s.get(5..7).internal_error("color parser", err_msg)?;
+            let err_msg = "color parser: invaild RGBA color";
+            let r = s.get(1..3).error_msg(err_msg)?;
+            let g = s.get(3..5).error_msg(err_msg)?;
+            let b = s.get(5..7).error_msg(err_msg)?;
             let a = s.get(7..9).unwrap_or("FF");
             Ok(Color::Rgba(
-                u8::from_str_radix(r, 16).internal_error("color parser", err_msg)?,
-                u8::from_str_radix(g, 16).internal_error("color parser", err_msg)?,
-                u8::from_str_radix(b, 16).internal_error("color parser", err_msg)?,
-                u8::from_str_radix(a, 16).internal_error("color parser", err_msg)?,
+                u8::from_str_radix(r, 16).error_msg(err_msg)?,
+                u8::from_str_radix(g, 16).error_msg(err_msg)?,
+                u8::from_str_radix(b, 16).error_msg(err_msg)?,
+                u8::from_str_radix(a, 16).error_msg(err_msg)?,
             ))
         }
     }
@@ -77,7 +77,7 @@ impl<'de> Deserialize<'de> for Color {
             where
                 E: de::Error,
             {
-                s.parse().serde_error()
+                s.parse().map_err(E::custom)
             }
         }
 
@@ -276,7 +276,9 @@ impl<'de> Deserialize<'de> for Theme {
                     .ok_or_else(|| de::Error::custom(format!("Theme '{}' not found.", theme)))?;
 
                 if let Some(ref overrides) = overrides {
-                    theme.apply_overrides(overrides).serde_error()?;
+                    theme
+                        .apply_overrides(overrides)
+                        .map_err(de::Error::custom)?;
                 }
                 Ok(theme)
             }

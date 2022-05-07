@@ -198,13 +198,13 @@ impl ConfigBlock for NvidiaGpu {
             ])
             .stdout(Stdio::piped())
             .spawn()
-            .block_error("gpu", "Failed to execute nvidia-smi.")?;
+            .error_msg("Failed to execute nvidia-smi.")?;
 
         let reader = BufReader::new(
             handle
                 .stdout
                 .take()
-                .block_error("gpu", "Failed to create bufreader for nvidia-smi.")?,
+                .error_msg("Failed to create bufreader for nvidia-smi.")?,
         );
 
         Ok(NvidiaGpu {
@@ -260,20 +260,22 @@ impl Drop for NvidiaGpu {
 }
 
 impl Block for NvidiaGpu {
+    fn name(&self) -> &'static str {
+        "nvidia_gpu"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         self.gpu_enabled = match self.handle.try_wait() {
             Ok(None) => true,
             Ok(Some(code)) => {
-                return Err(BlockError(
-                    "nvidia_gpu".to_string(),
-                    format!("nvidia-smi exited with error code {}", code),
-                ))
+                return Err(Error::new(format!(
+                    "nvidia-smi exited with error code {code}"
+                )))
             }
             Err(e) => {
-                return Err(BlockError(
-                    "nvidia_gpu".to_string(),
-                    format!("error attempting to wait for nvidia-smi: {}", e),
-                ))
+                return Err(Error::new(format!(
+                    "error attempting to wait for nvidia-smi: {e}"
+                )))
             }
         };
 
@@ -281,16 +283,15 @@ impl Block for NvidiaGpu {
         let buf = self
             .reader
             .fill_buf()
-            .block_error("gpu", "Nvidia-smi fill_buf error")?;
-        let buf_str =
-            String::from_utf8(buf.to_vec()).block_error("gpu", "Nvidia-smi from_utf8 error")?;
+            .error_msg("Nvidia-smi fill_buf error")?;
+        let buf_str = String::from_utf8(buf.to_vec()).error_msg("Nvidia-smi from_utf8 error")?;
 
         /* Catch up on any existing lines */
         for _ in buf_str.lines() {
             result_str.clear();
             self.reader
                 .read_line(&mut result_str)
-                .block_error("gpu", "Nvidia-smi read_line error")?;
+                .error_msg("Nvidia-smi read_line error")?;
         }
 
         let result: Vec<&str> = result_str.trim().split(", ").collect();
@@ -448,7 +449,7 @@ impl Block for NvidiaGpu {
                                     ),
                                 ])
                                 .output()
-                                .block_error("gpu", "Failed to execute nvidia-settings.")?;
+                                .error_msg("Failed to execute nvidia-settings.")?;
                             fan_widget.set_text(format!("{:02}%", self.fan_speed));
                             fan_widget.set_state(State::Warning);
                         } else {
@@ -458,7 +459,7 @@ impl Block for NvidiaGpu {
                                     &format!("[gpu:{}]/GPUFanControlState=0", self.gpu_id),
                                 ])
                                 .output()
-                                .block_error("gpu", "Failed to execute nvidia-settings.")?;
+                                .error_msg("Failed to execute nvidia-settings.")?;
                             fan_widget.set_state(State::Idle);
                         }
                     } else if self.fan_speed_controlled {
@@ -471,7 +472,7 @@ impl Block for NvidiaGpu {
                                 ),
                             ])
                             .output()
-                            .block_error("gpu", "Failed to execute nvidia-settings.")?;
+                            .error_msg("Failed to execute nvidia-settings.")?;
                         self.fan_speed = new_fan_speed;
                         fan_widget.set_text(format!("{:02}%", new_fan_speed));
                     }

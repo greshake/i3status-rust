@@ -92,8 +92,7 @@ impl ConfigBlock for KDEConnect {
         let send6 = send.clone();
         let send7 = send.clone();
 
-        let c = Connection::new_session()
-            .block_error("kdeconnect", "Failed to establish D-Bus connection")?;
+        let c = Connection::new_session().error_msg("Failed to establish D-Bus connection")?;
 
         let device_id = if block_config.device_id.is_none() {
             // If none specified in block config, just grab the first device found.
@@ -105,12 +104,9 @@ impl ConfigBlock for KDEConnect {
             // method call opts: only_reachable=false, only_paired=true
             let (devices,): (Vec<String>,) = p1
                 .method_call("org.kde.kdeconnect.daemon", "devices", (false, true))
-                .block_error("kdeconnect", "Couldn't connect to KDE Connect daemon")?;
+                .error_msg("Couldn't connect to KDE Connect daemon")?;
             if devices.is_empty() {
-                return Err(BlockError(
-                    "kdeconnect".to_owned(),
-                    "No devices found.".to_owned(),
-                ));
+                return Err(Error::new("No devices found"));
             }
             devices[0].clone()
         } else {
@@ -138,13 +134,10 @@ impl ConfigBlock for KDEConnect {
         let old_kdeconnect = Command::new("kdeconnect-cli")
             .args(&["--version"])
             .output()
-            .block_error(
-                "kdeconnect",
-                "Failed to check kdeconnect version. Is it installed?",
-            )
+            .error_msg("Failed to check kdeconnect version. Is it installed?")
             .and_then(|raw_output| {
                 String::from_utf8(raw_output.stdout)
-                    .block_error("kdeconnect", "Failed to check kdeconnect version.")
+                    .error_msg("Failed to check kdeconnect version.")
             })
             .unwrap()
             .contains("kdeconnect-cli 1.");
@@ -536,40 +529,25 @@ impl ConfigBlock for KDEConnect {
 }
 
 impl Block for KDEConnect {
+    fn name(&self) -> &'static str {
+        "kdeconnect"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        let charge = (*self
-            .battery_charge
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `charge`")?)
-            as i32;
-
-        let charging = *self
-            .battery_state
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `battery_state`")?;
-
-        let notif_count = *self
-            .notif_count
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `notif_count`")?;
+        // TODO: use atomics! (or one mutex with a struct)
+        let charge = *self.battery_charge.lock().unwrap() as i32;
+        let charging = *self.battery_state.lock().unwrap();
+        let notif_count = *self.notif_count.lock().unwrap();
+        let phone_reachable = *self.phone_reachable.lock().unwrap();
 
         // TODO
         //let notif_text = (*self
         //   .notif_text
         //   .lock()
-        //   .block_error("kdeconnect", "failed to acquire lock for `notif_text`")?)
+        //   .error_msg( "failed to acquire lock for `notif_text`")?)
         //   .clone();
 
-        let phone_reachable = *self
-            .phone_reachable
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `phone_reachable`")?;
-
-        let name = (*self
-            .device_name
-            .lock()
-            .block_error("kdeconnect", "failed to acquire lock for `name`")?)
-        .clone();
+        let name = (*self.device_name.lock().unwrap()).clone();
 
         let bat_icon = self
             .shared_config

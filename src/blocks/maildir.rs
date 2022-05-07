@@ -9,6 +9,7 @@ use crate::config::SharedConfig;
 use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
+use crate::util::expand_string;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -77,14 +78,7 @@ impl ConfigBlock for Maildir {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         for inbox in &mut block_config.inboxes {
-            *inbox = shellexpand::full(inbox)
-                .map_err(|e| {
-                    ConfigurationError(
-                        "maildir".to_string(),
-                        format!("Failed to expand inbox path {}: {}", inbox, e),
-                    )
-                })?
-                .to_string();
+            *inbox = expand_string(inbox)?;
         }
         let widget = TextWidget::new(id, 0, shared_config).with_text("");
         Ok(Maildir {
@@ -103,6 +97,10 @@ impl ConfigBlock for Maildir {
 }
 
 impl Block for Maildir {
+    fn name(&self) -> &'static str {
+        "maildir"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let mut newmails = 0;
         for inbox in &self.inboxes {

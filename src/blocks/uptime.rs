@@ -51,22 +51,22 @@ impl ConfigBlock for Uptime {
 }
 
 impl Block for Uptime {
+    fn name(&self) -> &'static str {
+        "uptime"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        let uptime_raw = read_file("uptime", Path::new("/proc/uptime")).map_err(|e| {
-            BlockError(
-                "Uptime".to_owned(),
-                format!("Uptime failed to read /proc/uptime: '{}'", e),
-            )
-        })?;
+        let uptime_raw =
+            read_file(Path::new("/proc/uptime")).error_msg("Uptime failed to read /proc/uptime")?;
         let uptime = uptime_raw
             .split_whitespace()
             .next()
-            .block_error("Uptime", "Uptime failed to read uptime string.")?;
+            .error_msg("Uptime failed to read uptime string.")?;
 
         let total_seconds = uptime
             .parse::<f64>()
             .map(|x| x as u32)
-            .block_error("Uptime", "Failed to convert uptime float to integer)")?;
+            .error_msg("Failed to convert uptime float to integer)")?;
 
         // split up seconds into more human readable portions
         let weeks = (total_seconds / 604_800) as u32;

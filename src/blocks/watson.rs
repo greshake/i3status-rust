@@ -11,7 +11,7 @@ use crate::de::deserialize_local_timestamp;
 use crate::errors::*;
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
-use crate::util::xdg_config_home;
+use crate::util::{expand_string, xdg_config_home};
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 use chrono::offset::Local;
@@ -63,31 +63,10 @@ impl ConfigBlock for Watson {
         shared_config: SharedConfig,
         tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        // TODO test if state_path PathBuf is being properly converted and erroring out if not
-        let state_path_string = match block_config.state_path.to_str() {
-            Some(str) => str,
-            None => {
-                return Err(BlockError(
-                    "watson".to_string(),
-                    format!(
-                        "Error converting state_path to unicode string: '{}'. Can you try renaming one of the folders?",
-                        block_config.state_path.to_string_lossy()
-                    ),
-                ))
-            }
-        };
+        let state_path_string = block_config.state_path.to_str().unwrap();
         let watson = Watson {
             text: TextWidget::new(id, 0, shared_config),
-            state_path: PathBuf::from(
-                shellexpand::full(&state_path_string)
-                    .map_err(|e| {
-                        ConfigurationError(
-                            "watson".to_string(),
-                            format!("Failed to expand state path {}: {}", &state_path_string, e),
-                        )
-                    })?
-                    .to_string(),
-            ),
+            state_path: PathBuf::from(expand_string(state_path_string)?),
             show_time: block_config.show_time,
             update_interval: block_config.interval,
             prev_state: None,
@@ -140,12 +119,16 @@ impl ConfigBlock for Watson {
 }
 
 impl Block for Watson {
+    fn name(&self) -> &'static str {
+        "watson"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let state = {
             let file = BufReader::new(
-                File::open(&self.state_path).block_error("watson", "unable to open state file")?,
+                File::open(&self.state_path).error_msg("unable to open state file")?,
             );
-            serde_json::from_reader(file).block_error("watson", "unable to deserialize state")?
+            serde_json::from_reader(file).error_msg("unable to deserialize state")?
         };
 
         match state {

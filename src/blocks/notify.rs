@@ -44,7 +44,7 @@ impl ConfigBlock for Notify {
         send: Sender<Task>,
     ) -> Result<Self> {
         let c = Connection::get_private(BusType::Session)
-            .block_error("notify", "Failed to establish D-Bus connection")?;
+            .error_msg("Failed to establish D-Bus connection")?;
 
         let p = c.with_path(
             "org.freedesktop.Notifications",
@@ -53,7 +53,7 @@ impl ConfigBlock for Notify {
         );
         let initial_state: bool = p
             .get("org.dunstproject.cmd0", "paused")
-            .block_error("notify", "Failed to get dunst state. Is it running?")?;
+            .error_msg("Failed to get dunst state. Is it running?")?;
 
         let icon = if initial_state { "bell-slash" } else { "bell" };
 
@@ -102,11 +102,12 @@ impl ConfigBlock for Notify {
 }
 
 impl Block for Notify {
+    fn name(&self) -> &'static str {
+        "notify"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        let paused = *self
-            .paused
-            .lock()
-            .block_error("notify", "failed to acquire lock for `state`")?;
+        let paused = *self.paused.lock().unwrap();
 
         let values = map!(
             "state" => Value::from_string(paused.to_string())
@@ -128,7 +129,7 @@ impl Block for Notify {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let MouseButton::Left = e.button {
             let c = Connection::get_private(BusType::Session)
-                .block_error("notify", "Failed to establish D-Bus connection")?;
+                .error_msg("Failed to establish D-Bus connection")?;
 
             let p = c.with_path(
                 "org.freedesktop.Notifications",
@@ -136,17 +137,14 @@ impl Block for Notify {
                 5000,
             );
 
-            let paused = *self
-                .paused
-                .lock()
-                .block_error("notify", "failed to acquire lock")?;
+            let paused = *self.paused.lock().unwrap();
 
             if paused == 1 {
                 p.set("org.dunstproject.cmd0", "paused", false)
-                    .block_error("notify", "Failed to query D-Bus")?;
+                    .error_msg("Failed to query D-Bus")?;
             } else {
                 p.set("org.dunstproject.cmd0", "paused", true)
-                    .block_error("notify", "Failed to query D-Bus")?;
+                    .error_msg("Failed to query D-Bus")?;
             }
 
             // block will auto-update due to monitoring the bus

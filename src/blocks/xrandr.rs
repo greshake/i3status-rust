@@ -105,10 +105,10 @@ impl Xrandr {
             Command::new("xrandr")
                 .args(&["--listactivemonitors"])
                 .output()
-                .block_error("xrandr", "couldn't collect active xrandr monitors")?
+                .error_msg( "couldn't collect active xrandr monitors")?
                 .stdout,
         )
-        .block_error("xrandr", "couldn't parse xrandr monitor list")?;
+        .error_msg( "couldn't parse xrandr monitor list")?;
 
         let monitors: Vec<&str> = active_monitors_cli.split('\n').collect();
         let mut active_monitors: Vec<String> = Vec::new();
@@ -134,10 +134,10 @@ impl Xrandr {
             Command::new("xrandr")
                 .args(&["--verbose"])
                 .output()
-                .block_error("xrandr", "couldn't collect xrandr monitor info")?
+                .error_msg( "couldn't collect xrandr monitor info")?
                 .stdout,
         )
-        .block_error("xrandr", "couldn't parse xrandr monitor info")?;
+        .error_msg( "couldn't parse xrandr monitor info")?;
 
         let regex_set = RegexSet::new(
             monitor_names
@@ -145,7 +145,7 @@ impl Xrandr {
                 .map(|x| format!("{} connected", x))
                 .chain(std::iter::once("Brightness:".to_string())),
         )
-        .block_error("xrandr", "invalid monitor name")?;
+        .error_msg( "invalid monitor name")?;
 
         let monitor_infos: Vec<&str> = monitor_info_cli
             .split('\n')
@@ -161,7 +161,7 @@ impl Xrandr {
                 display = name.trim();
                 if let Some(brightness_raw) = b_line.split(':').collect::<Vec<&str>>().get(1) {
                     brightness = (f32::from_str(brightness_raw.trim())
-                        .block_error("xrandr", "unable to parse brightness")?
+                        .error_msg( "unable to parse brightness")?
                         * 100.0)
                         .floor() as u32;
                 }
@@ -238,6 +238,10 @@ impl ConfigBlock for Xrandr {
 }
 
 impl Block for Xrandr {
+    fn name(&self) -> &'static str {
+        "xrandr"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         if let Some(am) = Xrandr::get_active_monitors()? {
             if let Some(mm) = Xrandr::get_monitor_metrics(&am)? {

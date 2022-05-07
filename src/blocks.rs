@@ -61,8 +61,13 @@ pub trait ConfigBlock: Block {
     }
 }
 
-/// The Block trait is used to interact with a block after it has been instantiated from ConfigBlock
+/// The Block trait is used to interact with a block after it has been instantiated from ConfigBlock.
 pub trait Block {
+    /// The name of the block.
+    ///
+    /// This name will be shown to the user when an error occurs.
+    fn name(&self) -> &'static str;
+
     /// Use this function to return the widgets that comprise the UI of your component.
     ///
     /// The music block may, for example, be comprised of a text widget and multiple
@@ -130,6 +135,20 @@ macro_rules! define_blocks {
                         $(#[cfg($attr)])?
                         Self::$block => {
                             create_block_typed::<$block::$block_type>(id, block_config, shared_config, update_request)
+                        }
+                    )*
+                }
+            }
+
+            pub fn name(
+                self,
+            ) -> &'static str
+            {
+                match self {
+                    $(
+                        $(#[cfg($attr)])?
+                        Self::$block => {
+                            stringify!($block)
                         }
                     )*
                 }
@@ -227,20 +246,19 @@ pub fn create_block_typed<B>(
     update_request: Sender<Task>,
 ) -> Result<Option<Box<dyn Block>>>
 where
-    B: Block + ConfigBlock + 'static,
+    B: ConfigBlock + 'static,
 {
     // Extract base(common) config
     let common_config = BaseBlockConfig::extract(&mut block_config);
     let mut common_config = BaseBlockConfig::deserialize(common_config)
-        .configuration_error("Failed to deserialize common block config.")?;
+        .error_msg("Failed to deserialize common block config")?;
 
     // Run if_command if present
     if let Some(ref cmd) = common_config.if_command {
         if !Command::new("sh")
             .args(["-c", cmd])
-            .output()?
-            .status
-            .success()
+            .output()
+            .map_or(false, |o| o.status.success())
         {
             return Ok(None);
         }
@@ -259,7 +277,7 @@ where
 
     // Extract block-specific config
     let block_config = <B as ConfigBlock>::Config::deserialize(block_config)
-        .configuration_error("Failed to deserialize block config.")?;
+        .error_msg("Failed to deserialize block config")?;
 
     let mut block = B::new(id, block_config, shared_config, update_request)?;
     if let Some(overrided) = block.override_on_click() {
@@ -267,7 +285,6 @@ where
     }
 
     Ok(Some(Box::new(BaseBlock {
-        name: stringify!($block_type).to_string(),
         inner: block,
         on_click: common_config.on_click,
     })))

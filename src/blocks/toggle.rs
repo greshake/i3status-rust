@@ -87,6 +87,10 @@ impl ConfigBlock for Toggle {
 }
 
 impl Block for Toggle {
+    fn name(&self) -> &'static str {
+        "toggle"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &self.command_state])
@@ -124,7 +128,7 @@ impl Block for Toggle {
         let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", cmd])
             .output()
-            .block_error("toggle", "failed to run toggle command")?;
+            .error_msg( "failed to run toggle command")?;
 
         if output.status.success() {
             self.text.set_state(State::Idle);

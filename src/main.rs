@@ -92,7 +92,7 @@ fn main() {
         // Create widget with error message
         let error_widget = TextWidget::new(0, 0, Default::default())
             .with_state(State::Critical)
-            .with_text(&format!("{:?}", error));
+            .with_text(&error.to_string());
 
         // Print errors
         println!("[{}],", error_widget.get_data().render());
@@ -130,12 +130,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
     // Initialize the blocks
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
     for (block_name, block_config) in config.blocks {
-        let block = block_name.create_block(
-            blocks.len(),
-            block_config,
-            shared_config.clone(),
-            tx_update_requests.clone(),
-        )?;
+        let block = block_name
+            .create_block(
+                blocks.len(),
+                block_config,
+                shared_config.clone(),
+                tx_update_requests.clone(),
+            )
+            .in_block(block_name.name())?;
 
         if let Some(block) = block {
             blocks.push(block);
@@ -164,24 +166,22 @@ fn run(matches: &ArgMatches) -> Result<()> {
             // Receive click events
             recv(rx_clicks) -> res => if let Ok(event) = res {
                 if let Some(id) = event.id {
-                        blocks.get_mut(id)
-                    .internal_error("click handler", "could not get required block")?
-                            .click(&event)?;
+                    let block = blocks.get_mut(id).error_msg("could not get required block")?;
+                    block.click(&event).in_block(block.name())?;
                     protocol::print_blocks(&blocks, &shared_config)?;
                 }
             },
             // Receive async update requests
             recv(rx_update_requests) -> request => if let Ok(req) = request {
                 if scheduler.schedule.iter().any(|x| x.id == req.id) {
-                // If block is already scheduled then process immediately and forget
-                blocks.get_mut(req.id)
-                    .internal_error("scheduler", "could not get required block")?
-                    .update()?;
+                    // If block is already scheduled then process immediately and forget
+                    let block = blocks.get_mut(req.id).error_msg("scheduler: could not get required block")?;
+                    block.update().in_block(block.name())?;
                 } else {
-                // Otherwise add to scheduler tasks and trigger update
-                // In case this needs to schedule further updates e.g. marquee
-                scheduler.schedule.push(req);
-                scheduler.do_scheduled_updates(&mut blocks)?;
+                    // Otherwise add to scheduler tasks and trigger update
+                    // In case this needs to schedule further updates e.g. marquee
+                    scheduler.schedule.push(req);
+                    scheduler.do_scheduled_updates(&mut blocks)?;
                 }
                 protocol::print_blocks(&blocks, &shared_config)?;
             },
@@ -197,7 +197,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     signal_hook::consts::SIGUSR1 => {
                         //USR1 signal that updates every block in the bar
                         for block in blocks.iter_mut() {
-                            block.update()?;
+                            block.update().in_block(block.name())?;
                         }
                     },
                     signal_hook::consts::SIGUSR2 => {
@@ -209,7 +209,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         //Real time signal that updates only the blocks listening
                         //for that signal
                         for block in blocks.iter_mut() {
-                            block.signal(sig)?;
+                            block.signal(sig).in_block(block.name())?;
                         }
                     },
                 };

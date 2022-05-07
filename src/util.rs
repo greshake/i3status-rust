@@ -124,43 +124,34 @@ where
 {
     let file = path.to_str().unwrap();
     let mut contents = String::new();
-    let mut file = BufReader::new(
-        File::open(file).internal_error("util", &format!("failed to open file: {}", file))?,
-    );
+    let mut file =
+        BufReader::new(File::open(file).map_error_msg(|_| format!("failed to open file: {file}"))?);
     file.read_to_string(&mut contents)
-        .internal_error("util", "failed to read file")?;
-    toml::from_str(&contents).configuration_error("failed to parse TOML from file contents")
+        .error_msg("failed to read file")?;
+    toml::from_str(&contents).error_msg("failed to parse TOML from file contents")
 }
 
-pub fn read_file(blockname: &str, path: impl AsRef<Path>) -> Result<String> {
+pub fn read_file(path: impl AsRef<Path>) -> Result<String> {
     let mut f = OpenOptions::new()
         .read(true)
         .open(path.as_ref())
-        .block_error(
-            blockname,
-            &format!("failed to open file {}", path.as_ref().display()),
-        )?;
+        .map_error_msg(|_| format!("failed to open file {}", path.as_ref().display()))?;
     let mut content = String::new();
-    f.read_to_string(&mut content).block_error(
-        blockname,
-        &format!("failed to read {}", path.as_ref().display()),
-    )?;
+    f.read_to_string(&mut content)
+        .map_error_msg(|_| format!("failed to read {}", path.as_ref().display()))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
 }
 
-pub fn has_command(block_name: &str, command: &str) -> Result<bool> {
+pub fn has_command(command: &str) -> Result<bool> {
     let exit_status = Command::new("sh")
         .args(&[
             "-c",
             format!("command -v {} >/dev/null 2>&1", command).as_ref(),
         ])
         .status()
-        .block_error(
-            block_name,
-            format!("failed to start command to check for {}", command).as_ref(),
-        )?;
+        .map_error_msg(|_| format!("failed to start command to check for {command}"))?;
     Ok(exit_status.success())
 }
 
@@ -202,6 +193,12 @@ pub fn notify(short: &str, long: &str) {
     let _ = Command::new("notify-send").args([short, long]).output();
 }
 
+pub fn expand_string(s: &str) -> Result<String> {
+    shellexpand::full(s)
+        .error_msg("Failed to expand string")
+        .map(Into::into)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::util::{country_flag_from_iso_code, has_command};
@@ -209,7 +206,7 @@ mod tests {
     #[test]
     // we assume sh is always available
     fn test_has_command_ok() {
-        let has_command = has_command("none", "sh");
+        let has_command = has_command("sh");
         assert!(has_command.is_ok());
         let has_command = has_command.unwrap();
         assert!(has_command);
@@ -218,7 +215,7 @@ mod tests {
     #[test]
     // we assume thequickbrownfoxjumpsoverthelazydog command does not exist
     fn test_has_command_err() {
-        let has_command = has_command("none", "thequickbrownfoxjumpsoverthelazydog");
+        let has_command = has_command("thequickbrownfoxjumpsoverthelazydog");
         assert!(has_command.is_ok());
         let has_command = has_command.unwrap();
         assert!(!has_command)

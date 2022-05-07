@@ -1,4 +1,3 @@
-use std::fs;
 use std::time::Duration;
 
 use sensors::FeatureType::SENSORS_FEATURE_TEMP;
@@ -34,7 +33,6 @@ impl Default for TemperatureScale {
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TemperatureDriver {
-    Sysfs,
     Sensors,
 }
 
@@ -94,7 +92,7 @@ pub struct TemperatureConfig {
     /// Format override
     pub format: FormatTemplate,
 
-    /// The "driver " to use for temperature block. One of "sysfs" or "sensors"
+    /// The "driver " to use for temperature block
     pub driver: TemperatureDriver,
 
     /// Chip override
@@ -170,6 +168,10 @@ impl ConfigBlock for Temperature {
 }
 
 impl Block for Temperature {
+    fn name(&self) -> &'static str {
+        "temperature"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let mut temperatures: Vec<f64> = Vec::new();
 
@@ -180,7 +182,7 @@ impl Block for Temperature {
                 let chips = match &self.chip {
                     Some(chip) => sensors
                         .detected_chips(chip)
-                        .block_error("temperature", "Failed to create chip iterator")?,
+                        .error_msg("Failed to create chip iterator")?,
                     None => sensors.into_iter(),
                 };
 
@@ -190,9 +192,7 @@ impl Block for Temperature {
                             continue;
                         }
                         if let Some(inputs) = &self.inputs {
-                            let label = feat
-                                .get_label()
-                                .block_error("temperature", "Failed to get input label")?;
+                            let label = feat.get_label().error_msg("Failed to get input label")?;
                             if !inputs.contains(&label) {
                                 continue;
                             }
@@ -204,57 +204,9 @@ impl Block for Temperature {
                                         temperatures.push(value);
                                     } else {
                                         eprintln!(
-                                            "Temperature ({}) outside of range ([-100, 150])",
-                                            value
+                                            "Temperature ({value}) outside of range ([-100, 150])",
                                         );
                                     }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            TemperatureDriver::Sysfs => {
-                for hwmon_dir in fs::read_dir("/sys/class/hwmon")? {
-                    let hwmon = &hwmon_dir?.path();
-                    if let Some(ref chip_name) = self.chip {
-                        // Narrow to hwmon names that are substrings of the given chip name or vice versa
-                        let hwmon_untrimmed = fs::read_to_string(hwmon.join("name"))?;
-                        let hwmon_name = hwmon_untrimmed.trim();
-                        if !(chip_name.contains(hwmon_name) || hwmon_name.contains(chip_name)) {
-                            continue;
-                        }
-                    }
-                    for entry in hwmon.read_dir()? {
-                        let entry = entry?;
-                        if let Ok(name) = entry.file_name().into_string() {
-                            if name.starts_with("temp") && name.ends_with("label") {
-                                if let Some(ref whitelist) = self.inputs {
-                                    //narrow to labels that are an exact match for one of the inputs
-                                    if !whitelist.contains(
-                                        &fs::read_to_string(entry.path())?.trim().to_string(),
-                                    ) {
-                                        continue;
-                                    }
-                                }
-                                let value: f64 =
-                                    fs::read_to_string(hwmon.join(name.replace("label", "input")))?
-                                        .trim()
-                                        .parse::<f64>()
-                                        .block_error(
-                                            "temperature",
-                                            "failed to parse temperature as an integer",
-                                        )?
-                                        / 1000f64;
-
-                                if value > -101f64 && value < 151f64 {
-                                    temperatures.push(value);
-                                } else {
-                                    // This error is recoverable and therefore should not stop the program
-                                    eprintln!(
-                                        "Temperature ({}) outside of range ([-100, 150])",
-                                        value
-                                    );
                                 }
                             }
                         }
@@ -274,12 +226,12 @@ impl Block for Temperature {
                 .iter()
                 .cloned()
                 .reduce(f64::max)
-                .block_error("temperature", "failed to get max temperature")?;
+                .error_msg("failed to get max temperature")?;
             let min: f64 = temperatures
                 .iter()
                 .cloned()
                 .reduce(f64::min)
-                .block_error("temperature", "failed to get min temperature")?;
+                .error_msg("failed to get min temperature")?;
             let avg: f64 = temperatures.iter().sum::<f64>() / temperatures.len() as f64;
 
             let values = map!(

@@ -18,6 +18,7 @@ use crate::protocol::i3bar_event::I3BarEvent;
 use crate::protocol::i3bar_event::MouseButton;
 use crate::scheduler::Task;
 use crate::subprocess::spawn_child_async;
+use crate::util::expand_string;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 use crate::widgets::State;
@@ -78,23 +79,17 @@ impl ConfigBlock for Rofication {
         Ok(Rofication {
             update_interval: block_config.interval,
             text,
-            socket_path: shellexpand::full(&block_config.socket_path)
-                .map_err(|e| {
-                    ConfigurationError(
-                        "rofi".to_string(),
-                        format!(
-                            "Failed to expand socket path {}: {}",
-                            &block_config.socket_path, e
-                        ),
-                    )
-                })?
-                .to_string(),
+            socket_path: expand_string(&block_config.socket_path)?,
             format: block_config.format.with_default("{num}")?,
         })
     }
 }
 
 impl Block for Rofication {
+    fn name(&self) -> &'static str {
+        "rofication"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         match rofication_status(&self.socket_path) {
             Ok(status) => {
@@ -128,8 +123,7 @@ impl Block for Rofication {
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
         if event.button == MouseButton::Left {
-            spawn_child_async("rofication-gui", &[])
-                .block_error("rofication", "could not spawn gui")?;
+            spawn_child_async("rofication-gui", &[]).error_msg("could not spawn gui")?;
         }
         Ok(())
     }
@@ -138,40 +132,26 @@ impl Block for Rofication {
 fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
     let socket = Path::new(socket_path);
     // Connect to socket
-    let mut stream = match UnixStream::connect(&socket) {
-        Err(_) => {
-            return Err(BlockError(
-                "rofication".to_string(),
-                "Failed to connect to socket".to_string(),
-            ))
-        }
-        Ok(stream) => stream,
-    };
+    let mut stream = UnixStream::connect(&socket).error_msg("failed to connect to socket")?;
 
     // Request count
     stream
         .write(b"num:\n")
-        .block_error("rofication", "Failed to write to socket")?;
+        .error_msg("Failed to write to socket")?;
 
     // Response must be two comma separated integers: regular and critical
     let mut buffer = String::new();
     stream
         .read_to_string(&mut buffer)
-        .block_error("rofication", "Failed to read from socket")?;
+        .error_msg("Failed to read from socket")?;
 
     // Original rofication uses newline to separate, while regolith forks uses comma.
     let values = buffer
         .split_once(|c| c == ',' || c == '\n')
-        .block_error("rofication", "Format error")?;
+        .error_msg("Format error")?;
 
-    let num = values
-        .0
-        .parse::<u64>()
-        .block_error("rofication", "Failed to parse num")?;
-    let crit = values
-        .1
-        .parse::<u64>()
-        .block_error("rofication", "Failed to parse crit")?;
+    let num = values.0.parse::<u64>().error_msg("Failed to parse num")?;
+    let crit = values.1.parse::<u64>().error_msg("Failed to parse crit")?;
 
     Ok(RotificationStatus { num, crit })
 }

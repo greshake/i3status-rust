@@ -13,6 +13,7 @@ use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
 use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
+use crate::util::expand_string;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 use crossbeam_channel::Sender;
@@ -110,20 +111,10 @@ impl ConfigBlock for Custom {
             let tx_inotify = custom.tx_update_request.clone();
             let mut notify = Inotify::init().expect("Failed to start inotify");
             for path in paths {
-                let path_expanded = shellexpand::full(&path).map_err(|e| {
-                    ConfigurationError(
-                        "custom".to_string(),
-                        format!("Failed to expand file path {}: {}", &path, e),
-                    )
-                })?;
+                let path_expanded = expand_string(&path)?;
                 notify
-                    .add_watch(&*path_expanded, WatchMask::MODIFY)
-                    .map_err(|e| {
-                        ConfigurationError(
-                            "custom".to_string(),
-                            format!("Failed to watch file {}: {}", &path, e),
-                        )
-                    })?;
+                    .add_watch(path_expanded, WatchMask::MODIFY)
+                    .map_error_msg(|_| format!("Failed to watch file {path}"))?;
             }
             thread::Builder::new()
                 .name("custom".into())
@@ -151,10 +142,7 @@ impl ConfigBlock for Custom {
         };
 
         if block_config.cycle.is_some() && block_config.command.is_some() {
-            return Err(BlockError(
-                "custom".to_string(),
-                "`command` and `cycle` are mutually exclusive".to_string(),
-            ));
+            return Err(Error::new("`command` and `cycle` are mutually exclusive"));
         }
 
         if let Some(cycle) = block_config.cycle {
@@ -192,6 +180,10 @@ struct Output {
 }
 
 impl Block for Custom {
+    fn name(&self) -> &'static str {
+        "custom"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let command_str = self
             .cycle
@@ -200,19 +192,15 @@ impl Block for Custom {
             .or_else(|| self.command.clone())
             .unwrap_or_else(|| "".to_owned());
 
-        let raw_output = match Command::new(&self.shell)
+        let raw_output = Command::new(&self.shell)
             .args(&["-c", &command_str])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-        {
-            Ok(output) => output,
-            Err(e) => return Err(BlockError("custom".to_string(), e.to_string())),
-        };
+            .error_msg("failed to read output")?;
 
         if self.json {
-            let output: Output = serde_json::from_str(&*raw_output).map_err(|e| {
-                BlockError("custom".to_string(), format!("Error parsing JSON: {}", e))
-            })?;
+            let output: Output =
+                serde_json::from_str(&*raw_output).error_msg("error parsing JSON")?;
             if output.icon.is_empty() {
                 self.output.unset_icon();
             } else {
@@ -240,10 +228,12 @@ impl Block for Custom {
     fn signal(&mut self, signal: i32) -> Result<()> {
         if let Some(sig) = self.signal {
             if sig == signal {
-                self.tx_update_request.send(Task {
-                    id: self.id,
-                    update_time: Instant::now(),
-                })?;
+                self.tx_update_request
+                    .send(Task {
+                        id: self.id,
+                        update_time: Instant::now(),
+                    })
+                    .error_msg("send error")?;
             }
         }
         Ok(())
@@ -263,10 +253,12 @@ impl Block for Custom {
         }
 
         if update {
-            self.tx_update_request.send(Task {
-                id: self.id,
-                update_time: Instant::now(),
-            })?;
+            self.tx_update_request
+                .send(Task {
+                    id: self.id,
+                    update_time: Instant::now(),
+                })
+                .error_msg("send error")?;
         }
 
         Ok(())

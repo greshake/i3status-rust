@@ -83,10 +83,7 @@ impl Time {
     fn get_formatted_time(&self, format: &str) -> Result<String> {
         let time = match &self.locale {
             Some(l) => {
-                let locale: Locale = l
-                    .as_str()
-                    .try_into()
-                    .block_error("time", "invalid locale")?;
+                let locale: Locale = l.as_str().try_into().ok().error_msg("invalid locale")?;
                 match self.timezone {
                     Some(tz) => Utc::now()
                         .with_timezone(&tz)
@@ -104,6 +101,10 @@ impl Time {
 }
 
 impl Block for Time {
+    fn name(&self) -> &'static str {
+        "time"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         if self.timezone.is_none() {
             // Update timezone because `chrono` will not do that for us.

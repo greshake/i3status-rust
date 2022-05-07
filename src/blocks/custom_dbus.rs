@@ -149,13 +149,13 @@ impl ConfigBlock for CustomDBus {
 }
 
 impl Block for CustomDBus {
+    fn name(&self) -> &'static str {
+        "custom_dbus"
+    }
+
     // Updates the internal state of the block.
     fn update(&mut self) -> Result<Option<Update>> {
-        let status = (*self
-            .status
-            .lock()
-            .block_error("custom_dbus", "failed to acquire lock")?)
-        .clone();
+        let status = (*self.status.lock().unwrap()).clone();
 
         let now = Instant::now();
         if let Some(time) = self.clear_pending {

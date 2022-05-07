@@ -10,12 +10,15 @@ use serde_derive::Deserialize;
 use toml::{value::Table, Value};
 
 pub(super) struct BaseBlock<T: Block> {
-    pub name: String,
     pub inner: T,
     pub on_click: Option<String>,
 }
 
 impl<T: Block> Block for BaseBlock<T> {
+    fn name(&self) -> &'static str {
+        self.inner.name()
+    }
+
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         self.inner.view()
     }
@@ -32,8 +35,7 @@ impl<T: Block> Block for BaseBlock<T> {
         match &self.on_click {
             Some(cmd) => {
                 if let MouseButton::Left = e.button {
-                    spawn_child_async("sh", &["-c", cmd])
-                        .block_error(&self.name, "could not spawn child")?;
+                    spawn_child_async("sh", &["-c", cmd]).error_msg("could not spawn child")?;
                 }
                 Ok(())
             }

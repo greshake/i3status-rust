@@ -60,6 +60,10 @@ impl ConfigBlock for Template {
 }
 
 impl Block for Template {
+    fn name(&self) -> &'static str {
+        "<block name>"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         Ok(Some(self.update_interval.into()))
     }

@@ -69,7 +69,7 @@ impl ConfigBlock for Load {
 
         // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
         let content = read_to_string("/proc/cpuinfo")
-            .block_error("load", "Your system doesn't support /proc/cpuinfo")?;
+            .error_msg("Your system doesn't support /proc/cpuinfo")?;
         let logical_cores = content
             .lines()
             .filter(|l| l.starts_with("processor"))
@@ -88,17 +88,20 @@ impl ConfigBlock for Load {
 }
 
 impl Block for Load {
+    fn name(&self) -> &'static str {
+        "load"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let mut f = OpenOptions::new()
             .read(true)
             .open("/proc/loadavg")
-            .block_error(
-                "load",
+            .error_msg(
                 "Your system does not support reading the load average from /proc/loadavg",
             )?;
         let mut loadavg = String::new();
         f.read_to_string(&mut loadavg)
-            .block_error("load", "Failed to read the load average of your system!")?;
+            .error_msg("Failed to read the load average of your system!")?;
 
         let split: Vec<f64> = loadavg
             .split(' ')
