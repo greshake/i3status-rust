@@ -87,14 +87,14 @@ impl BatteryDevice for PowerSupplyDevice {
         // we don't check for present==1 because the device subdirectory
         // being present already implies that the device is available
         let path = self.device_path.join("scope");
-        if path.exists() && read_file("battery", path).map_or(false, |x| x == "Device") {
+        if path.exists() && read_file(path).map_or(false, |x| x == "Device") {
             // device is a human interface device
             return true;
         }
         // normal battery device -> check for present==1
         let path = self.device_path.join("present");
         if path.exists() {
-            return read_file("battery", path).map_or(false, |x| x == "1");
+            return read_file(path).map_or(false, |x| x == "1");
         }
         false
     }
@@ -109,9 +109,9 @@ impl BatteryDevice for PowerSupplyDevice {
         // Read charge_full exactly once, if it exists, units are µAh
         self.charge_full = if self.device_path.join("charge_full").exists() {
             Some(
-                read_file("battery", &self.device_path.join("charge_full"))?
+                read_file(&self.device_path.join("charge_full"))?
                     .parse::<u64>()
-                    .block_error("battery", "failed to parse charge_full")?,
+                    .error_msg("failed to parse charge_full")?,
             )
         } else {
             None
@@ -120,9 +120,9 @@ impl BatteryDevice for PowerSupplyDevice {
         // Read energy_full exactly once, if it exists. Units are µWh.
         self.energy_full = if self.device_path.join("energy_full").exists() {
             Some(
-                read_file("battery", &self.device_path.join("energy_full"))?
+                read_file(&self.device_path.join("energy_full"))?
                     .parse::<u64>()
-                    .block_error("battery", "failed to parse energy_full")?,
+                    .error_msg("failed to parse energy_full")?,
             )
         } else {
             None
@@ -132,7 +132,7 @@ impl BatteryDevice for PowerSupplyDevice {
     }
 
     fn status(&self) -> Result<String> {
-        read_file("battery", &self.device_path.join("status"))
+        read_file(&self.device_path.join("status"))
     }
 
     fn capacity(&self) -> Result<u64> {
@@ -142,21 +142,21 @@ impl BatteryDevice for PowerSupplyDevice {
         let capacity_level_path = self.device_path.join("capacity_level");
 
         let capacity = if capacity_path.exists() {
-            read_file("battery", &capacity_path)?
+            read_file(&capacity_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse capacity")?
+                .error_msg("failed to parse capacity")?
         } else if charge_path.exists() && self.charge_full.is_some() {
-            let charge = read_file("battery", &charge_path)?
+            let charge = read_file(&charge_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse charge_now")?;
+                .error_msg("failed to parse charge_now")?;
             ((charge as f64 / self.charge_full.unwrap() as f64) * 100.0) as u64
         } else if energy_path.exists() && self.energy_full.is_some() {
-            let charge = read_file("battery", &energy_path)?
+            let charge = read_file(&energy_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse energy_now")?;
+                .error_msg("failed to parse energy_now")?;
             ((charge as f64 / self.energy_full.unwrap() as f64) * 100.0) as u64
         } else if capacity_level_path.exists() {
-            let capacity_level = read_file("battery", &capacity_level_path)?;
+            let capacity_level = read_file(&capacity_level_path)?;
             match capacity_level.as_str() {
                 "Full" => 100u64,
                 "High" => 75u64,
@@ -164,20 +164,15 @@ impl BatteryDevice for PowerSupplyDevice {
                 "Low" => 25u64,
                 "Critical" => 5u64,
                 "Unknown" => {
-                    return Err(BlockError("battery".into(), "Unknown charge level".into()));
+                    return Err(Error::new("Unknown charge level"));
                 }
                 _ => {
-                    return Err(BlockError(
-                        "battery".into(),
-                        "unexpected string from capacity_level file".into(),
-                    ));
+                    return Err(Error::new("unexpected string from capacity_level file"));
                 }
             }
         } else {
-            return Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading capacity, charge, energy or capacity_level"
-                    .to_string(),
+            return Err(Error::new(
+                "Device does not support reading capacity, charge, energy or capacity_level",
             ));
         };
 
@@ -193,24 +188,22 @@ impl BatteryDevice for PowerSupplyDevice {
     fn time_remaining(&self) -> Result<u64> {
         let time_to_empty_now_path = self.device_path.join("time_to_empty_now");
         let time_to_empty = if time_to_empty_now_path.exists() {
-            read_file("battery", &time_to_empty_now_path)?
+            read_file(&time_to_empty_now_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse time to empty")
+                .error_msg("failed to parse time to empty")
         } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading time to empty directly".to_string(),
+            Err(Error::new(
+                "Device does not support reading time to empty directly",
             ))
         };
         let time_to_full_now_path = self.device_path.join("time_to_full_now");
         let time_to_full = if time_to_full_now_path.exists() {
-            read_file("battery", &time_to_full_now_path)?
+            read_file(&time_to_full_now_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse time to full")
+                .error_msg("failed to parse time to full")
         } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading time to full directly".to_string(),
+            Err(Error::new(
+                "Device does not support reading time to full directly",
             ))
         };
 
@@ -227,35 +220,29 @@ impl BatteryDevice for PowerSupplyDevice {
         let energy_path = self.device_path.join("energy_now");
         let charge_path = self.device_path.join("charge_now");
         let fill = if energy_path.exists() {
-            read_file("battery", &energy_path)?
+            read_file(&energy_path)?
                 .parse::<f64>()
-                .block_error("battery", "failed to parse energy_now")
+                .error_msg("failed to parse energy_now")
         } else if charge_path.exists() {
-            read_file("battery", &charge_path)?
+            read_file(&charge_path)?
                 .parse::<f64>()
-                .block_error("battery", "failed to parse charge_now")
+                .error_msg("failed to parse charge_now")
         } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading energy".to_string(),
-            ))
+            Err(Error::new("Device does not support reading energy"))
         };
 
         let power_path = self.device_path.join("power_now");
         let current_path = self.device_path.join("current_now");
         let usage = if power_path.exists() {
-            read_file("battery", &power_path)?
+            read_file(&power_path)?
                 .parse::<f64>()
-                .block_error("battery", "failed to parse power_now")
+                .error_msg("failed to parse power_now")
         } else if current_path.exists() {
-            read_file("battery", &current_path)?
+            read_file(&current_path)?
                 .parse::<f64>()
-                .block_error("battery", "failed to parse current_now")
+                .error_msg("failed to parse current_now")
         } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support reading power".to_string(),
-            ))
+            Err(Error::new("Device does not support reading power"))
         };
 
         // If the device driver uses the combination of energy_full, energy_now and power_now,
@@ -270,10 +257,8 @@ impl BatteryDevice for PowerSupplyDevice {
                 } else if fill.is_ok() && usage.is_ok() {
                     Ok(((fill.unwrap() / usage.unwrap()) * 60.0) as u64)
                 } else {
-                    Err(BlockError(
-                        "battery".to_string(),
-                        "Device does not support any method of calculating time to empty"
-                            .to_string(),
+                    Err(Error::new(
+                        "Device does not support any method of calculating time to empty",
                     ))
                 }
             }
@@ -283,10 +268,8 @@ impl BatteryDevice for PowerSupplyDevice {
                 } else if full.is_some() && fill.is_ok() && usage.is_ok() {
                     Ok((((full.unwrap() as f64 - fill.unwrap()) / usage.unwrap()) * 60.0) as u64)
                 } else {
-                    Err(BlockError(
-                        "battery".to_string(),
-                        "Device does not support any method of calculating time to full"
-                            .to_string(),
+                    Err(Error::new(
+                        "Device does not support any method of calculating time to full",
                     ))
                 }
             }
@@ -309,22 +292,19 @@ impl BatteryDevice for PowerSupplyDevice {
         let voltage_path = self.device_path.join("voltage_now");
 
         if power_path.exists() {
-            Ok(read_file("battery", &power_path)?
+            Ok(read_file(&power_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse power_now")?)
+                .error_msg("failed to parse power_now")?)
         } else if current_path.exists() && voltage_path.exists() {
-            let current = read_file("battery", &current_path)?
+            let current = read_file(&current_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse current_now")?;
-            let voltage = read_file("battery", &voltage_path)?
+                .error_msg("failed to parse current_now")?;
+            let voltage = read_file(&voltage_path)?
                 .parse::<u64>()
-                .block_error("battery", "failed to parse voltage_now")?;
+                .error_msg("failed to parse voltage_now")?;
             Ok((current * voltage) / 1_000_000)
         } else {
-            Err(BlockError(
-                "battery".to_string(),
-                "Device does not support power consumption".to_string(),
-            ))
+            Err(Error::new("Device does not support power consumption"))
         }
     }
 }
@@ -342,10 +322,9 @@ pub struct ApcUpsDevice {
 impl ApcUpsDevice {
     pub fn from_device(device: &str) -> Result<ApcUpsDevice> {
         Ok(ApcUpsDevice {
-            con: ApcAccess::new(device, 1).block_error(
-                "battery",
-                &format!("Could not create a apcaccess connection to {}", device),
-            )?,
+            con: ApcAccess::new(device, 1).map_error_msg(|_| {
+                format!("Could not create a apcaccess connection to {device}",)
+            })?,
             status: None,
             charge_percent: 0.0,
             time_left: 0.0,
@@ -370,31 +349,19 @@ impl BatteryDevice for ApcUpsDevice {
                 Some(charge_percent) => {
                     let (value, unit) = charge_percent
                         .split_once(' ')
-                        .block_error("battery", &format!("could not split {}", stat_name))
+                        .map_error_msg(|| format!("could not split {stat_name}"))
                         .unwrap();
                     if unit == required_unit {
-                        return Ok(str::parse::<f64>(value)
-                            .block_error(
-                                "battery",
-                                &format!("could not parse {} to float", stat_name),
-                            )
-                            .unwrap());
+                        Ok(str::parse::<f64>(value)
+                            .map_error_msg(|_| format!("could not parse {stat_name} to float"))
+                            .unwrap())
                     } else {
-                        return Err(BlockError(
-                            "battery".to_string(),
-                            format!(
-                                "Expected unit for {} are {}, but got {}",
-                                stat_name, required_unit, unit
-                            ),
-                        ));
+                        Err(Error::new(format!(
+                            "Expected unit for {stat_name} are {required_unit}, but got {unit}",
+                        )))
                     }
                 }
-                _ => {
-                    return Err(BlockError(
-                        "battery".to_string(),
-                        format!("{} not in apcaccess data", stat_name),
-                    ))
-                }
+                _ => Err(Error::new(format!("{stat_name} not in apcaccess data"))),
             }
         }
 
@@ -471,7 +438,7 @@ impl UpowerDevice {
     /// if D-Bus does not respond.
     pub fn from_device(device: &str) -> Result<Self> {
         let con = dbus::ffidisp::Connection::new_system()
-            .block_error("battery", "Failed to establish D-Bus connection.")?;
+            .error_msg("Failed to establish D-Bus connection.")?;
 
         let device_path = UpowerDevice::get_device_path(device, &con)?;
 
@@ -579,16 +546,15 @@ impl UpowerDevice {
                 "org.freedesktop.UPower",
                 "EnumerateDevices",
             )
-            .block_error("battery", "Failed to create DBus message")?;
+            .error_msg("Failed to create DBus message")?;
 
             let dbus_reply = con
                 .send_with_reply_and_block(msg, 2000)
-                .block_error("battery", "Failed to retrieve DBus reply")?;
+                .error_msg("Failed to retrieve DBus reply")?;
 
             // EnumerateDevices returns one argument, which is an array of ObjectPaths (not dbus::tree:ObjectPath).
-            let mut paths: Array<dbus::Path, _> = dbus_reply
-                .get1()
-                .block_error("battery", "Failed to read DBus reply")?;
+            let mut paths: Array<dbus::Path, _> =
+                dbus_reply.get1().error_msg("Failed to read DBus reply")?;
 
             Ok(paths
                 .find(|entry| entry.ends_with(device))
@@ -607,12 +573,10 @@ impl BatteryDevice for UpowerDevice {
         // https://upower.freedesktop.org/docs/Device.html#Device:Type
         // consider any peripheral, UPS and internal battery
         if upower_type == 1 {
-            return Err(BlockError(
-                "battery".into(),
-                "UPower device is not a battery.".into(),
-            ));
+            Err(Error::new("UPower device is not a battery."))
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     fn status(&self) -> Result<String> {
@@ -780,13 +744,12 @@ impl ConfigBlock for Battery {
                 BatteryDriver::ApcAccess => "localhost:3551".to_string(),
                 BatteryDriver::Upower => "DisplayDevice".to_string(),
                 _ => {
-                    let sysfs_dir = read_dir("/sys/class/power_supply").block_error(
-                        "battery",
-                        "failed to read /sys/class/power_supply direcory",
-                    )?;
+                    let sysfs_dir = read_dir("/sys/class/power_supply")
+                        .error_msg("failed to read /sys/class/power_supply direcory")?;
                     let mut found_battery_devices = Vec::<String>::new();
                     for entry in sysfs_dir {
-                        let dir = entry?;
+                        let dir =
+                            entry.error_msg("failed to read /sys/class/power_supply direcory")?;
                         if read_to_string(dir.path().join("type"))
                             .map(|t| t.trim() == "Battery")
                             .unwrap_or(false)
@@ -855,6 +818,10 @@ impl ConfigBlock for Battery {
 }
 
 impl Block for Battery {
+    fn name(&self) -> &'static str {
+        "battery"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         if !self.device.is_available() {
             // TODO: Remove (What's the point of setting these values if `missing_format` is used anyway?)

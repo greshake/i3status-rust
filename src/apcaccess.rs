@@ -13,16 +13,25 @@ pub struct ApcAccess {
 impl ApcAccess {
     pub fn new(addr: &str, timeout_seconds: u64) -> Result<ApcAccess> {
         Ok(ApcAccess {
-            socket_addr: addr.to_socket_addrs()?.find(|x| x.is_ipv4()).unwrap(),
+            socket_addr: addr
+                .to_socket_addrs()
+                .error_msg("failed to create socket address")?
+                .find(|x| x.is_ipv4())
+                .unwrap(),
             timeout_seconds,
         })
     }
 
     fn connect(&self) -> Result<TcpStream> {
         let stream =
-            TcpStream::connect_timeout(&self.socket_addr, Duration::new(self.timeout_seconds, 0))?;
-        stream.set_write_timeout(Some(Duration::new(self.timeout_seconds, 0)))?;
-        stream.set_read_timeout(Some(Duration::new(self.timeout_seconds, 0)))?;
+            TcpStream::connect_timeout(&self.socket_addr, Duration::new(self.timeout_seconds, 0))
+                .error_msg("fialed to connect to socket")?;
+        stream
+            .set_write_timeout(Some(Duration::new(self.timeout_seconds, 0)))
+            .error_msg("failed to set write timeout")?;
+        stream
+            .set_read_timeout(Some(Duration::new(self.timeout_seconds, 0)))
+            .error_msg("failed to set read timeout")?;
 
         Ok(stream)
     }
@@ -56,15 +65,17 @@ impl ApcAccess {
     fn write(&self, stream: &mut TcpStream, msg: &[u8]) -> Result<()> {
         let msg_len = msg.len();
         if msg_len >= 1 << 16 {
-            return Err(InternalError(
-                "apcaccess".to_string(),
-                "msg is too long, it must be less than 2^16 characters long".to_string(),
-                None,
+            return Err(Error::new(
+                "apcaccess: msg is too long, it must be less than 2^16 characters long",
             ));
         }
 
-        stream.write_all(&msg_len.to_be_bytes()[6..])?;
-        stream.write_all(msg)?;
+        stream
+            .write_all(&msg_len.to_be_bytes()[6..])
+            .error_msg("failed to write to tcp stream")?;
+        stream
+            .write_all(msg)
+            .error_msg("failed to write to tcp stream")?;
 
         Ok(())
     }
@@ -72,13 +83,17 @@ impl ApcAccess {
     fn read_to_string(&self, stream: &mut TcpStream, buf: &mut String) -> Result<usize> {
         let mut read_info = [0_u8, 2];
         loop {
-            stream.read_exact(&mut read_info)?;
+            stream
+                .read_exact(&mut read_info)
+                .error_msg("failed to read from tcp stream")?;
             let read_size = ((read_info[0] as usize) << 8) + (read_info[1] as usize);
             if read_size == 0 {
                 break;
             }
             let mut read_buf: Vec<u8> = vec![0; read_size];
-            stream.read_exact(&mut read_buf)?;
+            stream
+                .read_exact(&mut read_buf)
+                .error_msg("failed to read from tcp stream")?;
             buf.extend(String::from_utf8(read_buf));
         }
         Ok(buf.len())

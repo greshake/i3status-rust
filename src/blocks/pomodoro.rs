@@ -94,16 +94,16 @@ impl Pomodoro {
         ));
     }
 
-    fn notify(&self, message: &str, level: String) {
+    fn notify(&self, message: &str, level: &str) -> Result<()> {
         let urgency = if level == "error" {
-            "critical".to_string()
+            "critical"
         } else {
-            "normal".to_string()
+            "normal"
         };
         let args = if self.notifier == Notifier::NotifySend {
-            ["--urgency", &urgency, message, " "]
+            ["--urgency", urgency, message, " "]
         } else {
-            ["--type", &level, "--message", message]
+            ["--type", level, "--message", message]
         };
 
         let binary = if self.use_nag {
@@ -112,7 +112,8 @@ impl Pomodoro {
             self.notifier_path.to_str().unwrap()
         };
 
-        spawn_child_async(binary, &args).expect("Failed to start notifier");
+        spawn_child_async(binary, &args).error_msg("Failed to start notifier")?;
+        Ok(())
     }
 }
 
@@ -184,13 +185,17 @@ impl ConfigBlock for Pomodoro {
 }
 
 impl Block for Pomodoro {
+    fn name(&self) -> &'static str {
+        "pomodoro"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         self.set_text();
         match &self.state {
             State::Started(_) => {
                 if self.state.elapsed() >= self.length {
                     if self.use_nag || self.notifier != Notifier::None {
-                        self.notify(&self.message, "error".to_string());
+                        self.notify(&self.message, "error")?;
                     }
 
                     self.state = State::OnBreak(Instant::now());
@@ -199,7 +204,7 @@ impl Block for Pomodoro {
             State::OnBreak(_) => {
                 if self.state.elapsed() >= self.break_length {
                     if self.use_nag || self.notifier != Notifier::None {
-                        self.notify(&self.break_message, "warning".to_string());
+                        self.notify(&self.break_message, "warning")?;
                     }
                     self.state = State::Stopped;
                     self.count += 1;

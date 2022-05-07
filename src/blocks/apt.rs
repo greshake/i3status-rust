@@ -81,7 +81,7 @@ impl ConfigBlock for Apt {
         let mut cache_dir = env::temp_dir();
         cache_dir.push("i3rs-apt");
         if !cache_dir.exists() {
-            fs::create_dir(cache_dir.clone()).block_error("apt", "Failed to create temp dir")?;
+            fs::create_dir(&cache_dir).error_msg("Failed to create temp dir")?;
         }
 
         let apt_conf = format!(
@@ -90,13 +90,13 @@ impl ConfigBlock for Apt {
              Dir::Cache \"{}\";\n
              Dir::Cache::srcpkgcache \"srcpkgcache.bin\";\n
              Dir::Cache::pkgcache \"pkgcache.bin\";",
-            cache_dir.clone().into_os_string().into_string().unwrap(),
-            cache_dir.clone().into_os_string().into_string().unwrap()
+            cache_dir.display(),
+            cache_dir.display()
         );
         cache_dir.push("apt.conf");
-        let mut config_file = fs::File::create(cache_dir.clone())
-            .block_error("apt", "Failed to create config file")?;
-        write!(config_file, "{}", apt_conf).block_error("apt", "Failed to write to config file")?;
+        let mut config_file =
+            fs::File::create(&cache_dir).error_msg("Failed to create config file")?;
+        write!(config_file, "{}", apt_conf).error_msg("Failed to write to config file")?;
 
         let output = TextWidget::new(id, 0, shared_config).with_icon("update")?;
 
@@ -106,30 +106,18 @@ impl ConfigBlock for Apt {
             format_singular: block_config.format_singular.with_default("{count:1}")?,
             format_up_to_date: block_config.format_up_to_date.with_default("{count:1}")?,
             output,
-            warning_updates_regex: match block_config.warning_updates_regex {
-                None => None, // no regex configured
-                Some(regex_str) => {
-                    let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
-                        ConfigurationError(
-                            "apt".to_string(),
-                            "invalid warning updates regex".to_string(),
-                        )
-                    })?;
-                    Some(regex)
-                }
-            },
-            critical_updates_regex: match block_config.critical_updates_regex {
-                None => None, // no regex configured
-                Some(regex_str) => {
-                    let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
-                        ConfigurationError(
-                            "apt".to_string(),
-                            "invalid critical updates regex".to_string(),
-                        )
-                    })?;
-                    Some(regex)
-                }
-            },
+            warning_updates_regex: block_config
+                .warning_updates_regex
+                .as_deref()
+                .map(Regex::new)
+                .transpose()
+                .error_msg("invalid warning updates regex")?,
+            critical_updates_regex: block_config
+                .critical_updates_regex
+                .as_deref()
+                .map(Regex::new)
+                .transpose()
+                .error_msg("invalid critical updates regex")?,
             config_path: cache_dir.into_os_string().into_string().unwrap(),
         })
     }
@@ -149,17 +137,17 @@ fn get_updates_list(config_path: &str) -> Result<String> {
         .env("APT_CONFIG", config_path)
         .args(&["-c", "apt update"])
         .output()
-        .block_error("apt", "Failed to run `apt update` command")?;
+        .error_msg("Failed to run `apt update` command")?;
 
     String::from_utf8(
         Command::new("sh")
             .env("APT_CONFIG", config_path)
             .args(&["-c", "apt list --upgradable"])
             .output()
-            .block_error("apt", "Problem running apt command")?
+            .error_msg("Problem running apt command")?
             .stdout,
     )
-    .block_error("apt", "Problem capturing apt command output")
+    .error_msg("Problem capturing apt command output")
 }
 
 fn get_update_count(updates: &str) -> usize {
@@ -170,6 +158,10 @@ fn get_update_count(updates: &str) -> usize {
 }
 
 impl Block for Apt {
+    fn name(&self) -> &'static str {
+        "apt"
+    }
+
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
     }

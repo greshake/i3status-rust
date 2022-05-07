@@ -109,18 +109,14 @@ impl PacmanConfig {
         let pacman = any_format_contains!("pacman") || any_format_contains!("count");
         let both = any_format_contains!("both");
         if both || (pacman && aur) {
-            let aur_command = aur_command.block_error(
-                "pacman",
-                "{aur} or {both} found in format string but no aur_command supplied",
-            )?;
+            let aur_command = aur_command
+                .error_msg("{aur} or {both} found in format string but no aur_command supplied")?;
             Ok(Watched::Both(aur_command))
         } else if pacman && !aur {
             Ok(Watched::Pacman)
         } else if !pacman && aur {
-            let aur_command = aur_command.block_error(
-                "pacman",
-                "{aur} found in format string but no aur_command supplied",
-            )?;
+            let aur_command = aur_command
+                .error_msg("{aur} found in format string but no aur_command supplied")?;
             Ok(Watched::AUR(aur_command))
         } else {
             Ok(Watched::None)
@@ -146,30 +142,18 @@ impl ConfigBlock for Pacman {
         Ok(Pacman {
             update_interval: block_config.interval,
             output,
-            warning_updates_regex: match block_config.warning_updates_regex {
-                None => None, // no regex configured
-                Some(regex_str) => {
-                    let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
-                        ConfigurationError(
-                            "pacman".to_string(),
-                            "invalid warning updates regex".to_string(),
-                        )
-                    })?;
-                    Some(regex)
-                }
-            },
-            critical_updates_regex: match block_config.critical_updates_regex {
-                None => None, // no regex configured
-                Some(regex_str) => {
-                    let regex = Regex::new(regex_str.as_ref()).map_err(|_| {
-                        ConfigurationError(
-                            "pacman".to_string(),
-                            "invalid critical updates regex".to_string(),
-                        )
-                    })?;
-                    Some(regex)
-                }
-            },
+            warning_updates_regex: block_config
+                .warning_updates_regex
+                .as_deref()
+                .map(Regex::new)
+                .transpose()
+                .error_msg("invalid warning updates regex")?,
+            critical_updates_regex: block_config
+                .critical_updates_regex
+                .as_deref()
+                .map(Regex::new)
+                .transpose()
+                .error_msg("invalid critical updates regex")?,
             watched: PacmanConfig::watched(
                 &fmt_normal,
                 &fmt_singular,
@@ -185,16 +169,9 @@ impl ConfigBlock for Pacman {
     }
 }
 
-fn has_fake_root() -> Result<bool> {
-    has_command("pacman", "fakeroot")
-}
-
 fn check_fakeroot_command_exists() -> Result<()> {
-    if !has_fake_root()? {
-        Err(BlockError(
-            "pacman".to_string(),
-            "fakeroot not found".to_string(),
-        ))
+    if !has_command("fakeroot")? {
+        Err(Error::new("fakeroot not found"))
     } else {
         Ok(())
     }
@@ -204,15 +181,18 @@ fn get_updates_db_dir() -> Result<String> {
     let tmp_dir = env::temp_dir()
         .into_os_string()
         .into_string()
-        .block_error("pacman", "There's something wrong with your $TMP variable")?;
+        .ok()
+        .error_msg("There's something wrong with your $TMP variable")?;
     let user = env::var_os("USER")
         .unwrap_or_else(|| OsString::from(""))
         .into_string()
-        .block_error("pacman", "There's a problem with your $USER")?;
+        .ok()
+        .error_msg("There's a problem with your $USER")?;
     env::var_os("CHECKUPDATES_DB")
         .unwrap_or_else(|| OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
         .into_string()
-        .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")
+        .ok()
+        .error_msg("There's a problem with your $CHECKUPDATES_DB")
 }
 
 fn get_pacman_available_updates() -> Result<String> {
@@ -224,16 +204,14 @@ fn get_pacman_available_updates() -> Result<String> {
         .unwrap_or_else(|| Path::new("/var/lib/pacman/").to_path_buf());
 
     // Create the determined `checkup-db` path recursively
-    fs::create_dir_all(&updates_db).block_error(
-        "pacman",
-        &format!("Failed to create checkup-db path '{}'", updates_db),
-    )?;
+    fs::create_dir_all(&updates_db)
+        .map_error_msg(|_| format!("Failed to create checkup-db path '{updates_db}'"))?;
 
     // Create symlink to local cache in `checkup-db` if required
     let local_cache = Path::new(&updates_db).join("local");
     if !local_cache.exists() {
         symlink(db_path.join("local"), local_cache)
-            .block_error("pacman", "Failed to created required symlink")?;
+            .error_msg("Failed to created required symlink")?;
     }
 
     // Update database
@@ -248,7 +226,7 @@ fn get_pacman_available_updates() -> Result<String> {
         ])
         .stdout(Stdio::null())
         .status()
-        .block_error("pacman", "Failed to run command")?;
+        .error_msg("Failed to run command")?;
 
     // Get updates list
     String::from_utf8(
@@ -256,16 +234,13 @@ fn get_pacman_available_updates() -> Result<String> {
             .env("LC_ALL", "C")
             .args(&[
                 "-c",
-                &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db),
+                &format!("fakeroot pacman -Qu --dbpath \"{updates_db}\""),
             ])
             .output()
-            .block_error("pacman", "There was a problem running the pacman commands")?
+            .error_msg("There was a problem running the pacman commands")?
             .stdout,
     )
-    .block_error(
-        "pacman",
-        "There was a problem while converting the output of the pacman command to a string",
-    )
+    .error_msg("There was a problem while converting the output of the pacman command to a string")
 }
 
 fn get_aur_available_updates(aur_command: &str) -> Result<String> {
@@ -273,13 +248,10 @@ fn get_aur_available_updates(aur_command: &str) -> Result<String> {
         Command::new("sh")
             .args(&["-c", aur_command])
             .output()
-            .block_error("pacman", &format!("aur command: {} failed", aur_command))?
+            .map_error_msg(|_| format!("aur command: {aur_command} failed"))?
             .stdout,
     )
-    .block_error(
-        "pacman",
-        "There was a problem while converting the aur command output to a string",
-    )
+    .error_msg("There was a problem while converting the aur command output to a string")
 }
 
 fn get_update_count(updates: &str) -> usize {
@@ -298,6 +270,10 @@ fn has_critical_update(updates: &str, regex: &Regex) -> bool {
 }
 
 impl Block for Pacman {
+    fn name(&self) -> &'static str {
+        "pacman"
+    }
+
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         if self.uptodate && self.hide_when_uptodate {
             vec![]

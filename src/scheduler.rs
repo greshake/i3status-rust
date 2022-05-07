@@ -78,7 +78,7 @@ impl UpdateScheduler {
         let t = self
             .schedule
             .pop()
-            .internal_error("scheduler", "schedule is empty")?;
+            .error_msg("scheduler: schedule is empty")?;
         let mut tasks_next = vec![t.clone()];
 
         while !self.schedule.is_empty()
@@ -86,13 +86,13 @@ impl UpdateScheduler {
                 == self
                     .schedule
                     .peek()
-                    .internal_error("scheduler", "schedule is empty")?
+                    .error_msg("scheduler: schedule is empty")?
                     .update_time
         {
             tasks_next.push(
                 self.schedule
                     .pop()
-                    .internal_error("scheduler", "schedule is empty")?,
+                    .error_msg("scheduler: schedule is empty")?,
             )
         }
 
@@ -106,7 +106,7 @@ impl UpdateScheduler {
         for task in tasks_next {
             if let Some(dur) = blocks
                 .get_mut(task.id as usize)
-                .internal_error("scheduler", "could not get required block")?
+                .error_msg("scheduler: could not get required block")?
                 .update()?
             {
                 match dur {

@@ -276,11 +276,11 @@ impl ConfigBlock for Music {
         let collapsed_id = pseudo_uuid();
 
         let dbus_conn = Connection::get_private(BusType::Session)
-            .block_error("music", "failed to establish D-Bus connection")?;
+            .error_msg("failed to establish D-Bus connection")?;
 
         let interface_name_exclude_regexps =
             compile_regexps(block_config.clone().interface_name_exclude)
-                .block_error("music", "failed to parse exclude patterns")?;
+                .error_msg("failed to parse exclude patterns")?;
 
         // ListNames returns one argument, which is an array of strings.
         let list_names = dbus_conn
@@ -464,10 +464,9 @@ impl ConfigBlock for Music {
                     )
                 }
                 x => {
-                    return Err(BlockError(
-                        "music".to_owned(),
-                        format!("unknown music button identifier: '{}'", x),
-                    ))
+                    return Err(Error::new(format!(
+                        "unknown music button identifier: '{x}'",
+                    )))
                 }
             };
         }
@@ -504,7 +503,7 @@ impl ConfigBlock for Music {
                 .with_spacing(Spacing::Hidden),
             on_collapsed_click: block_config.on_collapsed_click,
             dbus_conn: Connection::get_private(BusType::Session)
-                .block_error("music", "failed to establish D-Bus connection")?,
+                .error_msg("failed to establish D-Bus connection")?,
             marquee: block_config.marquee,
             marquee_interval: block_config.marquee_interval,
             smart_trim: block_config.smart_trim,
@@ -525,6 +524,10 @@ impl ConfigBlock for Music {
 }
 
 impl Block for Music {
+    fn name(&self) -> &'static str {
+        "music"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let (rotation_in_progress, time_to_next_rotation) = if self.marquee {
             self.current_song_widget.next()?
@@ -532,10 +535,7 @@ impl Block for Music {
             (false, None)
         };
 
-        let players = self
-            .players
-            .lock()
-            .block_error("music", "failed to acquire lock for `players`")?;
+        let players = self.players.lock().unwrap();
         let metadata = match players.first() {
             Some(m) => m,
             None => {
@@ -624,10 +624,7 @@ impl Block for Music {
                 _ => return Ok(()),
             };
 
-            let mut players = self
-                .players
-                .lock()
-                .block_error("music", "failed to acquire lock for `players`")?;
+            let mut players = self.players.lock().unwrap();
 
             match event.button {
                 MouseButton::Left => {
@@ -639,18 +636,18 @@ impl Block for Music {
                             "org.mpris.MediaPlayer2.Player",
                             action,
                         )
-                        .block_error("music", "failed to create D-Bus method call")?;
+                        .error_msg("failed to create D-Bus method call")?;
                         self.dbus_conn
                             .send(m)
-                            .block_error("music", "failed to call method via D-Bus")?;
+                            .ok()
+                            .error_msg("failed to call method via D-Bus")?;
                     } else if event_id == self.collapsed_id && self.on_collapsed_click.is_some() {
                         let cmd = self.on_collapsed_click.as_ref().unwrap();
-                        spawn_child_async("sh", &["-c", cmd])
-                            .block_error("music", "could not spawn child")?;
+                        spawn_child_async("sh", &["-c", cmd]).error_msg("could not spawn child")?;
                     } else if event_id == self.id {
                         if let Some(ref cmd) = self.on_click {
                             spawn_child_async("sh", &["-c", cmd])
-                                .block_error("music", "could not spawn child")?;
+                                .error_msg("could not spawn child")?;
                         }
                     }
                 }
@@ -665,10 +662,12 @@ impl Block for Music {
                 MouseButton::Right => {
                     if (event_id == self.id || event_id == self.collapsed_id) && players.len() > 0 {
                         players.rotate_left(1);
-                        self.send.send(Task {
-                            id: self.id,
-                            update_time: Instant::now(),
-                        })?;
+                        self.send
+                            .send(Task {
+                                id: self.id,
+                                update_time: Instant::now(),
+                            })
+                            .error_msg("send error")?;
                     }
                 }
                 _ => {
@@ -680,19 +679,21 @@ impl Block for Music {
                             "org.mpris.MediaPlayer2.Player",
                             "Seek",
                         )
-                        .block_error("music", "failed to create D-Bus method call")?;
+                        .error_msg("failed to create D-Bus method call")?;
 
                         use LogicalDirection::*;
                         match self.scrolling.to_logical_direction(event.button) {
                             Some(Up) => {
                                 self.dbus_conn
                                     .send(m.append1(self.seek_step * 1000))
-                                    .block_error("music", "failed to call method via D-Bus")?;
+                                    .ok()
+                                    .error_msg("failed to call method via D-Bus")?;
                             }
                             Some(Down) => {
                                 self.dbus_conn
                                     .send(m.append1(self.seek_step * -1000))
-                                    .block_error("music", "failed to call method via D-Bus")?;
+                                    .ok()
+                                    .error_msg("failed to call method via D-Bus")?;
                             }
                             None => {}
                         }
@@ -750,9 +751,9 @@ fn extract_artist_from_value(value: &dyn RefArg) -> Result<&str> {
         extract_artist_from_value(
             value
                 .as_iter()
-                .block_error("music", "failed to extract artist")?
+                .error_msg("failed to extract artist")?
                 .next()
-                .block_error("music", "failed to extract artist")?,
+                .error_msg("failed to extract artist")?,
         )
     }
 }
@@ -761,24 +762,15 @@ fn extract_from_metadata(metadata: &dyn RefArg) -> Result<(Option<String>, Optio
     let mut title = None;
     let mut artist = None;
 
-    let mut iter = metadata
-        .as_iter()
-        .block_error("music", "failed to extract metadata")?;
+    let mut iter = metadata.as_iter().error_msg("failed to extract metadata")?;
 
     while let Some(key) = iter.next() {
-        let value = iter
-            .next()
-            .block_error("music", "failed to extract metadata")?;
-        match key
-            .as_str()
-            .block_error("music", "failed to extract metadata")?
-        {
+        let value = iter.next().error_msg("failed to extract metadata")?;
+        match key.as_str().error_msg("failed to extract metadata")? {
             "xesam:artist" => artist = Some(String::from(extract_artist_from_value(value)?)),
             "xesam:title" => {
                 title = Some(String::from(
-                    value
-                        .as_str()
-                        .block_error("music", "failed to extract metadata")?,
+                    value.as_str().error_msg("failed to extract metadata")?,
                 ))
             }
             _ => {}

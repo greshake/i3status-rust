@@ -62,26 +62,20 @@ fn setxkbmap_layouts() -> Result<String> {
     let output = Command::new("setxkbmap")
         .args(&["-query"])
         .output()
-        .block_error("keyboard_layout", "Failed to execute setxkbmap.")
-        .and_then(|raw| {
-            String::from_utf8(raw.stdout).block_error("keyboard_layout", "Non-UTF8 input.")
-        })?;
+        .error_msg("Failed to execute setxkbmap.")
+        .and_then(|raw| String::from_utf8(raw.stdout).error_msg("Non-UTF8 input."))?;
 
     // Find the "layout:    xxxx" entry.
     let layout = output
         .split('\n')
         .find(|line| line.starts_with("layout"))
-        .block_error(
-            "keyboard_layout",
-            "Could not find the layout entry from setxkbmap.",
-        )?
+        .error_msg("Could not find the layout entry from setxkbmap")?
         .split(char::is_whitespace)
         .last();
 
-    layout.map(|s| s.to_string()).block_error(
-        "keyboard_layout",
-        "Could not read the layout entry from setxkbmap.",
-    )
+    layout
+        .map(|s| s.to_string())
+        .error_msg("Could not read the layout entry from setxkbmap")
 }
 
 impl KeyboardLayoutMonitor for SetXkbMap {
@@ -106,7 +100,7 @@ pub struct LocaleBus {
 impl LocaleBus {
     pub fn new() -> Result<Self> {
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-            .block_error("locale", "Failed to establish D-Bus connection.")?;
+            .error_msg("Failed to establish D-Bus connection.")?;
 
         Ok(LocaleBus { con })
     }
@@ -117,14 +111,14 @@ impl KeyboardLayoutMonitor for LocaleBus {
         self.con
             .with_path("org.freedesktop.locale1", "/org/freedesktop/locale1", 1000)
             .get("org.freedesktop.locale1", "X11Layout")
-            .block_error("locale", "Failed to get X11Layout property.")
+            .error_msg("Failed to get X11Layout property.")
     }
 
     fn keyboard_variant(&self) -> Result<String> {
         self.con
             .with_path("org.freedesktop.locale1", "/org/freedesktop/locale1", 1000)
             .get("org.freedesktop.locale1", "X11Variant")
-            .block_error("locale", "Failed to get X11Variant property.")
+            .error_msg("Failed to get X11Variant property.")
     }
 
     fn must_poll(&self) -> bool {
@@ -181,7 +175,7 @@ impl KbdDaemonBus {
         Command::new("setxkbmap")
             .arg("-version")
             .output()
-            .block_error("kbddaemonbus", "setxkbmap not found")?;
+            .error_msg("setxkbmap not found")?;
 
         // also verifies that kbdd daemon is registered in dbus
         let layout_id = KbdDaemonBus::get_initial_layout_id()?;
@@ -193,7 +187,7 @@ impl KbdDaemonBus {
 
     fn get_initial_layout_id() -> Result<u32> {
         let c = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::Session)
-            .block_error("kbddaemonbus", "can't connect to dbus")?;
+            .error_msg("can't connect to dbus")?;
 
         let send_msg = Message::new_method_call(
             "ru.gentoo.KbddService",
@@ -201,16 +195,16 @@ impl KbdDaemonBus {
             "ru.gentoo.kbdd",
             "getCurrentLayout",
         )
-        .block_error("kbddaemonbus", "Create get-layout-id message failure")?;
+        .error_msg("Create get-layout-id message failure")?;
 
         let repl_msg = c
             .send_with_reply_and_block(send_msg, 5000)
-            .block_error("kbddaemonbus", "Is kbdd running?")?;
+            .error_msg("Is kbdd running?")?;
 
         let current_layout_id: u32 = repl_msg
             .get1()
             .ok_or("")
-            .block_error("kbddaemonbus", "dbus kbdd response error")?;
+            .error_msg("dbus kbdd response error")?;
 
         Ok(current_layout_id)
     }
@@ -233,7 +227,7 @@ impl KeyboardLayoutMonitor for KbdDaemonBus {
             //'None' may happen only if keyboard map is being toggled (by window focus or keyboard)
             //and keyboard layout replaced (by calling setxkmap) at almost the same time,
             //frankly I can't reproduce this without thread sleep in monitor function, so instead
-            //of block_error I think showing all layouts will be better until the next
+            //of error_msg I think showing all layouts will be better until the next
             //toggling happens
             None => Ok(layouts_str),
         }
@@ -326,7 +320,7 @@ impl Sway {
                     && input.input_type == "keyboard"
             })
             .and_then(|input| input.xkb_active_layout_name)
-            .block_error("sway", "Failed to get xkb_active_layout_name.")?;
+            .error_msg("Failed to get xkb_active_layout_name.")?;
 
         Ok(Sway {
             sway_kb_layout: Arc::new(Mutex::new(layout)),
@@ -418,7 +412,7 @@ impl XkbSwitch {
     pub fn new() -> Result<XkbSwitch> {
         Command::new("xkb-switch")
             .output()
-            .block_error("keyboard_layout", "Failed to find xkb-switch in PATH")
+            .error_msg("Failed to find xkb-switch in PATH")
             .map(|_| XkbSwitch)
     }
 }
@@ -428,17 +422,15 @@ fn xkb_switch_show_layout_and_variant() -> Result<(String, Option<String>)> {
     Command::new("xkb-switch")
         .args(&["-p"])
         .output()
-        .block_error("keyboard_layout", "Failed to execute `xkb-switch -p`.")
-        .and_then(|raw| {
-            String::from_utf8(raw.stdout).block_error("keyboard_layout", "Non-UTF8 input.")
-        })
+        .error_msg("Failed to execute `xkb-switch -p`.")
+        .and_then(|raw| String::from_utf8(raw.stdout).error_msg("Non-UTF8 input."))
         .and_then(|layout_and_variant| {
             let mut components = layout_and_variant.trim_end().split('(');
 
             let layout = components
                 .next()
                 .ok_or("")
-                .block_error("keyboard_layout", "Unable to find keyboard layout")?
+                .error_msg("Unable to find keyboard layout")?
                 .to_string();
 
             let variant = components
@@ -545,6 +537,10 @@ impl ConfigBlock for KeyboardLayout {
 }
 
 impl Block for KeyboardLayout {
+    fn name(&self) -> &'static str {
+        "keyboard_layout"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let mut layout = self.monitor.keyboard_layout()?;
         let variant = self.monitor.keyboard_variant()?;

@@ -12,6 +12,7 @@ use crate::errors::*;
 use crate::formatting::FormatTemplate;
 use crate::formatting::{prefix::Prefix, value::Value};
 use crate::scheduler::Task;
+use crate::util::expand_string;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -136,14 +137,7 @@ impl ConfigBlock for DiskSpace {
         Ok(DiskSpace {
             update_interval: block_config.interval,
             disk_space: TextWidget::new(id, 0, shared_config),
-            path: shellexpand::full(&block_config.path)
-                .map_err(|e| {
-                    ConfigurationError(
-                        "disk_space".to_string(),
-                        format!("Failed to expand file path {}: {}", &block_config.path, e),
-                    )
-                })?
-                .to_string(),
+            path: expand_string(&block_config.path)?,
             format: block_config.format.with_default("{available}")?,
             info_type: block_config.info_type,
             unit: match block_config.unit.as_str() {
@@ -152,12 +146,7 @@ impl ConfigBlock for DiskSpace {
                 "MB" => Prefix::Mega,
                 "KB" => Prefix::Kilo,
                 "B" => Prefix::One,
-                x => {
-                    return Err(BlockError(
-                        "disk_space".to_string(),
-                        format!("cannot set unit to '{}'", x),
-                    ))
-                }
+                x => return Err(Error::new(format!("unknown unit '{x}'"))),
             },
             warning: block_config.warning,
             alert: block_config.alert,
@@ -169,9 +158,13 @@ impl ConfigBlock for DiskSpace {
 }
 
 impl Block for DiskSpace {
+    fn name(&self) -> &'static str {
+        "disk_space"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        let statvfs = statvfs(Path::new(self.path.as_str()))
-            .block_error("disk_space", "failed to retrieve statvfs")?;
+        let statvfs =
+            statvfs(Path::new(self.path.as_str())).error_msg("failed to retrieve statvfs")?;
 
         let total = (statvfs.blocks() as u64) * (statvfs.fragment_size() as u64);
         let used = ((statvfs.blocks() as u64) - (statvfs.blocks_free() as u64))

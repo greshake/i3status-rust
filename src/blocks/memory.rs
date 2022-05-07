@@ -275,9 +275,12 @@ impl ConfigBlock for Memory {
 }
 
 impl Block for Memory {
+    fn name(&self) -> &'static str {
+        "memory"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        let f =
-            File::open("/proc/meminfo").block_error("memory", "/proc/meminfo does not exist")?;
+        let f = File::open("/proc/meminfo").error_msg("/proc/meminfo does not exist")?;
         let f = BufReader::new(f);
 
         let mut mem_state = Memstate::new();
@@ -297,60 +300,56 @@ impl Block for Memory {
             match line.get(0) {
                 Some(&"MemTotal:") => {
                     mem_state.mem_total = (
-                        u64::from_str(line[1])
-                            .block_error("memory", "failed to parse mem_total")?,
+                        u64::from_str(line[1]).error_msg("failed to parse mem_total")?,
                         true,
                     );
                     continue;
                 }
                 Some(&"MemFree:") => {
                     mem_state.mem_free = (
-                        u64::from_str(line[1]).block_error("memory", "failed to parse mem_free")?,
+                        u64::from_str(line[1]).error_msg("failed to parse mem_free")?,
                         true,
                     );
                     continue;
                 }
                 Some(&"Buffers:") => {
                     mem_state.buffers = (
-                        u64::from_str(line[1]).block_error("memory", "failed to parse buffers")?,
+                        u64::from_str(line[1]).error_msg("failed to parse buffers")?,
                         true,
                     );
                     continue;
                 }
                 Some(&"Cached:") => {
                     mem_state.cached = (
-                        u64::from_str(line[1]).block_error("memory", "failed to parse cached")?,
+                        u64::from_str(line[1]).error_msg("failed to parse cached")?,
                         true,
                     );
                     continue;
                 }
                 Some(&"SReclaimable:") => {
                     mem_state.s_reclaimable = (
-                        u64::from_str(line[1])
-                            .block_error("memory", "failed to parse s_reclaimable")?,
+                        u64::from_str(line[1]).error_msg("failed to parse s_reclaimable")?,
                         true,
                     );
                     continue;
                 }
                 Some(&"Shmem:") => {
                     mem_state.shmem = (
-                        u64::from_str(line[1]).block_error("memory", "failed to parse shmem")?,
+                        u64::from_str(line[1]).error_msg("failed to parse shmem")?,
                         true,
                     );
                     continue;
                 }
                 Some(&"SwapTotal:") => {
                     mem_state.swap_total = (
-                        u64::from_str(line[1])
-                            .block_error("memory", "failed to parse swap_total")?,
+                        u64::from_str(line[1]).error_msg("failed to parse swap_total")?,
                         true,
                     );
                     continue;
                 }
                 Some(&"SwapFree:") => {
                     mem_state.swap_free = (
-                        u64::from_str(line[1])
-                            .block_error("memory", "failed to parse swap_free")?,
+                        u64::from_str(line[1]).error_msg("failed to parse swap_free")?,
                         true,
                     );
                     continue;
@@ -367,9 +366,9 @@ impl Block for Memory {
             let size_re = Regex::new(r"size\s+\d+\s+(\d+)").unwrap(); // Valid regex is safe to unwrap.
             let size = &size_re
                 .captures(&arcstats)
-                .block_error("memory", "failed to find zfs_arc_cache size")?[1];
+                .error_msg("failed to find zfs_arc_cache size")?[1];
             mem_state.zfs_arc_cache =
-                u64::from_str(size).block_error("memory", "failed to parse zfs_arc_cache size")?;
+                u64::from_str(size).error_msg("failed to parse zfs_arc_cache size")?;
         }
 
         // Now, create the string to be shown
@@ -387,10 +386,12 @@ impl Block for Memory {
         if event.button == MouseButton::Left && self.clickable {
             self.switch();
             self.update()?;
-            self.tx_update_request.send(Task {
-                id: self.id,
-                update_time: Instant::now(),
-            })?;
+            self.tx_update_request
+                .send(Task {
+                    id: self.id,
+                    update_time: Instant::now(),
+                })
+                .error_msg("send error")?;
         }
 
         Ok(())

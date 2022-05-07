@@ -68,10 +68,8 @@ impl ConfigBlock for IBus {
         let init_text = block_config.initial_text;
         let engine_original = Arc::new(Mutex::new(init_text.clone()));
 
-        let c = Connection::get_private(BusType::Session).block_error(
-            "ibus",
-            "failed to establish D-Bus connection to session bus",
-        )?;
+        let c = Connection::get_private(BusType::Session)
+            .error_msg("failed to establish D-Bus connection to session bus")?;
         let m = Message::new_method_call(
             "org.freedesktop.DBus",
             "/",
@@ -137,10 +135,9 @@ impl ConfigBlock for IBus {
 
         let current_engine: String = if running {
             let ibus_address = get_ibus_address()?;
-            let c = Connection::open_private(&ibus_address).block_error(
-                "ibus",
-                &format!("Failed to establish D-Bus connection to {}", ibus_address),
-            )?;
+            let c = Connection::open_private(&ibus_address).error_msg(format!(
+                "Failed to establish D-Bus connection to {ibus_address}"
+            ))?;
             let p = c.with_path("org.freedesktop.IBus", "/org/freedesktop/IBus", 5000);
 
             // This is a hack.
@@ -165,9 +162,9 @@ impl ConfigBlock for IBus {
                     // //                         ↑ We will use this element (name) as it is what GlobalEngineChanged signal returns.
                     value
                         .as_iter()
-                        .block_error("ibus", "Failed to parse D-Bus message (step 1)")?
+                        .error_msg("Failed to parse D-Bus message (step 1)")?
                         .nth(2)
-                        .block_error("ibus", "Failed to parse D-Bus message (step 2)")?
+                        .error_msg("Failed to parse D-Bus message (step 2)")?
                         .as_str()
                         .unwrap_or(&init_text)
                         .to_string()
@@ -232,13 +229,13 @@ impl ConfigBlock for IBus {
 }
 
 impl Block for IBus {
+    fn name(&self) -> &'static str {
+        "idus"
+    }
+
     // Updates the internal state of the block.
     fn update(&mut self) -> Result<Option<Update>> {
-        let engine = (*self
-            .engine
-            .lock()
-            .block_error("ibus", "failed to acquire lock")?)
-        .clone();
+        let engine = (*self.engine.lock().unwrap()).clone();
         let display_engine = if let Some(m) = &self.mappings {
             match m.get(&engine) {
                 Some(mapping) => mapping.to_string(),
@@ -319,18 +316,15 @@ fn get_ibus_address() -> Result<String> {
     // If the above fails for some reason, then fallback to guessing the correct socket file
     // TODO: possibly remove all this since if `ibus address` fails then something is wrong
     let socket_dir = xdg_config_home().join("ibus/bus");
-    let socket_files: Vec<String> = read_dir(socket_dir.clone())
-        .block_error("ibus", &format!("Could not open '{:?}'.", socket_dir))?
+    let socket_files: Vec<String> = read_dir(&socket_dir)
+        .map_error_msg(|_| format!("Could not open '{socket_dir:?}'."))?
         .filter(|entry| entry.is_ok())
         // The path will be valid unicode, so this is safe to unwrap.
         .map(|entry| entry.unwrap().file_name().into_string().unwrap())
         .collect();
 
     if socket_files.is_empty() {
-        return Err(BlockError(
-            "ibus".to_string(),
-            "Could not locate an IBus socket file.".to_string(),
-        ));
+        return Err(Error::new("Could not locate an IBus socket file"));
     }
 
     // Only check $DISPLAY if we need to.
@@ -346,13 +340,10 @@ fn get_ibus_address() -> Result<String> {
             let re = Regex::new(r"^:([0-9]{1})$").unwrap(); // Valid regex is safe to unwrap.
             let cap = re
                 .captures(&x)
-                .block_error("ibus", "Failed to extract display number from $DISPLAY")?;
+                .error_msg("Failed to extract display number from $DISPLAY")?;
             cap[1].to_string()
         } else {
-            return Err(BlockError(
-                "ibus".to_string(),
-                "Could not read DISPLAY or WAYLAND_DISPLAY.".to_string(),
-            ));
+            return Err(Error::new("Could not read DISPLAY or WAYLAND_DISPLAY"));
         };
 
         let candidate = socket_files
@@ -360,26 +351,19 @@ fn get_ibus_address() -> Result<String> {
             .filter(|fname| fname.ends_with(&display_suffix))
             .take(1)
             .next()
-            .block_error(
-                "ibus",
-                "Could not find an IBus socket file matching $DISPLAY.",
-            )?;
+            .error_msg("Could not find an IBus socket file matching $DISPLAY")?;
         socket_dir.join(candidate)
     };
 
     let re = Regex::new(r"ADDRESS=(.*),guid").unwrap(); // Valid regex is safe to unwrap.
     let mut address = String::new();
     File::open(&socket_path)
-        .block_error("ibus", &format!("Could not open '{:?}'.", socket_path))?
+        .map_error_msg(|_| format!("Could not open '{socket_path:?}'"))?
         .read_to_string(&mut address)
-        .block_error(
-            "ibus",
-            &format!("Error reading contents of '{:?}'.", socket_path),
-        )?;
-    let cap = re.captures(&address).block_error(
-        "ibus",
-        &format!("Failed to extract address out of '{}'.", address),
-    )?;
+        .map_error_msg(|_| format!("Error reading contents of '{socket_path:?}'"))?;
+    let cap = re
+        .captures(&address)
+        .map_error_msg(|| format!("Failed to extract address out of '{address}'"))?;
 
     let address = cap[1].to_string();
     eprintln!(

@@ -50,17 +50,12 @@ impl HueShiftDriver for Redshift {
                 format!("redshift -O {} -P >/dev/null 2>&1", temp).as_str(),
             ],
         )
-        .block_error(
-            "hueshift",
-            "Failed to set new color temperature using redshift.",
-        )?;
+        .error_msg("Failed to set new color temperature using redshift")?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
-        spawn_child_async("sh", &["-c", "redshift -x >/dev/null 2>&1"]).block_error(
-            "redshift",
-            "Failed to set new color temperature using redshift.",
-        )?;
+        spawn_child_async("sh", &["-c", "redshift -x >/dev/null 2>&1"])
+            .error_msg("Failed to set new color temperature using redshift")?;
         Ok(())
     }
 }
@@ -71,12 +66,12 @@ impl HueShiftDriver for Sct {
             "sh",
             &["-c", format!("sct {} >/dev/null 2>&1", temp).as_str()],
         )
-        .block_error("hueshift", "Failed to set new color temperature using sct.")?;
+        .error_msg("Failed to set new color temperature using sct")?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
         spawn_child_async("sh", &["-c", "sct >/dev/null 2>&1"])
-            .block_error("hueshift", "Failed to set new color temperature using sct.")?;
+            .error_msg("Failed to set new color temperature using sct")?;
         Ok(())
     }
 }
@@ -90,18 +85,11 @@ impl HueShiftDriver for Gammastep {
                 &format!("pkill gammastep; gammastep -O {} -P &", temp),
             ],
         )
-        .block_error(
-            "hueshift",
-            "Failed to set new color temperature using gammastep.",
-        )?;
-        Ok(())
+        .error_msg("Failed to set new color temperature using gammastep")
     }
     fn reset(&self) -> Result<()> {
-        spawn_child_async("sh", &["-c", "gammastep -x >/dev/null 2>&1"]).block_error(
-            "hueshift",
-            "Failed to set new color temperature using gammastep.",
-        )?;
-        Ok(())
+        spawn_child_async("sh", &["-c", "gammastep -x >/dev/null 2>&1"])
+            .error_msg("Failed to set new color temperature using gammastep")
     }
 }
 struct Wlsunset();
@@ -117,10 +105,7 @@ impl HueShiftDriver for Wlsunset {
                 &format!("pkill wlsunset; wlsunset -T {} -t {} &", temp + 1, temp),
             ],
         )
-        .block_error(
-            "hueshift",
-            "Failed to set new color temperature using wlsunset.",
-        )?;
+        .error_msg("Failed to set new color temperature using wlsunset")?;
         Ok(())
     }
     fn reset(&self) -> Result<()> {
@@ -132,10 +117,8 @@ impl HueShiftDriver for Wlsunset {
         //     ^ results in sun_condition == POLAR_NIGHT at time of testing
         // With these defaults, this results in the the color temperature
         // getting set to 4000K.
-        spawn_child_async("sh", &["-c", "pkill wlsunset > /dev/null 2>&1"]).block_error(
-            "hueshift",
-            "Failed to set new color temperature using wlsunset.",
-        )?;
+        spawn_child_async("sh", &["-c", "pkill wlsunset > /dev/null 2>&1"])
+            .error_msg("Failed to set new color temperature using wlsunset")?;
         Ok(())
     }
 }
@@ -161,9 +144,8 @@ impl WlGammarelay {
                 }
                 Err(_) => {
                     if attempt == max_attempts {
-                        return Err(BlockError(
-                            "hueshift".to_string(),
-                            "Unable to get current temperature for rs.wl.gammarelay".to_string(),
+                        return Err(Error::new(
+                            "Unable to get current temperature for rs.wl.gammarelay",
                         ));
                     } else {
                         thread::sleep(Duration::from_millis(delay));
@@ -179,9 +161,9 @@ impl WlGammarelay {
             "sh",
             &["-c", format!("{} >/dev/null 2>&1", command).as_str()],
         )
-        .block_error("hueshift", format!("Failed to start {}.", command).as_str())?;
+        .error_msg(format!("Failed to start {command}"))?;
         let con = dbus::ffidisp::Connection::new_session()
-            .block_error("hueshift", "Failed to establish D-Bus connection.")?;
+            .error_msg("Failed to establish D-Bus connection.")?;
 
         let current_temperature: Arc<AtomicU16> = Arc::new(AtomicU16::new(
             WlGammarelay::attempt_to_get_current_temperature(&con, 100, 5)?,
@@ -244,8 +226,7 @@ impl HueShiftDriver for WlGammarelay {
         self.con
             .with_path("rs.wl-gammarelay", "/", 1000)
             .set("rs.wl.gammarelay", "Temperature", temp)
-            .map_err(|e| BlockError("hueshift".to_string(), e.to_string()))?;
-        Ok(())
+            .error_msg("failed to update temperature")
     }
     fn reset(&self) -> Result<()> {
         // wl-gammarelay does not have a reset option just set the temp back to 6500
@@ -297,17 +278,17 @@ impl Default for HueshiftConfig {
             max_temp: 10_000,
             min_temp: 1_000,
             current_temp: 6_500,
-            hue_shifter: if has_command("hueshift", "redshift").unwrap_or(false) {
+            hue_shifter: if has_command("redshift").unwrap_or(false) {
                 Some(HueShifter::Redshift)
-            } else if has_command("hueshift", "sct").unwrap_or(false) {
+            } else if has_command("sct").unwrap_or(false) {
                 Some(HueShifter::Sct)
-            } else if has_command("hueshift", "gammastep").unwrap_or(false) {
+            } else if has_command("gammastep").unwrap_or(false) {
                 Some(HueShifter::Gammastep)
-            } else if has_command("hueshift", "wlsunset").unwrap_or(false) {
+            } else if has_command("wlsunset").unwrap_or(false) {
                 Some(HueShifter::Wlsunset)
-            } else if has_command("hueshift", "wl-gammarelay-rs").unwrap_or(false) {
+            } else if has_command("wl-gammarelay-rs").unwrap_or(false) {
                 Some(HueShifter::WlGammarelayRs)
-            } else if has_command("hueshift", "wl-gammarelay").unwrap_or(false) {
+            } else if has_command("wl-gammarelay").unwrap_or(false) {
                 Some(HueShifter::WlGammarelay)
             } else {
                 None
@@ -344,7 +325,7 @@ impl ConfigBlock for Hueshift {
 
         let hue_shifter = block_config
             .hue_shifter
-            .block_error("hueshift", "Cound not detect driver program")?;
+            .error_msg("Cound not detect driver program")?;
 
         let hue_shift_driver: Box<dyn HueShiftDriver> = match hue_shifter {
             HueShifter::Redshift => Box::new(Redshift {}),
@@ -375,6 +356,10 @@ impl ConfigBlock for Hueshift {
 }
 
 impl Block for Hueshift {
+    fn name(&self) -> &'static str {
+        "hueshift"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         if let Some(current_temp) = self.hue_shift_driver.get_current_temperature()? {
             self.current_temp = current_temp;

@@ -128,8 +128,7 @@ impl ConfigBlock for FocusedWindow {
             }
         };
 
-        let _test_conn =
-            Connection::new().block_error("focused_window", "failed to acquire connect to IPC")?;
+        let _test_conn = Connection::new().error_msg("failed to acquire connect to IPC")?;
 
         thread::Builder::new()
             .name("focused_window".into())
@@ -195,18 +194,14 @@ impl ConfigBlock for FocusedWindow {
 }
 
 impl Block for FocusedWindow {
+    fn name(&self) -> &'static str {
+        "focused_window"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        let mut marks_string = (*self
-            .marks
-            .lock()
-            .block_error("focused_window", "failed to acquire lock")?)
-        .clone();
+        let mut marks_string = (*self.marks.lock().unwrap()).clone();
         marks_string = marks_string.chars().take(self.max_width).collect();
-        let mut title_string = (*self
-            .title
-            .lock()
-            .block_error("focused_window", "failed to acquire lock")?)
-        .clone();
+        let mut title_string = (*self.title.lock().unwrap()).clone();
         title_string = title_string.chars().take(self.max_width).collect();
         let out_str = match self.show_marks {
             MarksType::None => &title_string,

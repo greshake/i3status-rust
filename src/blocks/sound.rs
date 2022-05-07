@@ -112,12 +112,12 @@ impl SoundDevice for AlsaSoundDevice {
             .args(&args)
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .block_error("sound", "could not run amixer to get sound info")?;
+            .error_msg("could not run amixer to get sound info")?;
 
         let last_line = &output
             .lines()
             .last()
-            .block_error("sound", "could not get sound info")?;
+            .error_msg("could not get sound info")?;
 
         let last = last_line
             .split_whitespace()
@@ -127,9 +127,9 @@ impl SoundDevice for AlsaSoundDevice {
 
         self.volume = last
             .get(0)
-            .block_error("sound", "could not get volume")?
+            .error_msg("could not get volume")?
             .parse::<u32>()
-            .block_error("sound", "could not parse volume to u32")?;
+            .error_msg("could not parse volume to u32")?;
 
         self.muted = last.get(1).map(|muted| *muted == "off").unwrap_or(false);
 
@@ -153,7 +153,7 @@ impl SoundDevice for AlsaSoundDevice {
         Command::new("amixer")
             .args(&args)
             .output()
-            .block_error("sound", "failed to set volume")?;
+            .error_msg("failed to set volume")?;
 
         self.volume = capped_volume;
 
@@ -170,7 +170,7 @@ impl SoundDevice for AlsaSoundDevice {
         Command::new("amixer")
             .args(&args)
             .output()
-            .block_error("sound", "failed to toggle mute")?;
+            .error_msg("failed to toggle mute")?;
 
         self.muted = !self.muted;
 
@@ -330,24 +330,22 @@ impl PulseAudioConnection {
         let mut proplist = Proplist::new().unwrap();
         proplist
             .set_str(properties::APPLICATION_NAME, "i3status-rs")
-            .block_error(
-                "sound",
-                "could not set pulseaudio APPLICATION_NAME property",
-            )?;
+            .ok()
+            .error_msg("could not set pulseaudio APPLICATION_NAME property")?;
 
         let mainloop = Rc::new(RefCell::new(
-            Mainloop::new().block_error("sound", "failed to create pulseaudio mainloop")?,
+            Mainloop::new().error_msg("failed to create pulseaudio mainloop")?,
         ));
 
         let context = Rc::new(RefCell::new(
             Context::new_with_proplist(mainloop.borrow().deref(), "i3status-rs_context", &proplist)
-                .block_error("sound", "failed to create new pulseaudio context")?,
+                .error_msg("failed to create new pulseaudio context")?,
         ));
 
         context
             .borrow_mut()
             .connect(None, FlagSet::NOFLAGS, None)
-            .block_error("sound", "failed to connect to pulseaudio context")?;
+            .error_msg("failed to connect to pulseaudio context")?;
 
         let mut connection = PulseAudioConnection { mainloop, context };
 
@@ -359,10 +357,7 @@ impl PulseAudioConnection {
                     break;
                 }
                 PulseState::Failed | PulseState::Terminated => {
-                    return Err(BlockError(
-                        "sound".into(),
-                        "pulseaudio context state failed/terminated".into(),
-                    ))
+                    return Err(Error::new("pulseaudio context state failed/terminated"))
                 }
                 _ => {}
             }
@@ -373,10 +368,9 @@ impl PulseAudioConnection {
 
     fn iterate(&mut self, blocking: bool) -> Result<()> {
         match self.mainloop.borrow_mut().iterate(blocking) {
-            IterateResult::Quit(_) | IterateResult::Err(_) => Err(BlockError(
-                "sound".into(),
-                "failed to iterate pulseaudio state".into(),
-            )),
+            IterateResult::Quit(_) | IterateResult::Err(_) => {
+                Err(Error::new("failed to iterate pulseaudio state"))
+            }
             IterateResult::Success(_) => Ok(()),
         }
     }
@@ -404,7 +398,7 @@ impl PulseAudioClient {
         let thread_result = || -> Result<()> {
             recv_result
                 .recv()
-                .block_error("sound", "failed to receive from pulseaudio thread channel")?
+                .error_msg("failed to receive from pulseaudio thread channel")?
         };
 
         // requests
@@ -511,10 +505,9 @@ impl PulseAudioClient {
                 client.sender.send(request).unwrap();
                 Ok(())
             }
-            Err(err) => Err(BlockError(
-                "sound".into(),
-                format!("pulseaudio connection failed with error: {}", err),
-            )),
+            Err(err) => Err(Error::new(format!(
+                "pulseaudio connection failed with error: {err}"
+            ))),
         }
     }
 
@@ -680,7 +673,7 @@ impl SoundDevice for PulseAudioSoundDevice {
     }
 
     fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()> {
-        let mut volume = self.volume.block_error("sound", "volume unknown")?;
+        let mut volume = self.volume.error_msg("volume unknown")?;
 
         // apply step to volumes
         let step = (step as f32 * Volume::NORMAL.0 as f32 / 100.0).round() as i32;
@@ -898,10 +891,7 @@ impl ConfigBlock for Sound {
             SoundDriver::Auto | SoundDriver::PulseAudio => {
                 PulseAudioSoundDevice::new(block_config.device_kind, block_config.name.clone())
             }
-            _ => Err(BlockError(
-                "sound".into(),
-                "PulseAudio feature or driver disabled".into(),
-            )),
+            _ => Err(Error::new("PulseAudio feature or driver disabled")),
         };
 
         // prefer PulseAudio if available and selected, fallback to ALSA
@@ -942,6 +932,10 @@ impl ConfigBlock for Sound {
 const FILTER: &[char] = &['[', ']', '%'];
 
 impl Block for Sound {
+    fn name(&self) -> &'static str {
+        "sound"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         self.device.get_info()?;
 
@@ -999,8 +993,7 @@ impl Block for Sound {
             MouseButton::Right => self.device.toggle()?,
             MouseButton::Left => {
                 if let Some(ref cmd) = self.on_click {
-                    spawn_child_async("sh", &["-c", cmd])
-                        .block_error("sound", "could not spawn child")?;
+                    spawn_child_async("sh", &["-c", cmd]).error_msg("could not spawn child")?;
                 }
             }
             _ => {

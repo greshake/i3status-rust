@@ -13,6 +13,7 @@ use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::util::expand_string;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 use inotify::{EventMask, Inotify, WatchMask};
@@ -130,14 +131,7 @@ impl ConfigBlock for Taskwarrior {
         };
 
         let data_location = block_config.data_location.clone();
-        let data_location = shellexpand::full(data_location.as_str())
-            .map_err(|e| {
-                ConfigurationError(
-                    "custom".to_string(),
-                    format!("Failed to expand data location {}: {}", data_location, e),
-                )
-            })?
-            .to_string();
+        let data_location = expand_string(&data_location)?;
 
         // Spin up a thread to watch for changes to the task directory (~/.task)
         // and schedule an update if needed.
@@ -191,13 +185,10 @@ fn has_taskwarrior() -> Result<bool> {
         Command::new("sh")
             .args(&["-c", "type -P task"])
             .output()
-            .block_error(
-                "taskwarrior",
-                "failed to start command to check for taskwarrior",
-            )?
+            .error_msg("failed to start command to check for taskwarrior")?
             .stdout,
     )
-    .block_error("taskwarrior", "failed to check for taskwarrior")?
+    .error_msg("failed to check for taskwarrior")?
     .trim()
         != "")
 }
@@ -207,30 +198,28 @@ fn get_number_of_tasks(filter: &str) -> Result<u32> {
         Command::new("sh")
             .args(&["-c", &format!("task rc.gc=off {} count", filter)])
             .output()
-            .block_error(
-                "taskwarrior",
-                "failed to run taskwarrior for getting the number of tasks",
-            )?
+            .error_msg("failed to run taskwarrior for getting the number of tasks")?
             .stdout,
     )
-    .block_error(
-        "taskwarrior",
-        "failed to get the number of tasks from taskwarrior",
-    )?
+    .error_msg("failed to get the number of tasks from taskwarrior")?
     .trim()
     .parse::<u32>()
-    .block_error("taskwarrior", "could not parse the result of taskwarrior")
+    .error_msg("could not parse the result of taskwarrior")
 }
 
 impl Block for Taskwarrior {
+    fn name(&self) -> &'static str {
+        "taskwarrior"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         if !has_taskwarrior()? {
             self.output.set_text("?".to_string())
         } else {
-            let filter = self.filters.get(self.filter_index).block_error(
-                "taskwarrior",
-                &format!("Filter at index {} does not exist", self.filter_index),
-            )?;
+            let filter = self.filters.get(self.filter_index).error_msg(format!(
+                "Filter at index {} does not exist",
+                self.filter_index
+            ))?;
             let number_of_tasks = get_number_of_tasks(&filter.filter)?;
             let values = map!(
                 "count" => Value::from_integer(number_of_tasks as i64),

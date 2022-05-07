@@ -32,14 +32,14 @@ pub struct BluetoothDevice {
 impl BluetoothDevice {
     pub fn new(mac: String, controller_id: String, label: Option<String>) -> Result<Self> {
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-            .block_error("bluetooth", "Failed to establish D-Bus connection.")?;
+            .error_msg("Failed to establish D-Bus connection.")?;
 
         // Bluez does not provide a convenient way to list devices, so we
         // have to employ a rather verbose workaround.
         let objects = con
             .with_path("org.bluez", "/", 1000)
             .get_managed_objects()
-            .block_error("bluetooth", "Failed to get managed objects from org.bluez.")?;
+            .error_msg("Failed to get managed objects from org.bluez.")?;
 
         // If we need to suppress errors from missing devices, this is the place
         // to do it. We could also pick the "default" device here, although that
@@ -121,11 +121,8 @@ impl BluetoothDevice {
             .ok()
     }
 
-    pub fn available(&self) -> Result<bool> {
-        Ok(*self
-            .available
-            .lock()
-            .block_error("bluetooth", "failed to acquire lock for `available`")?)
+    pub fn available(&self) -> bool {
+        *self.available.lock().unwrap()
     }
 
     pub fn connected(&self) -> bool {
@@ -148,7 +145,7 @@ impl BluetoothDevice {
         };
         let msg =
             dbus::Message::new_method_call("org.bluez", &self.path, "org.bluez.Device1", method)
-                .block_error("bluetooth", "Failed to build D-Bus method.")?;
+                .error_msg("Failed to build D-Bus method.")?;
 
         let _ = self.con.send(msg);
         Ok(())
@@ -292,8 +289,12 @@ impl ConfigBlock for Bluetooth {
 }
 
 impl Block for Bluetooth {
+    fn name(&self) -> &'static str {
+        "bluetooth"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        if self.device.available()? {
+        if self.device.available() {
             let values = map!(
                 "label" => Value::from_string(self.device.label.clone()),
                 "percentage" => Value::from_integer(self.device.battery().unwrap_or(0) as i64).percents(),

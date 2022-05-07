@@ -53,10 +53,10 @@ fn get_values() -> Result<String> {
     cmd.arg("--simple");
     String::from_utf8(
         cmd.output()
-            .block_error("speedtest", "could not get speedtest-cli output")?
+            .error_msg("could not get speedtest-cli output")?
             .stdout,
     )
-    .block_error("speedtest", "could not parse speedtest-cli output")
+    .error_msg("could not parse speedtest-cli output")
 }
 
 fn parse_values(output: &str) -> Result<Vec<f32>> {
@@ -67,9 +67,9 @@ fn parse_values(output: &str) -> Result<Vec<f32>> {
         word.next();
         vals.push(
             word.next()
-                .block_error("speedtest", "missing data")?
+                .error_msg("missing data")?
                 .parse::<f32>()
-                .block_error("speedtest", "Unable to parse data")?,
+                .error_msg("Unable to parse data")?,
         );
     }
 
@@ -141,11 +141,12 @@ impl ConfigBlock for SpeedTest {
 }
 
 impl Block for SpeedTest {
+    fn name(&self) -> &'static str {
+        "speedtest"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        let (ref mut updated, ref vals) = *self
-            .vals
-            .lock()
-            .block_error("speedtest", "mutext poisoned")?;
+        let (ref mut updated, ref vals) = *self.vals.lock().unwrap();
 
         if *updated {
             *updated = false;
@@ -167,14 +168,14 @@ impl Block for SpeedTest {
 
             Ok(None)
         } else {
-            self.send.send(())?;
+            self.send.send(()).error_msg("send errror")?;
             Ok(Some(self.interval.into()))
         }
     }
 
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let MouseButton::Left = e.button {
-            self.send.send(())?;
+            self.send.send(()).error_msg("send error")?;
         }
         Ok(())
     }

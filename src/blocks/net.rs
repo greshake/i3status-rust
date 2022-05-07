@@ -136,14 +136,14 @@ impl NetworkDevice {
     pub fn tx_bytes(&self) -> Result<u64> {
         read_file(&self.device_path.join("statistics/tx_bytes"))?
             .parse::<u64>()
-            .block_error("net", "Failed to parse tx_bytes")
+            .error_msg("Failed to parse tx_bytes")
     }
 
     /// Query the device for the current `rx_bytes` statistic.
     pub fn rx_bytes(&self) -> Result<u64> {
         read_file(&self.device_path.join("statistics/rx_bytes"))?
             .parse::<u64>()
-            .block_error("net", "Failed to parse rx_bytes")
+            .error_msg("Failed to parse rx_bytes")
     }
 
     /// Checks whether this device is wireless.
@@ -162,12 +162,12 @@ impl NetworkDevice {
             return Ok((None, None, None));
         }
 
-        let mut sock = neli_wifi::Socket::connect()
-            .block_error("net", "nl80211: failed to connect to the socket")?;
+        let mut sock =
+            neli_wifi::Socket::connect().error_msg("nl80211: failed to connect to the socket")?;
 
         let interfaces = sock
             .get_interfaces_info()
-            .block_error("net", "nl80211: failed to get interfaces' information")?;
+            .error_msg("nl80211: failed to get interfaces' information")?;
 
         for interface in interfaces {
             if let Some(index) = &interface.index {
@@ -209,14 +209,14 @@ impl NetworkDevice {
         let output = Command::new("ip")
             .args(&["-json", "-family", "inet", "address", "show", &self.device])
             .output()
-            .block_error("net", "Failed to execute IP address query.")
+            .error_msg("Failed to execute IP address query.")
             .and_then(|raw_output| {
                 String::from_utf8(raw_output.stdout)
-                    .block_error("net", "Response contained non-UTF8 characters.")
+                    .error_msg("Response contained non-UTF8 characters.")
             })?;
 
         let ip_devs: Vec<IpDev> =
-            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response")?;
+            serde_json::from_str(&output).error_msg("Failed to parse JSON response")?;
 
         if ip_devs.is_empty() {
             return Ok(Some("".to_string()));
@@ -243,14 +243,14 @@ impl NetworkDevice {
         let output = Command::new("ip")
             .args(&["-json", "-family", "inet6", "address", "show", &self.device])
             .output()
-            .block_error("net", "Failed to execute IP address query.")
+            .error_msg("Failed to execute IP address query.")
             .and_then(|raw_output| {
                 String::from_utf8(raw_output.stdout)
-                    .block_error("net", "Response contained non-UTF8 characters.")
+                    .error_msg("Response contained non-UTF8 characters.")
             })?;
 
         let ip_devs: Vec<IpDev> =
-            serde_json::from_str(&output).block_error("net", "Failed to parse JSON response")?;
+            serde_json::from_str(&output).error_msg("Failed to parse JSON response")?;
 
         if ip_devs.is_empty() {
             return Ok(Some("".to_string()));
@@ -280,7 +280,7 @@ impl NetworkDevice {
             let bitrate_output = Command::new("iw")
                 .args(&["dev", &self.device, "link"])
                 .output()
-                .block_error("net", "Failed to execute bitrate query with iw.")?
+                .error_msg("Failed to execute bitrate query with iw.")?
                 .stdout;
 
             if let Some(rate) = IW_BITRATE_REGEX
@@ -289,7 +289,7 @@ impl NetworkDevice {
                 .and_then(|x| x.get(1))
             {
                 String::from_utf8(rate.as_bytes().to_vec())
-                    .block_error("net", "Non-UTF8 bitrate")
+                    .error_msg("Non-UTF8 bitrate")
                     .map(Some)
             } else {
                 Ok(None)
@@ -298,14 +298,12 @@ impl NetworkDevice {
             let output = Command::new("ethtool")
                 .arg(&self.device)
                 .output()
-                .block_error("net", "Failed to execute bitrate query with ethtool")?
+                .error_msg("Failed to execute bitrate query with ethtool")?
                 .stdout;
             if let Some(rate) = ETHTOOL_SPEED_REGEX.captures_iter(&output).next() {
-                let rate = rate
-                    .get(1)
-                    .block_error("net", "Invalid ethtool output: no speed")?;
+                let rate = rate.get(1).error_msg("Invalid ethtool output: no speed")?;
                 String::from_utf8(rate.as_bytes().to_vec())
-                    .block_error("net", "Non-UTF8 bitrate")
+                    .error_msg("Non-UTF8 bitrate")
                     .map(Some)
             } else {
                 Ok(None)
@@ -479,13 +477,13 @@ impl ConfigBlock for Net {
 }
 
 fn read_file(path: &Path) -> Result<String> {
-    let mut f = OpenOptions::new().read(true).open(path).block_error(
-        "net",
-        &format!("failed to open file {}", path.to_string_lossy()),
-    )?;
+    let mut f = OpenOptions::new()
+        .read(true)
+        .open(path)
+        .map_error_msg(|_| format!("failed to open file {}", path.to_string_lossy()))?;
     let mut content = String::new();
     f.read_to_string(&mut content)
-        .block_error("net", &format!("failed to read {}", path.to_string_lossy()))?;
+        .map_error_msg(|_| format!("failed to read {}", path.to_string_lossy()))?;
     // Removes trailing newline
     content.pop();
     Ok(content)
@@ -572,6 +570,10 @@ impl Net {
 }
 
 impl Block for Net {
+    fn name(&self) -> &'static str {
+        "net"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         // Update device
         if self.auto_device {

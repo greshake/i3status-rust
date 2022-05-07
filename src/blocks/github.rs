@@ -84,7 +84,7 @@ impl ConfigBlock for Github {
         _: Sender<Task>,
     ) -> Result<Self> {
         let token = std::env::var(GITHUB_TOKEN_ENV)
-            .block_error("github", "missing I3RS_GITHUB_TOKEN environment variable")?;
+            .error_msg( "missing I3RS_GITHUB_TOKEN environment variable")?;
 
         let text = TextWidget::new(id, 0, shared_config)
             .with_text("x")
@@ -106,6 +106,10 @@ impl ConfigBlock for Github {
 }
 
 impl Block for Github {
+    fn name(&self) -> &'static str {
+        "github"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let aggregations = match Notifications::new(&self.api_server, &self.token).try_fold(
             map!("total".to_owned() => 0),

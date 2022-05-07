@@ -19,7 +19,6 @@ use crate::widgets::{I3BarWidget, State};
 use crate::Duration;
 
 const API_ENDPOINT: &str = "https://ipapi.co/json/";
-const BLOCK_NAME: &str = "external_ip";
 
 #[derive(ser, des, Default)]
 #[serde(default)]
@@ -147,16 +146,17 @@ impl ConfigBlock for ExternalIP {
 }
 
 impl Block for ExternalIP {
+    fn name(&self) -> &'static str {
+        "external_ip"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let (external_ip, success) = {
             let ip_info: Result<IPAddressInfo> =
                 match http::http_get_json(API_ENDPOINT, Some(Duration::from_secs(3)), vec![]) {
                     Ok(ip_info_json) => serde_json::from_value(ip_info_json.content)
-                        .block_error(BLOCK_NAME, "Failed to decode JSON"),
-                    _ => Err(BlockError(
-                        BLOCK_NAME.to_string(),
-                        "Failed to contact API".to_string(),
-                    )),
+                        .error_msg("Failed to decode JSON"),
+                    _ => Err(Error::new("Failed to contact API")),
                 };
             match ip_info {
                 Ok(ip_info) => match ip_info.error {

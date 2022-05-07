@@ -22,11 +22,9 @@ pub struct Placeholder {
 }
 
 pub(super) fn unexpected_token<T>(token: char) -> Result<T> {
-    Err(InternalError(
-        "format parser".to_string(),
-        format!("unexpected token '{}'", token),
-        None,
-    ))
+    Err(Error::new(format!(
+        "uformat parser: nexpected token '{token}'"
+    )))
 }
 
 impl FromStr for Placeholder {
@@ -57,19 +55,17 @@ impl FromStr for Placeholder {
         let max_width = if max_width.is_empty() {
             None
         } else {
-            Some(max_width.parse().internal_error(
-                "format parser",
-                &format!("failed to parse max_width '{}'", max_width),
-            )?)
+            Some(max_width.parse().map_error_msg(|_| {
+                format!("format parser: failed to parse max_width '{max_width}'")
+            })?)
         };
         // Parse bar_max_value
         let bar_max_value = if bar_max_value.is_empty() {
             None
         } else {
-            Some(bar_max_value.parse().internal_error(
-                "format parser",
-                &format!("failed to parse bar_max_value '{}'", bar_max_value),
-            )?)
+            Some(bar_max_value.parse().map_error_msg(|_| {
+                format!("format parser: failed to parse bar_max_value '{bar_max_value}'")
+            })?)
         };
 
         Ok(Self {
@@ -102,10 +98,11 @@ impl FromStr for MinWidthConfig {
             value: if s.is_empty() {
                 None
             } else {
-                Some(s.parse().internal_error(
-                    "format parser",
-                    &format!("failed to parse min_width '{}'", s),
-                )?)
+                Some(
+                    s.parse().map_error_msg(|_| {
+                        format!("format parser: failed to parse min_width '{s}'")
+                    })?,
+                )
             },
             pad_with: if pad_with_zero { '0' } else { ' ' },
         })

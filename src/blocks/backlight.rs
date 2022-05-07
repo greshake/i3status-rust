@@ -34,15 +34,15 @@ fn read_brightness(device_file: &Path) -> Result<u64> {
     let mut file = OpenOptions::new()
         .read(true)
         .open(device_file)
-        .block_error("backlight", "Failed to open brightness file")?;
+        .error_msg("Failed to open brightness file")?;
     let mut content = String::new();
     file.read_to_string(&mut content)
-        .block_error("backlight", "Failed to read brightness file")?;
+        .error_msg("Failed to read brightness file")?;
     // Removes trailing newline.
     content.pop();
     content
         .parse::<u64>()
-        .block_error("backlight", "Failed to read value from brightness file")
+        .error_msg("Failed to read value from brightness file")
 }
 
 /// Represents a physical backlit device whose brightness level can be queried.
@@ -63,13 +63,13 @@ impl BacklitDevice {
     pub fn default(root_scaling: f64) -> Result<Self> {
         let devices = Path::new("/sys/class/backlight")
             .read_dir() // Iterate over entries in the directory.
-            .block_error("backlight", "Failed to read backlight device directory")?;
+            .error_msg("Failed to read backlight device directory")?;
 
         let first_device = devices
             .take(1)
             .next()
-            .block_error("backlight", "No backlit devices found")?
-            .block_error("backlight", "Failed to read default device file")?;
+            .error_msg("No backlit devices found")?
+            .error_msg("Failed to read default device file")?;
 
         let max_brightness = read_brightness(&first_device.path().join("max_brightness"))?;
 
@@ -85,13 +85,10 @@ impl BacklitDevice {
     pub fn from_device(device: String, root_scaling: f64) -> Result<Self> {
         let device_path = Path::new("/sys/class/backlight").join(device);
         if !device_path.exists() {
-            return Err(BlockError(
-                "backlight".to_string(),
-                format!(
-                    "Backlight device '{}' does not exist",
-                    device_path.to_string_lossy()
-                ),
-            ));
+            return Err(Error::new(format!(
+                "Backlight device '{}' does not exist",
+                device_path.display()
+            )));
         }
 
         let max_brightness = read_brightness(&device_path.join("max_brightness"))?;
@@ -138,7 +135,7 @@ impl BacklitDevice {
         // It's safe to unwrap() here because we checked for errors above.
         file.unwrap()
             .write_fmt(format_args!("{}", raw))
-            .block_error("backlight", "Failed to write into brightness file")
+            .error_msg("Failed to write into brightness file")
     }
 
     fn set_brightness_via_dbus(&self, raw_value: u64) -> Result<()> {
@@ -146,22 +143,22 @@ impl BacklitDevice {
             .device_path
             .file_name()
             .and_then(|x| x.to_str())
-            .block_error("backlight", "Malformed device path")?;
+            .error_msg("Malformed device path")?;
 
         let con = dbus::ffidisp::Connection::get_private(dbus::ffidisp::BusType::System)
-            .block_error("backlight", "Failed to establish D-Bus connection.")?;
+            .error_msg("Failed to establish D-Bus connection.")?;
         let msg = dbus::Message::new_method_call(
             "org.freedesktop.login1",
             "/org/freedesktop/login1/session/auto",
             "org.freedesktop.login1.Session",
             "SetBrightness",
         )
-        .block_error("backlight", "Failed to create D-Bus message")?
+        .error_msg("Failed to create D-Bus message")?
         .append2("backlight", device_name)
         .append1(raw_value as u32);
 
         con.send_with_reply_and_block(msg, 1000)
-            .block_error("backlight", "Failed to send D-Bus message")
+            .error_msg("Failed to send D-Bus message")
             .map(|_| ())
     }
 
@@ -353,6 +350,10 @@ impl ConfigBlock for Backlight {
 }
 
 impl Block for Backlight {
+    fn name(&self) -> &'static str {
+        "backlight"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let mut brightness = self.device.brightness()?;
         let values = map!(
@@ -393,8 +394,7 @@ impl Block for Backlight {
             MouseButton::Right => self.advance_cycle()?,
             MouseButton::Left => {
                 if let Some(ref cmd) = self.on_click {
-                    spawn_child_async("sh", &["-c", cmd])
-                        .block_error("backlight", "could not spawn child")?
+                    spawn_child_async("sh", &["-c", cmd]).error_msg("could not spawn child")?
                 } else {
                     self.advance_cycle()?
                 }

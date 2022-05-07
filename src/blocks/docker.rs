@@ -11,6 +11,7 @@ use crate::formatting::value::Value;
 use crate::formatting::FormatTemplate;
 use crate::http;
 use crate::scheduler::Task;
+use crate::util::expand_string;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 use crate::widgets::State;
@@ -76,25 +77,20 @@ impl ConfigBlock for Docker {
         let text = TextWidget::new(id, 0, shared_config)
             .with_text("N/A")
             .with_icon("docker")?;
-        let path_expanded = shellexpand::full(&block_config.socket_path).map_err(|e| {
-            ConfigurationError(
-                "docker".to_string(),
-                format!(
-                    "Failed to expand socket path {}: {}",
-                    &block_config.socket_path, e
-                ),
-            )
-        })?;
         Ok(Docker {
             text,
             format: block_config.format.with_default("{running}")?,
             update_interval: block_config.interval,
-            socket_path: path_expanded.to_string(),
+            socket_path: expand_string(&block_config.socket_path)?,
         })
     }
 }
 
 impl Block for Docker {
+    fn name(&self) -> &'static str {
+        "docker"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let socket_path = std::path::PathBuf::from(self.socket_path.as_str());
         let output = http::http_get_socket_json(socket_path, "http:/api/info");
@@ -106,7 +102,7 @@ impl Block for Docker {
         }
 
         let status: Status = match serde_json::from_value(output.unwrap().content)
-            .block_error("docker", "Failed to parse JSON response.")
+            .error_msg("Failed to parse JSON response.")
         {
             Ok(status) => status,
             Err(e) => {

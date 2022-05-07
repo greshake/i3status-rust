@@ -2,8 +2,7 @@ use curl::easy::Easy;
 use serde_json::value::Value;
 use std::time::Duration;
 
-use crate::errors;
-use crate::errors::{Result, ResultExtInternal};
+use crate::errors::{Error, Result, ResultExt};
 
 pub struct HttpResponse<T> {
     pub code: u32,
@@ -50,7 +49,7 @@ pub fn http_get_socket_json(path: std::path::PathBuf, url: &str) -> Result<HttpR
     let response = http_easy(easy)?;
 
     let content = serde_json::from_slice(&response.content)
-        .internal_error("curl", "could not parse json response from server")?;
+        .error_msg("could not parse json response from server")?;
 
     Ok(HttpResponse {
         code: response.code,
@@ -86,7 +85,7 @@ pub fn http_get_json(
     let response = http_easy(easy)?;
 
     let content = serde_json::from_slice(&response.content)
-        .internal_error("curl", "could not parse json response from server")?;
+        .error_msg("could not parse json response from server")?;
 
     Ok(HttpResponse {
         code: response.code,
@@ -95,12 +94,8 @@ pub fn http_get_json(
     })
 }
 
-impl From<curl::Error> for errors::Error {
+impl From<curl::Error> for Error {
     fn from(err: curl::Error) -> Self {
-        errors::InternalError(
-            "curl".to_owned(),
-            "error running curl".to_owned(),
-            Some((format!("{}", err), format!("{:?}", err))),
-        )
+        Self::Curl(err)
     }
 }

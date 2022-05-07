@@ -92,7 +92,7 @@ pub struct TemperatureConfig {
     /// Format override
     pub format: FormatTemplate,
 
-    /// The "driver " to use for temperature block. One of "sysfs" or "sensors"
+    /// The "driver " to use for temperature block
     pub driver: TemperatureDriver,
 
     /// Chip override
@@ -168,6 +168,10 @@ impl ConfigBlock for Temperature {
 }
 
 impl Block for Temperature {
+    fn name(&self) -> &'static str {
+        "temperature"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         let mut temperatures: Vec<f64> = Vec::new();
 
@@ -178,7 +182,7 @@ impl Block for Temperature {
                 let chips = match &self.chip {
                     Some(chip) => sensors
                         .detected_chips(chip)
-                        .block_error("temperature", "Failed to create chip iterator")?,
+                        .error_msg("Failed to create chip iterator")?,
                     None => sensors.into_iter(),
                 };
 
@@ -188,9 +192,7 @@ impl Block for Temperature {
                             continue;
                         }
                         if let Some(inputs) = &self.inputs {
-                            let label = feat
-                                .get_label()
-                                .block_error("temperature", "Failed to get input label")?;
+                            let label = feat.get_label().error_msg("Failed to get input label")?;
                             if !inputs.contains(&label) {
                                 continue;
                             }
@@ -202,8 +204,7 @@ impl Block for Temperature {
                                         temperatures.push(value);
                                     } else {
                                         eprintln!(
-                                            "Temperature ({}) outside of range ([-100, 150])",
-                                            value
+                                            "Temperature ({value}) outside of range ([-100, 150])",
                                         );
                                     }
                                 }
@@ -225,12 +226,12 @@ impl Block for Temperature {
                 .iter()
                 .cloned()
                 .reduce(f64::max)
-                .block_error("temperature", "failed to get max temperature")?;
+                .error_msg("failed to get max temperature")?;
             let min: f64 = temperatures
                 .iter()
                 .cloned()
                 .reduce(f64::min)
-                .block_error("temperature", "failed to get min temperature")?;
+                .error_msg("failed to get min temperature")?;
             let avg: f64 = temperatures.iter().sum::<f64>() / temperatures.len() as f64;
 
             let values = map!(

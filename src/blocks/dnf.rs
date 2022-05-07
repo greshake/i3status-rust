@@ -65,15 +65,12 @@ impl Default for DnfConfig {
     }
 }
 
-impl DnfConfig {
-    fn unpack_regex(regex_str: Option<String>, errorstring: String) -> Result<Option<Regex>> {
-        match regex_str {
-            None => Ok(None),
-            Some(s) => Regex::new(s.as_ref())
-                .map_err(|_| ConfigurationError("dnf".to_string(), errorstring.to_string()))
-                .map(Some),
-        }
-    }
+fn unpack_regex(regex_str: Option<String>, errorstring: &'static str) -> Result<Option<Regex>> {
+    regex_str
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error_msg(errorstring)
 }
 
 impl ConfigBlock for Dnf {
@@ -93,13 +90,13 @@ impl ConfigBlock for Dnf {
             format_singular: block_config.format_singular.with_default("{count:1}")?,
             format_up_to_date: block_config.format_up_to_date.with_default("{count:1}")?,
             output,
-            warning_updates_regex: DnfConfig::unpack_regex(
+            warning_updates_regex: unpack_regex(
                 block_config.warning_updates_regex,
-                "invalid warning updates regex".to_owned(),
+                "invalid warning updates regex",
             )?,
-            critical_updates_regex: DnfConfig::unpack_regex(
+            critical_updates_regex: unpack_regex(
                 block_config.critical_updates_regex,
-                "invalid critical updates regex".to_owned(),
+                "invalid critical updates regex",
             )?,
         })
     }
@@ -111,10 +108,10 @@ fn get_updates_list() -> Result<String> {
             .env("LC_LANG", "C")
             .args(&["-c", "dnf check-update -q --skip-broken"])
             .output()
-            .block_error("dnf", "Failure running dnf check-update")?
+            .error_msg("Failure running dnf check-update")?
             .stdout,
     )
-    .block_error("dnf", "Failed to capture dnf output")
+    .error_msg("Failed to capture dnf output")
 }
 
 fn get_update_count(updates: &str) -> usize {
@@ -130,6 +127,10 @@ fn has_critical_update(updates: &str, regex: &Regex) -> bool {
 }
 
 impl Block for Dnf {
+    fn name(&self) -> &'static str {
+        "dnf"
+    }
+
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
     }

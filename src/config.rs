@@ -6,7 +6,7 @@ use serde_derive::Deserialize;
 use toml::value;
 
 use crate::blocks::BlockType;
-use crate::errors;
+use crate::errors::*;
 use crate::icons::Icons;
 use crate::protocol::i3bar_event::MouseButton;
 use crate::themes::Theme;
@@ -33,7 +33,7 @@ impl SharedConfig {
         self.icons_format = icons_format;
     }
 
-    pub fn theme_override(&mut self, overrides: &HashMap<String, String>) -> errors::Result<()> {
+    pub fn theme_override(&mut self, overrides: &HashMap<String, String>) -> Result<()> {
         let mut theme = self.theme.as_ref().clone();
         theme.apply_overrides(overrides)?;
         self.theme = Rc::new(theme);
@@ -46,14 +46,13 @@ impl SharedConfig {
         self.icons = Rc::new(icons);
     }
 
-    pub fn get_icon(&self, icon: &str) -> crate::errors::Result<String> {
-        use crate::errors::OptionExt;
+    pub fn get_icon(&self, icon: &str) -> Result<String> {
         Ok(self.icons_format.clone().replace(
             "{icon}",
             self.icons
                 .0
                 .get(icon)
-                .internal_error("get_icon()", &format!("icon '{}' not found in your icons file. If you recently upgraded to v0.2 please check NEWS.md.", icon))?,
+                .map_error_msg(|| format!("icon '{icon}' not found in your icons file. If you recently upgraded to v0.2 please check NEWS.md."))?,
         ))
     }
 }

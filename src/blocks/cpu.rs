@@ -84,12 +84,16 @@ impl ConfigBlock for Cpu {
 }
 
 impl Block for Cpu {
+    fn name(&self) -> &'static str {
+        "cpu"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
         // Read frequencies (read in MHz, store in Hz)
         let mut freqs = Vec::with_capacity(32);
         let mut freqs_avg = 0.0;
         let freqs_f =
-            File::open("/proc/cpuinfo").block_error("cpu", "failed to read /proc/cpuinfo")?;
+            File::open("/proc/cpuinfo").error_msg( "failed to read /proc/cpuinfo")?;
         for line in BufReader::new(freqs_f).lines().scan((), |_, x| x.ok()) {
             if line.starts_with("cpu MHz") {
                 let words = line.split(' ');
@@ -109,7 +113,7 @@ impl Block for Cpu {
         // Read utilizations
         let mut utilizations = Vec::with_capacity(32);
         let utilizations_f = File::open("/proc/stat")
-            .block_error("cpu", "Your system doesn't support /proc/stat")?;
+            .error_msg( "Your system doesn't support /proc/stat")?;
         for (i, line) in BufReader::new(utilizations_f)
             .lines()
             .scan((), |_, x| x.ok())

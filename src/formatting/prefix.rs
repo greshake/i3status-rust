@@ -50,11 +50,7 @@ impl FromStr for Prefix {
             "M" => Ok(Prefix::Mega),
             "G" => Ok(Prefix::Giga),
             "T" => Ok(Prefix::Tera),
-            x => Err(InternalError(
-                "format parser".to_string(),
-                format!("unknown prefix: '{}'", x),
-                None,
-            )),
+            x => Err(Error::new(format!("format parser: unknown prefix: '{x}'"))),
         }
     }
 }

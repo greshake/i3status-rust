@@ -9,6 +9,7 @@ use crate::de::deserialize_duration;
 use crate::errors::*;
 use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
 use crate::scheduler::Task;
+use crate::util::expand_string;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
@@ -80,17 +81,7 @@ impl ConfigBlock for Notmuch {
         }
         Ok(Notmuch {
             update_interval: block_config.interval,
-            db: shellexpand::full(&block_config.maildir)
-                .map_err(|e| {
-                    ConfigurationError(
-                        "notmuch".to_string(),
-                        format!(
-                            "Failed to expand file path {}: {}",
-                            &block_config.maildir, e
-                        ),
-                    )
-                })?
-                .to_string(),
+            db: expand_string(&block_config.maildir)?,
             query: block_config.query,
             threshold_info: block_config.threshold_info,
             threshold_good: block_config.threshold_good,
@@ -127,15 +118,15 @@ impl Notmuch {
 }
 
 impl Block for Notmuch {
+    fn name(&self) -> &'static str {
+        "notmuch"
+    }
+
     fn update(&mut self) -> Result<Option<Update>> {
-        match run_query(&self.db, &self.query) {
-            Ok(count) => {
-                self.update_text(count);
-                self.update_state(count);
-                Ok(Some(self.update_interval.into()))
-            }
-            Err(e) => Err(BlockError("notmuch".to_string(), e.to_string())),
-        }
+        let count = run_query(&self.db, &self.query).error_msg("fialed to run query")?;
+        self.update_text(count);
+        self.update_state(count);
+        Ok(Some(self.update_interval.into()))
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
