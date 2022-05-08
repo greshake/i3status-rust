@@ -11,7 +11,6 @@ use crate::de::deserialize_update;
 use crate::errors::*;
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
-use crate::signals::convert_to_valid_signal;
 use crate::subprocess::spawn_child_async;
 use crate::util::expand_string;
 use crate::widgets::text::TextWidget;
@@ -27,7 +26,6 @@ pub struct Custom {
     command: Option<String>,
     on_click: Option<String>,
     cycle: Option<Peekable<Cycle<vec::IntoIter<String>>>>,
-    signal: Option<i32>,
     tx_update_request: Sender<Task>,
     pub json: bool,
     hide_when_empty: bool,
@@ -48,9 +46,6 @@ pub struct CustomConfig {
     /// Commands to execute and change when the button is clicked
     pub cycle: Option<Vec<String>>,
 
-    /// Signal to update upon reception
-    pub signal: Option<i32>,
-
     /// Files to watch for modifications and trigger update
     pub watch_files: Option<Vec<String>>,
 
@@ -69,7 +64,6 @@ impl Default for CustomConfig {
             interval: Update::Every(Duration::from_secs(10)),
             command: None,
             cycle: None,
-            signal: None,
             watch_files: None,
             json: false,
             hide_when_empty: false,
@@ -94,17 +88,11 @@ impl ConfigBlock for Custom {
             command: None,
             on_click: None,
             cycle: None,
-            signal: None,
             tx_update_request: tx,
             json: block_config.json,
             hide_when_empty: block_config.hide_when_empty,
             is_empty: true,
             shell: block_config.shell,
-        };
-
-        if let Some(signal) = block_config.signal {
-            // If the signal is not in the valid range we return an error
-            custom.signal = Some(convert_to_valid_signal(signal)?);
         };
 
         if let Some(paths) = block_config.watch_files {
@@ -223,20 +211,6 @@ impl Block for Custom {
         } else {
             vec![&self.output]
         }
-    }
-
-    fn signal(&mut self, signal: i32) -> Result<()> {
-        if let Some(sig) = self.signal {
-            if sig == signal {
-                self.tx_update_request
-                    .send(Task {
-                        id: self.id,
-                        update_time: Instant::now(),
-                    })
-                    .error_msg("send error")?;
-            }
-        }
-        Ok(())
     }
 
     fn click(&mut self, _e: &I3BarEvent) -> Result<()> {

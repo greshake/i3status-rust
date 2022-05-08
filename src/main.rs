@@ -25,12 +25,12 @@ use std::time::Duration;
 use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
 
-use crate::blocks::Block;
 use crate::config::{Config, SharedConfig};
 use crate::errors::*;
-use crate::protocol::i3bar_event::{process_events, I3BarEvent};
+use crate::protocol::i3bar_event::{process_events, I3BarEvent, MouseButton};
 use crate::scheduler::{Task, UpdateScheduler};
-use crate::signals::process_signals;
+use crate::signals::{process_signals, Signal};
+use crate::subprocess::spawn_child_async;
 use crate::util::deserialize_file;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
@@ -128,7 +128,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let shared_config = SharedConfig::new(&config);
 
     // Initialize the blocks
-    let mut blocks: Vec<Box<dyn Block>> = Vec::new();
+    let mut blocks = Vec::new();
+    let mut block_event_handlers = Vec::new();
     for (block_name, block_config) in config.blocks {
         let block = block_name
             .create_block(
@@ -139,8 +140,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
             )
             .in_block(block_name.name())?;
 
-        if let Some(block) = block {
+        if let Some((block, handlers)) = block {
             blocks.push(block);
+            block_event_handlers.push(handlers);
         }
     }
 
@@ -152,7 +154,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     process_events(tx_clicks);
 
     // We wait for signals in a separate thread
-    let (tx_signals, rx_signals): (Sender<i32>, Receiver<i32>) = crossbeam_channel::unbounded();
+    let (tx_signals, rx_signals) = crossbeam_channel::unbounded();
     process_signals(tx_signals);
 
     // Time to next update channel.
@@ -167,7 +169,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
             recv(rx_clicks) -> res => if let Ok(event) = res {
                 if let Some(id) = event.id {
                     let block = blocks.get_mut(id).error_msg("could not get required block")?;
-                    block.click(&event).in_block(block.name())?;
+                    let handlers = block_event_handlers.get_mut(id).error_msg("could not get required block")?;
+                    match &handlers.on_click {
+                        Some(on_click) if event.button == MouseButton::Left => {
+                            spawn_child_async("sh", &["-c", on_click]).error_msg("could not spawn child").in_block(block.name())?;
+                        }
+                        _ => {
+                            block.click(&event).in_block(block.name())?;
+                        }
+                    }
                     protocol::print_blocks(&blocks, &shared_config)?;
                 }
             },
@@ -194,22 +204,24 @@ fn run(matches: &ArgMatches) -> Result<()> {
             // Receive signal events
             recv(rx_signals) -> res => if let Ok(sig) = res {
                 match sig {
-                    signal_hook::consts::SIGUSR1 => {
+                    Signal::SigUsr1 => {
                         //USR1 signal that updates every block in the bar
                         for block in blocks.iter_mut() {
                             block.update().in_block(block.name())?;
                         }
                     },
-                    signal_hook::consts::SIGUSR2 => {
+                    Signal::SigUsr2 => {
                         //USR2 signal that should reload the config
                         blocks.drain(..);
                         restart();
                     },
-                    _ => {
+                    Signal::Other(sig) => {
                         //Real time signal that updates only the blocks listening
                         //for that signal
-                        for block in blocks.iter_mut() {
-                            block.signal(sig).in_block(block.name())?;
+                        for (block, handlers) in blocks.iter_mut().zip(&block_event_handlers) {
+                            if handlers.signal == Some(sig) {
+                                block.update().in_block(block.name())?;
+                            }
                         }
                     },
                 };
