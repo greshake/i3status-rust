@@ -24,11 +24,6 @@ pub enum MouseButton {
 struct I3BarEventInternal {
     pub name: Option<String>,
     pub instance: Option<String>,
-    #[allow(dead_code)]
-    pub x: u64,
-    #[allow(dead_code)]
-    pub y: u64,
-
     #[serde(deserialize_with = "deserialize_mousebutton")]
     pub button: MouseButton,
 }

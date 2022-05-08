@@ -1,53 +1,15 @@
 //! A Base block for common behavior for all blocks
 
-use std::collections::HashMap;
-
-use crate::errors::*;
-use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
-use crate::{blocks::Update, subprocess::spawn_child_async, widgets::I3BarWidget, Block};
-
 use serde_derive::Deserialize;
+use std::collections::HashMap;
 use toml::{value::Table, Value};
-
-pub(super) struct BaseBlock<T: Block> {
-    pub inner: T,
-    pub on_click: Option<String>,
-}
-
-impl<T: Block> Block for BaseBlock<T> {
-    fn name(&self) -> &'static str {
-        self.inner.name()
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        self.inner.view()
-    }
-
-    fn update(&mut self) -> Result<Option<Update>> {
-        self.inner.update()
-    }
-
-    fn signal(&mut self, signal: i32) -> Result<()> {
-        self.inner.signal(signal)
-    }
-
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        match &self.on_click {
-            Some(cmd) => {
-                if let MouseButton::Left = e.button {
-                    spawn_child_async("sh", &["-c", cmd]).error_msg("could not spawn child")?;
-                }
-                Ok(())
-            }
-            None => self.inner.click(e),
-        }
-    }
-}
 
 #[derive(Deserialize, Debug, Default, Clone)]
 pub(super) struct BaseBlockConfig {
     /// Command to execute when the button is clicked
     pub on_click: Option<String>,
+    /// Signal to update upon reception
+    pub signal: Option<i32>,
 
     pub theme_overrides: Option<HashMap<String, String>>,
     pub icons_overrides: Option<HashMap<String, String>>,
@@ -58,6 +20,7 @@ pub(super) struct BaseBlockConfig {
 impl BaseBlockConfig {
     const FIELDS: &'static [&'static str] = &[
         "on_click",
+        "signal",
         "theme_overrides",
         "icons_overrides",
         "icons_format",

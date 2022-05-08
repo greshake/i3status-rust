@@ -85,16 +85,10 @@ pub trait Block {
         Ok(None)
     }
 
-    /// Sends a signal event with the provided signal, this function is called on every block
-    /// for every signal event
-    fn signal(&mut self, _signal: i32) -> Result<()> {
-        Ok(())
-    }
-
     /// Sends click events to the block.
     ///
     /// Here you can react to the user clicking your block. The I3BarEvent instance contains all
-    /// fields to describe the click action, including mouse button and location down to the pixel.
+    /// fields to describe the click action, including mouse button.
     /// You may also update the internal state here.
     ///
     /// If block uses more that one widget, use the event.instance property to determine which widget was clicked.
@@ -128,7 +122,7 @@ macro_rules! define_blocks {
                 block_config: Value,
                 shared_config: SharedConfig,
                 update_request: Sender<Task>,
-            ) -> Result<Option<Box<dyn Block>>>
+            ) -> Result<Option<(Box<dyn Block>, BlockHandlers)>>
             {
                 match self {
                     $(
@@ -239,12 +233,17 @@ define_blocks!(
     xrandr::Xrandr,
 );
 
+pub struct BlockHandlers {
+    pub signal: Option<i32>,
+    pub on_click: Option<String>,
+}
+
 pub fn create_block_typed<B>(
     id: usize,
     mut block_config: Value,
     mut shared_config: SharedConfig,
     update_request: Sender<Task>,
-) -> Result<Option<Box<dyn Block>>>
+) -> Result<Option<(Box<dyn Block>, BlockHandlers)>>
 where
     B: ConfigBlock + 'static,
 {
@@ -284,8 +283,11 @@ where
         *overrided = common_config.on_click.take();
     }
 
-    Ok(Some(Box::new(BaseBlock {
-        inner: block,
-        on_click: common_config.on_click,
-    })))
+    Ok(Some((
+        Box::new(block),
+        BlockHandlers {
+            signal: common_config.signal,
+            on_click: common_config.on_click,
+        },
+    )))
 }
