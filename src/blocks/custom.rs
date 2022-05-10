@@ -271,8 +271,4 @@ impl Block for Custom {
 
         Ok(())
     }
-
-    fn id(&self) -> usize {
-        self.id
-    }
 }

@@ -18,7 +18,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 pub struct SpeedTest {
-    id: usize,
     vals: Arc<Mutex<(bool, Vec<f32>)>>,
     output: TextWidget,
     format: FormatTemplate,
@@ -127,7 +126,6 @@ impl ConfigBlock for SpeedTest {
         make_thread(recv, done, vals.clone(), id);
 
         Ok(SpeedTest {
-            id,
             vals,
             format: block_config
                 .format
@@ -183,9 +181,5 @@ impl Block for SpeedTest {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

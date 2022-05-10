@@ -19,7 +19,6 @@ use crate::widgets::{text::TextWidget, I3BarWidget, State};
 const GITHUB_TOKEN_ENV: &str = "I3RS_GITHUB_TOKEN";
 
 pub struct Github {
-    id: usize,
     text: TextWidget,
     update_interval: Duration,
     api_server: String,
@@ -91,7 +90,6 @@ impl ConfigBlock for Github {
             .with_text("x")
             .with_icon("github")?;
         Ok(Github {
-            id,
             update_interval: block_config.interval,
             text,
             api_server: block_config.api_server,
@@ -166,10 +164,6 @@ impl Block for Github {
         } else {
             vec![&self.text]
         }
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
 

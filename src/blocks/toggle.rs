@@ -15,7 +15,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Toggle {
-    id: usize,
     text: TextWidget,
     command_on: String,
     command_off: String,
@@ -74,7 +73,6 @@ impl ConfigBlock for Toggle {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Toggle {
-            id,
             text: TextWidget::new(id, 0, shared_config)
                 .with_text(&block_config.text.unwrap_or_default()),
             command_on: block_config.command_on,
@@ -141,9 +139,5 @@ impl Block for Toggle {
         };
 
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

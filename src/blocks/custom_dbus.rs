@@ -25,7 +25,6 @@ struct CustomDBusStatus {
 }
 
 pub struct CustomDBus {
-    id: usize,
     text: TextWidget,
     status: Arc<Mutex<CustomDBusStatus>>,
     timeout: Option<Duration>,
@@ -141,7 +140,6 @@ impl ConfigBlock for CustomDBus {
 
         let text = TextWidget::new(id, 0, shared_config).with_text("CustomDBus");
         Ok(CustomDBus {
-            id,
             text,
             status,
             timeout: block_config.timeout,
@@ -151,10 +149,6 @@ impl ConfigBlock for CustomDBus {
 }
 
 impl Block for CustomDBus {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     // Updates the internal state of the block.
     fn update(&mut self) -> Result<Option<Update>> {
         let status = (*self

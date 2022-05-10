@@ -61,7 +61,6 @@ pub enum Notifier {
 }
 
 pub struct Pomodoro {
-    id: usize,
     time: TextWidget,
     state: State,
     length: Duration,
@@ -157,7 +156,6 @@ impl ConfigBlock for Pomodoro {
         _send: Sender<Task>,
     ) -> Result<Self> {
         Ok(Pomodoro {
-            id,
             time: TextWidget::new(id, 0, shared_config.clone()).with_icon("pomodoro")?,
             state: State::Stopped,
             length: Duration::from_secs(block_config.length * 60), // convert to minutes
@@ -186,10 +184,6 @@ impl ConfigBlock for Pomodoro {
 }
 
 impl Block for Pomodoro {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         self.set_text();
         match &self.state {

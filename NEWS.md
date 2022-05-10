@@ -3,6 +3,7 @@
 ### Breaking changes
 
 * Battery: remove `allow_missing` config option (#1461 by @MaxVerevkin) 
+* Temperature: sysfs driver removed
 
 ### New Blocks and Features
 

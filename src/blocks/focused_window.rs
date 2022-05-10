@@ -25,7 +25,6 @@ pub enum MarksType {
 }
 
 pub struct FocusedWindow {
-    id: usize,
     text: TextWidget,
     title: Arc<Mutex<String>>,
     marks: Arc<Mutex<String>>,
@@ -185,7 +184,6 @@ impl ConfigBlock for FocusedWindow {
 
         let text = TextWidget::new(id, 0, shared_config);
         Ok(FocusedWindow {
-            id,
             text,
             max_width: block_config.max_width,
             show_marks: block_config.show_marks,
@@ -242,9 +240,5 @@ impl Block for FocusedWindow {
         } else {
             vec![&self.text]
         }
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

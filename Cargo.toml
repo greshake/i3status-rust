@@ -18,6 +18,7 @@ pulseaudio = ["libpulse-binding"]
 debug_borders = []
 
 [dependencies]
+libc = "0.2"
 crossbeam-channel = "0.5"
 curl = "0.4"
 dbus = "0.9"

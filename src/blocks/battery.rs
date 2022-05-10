@@ -659,7 +659,6 @@ impl BatteryDevice for UpowerDevice {
 
 /// A block for displaying information about an internal power supply.
 pub struct Battery {
-    id: usize,
     output: TextWidget,
     update_interval: Duration,
     device: Box<dyn BatteryDevice>,
@@ -836,7 +835,6 @@ impl ConfigBlock for Battery {
         };
 
         Ok(Battery {
-            id,
             update_interval: block_config.interval,
             output: TextWidget::new(id, 0, shared_config),
             device,
@@ -954,9 +952,5 @@ impl Block for Battery {
         }
 
         vec![&self.output]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

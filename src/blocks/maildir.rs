@@ -31,7 +31,6 @@ impl MailType {
 }
 
 pub struct Maildir {
-    id: usize,
     text: TextWidget,
     update_interval: Duration,
     inboxes: Vec<String>,
@@ -89,7 +88,6 @@ impl ConfigBlock for Maildir {
         }
         let widget = TextWidget::new(id, 0, shared_config).with_text("");
         Ok(Maildir {
-            id,
             update_interval: block_config.interval,
             text: if block_config.icon {
                 widget.with_icon("mail")?
@@ -125,9 +123,5 @@ impl Block for Maildir {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

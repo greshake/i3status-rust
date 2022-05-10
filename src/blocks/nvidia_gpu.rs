@@ -481,8 +481,4 @@ impl Block for NvidiaGpu {
 
         Ok(())
     }
-
-    fn id(&self) -> usize {
-        self.id
-    }
 }

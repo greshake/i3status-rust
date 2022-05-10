@@ -13,7 +13,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 pub struct Template {
-    id: usize,
     text: TextWidget,
     update_interval: Duration,
 
@@ -52,7 +51,6 @@ impl ConfigBlock for Template {
         let text = TextWidget::new(id, 0, shared_config.clone()).with_text("Template");
 
         Ok(Template {
-            id,
             update_interval: block_config.interval,
             text,
             tx_update_request,
@@ -72,9 +70,5 @@ impl Block for Template {
 
     fn click(&mut self, _: &I3BarEvent) -> Result<()> {
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

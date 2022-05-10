@@ -16,7 +16,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Dnf {
-    id: usize,
     output: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
@@ -89,7 +88,6 @@ impl ConfigBlock for Dnf {
         let output = TextWidget::new(id, 0, shared_config).with_icon("update")?;
 
         Ok(Dnf {
-            id,
             update_interval: block_config.interval,
             format: block_config.format.with_default("{count:1}")?,
             format_singular: block_config.format_singular.with_default("{count:1}")?,
@@ -132,10 +130,6 @@ fn has_critical_update(updates: &str, regex: &Regex) -> bool {
 }
 
 impl Block for Dnf {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.output]
     }

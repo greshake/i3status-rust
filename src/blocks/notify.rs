@@ -22,7 +22,6 @@ use crate::widgets::I3BarWidget;
 // Add driver option so can choose between dunst, mako, etc.
 
 pub struct Notify {
-    id: usize,
     paused: Arc<Mutex<i64>>,
     format: FormatTemplate,
     output: TextWidget,
@@ -95,7 +94,6 @@ impl ConfigBlock for Notify {
             .unwrap();
 
         Ok(Notify {
-            id,
             paused: state,
             format: block_config.format.with_default("")?,
             output: TextWidget::new(id, 0, shared_config).with_icon(icon)?,
@@ -104,10 +102,6 @@ impl ConfigBlock for Notify {
 }
 
 impl Block for Notify {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         let paused = *self
             .paused

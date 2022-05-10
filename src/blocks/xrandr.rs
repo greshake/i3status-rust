@@ -49,7 +49,6 @@ impl Monitor {
 }
 
 pub struct Xrandr {
-    id: usize,
     text: TextWidget,
     format: FormatTemplate,
     update_interval: Duration,
@@ -227,7 +226,6 @@ impl ConfigBlock for Xrandr {
         };
 
         Ok(Xrandr {
-            id,
             text: TextWidget::new(id, 0, shared_config.clone()).with_icon("xrandr")?,
             format: block_config.format.with_default(format_str)?,
             update_interval: block_config.interval,
@@ -288,9 +286,5 @@ impl Block for Xrandr {
         self.display()?;
 
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

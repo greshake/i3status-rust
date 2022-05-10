@@ -29,7 +29,6 @@ struct RotificationStatus {
 }
 
 pub struct Rofication {
-    id: usize,
     text: TextWidget,
     update_interval: Duration,
     format: FormatTemplate,
@@ -77,7 +76,6 @@ impl ConfigBlock for Rofication {
             .with_state(State::Good);
 
         Ok(Rofication {
-            id,
             update_interval: block_config.interval,
             text,
             socket_path: shellexpand::full(&block_config.socket_path)
@@ -134,10 +132,6 @@ impl Block for Rofication {
                 .block_error("rofication", "could not spawn gui")?;
         }
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
 

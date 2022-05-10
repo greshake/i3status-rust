@@ -55,7 +55,6 @@ struct IPAddressInfo {
 }
 
 pub struct ExternalIP {
-    id: usize,
     output: TextWidget,
     format: FormatTemplate,
     refresh_interval_success: u64,
@@ -139,7 +138,6 @@ impl ConfigBlock for ExternalIP {
                 .unwrap();
         }
         Ok(ExternalIP {
-            id,
             output: TextWidget::new(id, 0, shared_config),
             format: block_config.format.with_default("{ip} {country_flag}")?,
             refresh_interval_success: block_config.interval,
@@ -149,10 +147,6 @@ impl ConfigBlock for ExternalIP {
 }
 
 impl Block for ExternalIP {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         let (external_ip, success) = {
             let ip_info: Result<IPAddressInfo> =

@@ -315,7 +315,6 @@ impl NetworkDevice {
 }
 
 pub struct Net {
-    id: usize,
     format: FormatTemplate,
     format_alt: Option<FormatTemplate>,
     output: TextWidget,
@@ -427,7 +426,6 @@ impl ConfigBlock for Net {
             .unwrap_or(Self::DEFAULT_GRAPH_WIDTH);
 
         Ok(Net {
-            id,
             update_interval: block_config.interval,
             output: TextWidget::new(id, 0, shared_config.clone())
                 .with_icon(if wireless {
@@ -671,10 +669,6 @@ impl Block for Net {
             self.update()?;
         }
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
 

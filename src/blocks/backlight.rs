@@ -179,7 +179,6 @@ impl BacklitDevice {
 
 /// A block for displaying the brightness of a backlit device.
 pub struct Backlight {
-    id: usize,
     output: TextWidget,
     device: BacklitDevice,
     step_width: u64,
@@ -301,7 +300,6 @@ impl ConfigBlock for Backlight {
         };
 
         let backlight = Self {
-            id,
             device,
             step_width: block_config.step_width,
             minimum,
@@ -419,9 +417,5 @@ impl Block for Backlight {
             }
         }
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

@@ -25,10 +25,8 @@ use std::time::Duration;
 use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
 use crossbeam_channel::{select, Receiver, Sender};
 
-use crate::blocks::create_block;
 use crate::blocks::Block;
-use crate::config::Config;
-use crate::config::SharedConfig;
+use crate::config::{Config, SharedConfig};
 use crate::errors::*;
 use crate::protocol::i3bar_event::{process_events, I3BarEvent};
 use crate::scheduler::{Task, UpdateScheduler};
@@ -131,11 +129,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // Initialize the blocks
     let mut blocks: Vec<Box<dyn Block>> = Vec::new();
-    for &(ref block_name, ref block_config) in &config.blocks {
-        let block = create_block(
+    for (block_name, block_config) in config.blocks {
+        let block = block_name.create_block(
             blocks.len(),
-            block_name,
-            block_config.clone(),
+            block_config,
             shared_config.clone(),
             tx_update_requests.clone(),
         )?;
@@ -145,7 +142,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    let mut scheduler = UpdateScheduler::new(&blocks);
+    let mut scheduler = UpdateScheduler::new(blocks.len());
 
     // We wait for click events in a separate thread, to avoid blocking to wait for stdin
     let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =

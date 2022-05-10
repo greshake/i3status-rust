@@ -45,13 +45,13 @@ pub struct UpdateScheduler {
 }
 
 impl UpdateScheduler {
-    pub fn new(blocks: &[Box<dyn Block>]) -> UpdateScheduler {
+    pub fn new(blocks_cnt: usize) -> UpdateScheduler {
         let mut schedule = BinaryHeap::new();
 
         let now = Instant::now();
-        for block in blocks.iter() {
+        for id in 0..blocks_cnt {
             schedule.push(Task {
-                id: block.id(),
+                id,
                 update_time: now,
             });
         }

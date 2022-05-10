@@ -275,10 +275,6 @@ impl ConfigBlock for Memory {
 }
 
 impl Block for Memory {
-    fn id(&self) -> usize {
-        self.id
-    }
-
     fn update(&mut self) -> Result<Option<Update>> {
         let f =
             File::open("/proc/meminfo").block_error("memory", "/proc/meminfo does not exist")?;

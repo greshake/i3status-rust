@@ -60,7 +60,6 @@ pub enum OpenWeatherMapUnits {
 }
 
 pub struct Weather {
-    id: usize,
     weather: TextWidget,
     format: FormatTemplate,
     weather_keys: HashMap<&'static str, Value>,
@@ -333,7 +332,6 @@ impl ConfigBlock for Weather {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Weather {
-            id,
             weather: TextWidget::new(id, 0, shared_config),
             format: block_config.format.with_default("{weather} {temp}")?,
             weather_keys: HashMap::new(),
@@ -376,9 +374,5 @@ impl Block for Weather {
             self.update()?;
         }
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

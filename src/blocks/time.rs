@@ -20,7 +20,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
 pub struct Time {
-    id: usize,
     time: TextWidget,
     update_interval: Duration,
     formats: (String, Option<String>),
@@ -66,7 +65,6 @@ impl ConfigBlock for Time {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         Ok(Time {
-            id,
             time: TextWidget::new(id, 0, shared_config)
                 .with_text("")
                 .with_icon("time")?,
@@ -124,10 +122,6 @@ impl Block for Time {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.time]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
 

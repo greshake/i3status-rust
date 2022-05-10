@@ -16,7 +16,6 @@ use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
 pub struct Load {
-    id: usize,
     text: TextWidget,
     logical_cores: u32,
     format: FormatTemplate,
@@ -77,7 +76,6 @@ impl ConfigBlock for Load {
             .count() as u32;
 
         Ok(Load {
-            id,
             logical_cores,
             update_interval: block_config.interval,
             minimum_info: block_config.info,
@@ -130,9 +128,5 @@ impl Block for Load {
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
         vec![&self.text]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

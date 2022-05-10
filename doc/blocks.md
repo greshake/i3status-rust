@@ -154,7 +154,7 @@ Key | Values | Required | Default
 `device` | The `/sys/class/backlight` device to read brightness information from. | No | Default device
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{brightness}"`
 `step_width` | The brightness increment to use when scrolling, in percent. | No | `5`
-`minimum` | The minimum brightness that can be scrolled down to | No | `1`
+`minimum` | The minimum brightness that can be scrolled down to | No | `5`
 `maximum` | The maximum brightness that can be scrolled up to | No | `100`
 `cycle` | The brightnesses to cycle through on each click | No | `[minimum, maximum]`
 `root_scaling` | Scaling exponent reciprocal (ie. root). | No | `1.0`
@@ -1907,15 +1907,9 @@ Key | Values | Required | Default
 `idle` | Maximum temperature to set state to idle. | No | `45` °C (`113` °F)
 `info` | Maximum temperature to set state to info. | No | `60` °C (`140` °F)
 `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical. | No | `80` °C (`176` °F)
-`chip` | Narrows the results to a given chip name. If driver = `"sensors"` then `*` may be used as a wildcard. If driver = `"sysfs"` then narrows to chips whose '"/sys/class/hwmon/hwmon*/name"' is a substring of the given chip name or vice versa. `sysfs` can not match to the bus such as `*-isa-*` or `*-pci-*`). | No | None
+`chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
 `inputs` | Narrows the results to individual inputs reported by each chip. | No | None
 `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"{average} avg, {max} max"`
-
-#### Deprecated options
-
-Key | Values | Required | Default
-----|--------|----------|--------
-`driver` | One of `"sensors"` or `"sysfs"`. | No | `"sensors"`
 
 #### Available Format Keys
 
