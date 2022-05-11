@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
@@ -14,14 +15,16 @@ use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
+const BASE_URL: &str = "https://wttr.in/";
+
+lazy_static! {
+    static ref STRIP_WHITESPACES_REGEX: Regex = Regex::new(r"  +").unwrap();
+}
+
 pub struct Wttr {
-    id: usize,
     text: TextWidget,
     update_interval: Duration,
-    #[allow(dead_code)]
-    shared_config: SharedConfig,
-    query: String,
-    location: Option<String>,
+    url: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -53,33 +56,27 @@ impl ConfigBlock for Wttr {
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
         let text = TextWidget::new(id, 0, shared_config.clone()).with_text("Wttr");
+        let url = match block_config.location {
+            Some(ref location) => format!("{}{}?{}", BASE_URL, location, block_config.query),
+            _ => format!("{}?{}", BASE_URL, block_config.query),
+        };
 
         Ok(Wttr {
-            id,
             update_interval: block_config.interval,
             text,
-            query: block_config.query,
-            location: block_config.location,
-            shared_config,
+            url,
         })
     }
 }
 
-const BASE_URL: &str = "https://wttr.in/";
-
 impl Block for Wttr {
     fn update(&mut self) -> Result<Option<Update>> {
-        let url = match self.location {
-            Some(ref location) => format!("{}{}?{}", BASE_URL, location, self.query),
-            _ => format!("{}?{}", BASE_URL, self.query),
-        };
-
         let mut data = Vec::new();
         let mut handle = Easy::new();
         let mut list = List::new();
         list.append("User-Agent: curl/7.81.0").unwrap();
         handle.http_headers(list).unwrap();
-        handle.url(&url).unwrap();
+        handle.url(&self.url).unwrap();
         {
             let mut transfer = handle.transfer();
             transfer
@@ -98,8 +95,7 @@ impl Block for Wttr {
 
         // I don't know why but there are 3 whitespaces added to condition.
         // This looks odd so get rid of it.
-        let rg = Regex::new(r"  +").unwrap();
-        let cleansed = rg.replace_all(trimmed, " ");
+        let cleansed = STRIP_WHITESPACES_REGEX.replace_all(trimmed, " ");
 
         self.text.set_text(cleansed.to_string());
         Ok(Some(self.update_interval.into()))
@@ -111,9 +107,5 @@ impl Block for Wttr {
 
     fn click(&mut self, _: &I3BarEvent) -> Result<()> {
         Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }

@@ -218,7 +218,7 @@ define_blocks!(
     watson::Watson,
     weather::Weather,
     wttr::Wttr,
-    xrandr::Xrandr
+    xrandr::Xrandr,
 );
 
 pub fn create_block_typed<B>(
