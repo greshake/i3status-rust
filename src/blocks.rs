@@ -315,7 +315,7 @@ pub fn create_block_typed<B>(
     mut block_config: Value,
     mut shared_config: SharedConfig,
     update_request: Sender<Task>,
-<<<<<<< HEAD
+
 ) -> Result<Option<Box<dyn Block>>>
 where
     B: Block + ConfigBlock + 'static,
@@ -335,74 +335,6 @@ where
         {
             return Ok(None);
         }
-=======
-) -> Result<Option<Box<dyn Block>>> {
-    match name {
-        // Please keep these in alphabetical order.
-        "apt" => block!(Apt, id, block_config, shared_config, update_request),
-        "backlight" => block!(Backlight, id, block_config, shared_config, update_request),
-        "battery" => block!(Battery, id, block_config, shared_config, update_request),
-        "bluetooth" => block!(Bluetooth, id, block_config, shared_config, update_request),
-        "cpu" => block!(Cpu, id, block_config, shared_config, update_request),
-        "custom" => block!(Custom, id, block_config, shared_config, update_request),
-        "custom_dbus" => block!(CustomDBus, id, block_config, shared_config, update_request),
-        "disk_space" => block!(DiskSpace, id, block_config, shared_config, update_request),
-        "dnf" => block!(Dnf, id, block_config, shared_config, update_request),
-        "docker" => block!(Docker, id, block_config, shared_config, update_request), ///////
-        "external_ip" => block!(ExternalIP, id, block_config, shared_config, update_request),
-        "focused_window" => block!(
-            FocusedWindow,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "github" => block!(Github, id, block_config, shared_config, update_request),
-        "hueshift" => block!(Hueshift, id, block_config, shared_config, update_request),
-        "ibus" => block!(IBus, id, block_config, shared_config, update_request),
-        "kdeconnect" => block!(KDEConnect, id, block_config, shared_config, update_request),
-        "keyboard_layout" => block!(
-            KeyboardLayout,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "load" => block!(Load, id, block_config, shared_config, update_request),
-        #[cfg(feature = "maildir")]
-        "maildir" => block!(Maildir, id, block_config, shared_config, update_request),
-        "memory" => block!(Memory, id, block_config, shared_config, update_request),
-        "music" => block!(Music, id, block_config, shared_config, update_request),
-        "net" => block!(Net, id, block_config, shared_config, update_request),
-        "networkmanager" => block!(
-            NetworkManager,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "notify" => block!(Notify, id, block_config, shared_config, update_request),
-        #[cfg(feature = "notmuch")]
-        "notmuch" => block!(Notmuch, id, block_config, shared_config, update_request),
-        "nvidia_gpu" => block!(NvidiaGpu, id, block_config, shared_config, update_request),
-        "pacman" => block!(Pacman, id, block_config, shared_config, update_request),
-        "pomodoro" => block!(Pomodoro, id, block_config, shared_config, update_request),
-        "rofication" => block!(Rofication, id, block_config, shared_config, update_request),
-        "sound" => block!(Sound, id, block_config, shared_config, update_request),
-        "speedtest" => block!(SpeedTest, id, block_config, shared_config, update_request),
-        "taskwarrior" => block!(Taskwarrior, id, block_config, shared_config, update_request),
-        "temperature" => block!(Temperature, id, block_config, shared_config, update_request),
-        "template" => block!(Template, id, block_config, shared_config, update_request),
-        "time" => block!(Time, id, block_config, shared_config, update_request), /////////
-        "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
-        "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
-        #[cfg(feature = "virt")]
-        "virt" => block!(Libvirt, id, block_config, shared_config, update_request),
-        "watson" => block!(Watson, id, block_config, shared_config, update_request),
-        "weather" => block!(Weather, id, block_config, shared_config, update_request),
-        "xrandr" => block!(Xrandr, id, block_config, shared_config, update_request),
-        other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
->>>>>>> 89b36d9 (feat: add block for libvirtd/qemu)
     }
 
     // Apply theme overrides if presented
