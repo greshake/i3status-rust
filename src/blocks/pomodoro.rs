@@ -13,6 +13,7 @@ use crate::subprocess::spawn_child_async;
 use crate::widgets::text::TextWidget;
 use crate::widgets::I3BarWidget;
 
+#[derive(Clone, Copy)]
 enum State {
     Started(Instant),
     Stopped,
@@ -20,28 +21,20 @@ enum State {
     OnBreak(Instant),
 }
 
-impl State {
-    fn elapsed(&self) -> Duration {
-        match self {
-            State::Started(start) => Instant::now().duration_since(start.to_owned()),
-            State::Stopped => unreachable!(),
-            State::Paused(duration) => duration.to_owned(),
-            State::OnBreak(start) => Instant::now().duration_since(start.to_owned()),
-        }
-    }
-}
-
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            State::Stopped => write!(f, "0:00"),
-            State::Started(_) | State::OnBreak(_) => write!(
-                f,
-                "{}:{:02}",
-                self.elapsed().as_secs() / 60,
-                self.elapsed().as_secs() % 60
-            ),
-            State::Paused(duration) => write!(
+            Self::Stopped => write!(f, "0:00"),
+            Self::Started(i) | State::OnBreak(i) => {
+                let elapsed = i.elapsed();
+                write!(
+                    f,
+                    "{}:{:02}",
+                    elapsed.as_secs() / 60,
+                    elapsed.as_secs() % 60
+                )
+            }
+            Self::Paused(duration) => write!(
                 f,
                 "{}:{:02}",
                 duration.as_secs() / 60,
@@ -70,28 +63,30 @@ pub struct Pomodoro {
     break_message: String,
     count: usize,
     notifier: Notifier,
-    notifier_path: std::path::PathBuf,
+    notifier_path: String,
     shared_config: SharedConfig,
     // Following two are deprecated - remove in a later release
     use_nag: bool,
-    nag_path: std::path::PathBuf,
+    nag_path: String,
 }
 
 impl Pomodoro {
-    fn set_text(&mut self) {
-        let state_icon = match &self.state {
-            State::Stopped => "pomodoro_stopped".to_string(),
-            State::Started(_) => "pomodoro_started".to_string(),
-            State::OnBreak(_) => "pomodoro_break".to_string(),
-            State::Paused(_) => "pomodoro_paused".to_string(),
+    fn set_text(&mut self) -> Result<()> {
+        let state_icon = match self.state {
+            State::Stopped => "pomodoro_stopped",
+            State::Started(_) => "pomodoro_started",
+            State::OnBreak(_) => "pomodoro_break",
+            State::Paused(_) => "pomodoro_paused",
         };
 
         self.time.set_text(format!(
             "{} | {} {}",
             self.count,
-            self.shared_config.get_icon(&state_icon).unwrap(),
+            self.shared_config.get_icon(state_icon)?,
             self.state
         ));
+
+        Ok(())
     }
 
     fn notify(&self, message: &str, level: &str) -> Result<()> {
@@ -107,9 +102,9 @@ impl Pomodoro {
         };
 
         let binary = if self.use_nag {
-            self.nag_path.to_str().unwrap()
+            &self.nag_path
         } else {
-            self.notifier_path.to_str().unwrap()
+            &self.notifier_path
         };
 
         spawn_child_async(binary, &args).error_msg("Failed to start notifier")?;
@@ -125,10 +120,10 @@ pub struct PomodoroConfig {
     pub message: String,
     pub break_message: String,
     pub notifier: Notifier,
-    pub notifier_path: Option<std::path::PathBuf>,
+    pub notifier_path: Option<String>,
     // Following two are deprecated - remove in a later release
     pub use_nag: bool,
-    pub nag_path: std::path::PathBuf,
+    pub nag_path: String,
 }
 
 impl Default for PomodoroConfig {
@@ -142,7 +137,7 @@ impl Default for PomodoroConfig {
             notifier_path: None,
             // Following two are deprecated - remove in a later release
             use_nag: false,
-            nag_path: std::path::PathBuf::from("i3-nagbar"),
+            nag_path: "i3-nagbar".to_string(),
         }
     }
 }
@@ -170,11 +165,12 @@ impl ConfigBlock for Pomodoro {
                 p
             } else {
                 match block_config.notifier {
-                    Notifier::I3Nag => std::path::PathBuf::from("i3-nagbar"),
-                    Notifier::SwayNag => std::path::PathBuf::from("swaynag"),
-                    Notifier::NotifySend => std::path::PathBuf::from("notify-send"),
-                    _ => std::path::PathBuf::from(""),
+                    Notifier::I3Nag => "i3-nagbar",
+                    Notifier::SwayNag => "swaynag",
+                    Notifier::NotifySend => "notify-send",
+                    _ => "",
                 }
+                .into()
             },
             shared_config,
             // Following two are deprecated - remove in a later release
@@ -190,10 +186,10 @@ impl Block for Pomodoro {
     }
 
     fn update(&mut self) -> Result<Option<Update>> {
-        self.set_text();
-        match &self.state {
-            State::Started(_) => {
-                if self.state.elapsed() >= self.length {
+        self.set_text()?;
+        match self.state {
+            State::Started(started) => {
+                if started.elapsed() >= self.length {
                     if self.use_nag || self.notifier != Notifier::None {
                         self.notify(&self.message, "error")?;
                     }
@@ -201,8 +197,8 @@ impl Block for Pomodoro {
                     self.state = State::OnBreak(Instant::now());
                 }
             }
-            State::OnBreak(_) => {
-                if self.state.elapsed() >= self.break_length {
+            State::OnBreak(on_break) => {
+                if on_break.elapsed() >= self.break_length {
                     if self.use_nag || self.notifier != Notifier::None {
                         self.notify(&self.break_message, "warning")?;
                     }
@@ -222,25 +218,15 @@ impl Block for Pomodoro {
                 self.state = State::Stopped;
                 self.count = 0;
             }
-            _ => match &self.state {
-                State::Stopped => {
-                    self.state = State::Started(Instant::now());
-                }
-                State::Started(_) => {
-                    self.state = State::Paused(self.state.elapsed());
-                }
-                State::Paused(duration) => {
-                    self.state =
-                        State::Started(Instant::now().checked_sub(duration.to_owned()).unwrap());
-                }
-                State::OnBreak(_) => {
-                    self.state = State::Started(Instant::now());
-                }
-            },
+            _ => {
+                self.state = match self.state {
+                    State::Stopped | State::OnBreak(_) => State::Started(Instant::now()),
+                    State::Started(started) => State::Paused(started.elapsed()),
+                    State::Paused(duration) => State::Started(Instant::now() - duration),
+                };
+            }
         }
-        self.set_text();
-
-        Ok(())
+        self.set_text()
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {
