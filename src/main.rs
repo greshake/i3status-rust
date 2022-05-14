@@ -92,7 +92,7 @@ fn main() {
         // Create widget with error message
         let error_widget = TextWidget::new(0, 0, Default::default())
             .with_state(State::Critical)
-            .with_text(&error.to_string());
+            .with_text(&format!("Error: {error}"));
 
         // Print errors
         println!("[{}],", error_widget.get_data().render());
