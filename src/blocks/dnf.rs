@@ -131,7 +131,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
-async fn get_updates_list() -> Result<StdString> {
+async fn get_updates_list() -> Result<String> {
     let stdout = Command::new("sh")
         .env("LC_LANG", "C")
         .args(&["-c", "dnf check-update -q --skip-broken"])
@@ -139,7 +139,7 @@ async fn get_updates_list() -> Result<StdString> {
         .await
         .error("Failed to run dnf check-update")?
         .stdout;
-    StdString::from_utf8(stdout).error("dnf produced non-UTF8 output")
+    String::from_utf8(stdout).error("dnf produced non-UTF8 output")
 }
 
 fn get_update_count(updates: &str) -> usize {

@@ -100,20 +100,17 @@ fn get_time(format: &str, timezone: Option<Tz>, locale: Option<Locale>) -> Strin
             Some(tz) => Utc::now()
                 .with_timezone(&tz)
                 .format_localized(format, locale)
-                .to_string()
-                .into(),
+                .to_string(),
             None => Local::now()
                 .format_localized(format, locale)
-                .to_string()
-                .into(),
+                .to_string(),
         },
         None => match timezone {
             Some(tz) => Utc::now()
                 .with_timezone(&tz)
                 .format(format)
-                .to_string()
-                .into(),
-            None => Local::now().format(format).to_string().into(),
+                .to_string(),
+            None => Local::now().format(format).to_string(),
         },
     }
 }

@@ -27,7 +27,6 @@ use once_cell::sync::Lazy;
 use protocol::i3bar_block::I3BarBlock;
 use protocol::i3bar_event::I3BarEvent;
 use smallvec::SmallVec;
-use smartstring::alias::String;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -112,8 +111,7 @@ fn main() {
     })();
 
     if let Err(error) = result {
-        let error_widget =
-            Widget::new(0, Default::default(), None).with_text(error.to_string().into());
+        let error_widget = Widget::new(0, Default::default(), None).with_text(error.to_string());
         println!(
             "{},",
             serde_json::to_string(&error_widget.get_data().unwrap()).unwrap()
@@ -407,7 +405,7 @@ impl BarState {
                             block.error.message.as_deref().unwrap_or("Error").into()
                         } else {
                             self.fullscreen_block = Some(block.id);
-                            block.error.to_string().into()
+                            block.error.to_string()
                         };
                         block.error_widget.set_text(text);
                         self.blocks_render_cache[block.id] = block.error_widget.get_data()?;

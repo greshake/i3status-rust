@@ -6,8 +6,6 @@ use super::value::ValueInner;
 use super::{Rendered, Values};
 use crate::errors::*;
 
-use smartstring::alias::String;
-
 use std::iter::Peekable;
 use std::str::FromStr;
 
@@ -94,7 +92,7 @@ impl TokenList {
                 }
                 Token::Var { name, formatter } => {
                     let var = vars
-                        .get(name)
+                        .get(name.as_str())
                         .format_error(format!("Placeholder with name '{}' not found", name))?;
                     let formatter = formatter.as_ref().map(|x| x.as_ref()).unwrap_or_else(|| {
                         match &var.inner {

@@ -108,15 +108,15 @@ struct MusicConfig {
 #[derive(Debug, Clone, Type, Deserialize)]
 struct PropChange {
     _interface_name: OwnedInterfaceName,
-    changed_properties: HashMap<StdString, OwnedValue>,
-    _invalidated_properties: Vec<StdString>,
+    changed_properties: HashMap<String, OwnedValue>,
+    _invalidated_properties: Vec<String>,
 }
 
 #[derive(Debug, Clone, Type, Deserialize)]
 struct OwnerChange {
     pub name: OwnedBusName,
-    pub old_owner: Optional<StdString>,
-    pub new_owner: Optional<StdString>,
+    pub old_owner: Optional<String>,
+    pub new_owner: Optional<String>,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -195,7 +195,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     (Some(t), Some(a)) => {
                         values.insert(
                             "combo".into(),
-                            Value::text(format!("{t}{}{a}", config.separator).into()),
+                            Value::text(format!("{t}{}{a}", config.separator)),
                         );
                         values.insert("title".into(), Value::text(t.clone()));
                         values.insert("artist".into(), Value::text(a.clone()));
@@ -242,8 +242,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     }
                     Some("NameOwnerChanged") => {
                         let body: OwnerChange = msg.body().unwrap();
-                        let old: Option<StdString> = body.old_owner.into();
-                        let new: Option<StdString> = body.new_owner.into();
+                        let old: Option<String> = body.old_owner.into();
+                        let new: Option<String> = body.new_owner.into();
                         match (old, new) {
                             (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), fileter_name, &exclude_regex) {
                                 players.push(Player::new(&dbus_conn, body.name, new).await?);
@@ -332,7 +332,7 @@ async fn get_players(
 #[derive(Debug)]
 struct Player {
     status: Option<PlaybackStatus>,
-    owner: StdString,
+    owner: String,
     bus_name: OwnedBusName,
     player_proxy: zbus_mpris::PlayerProxy<'static>,
     title: Option<String>,
@@ -343,7 +343,7 @@ impl Player {
     async fn new(
         dbus_conn: &zbus::Connection,
         bus_name: OwnedBusName,
-        owner: StdString,
+        owner: String,
     ) -> Result<Player> {
         let proxy = zbus_mpris::PlayerProxy::builder(dbus_conn)
             .destination(bus_name.clone())

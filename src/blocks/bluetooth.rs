@@ -390,10 +390,10 @@ trait Device1 {
     fn connected(&self) -> zbus::Result<bool>;
 
     #[dbus_proxy(property)]
-    fn name(&self) -> zbus::Result<StdString>;
+    fn name(&self) -> zbus::Result<String>;
 
     #[dbus_proxy(property)]
-    fn icon(&self) -> zbus::Result<StdString>;
+    fn icon(&self) -> zbus::Result<String>;
 }
 
 #[zbus::dbus_proxy(interface = "org.bluez.Battery1", default_service = "org.bluez")]

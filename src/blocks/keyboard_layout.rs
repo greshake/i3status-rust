@@ -84,7 +84,7 @@ struct KeyboardLayoutConfig {
     #[default(60.into())]
     interval: Seconds,
     sway_kb_identifier: Option<String>,
-    mappings: Option<HashMap<StdString, String>>,
+    mappings: Option<HashMap<String, String>>,
 }
 
 #[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
@@ -157,7 +157,7 @@ impl Backend for SetXkbMap {
             .await
             .error("Failed to execute setxkbmap")?;
         let output =
-            StdString::from_utf8(output.stdout).error("setxkbmap produced a non-UTF8 output")?;
+            String::from_utf8(output.stdout).error("setxkbmap produced a non-UTF8 output")?;
         let layout = output
             .lines()
             // Find the "layout:    xxxx" entry.
@@ -180,8 +180,8 @@ impl Backend for SetXkbMap {
 
 struct LocaleBus {
     proxy: LocaleBusInterfaceProxy<'static>,
-    stream1: zbus::PropertyStream<'static, StdString>,
-    stream2: zbus::PropertyStream<'static, StdString>,
+    stream1: zbus::PropertyStream<'static, String>,
+    stream2: zbus::PropertyStream<'static, String>,
 }
 
 impl LocaleBus {
@@ -206,8 +206,8 @@ impl Backend for LocaleBus {
         let layout = self.proxy.layout().await.error("Failed to get layout")?;
         let variant = self.proxy.variant().await.error("Failed to get variant")?;
         Ok(Info {
-            layout: layout.into(),
-            variant: Some(variant.into()),
+            layout,
+            variant: Some(variant),
         })
     }
 
@@ -222,7 +222,7 @@ impl Backend for LocaleBus {
 
 struct Sway {
     events: swayipc_async::EventStream,
-    cur_layout: StdString,
+    cur_layout: String,
     kbd: Option<String>,
 }
 
@@ -312,8 +312,8 @@ fn parse_sway_layout(layout: &str) -> (String, Option<String>) {
 )]
 trait LocaleBusInterface {
     #[dbus_proxy(property, name = "X11Layout")]
-    fn layout(&self) -> zbus::Result<StdString>;
+    fn layout(&self) -> zbus::Result<String>;
 
     #[dbus_proxy(property, name = "X11Variant")]
-    fn variant(&self) -> zbus::Result<StdString>;
+    fn variant(&self) -> zbus::Result<String>;
 }

@@ -158,7 +158,7 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
         .error("Failed to collect active xrandr monitors")?
         .stdout;
     let active_monitors =
-        StdString::from_utf8(active_monitors).error("xrandr produced non-UTF8 output")?;
+        String::from_utf8(active_monitors).error("xrandr produced non-UTF8 output")?;
 
     let regex = active_monitors
         .lines()
@@ -174,7 +174,7 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
         .error("Failed to collect xrandr monitors info")?
         .stdout;
     let monitors_info =
-        StdString::from_utf8(monitors_info).error("xrandr produced non-UTF8 output")?;
+        String::from_utf8(monitors_info).error("xrandr produced non-UTF8 output")?;
 
     let mut it = monitors_info.lines().filter(|line| regex.is_match(line));
 

@@ -127,7 +127,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "region_code" => Value::text(info.region_code),
             "country" => Value::text(info.country),
             "country_name" => Value::text(info.country_name),
-            "country_flag" => Value::text(country_flag_from_iso_code(&info.country_code).into()),
+            "country_flag" => Value::text(country_flag_from_iso_code(&info.country_code)),
             "country_code" => Value::text(info.country_code),
             "country_code_iso3" => Value::text(info.country_code_iso3),
             "country_capital" => Value::text(info.country_capital),
@@ -171,7 +171,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 #[serde(default)]
 struct IPAddressInfo {
     error: bool,
-    reason: StdString,
+    reason: String,
     ip: String,
     version: String,
     city: String,

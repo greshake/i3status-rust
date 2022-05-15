@@ -100,7 +100,7 @@ impl Block {
 
     async fn read_u64(&mut self, mut number: u64, msg: &str) -> Result<u64> {
         loop {
-            self.set_text(format!("{msg} {number}").into()).await?;
+            self.set_text(format!("{msg} {number}")).await?;
             if let Click(click) = self.api.event().await {
                 match click.button {
                     MouseButton::Left => break,
@@ -138,7 +138,7 @@ impl Block {
                         (left.as_secs() + 59) / 60,
                     )
                 };
-                self.set_text(text.into()).await?;
+                self.set_text(text).await?;
                 select! {
                     _ = sleep(Duration::from_secs(10)) => (),
                     Click(click) = self.api.event() => {
@@ -179,7 +179,7 @@ impl Block {
                     break;
                 }
                 let left = break_len - elapsed;
-                self.set_text(format!("Break: {} min", (left.as_secs() + 59) / 60,).into())
+                self.set_text(format!("Break: {} min", (left.as_secs() + 59) / 60,))
                     .await?;
                 select! {
                     _ = sleep(Duration::from_secs(10)) => (),

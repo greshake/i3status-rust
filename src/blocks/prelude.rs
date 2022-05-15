@@ -10,12 +10,9 @@ pub use crate::REQWEST_CLIENT;
 
 pub use serde::Deserialize;
 
-pub use smartstring::alias::String;
-
 pub use std::borrow::Cow;
 pub use std::fmt::Write;
 pub use std::pin::Pin;
-pub use std::string::String as StdString;
 pub use std::time::Duration;
 
 pub use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};

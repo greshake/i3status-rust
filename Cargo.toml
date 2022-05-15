@@ -66,10 +66,6 @@ features = ["std", "derive"]
 version = "1.7"
 features = ["union", "const_generics"]
 
-[dependencies.smartstring]
-version = "1.0"
-features = ["serde"]
-
 [dependencies.serde]
 version = "1.0"
 features = ["derive", "rc"]

@@ -123,8 +123,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     values.insert(
                         "time".into(),
                         Value::text(
-                            format!("{}:{:02}", (t / 3600.) as i32, (t % 3600. / 60.) as i32)
-                                .into(),
+                            format!("{}:{:02}", (t / 3600.) as i32, (t % 3600. / 60.) as i32),
                         ),
                     )
                 });

@@ -97,15 +97,15 @@ use tokio_stream::wrappers::IntervalStream;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct CustomConfig {
-    command: Option<StdString>,
+    command: Option<String>,
     persistent: bool,
-    cycle: Option<Vec<StdString>>,
+    cycle: Option<Vec<String>>,
     #[default(10.into())]
     interval: OnceDuration,
     json: bool,
     hide_when_empty: bool,
-    shell: Option<StdString>,
-    watch_files: Vec<StdString>,
+    shell: Option<String>,
+    watch_files: Vec<String>,
 }
 
 async fn update_bar(

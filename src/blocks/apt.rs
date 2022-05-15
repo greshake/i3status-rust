@@ -166,7 +166,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
-async fn get_updates_list(config_path: &str) -> Result<StdString> {
+async fn get_updates_list(config_path: &str) -> Result<String> {
     Command::new("sh")
         .env("APT_CONFIG", config_path)
         .args(["-c", "apt update"])
@@ -182,7 +182,7 @@ async fn get_updates_list(config_path: &str) -> Result<StdString> {
         .await
         .error("Problem running apt command")?
         .stdout;
-    StdString::from_utf8(stdout).error("apt produced non-UTF8 output")
+    String::from_utf8(stdout).error("apt produced non-UTF8 output")
 }
 
 fn get_update_count(updates: &str) -> usize {

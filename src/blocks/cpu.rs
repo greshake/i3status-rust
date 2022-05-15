@@ -151,7 +151,7 @@ async fn read_frequencies() -> Result<Vec<f64>> {
         .error("failed to read /proc/cpuinfo")?;
     let mut file = BufReader::new(file);
 
-    let mut line = StdString::new();
+    let mut line = String::new();
     while file
         .read_line(&mut line)
         .await
@@ -208,7 +208,7 @@ async fn read_proc_stat() -> Result<(CpuTime, Vec<CpuTime>)> {
         .error("failed to read /proc/stat")?;
     let mut file = BufReader::new(file);
 
-    let mut line = StdString::new();
+    let mut line = String::new();
     while file
         .read_line(&mut line)
         .await

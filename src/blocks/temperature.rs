@@ -73,7 +73,7 @@ struct TemperatureConfig {
     info: Option<f64>,
     warning: Option<f64>,
     chip: Option<String>,
-    inputs: Option<Vec<StdString>>,
+    inputs: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq)]

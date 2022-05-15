@@ -137,7 +137,7 @@ fn format_delta_past(delta: &chrono::Duration) -> String {
     spans
         .iter()
         .filter(|&(_, n)| *n != 0)
-        .map(|&(label, n)| format!("{n} {label}{} ago", if n > 1 { "s" } else { "" }).into())
+        .map(|&(label, n)| format!("{n} {label}{} ago", if n > 1 { "s" } else { "" }))
         .next()
         .unwrap_or_else(|| "now".into())
 }
@@ -154,7 +154,7 @@ fn format_delta_after(delta: &chrono::Duration) -> String {
     spans
         .iter()
         .find(|&(_, n)| *n != 0)
-        .map(|&(label, n)| format!("after {n} {label}{}", if n > 1 { "s" } else { "" }).into())
+        .map(|&(label, n)| format!("after {n} {label}{}", if n > 1 { "s" } else { "" }))
         .unwrap_or_else(|| "now".into())
 }
 

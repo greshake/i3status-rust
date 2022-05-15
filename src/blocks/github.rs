@@ -67,7 +67,7 @@ struct GithubConfig {
     #[default(60.into())]
     interval: Seconds,
     format: FormatConfig,
-    token: Option<StdString>,
+    token: Option<String>,
     hide_if_total_is_zero: bool,
     good: Option<Vec<String>>,
     info: Option<Vec<String>>,
@@ -110,7 +110,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             let stats: HashMap<_, _> = stats
                 .into_iter()
-                .map(|(k, v)| (k, Value::number(v)))
+                .map(|(k, v)| (k.into(), Value::number(v)))
                 .collect();
             api.set_state(state);
             api.set_values(stats);

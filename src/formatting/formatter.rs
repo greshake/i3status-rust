@@ -1,4 +1,3 @@
-use smartstring::alias::String;
 use std::fmt::Debug;
 use std::iter::repeat;
 use std::str::FromStr;

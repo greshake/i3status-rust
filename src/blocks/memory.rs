@@ -53,7 +53,6 @@
 //! - `memory_mem`
 //! - `memory_swap`
 
-use std::path::Path;
 use std::str::FromStr;
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -217,7 +216,7 @@ impl Memstate {
         );
 
         let mut mem_state = Memstate::default();
-        let mut line = StdString::new();
+        let mut line = String::new();
 
         while file
             .read_line(&mut line)

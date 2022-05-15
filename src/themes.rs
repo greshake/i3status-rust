@@ -6,7 +6,6 @@ use std::str::FromStr;
 use color_space::{Hsv, Rgb};
 use serde::de::{self, Deserializer, MapAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
-use smartstring::alias::String;
 
 use crate::errors::*;
 use crate::util;

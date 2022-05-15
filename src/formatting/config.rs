@@ -2,7 +2,6 @@ use super::{template::FormatTemplate, Format, FormatInner};
 use crate::errors::*;
 use serde::de::{MapAccess, Visitor};
 use serde::{de, Deserialize, Deserializer};
-use smartstring::alias::String;
 use std::fmt;
 use std::sync::Arc;
 

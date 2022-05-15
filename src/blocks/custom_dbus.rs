@@ -41,7 +41,7 @@ use super::prelude::*;
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 struct CustomDBusConfig {
-    path: StdString,
+    path: String,
 }
 
 struct Block {
@@ -50,7 +50,7 @@ struct Block {
 
 #[dbus_interface(name = "rs.i3status.custom")]
 impl Block {
-    async fn set_icon(&mut self, icon: &str) -> StdString {
+    async fn set_icon(&mut self, icon: &str) -> String {
         if let Err(e) = self.api.set_icon(icon) {
             return e.to_string();
         }
@@ -60,15 +60,15 @@ impl Block {
         "OK".into()
     }
 
-    async fn set_text(&mut self, full: StdString, short: StdString) -> StdString {
-        self.api.set_texts(full.into(), short.into());
+    async fn set_text(&mut self, full: String, short: String) -> String {
+        self.api.set_texts(full, short);
         if let Err(e) = self.api.flush().await {
             return e.to_string();
         }
         "OK".into()
     }
 
-    async fn set_state(&mut self, state: &str) -> StdString {
+    async fn set_state(&mut self, state: &str) -> String {
         match state {
             "idle" => self.api.set_state(State::Idle),
             "info" => self.api.set_state(State::Info),

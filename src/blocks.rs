@@ -7,7 +7,6 @@ use futures::future::FutureExt;
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
 use smallvec::SmallVec;
-use smartstring::alias::String;
 use tokio::sync::mpsc;
 use toml::value::Table;
 
@@ -18,7 +17,7 @@ use std::time::Duration;
 use crate::click::{ClickHandler, MouseButton};
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::formatting::{value::Value, Format};
+use crate::formatting::{Format, Values};
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::widget::State;
 use crate::{Request, RequestCmd};
@@ -222,7 +221,7 @@ impl CommonApi {
         self.cmd_buf.push(RequestCmd::SetTexts(full, short));
     }
 
-    pub fn set_values(&mut self, values: HashMap<String, Value>) {
+    pub fn set_values(&mut self, values: Values) {
         self.cmd_buf.push(RequestCmd::SetValues(values));
     }
 
@@ -307,7 +306,7 @@ impl CommonApi {
                     // the error
                     loop {
                         if focused {
-                            self.set_text(err.to_string().into());
+                            self.set_text(err.to_string());
                             self.set_full_screen(true);
                         } else {
                             self.set_text(

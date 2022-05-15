@@ -446,15 +446,15 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
             Some(name) => Ok(PulseAudioVolInfo {
                 volume: source_info.volume,
                 mute: source_info.mute,
-                name: name.to_string().into(),
+                name: name.to_string(),
                 description: source_info
                     .description
                     .as_ref()
-                    .map(|d| d.to_string().into()),
+                    .map(|d| d.to_string()),
                 active_port: source_info
                     .active_port
                     .as_ref()
-                    .and_then(|a| a.name.as_ref().map(|n| n.to_string().into())),
+                    .and_then(|a| a.name.as_ref().map(|n| n.to_string())),
             }),
         }
     }
@@ -469,12 +469,12 @@ impl TryFrom<&SinkInfo<'_>> for PulseAudioVolInfo {
             Some(name) => Ok(PulseAudioVolInfo {
                 volume: sink_info.volume,
                 mute: sink_info.mute,
-                name: name.to_string().into(),
-                description: sink_info.description.as_ref().map(|d| d.to_string().into()),
+                name: name.to_string(),
+                description: sink_info.description.as_ref().map(|d| d.to_string()),
                 active_port: sink_info
                     .active_port
                     .as_ref()
-                    .and_then(|a| a.name.as_ref().map(|n| n.to_string().into())),
+                    .and_then(|a| a.name.as_ref().map(|n| n.to_string())),
             }),
         }
     }
@@ -684,11 +684,11 @@ impl PulseAudioClient {
 
     fn server_info_callback(server_info: &ServerInfo) {
         if let Some(default_sink) = server_info.default_sink_name.as_ref() {
-            *PULSEAUDIO_DEFAULT_SINK.lock().unwrap() = default_sink.to_string().into();
+            *PULSEAUDIO_DEFAULT_SINK.lock().unwrap() = default_sink.to_string();
         }
 
         if let Some(default_source) = server_info.default_source_name.as_ref() {
-            *PULSEAUDIO_DEFAULT_SOURCE.lock().unwrap() = default_source.to_string().into();
+            *PULSEAUDIO_DEFAULT_SOURCE.lock().unwrap() = default_source.to_string();
         }
 
         PulseAudioClient::send_update_event();
@@ -706,7 +706,7 @@ impl PulseAudioClient {
     fn sink_info_callback(result: ListResult<&SinkInfo>) {
         if let Some(vol_info) = Self::get_info_callback(result) {
             PULSEAUDIO_DEVICES.lock().unwrap().insert(
-                (DeviceKind::Sink, vol_info.name.to_string().into()),
+                (DeviceKind::Sink, vol_info.name.to_string()),
                 vol_info,
             );
 
@@ -717,7 +717,7 @@ impl PulseAudioClient {
     fn source_info_callback(result: ListResult<&SourceInfo>) {
         if let Some(vol_info) = Self::get_info_callback(result) {
             PULSEAUDIO_DEVICES.lock().unwrap().insert(
-                (DeviceKind::Source, vol_info.name.to_string().into()),
+                (DeviceKind::Source, vol_info.name.to_string()),
                 vol_info,
             );
 

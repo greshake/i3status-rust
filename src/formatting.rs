@@ -81,7 +81,7 @@ pub mod template;
 pub mod unit;
 pub mod value;
 
-use smartstring::alias::String;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -91,7 +91,7 @@ use crate::widget::State;
 use template::FormatTemplate;
 use value::Value;
 
-pub type Values = HashMap<String, Value>;
+pub type Values = HashMap<Cow<'static, str>, Value>;
 
 #[derive(Debug, Clone)]
 pub struct Format {

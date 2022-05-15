@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use smartstring::alias::String;
 use std::sync::Arc;
 use toml::value;
 
@@ -26,7 +25,7 @@ impl SharedConfig {
                 .0
                 .get(icon)
                 .or_error(|| format!("Icon '{icon}' not found: please check your icons file or open a new issue on GitHub if you use precompiled icons"))?,
-        ).into())
+        ))
     }
 }
 

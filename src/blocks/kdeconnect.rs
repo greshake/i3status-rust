@@ -296,7 +296,7 @@ async fn any_device_id(conn: &zbus::Connection) -> Result<String> {
 )]
 trait DaemonDbus {
     #[dbus_proxy(name = "devices")]
-    fn devices(&self) -> zbus::Result<Vec<StdString>>;
+    fn devices(&self) -> zbus::Result<Vec<String>>;
 }
 
 #[dbus_proxy(
@@ -311,7 +311,7 @@ trait DeviceDbus {
     fn reachable_changed(&self, reachable: bool) -> zbus::Result<()>;
 
     #[dbus_proxy(property, name = "name")]
-    fn name(&self) -> zbus::Result<StdString>;
+    fn name(&self) -> zbus::Result<String>;
 
     #[dbus_proxy(signal, name = "nameChanged")]
     fn name_changed_(&self, name: &str) -> zbus::Result<()>;
@@ -338,7 +338,7 @@ trait BatteryDbus {
 )]
 trait NotificationsDbus {
     #[dbus_proxy(name = "activeNotifications")]
-    fn active_notifications(&self) -> zbus::Result<Vec<StdString>>;
+    fn active_notifications(&self) -> zbus::Result<Vec<String>>;
 
     #[dbus_proxy(signal, name = "allNotificationsRemoved")]
     fn all_notifications_removed(&self) -> zbus::Result<()>;

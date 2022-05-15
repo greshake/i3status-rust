@@ -3,7 +3,6 @@ use crate::errors::*;
 use crate::formatting::{Format, Rendered, Values};
 use crate::protocol::i3bar_block::I3BarBlock;
 use serde::Deserialize;
-use smartstring::alias::String;
 use tokio::sync::mpsc;
 
 /// State of the widget. Affects the theming.
@@ -178,7 +177,7 @@ impl Widget {
         // Icon block
         if !self.icon.is_empty() {
             let mut data = template.clone();
-            data.full_text = self.icon.clone().into();
+            data.full_text = self.icon.clone();
             parts.push(data);
         }
 
@@ -203,7 +202,7 @@ impl Widget {
         let full_cnt = full.len();
         parts.extend(full.into_iter().enumerate().map(|(i, w)| {
             let mut data = template.clone();
-            data.full_text = w.text.into();
+            data.full_text = w.text;
             if i + 1 == full_cnt {
                 data.full_text.push(' ');
             }
@@ -220,7 +219,7 @@ impl Widget {
         template.full_text = "<span/>".into();
         parts.extend(short.into_iter().enumerate().map(|(i, w)| {
             let mut data = template.clone();
-            data.short_text = w.text.into();
+            data.short_text = w.text;
             if i + 1 == short_cnt {
                 data.short_text.push(' ');
             }

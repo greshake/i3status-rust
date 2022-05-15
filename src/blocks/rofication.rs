@@ -91,7 +91,7 @@ async fn rofication_status(socket_path: &str) -> Result<(usize, usize)> {
         .await
         .error("Failed to write to socket")?;
 
-    let mut responce = StdString::new();
+    let mut responce = String::new();
     stream
         .read_to_string(&mut responce)
         .await

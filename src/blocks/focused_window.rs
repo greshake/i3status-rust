@@ -96,7 +96,7 @@ trait Backend {
 #[derive(Clone, Default)]
 struct Info {
     title: String,
-    marks: Vec<StdString>,
+    marks: Vec<String>,
 }
 
 struct SwayIpc {

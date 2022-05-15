@@ -307,7 +307,7 @@ fn get_updates_db_dir() -> PathBuf {
     }
 }
 
-async fn get_pacman_available_updates() -> Result<StdString> {
+async fn get_pacman_available_updates() -> Result<String> {
     let updates_db = get_updates_db_dir();
 
     // Determine pacman database path
@@ -360,17 +360,17 @@ async fn get_pacman_available_updates() -> Result<StdString> {
         .error("There was a problem running the pacman commands")?
         .stdout;
 
-    StdString::from_utf8(stdout).error("Pacman produced non-UTF8 output")
+    String::from_utf8(stdout).error("Pacman produced non-UTF8 output")
 }
 
-async fn get_aur_available_updates(aur_command: &str) -> Result<StdString> {
+async fn get_aur_available_updates(aur_command: &str) -> Result<String> {
     let stdout = Command::new("sh")
         .args(&["-c", aur_command])
         .output()
         .await
         .or_error(|| format!("aur command: {aur_command} failed"))?
         .stdout;
-    StdString::from_utf8(stdout)
+    String::from_utf8(stdout)
         .error("There was a problem while converting the aur command output to a string")
 }
 

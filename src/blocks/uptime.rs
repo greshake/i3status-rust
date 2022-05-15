@@ -66,7 +66,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             format!("{minutes}m {seconds}s")
         };
 
-        api.set_text(text.into());
+        api.set_text(text);
         api.flush().await?;
 
         select! {

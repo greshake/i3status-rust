@@ -141,7 +141,7 @@ macro_rules! regex {
     }};
 }
 
-pub fn format_bar_graph(content: &[f64]) -> smartstring::alias::String {
+pub fn format_bar_graph(content: &[f64]) -> String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     static BARS: [char; 8] = [
         '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',

@@ -762,7 +762,7 @@ trait NetworkManagerConnection {
 
     /// Id property
     #[dbus_proxy(property)]
-    fn id(&self) -> zbus::Result<StdString>;
+    fn id(&self) -> zbus::Result<String>;
 
     /// State property
     #[dbus_proxy(property)]

@@ -52,7 +52,7 @@ struct NetConfig {
     interval: Seconds,
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
-    device: Option<StdString>,
+    device: Option<String>,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -111,10 +111,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "speed_up" => Value::bytes(speed_up).with_icon(api.get_icon("net_up")?),
             "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
             "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
-            "device" => Value::text(device.interface.into()),
+            "device" => Value::text(device.interface),
         };
         wifi.0
-            .map(|s| values.insert("ssid".into(), Value::text(s.into())));
+            .map(|s| values.insert("ssid".into(), Value::text(s)));
         wifi.1
             .map(|f| values.insert("frequency".into(), Value::hertz(f)));
         wifi.2

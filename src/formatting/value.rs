@@ -1,7 +1,6 @@
 use super::unit::Unit;
 use super::Metadata;
 use crate::widget::State;
-use smartstring::alias::String;
 
 #[derive(Debug, Clone)]
 pub struct Value {

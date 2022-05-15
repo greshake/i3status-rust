@@ -107,7 +107,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut current_temp = config.current_temp;
 
     loop {
-        api.set_text(current_temp.to_string().into());
+        api.set_text(current_temp.to_string());
         api.flush().await?;
 
         select! {
