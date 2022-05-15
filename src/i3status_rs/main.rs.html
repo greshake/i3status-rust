@@ -491,6 +491,15 @@
 <span id="486">486</span>
 <span id="487">487</span>
 <span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
@@ -513,8 +522,9 @@
 <span class="kw">mod</span> <span class="ident">wrappers</span>;
 
 <span class="kw">use</span> <span class="ident">clap::Parser</span>;
+<span class="kw">use</span> <span class="ident">futures::future</span>::{<span class="ident">abortable</span>, <span class="ident">FutureExt</span>};
 <span class="kw">use</span> <span class="ident">futures::stream::futures_unordered::FuturesUnordered</span>;
-<span class="kw">use</span> <span class="ident">futures::stream</span>::{<span class="ident">Stream</span>, <span class="ident">StreamExt</span>};
+<span class="kw">use</span> <span class="ident">futures::stream</span>::{<span class="ident">AbortHandle</span>, <span class="ident">Stream</span>, <span class="ident">StreamExt</span>};
 <span class="kw">use</span> <span class="ident">once_cell::sync::Lazy</span>;
 <span class="kw">use</span> <span class="ident">protocol::i3bar_block::I3BarBlock</span>;
 <span class="kw">use</span> <span class="ident">protocol::i3bar_event::I3BarEvent</span>;
@@ -627,6 +637,7 @@
     <span class="ident">id</span>: <span class="ident">usize</span>,
 
     <span class="ident">event_sender</span>: <span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">BlockEvent</span><span class="op">&gt;</span>,
+    <span class="ident">abort_handle</span>: <span class="ident">AbortHandle</span>,
     <span class="ident">click_handler</span>: <span class="ident">ClickHandler</span>,
     <span class="ident">signal</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>,
 
@@ -742,9 +753,10 @@
 
         <span class="kw">let</span> (<span class="ident">event_sender</span>, <span class="ident">event_receiver</span>) <span class="op">=</span> <span class="ident">mpsc::channel</span>(<span class="number">64</span>);
 
+        <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">blocks</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">CommonApi</span> {
-            <span class="ident">id</span>: <span class="self">self</span>.<span class="ident">blocks</span>.<span class="ident">len</span>(),
-            <span class="ident">shared_config</span>,
+            <span class="ident">id</span>,
+            <span class="ident">shared_config</span>: <span class="ident">shared_config</span>.<span class="ident">clone</span>(),
             <span class="ident">event_receiver</span>,
 
             <span class="ident">request_sender</span>: <span class="self">self</span>.<span class="ident">request_sender</span>.<span class="ident">clone</span>(),
@@ -754,22 +766,25 @@
             <span class="ident">error_format</span>: <span class="ident">common_config</span>.<span class="ident">error_format</span>,
         };
 
+        <span class="kw">let</span> (<span class="ident">block_fut</span>, <span class="ident">abort_handle</span>) <span class="op">=</span> <span class="ident">abortable</span>(<span class="ident">block_type</span>.<span class="ident">run</span>(<span class="ident">block_config</span>, <span class="ident">api</span>));
+
         <span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">Block::Running</span>(<span class="ident">RunningBlock</span> {
-            <span class="ident">id</span>: <span class="ident">api</span>.<span class="ident">id</span>,
+            <span class="ident">id</span>,
 
             <span class="ident">event_sender</span>,
+            <span class="ident">abort_handle</span>,
             <span class="ident">click_handler</span>: <span class="ident">common_config</span>.<span class="ident">click</span>,
             <span class="ident">signal</span>: <span class="ident">common_config</span>.<span class="ident">signal</span>,
 
             <span class="ident">hidden</span>: <span class="bool-val">false</span>,
-            <span class="ident">widget</span>: <span class="ident">Widget::new</span>(
-                <span class="ident">api</span>.<span class="ident">id</span>,
-                <span class="ident">api</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>(),
-                <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">widget_updates_sender</span>.<span class="ident">clone</span>()),
-            ),
+            <span class="ident">widget</span>: <span class="ident">Widget::new</span>(<span class="ident">id</span>, <span class="ident">shared_config</span>, <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">widget_updates_sender</span>.<span class="ident">clone</span>())),
         });
 
-        <span class="self">self</span>.<span class="ident">running_blocks</span>.<span class="ident">push</span>(<span class="ident">block_type</span>.<span class="ident">run</span>(<span class="ident">block_config</span>, <span class="ident">api</span>));
+        <span class="self">self</span>.<span class="ident">running_blocks</span>
+            .<span class="ident">push</span>(<span class="ident">Box::pin</span>(<span class="ident">block_fut</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">res</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">res</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">res</span>) =&gt; <span class="ident">res</span>,
+                <span class="prelude-val">Err</span>(<span class="ident">_aborted</span>) =&gt; <span class="prelude-val">Ok</span>(()),
+            })));
         <span class="self">self</span>.<span class="ident">blocks</span>.<span class="ident">push</span>((<span class="ident">block</span>, <span class="ident">block_type</span>));
         <span class="self">self</span>.<span class="ident">blocks_render_cache</span>.<span class="ident">push</span>(<span class="ident">Vec::new</span>());
         <span class="prelude-val">Ok</span>(())
@@ -933,6 +948,9 @@
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">process_event</span>().<span class="kw">await</span> {
                 <span class="kw">match</span> <span class="ident">error</span>.<span class="ident">block</span> {
                     <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">id</span>)) =&gt; {
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Block::Running</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">blocks</span>[<span class="ident">id</span>].<span class="number">0</span> {
+                            <span class="ident">block</span>.<span class="ident">abort_handle</span>.<span class="ident">abort</span>();
+                        }
                         <span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">FailedBlock</span> {
                             <span class="ident">id</span>,
                             <span class="ident">error_widget</span>: <span class="ident">Widget::new</span>(<span class="ident">id</span>, <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>(), <span class="prelude-val">None</span>)
