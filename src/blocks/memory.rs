@@ -255,7 +255,7 @@ impl Memstate {
         }
 
         // Read ZFS arc cache size to add to total cache size
-        if let Ok(arcstats) = read_file(Path::new("/proc/spl/kstat/zfs/arcstats")).await {
+        if let Ok(arcstats) = read_file("/proc/spl/kstat/zfs/arcstats").await {
             let size_re = regex!(r"size\s+\d+\s+(\d+)");
             let size = &size_re
                 .captures(&arcstats)

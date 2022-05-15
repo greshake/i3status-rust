@@ -35,12 +35,9 @@
 //! # Icons Used
 //! - `disk_drive`
 
-use std::path::Path;
-
-use nix::sys::statvfs::statvfs;
-
 use super::prelude::*;
 use crate::formatting::prefix::Prefix;
+use nix::sys::statvfs::statvfs;
 
 #[derive(Copy, Clone, Debug, Deserialize, SmartDefault)]
 #[serde(rename_all = "lowercase")]
@@ -84,11 +81,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let path = Path::new(config.path.as_str());
-    let mut timer = config.interval.timer();
-
     loop {
-        let statvfs = statvfs(path).error("failed to retrieve statvfs")?;
+        let statvfs = statvfs(config.path.as_str()).error("failed to retrieve statvfs")?;
 
         let total = (statvfs.blocks() as u64) * (statvfs.fragment_size() as u64);
         let used = ((statvfs.blocks() as u64) - (statvfs.blocks_free() as u64))
@@ -147,7 +141,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         select! {
-            _ = timer.tick() => (),
+            _ = sleep(config.interval.0) => (),
             UpdateRequest = api.event() => (),
         }
     }

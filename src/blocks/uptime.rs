@@ -37,8 +37,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = UptimeConfig::deserialize(config).config_error()?;
     api.set_icon("uptime")?;
 
-    let mut timer = config.interval.timer();
-
     loop {
         let uptime = read_to_string("/proc/uptime")
             .await
@@ -72,7 +70,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         select! {
-            _ = timer.tick() => (),
+            _ = sleep(config.interval.0) => (),
             UpdateRequest = api.event() => (),
         }
     }

@@ -32,7 +32,6 @@
 //! - `cpu_boost_on`
 //! - `cpu_boost_off`
 
-use std::path::Path;
 use std::str::FromStr;
 
 use tokio::fs::File;
@@ -232,9 +231,9 @@ async fn read_proc_stat() -> Result<(CpuTime, Vec<CpuTime>)> {
 /// Read the cpu turbo boost status from kernel sys interface
 /// or intel pstate interface
 async fn boost_status() -> Option<bool> {
-    if let Ok(boost) = read_file(Path::new(CPU_BOOST_PATH)).await {
+    if let Ok(boost) = read_file(CPU_BOOST_PATH).await {
         Some(boost.starts_with('1'))
-    } else if let Ok(no_turbo) = read_file(Path::new(CPU_NO_TURBO_PATH)).await {
+    } else if let Ok(no_turbo) = read_file(CPU_NO_TURBO_PATH).await {
         Some(no_turbo.starts_with('0'))
     } else {
         None

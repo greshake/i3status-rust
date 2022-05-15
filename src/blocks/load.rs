@@ -30,7 +30,6 @@
 
 use super::prelude::*;
 use crate::util;
-use std::path::Path;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -52,18 +51,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     api.set_icon("cogs")?;
 
     // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
-    let logical_cores = util::read_file(Path::new("/proc/cpuinfo"))
+    let logical_cores = util::read_file("/proc/cpuinfo")
         .await
         .error("Your system doesn't support /proc/cpuinfo")?
         .lines()
         .filter(|l| l.starts_with("processor"))
-        .count() as f64;
+        .count();
 
-    let mut timer = config.interval.timer();
-
-    let loadavg_path = Path::new("/proc/loadavg");
     loop {
-        let loadavg = util::read_file(loadavg_path)
+        let loadavg = util::read_file("/proc/loadavg")
             .await
             .error("Your system does not support reading the load average from /proc/loadavg")?;
         let mut values = loadavg.split(' ');
@@ -80,7 +76,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .and_then(|x| x.parse().ok())
             .error("bad /proc/loadavg file")?;
 
-        api.set_state(match m1 / logical_cores {
+        api.set_state(match m1 / logical_cores as f64 {
             x if x > config.critical => State::Critical,
             x if x > config.warning => State::Warning,
             x if x > config.info => State::Info,
@@ -95,7 +91,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.flush().await?;
 
         select! {
-            _ = timer.tick() => (),
+            _ = sleep(config.interval.0) => (),
             UpdateRequest = api.event() => (),
         }
     }
