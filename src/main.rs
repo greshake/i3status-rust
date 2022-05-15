@@ -20,8 +20,9 @@ mod widget;
 mod wrappers;
 
 use clap::Parser;
+use futures::future::{abortable, FutureExt};
 use futures::stream::futures_unordered::FuturesUnordered;
-use futures::stream::{Stream, StreamExt};
+use futures::stream::{AbortHandle, Stream, StreamExt};
 use once_cell::sync::Lazy;
 use protocol::i3bar_block::I3BarBlock;
 use protocol::i3bar_event::I3BarEvent;
@@ -134,6 +135,7 @@ pub struct RunningBlock {
     id: usize,
 
     event_sender: mpsc::Sender<BlockEvent>,
+    abort_handle: AbortHandle,
     click_handler: ClickHandler,
     signal: Option<i32>,
 
@@ -249,9 +251,10 @@ impl BarState {
 
         let (event_sender, event_receiver) = mpsc::channel(64);
 
+        let id = self.blocks.len();
         let api = CommonApi {
-            id: self.blocks.len(),
-            shared_config,
+            id,
+            shared_config: shared_config.clone(),
             event_receiver,
 
             request_sender: self.request_sender.clone(),
@@ -261,22 +264,25 @@ impl BarState {
             error_format: common_config.error_format,
         };
 
+        let (block_fut, abort_handle) = abortable(block_type.run(block_config, api));
+
         let block = Block::Running(RunningBlock {
-            id: api.id,
+            id,
 
             event_sender,
+            abort_handle,
             click_handler: common_config.click,
             signal: common_config.signal,
 
             hidden: false,
-            widget: Widget::new(
-                api.id,
-                api.shared_config.clone(),
-                Some(self.widget_updates_sender.clone()),
-            ),
+            widget: Widget::new(id, shared_config, Some(self.widget_updates_sender.clone())),
         });
 
-        self.running_blocks.push(block_type.run(block_config, api));
+        self.running_blocks
+            .push(Box::pin(block_fut.map(|res| match res {
+                Ok(res) => res,
+                Err(_aborted) => Ok(()),
+            })));
         self.blocks.push((block, block_type));
         self.blocks_render_cache.push(Vec::new());
         Ok(())
@@ -440,6 +446,9 @@ impl BarState {
             if let Err(error) = self.process_event().await {
                 match error.block {
                     Some((_, id)) => {
+                        if let Block::Running(block) = &self.blocks[id].0 {
+                            block.abort_handle.abort();
+                        }
                         let block = FailedBlock {
                             id,
                             error_widget: Widget::new(id, self.shared_config.clone(), None)

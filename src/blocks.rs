@@ -321,9 +321,12 @@ impl CommonApi {
 
                         tokio::select! {
                             _ = tokio::time::sleep_until(retry_at) => break,
-                            BlockEvent::Click(click) = self.event() => {
-                                if click.button == MouseButton::Left {
-                                    focused = !focused;
+                            event = self.event() => match event {
+                                BlockEvent::UpdateRequest => break,
+                                BlockEvent::Click(click) => {
+                                    if click.button == MouseButton::Left {
+                                        focused = !focused;
+                                    }
                                 }
                             }
                         }
