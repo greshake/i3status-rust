@@ -134,12 +134,12 @@ macro_rules! map {
     }};
 }
 
-// macro_rules! regex {
-//     ($re:literal $(,)?) => {{
-//         static RE: once_cell::sync::OnceCell<regex::Regex> = once_cell::sync::OnceCell::new();
-//         RE.get_or_init(|| regex::Regex::new($re).unwrap())
-//     }};
-// }
+macro_rules! regex {
+    ($re:literal $(,)?) => {{
+        static RE: once_cell::sync::OnceCell<regex::Regex> = once_cell::sync::OnceCell::new();
+        RE.get_or_init(|| regex::Regex::new($re).unwrap())
+    }};
+}
 
 pub fn format_bar_graph(content: &[f64]) -> smartstring::alias::String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements

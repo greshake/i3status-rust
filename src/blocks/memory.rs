@@ -58,8 +58,6 @@ use std::str::FromStr;
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt, BufReader};
 
-use regex::Regex;
-
 use super::prelude::*;
 use crate::util::read_file;
 
@@ -164,22 +162,25 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         loop {
             select! {
                 _ = timer.tick() => break,
-                Click(click) = api.event() => {
-                    if click.button == MouseButton::Left && clickable {
-                        match memtype {
-                            Memtype::Swap => {
-                                format = &format_mem;
-                                memtype = Memtype::Memory;
-                                api.set_icon("memory_mem")?;
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left && clickable {
+                            match memtype {
+                                Memtype::Swap => {
+                                    format = &format_mem;
+                                    memtype = Memtype::Memory;
+                                    api.set_icon("memory_mem")?;
+                                }
+                                Memtype::Memory => {
+                                    format = &format_swap;
+                                    memtype = Memtype::Swap;
+                                    api.set_icon("memory_swap")?;
+                                }
                             }
-                            Memtype::Memory => {
-                                format = &format_swap;
-                                memtype = Memtype::Swap;
-                                api.set_icon("memory_swap")?;
-                            }
+                            api.set_format(format.clone());
+                            break;
                         }
-                        api.set_format(format.clone());
-                        break;
                     }
                 }
             }
@@ -194,8 +195,7 @@ pub enum Memtype {
     Memory,
 }
 
-#[derive(Clone, Copy, Debug)]
-// Not following naming convention, because of naming in /proc/meminfo
+#[derive(Clone, Copy, Debug, Default)]
 struct Memstate {
     mem_total: u64,
     mem_free: u64,
@@ -216,19 +216,9 @@ impl Memstate {
                 .error("/proc/meminfo does not exist")?,
         );
 
-        let mut mem_state = Memstate {
-            mem_total: 0,
-            mem_free: 0,
-            buffers: 0,
-            cached: 0,
-            s_reclaimable: 0,
-            shmem: 0,
-            swap_total: 0,
-            swap_free: 0,
-            zfs_arc_cache: 0,
-        };
-
+        let mut mem_state = Memstate::default();
         let mut line = StdString::new();
+
         while file
             .read_line(&mut line)
             .await
@@ -266,12 +256,11 @@ impl Memstate {
 
         // Read ZFS arc cache size to add to total cache size
         if let Ok(arcstats) = read_file(Path::new("/proc/spl/kstat/zfs/arcstats")).await {
-            let size_re = Regex::new(r"size\s+\d+\s+(\d+)").unwrap(); // Valid regex is safe to unwrap.
+            let size_re = regex!(r"size\s+\d+\s+(\d+)");
             let size = &size_re
                 .captures(&arcstats)
                 .error("failed to find zfs_arc_cache size")?[1];
-            mem_state.zfs_arc_cache =
-                u64::from_str(size).error("failed to parse zfs_arc_cache size")?;
+            mem_state.zfs_arc_cache = size.parse().error("failed to parse zfs_arc_cache size")?;
         }
 
         Ok(mem_state)
