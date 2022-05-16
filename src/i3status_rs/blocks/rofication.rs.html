@@ -212,7 +212,7 @@
         .<span class="kw">await</span>
         .<span class="ident">error</span>(<span class="string">&quot;Failed to write to socket&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">responce</span> <span class="op">=</span> <span class="ident">StdString::new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">responce</span> <span class="op">=</span> <span class="ident">String::new</span>();
     <span class="ident">stream</span>
         .<span class="ident">read_to_string</span>(<span class="kw-2">&amp;mut</span> <span class="ident">responce</span>)
         .<span class="kw">await</span>

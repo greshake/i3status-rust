@@ -257,7 +257,7 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">unit</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">value</span>;
 
-<span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
+<span class="kw">use</span> <span class="ident">std::borrow::Cow</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 <span class="kw">use</span> <span class="ident">std::ops::Deref</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
@@ -267,7 +267,7 @@
 <span class="kw">use</span> <span class="ident">template::FormatTemplate</span>;
 <span class="kw">use</span> <span class="ident">value::Value</span>;
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Values</span> <span class="op">=</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Value</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Values</span> <span class="op">=</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Cow</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">str</span><span class="op">&gt;</span>, <span class="ident">Value</span><span class="op">&gt;</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Format</span> {

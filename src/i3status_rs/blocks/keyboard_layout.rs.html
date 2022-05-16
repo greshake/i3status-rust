@@ -408,7 +408,7 @@
     <span class="attribute">#[<span class="ident">default</span>(<span class="number">60</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
     <span class="ident">sway_kb_identifier</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">mappings</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">StdString</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">mappings</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
@@ -481,7 +481,7 @@
             .<span class="kw">await</span>
             .<span class="ident">error</span>(<span class="string">&quot;Failed to execute setxkbmap&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span>
-            <span class="ident">StdString::from_utf8</span>(<span class="ident">output</span>.<span class="ident">stdout</span>).<span class="ident">error</span>(<span class="string">&quot;setxkbmap produced a non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
+            <span class="ident">String::from_utf8</span>(<span class="ident">output</span>.<span class="ident">stdout</span>).<span class="ident">error</span>(<span class="string">&quot;setxkbmap produced a non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">output</span>
             .<span class="ident">lines</span>()
             <span class="comment">// Find the &quot;layout:    xxxx&quot; entry.</span>
@@ -504,8 +504,8 @@
 
 <span class="kw">struct</span> <span class="ident">LocaleBus</span> {
     <span class="ident">proxy</span>: <span class="ident">LocaleBusInterfaceProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">stream1</span>: <span class="ident">zbus::PropertyStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">StdString</span><span class="op">&gt;</span>,
-    <span class="ident">stream2</span>: <span class="ident">zbus::PropertyStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">StdString</span><span class="op">&gt;</span>,
+    <span class="ident">stream1</span>: <span class="ident">zbus::PropertyStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">stream2</span>: <span class="ident">zbus::PropertyStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">String</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">LocaleBus</span> {
@@ -530,8 +530,8 @@
         <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">proxy</span>.<span class="ident">layout</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to get layout&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">variant</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">proxy</span>.<span class="ident">variant</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to get variant&quot;</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">Info</span> {
-            <span class="ident">layout</span>: <span class="ident">layout</span>.<span class="ident">into</span>(),
-            <span class="ident">variant</span>: <span class="prelude-val">Some</span>(<span class="ident">variant</span>.<span class="ident">into</span>()),
+            <span class="ident">layout</span>,
+            <span class="ident">variant</span>: <span class="prelude-val">Some</span>(<span class="ident">variant</span>),
         })
     }
 
@@ -546,7 +546,7 @@
 
 <span class="kw">struct</span> <span class="ident">Sway</span> {
     <span class="ident">events</span>: <span class="ident">swayipc_async::EventStream</span>,
-    <span class="ident">cur_layout</span>: <span class="ident">StdString</span>,
+    <span class="ident">cur_layout</span>: <span class="ident">String</span>,
     <span class="ident">kbd</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
@@ -636,10 +636,10 @@
 )]</span>
 <span class="kw">trait</span> <span class="ident">LocaleBusInterface</span> {
     <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>, <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;X11Layout&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">layout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">layout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
 
     <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>, <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;X11Variant&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">variant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">StdString</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">variant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.60.0 (7737e0b5c 2022-04-04)" ></div>

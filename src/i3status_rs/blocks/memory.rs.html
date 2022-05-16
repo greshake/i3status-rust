@@ -270,7 +270,6 @@
 <span id="265">265</span>
 <span id="266">266</span>
 <span id="267">267</span>
-<span id="268">268</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Memory and swap usage</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module keeps track of both Swap and Memory. By default, a click switches between them.</span>
@@ -326,7 +325,6 @@
 <span class="doccomment">//! - `memory_mem`</span>
 <span class="doccomment">//! - `memory_swap`</span>
 
-<span class="kw">use</span> <span class="ident">std::path::Path</span>;
 <span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
 <span class="kw">use</span> <span class="ident">tokio::fs::File</span>;
 <span class="kw">use</span> <span class="ident">tokio::io</span>::{<span class="ident">AsyncBufReadExt</span>, <span class="ident">BufReader</span>};
@@ -490,7 +488,7 @@
         );
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mem_state</span> <span class="op">=</span> <span class="ident">Memstate::default</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">StdString::new</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">String::new</span>();
 
         <span class="kw">while</span> <span class="ident">file</span>
             .<span class="ident">read_line</span>(<span class="kw-2">&amp;mut</span> <span class="ident">line</span>)
@@ -528,7 +526,7 @@
         }
 
         <span class="comment">// Read ZFS arc cache size to add to total cache size</span>
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">arcstats</span>) <span class="op">=</span> <span class="ident">read_file</span>(<span class="ident">Path::new</span>(<span class="string">&quot;/proc/spl/kstat/zfs/arcstats&quot;</span>)).<span class="kw">await</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">arcstats</span>) <span class="op">=</span> <span class="ident">read_file</span>(<span class="string">&quot;/proc/spl/kstat/zfs/arcstats&quot;</span>).<span class="kw">await</span> {
             <span class="kw">let</span> <span class="ident">size_re</span> <span class="op">=</span> <span class="macro">regex!</span>(<span class="string">r&quot;size\s+\d+\s+(\d+)&quot;</span>);
             <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">size_re</span>
                 .<span class="ident">captures</span>(<span class="kw-2">&amp;</span><span class="ident">arcstats</span>)

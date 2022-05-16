@@ -360,7 +360,7 @@
     }};
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">format_bar_graph</span>(<span class="ident">content</span>: <span class="kw-2">&amp;</span>[<span class="ident">f64</span>]) -&gt; <span class="ident">smartstring::alias::String</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">format_bar_graph</span>(<span class="ident">content</span>: <span class="kw-2">&amp;</span>[<span class="ident">f64</span>]) -&gt; <span class="ident">String</span> {
     <span class="comment">// (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements</span>
     <span class="kw">static</span> <span class="ident">BARS</span>: [<span class="ident">char</span>; <span class="number">8</span>] <span class="op">=</span> [
         <span class="string">&#39;\u{2581}&#39;</span>, <span class="string">&#39;\u{2582}&#39;</span>, <span class="string">&#39;\u{2583}&#39;</span>, <span class="string">&#39;\u{2584}&#39;</span>, <span class="string">&#39;\u{2585}&#39;</span>, <span class="string">&#39;\u{2586}&#39;</span>, <span class="string">&#39;\u{2587}&#39;</span>,

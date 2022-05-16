@@ -240,13 +240,11 @@
 <span id="235">235</span>
 <span id="236">236</span>
 <span id="237">237</span>
-<span id="238">238</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Format</span>, <span class="ident">Rendered</span>, <span class="ident">Values</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::protocol::i3bar_block::I3BarBlock</span>;
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
-<span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>;
 
 <span class="doccomment">/// State of the widget. Affects the theming.</span>
@@ -421,7 +419,7 @@
         <span class="comment">// Icon block</span>
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">icon</span>.<span class="ident">is_empty</span>() {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">template</span>.<span class="ident">clone</span>();
-            <span class="ident">data</span>.<span class="ident">full_text</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">icon</span>.<span class="ident">clone</span>().<span class="ident">into</span>();
+            <span class="ident">data</span>.<span class="ident">full_text</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">icon</span>.<span class="ident">clone</span>();
             <span class="ident">parts</span>.<span class="ident">push</span>(<span class="ident">data</span>);
         }
 
@@ -446,7 +444,7 @@
         <span class="kw">let</span> <span class="ident">full_cnt</span> <span class="op">=</span> <span class="ident">full</span>.<span class="ident">len</span>();
         <span class="ident">parts</span>.<span class="ident">extend</span>(<span class="ident">full</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">w</span>)<span class="op">|</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">template</span>.<span class="ident">clone</span>();
-            <span class="ident">data</span>.<span class="ident">full_text</span> <span class="op">=</span> <span class="ident">w</span>.<span class="ident">text</span>.<span class="ident">into</span>();
+            <span class="ident">data</span>.<span class="ident">full_text</span> <span class="op">=</span> <span class="ident">w</span>.<span class="ident">text</span>;
             <span class="kw">if</span> <span class="ident">i</span> <span class="op">+</span> <span class="number">1</span> <span class="op">==</span> <span class="ident">full_cnt</span> {
                 <span class="ident">data</span>.<span class="ident">full_text</span>.<span class="ident">push</span>(<span class="string">&#39; &#39;</span>);
             }
@@ -463,7 +461,7 @@
         <span class="ident">template</span>.<span class="ident">full_text</span> <span class="op">=</span> <span class="string">&quot;&lt;span/&gt;&quot;</span>.<span class="ident">into</span>();
         <span class="ident">parts</span>.<span class="ident">extend</span>(<span class="ident">short</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">w</span>)<span class="op">|</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">template</span>.<span class="ident">clone</span>();
-            <span class="ident">data</span>.<span class="ident">short_text</span> <span class="op">=</span> <span class="ident">w</span>.<span class="ident">text</span>.<span class="ident">into</span>();
+            <span class="ident">data</span>.<span class="ident">short_text</span> <span class="op">=</span> <span class="ident">w</span>.<span class="ident">text</span>;
             <span class="kw">if</span> <span class="ident">i</span> <span class="op">+</span> <span class="number">1</span> <span class="op">==</span> <span class="ident">short_cnt</span> {
                 <span class="ident">data</span>.<span class="ident">short_text</span>.<span class="ident">push</span>(<span class="string">&#39; &#39;</span>);
             }

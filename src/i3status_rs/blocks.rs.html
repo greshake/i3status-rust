@@ -387,7 +387,6 @@
 <span id="382">382</span>
 <span id="383">383</span>
 <span id="384">384</span>
-<span id="385">385</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
@@ -397,7 +396,6 @@
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserializer</span>};
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
 <span class="kw">use</span> <span class="ident">smallvec::SmallVec</span>;
-<span class="kw">use</span> <span class="ident">smartstring::alias::String</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>;
 <span class="kw">use</span> <span class="ident">toml::value::Table</span>;
 
@@ -408,7 +406,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::click</span>::{<span class="ident">ClickHandler</span>, <span class="ident">MouseButton</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">value::Value</span>, <span class="ident">Format</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Format</span>, <span class="ident">Values</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::widget::State</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Request</span>, <span class="ident">RequestCmd</span>};
@@ -612,7 +610,7 @@
         <span class="self">self</span>.<span class="ident">cmd_buf</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::SetTexts</span>(<span class="ident">full</span>, <span class="ident">short</span>));
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_values</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">values</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Value</span><span class="op">&gt;</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_values</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">values</span>: <span class="ident">Values</span>) {
         <span class="self">self</span>.<span class="ident">cmd_buf</span>.<span class="ident">push</span>(<span class="ident">RequestCmd::SetValues</span>(<span class="ident">values</span>));
     }
 
@@ -697,7 +695,7 @@
                     <span class="comment">// the error</span>
                     <span class="kw">loop</span> {
                         <span class="kw">if</span> <span class="ident">focused</span> {
-                            <span class="self">self</span>.<span class="ident">set_text</span>(<span class="ident">err</span>.<span class="ident">to_string</span>().<span class="ident">into</span>());
+                            <span class="self">self</span>.<span class="ident">set_text</span>(<span class="ident">err</span>.<span class="ident">to_string</span>());
                             <span class="self">self</span>.<span class="ident">set_full_screen</span>(<span class="bool-val">true</span>);
                         } <span class="kw">else</span> {
                             <span class="self">self</span>.<span class="ident">set_text</span>(

@@ -9,7 +9,9 @@
 analog to <code>std::thread::sleep</code>.</p>
 <p>No work is performed while awaiting on the sleep future to complete. <code>Sleep</code>
 operates at millisecond granularity and should not be used for tasks that
-require high-resolution timers.</p>
+require high-resolution timers. The implementation is platform specific,
+and some platforms (specifically Windows) will provide timers with a
+larger resolution than 1 ms.</p>
 <p>To run something regularly on a schedule, see <a href="crate::time::interval()"><code>interval</code></a>.</p>
 <p>The maximum duration for a sleep is 68719476734 milliseconds (approximately 2.2 years).</p>
 <h2 id="cancellation"><a href="#cancellation">Cancellation</a></h2>

@@ -244,7 +244,6 @@
 <span id="239">239</span>
 <span id="240">240</span>
 <span id="241">241</span>
-<span id="242">242</span>
 </pre><pre class="rust"><code><span class="doccomment">//! CPU statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -279,7 +278,6 @@
 <span class="doccomment">//! - `cpu_boost_on`</span>
 <span class="doccomment">//! - `cpu_boost_off`</span>
 
-<span class="kw">use</span> <span class="ident">std::path::Path</span>;
 <span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
 
 <span class="kw">use</span> <span class="ident">tokio::fs::File</span>;
@@ -399,7 +397,7 @@
         .<span class="ident">error</span>(<span class="string">&quot;failed to read /proc/cpuinfo&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">file</span>);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">StdString::new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">String::new</span>();
     <span class="kw">while</span> <span class="ident">file</span>
         .<span class="ident">read_line</span>(<span class="kw-2">&amp;mut</span> <span class="ident">line</span>)
         .<span class="kw">await</span>
@@ -456,7 +454,7 @@
         .<span class="ident">error</span>(<span class="string">&quot;failed to read /proc/stat&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">file</span>);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">StdString::new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">String::new</span>();
     <span class="kw">while</span> <span class="ident">file</span>
         .<span class="ident">read_line</span>(<span class="kw-2">&amp;mut</span> <span class="ident">line</span>)
         .<span class="kw">await</span>
@@ -479,9 +477,9 @@
 <span class="doccomment">/// Read the cpu turbo boost status from kernel sys interface</span>
 <span class="doccomment">/// or intel pstate interface</span>
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">boost_status</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">boost</span>) <span class="op">=</span> <span class="ident">read_file</span>(<span class="ident">Path::new</span>(<span class="ident">CPU_BOOST_PATH</span>)).<span class="kw">await</span> {
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">boost</span>) <span class="op">=</span> <span class="ident">read_file</span>(<span class="ident">CPU_BOOST_PATH</span>).<span class="kw">await</span> {
         <span class="prelude-val">Some</span>(<span class="ident">boost</span>.<span class="ident">starts_with</span>(<span class="string">&#39;1&#39;</span>))
-    } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">no_turbo</span>) <span class="op">=</span> <span class="ident">read_file</span>(<span class="ident">Path::new</span>(<span class="ident">CPU_NO_TURBO_PATH</span>)).<span class="kw">await</span> {
+    } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">no_turbo</span>) <span class="op">=</span> <span class="ident">read_file</span>(<span class="ident">CPU_NO_TURBO_PATH</span>).<span class="kw">await</span> {
         <span class="prelude-val">Some</span>(<span class="ident">no_turbo</span>.<span class="ident">starts_with</span>(<span class="string">&#39;0&#39;</span>))
     } <span class="kw">else</span> {
         <span class="prelude-val">None</span>

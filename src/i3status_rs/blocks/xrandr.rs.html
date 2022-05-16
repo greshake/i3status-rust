@@ -374,7 +374,7 @@
         .<span class="ident">error</span>(<span class="string">&quot;Failed to collect active xrandr monitors&quot;</span>)<span class="question-mark">?</span>
         .<span class="ident">stdout</span>;
     <span class="kw">let</span> <span class="ident">active_monitors</span> <span class="op">=</span>
-        <span class="ident">StdString::from_utf8</span>(<span class="ident">active_monitors</span>).<span class="ident">error</span>(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
+        <span class="ident">String::from_utf8</span>(<span class="ident">active_monitors</span>).<span class="ident">error</span>(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">regex</span> <span class="op">=</span> <span class="ident">active_monitors</span>
         .<span class="ident">lines</span>()
@@ -390,7 +390,7 @@
         .<span class="ident">error</span>(<span class="string">&quot;Failed to collect xrandr monitors info&quot;</span>)<span class="question-mark">?</span>
         .<span class="ident">stdout</span>;
     <span class="kw">let</span> <span class="ident">monitors_info</span> <span class="op">=</span>
-        <span class="ident">StdString::from_utf8</span>(<span class="ident">monitors_info</span>).<span class="ident">error</span>(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
+        <span class="ident">String::from_utf8</span>(<span class="ident">monitors_info</span>).<span class="ident">error</span>(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">it</span> <span class="op">=</span> <span class="ident">monitors_info</span>.<span class="ident">lines</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">line</span><span class="op">|</span> <span class="ident">regex</span>.<span class="ident">is_match</span>(<span class="ident">line</span>));
 

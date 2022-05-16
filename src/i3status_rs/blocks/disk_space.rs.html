@@ -151,12 +151,6 @@
 <span id="146">146</span>
 <span id="147">147</span>
 <span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -194,12 +188,9 @@
 <span class="doccomment">//! # Icons Used</span>
 <span class="doccomment">//! - `disk_drive`</span>
 
-<span class="kw">use</span> <span class="ident">std::path::Path</span>;
-
-<span class="kw">use</span> <span class="ident">nix::sys::statvfs::statvfs</span>;
-
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting::prefix::Prefix</span>;
+<span class="kw">use</span> <span class="ident">nix::sys::statvfs::statvfs</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
@@ -243,11 +234,8 @@
         <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
     };
 
-    <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">Path::new</span>(<span class="ident">config</span>.<span class="ident">path</span>.<span class="ident">as_str</span>());
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
-
     <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">statvfs</span> <span class="op">=</span> <span class="ident">statvfs</span>(<span class="ident">path</span>).<span class="ident">error</span>(<span class="string">&quot;failed to retrieve statvfs&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">statvfs</span> <span class="op">=</span> <span class="ident">statvfs</span>(<span class="ident">config</span>.<span class="ident">path</span>.<span class="ident">as_str</span>()).<span class="ident">error</span>(<span class="string">&quot;failed to retrieve statvfs&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">total</span> <span class="op">=</span> (<span class="ident">statvfs</span>.<span class="ident">blocks</span>() <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">*</span> (<span class="ident">statvfs</span>.<span class="ident">fragment_size</span>() <span class="kw">as</span> <span class="ident">u64</span>);
         <span class="kw">let</span> <span class="ident">used</span> <span class="op">=</span> ((<span class="ident">statvfs</span>.<span class="ident">blocks</span>() <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">-</span> (<span class="ident">statvfs</span>.<span class="ident">blocks_free</span>() <span class="kw">as</span> <span class="ident">u64</span>))
@@ -306,7 +294,7 @@
         <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; (),
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
             <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
         }
     }
