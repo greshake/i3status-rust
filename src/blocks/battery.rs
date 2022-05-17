@@ -863,7 +863,7 @@ impl Block for Battery {
                 _ => false,
             };
 
-            if status == "Full" || status == "Not charging" || capacity_is_above_full_threshold {
+            if status == "Full" || status == "Not charging" || status == "Unknown" || capacity_is_above_full_threshold {
                 self.output.set_icon("bat_full")?;
                 self.output.set_texts(self.full_format.render(&values)?);
                 self.output.set_state(State::Good);
