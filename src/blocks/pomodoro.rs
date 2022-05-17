@@ -67,14 +67,15 @@ struct PomodoroConfig {
 }
 
 struct Block {
+    widget: Widget,
     api: CommonApi,
     block_config: PomodoroConfig,
 }
 
 impl Block {
     async fn set_text(&mut self, text: String) -> Result<()> {
-        self.api.set_text(text);
-        self.api.flush().await
+        self.widget.set_text(text);
+        self.api.set_widget(&self.widget).await
     }
 
     async fn wait_for_click(&mut self, button: MouseButton) {
@@ -121,7 +122,7 @@ impl Block {
     ) -> Result<()> {
         for pomodoro in 0..pomodoros {
             // Task timer
-            self.api.set_state(State::Idle);
+            self.widget.state = State::Idle;
             let timer = Instant::now();
             loop {
                 let elapsed = timer.elapsed();
@@ -150,7 +151,7 @@ impl Block {
             }
 
             // Show break message
-            self.api.set_state(State::Good);
+            self.widget.state = State::Good;
             self.set_text(self.block_config.message.clone()).await?;
             if let Some(cmd) = &self.block_config.notify_cmd {
                 let cmd = cmd.replace("{msg}", &self.block_config.message);
@@ -192,7 +193,7 @@ impl Block {
             }
 
             // Show task message
-            self.api.set_state(State::Good);
+            self.widget.state = State::Good;
             self.set_text(self.block_config.break_message.clone())
                 .await?;
             if let Some(cmd) = &self.block_config.notify_cmd {
@@ -214,14 +215,17 @@ impl Block {
     }
 }
 
-pub async fn run(block_config: toml::Value, mut api: CommonApi) -> Result<()> {
+pub async fn run(block_config: toml::Value, api: CommonApi) -> Result<()> {
     let block_config = PomodoroConfig::deserialize(block_config).config_error()?;
-    api.set_icon("pomodoro")?;
-    let mut block = Block { api, block_config };
+    let mut block = Block {
+        widget: api.new_widget().with_icon("pomodoro")?,
+        api,
+        block_config,
+    };
 
     loop {
         // Send collaped block
-        block.api.set_state(State::Idle);
+        block.widget.state = State::Idle;
         block.set_text(String::new()).await?;
 
         // Wait for left click

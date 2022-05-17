@@ -45,7 +45,7 @@ struct TimeConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TimeConfig::deserialize(config).config_error()?;
-    api.set_icon("time")?;
+    let mut widget = api.new_widget().with_icon("time")?;
 
     let /*mut*/ format = config.format.full.as_deref().unwrap_or("%a %d/%m %R");
     let /*mut*/ format_short = config.format.short.as_deref();
@@ -81,11 +81,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let short_time = format_short.map(|f| get_time(f, timezone, locale));
 
         if let Some(short) = short_time {
-            api.set_texts(full_time, short);
+            widget.set_texts(full_time, short);
         } else {
-            api.set_text(full_time);
+            widget.set_text(full_time);
         }
-        api.flush().await?;
+
+        api.set_widget(&widget).await?;
 
         select! {
             _ = timer.tick() => (),
@@ -101,15 +102,10 @@ fn get_time(format: &str, timezone: Option<Tz>, locale: Option<Locale>) -> Strin
                 .with_timezone(&tz)
                 .format_localized(format, locale)
                 .to_string(),
-            None => Local::now()
-                .format_localized(format, locale)
-                .to_string(),
+            None => Local::now().format_localized(format, locale).to_string(),
         },
         None => match timezone {
-            Some(tz) => Utc::now()
-                .with_timezone(&tz)
-                .format(format)
-                .to_string(),
+            Some(tz) => Utc::now().with_timezone(&tz).format(format).to_string(),
             None => Local::now().format(format).to_string(),
         },
     }

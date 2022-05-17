@@ -83,6 +83,7 @@ struct MemoryConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = MemoryConfig::deserialize(config).config_error()?;
+    let mut widget = api.new_widget();
 
     let format_mem = config.format_mem.with_default(
         "$mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2))",
@@ -95,15 +96,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut memtype = config.display_type;
     let mut format = match memtype {
         Memtype::Memory => {
-            api.set_icon("memory_mem")?;
+            widget.set_icon("memory_mem")?;
             &format_mem
         }
         Memtype::Swap => {
-            api.set_icon("memory_swap")?;
+            widget.set_icon("memory_swap")?;
             &format_swap
         }
     };
-    api.set_format(format.clone());
+    widget.set_format(format.clone());
 
     let mut timer = config.interval.timer();
 
@@ -121,7 +122,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let mem_used = mem_total_used - (buffers + cached);
         let mem_avail = mem_total - mem_used;
 
-        let values = map!(
+        widget.set_values(map! {
             "mem_total" => Value::bytes(mem_total),
             "mem_free" => Value::bytes(mem_free),
             "mem_free_percents" => Value::percents(mem_free / mem_total * 100.),
@@ -140,10 +141,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "buffers_percent" => Value::percents(buffers / mem_total * 100.),
             "cached" => Value::bytes(cached),
             "cached_percent" => Value::percents(cached / mem_total * 100.),
-        );
-        api.set_values(values);
+        });
 
-        api.set_state(match memtype {
+        widget.state = match memtype {
             Memtype::Memory => match mem_used / mem_total * 100. {
                 x if x > config.critical_mem => State::Critical,
                 x if x > config.warning_mem => State::Warning,
@@ -154,9 +154,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 x if x > config.warning_swap => State::Warning,
                 _ => State::Idle,
             },
-        });
+        };
 
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         loop {
             select! {
@@ -169,15 +169,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                                 Memtype::Swap => {
                                     format = &format_mem;
                                     memtype = Memtype::Memory;
-                                    api.set_icon("memory_mem")?;
+                                    widget.set_icon("memory_mem")?;
                                 }
                                 Memtype::Memory => {
                                     format = &format_swap;
                                     memtype = Memtype::Swap;
-                                    api.set_icon("memory_swap")?;
+                                    widget.set_icon("memory_swap")?;
                                 }
                             }
-                            api.set_format(format.clone());
+                            widget.set_format(format.clone());
                             break;
                         }
                     }

@@ -47,8 +47,10 @@ struct LoadConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = LoadConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$1m")?);
-    api.set_icon("cogs")?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("cogs")?
+        .with_format(config.format.with_default("$1m")?);
 
     // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
     let logical_cores = util::read_file("/proc/cpuinfo")
@@ -76,19 +78,18 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .and_then(|x| x.parse().ok())
             .error("bad /proc/loadavg file")?;
 
-        api.set_state(match m1 / logical_cores as f64 {
+        widget.state = match m1 / logical_cores as f64 {
             x if x > config.critical => State::Critical,
             x if x > config.warning => State::Warning,
             x if x > config.info => State::Info,
             _ => State::Idle,
-        });
-        api.set_values(map! {
+        };
+        widget.set_values(map! {
             "1m" => Value::number(m1),
             "5m" => Value::number(m5),
             "15m" => Value::number(m15),
         });
-
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

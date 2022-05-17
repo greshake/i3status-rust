@@ -52,23 +52,24 @@ enum DriverType {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NotifyConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("")?);
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("")?);
 
-    let dbus_conn = api.get_dbus_connection().await?;
     let mut driver: Box<dyn Driver + Send + Sync> = match config.driver {
-        DriverType::Dunst => Box::new(MakoDriver::new(&dbus_conn).await?),
+        DriverType::Dunst => Box::new(MakoDriver::new().await?),
     };
 
     loop {
         let is_paused = driver.is_paused().await?;
 
-        api.set_icon(if is_paused { ICON_OFF } else { ICON_ON })?;
-        api.set_values(if is_paused {
+        widget.set_icon(if is_paused { ICON_OFF } else { ICON_ON })?;
+        widget.set_values(if is_paused {
             map!("paused" => Value::flag())
         } else {
             default()
         });
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         loop {
             select! {
@@ -96,14 +97,15 @@ trait Driver {
     async fn wait_for_change(&mut self) -> Result<()>;
 }
 
-struct MakoDriver<'a> {
-    proxy: DunstDbusProxy<'a>,
+struct MakoDriver {
+    proxy: DunstDbusProxy<'static>,
     changes: PropertyStream<'static, bool>,
 }
 
-impl<'a> MakoDriver<'a> {
-    async fn new(dbus_conn: &zbus::Connection) -> Result<MakoDriver<'a>> {
-        let proxy = DunstDbusProxy::new(dbus_conn)
+impl MakoDriver {
+    async fn new() -> Result<Self> {
+        let dbus_conn = new_dbus_connection().await?;
+        let proxy = DunstDbusProxy::new(&dbus_conn)
             .await
             .error("Failed to create DunstDbusProxy")?;
         Ok(Self {
@@ -114,7 +116,7 @@ impl<'a> MakoDriver<'a> {
 }
 
 #[async_trait]
-impl<'a> Driver for MakoDriver<'a> {
+impl Driver for MakoDriver {
     async fn is_paused(&self) -> Result<bool> {
         self.proxy.paused().await.error("Failed to get 'paused'")
     }

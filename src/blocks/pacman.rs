@@ -121,7 +121,7 @@ struct PacmanConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = PacmanConfig::deserialize(config).config_error()?;
-    api.set_icon("update")?;
+    let mut widget = api.new_widget().with_icon("update")?;
 
     let format = config.format.with_default("$pacman.eng(1)")?;
     let format_singular = config.format_singular.with_default("$pacman.eng(1)")?;
@@ -159,20 +159,18 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         check_fakeroot_command_exists().await?;
     }
 
-    let warning_updates_regex = match config.warning_updates_regex {
-        None => None, // no regex configured
-        Some(regex_str) => {
-            let regex = Regex::new(&regex_str).error("invalid warning updates regex")?;
-            Some(regex)
-        }
-    };
-    let critical_updates_regex = match config.critical_updates_regex {
-        None => None, // no regex configured
-        Some(regex_str) => {
-            let regex = Regex::new(&regex_str).error("invalid critical updates regex")?;
-            Some(regex)
-        }
-    };
+    let warning_updates_regex = config
+        .warning_updates_regex
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error("invalid warning updates regex")?;
+    let critical_updates_regex = config
+        .critical_updates_regex
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error("invalid critical updates regex")?;
 
     loop {
         let (values, warning, critical, total) = match &watched {
@@ -237,17 +235,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         if total == 0 && config.hide_when_uptodate {
-            api.hide();
+            api.hide().await?;
         } else {
-            api.show();
-
-            match total {
-                0 => api.set_format(format_up_to_date.clone()),
-                1 => api.set_format(format_singular.clone()),
-                _ => api.set_format(format.clone()),
-            }
-            api.set_values(values);
-            api.set_state(match total {
+            widget.set_format(match total {
+                0 => format_up_to_date.clone(),
+                1 => format_singular.clone(),
+                _ => format.clone(),
+            });
+            widget.set_values(values);
+            widget.state = match total {
                 0 => State::Idle,
                 _ => {
                     if critical {
@@ -258,10 +254,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         State::Info
                     }
                 }
-            });
+            };
+            api.set_widget(&widget).await?;
         }
-
-        api.flush().await?;
 
         loop {
             select! {

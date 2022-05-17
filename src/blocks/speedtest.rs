@@ -44,7 +44,9 @@ struct SpeedtestConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = SpeedtestConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$ping$speed_down$speed_up")?);
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("$ping$speed_down$speed_up")?);
 
     let icon_ping = api.get_icon("ping")?;
     let icon_down = api.get_icon("net_down")?;
@@ -64,12 +66,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let output: SpeedtestCliOutput =
             serde_json::from_str(output).error("'speedtest-cli' produced wrong JSON")?;
 
-        api.set_values(map! {
+        widget.set_values(map! {
             "ping" => Value::seconds(output.ping * 1e-3).with_icon(icon_ping.clone()),
             "speed_down" => Value::bits(output.download).with_icon(icon_down.clone()),
             "speed_up" => Value::bits(output.upload).with_icon(icon_up.clone()),
         });
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

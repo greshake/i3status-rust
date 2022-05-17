@@ -113,31 +113,30 @@ async fn update_bar(
     hide_when_empty: bool,
     json: bool,
     api: &mut CommonApi,
+    widget: &mut Widget,
 ) -> Result<()> {
     if stdout.is_empty() && hide_when_empty {
-        api.hide();
+        api.hide().await
     } else if json {
         let input: Input = serde_json::from_str(stdout).error("invalid JSON")?;
 
-        api.show();
-        api.set_icon(&input.icon)?;
-        api.set_state(input.state);
+        widget.set_icon(&input.icon)?;
+        widget.state = input.state;
         if let Some(short) = input.short_text {
-            api.set_texts(input.text, short);
+            widget.set_texts(input.text, short);
         } else {
-            api.set_text(input.text);
+            widget.set_text(input.text);
         }
+        api.set_widget(widget).await
     } else {
-        api.show();
-        api.set_text(stdout.into());
-    };
-    api.flush().await?;
-
-    Ok(())
+        widget.set_text(stdout.into());
+        api.set_widget(widget).await
+    }
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = CustomConfig::deserialize(config).config_error()?;
+    let mut widget = api.new_widget();
 
     type TimerStream = Pin<Box<dyn Stream<Item = Instant> + Send + Sync>>;
     let mut timer: TimerStream = match config.interval {
@@ -206,7 +205,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             select! {
                 line = reader.next_line() => {
                     let line = line.error("error reading line from child process")?.error("child process exited unexpectedly")?;
-                    update_bar(&line, config.hide_when_empty, config.json, &mut api).await?;
+                    update_bar(&line, config.hide_when_empty, config.json, &mut api, &mut widget).await?;
                 }
                 // events must be polled
                 _ = api.event() => (),
@@ -224,7 +223,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 .error("the output of command is invalid UTF-8")?
                 .trim();
 
-            update_bar(stdout, config.hide_when_empty, config.json, &mut api).await?;
+            update_bar(
+                stdout,
+                config.hide_when_empty,
+                config.json,
+                &mut api,
+                &mut widget,
+            )
+            .await?;
 
             if config.interval == OnceDuration::Once && config.watch_files.is_empty() {
                 return Ok(());

@@ -77,6 +77,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-once-cell"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b69b5eea5434e0e63be3bc96b067f5f9d54c21d3c26f2b1d8d15ff8df19c931"
+
+[[package]]
 name = "async-pidfd"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -756,6 +762,7 @@ dependencies = [
 name = "i3status-rs"
 version = "0.30.0"
 dependencies = [
+ "async-once-cell",
  "async-trait",
  "chrono",
  "chrono-tz",
@@ -782,7 +789,6 @@ dependencies = [
  "shellexpand",
  "signal-hook",
  "signal-hook-tokio",
- "smallvec",
  "smart-default",
  "swayipc-async",
  "tokio",

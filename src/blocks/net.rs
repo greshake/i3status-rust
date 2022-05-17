@@ -57,6 +57,7 @@ struct NetConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NetConfig::deserialize(config).config_error()?;
+
     let mut format = config
         .format
         .with_default("$speed_down.eng(3,B,K)$speed_up.eng(3,B,K)")?;
@@ -64,8 +65,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         Some(f) => Some(f.with_default("")?),
         None => None,
     };
-    api.set_format(format.clone());
 
+    let mut widget = api.new_widget().with_format(format.clone());
     let mut timer = config.interval.timer();
 
     // Stats
@@ -113,16 +114,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
             "device" => Value::text(device.interface),
         };
-        wifi.0
-            .map(|s| values.insert("ssid".into(), Value::text(s)));
+        wifi.0.map(|s| values.insert("ssid".into(), Value::text(s)));
         wifi.1
             .map(|f| values.insert("frequency".into(), Value::hertz(f)));
         wifi.2
             .map(|s| values.insert("signal".into(), Value::percents(s)));
 
-        api.set_values(values);
-        api.set_icon(device.icon)?;
-        api.flush().await?;
+        widget.set_values(values);
+        widget.set_icon(device.icon)?;
+        api.set_widget(&widget).await?;
 
         loop {
             select! {
@@ -133,7 +133,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         if click.button == MouseButton::Left {
                             if let Some(ref mut format_alt) = format_alt {
                                 std::mem::swap(format_alt, &mut format);
-                                api.set_format(format.clone());
+                                widget.set_format(format.clone());
                                 break;
                             }
                         }

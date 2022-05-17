@@ -97,8 +97,10 @@ impl TemperatureScale {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TemperatureConfig::deserialize(config).config_error()?;
     let mut collapsed = config.collapsed;
-    api.set_format(config.format.with_default("$average avg, $max max")?);
-    api.set_icon("thermometer")?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("thermometer")?
+        .with_format(config.format.with_default("$average avg, $max max")?);
 
     let good = config
         .good
@@ -170,26 +172,26 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .unwrap_or(0.0);
         let avg_temp = temp.iter().sum::<f64>() / temp.len() as f64;
 
-        api.set_state(match max_temp {
+        widget.state = match max_temp {
             x if x <= good => State::Good,
             x if x <= idle => State::Idle,
             x if x <= info => State::Info,
             x if x <= warn => State::Warning,
             _ => State::Critical,
-        });
+        };
 
         'outer: loop {
             if collapsed {
-                api.set_values(default());
+                widget.set_values(default());
             } else {
-                api.set_values(map! {
+                widget.set_values(map! {
                     "average" => Value::degrees(avg_temp),
                     "min" => Value::degrees(min_temp),
                     "max" => Value::degrees(max_temp),
                 });
             }
 
-            api.flush().await?;
+            api.set_widget(&widget).await?;
 
             loop {
                 select! {

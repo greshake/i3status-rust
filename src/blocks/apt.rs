@@ -64,26 +64,24 @@ struct AptConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = AptConfig::deserialize(config).config_error()?;
-    api.set_icon("update")?;
+    let mut widget = api.new_widget().with_icon("update")?;
 
     let format = config.format.with_default("$count.eng(1)")?;
     let format_singular = config.format_singular.with_default("$count.eng(1)")?;
     let format_up_to_date = config.format_up_to_date.with_default("$count.eng(1)")?;
 
-    let warning_updates_regex = match config.warning_updates_regex {
-        None => None,
-        Some(regex_str) => {
-            let regex = Regex::new(&regex_str).error("invalid warning updates regex")?;
-            Some(regex)
-        }
-    };
-    let critical_updates_regex = match config.critical_updates_regex {
-        None => None,
-        Some(regex_str) => {
-            let regex = Regex::new(&regex_str).error("invalid critical updates regex")?;
-            Some(regex)
-        }
-    };
+    let warning_updates_regex = config
+        .warning_updates_regex
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error("invalid warning updates regex")?;
+    let critical_updates_regex = config
+        .critical_updates_regex
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error("invalid critical updates regex")?;
 
     let mut cache_dir = env::temp_dir();
     cache_dir.push("i3rs-apt");
@@ -117,16 +115,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let count = get_update_count(&updates);
 
         if count == 0 && config.hide_when_uptodate {
-            api.hide();
+            api.hide().await?;
         } else {
-            api.show();
-
-            match count {
-                0 => api.set_format(format_up_to_date.clone()),
-                1 => api.set_format(format_singular.clone()),
-                _ => api.set_format(format.clone()),
-            }
-            api.set_values(map!("count" => Value::number(count)));
+            widget.set_format(match count {
+                0 => format_up_to_date.clone(),
+                1 => format_singular.clone(),
+                _ => format.clone(),
+            });
+            widget.set_values(map!("count" => Value::number(count)));
 
             let warning = warning_updates_regex
                 .as_ref()
@@ -134,7 +130,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             let critical = critical_updates_regex
                 .as_ref()
                 .map_or(false, |regex| has_matching_update(&updates, regex));
-            api.set_state(match count {
+            widget.state = match count {
                 0 => State::Idle,
                 _ => {
                     if critical {
@@ -145,10 +141,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         State::Info
                     }
                 }
-            });
-        }
+            };
 
-        api.flush().await?;
+            api.set_widget(&widget).await?;
+        }
 
         loop {
             select! {

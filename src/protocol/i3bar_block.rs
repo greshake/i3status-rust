@@ -1,4 +1,3 @@
-// use crate::escape::JsonStr;
 use crate::themes::Color;
 use serde::Serialize;
 

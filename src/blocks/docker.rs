@@ -45,21 +45,23 @@ struct DockerConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = DockerConfig::deserialize(config).config_error()?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("docker")?
+        .with_format(config.format.with_default("$running.eng(1)")?);
     let socket_path = config.socket_path.expand()?;
-
-    api.set_format(config.format.with_default("$running.eng(1)")?);
-    api.set_icon("docker")?;
 
     loop {
         let status = api.recoverable(|| Status::new(&*socket_path), "X").await?;
-        api.set_values(map! {
+
+        widget.set_values(map! {
             "total" =>   Value::number(status.total),
             "running" => Value::number(status.running),
             "paused" =>  Value::number(status.paused),
             "stopped" => Value::number(status.stopped),
             "images" =>  Value::number(status.images),
         });
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

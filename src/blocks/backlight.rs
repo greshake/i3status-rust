@@ -124,10 +124,12 @@ struct BacklightConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let dbus_conn = api.get_system_dbus_connection().await?;
-
     let config = BacklightConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$brightness")?);
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("$brightness")?);
+
+    let dbus_conn = new_system_dbus_connection().await?;
 
     let mut cycle = config
         .cycle
@@ -156,14 +158,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let brightness = device.brightness().await?;
         let mut icon_index = (usize::from(brightness) * BACKLIGHT_ICONS.len()) / 101;
         if config.invert_icons {
+            // FIXME
             icon_index = BACKLIGHT_ICONS.len() - icon_index;
         }
 
-        api.set_icon(BACKLIGHT_ICONS[icon_index])?;
-        api.set_values(map! {
-            "brightness" => Value::percents(brightness as i64),
-        });
-        api.flush().await?;
+        widget.set_icon(BACKLIGHT_ICONS[icon_index])?;
+        widget.set_values(map! { "brightness" => Value::percents(brightness) });
+        api.set_widget(&widget).await?;
 
         select! {
             _ = file_changes.next() => (),

@@ -42,6 +42,8 @@ struct WatsonConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = WatsonConfig::deserialize(config).config_error()?;
+    let mut widget = api.new_widget();
+
     let mut show_time = config.show_time;
 
     let (state_dir, state_file, state_path) = match config.state_path {
@@ -80,28 +82,28 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let state = serde_json::from_str(&state).error("Fnable to deserialize state")?;
         match state {
             state @ WatsonState::Active { .. } => {
-                api.set_state(State::Good);
-                api.set_text(state.format(show_time, "started", format_delta_past));
+                widget.state = State::Good;
+                widget.set_text(state.format(show_time, "started", format_delta_past));
                 prev_state = Some(state);
             }
             WatsonState::Idle {} => {
                 if let Some(prev @ WatsonState::Active { .. }) = &prev_state {
                     // The previous state was active, which means that we just now stopped the time
                     // tracking. This means that we could show some statistics.
-                    api.set_text(prev.format(true, "stopped", format_delta_after));
-                    api.set_state(State::Idle {});
+                    widget.state = State::Idle;
+                    widget.set_text(prev.format(true, "stopped", format_delta_after));
                 } else {
                     // File is empty which means that there is currently no active time tracking,
                     // and the previous state wasn't time tracking neither so we reset the
                     // contents.
-                    api.set_state(State::Idle {});
-                    api.set_text(String::new());
+                    widget.state = State::Idle;
+                    widget.set_text(String::new());
                 }
                 prev_state = Some(state);
             }
         }
 
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         loop {
             select! {

@@ -99,13 +99,13 @@ enum KeyboardLayoutDriver {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = KeyboardLayoutConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$layout")?);
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("$layout")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap(config.interval)),
-        KeyboardLayoutDriver::LocaleBus => {
-            Box::new(LocaleBus::new(api.get_system_dbus_connection().await?).await?)
-        }
+        KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
         KeyboardLayoutDriver::KbddBus => return Err(Error::new("KbddBus is not implemented")),
         KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
     };
@@ -123,7 +123,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
         }
 
-        api.set_values(map! {
+        widget.set_values(map! {
             "layout" => Value::text(layout),
             "variant" => Value::text(variant),
         });
@@ -185,7 +185,8 @@ struct LocaleBus {
 }
 
 impl LocaleBus {
-    async fn new(conn: zbus::Connection) -> Result<Self> {
+    async fn new() -> Result<Self> {
+        let conn = new_system_dbus_connection().await?;
         let proxy = LocaleBusInterfaceProxy::new(&conn)
             .await
             .error("Failed to create LocaleBusProxy")?;

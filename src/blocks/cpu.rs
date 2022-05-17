@@ -54,14 +54,18 @@ struct CpuConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = CpuConfig::deserialize(config).config_error()?;
+
     let mut format = config.format.with_default("$utilization")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
     };
-    api.set_format(format.clone());
 
-    api.set_icon("cpu")?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("cpu")?
+        .with_format(format.clone());
+
     let boost_icon_on = api.get_icon("cpu_boost_on")?;
     let boost_icon_off = api.get_icon("cpu_boost_off")?;
 
@@ -116,14 +120,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             );
         }
 
-        api.set_values(values);
-        api.set_state(match utilization_avg {
+        widget.set_values(values);
+        widget.state = match utilization_avg {
             x if x > 0.9 => State::Critical,
             x if x > 0.6 => State::Warning,
             x if x > 0.3 => State::Info,
             _ => State::Idle,
-        });
-        api.flush().await?;
+        };
+        api.set_widget(&widget).await?;
 
         loop {
             select! {
@@ -132,7 +136,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     if click.button == MouseButton::Left {
                         if let Some(ref mut format_alt) = format_alt {
                             std::mem::swap(format_alt, &mut format);
-                            api.set_format(format.clone());
+                            widget.set_format(format.clone());
                             break;
                         }
                     }

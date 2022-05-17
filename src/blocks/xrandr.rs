@@ -50,29 +50,11 @@ struct XrandrConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = XrandrConfig::deserialize(config).config_error()?;
-
-    api.set_format(
+    let mut widget = api.new_widget().with_icon("xrandr")?.with_format(
         config
             .format
             .with_default("$display $brightness_icon $brightness")?,
     );
-    api.set_icon("xrandr")?;
-
-    let display = |monitor: Option<&Monitor>, api: &mut CommonApi| {
-        if let Some(mon) = monitor {
-            api.set_values(map! {
-                "display" => Value::text(mon.name.clone()),
-                "brightness" => Value::percents(mon.brightness),
-                //TODO: change `brightness_icon` based on `brightness`
-                "brightness_icon" => Value::icon(api.get_icon("backlight_full")?),
-                "resolution" => Value::text(mon.resolution.clone()),
-                "res_icon" => Value::icon(api.get_icon("resolution")?),
-            });
-        } else {
-            api.set_values(default());
-        }
-        Ok(())
-    };
 
     let mut cur_indx = 0;
     let mut timer = config.interval.timer();
@@ -83,10 +65,21 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             cur_indx = 0;
         }
 
-        display(monitors.get(cur_indx), &mut api)?;
-        api.flush().await?;
-
         loop {
+            widget.set_values(if let Some(mon) = monitors.get(cur_indx) {
+                map! {
+                    "display" => Value::text(mon.name.clone()),
+                    "brightness" => Value::percents(mon.brightness),
+                    //TODO: change `brightness_icon` based on `brightness`
+                    "brightness_icon" => Value::icon(api.get_icon("backlight_full")?),
+                    "resolution" => Value::text(mon.resolution.clone()),
+                    "res_icon" => Value::icon(api.get_icon("resolution")?),
+                }
+            } else {
+                default()
+            });
+            api.set_widget(&widget).await?;
+
             select! {
                 _ = timer.tick() => break,
                 event = api.event() => match event {
@@ -113,8 +106,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                             }
                             _ => (),
                         }
-                        display(monitors.get(cur_indx), &mut api)?;
-                        api.flush().await?;
                     }
                 }
             }

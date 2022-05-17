@@ -58,24 +58,22 @@ struct NotmuchConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut events = api.get_events().await?;
     let config = NotmuchConfig::deserialize(config).config_error()?;
-    api.set_icon("mail")?;
+    let mut widget = api.new_widget().with_icon("mail")?;
 
     let db = config.maildir.expand()?;
     let mut timer = config.interval.timer();
 
     loop {
-        // TODO: spawn_blocking
+        // TODO: spawn_blocking?
         let count = run_query(&db, &config.query).error("Failed to get count")?;
 
-        let text = match &config.name {
-            Some(s) => format!("{}:{}", s, count),
-            None => format!("{}", count),
-        };
-        api.set_text(text.into());
+        widget.set_text(match &config.name {
+            Some(s) => format!("{s}:{count}"),
+            None => format!("{count}"),
+        });
 
-        api.set_state(if count >= config.threshold_critical {
+        widget.state = if count >= config.threshold_critical {
             State::Critical
         } else if count >= config.threshold_warning {
             State::Warning
@@ -85,9 +83,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             State::Info
         } else {
             State::Idle
-        });
+        };
 
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         loop {
             tokio::select! {

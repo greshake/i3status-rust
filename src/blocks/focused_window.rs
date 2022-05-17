@@ -56,7 +56,9 @@ enum Driver {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = FocusedWindowConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$title.rot-str(15)|")?);
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("$title.rot-str(15)|")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         Driver::Auto => match SwayIpc::new().await {
@@ -73,16 +75,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             info = backend.get_info() => {
                 let Info { title, marks } = info?;
                 if !title.is_empty() || !config.autohide {
-                    api.set_values(map! {
+                    widget.set_values(map! {
                         "title" => Value::text(title.clone()),
                         "marks" => Value::text(marks.iter().map(|m| format!("[{m}]")).collect()),
                         "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{m}]")).collect()),
                     });
-                    api.show();
+                    api.set_widget(&widget).await?;
                 } else {
-                    api.hide();
+                    api.hide().await?;
                 }
-                api.flush().await?;
             }
         }
     }

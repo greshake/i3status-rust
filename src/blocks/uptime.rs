@@ -35,7 +35,7 @@ struct UptimeConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = UptimeConfig::deserialize(config).config_error()?;
-    api.set_icon("uptime")?;
+    let mut widget = api.new_widget().with_icon("uptime")?;
 
     loop {
         let uptime = read_to_string("/proc/uptime")
@@ -66,8 +66,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             format!("{minutes}m {seconds}s")
         };
 
-        api.set_text(text);
-        api.flush().await?;
+        widget.set_text(text);
+        api.set_widget(&widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

@@ -138,56 +138,54 @@ impl WeatherService {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = WeatherConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$weather $temp")?);
-    let mut timer = config.interval.timer();
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("$weather $temp")?);
 
     loop {
-        if let Ok(data) = config.service.get(config.autolocate).await {
-            let apparent_temp = australian_apparent_temp(
-                data.main.temp,
-                data.main.humidity,
-                data.wind.speed,
-                config.service.units(),
-            );
+        let data = api
+            .recoverable(|| config.service.get(config.autolocate), "X")
+            .await?;
 
-            let kmh_wind_speed = data.wind.speed
-                * 3.6
-                * match config.service.units() {
-                    UnitSystem::Metric => 1.0,
-                    UnitSystem::Imperial => 0.447,
-                };
+        let apparent_temp = australian_apparent_temp(
+            data.main.temp,
+            data.main.humidity,
+            data.wind.speed,
+            config.service.units(),
+        );
 
-            let keys = map! {
-                "location" => Value::text(data.name),
-                "temp" => Value::degrees(data.main.temp),
-                "apparent" => Value::degrees(apparent_temp),
-                "humidity" => Value::percents(data.main.humidity),
-                "weather" => Value::text(data.weather[0].main.clone()),
-                "weather_verbose" => Value::text(data.weather[0].description.clone()),
-                "wind" => Value::number(data.wind.speed),
-                "wind_kmh" => Value::number(kmh_wind_speed),
-                "direction" => Value::text(convert_wind_direction(data.wind.deg).into()),
+        let kmh_wind_speed = data.wind.speed
+            * 3.6
+            * match config.service.units() {
+                UnitSystem::Metric => 1.0,
+                UnitSystem::Imperial => 0.447,
             };
 
-            let icon = match data.weather[0].main.as_str() {
-                "Clear" => "weather_sun",
-                "Rain" | "Drizzle" => "weather_rain",
-                "Clouds" | "Fog" | "Mist" => "weather_clouds",
-                "Thunderstorm" => "weather_thunder",
-                "Snow" => "weather_snow",
-                _ => "weather_default",
-            };
+        widget.set_values(map! {
+            "location" => Value::text(data.name),
+            "temp" => Value::degrees(data.main.temp),
+            "apparent" => Value::degrees(apparent_temp),
+            "humidity" => Value::percents(data.main.humidity),
+            "weather" => Value::text(data.weather[0].main.clone()),
+            "weather_verbose" => Value::text(data.weather[0].description.clone()),
+            "wind" => Value::number(data.wind.speed),
+            "wind_kmh" => Value::number(kmh_wind_speed),
+            "direction" => Value::text(convert_wind_direction(data.wind.deg).into()),
+        });
 
-            api.set_icon(icon)?;
-            api.set_values(keys);
-        } else {
-            api.set_text("X".into());
-        }
+        widget.set_icon(match data.weather[0].main.as_str() {
+            "Clear" => "weather_sun",
+            "Rain" | "Drizzle" => "weather_rain",
+            "Clouds" | "Fog" | "Mist" => "weather_clouds",
+            "Thunderstorm" => "weather_thunder",
+            "Snow" => "weather_snow",
+            _ => "weather_default",
+        })?;
 
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         select! {
-            _ = timer.tick() => (),
+            _ = sleep(config.interval.0) => (),
             UpdateRequest = api.event() => (),
         }
     }

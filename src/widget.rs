@@ -3,96 +3,33 @@ use crate::errors::*;
 use crate::formatting::{Format, Rendered, Values};
 use crate::protocol::i3bar_block::I3BarBlock;
 use serde::Deserialize;
-use tokio::sync::mpsc;
 
-/// State of the widget. Affects the theming.
-#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
-pub enum State {
-    Idle,
-    Info,
-    Good,
-    Warning,
-    Critical,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self::Idle
-    }
-}
-
-/// The source of text for widget
-#[derive(Debug)]
-enum Source {
-    /// Collapsed widget (only icon will be displayed)
-    None,
-    /// Simple text
-    Text(String),
-    /// Full and short texts
-    TextWithShort(String, String),
-    /// A format template
-    Format(Format, Option<Values>),
-}
-
-impl Source {
-    fn render(&self) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
-        match self {
-            Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
-            Self::TextWithShort(full, short) => {
-                Ok((vec![full.clone().into()], vec![short.clone().into()]))
-            }
-            Self::Format(format, Some(values)) => format.render(values),
-            Self::None | Self::Format(_, None) => Ok((vec![], vec![])),
-        }
-    }
-
-    fn notify(&self, widget: &Widget) {
-        if let Some(tx) = &widget.widget_updates_sender {
-            let intervals = match self {
-                Self::Format(f, _) => f.intervals(),
-                _ => Vec::new(),
-            };
-            tx.send((widget.id, intervals)).unwrap();
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Widget {
-    id: usize,
     pub icon: String,
     pub shared_config: SharedConfig,
     pub state: State,
-
-    widget_updates_sender: Option<mpsc::UnboundedSender<(usize, Vec<u64>)>>,
+    pub full_screen: bool,
 
     inner: I3BarBlock,
     source: Source,
-    backup: Option<(Source, State)>,
 }
 
 impl Widget {
-    pub fn new(
-        id: usize,
-        shared_config: SharedConfig,
-        widget_updates_sender: Option<mpsc::UnboundedSender<(usize, Vec<u64>)>>,
-    ) -> Self {
+    pub fn new(id: usize, shared_config: SharedConfig) -> Self {
         let inner = I3BarBlock {
             name: Some(id.to_string()),
             ..I3BarBlock::default()
         };
 
         Widget {
-            id,
             icon: String::new(),
             shared_config,
             state: State::Idle,
-
-            widget_updates_sender,
+            full_screen: false,
 
             inner,
             source: Source::Text(String::new()),
-            backup: None,
         }
     }
 
@@ -105,8 +42,18 @@ impl Widget {
         self
     }
 
+    pub fn with_icon(mut self, icon: &str) -> Result<Self> {
+        self.icon = self.shared_config.get_icon(icon)?;
+        Ok(self)
+    }
+
     pub fn with_state(mut self, state: State) -> Self {
         self.state = state;
+        self
+    }
+
+    pub fn with_format(mut self, format: Format) -> Self {
+        self.set_format(format);
         self
     }
 
@@ -120,12 +67,15 @@ impl Widget {
         } else {
             self.source = Source::Text(text);
         }
-        self.source.notify(self);
     }
 
     pub fn set_texts(&mut self, short: String, full: String) {
         self.source = Source::TextWithShort(short, full);
-        self.source.notify(self);
+    }
+
+    pub fn set_icon(&mut self, icon: &str) -> Result<()> {
+        self.icon = self.shared_config.get_icon(icon)?;
+        Ok(())
     }
 
     pub fn set_format(&mut self, format: Format) {
@@ -133,7 +83,6 @@ impl Widget {
             Source::Format(old, _) => *old = format,
             _ => self.source = Source::Format(format, None),
         }
-        self.source.notify(self);
     }
 
     pub fn set_values(&mut self, new_values: Values) {
@@ -142,24 +91,11 @@ impl Widget {
         }
     }
 
-    /*
-     * Preserve / Restore
-     */
-
-    pub fn preserve(&mut self) {
-        self.backup = Some((
-            std::mem::replace(&mut self.source, Source::Text(String::new())),
-            self.state,
-        ));
-        self.source.notify(self);
-    }
-
-    pub fn restore(&mut self) {
-        if let Some(backup) = self.backup.take() {
-            self.source = backup.0;
-            self.state = backup.1;
+    pub fn intervals(&self) -> Vec<u64> {
+        match &self.source {
+            Source::Format(f, _) => f.intervals(),
+            _ => Vec::new(),
         }
-        self.source.notify(self);
     }
 
     /// Constuct `I3BarBlock` from this widget
@@ -233,5 +169,47 @@ impl Widget {
         }));
 
         Ok(parts)
+    }
+}
+
+/// State of the widget. Affects the theming.
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+pub enum State {
+    Idle,
+    Info,
+    Good,
+    Warning,
+    Critical,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self::Idle
+    }
+}
+
+/// The source of text for widget
+#[derive(Debug, Clone)]
+enum Source {
+    /// Collapsed widget (only icon will be displayed)
+    None,
+    /// Simple text
+    Text(String),
+    /// Full and short texts
+    TextWithShort(String, String),
+    /// A format template
+    Format(Format, Option<Values>),
+}
+
+impl Source {
+    fn render(&self) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
+        match self {
+            Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
+            Self::TextWithShort(full, short) => {
+                Ok((vec![full.clone().into()], vec![short.clone().into()]))
+            }
+            Self::Format(format, Some(values)) => format.render(values),
+            Self::None | Self::Format(_, None) => Ok((vec![], vec![])),
+        }
     }
 }

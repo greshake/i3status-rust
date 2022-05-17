@@ -52,15 +52,13 @@ struct MaildirConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = MaildirConfig::deserialize(config).config_error()?;
-    api.set_icon("mail")?;
-
-    let mut timer = config.interval.timer();
+    let mut widget = api.new_widget().with_icon("mail")?;
 
     loop {
         let mut newmails = 0;
         for inbox in &config.inboxes {
             let isl: &str = &inbox[..];
-            // TODO: spawn_blocking
+            // TODO: spawn_blocking?
             let maildir = Maildir::from(isl);
             newmails += match config.display_type {
                 MailType::New => maildir.count_new(),
@@ -68,18 +66,18 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 MailType::All => maildir.count_new() + maildir.count_cur(),
             };
         }
-        let mut state = State::Idle;
-        if newmails >= config.threshold_critical {
-            state = State::Critical;
+        widget.state = if newmails >= config.threshold_critical {
+            State::Critical
         } else if newmails >= config.threshold_warning {
-            state = State::Warning;
-        }
-        api.set_state(state);
-        api.set_text(newmails.to_string().into());
-        api.flush().await?;
+            State::Warning
+        } else {
+            State::Idle
+        };
+        widget.set_text(newmails.to_string());
+        api.set_widget(&widget).await?;
 
         select! {
-            _ = timer.tick() => (),
+            _ = sleep(config.interval.0) => (),
             UpdateRequest = api.event() => (),
         }
     }

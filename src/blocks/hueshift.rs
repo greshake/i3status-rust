@@ -68,6 +68,7 @@ struct HueshiftConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = HueshiftConfig::deserialize(config).config_error()?;
+    let mut widget = api.new_widget();
 
     // limit too big steps at 500K to avoid too brutal changes
     let step = config.step.max(500);
@@ -107,8 +108,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut current_temp = config.current_temp;
 
     loop {
-        api.set_text(current_temp.to_string());
-        api.flush().await?;
+        widget.set_text(current_temp.to_string());
+        api.set_widget(&widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

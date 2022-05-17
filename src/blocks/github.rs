@@ -57,8 +57,6 @@
 //! # Icons Used
 //! - `github`
 
-use std::collections::HashMap;
-
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -77,8 +75,10 @@ struct GithubConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = GithubConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$total.eng(1)")?);
-    api.set_icon("github")?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("github")?
+        .with_format(config.format.with_default("$total.eng(1)")?);
 
     let mut interval = config.interval.timer();
     let token = match config.token {
@@ -112,13 +112,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 .into_iter()
                 .map(|(k, v)| (k.into(), Value::number(v)))
                 .collect();
-            api.set_state(state);
-            api.set_values(stats);
-            api.show();
+            widget.state = state;
+            widget.set_values(stats);
+            api.set_widget(&widget).await?;
         } else {
-            api.hide();
+            api.hide().await?;
         }
-        api.flush().await?;
 
         select! {
             _ = interval.tick() => (),

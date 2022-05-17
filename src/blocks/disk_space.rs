@@ -66,10 +66,10 @@ struct DiskSpaceConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = DiskSpaceConfig::deserialize(config).config_error()?;
-    api.set_icon("disk_drive")?;
-
-    let format = config.format.with_default("$available")?;
-    api.set_format(format);
+    let mut widget = api
+        .new_widget()
+        .with_icon("disk_drive")?
+        .with_format(config.format.with_default("$available")?);
 
     let unit = match config.alert_unit.as_deref() {
         Some("TB") => Some(Prefix::Tera),
@@ -97,14 +97,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         } as f64;
 
         let percentage = result / (total as f64) * 100.;
-        api.set_values(map!(
+        widget.set_values(map! {
             "path" => Value::text(config.path.clone()),
             "percentage" => Value::percents(percentage),
             "total" => Value::bytes(total as f64),
             "used" => Value::bytes(used as f64),
             "available" => Value::bytes(available as f64),
             "free" => Value::bytes(free as f64),
-        ));
+        });
 
         // Send percentage to alert check if we don't want absolute alerts
         let alert_val = match unit {
@@ -117,7 +117,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         // Compute state
-        api.set_state(match config.info_type {
+        widget.state = match config.info_type {
             InfoType::Used => {
                 if alert_val > config.alert {
                     State::Critical
@@ -136,9 +136,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     State::Idle
                 }
             }
-        });
+        };
 
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

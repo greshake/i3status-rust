@@ -34,9 +34,14 @@
 //! # TODO
 //! - Send a signal on click?
 
+use super::prelude::*;
 use zbus::dbus_interface;
 
-use super::prelude::*;
+// Share DBus connection between multiple block instances
+static DBUS_CONNECTION: async_once_cell::OnceCell<Result<zbus::Connection>> =
+    async_once_cell::OnceCell::new();
+
+const DBUS_NAME: &str = "rs.i3status";
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -45,39 +50,40 @@ struct CustomDBusConfig {
 }
 
 struct Block {
+    widget: Widget,
     api: CommonApi,
 }
 
 #[dbus_interface(name = "rs.i3status.custom")]
 impl Block {
     async fn set_icon(&mut self, icon: &str) -> String {
-        if let Err(e) = self.api.set_icon(icon) {
+        if let Err(e) = self.widget.set_icon(icon) {
             return e.to_string();
         }
-        if let Err(e) = self.api.flush().await {
+        if let Err(e) = self.api.set_widget(&self.widget).await {
             return e.to_string();
         }
         "OK".into()
     }
 
     async fn set_text(&mut self, full: String, short: String) -> String {
-        self.api.set_texts(full, short);
-        if let Err(e) = self.api.flush().await {
+        self.widget.set_texts(full, short);
+        if let Err(e) = self.api.set_widget(&self.widget).await {
             return e.to_string();
         }
         "OK".into()
     }
 
     async fn set_state(&mut self, state: &str) -> String {
-        match state {
-            "idle" => self.api.set_state(State::Idle),
-            "info" => self.api.set_state(State::Info),
-            "good" => self.api.set_state(State::Good),
-            "warning" => self.api.set_state(State::Warning),
-            "critical" => self.api.set_state(State::Critical),
+        self.widget.state = match state {
+            "idle" => State::Idle,
+            "info" => State::Info,
+            "good" => State::Good,
+            "warning" => State::Warning,
+            "critical" => State::Critical,
             _ => return format!("'{state}' is not a valid state"),
-        }
-        if let Err(e) = self.api.flush().await {
+        };
+        if let Err(e) = self.api.set_widget(&self.widget).await {
             return e.to_string();
         }
         "OK".into()
@@ -91,11 +97,29 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     api.event_receiver.close();
 
     let path = CustomDBusConfig::deserialize(config).config_error()?.path;
-    let dbus_conn = api.get_dbus_connection().await?;
+    let dbus_conn = DBUS_CONNECTION
+        .get_or_init(dbus_conn())
+        .await
+        .as_ref()
+        .map_err(|e| Error::new(e.to_string()))?;
     dbus_conn
         .object_server()
-        .at(path, Block { api })
+        .at(
+            path,
+            Block {
+                widget: api.new_widget(),
+                api,
+            },
+        )
         .await
         .error("Failed to setup DBus server")?;
     Ok(())
+}
+
+async fn dbus_conn() -> Result<zbus::Connection> {
+    let conn = new_dbus_connection().await?;
+    conn.request_name(DBUS_NAME)
+        .await
+        .error("Failed to reuqest DBus name")?;
+    Ok(conn)
 }

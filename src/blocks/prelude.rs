@@ -11,6 +11,7 @@ pub use crate::REQWEST_CLIENT;
 pub use serde::Deserialize;
 
 pub use std::borrow::Cow;
+pub use std::collections::HashMap;
 pub use std::fmt::Write;
 pub use std::pin::Pin;
 pub use std::time::Duration;

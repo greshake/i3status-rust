@@ -43,8 +43,10 @@ struct RoficationConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = RoficationConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$num.eng(1)")?);
-    api.set_icon("bell")?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("bell")?
+        .with_format(config.format.with_default("$num.eng(1)")?);
 
     let path = config.socket_path.expand()?;
     let mut timer = config.interval.timer();
@@ -52,16 +54,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         let (num, crit) = api.recoverable(|| rofication_status(&path), "X").await?;
 
-        api.set_values(map!("num" => Value::number(num)));
-        api.set_state(if crit > 0 {
+        widget.set_values(map!("num" => Value::number(num)));
+        widget.state = if crit > 0 {
             State::Warning
         } else if num > 0 {
             State::Info
         } else {
             State::Idle
-        });
-
-        api.flush().await?;
+        };
+        api.set_widget(&widget).await?;
 
         loop {
             tokio::select! {
@@ -71,7 +72,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     Click(click) => {
                         if click.button == MouseButton::Left {
                             let _ = spawn_shell("rofication-gui");
-                            break;
                         }
                     }
                 }

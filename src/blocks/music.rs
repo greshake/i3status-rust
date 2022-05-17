@@ -120,10 +120,12 @@ struct OwnerChange {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let dbus_conn = new_dbus_connection().await?;
     let config = MusicConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$combo.rot-str() $play|")?);
-    api.set_icon("music")?;
+    let dbus_conn = new_dbus_connection().await?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("music")?
+        .with_format(config.format.with_default("$combo.rot-str() $play|")?);
 
     let new_btn = |icon: &str, id: usize, api: &mut CommonApi| -> Result<Value> {
         Ok(Value::icon(api.get_icon(icon)?).with_instance(id))
@@ -202,20 +204,19 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     }
                     _ => (),
                 }
-                api.show();
-                api.set_values(values);
-                api.set_state(state);
+                widget.set_values(values);
+                widget.state = state;
+                api.set_widget(&widget).await?;
+            }
+            None if config.hide_when_empty => {
+                api.hide().await?;
             }
             None => {
-                if config.hide_when_empty {
-                    api.hide();
-                }
-                api.set_values(default());
-                api.set_state(State::Idle);
+                widget.set_values(default());
+                widget.state = State::Idle;
+                api.set_widget(&widget).await?;
             }
         }
-
-        api.flush().await?;
 
         select! {
             // Wait for a DBUS event

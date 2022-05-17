@@ -6,7 +6,6 @@ use crate::BoxedFuture;
 use futures::future::FutureExt;
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
-use smallvec::SmallVec;
 use tokio::sync::mpsc;
 use toml::value::Table;
 
@@ -17,9 +16,8 @@ use std::time::Duration;
 use crate::click::{ClickHandler, MouseButton};
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::formatting::{Format, Values};
 use crate::protocol::i3bar_event::I3BarEvent;
-use crate::widget::State;
+use crate::widget::{State, Widget};
 use crate::{Request, RequestCmd};
 
 macro_rules! define_blocks {
@@ -116,7 +114,7 @@ define_blocks!(
     memory,
     music,
     net,
-    // networkmanager,
+    // // networkmanager,
     notify,
     #[cfg(feature = "notmuch")]
     notmuch,
@@ -151,19 +149,34 @@ pub struct CommonApi {
     pub event_receiver: mpsc::Receiver<BlockEvent>,
 
     pub request_sender: mpsc::Sender<Request>,
-    pub cmd_buf: SmallVec<[RequestCmd; 4]>,
 
     pub error_interval: Duration,
     pub error_format: Option<String>,
 }
 
 impl CommonApi {
-    pub fn hide(&mut self) {
-        self.cmd_buf.push(RequestCmd::Hide);
+    pub fn new_widget(&self) -> Widget {
+        Widget::new(self.id, self.shared_config.clone())
     }
 
-    pub fn show(&mut self) {
-        self.cmd_buf.push(RequestCmd::Show);
+    pub async fn set_widget(&mut self, widget: &Widget) -> Result<()> {
+        self.request_sender
+            .send(Request {
+                block_id: self.id,
+                cmd: RequestCmd::SetWidget(Some(widget.clone())),
+            })
+            .await
+            .error("Failed to send Request")
+    }
+
+    pub async fn hide(&mut self) -> Result<()> {
+        self.request_sender
+            .send(Request {
+                block_id: self.id,
+                cmd: RequestCmd::SetWidget(None),
+            })
+            .await
+            .error("Failed to send Request")
     }
 
     /// Receive the next event, such as click notification or update request.
@@ -195,79 +208,6 @@ impl CommonApi {
         }
     }
 
-    pub fn set_icon(&mut self, icon: &str) -> Result<()> {
-        let icon = if icon.is_empty() {
-            String::new()
-        } else {
-            self.get_icon(icon)?
-        };
-        self.cmd_buf.push(RequestCmd::SetIcon(icon));
-        Ok(())
-    }
-
-    pub fn set_icon_raw(&mut self, icon: String) {
-        self.cmd_buf.push(RequestCmd::SetIcon(icon));
-    }
-
-    pub fn set_state(&mut self, state: State) {
-        self.cmd_buf.push(RequestCmd::SetState(state));
-    }
-
-    pub fn set_text(&mut self, text: String) {
-        self.cmd_buf.push(RequestCmd::SetText(text));
-    }
-
-    pub fn set_texts(&mut self, full: String, short: String) {
-        self.cmd_buf.push(RequestCmd::SetTexts(full, short));
-    }
-
-    pub fn set_values(&mut self, values: Values) {
-        self.cmd_buf.push(RequestCmd::SetValues(values));
-    }
-
-    pub fn set_format(&mut self, format: Format) {
-        self.cmd_buf.push(RequestCmd::SetFormat(format));
-    }
-
-    pub fn set_full_screen(&mut self, value: bool) {
-        self.cmd_buf.push(RequestCmd::SetFullScreen(value));
-    }
-
-    pub fn preserve(&mut self) {
-        self.cmd_buf.push(RequestCmd::Preserve);
-    }
-
-    pub fn restore(&mut self) {
-        self.cmd_buf.push(RequestCmd::Restore);
-    }
-
-    pub async fn get_dbus_connection(&mut self) -> Result<zbus::Connection> {
-        let (sender, receiver) = tokio::sync::oneshot::channel();
-        self.cmd_buf.push(RequestCmd::GetDbusConnection(sender));
-        self.flush().await?;
-        receiver.await.ok().error("Failed to get dbus connection")?
-    }
-
-    pub async fn get_system_dbus_connection(&mut self) -> Result<zbus::Connection> {
-        let (sender, receiver) = tokio::sync::oneshot::channel();
-        self.cmd_buf
-            .push(RequestCmd::GetSystemDbusConnection(sender));
-        self.flush().await?;
-        receiver.await.ok().error("Failed to get dbus connection")?
-    }
-
-    pub async fn flush(&mut self) -> Result<()> {
-        let cmds = std::mem::replace(&mut self.cmd_buf, SmallVec::new());
-        self.request_sender
-            .send(Request {
-                block_id: self.id,
-                cmds,
-            })
-            .await
-            .error("Failed to send Request")?;
-        Ok(())
-    }
-
     pub fn get_icon(&self, icon: &str) -> Result<String> {
         self.shared_config.get_icon(icon)
     }
@@ -280,43 +220,25 @@ impl CommonApi {
         Msg: Clone + Into<String>,
     {
         let mut focused = false;
-        let mut been_err = false;
+        let mut err_widget = None;
         loop {
             match f().await {
-                Ok(res) => {
-                    if been_err {
-                        // TODO restore hidden
-                        // TODO restore the full screen properly
-                        self.set_full_screen(false);
-                        self.restore();
-                    }
-                    return Ok(res);
-                }
+                Ok(res) => return Ok(res),
                 Err(err) => {
-                    if !been_err {
-                        self.preserve();
-                        been_err = true;
-                    }
+                    let widget = err_widget
+                        .get_or_insert_with(|| self.new_widget().with_state(State::Critical));
                     let retry_at = tokio::time::Instant::now() + self.error_interval;
 
-                    self.show();
-                    self.set_state(State::Critical);
-
-                    // TODO: do not toggle fullscreen if the block was already fullscreen before
-                    // the error
                     loop {
-                        if focused {
-                            self.set_text(err.to_string());
-                            self.set_full_screen(true);
+                        widget.full_screen = focused;
+                        widget.set_text(if focused {
+                            err.to_string()
                         } else {
-                            self.set_text(
-                                self.error_format
-                                    .clone()
-                                    .unwrap_or_else(|| msg.clone().into()),
-                            );
-                            self.set_full_screen(false);
-                        }
-                        self.flush().await?;
+                            self.error_format
+                                .clone()
+                                .unwrap_or_else(|| msg.clone().into())
+                        });
+                        self.set_widget(widget).await?;
 
                         tokio::select! {
                             _ = tokio::time::sleep_until(retry_at) => break,

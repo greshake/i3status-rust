@@ -62,13 +62,13 @@ struct BluetoothConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = BluetoothConfig::deserialize(config).config_error()?;
-    api.set_format(
+    let mut widget = api.new_widget().with_format(
         config
             .format
             .with_default("$name{ $percentage|}|Unavailable")?,
     );
 
-    let dbus_conn = api.get_system_dbus_connection().await?;
+    let dbus_conn = new_system_dbus_connection().await?;
     let mut monitor = DeviceMonitor::new(&dbus_conn, config.mac, config.adapter_mac).await?;
 
     loop {
@@ -86,32 +86,30 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         .await
                         .map(|p| values.insert("percentage".into(), Value::percents(p)));
                     if connected {
-                        api.set_state(State::Good);
+                        widget.state = State::Good;
                         values.insert("connected".into(), Value::flag());
                     } else {
-                        api.set_state(State::Idle);
+                        widget.state = State::Idle;
                     }
-                    api.set_icon(device.icon().await?)?;
-                    api.set_values(values);
-                    api.show();
+                    widget.set_icon(device.icon().await?)?;
+                    widget.set_values(values);
+                    api.set_widget(&widget).await?;
                 } else {
-                    api.hide();
+                    api.hide().await?;
                 }
             }
             // Unavailable
             None => {
                 if !config.hide_disconnected {
-                    api.set_icon("bluetooth")?;
-                    api.set_state(State::Idle);
-                    api.set_values(map!());
-                    api.show();
+                    widget.state = State::Idle;
+                    widget.set_icon("bluetooth")?;
+                    widget.set_values(default());
+                    api.set_widget(&widget).await?;
                 } else {
-                    api.hide();
+                    api.hide().await?;
                 }
             }
         }
-
-        api.flush().await?;
 
         loop {
             select! {

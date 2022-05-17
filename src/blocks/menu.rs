@@ -19,6 +19,7 @@ struct Item {
 
 struct Block {
     api: CommonApi,
+    widget: Widget,
     text: String,
     items: Vec<Item>,
 }
@@ -29,8 +30,8 @@ impl Block {
     }
 
     async fn set_text(&mut self, text: String) -> Result<()> {
-        self.api.set_text(text);
-        self.api.flush().await
+        self.widget.set_text(text);
+        self.api.set_widget(&self.widget).await
     }
 
     async fn wait_for_click(&mut self, button: MouseButton) {
@@ -74,6 +75,7 @@ pub async fn run(config: toml::Value, api: CommonApi) -> Result<()> {
     let config = Config::deserialize(config).config_error()?;
 
     let mut block = Block {
+        widget: api.new_widget(),
         api,
         text: config.text,
         items: config.items,

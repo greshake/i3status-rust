@@ -109,7 +109,9 @@ struct SoundConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = SoundConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$volume.eng(2)|")?);
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("$volume.eng(2)|")?);
 
     let device_kind = config.device_kind;
     let icon = |volume: u32, headphones: bool| -> String {
@@ -190,18 +192,18 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         if device.muted() {
-            api.set_icon(&icon(0, headphones))?;
-            api.set_state(State::Warning);
+            widget.set_icon(&icon(0, headphones))?;
+            widget.state = State::Warning;
             if !config.show_volume_when_muted {
                 values.remove("volume");
             }
         } else {
-            api.set_icon(&icon(volume, headphones))?;
-            api.set_state(State::Idle);
+            widget.set_icon(&icon(volume, headphones))?;
+            widget.state = State::Idle;
         }
 
-        api.set_values(values);
-        api.flush().await?;
+        widget.set_values(values);
+        api.set_widget(&widget).await?;
 
         loop {
             select! {
@@ -447,10 +449,7 @@ impl TryFrom<&SourceInfo<'_>> for PulseAudioVolInfo {
                 volume: source_info.volume,
                 mute: source_info.mute,
                 name: name.to_string(),
-                description: source_info
-                    .description
-                    .as_ref()
-                    .map(|d| d.to_string()),
+                description: source_info.description.as_ref().map(|d| d.to_string()),
                 active_port: source_info
                     .active_port
                     .as_ref()
@@ -705,10 +704,10 @@ impl PulseAudioClient {
 
     fn sink_info_callback(result: ListResult<&SinkInfo>) {
         if let Some(vol_info) = Self::get_info_callback(result) {
-            PULSEAUDIO_DEVICES.lock().unwrap().insert(
-                (DeviceKind::Sink, vol_info.name.to_string()),
-                vol_info,
-            );
+            PULSEAUDIO_DEVICES
+                .lock()
+                .unwrap()
+                .insert((DeviceKind::Sink, vol_info.name.to_string()), vol_info);
 
             PulseAudioClient::send_update_event();
         }
@@ -716,10 +715,10 @@ impl PulseAudioClient {
 
     fn source_info_callback(result: ListResult<&SourceInfo>) {
         if let Some(vol_info) = Self::get_info_callback(result) {
-            PULSEAUDIO_DEVICES.lock().unwrap().insert(
-                (DeviceKind::Source, vol_info.name.to_string()),
-                vol_info,
-            );
+            PULSEAUDIO_DEVICES
+                .lock()
+                .unwrap()
+                .insert((DeviceKind::Source, vol_info.name.to_string()), vol_info);
 
             PulseAudioClient::send_update_event();
         }

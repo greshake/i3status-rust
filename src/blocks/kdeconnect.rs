@@ -78,8 +78,9 @@ struct Config {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = Config::deserialize(config).config_error()?;
-    let dbus_conn = api.get_dbus_connection().await?;
-    api.set_format(config.format.with_default("")?);
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("")?);
 
     let battery_state = (
         config.bat_good,
@@ -88,6 +89,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         config.bat_critical,
     ) != (0, 0, 0, 0);
 
+    let dbus_conn = new_dbus_connection().await?;
     let id = match config.device_id {
         Some(id) => id,
         None => api.recoverable(|| any_device_id(&dbus_conn), "X").await?,
@@ -106,7 +108,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 "name" => Value::text(device.name().await?),
             };
             if connected {
-                api.set_icon("phone")?;
+                widget.set_icon("phone")?;
                 values.insert("connected".into(), Value::flag());
 
                 let (level, charging) = device.battery().await?;
@@ -149,17 +151,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     };
                 }
             } else {
-                api.set_icon("phone_disconnected")?;
+                widget.set_icon("phone_disconnected")?;
             }
 
-            api.show();
-            api.set_values(values);
-            api.set_state(state);
+            widget.set_values(values);
+            widget.state = state;
+            api.set_widget(&widget).await?;
         } else {
-            api.hide();
+            api.hide().await?;
         }
-
-        api.flush().await?;
 
         loop {
             select! {

@@ -63,9 +63,10 @@ pub struct ToggleConfig {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = ToggleConfig::deserialize(config).config_error()?;
     let interval = config.interval.map(Duration::from_secs);
+    let mut widget = api.new_widget();
 
     if let Some(text) = config.text {
-        api.set_text(text);
+        widget.set_text(text);
     }
 
     let icon_on = config.icon_on.unwrap_or_else(|| "toggle_on".into());
@@ -89,8 +90,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .is_empty();
 
         // Update widget
-        api.set_icon(if is_toggled { &icon_on } else { &icon_off })?;
-        api.flush().await?;
+        widget.set_icon(if is_toggled { &icon_on } else { &icon_off })?;
+        api.set_widget(&widget).await?;
 
         // TODO: try not to duplicate code
         loop {
@@ -113,10 +114,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                                         .await
                                         .error("Failed to run command")?;
                                     if output.status.success() {
-                                        api.set_state(State::Idle);
+                                        widget.state = State::Idle;
                                         break;
                                     } else {
-                                        api.set_state(State::Critical);
+                                        widget.state = State::Critical;
                                     }
                                 }
                             }
@@ -138,10 +139,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                                 .await
                                 .error("Failed to run command")?;
                             if output.status.success() {
-                                api.set_state(State::Idle);
+                                widget.state = State::Idle;
                                 break;
                             } else {
-                                api.set_state(State::Critical);
+                                widget.state = State::Critical;
                             }
                         }
                     }

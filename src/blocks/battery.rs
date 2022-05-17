@@ -104,6 +104,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = BatteryConfig::deserialize(config).config_error()?;
     let format = config.format.with_default("$percentage")?;
     let format_full = config.full_format.with_default("")?;
+    let mut widget = api.new_widget();
 
     let dev_name = DeviceName::new(config.device)?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
@@ -114,33 +115,29 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         match device.get_info().await? {
             Some(mut info) => {
-                api.show();
-
                 let mut values = map!("percentage" => Value::percents(info.capacity));
                 info.power
                     .map(|p| values.insert("power".into(), Value::watts(p)));
                 info.time_remaining.map(|t| {
                     values.insert(
                         "time".into(),
-                        Value::text(
-                            format!("{}:{:02}", (t / 3600.) as i32, (t % 3600. / 60.) as i32),
-                        ),
+                        Value::text(format!(
+                            "{}:{:02}",
+                            (t / 3600.) as i32,
+                            (t % 3600. / 60.) as i32
+                        )),
                     )
                 });
-                api.set_values(values);
+                widget.set_values(values);
 
                 if info.capacity >= config.full_threshold {
                     info.status = BatteryStatus::Full;
                 }
 
-                if matches!(
-                    info.status,
-                    BatteryStatus::Full | BatteryStatus::NotCharging
-                ) {
-                    api.set_format(format_full.clone());
-                } else {
-                    api.set_format(format.clone());
-                }
+                widget.set_format(match info.status {
+                    BatteryStatus::Full | BatteryStatus::NotCharging => format_full.clone(),
+                    _ => format.clone(),
+                });
 
                 let (icon, state) = match (info.status, info.capacity) {
                     (BatteryStatus::Empty, _) => (battery_level_icon(0, false), State::Critical),
@@ -163,21 +160,18 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     ),
                 };
 
-                api.set_icon(icon)?;
-                api.set_state(state);
+                widget.set_icon(icon)?;
+                widget.state = state;
             }
             None if config.hide_missing => {
-                api.hide();
+                api.hide().await?;
             }
             None => {
-                api.show();
-                api.set_icon("bat_not_available")?;
-                api.set_values(default());
-                api.set_format(format.clone());
+                widget.set_icon("bat_not_available")?;
+                widget.set_values(default());
+                widget.set_format(format.clone());
             }
         }
-
-        api.flush().await?;
 
         select! {
             update = device.wait_for_change() => update?,

@@ -80,12 +80,11 @@ struct NvidiaGpuConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NvidiaGpuConfig::deserialize(config).config_error()?;
-    api.set_format(
+    let mut widget = api.new_widget().with_icon("gpu")?.with_format(
         config
             .format
             .with_default("$utilization $memory $temperature")?,
     );
-    api.set_icon("gpu")?;
 
     // Run `nvidia-smi` command
     let mut child = Command::new("nvidia-smi")
@@ -122,7 +121,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             State::Idle
         };
 
-        api.set_values(map! {
+        widget.set_values(map! {
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
             "momory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
@@ -131,7 +130,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "clocks" => Value::hertz(info.clocks),
             "power" => Value::watts(info.power_draw),
         });
-        api.flush().await?;
+        api.set_widget(&widget).await?;
 
         loop {
             select! {

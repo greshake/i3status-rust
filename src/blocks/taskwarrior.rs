@@ -79,8 +79,10 @@ impl Default for TaskwarriorConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TaskwarriorConfig::deserialize(config).config_error()?;
-    api.set_format(config.format.with_default("$done|$count.eng(1)")?);
-    api.set_icon("tasks")?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("tasks")?
+        .with_format(config.format.with_default("$done|$count.eng(1)")?);
 
     let mut filters = config.filters.iter().cycle();
     let mut filter = filters.next().error("failed to get next filter")?;
@@ -98,31 +100,25 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let number_of_tasks = get_number_of_tasks(&filter.filter).await?;
 
         if number_of_tasks != 0 || !config.hide_when_zero {
-            let mut values = map!(
+            widget.set_values(map! {
                 "count" => Value::number(number_of_tasks),
                 "filter_name" => Value::text(filter.name.clone()),
-            );
-            if number_of_tasks == 0 {
-                values.insert("done".into(), Value::flag());
-            } else if number_of_tasks == 1 {
-                values.insert("single".into(), Value::flag());
-            }
-            api.set_values(values);
+                "done" => Value::flag(); if number_of_tasks == 0,
+                "single" => Value::flag(); if number_of_tasks == 1,
+            });
 
-            api.set_state(if number_of_tasks >= config.critical_threshold {
+            widget.state = if number_of_tasks >= config.critical_threshold {
                 State::Critical
             } else if number_of_tasks >= config.warning_threshold {
                 State::Warning
             } else {
                 State::Idle
-            });
+            };
 
-            api.show();
+            api.set_widget(&widget).await?;
         } else {
-            api.hide();
+            api.hide().await?;
         }
-
-        api.flush().await?;
 
         select! {
             _ = sleep(config.interval.0) =>(),

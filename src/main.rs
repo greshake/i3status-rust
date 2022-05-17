@@ -26,13 +26,11 @@ use futures::stream::{AbortHandle, Stream, StreamExt};
 use once_cell::sync::Lazy;
 use protocol::i3bar_block::I3BarBlock;
 use protocol::i3bar_event::I3BarEvent;
-use smallvec::SmallVec;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
-use tokio::sync::oneshot::Sender as OneshotSender;
 
 use blocks::{BlockEvent, BlockFuture, BlockType, CommonApi, CommonConfig};
 use click::ClickHandler;
@@ -40,7 +38,6 @@ use config::Config;
 use config::SharedConfig;
 use errors::*;
 use formatting::scheduling;
-use formatting::{Format, Values};
 use protocol::i3bar_event::events_stream;
 use signals::{signals_stream, Signal};
 use widget::{State, Widget};
@@ -71,9 +68,6 @@ struct CliArgs {
     /// The maximum number of blocking threads spawned by tokio
     #[clap(long = "threads", short = 'j', default_value = "2")]
     blocking_threads: usize,
-    /// The DBUS name
-    #[clap(long = "dbus-name", default_value = "rs.i3status")]
-    dbus_name: String,
 }
 
 fn main() {
@@ -102,7 +96,7 @@ fn main() {
             .build()
             .unwrap()
             .block_on(async move {
-                let mut bar = BarState::new(&config, args);
+                let mut bar = BarState::new(&config);
                 for block_config in config.blocks {
                     bar.spawn_block(block_config)?;
                 }
@@ -111,7 +105,7 @@ fn main() {
     })();
 
     if let Err(error) = result {
-        let error_widget = Widget::new(0, Default::default(), None).with_text(error.to_string());
+        let error_widget = Widget::new(0, Default::default()).with_text(error.to_string());
         println!(
             "{},",
             serde_json::to_string(&error_widget.get_data().unwrap()).unwrap()
@@ -137,8 +131,7 @@ pub struct RunningBlock {
     click_handler: ClickHandler,
     signal: Option<i32>,
 
-    hidden: bool,
-    widget: Widget,
+    widget: Option<Widget>,
 }
 
 pub struct FailedBlock {
@@ -155,36 +148,16 @@ pub enum Block {
 #[derive(Debug)]
 pub struct Request {
     pub block_id: usize,
-    pub cmds: SmallVec<[RequestCmd; 4]>,
+    pub cmd: RequestCmd,
 }
 
 #[derive(Debug)]
 pub enum RequestCmd {
-    Hide,
-    Show,
-
-    SetIcon(String),
-    SetState(State),
-    SetText(String),
-    SetTexts(String, String),
-
-    SetFormat(Format),
-    SetValues(Values),
-
-    SetFullScreen(bool),
-
-    Preserve,
-    Restore,
-
-    GetDbusConnection(OneshotSender<Result<zbus::Connection>>),
-    GetSystemDbusConnection(OneshotSender<Result<zbus::Connection>>),
-
-    Noop,
+    SetWidget(Option<Widget>),
 }
 
 struct BarState {
     shared_config: SharedConfig,
-    cli_args: CliArgs,
 
     blocks: Vec<(Block, BlockType)>,
     fullscreen_block: Option<usize>,
@@ -199,18 +172,14 @@ struct BarState {
 
     signals_stream: BoxedStream<Signal>,
     events_stream: BoxedStream<I3BarEvent>,
-
-    dbus_connection: Option<zbus::Connection>,
-    system_dbus_connection: Option<zbus::Connection>,
 }
 
 impl BarState {
-    fn new(config: &Config, cli: CliArgs) -> Self {
+    fn new(config: &Config) -> Self {
         let (request_sender, request_receiver) = mpsc::channel(64);
         let (widget_updates_sender, widget_updates_stream) = scheduling::manage_widgets_updates();
         Self {
             shared_config: config.shared.clone(),
-            cli_args: cli,
 
             blocks: Vec::new(),
             fullscreen_block: None,
@@ -228,9 +197,6 @@ impl BarState {
                 config.invert_scrolling,
                 Duration::from_millis(config.double_click_delay),
             ),
-
-            dbus_connection: None,
-            system_dbus_connection: None,
         }
     }
 
@@ -256,7 +222,6 @@ impl BarState {
             event_receiver,
 
             request_sender: self.request_sender.clone(),
-            cmd_buf: SmallVec::new(),
 
             error_interval: Duration::from_secs(common_config.error_interval),
             error_format: common_config.error_format,
@@ -272,8 +237,7 @@ impl BarState {
             click_handler: common_config.click,
             signal: common_config.signal,
 
-            hidden: false,
-            widget: Widget::new(id, shared_config, Some(self.widget_updates_sender.clone())),
+            widget: None,
         });
 
         self.running_blocks
@@ -298,55 +262,27 @@ impl BarState {
                 return Ok(());
             }
         };
-        for cmd in request.cmds {
-            match cmd {
-                RequestCmd::Hide => block.hidden = true,
-                RequestCmd::Show => block.hidden = false,
-                RequestCmd::SetIcon(icon) => block.widget.icon = icon,
-                RequestCmd::SetText(text) => block.widget.set_text(text),
-                RequestCmd::SetTexts(full, short) => block.widget.set_texts(full, short),
-                RequestCmd::SetState(state) => block.widget.state = state,
-                RequestCmd::SetFormat(format) => block.widget.set_format(format),
-                RequestCmd::SetValues(values) => block.widget.set_values(values),
-                RequestCmd::SetFullScreen(value) => {
-                    if self.fullscreen_block.is_none() && value {
+        match request.cmd {
+            RequestCmd::SetWidget(widget) => {
+                block.widget = widget;
+                if let Some(widget) = &block.widget {
+                    let _ = self
+                        .widget_updates_sender
+                        .send((block.id, widget.intervals()));
+                    if self.fullscreen_block.is_none() && widget.full_screen {
                         self.fullscreen_block = Some(block.id);
-                    } else if self.fullscreen_block == Some(block.id) && !value {
+                    } else if self.fullscreen_block == Some(block.id) && !widget.full_screen {
                         self.fullscreen_block = None;
                     }
+                } else if self.fullscreen_block == Some(block.id) {
+                    self.fullscreen_block = None;
                 }
-                RequestCmd::Preserve => block.widget.preserve(),
-                RequestCmd::Restore => block.widget.restore(),
-                RequestCmd::GetDbusConnection(tx) => match &self.dbus_connection {
-                    Some(conn) => {
-                        let _ = tx.send(Ok(conn.clone()));
-                    }
-                    None => {
-                        let conn = util::new_dbus_connection().await?;
-                        conn.request_name(self.cli_args.dbus_name.as_str())
-                            .await
-                            .error("Failed to reuqest DBus name")?;
-                        self.dbus_connection = Some(conn.clone());
-                        let _ = tx.send(Ok(conn));
-                    }
-                },
-                RequestCmd::GetSystemDbusConnection(tx) => match &self.system_dbus_connection {
-                    Some(conn) => {
-                        let _ = tx.send(Ok(conn.clone()));
-                    }
-                    None => {
-                        let conn = util::new_system_dbus_connection().await?;
-                        self.system_dbus_connection = Some(conn.clone());
-                        let _ = tx.send(Ok(conn));
-                    }
-                },
-                RequestCmd::Noop => (),
             }
         }
 
         let data = &mut self.blocks_render_cache[block.id];
-        if !block.hidden {
-            *data = block.widget.get_data().in_block(*block_type, block.id)?;
+        if let Some(widget) = &block.widget {
+            *data = widget.get_data().in_block(*block_type, block.id)?;
         } else {
             data.clear();
         }
@@ -380,8 +316,8 @@ impl BarState {
                     let data = &mut self.blocks_render_cache[id];
                     let (block, block_type) = &self.blocks[id];
                     if let Block::Running(block) = block {
-                        if !block.hidden {
-                            *data = block.widget.get_data().in_block(*block_type, id)?;
+                        if let Some(widget) = &block.widget {
+                            *data = widget.get_data().in_block(*block_type, id)?;
                         } else {
                             data.clear();
                         }
@@ -449,7 +385,7 @@ impl BarState {
                         }
                         let block = FailedBlock {
                             id,
-                            error_widget: Widget::new(id, self.shared_config.clone(), None)
+                            error_widget: Widget::new(id, self.shared_config.clone())
                                 .with_state(State::Critical)
                                 .with_text(error.message.as_deref().unwrap_or("Error").into()),
                             error,
