@@ -47,8 +47,10 @@ pub type BoxedStream<T> = Pin<Box<dyn Stream<Item = T>>>;
 
 pub static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
     const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+    const REQWEST_TIMEOUT: Duration = Duration::from_secs(5);
     reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
+        .timeout(REQWEST_TIMEOUT)
         .build()
         .unwrap()
 });
@@ -83,27 +85,21 @@ fn main() {
         protocol::init(args.never_pause);
     }
 
-    let result = (|| {
-        // Read & parse the config file
-        let config_path = util::find_file(&args.config, None, Some("toml"))
-            .or_error(|| format!("Configuration file '{}' not found", args.config))?;
-        let config: Config = util::deserialize_toml_file(&config_path).config_error()?;
-
-        // Run main loop
-        tokio::runtime::Builder::new_current_thread()
-            .max_blocking_threads(blocking_threads)
-            .enable_all()
-            .build()
-            .unwrap()
-            .block_on(async move {
-                let mut bar = BarState::new(&config);
-                for block_config in config.blocks {
-                    bar.spawn_block(block_config)?;
-                }
-                bar.run_event_loop().await
-            })
-    })();
-
+    let result = tokio::runtime::Builder::new_current_thread()
+        .max_blocking_threads(blocking_threads)
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async move {
+            let config_path = util::find_file(&args.config, None, Some("toml"))
+                .or_error(|| format!("Configuration file '{}' not found", args.config))?;
+            let config: Config = util::deserialize_toml_file(&config_path).config_error()?;
+            let mut bar = BarState::new(&config);
+            for block_config in config.blocks {
+                bar.spawn_block(block_config)?;
+            }
+            bar.run_event_loop().await
+        });
     if let Err(error) = result {
         let error_widget = Widget::new(0, Default::default()).with_text(error.to_string());
         println!(
