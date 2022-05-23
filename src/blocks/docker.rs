@@ -52,7 +52,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let socket_path = config.socket_path.expand()?;
 
     loop {
-        let status = api.recoverable(|| Status::new(&*socket_path), "X").await?;
+        let status = api.recoverable(|| Status::new(&*socket_path)).await?;
 
         widget.set_values(map! {
             "total" =>   Value::number(status.total),
@@ -89,11 +89,10 @@ impl Status {
         let socket = UnixStream::connect(socket_path)
             .await
             .error("Failed to connect to socket")?;
-        let (mut request_sender, connection) = hyper::client::conn::Builder::new()
-            .handshake(socket)
+        let (mut request_sender, connection) = hyper::client::conn::handshake(socket)
             .await
             .error("Failed to create request sender")?;
-        let connection = tokio::spawn(connection);
+        tokio::spawn(connection);
         let request = hyper::Request::builder()
             .header("Host", "localhost")
             .uri("http://api/info")
@@ -107,7 +106,6 @@ impl Status {
         let bytes = hyper::body::to_bytes(response.into_body())
             .await
             .error("Failed to get response bytes")?;
-        connection.abort(); // Not sure if this is necessary
         serde_json::from_slice::<Self>(&bytes).error("Failed to deserialize JSON")
     }
 }

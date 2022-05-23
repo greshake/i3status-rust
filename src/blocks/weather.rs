@@ -144,7 +144,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     loop {
         let data = api
-            .recoverable(|| config.service.get(config.autolocate), "X")
+            .recoverable(|| config.service.get(config.autolocate))
             .await?;
 
         let apparent_temp = australian_apparent_temp(

@@ -209,8 +209,8 @@ impl DeviceName {
 
     fn exact(&self) -> Option<&str> {
         match self {
-            DeviceName::Any => None,
-            DeviceName::Regex(pat) => Some(pat.as_str()),
+            Self::Any => None,
+            Self::Regex(pat) => Some(pat.as_str()),
         }
     }
 }
@@ -227,26 +227,21 @@ struct BatteryInfo {
     time_remaining: Option<f64>,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, SmartDefault)]
 enum BatteryStatus {
     Charging,
     Discharging,
     Empty,
     Full,
     NotCharging,
+    #[default]
     Unknown,
-}
-
-impl Default for BatteryStatus {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 impl FromStr for BatteryStatus {
     type Err = Infallible;
 
-    fn from_str(s: &str) -> Result<Self, Infallible> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "Charging" => Self::Charging,
             "Discharging" => Self::Discharging,

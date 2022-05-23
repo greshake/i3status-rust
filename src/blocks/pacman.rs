@@ -175,7 +175,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         let (values, warning, critical, total) = match &watched {
             Watched::Pacman => {
-                let updates = api.recoverable(get_pacman_available_updates, "X").await?;
+                let updates = api.recoverable(get_pacman_available_updates).await?;
                 let count = get_update_count(&updates);
                 let values = map!("pacman" => Value::number(count));
                 let warning = warning_updates_regex
@@ -188,7 +188,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             Watched::Aur(aur_command) => {
                 let updates = api
-                    .recoverable(|| get_aur_available_updates(aur_command), "X")
+                    .recoverable(|| get_aur_available_updates(aur_command))
                     .await?;
                 let count = get_update_count(&updates);
                 let values = map!(
@@ -204,15 +204,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             Watched::Both(aur_command) => {
                 let (pacman_updates, aur_updates) = api
-                    .recoverable(
-                        || async {
-                            tokio::try_join!(
-                                get_pacman_available_updates(),
-                                get_aur_available_updates(aur_command)
-                            )
-                        },
-                        "X",
-                    )
+                    .recoverable(|| async {
+                        tokio::try_join!(
+                            get_pacman_available_updates(),
+                            get_aur_available_updates(aur_command)
+                        )
+                    })
                     .await?;
                 let pacman_count = get_update_count(&pacman_updates);
                 let aur_count = get_update_count(&aur_updates);

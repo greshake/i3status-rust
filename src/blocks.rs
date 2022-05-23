@@ -155,11 +155,22 @@ pub struct CommonApi {
 }
 
 impl CommonApi {
+    /// A convenience function to create a new `Widget`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut widget = api
+    ///     .new_widget()
+    ///     .with_icon("docker")?
+    ///     .with_format(config.format.with_default("$running.eng(1)")?);
+    /// ```
     pub fn new_widget(&self) -> Widget {
         Widget::new(self.id, self.shared_config.clone())
     }
 
-    pub async fn set_widget(&mut self, widget: &Widget) -> Result<()> {
+    /// Sends the widget to be displayed.
+    pub async fn set_widget(&self, widget: &Widget) -> Result<()> {
         self.request_sender
             .send(Request {
                 block_id: self.id,
@@ -169,7 +180,8 @@ impl CommonApi {
             .error("Failed to send Request")
     }
 
-    pub async fn hide(&mut self) -> Result<()> {
+    /// Hides the block. Send new widget to make it visible again.
+    pub async fn hide(&self) -> Result<()> {
         self.request_sender
             .send(Request {
                 block_id: self.id,
@@ -212,14 +224,23 @@ impl CommonApi {
         self.shared_config.get_icon(icon)
     }
 
-    pub async fn recoverable<Fn, Fut, T, E, Msg>(&mut self, mut f: Fn, msg: Msg) -> Result<T>
+    /// Repeatedly call provided async function until it succeeds.
+    ///
+    /// This function will call `f` in a loop. If it succeeds, the result will be returned.
+    /// Otherwise, the block will enter error mode: "X" will be shown and on left click the error
+    /// message will be shown.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let status = api.recoverable(|| Status::new(&*socket_path)).await?;
+    /// ```
+    pub async fn recoverable<Fn, Fut, T, E>(&mut self, mut f: Fn) -> Result<T>
     where
         Fn: FnMut() -> Fut,
         Fut: Future<Output = Result<T, E>>,
         E: StdError,
-        Msg: Clone + Into<String>,
     {
-        let mut focused = false;
         let mut err_widget = None;
         loop {
             match f().await {
@@ -230,13 +251,10 @@ impl CommonApi {
                     let retry_at = tokio::time::Instant::now() + self.error_interval;
 
                     loop {
-                        widget.full_screen = focused;
-                        widget.set_text(if focused {
+                        widget.set_text(if widget.full_screen {
                             err.to_string()
                         } else {
-                            self.error_format
-                                .clone()
-                                .unwrap_or_else(|| msg.clone().into())
+                            "X".to_string()
                         });
                         self.set_widget(widget).await?;
 
@@ -246,7 +264,7 @@ impl CommonApi {
                                 BlockEvent::UpdateRequest => break,
                                 BlockEvent::Click(click) => {
                                     if click.button == MouseButton::Left {
-                                        focused = !focused;
+                                        widget.full_screen = !widget.full_screen;
                                     }
                                 }
                             }

@@ -120,7 +120,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     };
 
     loop {
-        let info = api.recoverable(IPAddressInfo::new, "X").await?;
+        let info = api.recoverable(IPAddressInfo::new).await?;
         let mut values = map! {
             "ip" => Value::text(info.ip),
             "version" => Value::text(info.version),

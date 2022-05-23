@@ -12,13 +12,9 @@ authors = [
 edition = "2021"
 
 [features]
-# Make widgets' borders visible. (for debugging purposes)
-debug_borders = []
-# console = ["console-subscriber"]
+debug_borders = [] # Make widgets' borders visible
 
 [dependencies]
-# console-subscriber = { version = "*", optional = true }
-
 smart-default = "0.6"
 signal-hook = "0.3"
 nix = "0.23"

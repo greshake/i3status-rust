@@ -1,6 +1,6 @@
 use zbus::fdo::DBusProxy;
 use zbus::MessageStream;
-use zvariant::OwnedObjectPath;
+use zvariant::ObjectPath;
 
 use super::{zbus_upower::*, BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
@@ -16,7 +16,7 @@ impl Device {
         let dbus_conn = new_system_dbus_connection().await?;
         let (device_path, device_proxy) = {
             if device.exact() == Some("DisplayDevice") {
-                let path: OwnedObjectPath = "/org/freedesktop/UPower/devices/DisplayDevice"
+                let path: ObjectPath = "/org/freedesktop/UPower/devices/DisplayDevice"
                     .try_into()
                     .unwrap();
                 let proxy = DeviceProxy::builder(&dbus_conn)
@@ -53,7 +53,7 @@ impl Device {
                         .await
                         .error("Failed to get device's native path")?;
                     if device.matches(&name) {
-                        res = Some((path, proxy));
+                        res = Some((path.into_inner(), proxy));
                         break;
                     }
                 }

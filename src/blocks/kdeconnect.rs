@@ -92,7 +92,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let dbus_conn = new_dbus_connection().await?;
     let id = match config.device_id {
         Some(id) => id,
-        None => api.recoverable(|| any_device_id(&dbus_conn), "X").await?,
+        None => api.recoverable(|| any_device_id(&dbus_conn)).await?,
     };
 
     let (tx, mut rx) = mpsc::channel(8);
@@ -170,18 +170,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
-struct Device<'a> {
-    device_proxy: DeviceDbusProxy<'a>,
-    battery_proxy: BatteryDbusProxy<'a>,
-    notifications_proxy: NotificationsDbusProxy<'a>,
+struct Device {
+    device_proxy: DeviceDbusProxy<'static>,
+    battery_proxy: BatteryDbusProxy<'static>,
+    notifications_proxy: NotificationsDbusProxy<'static>,
 }
 
-impl<'a> Device<'a> {
-    async fn new(
-        conn: &'a zbus::Connection,
-        tx: mpsc::Sender<()>,
-        id: &'_ str,
-    ) -> Result<Device<'a>> {
+impl Device {
+    async fn new(conn: &zbus::Connection, tx: mpsc::Sender<()>, id: &str) -> Result<Self> {
         let device_path = format!("/modules/kdeconnect/devices/{id}");
         let battery_path = format!("{device_path}/battery");
         let notifications_path = format!("{device_path}/notifications");

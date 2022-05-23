@@ -90,7 +90,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     };
 
     loop {
-        let stats = api.recoverable(|| get_stats(&token), "X").await?;
+        let stats = api.recoverable(|| get_stats(&token)).await?;
         if stats.get("total").map_or(false, |x| *x > 0) || !config.hide_if_total_is_zero {
             let mut state = State::Idle;
             'outer: for (list_opt, ret) in [

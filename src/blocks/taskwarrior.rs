@@ -88,12 +88,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut filter = filters.next().error("failed to get next filter")?;
 
     let mut notify = Inotify::init().error("Failed to start inotify")?;
-    let mut buffer = [0; 1024];
     notify
         .add_watch(&*config.data_location.expand()?, WatchMask::MODIFY)
         .error("Failed to watch data location")?;
     let mut updates = notify
-        .event_stream(&mut buffer)
+        .event_stream([0; 1024])
         .error("Failed to create event stream")?;
 
     loop {

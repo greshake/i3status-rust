@@ -25,7 +25,7 @@ enum CapacityLevel {
 impl FromStr for CapacityLevel {
     type Err = Infallible;
 
-    fn from_str(s: &str) -> Result<Self, Infallible> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "Full" => Self::Full,
             "High" => Self::High,
@@ -67,6 +67,8 @@ impl Device {
         }
     }
 
+    /// Returns `self.dev_path` if it is still available. Otherwise, find any device that matches
+    /// `self.dev_name`.
     async fn get_device_path(&mut self) -> Result<Option<&Path>> {
         if let Some(path) = &self.dev_path {
             if Self::device_available(path).await {
@@ -92,6 +94,7 @@ impl Device {
                 return Ok(Some(self.dev_path.insert(path)));
             }
         }
+
         Ok(None)
     }
 

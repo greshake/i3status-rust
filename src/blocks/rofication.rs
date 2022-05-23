@@ -52,7 +52,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
-        let (num, crit) = api.recoverable(|| rofication_status(&path), "X").await?;
+        let (num, crit) = api.recoverable(|| rofication_status(&path)).await?;
 
         widget.set_values(map!("num" => Value::number(num)));
         widget.state = if crit > 0 {
@@ -98,19 +98,12 @@ async fn rofication_status(socket_path: &str) -> Result<(usize, usize)> {
         .error("Failed to read from socket")?;
 
     // Response must be two integers: regular and critical, separated eihter by a comma or a \n
-    let mut parts = responce.split(|x| x == ',' || x == '\n');
-    let num = parts
-        .next()
-        .and_then(|x| x.parse::<usize>().ok())
-        .error("Incorrect responce")?;
-    let crit = parts
-        .next()
-        .and_then(|x| x.parse::<usize>().ok())
+    let (num, crit) = responce
+        .split_once(|x| x == ',' || x == '\n')
         .error("Incorrect responce")?;
 
-    if parts.next().is_some() {
-        Err(Error::new("Incorrect responce"))
-    } else {
-        Ok((num, crit))
-    }
+    Ok((
+        num.parse().error("Incorrect responce")?,
+        crit.parse().error("Incorrect responce")?,
+    ))
 }

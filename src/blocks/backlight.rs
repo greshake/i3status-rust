@@ -129,8 +129,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .new_widget()
         .with_format(config.format.with_default("$brightness")?);
 
-    let dbus_conn = new_system_dbus_connection().await?;
-
     let mut cycle = config
         .cycle
         .unwrap_or_else(|| vec![config.minimum, config.maximum])
@@ -138,20 +136,17 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .cycle();
 
     let device = match &config.device {
-        None => BacklightDevice::default(config.root_scaling, &dbus_conn).await?,
-        Some(path) => BacklightDevice::from_device(path, config.root_scaling, &dbus_conn).await?,
+        None => BacklightDevice::default(config.root_scaling).await?,
+        Some(path) => BacklightDevice::from_device(path, config.root_scaling).await?,
     };
 
     // Watch for brightness changes
     let mut notify = Inotify::init().error("Failed to start inotify")?;
-    let mut buffer = [0; 1024];
-
     notify
         .add_watch(&device.brightness_file, WatchMask::MODIFY)
         .error("Failed to watch brightness file")?;
-
     let mut file_changes = notify
-        .event_stream(&mut buffer)
+        .event_stream([0; 1024])
         .error("Failed to create event stream")?;
 
     loop {
@@ -210,20 +205,17 @@ async fn read_brightness_raw(device_file: &Path) -> Result<u64> {
 }
 
 /// Represents a physical backlight device whose brightness level can be queried.
-struct BacklightDevice<'a> {
+struct BacklightDevice {
     device_name: String,
     brightness_file: PathBuf,
     max_brightness: u64,
     root_scaling: f64,
-    dbus_proxy: SessionProxy<'a>,
+    dbus_proxy: SessionProxy<'static>,
 }
 
-impl<'a> BacklightDevice<'a> {
-    async fn new(
-        device_path: PathBuf,
-        root_scaling: f64,
-        dbus_conn: &'a zbus::Connection,
-    ) -> Result<BacklightDevice<'a>> {
+impl BacklightDevice {
+    async fn new(device_path: PathBuf, root_scaling: f64) -> Result<Self> {
+        let dbus_conn = new_system_dbus_connection().await?;
         Ok(Self {
             brightness_file: device_path.join({
                 if device_path.ends_with("amdgpu_bl0") {
@@ -238,7 +230,7 @@ impl<'a> BacklightDevice<'a> {
                 .error("Malformed device path")?,
             max_brightness: read_brightness_raw(&device_path.join(FILE_MAX_BRIGHTNESS)).await?,
             root_scaling: root_scaling.clamp(ROOT_SCALDING_RANGE.start, ROOT_SCALDING_RANGE.end),
-            dbus_proxy: SessionProxy::new(dbus_conn)
+            dbus_proxy: SessionProxy::new(&dbus_conn)
                 .await
                 .error("failed to create SessionProxy")?,
         })
@@ -246,10 +238,7 @@ impl<'a> BacklightDevice<'a> {
 
     /// Use the default backlit device, i.e. the first one found in the
     /// `/sys/class/backlight` directory.
-    async fn default(
-        root_scaling: f64,
-        dbus_conn: &'a zbus::Connection,
-    ) -> Result<BacklightDevice<'a>> {
+    async fn default(root_scaling: f64) -> Result<Self> {
         let device = read_dir(DEVICES_PATH)
             .await
             .error("Failed to read backlight device directory")?
@@ -257,22 +246,13 @@ impl<'a> BacklightDevice<'a> {
             .await
             .error("No backlit devices found")?
             .error("Failed to read default device file")?;
-        Self::new(device.path(), root_scaling, dbus_conn).await
+        Self::new(device.path(), root_scaling).await
     }
 
     /// Use the backlit device `device`. Returns an error if a directory for
     /// that device is not found.
-    async fn from_device(
-        device: &str,
-        root_scaling: f64,
-        dbus_conn: &'a zbus::Connection,
-    ) -> Result<BacklightDevice<'a>> {
-        Self::new(
-            Path::new(DEVICES_PATH).join(device),
-            root_scaling,
-            dbus_conn,
-        )
-        .await
+    async fn from_device(device: &str, root_scaling: f64) -> Result<Self> {
+        Self::new(Path::new(DEVICES_PATH).join(device), root_scaling).await
     }
 
     /// Query the brightness value for this backlit device, as a percent.

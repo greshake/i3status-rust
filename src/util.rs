@@ -136,6 +136,14 @@ macro_rules! __map {
     }};
 }
 
+/// # Example
+///
+/// ```
+/// map! {
+///     "key" => Value,
+///     "conditional" => Value; if conditon,
+/// }
+/// ```
 macro_rules! map {
     ($($key:expr => $value:expr $(; if $cond:expr)?),* $(,)*) => {{
         #[allow(unused_mut)]
