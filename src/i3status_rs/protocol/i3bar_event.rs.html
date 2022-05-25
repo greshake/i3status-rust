@@ -112,14 +112,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::click::MouseButton</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::BoxedStream</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">struct</span> <span class="ident">I3BarEventRaw</span> {
-    <span class="kw">pub</span> <span class="ident">name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">instance</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">button</span>: <span class="ident">MouseButton</span>,
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">I3BarEvent</span> {
     <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">usize</span>,
     <span class="kw">pub</span> <span class="ident">instance</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
@@ -141,6 +134,13 @@
 
             <span class="kw">if</span> <span class="ident">line</span>.<span class="ident">is_empty</span>() {
                 <span class="kw">continue</span>;
+            }
+
+            <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>)]</span>
+            <span class="kw">struct</span> <span class="ident">I3BarEventRaw</span> {
+                <span class="ident">name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+                <span class="ident">instance</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+                <span class="ident">button</span>: <span class="ident">MouseButton</span>,
             }
 
             <span class="kw">let</span> <span class="ident">event</span>: <span class="ident">I3BarEventRaw</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="ident">line</span>).<span class="ident">unwrap</span>();
