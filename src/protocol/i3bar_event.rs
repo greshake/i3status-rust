@@ -10,14 +10,7 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use crate::click::MouseButton;
 use crate::BoxedStream;
 
-#[derive(Deserialize, Debug, Clone)]
-struct I3BarEventRaw {
-    pub name: Option<String>,
-    pub instance: Option<String>,
-    pub button: MouseButton,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct I3BarEvent {
     pub id: usize,
     pub instance: Option<usize>,
@@ -39,6 +32,13 @@ fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> 
 
             if line.is_empty() {
                 continue;
+            }
+
+            #[derive(Deserialize)]
+            struct I3BarEventRaw {
+                name: Option<String>,
+                instance: Option<String>,
+                button: MouseButton,
             }
 
             let event: I3BarEventRaw = serde_json::from_str(line).unwrap();

@@ -4,7 +4,7 @@ use std::str::FromStr;
 use super::prefix::Prefix;
 use crate::errors::*;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Unit {
     /// `B`
     Bytes,

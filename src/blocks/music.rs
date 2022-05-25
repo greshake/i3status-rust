@@ -404,7 +404,7 @@ impl Player {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum PlaybackStatus {
     Playing,
     Paused,
