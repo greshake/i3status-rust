@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["run",""]],"struct":[["Block",""],["CustomDBusConfig",""]]});
+initSidebarItems({"constant":[["DBUS_NAME",""]],"fn":[["dbus_conn",""],["run",""]],"static":[["DBUS_CONNECTION",""]],"struct":[["Block",""],["CustomDBusConfig",""]]});

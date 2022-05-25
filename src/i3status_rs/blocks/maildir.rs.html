@@ -3,15 +3,15 @@
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1"> 1</span>
-<span id="2"> 2</span>
-<span id="3"> 3</span>
-<span id="4"> 4</span>
-<span id="5"> 5</span>
-<span id="6"> 6</span>
-<span id="7"> 7</span>
-<span id="8"> 8</span>
-<span id="9"> 9</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
 <span id="10">10</span>
 <span id="11">11</span>
 <span id="12">12</span>
@@ -95,8 +95,6 @@
 <span id="90">90</span>
 <span id="91">91</span>
 <span id="92">92</span>
-<span id="93">93</span>
-<span id="94">94</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Unread mail. Only supports maildir format.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Note that you need to enable `maildir` feature to use this block:</span>
@@ -151,15 +149,13 @@
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">MaildirConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="ident">api</span>.<span class="ident">set_icon</span>(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>;
-
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_icon</span>(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">newmails</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">for</span> <span class="ident">inbox</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">inboxes</span> {
             <span class="kw">let</span> <span class="ident">isl</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inbox</span>[..];
-            <span class="comment">// TODO: spawn_blocking</span>
+            <span class="comment">// TODO: spawn_blocking?</span>
             <span class="kw">let</span> <span class="ident">maildir</span> <span class="op">=</span> <span class="ident">Maildir::from</span>(<span class="ident">isl</span>);
             <span class="ident">newmails</span> <span class="op">+</span><span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">display_type</span> {
                 <span class="ident">MailType::New</span> =&gt; <span class="ident">maildir</span>.<span class="ident">count_new</span>(),
@@ -167,18 +163,18 @@
                 <span class="ident">MailType::All</span> =&gt; <span class="ident">maildir</span>.<span class="ident">count_new</span>() <span class="op">+</span> <span class="ident">maildir</span>.<span class="ident">count_cur</span>(),
             };
         }
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-        <span class="kw">if</span> <span class="ident">newmails</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_critical</span> {
-            <span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Critical</span>;
+        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">newmails</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_critical</span> {
+            <span class="ident">State::Critical</span>
         } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">newmails</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_warning</span> {
-            <span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Warning</span>;
-        }
-        <span class="ident">api</span>.<span class="ident">set_state</span>(<span class="ident">state</span>);
-        <span class="ident">api</span>.<span class="ident">set_text</span>(<span class="ident">newmails</span>.<span class="ident">to_string</span>().<span class="ident">into</span>());
-        <span class="ident">api</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="ident">State::Warning</span>
+        } <span class="kw">else</span> {
+            <span class="ident">State::Idle</span>
+        };
+        <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">newmails</span>.<span class="ident">to_string</span>());
+        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; (),
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
             <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
         }
     }
@@ -192,5 +188,5 @@
     <span class="ident">All</span>,
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.60.0 (7737e0b5c 2022-04-04)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.61.0 (fe5b13d68 2022-05-18)" ></div>
 </body></html>
