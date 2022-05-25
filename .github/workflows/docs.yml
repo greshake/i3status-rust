@@ -19,8 +19,16 @@ jobs:
     - name: Get required packages
       run: sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
     - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
     - name: Generate docs
-      run: cargo doc --all-features --no-deps
+      uses: actions-rs/cargo@v1
+      with:
+        command: doc
+        args: --all-features --no-deps
     - name: Create index.html
       run: echo "<meta http-equiv=\"Refresh\" content=\"0; url='/i3status-rust/i3status_rs'\" />" > target/doc/index.html
     - name: Deploy 🚀
@@ -28,4 +36,3 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: target/doc # The folder the action should deploy.
-
