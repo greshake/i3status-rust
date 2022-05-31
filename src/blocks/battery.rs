@@ -851,8 +851,10 @@ impl Block for Battery {
                     Ok(time) => Value::from_string(format!("{}:{:02}", std::cmp::min(time / 60, 99), time % 60)),
                     _ => Value::from_string("×".into()),
                 },
-                // convert µW to W for display
+                // convert µW to W for display (the zero value is special-cased:
+                // Value::from_float(0).watts() yields "0.0nW" which looks weird)
                 "power" => match self.device.power_consumption() {
+                    Ok(0) => Value::from_string("0W".into()),
                     Ok(power) => Value::from_float(power as f64 * 1e-6).watts(),
                     _ => Value::from_string("×".into()),
                 },
