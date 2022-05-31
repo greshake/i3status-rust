@@ -44,7 +44,8 @@ fn format_number(
         Prefix::Nano => -3,
     };
 
-    if is_byte {
+    // zero values are never displayed with a prefix: we prefer "0.0W" over "0.0nW"
+    if is_byte || raw_value == 0. {
         min_exp_level = min_exp_level.max(0);
     }
 
