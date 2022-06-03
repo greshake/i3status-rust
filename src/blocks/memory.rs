@@ -228,8 +228,7 @@ impl Memory {
     }
 
     pub fn switch(&mut self) {
-        let old: Memtype = self.memtype.clone();
-        self.memtype = match old {
+        self.memtype = match self.memtype {
             Memtype::Memory => Memtype::Swap,
             _ => Memtype::Memory,
         };
