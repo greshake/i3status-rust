@@ -52,7 +52,7 @@ impl WeatherService {
     }
 }
 
-#[derive(Copy, Clone, Debug, Deserialize, PartialEq)]
+#[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum OpenWeatherMapUnits {
     Metric,

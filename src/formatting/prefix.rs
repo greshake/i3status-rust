@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::errors::*;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Prefix {
     One,
     // SI prefixes

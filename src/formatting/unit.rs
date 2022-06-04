@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::errors::*;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Unit {
     Bytes,
     Bits,

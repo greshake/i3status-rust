@@ -372,10 +372,11 @@ impl Block for Hueshift {
         // Although WlGammarelay can get the current temperature it doesn't need
         // to run update on an update interval as it is listening to dbus events.
         // Something like this:
-        Ok(match self.hue_shifter {
-            // HueShifter::X | HueShifter::Y => Some(self.update_interval.into()),
-            _ => None,
-        })
+        // Ok(match self.hue_shifter {
+        // HueShifter::X | HueShifter::Y => Some(self.update_interval.into()),
+        // _ => None,
+        // })
+        Ok(None)
     }
 
     fn view(&self) -> Vec<&dyn I3BarWidget> {

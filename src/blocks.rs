@@ -14,7 +14,7 @@ use crate::protocol::i3bar_event::I3BarEvent;
 use crate::scheduler::Task;
 use crate::widgets::I3BarWidget;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Update {
     Every(Duration),
     Once,

@@ -79,7 +79,7 @@ impl FromStr for Placeholder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MinWidthConfig {
     pub value: Option<usize>,
     pub pad_with: char,
@@ -109,7 +109,7 @@ impl FromStr for MinWidthConfig {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UnitConfig {
     pub unit: Option<Unit>,
     pub hidden: bool,
@@ -130,7 +130,7 @@ impl FromStr for UnitConfig {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MinPrefixConfig {
     pub value: Option<Prefix>,
     pub space: bool,
