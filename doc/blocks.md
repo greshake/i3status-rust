@@ -1219,7 +1219,7 @@ Same thing for any compatible player, takes the first active on the bus, but ign
 [[block]]
 block = "music"
 buttons = ["play", "next"]
-interface_name_exclude = [".*kdeconnect.*", "mpd"]
+interface_name_exclude = ['.*kdeconnect.*', 'mpd']
 ```
 
 Start Spotify if the block is clicked whilst it's collapsed:
@@ -1345,7 +1345,7 @@ Creates a block which displays network connection information from NetworkManage
 [[block]]
 block = "networkmanager"
 on_click = "alacritty -e nmtui"
-interface_name_exclude = ["br\\-[0-9a-f]{12}", "docker\\d+"]
+interface_name_exclude = ['br\-[0-9a-f]{12}', 'docker\d+']
 interface_name_include = []
 ```
 
@@ -1355,7 +1355,7 @@ Same as previous, but also limits the length of SSID to 10 characters.
 [[block]]
 block = "networkmanager"
 on_click = "alacritty -e nmtui"
-interface_name_exclude = ["br\\-[0-9a-f]{12}", "docker\\d+"]
+interface_name_exclude = ['br\-[0-9a-f]{12}', 'docker\d+']
 interface_name_include = []
 ap_format = "{ssid^10}"
 ```
