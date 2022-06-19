@@ -1,37 +1,160 @@
+# i3status-rust 0.22.0
+
+### Breaking changes
+
+* Battery: remove `allow_missing` config option (#1461 by @MaxVerevkin) 
+* Temperature: sysfs driver removed
+
+### New Blocks and Features
+
+* Net block: configurable graph_up/down formatting (#1457 by @veprolet)
+
+# i3status-rust 0.21.10
+
+### New Blocks and Features
+
+* Expand paths (e.g. `~`->`$HOME`, just like in shell) for many blocks (#1453 by @Henriquelay) 
+
+### Bug Fixes and Improvements
+
+* Battery: fix availability check for some devices with `sysfs` driver (#1456 by @ferdinandschober) 
+* Battery: fallback to `charge_level` if `capacity` cannot be calculated (#1458 by @ferdinandschober) 
+
+# i3status-rust 0.21.9
+
+### New Blocks and Features
+
+* New "awesome6" icon set
+* Music: `players` option can now accept a list of names (#1452 by @meryacine)
+
+# i3status-rust 0.21.8
+
+### Bug Fixes and Improvements
+
+* Net: WiFi information should be more reliable now ([e7e2836f](https://github.com/greshake/i3status-rust/commit/e7e2836f823e35ecb507e4af7108dec110cbedaa))
+* Battery: fix missing battery detection for `sysfs` driver ([24f432f](https://github.com/greshake/i3status-rust/commit/24f432fb67e5ba3cadddf5084b60c15e392f5e44))
+
+# i3status-rust 0.21.7
+
+### New Blocks and Features
+
+* Icons can now be overriden per block with `icons_overrides` (97a66195f16469a4011a1521fb991bbe943196b6)
+ 
+### Bug Fixes and Improvements
+
+* Battery: be more efficient by enumerating devices less often (#1437 by bim9262)
+* Net: use bss signal if wifi signal info is incomplete (4f11d68b1d5147fe2b5285d68653e7091f44f628)
+* Sound: check DEVICE_FORM_FACTOR property to determine icons (#1438 by kevinmos)
+
+# i3status-rust 0.21.6
+
+### New Blocks and Features
+
+* Hueshift: Add wl-gammarelay driver (#1421 by bim9262)
+ 
+### Bug Fixes and Improvements
+
+* Battery: prefer system batteries (BATx/CMBx) when doing auto discovery (3db119a5a2dd12a65a499377cf849d418bfee308)
+
+# i3status-rust 0.21.5
+
+### New Blocks and Features
+
+* Add `if_command` field to block config to allow conditional enabling of blocks on startup (#1415 by LordMZTE) 
+ 
+### Bug Fixes and Improvements
+
+* Battery: revert to previous default device discovery behaviour (d6fbfd06cc4d078efccb1c559e7eb934d36ffe7a)
+
+# i3status-rust 0.21.4
+
+### Bug Fixes and Improvements
+
+* Battery: fix issues with finding battery device paths (#1417 by @bim9262)
+* Battery: better default values for `device` (c6824727020090bf6eb59cd3bf6f4de0f10179fa)
+
+# i3status-rust 0.21.3
+
+### Bug Fixes and Improvements
+
+* Temperature: use libsensors bindings instead of sensors binary (#1375 by @MaxVerevkin)
+* Hueshift: do not leave zombies (#1411 by @Naarakah)
+* Time: reflect timezone changes (72a7284)
+* Watson: fix automatic updates (0b810cb and 0b810cb)
+
+### Deprecation Warnings
+* Temperature: `sysfs` driver will be removed in a future release.
+
+# i3status-rust 0.21.2
+
+### New Blocks and Features
+
+* Add dracula theme (#1408 by @welcoMattic)
+
+### Bug Fixes and Improvements
+
+* Battery block: Fix UPower property type mismatch (#1409 by @bim9262)
+
+# i3status-rust 0.21.0
+
+### New Blocks and Features
+
+* New block: `rofication` (#1356 by @cfsmp3)
+* New block: `external_ip` (#1366 by @cfsmp3)
+* Xrandr block: new option `format` (it overrides `icons` and `resolution` options which are now deprecated) (ca86a97)
+* Battery block: add new apcupsd driver (#1383 by @bim9262)
+* Battery block: enable `allow_missing` for the UPower driver (#1378 by @bim9262)
+* KeyboardLayout: add support for the xkb-switch keyboard layout reader (#1386 by @roguh)
+
+### Bug Fixes and Improvements
+
+* Sound block: fix headphones indicator (#1363 by @codicodi)
+* Sound block: named PulseAudio devices now work as expected (#1394 by @bim9262)
+* NetworkManager block: escape SSID (#1373 by @nzig)
+* Taskwarrior block: use inotify to get instant changes (you will need to set `data_location` option if `taskwarrior` is configured to use a custom data directory) (#1374 by @cfsmp3)
+* Battery block: fix spacing (#1389 by @bim9262)
+* Hueshift block: replace `killall` with `pkill` (#1398 by @stelcodes)
+
+### Deprecation Warnings
+* Xrandr block: `icon` and `resolution` will be removed in a future release. Use `format` instead.
+* Memory block: `icons` will be removed in a future release. Set `icons_format = ""` to disable icons.
+* Maildir block: `icon` will be removed in a future release. Set `icons_format = ""` to disable icons.
+* Notmuch block: `no_icon` will be removed in a future release. Set `icons_format = ""` to disable icons.
+
 # i3status-rust 0.20.7
 
-## New Blocks and Features
+### New Blocks and Features
 
 * Backlight block: new options `minimum`, `maximum`, `cycle` for toggling min/max brightness on click or on scrolll (#1349 by @Vanille-N)
 * Focused Window block: add `format` string (#1360 by @cfsmp3)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * icons: Add missing bat_not_available icon (#1361 by @ram02z)
 * Docker block: colour errors using Critical state (#1360 by @cfsmp3)
 
 # i3status-rust 0.20.6
 
-## New Blocks and Features
+### New Blocks and Features
 
 * Custom block: new `watch watch_files` option that uses inotify to trigger the block to update when one or more specified files are seen to have been modified (#1325 by @BrendanBall)
 * CustomDBus block: new `initial_text` option to set the text shown up until the first update is received
 * Hueshift block: added support for wlsunset (#1337 by @DerVerruckteFuchs)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * IBus block: no longer crashes the bar if IBus reports that there is no global engine set on first startup
 * Music block: the default text icons are now pango escaped and should cause no errors with i3bar
  
 # i3status-rust 0.20.5
 
-## New Blocks and Features
+### New Blocks and Features
 
 * New DNF block for Fedora (#1311 by @sigvei)
 * Docker block: allow non-default docker socket files (#1310 by @JTarasovic)
 * Sound block: add option to automatically change icon based on output device type (#1313 by @codicodi)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Hueshift block: fix sluggishness by updating widget text on interactions (#1320 by @JohnDowson)
 * Music block: fix long standing issue where block tandomly stops updating (#1327 by jamesmcm)
@@ -40,23 +163,23 @@
 
 # i3status-rust 0.20.4
 
-## New Blocks and Features
+### New Blocks and Features
 
 * Github block: new config options `critical`, `warning`, `info`, `good` to colour the block for different notifications (#1286 by @ZachCook)
 * Temperature block: new `driver` config option with the option to choose a new backend using sysfs to grab temp info instead of `lm_sensors` (#1286 by @ZachCook)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Battery/Kdeconnect block: add more battery icons. For the new battery icons you will need to update your icon files, otherwise it will fallback to the previous icons. (#1282 by @freswa)
 * Nvidia block: only run `nvidia-smi` once instead of spawning a new instance for each update (#1286 by @ZachCook)
 * Weather block: escape spaces in internally generated URL (#1289 by @rbuch)
 
-## Deprecation Warnings
+### Deprecation Warnings
 `bat_half`, `bat_quarter`, `bat_three_quarters` are likely to be removed in a future release.
 
 # i3status-rust 0.20.3
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Net block: fix SSID escape code decoding (#1274 by @GlasOSkar)
 * NetworkManager block: update DBus interface for newer verisons of NM (#1269 by @mailhost)
@@ -70,7 +193,7 @@ If you are manually managing your icon/theme files then you may want to update t
 
 # i3status-rust 0.20.2
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Battery block: find battery by default instead of hardcoding "BAT0" (#1258 by @orvij)
 * Batter block: new `full_threshold` option for batteries that don't reach 100% (#1261 by @GladOSkar)
@@ -86,16 +209,16 @@ If you are manually managing your icon/theme files then you may want to update t
 * Add short_text support (#1207 by @GladOSkar)
 
 
-## Breaking Changes
+### Breaking Changes
 
 * Pomodoro block: Icons are no longer hardcoded. New icons: `pomodoro_started`, `pomodoro_stopped`, `pomodoro_paused`, `pomodoro_break` have been added to the icon themes in the repo, so you must update your icon theme files if it is not done by your package manager. (#1264)
 
-## Deprecation Warnings
+### Deprecation Warnings
 * Pomodoro block: `use_nag` and `nagbar_path` will be removed in a future release. Use `notifier` and `notifier_path` instead.
 
 # i3status-rust 0.20.1
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Fixed config error messages showing in swaybar but not in i3bar (#1224 by @jthomaschewski)
 * Fixed pacman block crash due to stderr output of pacman itself (#1220 by @mpldr)
@@ -103,7 +226,7 @@ If you are manually managing your icon/theme files then you may want to update t
 
 # i3status-rust 0.20.0
 
-## Breaking Changes
+### Breaking Changes
 
 Themes/Icons:
 
@@ -169,11 +292,11 @@ Memory block removed format keys:
 `{SUp}`  | `{swap_used_percents}`
 `{SUpi}` | `{swap_used_percents:1}`
 
-## Deprecation Warnings
+### Deprecation Warnings
 
 * Disk Space block: the `alias` has been deprecated in favour of using `format` and may be removed in a future release.
 
-## New Blocks and Features
+### New Blocks and Features
 
 * Backlight block: new `invert_icons` config option for people using coloured icons (#1098 by @MaxVerevkin)
 * Net block: new `format_alt` option to set an alternative format string to switch between when the block is clicked (#1063 by @MaxVerevkin)
@@ -187,7 +310,7 @@ Memory block removed format keys:
 * New "material-nf" icon set (#1095 by @MaxVerevkin)
 * New `icons_format` config option for overriding icon formatting on a per-block basis (#1095 by @MaxVerevkin)
  
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Music block: fix `on_collapsed_click` which was broken in a previous release (#1061 by @MaxVerevkin)
 * Net block: print "N/A" when trying to get ssid or signal strength using wired connections instead of erroring out (#1068 by @MaxVerevkin)
@@ -208,11 +331,11 @@ Fixes crash on i3 introduced in 0.14.4
 
 # i3status-rust 0.14.4
 
-## General Notices
+### General Notices
 
 * Due to a bugfix in the CPU block, when using the `{frequency}` and `{utilization}` format key specifiers,  "GHz" and "%" will be appended within the format keys themselves so there is no need to write them in your `format` string anymore.
 
-## Deprecation Warnings
+### Deprecation Warnings
 
 * Battery block config option `show` has been deprecated in favour of `format` (deprecated since at least v0.10.0 released in July 2019)
 
@@ -226,7 +349,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 * Taskwarrior block config option `filter_tags` has been deprecated in favour of `filters` (since v0.14.4 - this release)
 
-## New Blocks and Features
+### New Blocks and Features
 
 * `on_click` option is now available for all blocks  (#1006 by @edwin0cheng)
 
@@ -238,7 +361,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 * Taskwarrior block: support multiple filters with new `filters` option (#1008 by @matt-snider)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Fix config error when using custom themes (#968 by @ammgws)
 
@@ -266,7 +389,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 # i3status-rust 0.14.3
 
-## New Blocks and Features
+### New Blocks and Features
 
 * New Apt block for keeping tabs on pending updates on Debian based systems (#943 by @ammgws)
 
@@ -280,7 +403,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 * New "native" and "semi-native" themes (#938 by @GladOSkar)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Add git commit hash to version output (#915 by @ammgws)
 
@@ -304,7 +427,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 # i3status-rust 0.14.2
 
-## New Blocks and Features
+### New Blocks and Features
 
 * New Hueshift block (#802 by @AkechiShiro)
 
@@ -336,7 +459,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 * Time block: add `locale` option (#863 by @ammgws)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Fix spacing for inline widgets (#866 from @DCsunset)
 
@@ -372,7 +495,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 # i3status-rust 0.14.0
 
-## New Blocks and Features
+### New Blocks and Features
 
 * New KDEConnect block (#717 by @ammgws)
 
@@ -416,7 +539,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 * If no config file path is supplied then we default to XDG_CONFIG_HOME/i3status-rust
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Net block fixed to support ppp vpn (#570 by @MiniGod). Device is now auto selected by default (#626 by @ammgws). Fixed error in `use_bits` calculation (#704 by @ammgws). Use /sys/class/net/<device>/carrier instead of operstate in is_up() (#605 by @happycoder97, @ammgws)
 
@@ -448,7 +571,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 * Dependent crates have been updated to their latest versions (#729 by @ammgws, @ignatenkobrain)
 
-## Documentation
+### Documentation
 
 * Document `info`, `good`, `warning`, `critical` parameters for the Battery block (@ammgws)
 
@@ -468,7 +591,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 # i3status-rust 0.13.0
 
-## New Blocks and Features
+### New Blocks and Features
 
 * The Net block now takes a `use_bits` parameter to display speeds in bit-based
   instead of byte-based units. (#496 by @hlmtre)
@@ -484,7 +607,7 @@ Fixes crash on i3 introduced in 0.14.4
 * The Bluetooth block now allows for setting a text `label` parameter to keep
   track of devices. (#528 by @jeffw387)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Fixes a panic that could sometimes manifest when restarting Pulseaudio. (#484
   by @ammgws)
@@ -521,7 +644,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 # i3status-rust 0.12.0
 
-## New Blocks and Features
+### New Blocks and Features
 
 * Wireguard devices are now correctly identified as VPNs in the net block. (#419
   by @vvrein)
@@ -530,7 +653,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 * Adds a new Pomodoro block. (#453 by @ghedamat)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Fixes a panic in the iBus block due to the use of Perl regex features. (#443
   by @ammgws)
@@ -557,7 +680,7 @@ Fixes crash on i3 introduced in 0.14.4
 
 # i3status-rust 0.11.0
 
-## New Blocks and Features
+### New Blocks and Features
 
 * Adds a new Docker block, which can display information about containers
   overseen by the Docker daemon. (#413 by @jlevesy)
@@ -574,7 +697,7 @@ Fixes crash on i3 introduced in 0.14.4
 * The project now has improved crate metadata, a proper `CONTRIBUTING.md` file,
   and will put release notes in a `NEWS.md` file. (by @atheriel)
 
-## Bug Fixes and Improvements
+### Bug Fixes and Improvements
 
 * Updates the `nix` crate to fix broken builds on aarch64 with musl libc (#402).
 
