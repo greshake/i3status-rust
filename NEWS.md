@@ -1,3 +1,12 @@
+# i3status-rust 0.30.0 [unreleased]
+
+### Breaking changes
+
+This is a major release which rewrites the core code to be asynchronous.
+
+- Formatting system has breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in bracjets: `format = "$percentage"`.
+
+
 # i3status-rust 0.22.0
 
 ### Breaking changes
