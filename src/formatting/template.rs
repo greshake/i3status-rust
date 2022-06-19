@@ -220,7 +220,7 @@ fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> Strin
                 let _ = it.next();
                 escaped = true;
             }
-            x if !x.is_alphabetic() && x != '_' => break,
+            x if !x.is_alphanumeric() && x != '_' => break,
             x => {
                 let _ = it.next();
                 retval.push(x);
