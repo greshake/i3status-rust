@@ -125,8 +125,7 @@ impl SoundDevice for AlsaSoundDevice {
             .map(|s| s.trim_matches(FILTER))
             .collect::<Vec<&str>>();
 
-        self.volume = last
-            .get(0)
+        self.volume = last.first()
             .error_msg("could not get volume")?
             .parse::<u32>()
             .error_msg("could not parse volume to u32")?;

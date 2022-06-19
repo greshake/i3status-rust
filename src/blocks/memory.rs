@@ -296,7 +296,7 @@ impl Block for Memory {
             };
             let line = line.split_whitespace().collect::<Vec<&str>>();
 
-            match line.get(0) {
+            match line.first() {
                 Some(&"MemTotal:") => {
                     mem_state.mem_total = (
                         u64::from_str(line[1]).error_msg("failed to parse mem_total")?,

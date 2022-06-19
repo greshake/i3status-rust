@@ -154,10 +154,10 @@ impl Xrandr {
         for chunk in monitor_infos.chunks_exact(2) {
             let mut brightness = 0;
             let mut display: &str = "";
-            let mi_line = unwrap_or_continue!(chunk.get(0));
+            let mi_line = unwrap_or_continue!(chunk.first());
             let b_line = unwrap_or_continue!(chunk.get(1));
             let mi_line_args: Vec<&str> = mi_line.split_whitespace().collect();
-            if let Some(name) = mi_line_args.get(0) {
+            if let Some(name) = mi_line_args.first() {
                 display = name.trim();
                 if let Some(brightness_raw) = b_line.split(':').collect::<Vec<&str>>().get(1) {
                     brightness = (f32::from_str(brightness_raw.trim())
@@ -170,7 +170,7 @@ impl Xrandr {
                 if res.find('+').is_none() {
                     res = unwrap_or_continue!(mi_line_args.get(3));
                 }
-                if let Some(resolution) = res.split('+').collect::<Vec<&str>>().get(0) {
+                if let Some(resolution) = res.split('+').collect::<Vec<&str>>().first() {
                     monitor_metrics.push(Monitor::new(display, brightness, resolution.trim()));
                 }
             }
