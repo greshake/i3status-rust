@@ -5,7 +5,8 @@
 This is a major release which rewrites the core code to be asynchronous.
 
 - Formatting system has breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in bracjets: `format = "$percentage"`.
-
+- `ibus` block has been removed
+- `networkmanager` block has been removed (could be revisited in the future)
 
 # i3status-rust 0.22.0
 
