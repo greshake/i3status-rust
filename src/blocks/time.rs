@@ -5,7 +5,6 @@
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
 //! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | `"%a %d/%m %R"`
-//! `format_short` | Same as `format` but used when there is no enough space on the bar | No | None
 //! `interval` | Update interval in seconds | No | 10
 //! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | No | Local timezone
 //! `locale` | Locale to apply when formatting the time | No | System locale
