@@ -299,7 +299,7 @@ The minimum brightness that can be scrolled down to
 T}@T{
 No
 T}@T{
-\f[V]1\f[R]
+\f[V]5\f[R]
 T}
 T{
 \f[V]maximum\f[R]
@@ -511,7 +511,7 @@ entries taking precedence.\f[V]apcaccess\f[R]:
 \[lq]localhost:3551\[rq]\f[V]upower\f[R]:
 \f[V]DisplayDevice\[ga]\[ga]\f[R]driver\f[V]| One of\f[R]\[lq]sysfs\[rq]\f[V],\f[R]\[lq]apcaccess\[rq]\f[V], or\f[R]\[lq]upower\[rq]\f[V]. | No |\f[R]\[lq]sysfs\[rq]\f[V]\f[R]interval\f[V]| Update interval, in seconds. Only relevant for\f[R]driver
 = \[lq]sysfs\[rq] ||
-\[lq]apcaccess\[rq]\f[V]. | No |\f[R]10\f[V]\f[R]format\f[V]| A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No |\f[R]\[lq]{percentage}\[rq]\f[V]\f[R]full_format\f[V]| Same as\f[R]format\f[V]but for when the battery is full. | No |\f[R]\[lq]\[lq]\f[V]\f[R]missing_format\f[V]| Same as\f[R]format\f[V]but for when the specified battery is missing. | No |\f[R]\[rq]{percentage}\[lq]\f[V]\f[R]allow_missing\f[V]| Don\[aq]t display errors when the battery cannot be found. | No |\f[R]false\f[V]\f[R]hide_missing\f[V]| Completely hide this block if the battery cannot be found. Only works in combination with\f[R]allow_missing\f[V]. | No |\f[R]false\f[V]\f[R]full_threshold\f[V]| Percentage at which the battery is considered full (\f[R]full_format\f[V]shown) | No |\f[R]100\f[V]\f[R]good\f[V]| Minimum battery level, where state is set to good. | No |\f[R]60\f[V]\f[R]info\f[V]| Minimum battery level, where state is set to info. | No |\f[R]60\f[V]\f[R]warning\f[V]| Minimum battery level, where state is set to warning. | No |\f[R]30\f[V]\f[R]critical\f[V]| Minimum battery level, where state is set to critical. | No |\f[R]15\[ga]
+\[lq]apcaccess\[rq]\f[V]. | No |\f[R]10\f[V]\f[R]format\f[V]| A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No |\f[R]\[lq]{percentage}\[rq]\f[V]\f[R]full_format\f[V]| Same as\f[R]format\f[V]but for when the battery is full. | No |\f[R]\[lq]\[lq]\f[V]\f[R]missing_format\f[V]| Same as\f[R]format\f[V]but for when the specified battery is missing. | No |\f[R]\[rq]{percentage}\[lq]\f[V]\f[R]hide_missing\f[V]| Completely hide this block if the battery cannot be found. | No |\f[R]false\f[V]\f[R]full_threshold\f[V]| Percentage at which the battery is considered full (\f[R]full_format\f[V]shown) | No |\f[R]100\f[V]\f[R]good\f[V]| Minimum battery level, where state is set to good. | No |\f[R]60\f[V]\f[R]info\f[V]| Minimum battery level, where state is set to info. | No |\f[R]60\f[V]\f[R]warning\f[V]| Minimum battery level, where state is set to warning. | No |\f[R]30\f[V]\f[R]critical\f[V]| Minimum battery level, where state is set to critical. | No |\f[R]15\[ga]
 T}
 .TE
 .SS Available Format Keys
@@ -608,6 +608,7 @@ T{
 \f[V]mac\f[R]
 T}@T{
 MAC address of the Bluetooth device.
+You can find this by running \f[V]bluetoothctl devices\f[R]
 T}@T{
 Yes
 T}@T{
@@ -3638,23 +3639,79 @@ network interface.
 .PP
 \f[V]bitrate\f[R] requires either \f[V]ethtool\f[R] for wired devices or
 \f[V]iw\f[R] for wireless devices.
-.PD 0
-.P
-.PD
 \f[V]ip\f[R] and \f[V]ipv6\f[R] require \f[V]ip\f[R].
+.PP
+Placeholder for the \f[V]graph_up\f[R] and \f[V]graph_down\f[R] is
+interpreted in the following manner:
+.PP
+.TS
+tab(@);
+lw(7.0n) lw(58.0n) lw(5.0n).
+T{
+Part
+T}@T{
+Meaning
+T}@T{
+Default
+T}
+_
+T{
+\f[V]min_width\f[R]
+T}@T{
+Sets width of the graph in characters.
+T}@T{
+10
+T}
+T{
+\f[V]max_width\f[R]
+T}@T{
+Ignored.
+T}@T{
+-
+T}
+T{
+\f[V]min_prefix\f[R]
+T}@T{
+Determines how the \f[V]bar_max_val\f[R] value is interpreted.
+T}@T{
+No prefix
+T}
+T{
+\f[V]unit\f[R]
+T}@T{
+Determines how the \f[V]bar_max_val\f[R] value is interpreted and how
+the unit is displayed after the graph.
+T}@T{
+B
+T}
+T{
+\f[V]bar_max_val\f[R]
+T}@T{
+At what value the full bar is drawn.
+The unit of this value is determined from the \f[V]min_prefix\f[R] and
+\f[V]unit\f[R] fields.
+T}@T{
+Dynamic (set to largest value in graph)
+T}
+.TE
 .SS Examples
 .PP
-Displays ssid, signal strength, ip, down speed and up speed as bits per
-second.
-Minimal prefix is set to \f[V]K\f[R] in order to prevent the block to
-change it\[cq]s size.
+Displays ssid, signal strength, ip, download speed in bits and download
+speed graph.
+Minimal prefix on the \f[V]speed_down\f[R] block is set to \f[V]K\f[R]
+in order to prevent the \f[V]speed_down\f[R] block from changing
+it\[cq]s size when switching between the \f[V]b\f[R] and \f[V]Kb\f[R]
+suffix.
+The graph in the example will be represented by 8 characters (40
+seconds), will have the units hidden and will be on a constant scale
+from 0 to 50 Mb/s.
 .IP
 .nf
 \f[C]
 [[block]]
 block = \[dq]net\[dq]
 device = \[dq]wlp2s0\[dq]
-format = \[dq]{ssid} {signal_strength} {ip} {speed_down;K*b} {graph_down;K*b}\[dq]
+format = \[dq]{ssid} {signal_strength} {ip} {speed_down;K*b} {graph_down:8;M*_b#50}\[dq]
 interval = 5
 \f[R]
 .fi
@@ -5490,13 +5547,7 @@ T{
 \f[V]chip\f[R]
 T}@T{
 Narrows the results to a given chip name.
-If driver = \f[V]\[dq]sensors\[dq]\f[R] then \f[V]*\f[R] may be used as
-a wildcard.
-If driver = \f[V]\[dq]sysfs\[dq]\f[R] then narrows to chips whose
-\[cq]\[lq]/sys/class/hwmon/hwmon*/name\[rq]\[cq] is a substring of the
-given chip name or vice versa.
-\f[V]sysfs\f[R] can not match to the bus such as \f[V]*-isa-*\f[R] or
-\f[V]*-pci-*\f[R]).
+\f[V]*\f[R] may be used as a wildcard.
 T}@T{
 No
 T}@T{
@@ -5521,31 +5572,6 @@ T}@T{
 No
 T}@T{
 \f[V]\[dq]{average} avg, {max} max\[dq]\f[R]
-T}
-.TE
-.SS Deprecated options
-.PP
-.TS
-tab(@);
-l l l l.
-T{
-Key
-T}@T{
-Values
-T}@T{
-Required
-T}@T{
-Default
-T}
-_
-T{
-\f[V]driver\f[R]
-T}@T{
-One of \f[V]\[dq]sensors\[dq]\f[R] or \f[V]\[dq]sysfs\[dq]\f[R].
-T}@T{
-No
-T}@T{
-\f[V]\[dq]sensors\[dq]\f[R]
 T}
 .TE
 .SS Available Format Keys
@@ -6413,8 +6439,8 @@ content.
 A space is used otherwise.
 Floats and Integers are shifted to the right, while Strings are to the
 left.
-Defaults to \f[V]0\f[R] for Strings, \f[V]2\f[R] for Integers and
-\f[V]3\f[R] for Floats.
+Defaults to \f[V]0\f[R] for Strings, \f[V]2\f[R] for Integers,
+\f[V]3\f[R] for Floats and \f[V]10\f[R] for bar graphs.
 .SS Examples (spaces are shown as `\[sq]' to make the differences more obvious)
 .PP
 \f[V]\[dq]{var:3}\[dq]\f[R]
@@ -6884,6 +6910,8 @@ Uses text labels instead of icons)
 \f[V]awesome\f[R] (Font Awesome 4.x)
 .IP \[bu] 2
 \f[V]awesome5\f[R] (Font Awesome 5.x)
+.IP \[bu] 2
+\f[V]awesome6\f[R] (Font Awesome 6.x)
 .IP \[bu] 2
 \f[V]material\f[R]
 .IP \[bu] 2
