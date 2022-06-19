@@ -536,7 +536,8 @@ impl Block for Music {
         };
 
         let players = self.players.lock().unwrap();
-        let metadata = match players.first() {
+        let first_player = players.first();
+        let metadata = match first_player {
             Some(m) => m,
             None => {
                 self.current_song_widget.set_text(String::from(""));
