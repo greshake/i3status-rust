@@ -19,11 +19,10 @@ format_swap = "$swap_used_percents.eng(2)"
 
 [[block]]
 block = "cpu"
-interval = 1
 
 [[block]]
 block = "load"
-interval = 1
+interval = 5
 
 [[block]]
 block = "sound"
