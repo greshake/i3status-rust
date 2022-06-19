@@ -8,15 +8,13 @@ else
     OUT=$1
 fi
 
-pandoc -o man/blocks.1 -t man doc/blocks.md
+(cd gen-manpage && cargo run -- ../src ../man)
+
 # TODO: fix deprecation warning
 pandoc -o man/themes.1 -t man --base-header-level=2 doc/themes.md
 
 # Delete the table of contents from the block documentation.
-sed -i '0,/Xrandr/d' man/blocks.1
-
-# Delete "back to top" links
-sed -i '/^\.SS \\\[u21A5\] back to top/d' man/blocks.1
+sed -i '0,/xrandr/d' man/blocks.1
 
 # Add appropriate section headers.
 sed -i '1i .SH BLOCKS\n' man/blocks.1
