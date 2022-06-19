@@ -4,8 +4,6 @@
 
 `i3status-rs` is a feature-rich and resource-friendly replacement for i3status, written in pure Rust. It provides a way to display "blocks" of system information (time, battery status, volume, etc) on the [i3](https://i3wm.org/) bar. It is also compatible with [sway](http://swaywm.org/).
 
-For a list of available blocks, see the [block documentation](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html). Further information can be found on the [Wiki](https://github.com/greshake/i3status-rust/wiki).
-
 ## Requirements
 
 Most blocks assume you are running Linux, and some have their own system requirements; refer to the block documentation.
