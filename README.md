@@ -1,15 +1,10 @@
 # i3status-rust
 
-## [Blocks documentation](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
-
-## [Formatting documentation](https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html)
-
 ![demo1](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/example_bar.png)
-
 
 `i3status-rs` is a feature-rich and resource-friendly replacement for i3status, written in pure Rust. It provides a way to display "blocks" of system information (time, battery status, volume, etc) on the [i3](https://i3wm.org/) bar. It is also compatible with [sway](http://swaywm.org/).
 
-For a list of available blocks, see the [block documentation](https://github.com/greshake/i3status-rust/blob/master/doc/blocks.md). Further information can be found on the [Wiki](https://github.com/greshake/i3status-rust/wiki).
+For a list of available blocks, see the [block documentation](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html). Further information can be found on the [Wiki](https://github.com/greshake/i3status-rust/wiki).
 
 ## Requirements
 
@@ -51,9 +46,11 @@ Key | Description | Required | Default
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, set it to `" <span font_family='NotoSans Nerd Font'>{icon}</span> "` to set font of the icons to be 'NotoSans Nerd Font' | No | `" {icon} "`
 `theme` | The predefined theme that should be used. You can also add your own overrides. Check [themes.md](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md) for all available themes. | No | `plain`
 `scrolling` | The direction of scrolling, either `natural` or `reverse` | No | `reverse`
-`block` | All blocks that will exist in your i3bar. Check [blocks.md](https://github.com/greshake/i3status-rust/blob/master/doc/blocks.md) for all blocks and their parameters. | No | none
+`block` | All blocks that will exist in your i3bar. | No | none
 
-Refer to [formatting documentation](https://github.com/greshake/i3status-rust/blob/master/doc/blocks.md#formatting) to customize formatting strings' placeholders.
+### [Blocks documentation](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
+
+### [Formatting documentation](https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html)
 
 ## Integrate it into i3
 
