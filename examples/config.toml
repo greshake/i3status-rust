@@ -4,18 +4,18 @@ icons = "awesome"
 [[block]]
 block = "disk_space"
 path = "/"
-alias = "/"
 info_type = "available"
 unit = "GB"
 interval = 20
 warning = 20.0
 alert = 10.0
+format = "root: $available.eng(2)"
 
 [[block]]
 block = "memory"
 display_type = "memory"
-format_mem = "{mem_used_percents}"
-format_swap = "{swap_used_percents}"
+format_mem = "$mem_total_used_percents.eng(2)"
+format_swap = "$swap_used_percents.eng(2)"
 
 [[block]]
 block = "cpu"
@@ -24,7 +24,6 @@ interval = 1
 [[block]]
 block = "load"
 interval = 1
-format = "{1m}"
 
 [[block]]
 block = "sound"
