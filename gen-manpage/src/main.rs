@@ -2,16 +2,15 @@ use std::env::args;
 use std::fs::{read_dir, File};
 use std::io::{BufRead, BufReader, Result, Write};
 use std::path::PathBuf;
-use std::process::{exit, Command};
-use tempfile::NamedTempFile;
+use std::process::exit;
 
 const USAGE: &str = concat!(
     "i3status-rust manpage generator\n",
     "\n",
     "USAGE:\n",
-    "  gen-manpage <i3status-rs str dir> <output dir>\n",
+    "  gen-manpage <i3status-rs str dir> <output file>\n",
     "EXAMPLE:\n",
-    "  gen-manpage ../src/blocks ../man\n",
+    "  gen-manpage ../src/blocks ../man/blocks.md\n",
 );
 
 fn main() {
@@ -24,7 +23,7 @@ fn main() {
             exit(1);
         }
     };
-    let out_dir = match args.next() {
+    let out_path = match args.next() {
         Some(p) => PathBuf::from(p),
         None => {
             eprintln!("{USAGE}");
@@ -63,7 +62,7 @@ fn main() {
                 line = &line[1..];
             }
 
-            if line.starts_with("#") {
+            if line.starts_with('#') {
                 doc.push_str("##")
             }
             doc.push_str(line);
@@ -77,27 +76,8 @@ fn main() {
 
     result.sort_unstable_by(|a, b| a.0.cmp(&b.0));
 
-    let mut markdown = NamedTempFile::new().unwrap();
-    for (block, _) in &result {
-        writeln!(markdown, "- [{block}]({block})").unwrap();
-    }
+    let mut markdown = File::create(out_path).unwrap();
     for (block, doc) in &result {
-        writeln!(markdown, "- ## {block}\n{doc}").unwrap();
+        writeln!(markdown, "## {block}\n{doc}").unwrap();
     }
-    markdown.flush().unwrap();
-
-    Command::new("pandoc")
-        .arg("-o")
-        .arg(out_dir.join("blocks.1"))
-        .arg("-f")
-        .arg("markdown")
-        .arg("-t")
-        .arg("man")
-        .arg(markdown.path())
-        .spawn()
-        .unwrap()
-        .wait()
-        .unwrap();
-
-    drop(markdown);
 }

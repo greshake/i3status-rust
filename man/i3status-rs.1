@@ -65,10 +65,9 @@ For theme and icon configuration, see
 .BR THEMES.
 .SH BLOCKS
 
-\[bu] .RS 2
 .SS apt
+.PP
 Pending updates available for your Debian/Ubuntu based system
-.RE
 .PP
 Behind the scenes this uses \f[V]apt\f[R], and in order to run it
 without root privileges i3status-rust will create its own package
@@ -202,11 +201,9 @@ on_click = \[dq]APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -
 .SS Icons Used
 .IP \[bu] 2
 \f[V]update\f[R]
-\[bu] .RS 2
 .SS backlight
 .PP
 The brightness of a backlight device
-.RE
 .PP
 This block reads brightness information directly from the filesystem, so
 it works under both X11 and Wayland.
@@ -382,11 +379,9 @@ device = \[dq]intel_backlight\[dq]
 \f[V]backlight_13\f[R] (when brightness between 88 and 93%)
 .IP \[bu] 2
 \f[V]backlight_full\f[R] (when brightness above 94%)
-\[bu] .RS 2
 .SS battery
 .PP
 Information about the internal power supply
-.RE
 .PP
 This block can display the current battery state (Full, Charging or
 Discharging), percentage charged and estimate time until (dis)charged
@@ -609,11 +604,9 @@ format = \[dq]$percentage|N/A\[dq]
 \[lq]bat_90\[rq],
 .IP \[bu] 2
 \[lq]bat_full\[rq],
-\[bu] .RS 2
 .SS bluetooth
 .PP
 Monitor Bluetooth device
-.RE
 .PP
 This block displays the connectivity of a given Bluetooth device and the
 battery level if this is supported.
@@ -759,11 +752,9 @@ format = \[dq]\[dq]
 \[lq]input-mouse\[rq]
 .IP \[bu] 2
 \f[V]bluetooth\f[R] for all other devices
-\[bu] .RS 2
 .SS cpu
 .PP
 CPU statistics
-.RE
 .SS Configuration
 .PP
 .TS
@@ -896,11 +887,9 @@ format_alt = \[dq]$frequency.eng() \[rs]\[rs]|$boost.str()\[dq]
 \f[V]cpu_boost_on\f[R]
 .IP \[bu] 2
 \f[V]cpu_boost_off\f[R]
-\[bu] .RS 2
 .SS custom
 .PP
 The output of a custom shell command
-.RE
 .PP
 For further customisation, use the \f[V]json\f[R] option and have the
 shell command output valid JSON in the schema below:
@@ -1087,11 +1076,9 @@ interval = \[dq]once\[dq]
 .SS TODO:
 .IP \[bu] 2
 Use \f[V]shellexpand\f[R]
-\[bu] .RS 2
 .SS custom_dbus
 .PP
 A block controled by the DBus
-.RE
 .PP
 This block creates a new DBus object in \f[V]rs.i3status\f[R] service.
 This object implements \f[V]rs.i3status.custom\f[R] interface which
@@ -1136,11 +1123,9 @@ busctl --user call rs.i3status /my_path rs.i3status.custom SetState s good
 .SS TODO
 .IP \[bu] 2
 Send a signal on click?
-\[bu] .RS 2
 .SS disk_space
 .PP
 Disk usage statistics
-.RE
 .SS Configuration
 .PP
 .TS
@@ -1313,11 +1298,9 @@ format = \[dq]$icon.str() $available.eng(2)\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]disk_drive\f[R]
-\[bu] .RS 2
 .SS dnf
 .PP
 Pending updates available for your Fedora system
-.RE
 .SS Configuration
 .PP
 .TS
@@ -1441,11 +1424,9 @@ on_click = \[dq]dnf list -q --upgrades | tail -n +2 | rofi -dmenu\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]update\f[R]
-\[bu] .RS 2
 .SS docker
 .PP
 Local docker daemon status
-.RE
 .SS Configuration
 .PP
 .TS
@@ -1563,11 +1544,9 @@ format = \[dq]$running/$total\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]docker\f[R]
-\[bu] .RS 2
 .SS external_ip
 .PP
 External IP address and various information about it
-.RE
 .SS Configuration
 .PP
 .TS
@@ -1905,10 +1884,9 @@ a notification, for example due to a IP refresh at the router.
 Flags: They are not icons but unicode glyphs.
 You will need a font that includes them.
 Tested with: https://www.babelstone.co.uk/Fonts/Flags.html
-\[bu] .RS 2
 .SS focused_window
+.PP
 Currently focused window
-.RE
 .PP
 This block displays the title and/or the active marks (when used with
 \f[V]sway\f[R]/\f[V]i3\f[R]) of the currently focused window.
@@ -2017,10 +1995,9 @@ full = \[dq]$title.rot-str(15)|\[dq]
 short = \[dq]$title.rot-str(10)|\[dq]
 \f[R]
 .fi
-\[bu] .RS 2
 .SS github
+.PP
 The number of GitHub notifications
-.RE
 .PP
 This block shows the unread notification count for a GitHub account.
 A GitHub personal access token (https://github.com/settings/tokens/new)
@@ -2225,11 +2202,9 @@ hide_if_total_is_zero = true
 .SS Icons Used
 .IP \[bu] 2
 \f[V]github\f[R]
-\[bu] .RS 2
 .SS hueshift
 .PP
 Manage display temperature
-.RE
 .PP
 This block displays the current color temperature in Kelvin.
 When scrolling upon the block the color temperature is changed.
@@ -2359,10 +2334,9 @@ A hard limit is set for the \f[V]max_temp\f[R] to \f[V]10000K\f[R] and
 the same for the \f[V]min_temp\f[R] which is \f[V]1000K\f[R].
 The \f[V]step\f[R] has a hard limit as well, defined to \f[V]500K\f[R]
 to avoid too brutal changes.
-\[bu] .RS 2
 .SS kdeconnect
+.PP
 KDEConnect (https://community.kde.org/KDEConnect) indicator
-.RE
 .PP
 Display info from the currently connected device in KDEConnect, updated
 asynchronously.
@@ -2560,11 +2534,9 @@ bat_good = 101
 \f[V]phone\f[R]
 .IP \[bu] 2
 \f[V]phone_disconnected\f[R]
-\[bu] .RS 2
 .SS keyboard_layout
 .PP
 Keyboard layout indicator
-.RE
 .PP
 Four drivers are available: - \f[V]setxkbmap\f[R] which polls setxkbmap
 to get the current layout - \f[V]localebus\f[R] which can read
@@ -2726,10 +2698,9 @@ format = \[dq]$layout\[dq]
 \[dq]Russian (N/A)\[dq] = \[dq]RU\[dq]
 \f[R]
 .fi
-\[bu] .RS 2
 .SS load
+.PP
 System load average
-.RE
 .SS Configuration
 .PP
 .TS
@@ -2847,12 +2818,10 @@ interval = 1
 .SS Icons Used
 .IP \[bu] 2
 \f[V]cogs\f[R]
-\[bu] .RS 2
 .SS maildir
 .PP
 Unread mail.
 Only supports maildir format.
-.RE
 .PP
 Note that you need to enable \f[V]maildir\f[R] feature to use this
 block:
@@ -2943,11 +2912,9 @@ Add \f[V]format\f[R] option.
 .SS Icons Used
 .IP \[bu] 2
 \f[V]mail\f[R]
-\[bu] .RS 2
 .SS memory
 .PP
 Memory and swap usage
-.RE
 .PP
 This module keeps track of both Swap and Memory.
 By default, a click switches between them.
@@ -3250,11 +3217,9 @@ critical_mem = 90
 \f[V]memory_mem\f[R]
 .IP \[bu] 2
 \f[V]memory_swap\f[R]
-\[bu] .RS 2
 .SS music
 .PP
 The current song title and artist
-.RE
 .PP
 Also provides buttons for play/pause, previous and next.
 .PP
@@ -3479,10 +3444,9 @@ interface_name_exclude = [\[dq].*kdeconnect.*\[dq], \[dq]mpd\[dq]]
 \f[V]music_play\f[R]
 .IP \[bu] 2
 \f[V]music_prev\f[R]
-\[bu] .RS 2
 .SS net
+.PP
 Network information
-.RE
 .PP
 This block uses \f[V]sysfs\f[R] and \f[V]netlink\f[R] and thus does not
 require any external dependencies.
@@ -3652,11 +3616,9 @@ format = \[dq]{$signal.eng(2) $ssid.str() $frequency.eng()|Wired connection} via
 \f[V]net_up\f[R]
 .IP \[bu] 2
 \f[V]net_down\f[R]
-\[bu] .RS 2
 .SS notify
 .PP
 Display and toggle the state of notifications daemon
-.RE
 .PP
 Right now only \f[V]dunst\f[R] is supported.
 .PP
@@ -3737,11 +3699,9 @@ format = \[dq]$paused{Off}|On\[dq]
 \f[V]bell\f[R]
 .IP \[bu] 2
 \f[V]bell-slash\f[R]
-\[bu] .RS 2
 .SS notmuch
 .PP
 Count of notmuch messages
-.RE
 .PP
 This block queries a notmuch database and displays the count of
 messages.
@@ -3860,11 +3820,9 @@ name = \[dq]A\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]mail\f[R]
-\[bu] .RS 2
 .SS nvidia_gpu
 .PP
 Display the stats of your NVidia GPU
-.RE
 .PP
 By default \f[V]show_temperature\f[R] shows the used memory.
 Clicking the left mouse on the \[lq]temperature\[rq] part of the block
@@ -4036,11 +3994,9 @@ format = \[dq]GT 1030 $utilization $temperature $clocks\[dq]
 .IP \[bu] 2
 Provide a \f[V]mappings\f[R] option similar to
 \f[V]keyboard_layout\f[R]\[cq]s to map GPU names to labels?
-\[bu] .RS 2
 .SS pacman
 .PP
 Pending updates available on pacman or an AUR helper.
-.RE
 .PP
 Requires fakeroot to be installed (only required for pacman).
 .PP
@@ -4264,11 +4220,9 @@ aur_command = \[dq]yay -Qua\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]update\f[R]
-\[bu] .RS 2
 .SS pomodoro
 .PP
 A pomodoro timer (https://en.wikipedia.org/wiki/Pomodoro_Technique)
-.RE
 .SS Technique
 .PP
 There are six steps in the original technique: 1) Decide on the task to
@@ -4377,11 +4331,9 @@ blocking_cmd = false
 Use different icons.
 .IP \[bu] 2
 Use format strings.
-\[bu] .RS 2
 .SS rofication
 .PP
 The number of pending notifications in rofication-daemon
-.RE
 .PP
 A different color is used is there are critical notications.
 Left clicking the block opens the GUI.
@@ -4466,11 +4418,9 @@ socket_path = \[dq]/tmp/rofi_notification_daemon\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]bell\f[R]
-\[bu] .RS 2
 .SS sound
 .PP
 Volume level
-.RE
 .PP
 This block displays the volume level (according to PulseAudio or ALSA).
 Right click to toggle mute, scroll to adjust volume.
@@ -4701,11 +4651,9 @@ T}
 \f[V]volume_full\f[R] (over 71%)
 .IP \[bu] 2
 \f[V]headphones\f[R]
-\[bu] .RS 2
 .SS speedtest
 .PP
 Ping, download, and upload speeds
-.RE
 .PP
 This block which requires
 \f[V]speedtest-cli\f[R] (https://github.com/sivel/speedtest-cli).
@@ -4805,11 +4753,9 @@ format = \[dq]$speed_down.eng(4,B)$speed_up(4,B)\[dq]
 \f[V]net_down\f[R]
 .IP \[bu] 2
 \f[V]net_up\f[R]
-\[bu] .RS 2
 .SS taskwarrior
 .PP
 The number of tasks from the taskwarrior list
-.RE
 .PP
 Clicking on the block updates the number of tasks immediately.
 Clicking the right mouse button on the icon cycles the view of the block
@@ -4974,11 +4920,9 @@ filter = \[dq]project:some-project +PENDING\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]tasks\f[R]
-\[bu] .RS 2
 .SS temperature
 .PP
 The system temperature
-.RE
 .PP
 This block displays the system temperature, based on
 \f[V]libsensors\f[R] library.
@@ -5165,11 +5109,9 @@ chip = \[dq]*-isa-*\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]thermometer\f[R]
-\[bu] .RS 2
 .SS time
 .PP
 The current time.
-.RE
 .SS Configuration
 .PP
 .TS
@@ -5241,11 +5183,9 @@ short = \[dq]%R\[dq]
 .SS Icons Used
 .IP \[bu] 2
 \f[V]time\f[R]
-\[bu] .RS 2
 .SS toggle
 .PP
 A Toggle block
-.RE
 .PP
 You can add commands to be executed to disable the toggle
 (\f[V]command_off\f[R]), and to enable it (\f[V]command_on\f[R]).
@@ -5363,11 +5303,9 @@ interval = 5
 \f[V]toggle_off\f[R]
 .IP \[bu] 2
 \f[V]toggle_on\f[R]
-\[bu] .RS 2
 .SS uptime
 .PP
 System\[cq]s uptime
-.RE
 .PP
 This block displays system uptime in terms of two biggest units, so
 minutes and seconds, or hours and minutes or days and hours or weeks and
@@ -5413,11 +5351,9 @@ interval = \[dq]3600\[dq] # update every hour
 .IP \[bu] 2
 Add \f[V]time\f[R] or \f[V]dur\f[R] formatter to
 \f[V]src/formatting/formatter.rs\f[R]
-\[bu] .RS 2
 .SS watson
 .PP
 Watson statistics
-.RE
 .PP
 Watson (http://tailordev.github.io/Watson/) is a simple CLI time
 tracking application.
@@ -5481,11 +5417,9 @@ state_path = \[dq]/home/user/.config/watson/state\[dq]
 .SS TODO
 .IP \[bu] 2
 Extend functionality: start / stop watson using this block
-\[bu] .RS 2
 .SS weather
 .PP
 Current weather
-.RE
 .PP
 This block displays local weather and temperature information.
 In order to use this block, you will need access to a supported weather
@@ -5776,11 +5710,9 @@ service = { name = \[dq]openweathermap\[dq], api_key = \[dq]XXX\[dq], city_id = 
 \f[V]weather_snow\f[R] (when weather is reported as \[lq]Snow\[rq])
 .IP \[bu] 2
 \f[V]weather_default\f[R] (in all other cases)
-\[bu] .RS 2
 .SS xrandr
 .PP
 X11 screen information
-.RE
 .PP
 X11 screen information (name, brightness, resolution).
 With a click you can toggle through your active screens and with wheel
