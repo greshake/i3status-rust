@@ -100,7 +100,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api
         .new_widget()
         .with_icon("thermometer")?
-        .with_format(config.format.with_default("$average avg, $max max")?);
+        .with_format(config.format.with_default("$average avg, $max max|")?);
 
     let good = config
         .good
