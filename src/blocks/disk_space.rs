@@ -32,6 +32,17 @@
 //! warning = 15.0
 //! format = "$icon.str() $available.eng(2)"
 //! ```
+//!
+//! Update block on right click:
+//!
+//! ```toml
+//! [[block]]
+//! block = "disk_space"
+//! [[block.click]]
+//! button = "right"
+//! update = true
+//! ```
+//!
 //! # Icons Used
 //! - `disk_drive`
 
