@@ -140,9 +140,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         api.set_widget(&widget).await?;
 
-        select! {
+        tokio::select! {
             _ = sleep(config.interval.0) => (),
-            UpdateRequest = api.event() => (),
+            _ = api.wait_for_update_request() => (),
         }
     }
 }

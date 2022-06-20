@@ -322,8 +322,14 @@ impl BarState {
                 let (block, block_type) = self.blocks.get_mut(event.id).error("Events receiver: ID out of bounds")?;
                 match block {
                     Block::Running(block) => {
-                        if block.click_handler.handle(event.button).await.in_block(*block_type, event.id)? {
+                        match block.click_handler.handle(event.button).await.in_block(*block_type, event.id)? {
+                            click::PostAction::PassThrough => {
                                 let _ = block.event_sender.send(BlockEvent::Click(event)).await;
+                            }
+                            click::PostAction::RequestUpdate => {
+                                let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
+                            }
+                            click::PostAction::None => (),
                         }
                     }
                     Block::Failed(block) => {

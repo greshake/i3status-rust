@@ -137,7 +137,7 @@ define_blocks!(
 
 pub type BlockFuture = BoxedFuture<Result<()>>;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BlockEvent {
     Click(I3BarEvent),
     UpdateRequest,
@@ -210,7 +210,10 @@ impl CommonApi {
     /// ```
     /// tokio::select! {
     ///     _ = timer.tick() => (),
-    ///     UpdateRequest = api.event() => (),
+    ///     event = api.event() => match event {
+    ///         // ...
+    ///         _ => (),
+    ///     }
     /// }
     /// ```
     pub async fn event(&mut self) -> BlockEvent {
@@ -218,6 +221,31 @@ impl CommonApi {
             Some(event) => event,
             None => panic!("events stream ended"),
         }
+    }
+
+    /// Wait for the next update request.
+    ///
+    /// The update request can be send by clicking on the block (with `update=true`) or sending a
+    /// signal.
+    ///
+    /// # Cancel safety
+    ///
+    /// This method is cancel safe.
+    ///
+    /// # Panics
+    ///
+    /// Panics if event sender is closed
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// tokio::select! {
+    ///     _ = timer.tick() => (),
+    ///     _ = api.wait_for_update_request() => (),
+    /// }
+    /// ```
+    pub async fn wait_for_update_request(&mut self) {
+        while self.event().await != BlockEvent::UpdateRequest {}
     }
 
     pub fn get_icon(&self, icon: &str) -> Result<String> {
