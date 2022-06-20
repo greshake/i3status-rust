@@ -35,16 +35,9 @@ serde_json = "1.0"
 shellexpand = "2.1"
 signal-hook = "0.3"
 smart-default = "0.6"
+swayipc-async = "2.0"
 tokio-stream = "0.1"
 toml = "0.5"
-
-# swayipc-async = { path = "../swayipc-rs/async", default-features = false, features = ["tokio"] }
-swayipc-async = "2.0"
-
-# zbus = { path = "../zbus/zbus", default-features = false, features = ["tokio"] }
-# zvariant = { path = "../zbus/zvariant" }
-# zbus = { git = "https://gitlab.freedesktop.org/dbus/zbus.git" }
-# zvariant = { git = "https://gitlab.freedesktop.org/dbus/zbus.git" }
 zbus = { version = "2.1", default-features = false, features = ["tokio"] }
 zvariant = "3.0"
 
