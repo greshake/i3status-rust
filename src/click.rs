@@ -21,17 +21,16 @@ pub enum MouseButton {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PostAction {
-    PassThrough,
-    RequestUpdate,
-    None,
+pub struct PostActions {
+    pub pass: bool,
+    pub update: bool,
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
 pub struct ClickHandler(Vec<ClickConfigEntry>);
 
 impl ClickHandler {
-    pub async fn handle(&self, button: MouseButton) -> Result<PostAction> {
+    pub async fn handle(&self, button: MouseButton) -> Result<PostActions> {
         Ok(match self.0.iter().find(|e| e.button == button) {
             Some(entry) => {
                 if let Some(cmd) = &entry.cmd {
@@ -44,13 +43,15 @@ impl ClickHandler {
                         format!("'{:?}' button handler: Failed to run '{}", button, cmd)
                     })?;
                 }
-                if entry.update {
-                    PostAction::RequestUpdate
-                } else {
-                    PostAction::None
+                PostActions {
+                    pass: entry.pass,
+                    update: entry.update,
                 }
             }
-            None => PostAction::PassThrough,
+            None => PostActions {
+                pass: true,
+                update: false,
+            },
         })
     }
 }
@@ -69,6 +70,13 @@ pub struct ClickConfigEntry {
     /// Whether to update the block on click (default is `false`)
     #[serde(default)]
     update: bool,
+    /// Whether to pass click event to the block (default is `true`)
+    #[serde(default = "return_true")]
+    pass: bool,
+}
+
+fn return_true() -> bool {
+    true
 }
 
 impl<'de> Deserialize<'de> for MouseButton {
