@@ -171,13 +171,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .or_else(|| std::env::var("SHELL").ok())
         .unwrap_or_else(|| "sh".to_string());
 
-    let mut cycle = config
-        .cycle
-        .or_else(|| config.command.clone().map(|cmd| vec![cmd]))
-        .error("either 'command' or 'cycle' must be specified")?
-        .into_iter()
-        .cycle();
-
     if config.persistent {
         let mut process = Command::new(&shell)
             .args(&[
@@ -212,10 +205,18 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
         }
     } else {
+        let mut cycle = config
+            .cycle
+            .or_else(|| config.command.clone().map(|cmd| vec![cmd]))
+            .error("either 'command' or 'cycle' must be specified")?
+            .into_iter()
+            .cycle();
+        let mut cmd = cycle.next().unwrap();
+
         loop {
             // Run command
             let output = Command::new(&shell)
-                .args(&["-c", &cycle.next().unwrap()])
+                .args(&["-c", &cmd])
                 .output()
                 .await
                 .error("failed to run command")?;
@@ -236,10 +237,20 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 return Ok(());
             }
 
-            select! {
-                _ = timer.next() => (),
-                _ = file_updates.next() => (),
-                _ = api.event() => ()
+            loop {
+                select! {
+                    _ = timer.next() => break,
+                    _ = file_updates.next() => break,
+                    event = api.event() => match event {
+                        UpdateRequest => break,
+                        Click(click) => {
+                            if click.button == MouseButton::Left {
+                                cmd = cycle.next().unwrap();
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
