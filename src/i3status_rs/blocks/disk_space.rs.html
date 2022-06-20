@@ -151,6 +151,17 @@
 <span id="146">146</span>
 <span id="147">147</span>
 <span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -185,6 +196,17 @@
 <span class="doccomment">//! warning = 15.0</span>
 <span class="doccomment">//! format = &quot;$icon.str() $available.eng(2)&quot;</span>
 <span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Update block on right click:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```toml</span>
+<span class="doccomment">//! [[block]]</span>
+<span class="doccomment">//! block = &quot;disk_space&quot;</span>
+<span class="doccomment">//! [[block.click]]</span>
+<span class="doccomment">//! button = &quot;right&quot;</span>
+<span class="doccomment">//! update = true</span>
+<span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
 <span class="doccomment">//! - `disk_drive`</span>
 
@@ -293,9 +315,9 @@
 
         <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
+        <span class="macro">tokio::select!</span> {
             <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
-            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
         }
     }
 }

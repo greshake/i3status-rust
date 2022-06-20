@@ -211,9 +211,9 @@
 
         <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
+        <span class="macro">tokio::select!</span> {
             <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; (),
-            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
         }
     }
 }

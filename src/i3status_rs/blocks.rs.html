@@ -327,6 +327,34 @@
 <span id="322">322</span>
 <span id="323">323</span>
 <span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
@@ -466,7 +494,7 @@
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BlockFuture</span> <span class="op">=</span> <span class="ident">BoxedFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BlockEvent</span> {
     <span class="ident">Click</span>(<span class="ident">I3BarEvent</span>),
     <span class="ident">UpdateRequest</span>,
@@ -539,7 +567,10 @@
     <span class="doccomment">/// ```</span>
     <span class="doccomment">/// tokio::select! {</span>
     <span class="doccomment">///     _ = timer.tick() =&gt; (),</span>
-    <span class="doccomment">///     UpdateRequest = api.event() =&gt; (),</span>
+    <span class="doccomment">///     event = api.event() =&gt; match event {</span>
+    <span class="doccomment">///         // ...</span>
+    <span class="doccomment">///         _ =&gt; (),</span>
+    <span class="doccomment">///     }</span>
     <span class="doccomment">/// }</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">event</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="ident">BlockEvent</span> {
@@ -547,6 +578,31 @@
             <span class="prelude-val">Some</span>(<span class="ident">event</span>) =&gt; <span class="ident">event</span>,
             <span class="prelude-val">None</span> =&gt; <span class="macro">panic!</span>(<span class="string">&quot;events stream ended&quot;</span>),
         }
+    }
+
+    <span class="doccomment">/// Wait for the next update request.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// The update request can be send by clicking on the block (with `update=true`) or sending a</span>
+    <span class="doccomment">/// signal.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Cancel safety</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This method is cancel safe.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Panics</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Panics if event sender is closed</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Examples</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// ```</span>
+    <span class="doccomment">/// tokio::select! {</span>
+    <span class="doccomment">///     _ = timer.tick() =&gt; (),</span>
+    <span class="doccomment">///     _ = api.wait_for_update_request() =&gt; (),</span>
+    <span class="doccomment">/// }</span>
+    <span class="doccomment">/// ```</span>
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_update_request</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
+        <span class="kw">while</span> <span class="self">self</span>.<span class="ident">event</span>().<span class="kw">await</span> <span class="op">!</span><span class="op">=</span> <span class="ident">BlockEvent::UpdateRequest</span> {}
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {

@@ -434,7 +434,7 @@
 
         <span class="macro">select!</span> {
             <span class="ident">update</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">wait_for_change</span>() =&gt; <span class="ident">update</span><span class="question-mark">?</span>,
-            <span class="ident">UpdateRequest</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
         }
     }
 }
