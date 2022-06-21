@@ -206,6 +206,39 @@
 <span id="201">201</span>
 <span id="202">202</span>
 <span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">neli::consts</span>::{<span class="ident">nl</span>::<span class="kw-2">*</span>, <span class="ident">rtnl</span>::<span class="kw-2">*</span>, <span class="ident">socket</span>::<span class="kw-2">*</span>};
 <span class="kw">use</span> <span class="ident">neli::nl</span>::{<span class="ident">NlPayload</span>, <span class="ident">Nlmsghdr</span>};
 <span class="kw">use</span> <span class="ident">neli::rtnl::Rtmsg</span>;
@@ -222,6 +255,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NetDevice</span> {
     <span class="ident">rx_stat_path</span>: <span class="ident">PathBuf</span>,
     <span class="ident">tx_stat_path</span>: <span class="ident">PathBuf</span>,
+    <span class="ident">path</span>: <span class="ident">PathBuf</span>,
     <span class="kw">pub</span> <span class="ident">interface</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">wireless</span>: <span class="ident">bool</span>,
     <span class="kw">pub</span> <span class="ident">tun</span>: <span class="ident">bool</span>,
@@ -233,8 +267,11 @@
 <span class="kw">impl</span> <span class="ident">NetDevice</span> {
     <span class="doccomment">/// Use the network device `device`. Raises an error if a directory for that</span>
     <span class="doccomment">/// device is not found.</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">from_interface</span>(<span class="ident">interface</span>: <span class="ident">String</span>) -&gt; <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">from_interface</span>(<span class="ident">interface</span>: <span class="ident">String</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">Path::new</span>(<span class="string">&quot;/sys/class/net&quot;</span>).<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="ident">interface</span>);
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">path</span>.<span class="ident">exists</span>() {
+            <span class="kw">return</span> <span class="prelude-val">None</span>;
+        }
 
         <span class="comment">// I don&#39;t believe that this should ever change, so set it now:</span>
         <span class="kw">let</span> <span class="ident">wireless</span> <span class="op">=</span> <span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;wireless&quot;</span>).<span class="ident">exists</span>();
@@ -259,16 +296,45 @@
             <span class="string">&quot;net_wired&quot;</span>
         };
 
-        <span class="ident">NetDevice</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">NetDevice</span> {
             <span class="ident">rx_stat_path</span>: <span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;statistics/rx_bytes&quot;</span>),
             <span class="ident">tx_stat_path</span>: <span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;statistics/tx_bytes&quot;</span>),
+            <span class="ident">path</span>,
             <span class="ident">interface</span>,
             <span class="ident">wireless</span>,
             <span class="ident">tun</span>,
             <span class="ident">wg</span>,
             <span class="ident">ppp</span>,
             <span class="ident">icon</span>,
+        })
+    }
+
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">is_up</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">operstate_file</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;operstate&quot;</span>);
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">operstate_file</span>.<span class="ident">exists</span>() {
+            <span class="comment">// It seems more reasonable to treat these as inactive networks as</span>
+            <span class="comment">// opposed to erroring out the entire block.</span>
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>);
         }
+
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">tun</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">wg</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">ppp</span> {
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>);
+        }
+
+        <span class="kw">let</span> <span class="ident">operstate</span> <span class="op">=</span> <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="ident">operstate_file</span>)
+            .<span class="kw">await</span>
+            .<span class="ident">error</span>(<span class="string">&quot;Failed to read device operstate&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="ident">operstate</span> <span class="op">==</span> <span class="string">&quot;up&quot;</span> {
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>);
+        }
+
+        <span class="kw">let</span> <span class="ident">carrier_file</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;carrier&quot;</span>);
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">carrier_file</span>.<span class="ident">exists</span>() {
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>);
+        }
+
+        <span class="kw">let</span> <span class="ident">carrier</span> <span class="op">=</span> <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="ident">carrier_file</span>).<span class="kw">await</span>.<span class="ident">ok</span>();
+        <span class="prelude-val">Ok</span>(<span class="ident">carrier</span>.<span class="ident">as_deref</span>() <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="string">&quot;1&quot;</span>))
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_stats</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NetDeviceStats</span><span class="op">&gt;</span> {
