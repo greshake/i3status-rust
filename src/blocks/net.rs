@@ -6,10 +6,12 @@
 //!
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
+//! `device` | Network interface to monitor (as specified in `/sys/class/net/`) | No | If not set, device will be automatically selected every `interval`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$speed_down.eng(3,B,K)$speed_up.eng(3,B,K)"`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | No | None
-//! `device` | Network interface to monitor (as specified in `/sys/class/net/`) | No | If not set, device will be automatically selected every `interval`
 //! `interval` | Update interval in seconds | No | `2`
+//! `hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
+//! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
 //!
 //! Placeholder  | Value                    | Type   | Unit
 //! -------------|--------------------------|--------|---------------
@@ -48,11 +50,13 @@ use std::time::Instant;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct NetConfig {
-    #[default(2.into())]
-    interval: Seconds,
+    device: Option<String>,
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
-    device: Option<String>,
+    #[default(2.into())]
+    interval: Seconds,
+    hide_missing: bool,
+    hide_inactive: bool,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -79,50 +83,70 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let mut speed_down: f64 = 0.0;
         let mut speed_up: f64 = 0.0;
 
-        // Get interface name
         let device = NetDevice::from_interface(match &config.device {
             Some(i) => i.clone(),
             None => default_interface().await.unwrap_or_else(|| "lo".into()),
         })
         .await;
 
-        // Calculate speed
-        match (stats, device.read_stats().await) {
-            // No previous stats available
-            (None, new_stats) => stats = new_stats,
-            // No new stats available
-            (Some(_), None) => stats = None,
-            // All stats available
-            (Some(old_stats), Some(new_stats)) => {
-                let diff = new_stats - old_stats;
-                let elapsed = stats_timer.elapsed().as_secs_f64();
-                stats_timer = Instant::now();
-                speed_down = diff.rx_bytes as f64 / elapsed;
-                speed_up = diff.tx_bytes as f64 / elapsed;
-                stats = Some(new_stats);
+        match device {
+            Some(device) if !device.is_up().await? => {
+                if config.hide_inactive {
+                    api.hide().await?;
+                } else {
+                    widget.set_text("×".to_string());
+                    api.set_widget(&widget).await?;
+                }
+            }
+            Some(device) => {
+                widget.set_format(format.clone());
+
+                // Calculate speed
+                match (stats, device.read_stats().await) {
+                    // No previous stats available
+                    (None, new_stats) => stats = new_stats,
+                    // No new stats available
+                    (Some(_), None) => stats = None,
+                    // All stats available
+                    (Some(old_stats), Some(new_stats)) => {
+                        let diff = new_stats - old_stats;
+                        let elapsed = stats_timer.elapsed().as_secs_f64();
+                        stats_timer = Instant::now();
+                        speed_down = diff.rx_bytes as f64 / elapsed;
+                        speed_up = diff.tx_bytes as f64 / elapsed;
+                        stats = Some(new_stats);
+                    }
+                }
+                push_to_hist(&mut rx_hist, speed_down);
+                push_to_hist(&mut tx_hist, speed_up);
+
+                let wifi = device.wifi_info().await?;
+
+                let mut values = map! {
+                    "speed_down" => Value::bytes(speed_down).with_icon(api.get_icon("net_down")?),
+                    "speed_up" => Value::bytes(speed_up).with_icon(api.get_icon("net_up")?),
+                    "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
+                    "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
+                    "device" => Value::text(device.interface),
+                };
+
+                wifi.0.map(|s| values.insert("ssid".into(), Value::text(s)));
+                wifi.1
+                    .map(|f| values.insert("frequency".into(), Value::hertz(f)));
+                wifi.2
+                    .map(|s| values.insert("signal".into(), Value::percents(s)));
+
+                widget.set_values(values);
+                widget.set_icon(device.icon)?;
+                api.set_widget(&widget).await?;
+            }
+            None if config.hide_missing || config.hide_inactive => {
+                api.hide().await?;
+            }
+            None => {
+                return Err(Error::new("device not found"));
             }
         }
-        push_to_hist(&mut rx_hist, speed_down);
-        push_to_hist(&mut tx_hist, speed_up);
-
-        let wifi = device.wifi_info().await?;
-
-        let mut values = map! {
-            "speed_down" => Value::bytes(speed_down).with_icon(api.get_icon("net_down")?),
-            "speed_up" => Value::bytes(speed_up).with_icon(api.get_icon("net_up")?),
-            "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
-            "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
-            "device" => Value::text(device.interface),
-        };
-        wifi.0.map(|s| values.insert("ssid".into(), Value::text(s)));
-        wifi.1
-            .map(|f| values.insert("frequency".into(), Value::hertz(f)));
-        wifi.2
-            .map(|s| values.insert("signal".into(), Value::percents(s)));
-
-        widget.set_values(values);
-        widget.set_icon(device.icon)?;
-        api.set_widget(&widget).await?;
 
         loop {
             select! {
@@ -131,9 +155,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     UpdateRequest => break,
                     Click(click) => {
                         if click.button == MouseButton::Left {
-                            if let Some(ref mut format_alt) = format_alt {
+                            if let Some(format_alt) = &mut format_alt {
                                 std::mem::swap(format_alt, &mut format);
-                                widget.set_format(format.clone());
                                 break;
                             }
                         }
