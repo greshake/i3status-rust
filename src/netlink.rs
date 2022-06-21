@@ -14,6 +14,7 @@ use crate::util;
 pub struct NetDevice {
     rx_stat_path: PathBuf,
     tx_stat_path: PathBuf,
+    path: PathBuf,
     pub interface: String,
     pub wireless: bool,
     pub tun: bool,
@@ -25,8 +26,11 @@ pub struct NetDevice {
 impl NetDevice {
     /// Use the network device `device`. Raises an error if a directory for that
     /// device is not found.
-    pub async fn from_interface(interface: String) -> Self {
+    pub async fn from_interface(interface: String) -> Option<Self> {
         let path = Path::new("/sys/class/net").join(&interface);
+        if !path.exists() {
+            return None;
+        }
 
         // I don't believe that this should ever change, so set it now:
         let wireless = path.join("wireless").exists();
@@ -51,16 +55,45 @@ impl NetDevice {
             "net_wired"
         };
 
-        NetDevice {
+        Some(NetDevice {
             rx_stat_path: path.join("statistics/rx_bytes"),
             tx_stat_path: path.join("statistics/tx_bytes"),
+            path,
             interface,
             wireless,
             tun,
             wg,
             ppp,
             icon,
+        })
+    }
+
+    pub async fn is_up(&self) -> Result<bool> {
+        let operstate_file = self.path.join("operstate");
+        if !operstate_file.exists() {
+            // It seems more reasonable to treat these as inactive networks as
+            // opposed to erroring out the entire block.
+            return Ok(false);
         }
+
+        if self.tun || self.wg || self.ppp {
+            return Ok(true);
+        }
+
+        let operstate = util::read_file(&operstate_file)
+            .await
+            .error("Failed to read device operstate")?;
+        if operstate == "up" {
+            return Ok(true);
+        }
+
+        let carrier_file = self.path.join("carrier");
+        if !carrier_file.exists() {
+            return Ok(false);
+        }
+
+        let carrier = util::read_file(&carrier_file).await.ok();
+        Ok(carrier.as_deref() == Some("1"))
     }
 
     pub async fn read_stats(&self) -> Option<NetDeviceStats> {
