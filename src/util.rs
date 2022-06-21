@@ -162,6 +162,17 @@ macro_rules! regex {
     }};
 }
 
+macro_rules! make_log_macro {
+    ($macro_name:ident, $block_name:literal) => {
+        #[allow(dead_code)]
+        macro_rules! $macro_name {
+            ($$($$args:tt)+) => {
+                ::log::$macro_name!(target: $block_name, $$($$args)+);
+            };
+        }
+    };
+}
+
 pub fn format_bar_graph(content: &[f64]) -> String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     static BARS: [char; 8] = [

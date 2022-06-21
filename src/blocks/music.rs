@@ -88,6 +88,8 @@ use std::collections::HashMap;
 use super::prelude::*;
 mod zbus_mpris;
 
+make_log_macro!(debug, "music");
+
 const PLAY_PAUSE_BTN: usize = 1;
 const NEXT_BTN: usize = 2;
 const PREV_BTN: usize = 3;
@@ -165,6 +167,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut dbus_stream = MessageStream::from(&dbus_conn);
 
     loop {
+        debug!("availeable players:");
+        for player in &players {
+            debug!("{}", player.bus_name);
+        }
+
         let avail = players.len();
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
         match player {

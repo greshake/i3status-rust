@@ -73,6 +73,7 @@ struct CliArgs {
 }
 
 fn main() {
+    env_logger::init();
     let args = CliArgs::parse();
     let blocking_threads = args.blocking_threads;
 

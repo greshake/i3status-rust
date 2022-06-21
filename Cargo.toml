@@ -19,10 +19,12 @@ async-once-cell = "0.4"
 async-trait = "0.1"
 crossbeam-channel = "0.5"
 dirs-next = "2.0" # dependency of shellexpand
+env_logger = "0.9"
 hyper = "0.14"
 inotify = "0.10"
 libc = "0.2"
 libpulse-binding = { version = "2.0", default-features = false }
+log = "0.4"
 maildir = { version = "0.6", optional = true }
 neli = { version = "0.6", features = ["async"] }
 neli-wifi = { version = "0.3", features = ["async"] }
