@@ -24,8 +24,7 @@ pub struct NetDevice {
 }
 
 impl NetDevice {
-    /// Use the network device `device`. Raises an error if a directory for that
-    /// device is not found.
+    /// Use the network device `device`. Returns `None` if device is missing.
     pub async fn from_interface(interface: String) -> Option<Self> {
         let path = Path::new("/sys/class/net").join(&interface);
         if !path.exists() {
