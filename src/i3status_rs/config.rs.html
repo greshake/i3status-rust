@@ -70,6 +70,10 @@
 <span id="65">65</span>
 <span id="66">66</span>
 <span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">toml::value</span>;
@@ -91,13 +95,17 @@
 
 <span class="kw">impl</span> <span class="ident">SharedConfig</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">icons_format</span>.<span class="ident">replace</span>(
-            <span class="string">&quot;{icon}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">icons</span>
-                .<span class="number">0</span>
-                .<span class="ident">get</span>(<span class="ident">icon</span>)
-                .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{icon}&#39; not found: please check your icons file or open a new issue on GitHub if you use precompiled icons&quot;</span>))<span class="question-mark">?</span>,
-        ))
+        <span class="kw">if</span> <span class="ident">icon</span>.<span class="ident">is_empty</span>() {
+            <span class="prelude-val">Ok</span>(<span class="ident">String::new</span>())
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">icons_format</span>.<span class="ident">replace</span>(
+                <span class="string">&quot;{icon}&quot;</span>,
+                <span class="self">self</span>.<span class="ident">icons</span>
+                    .<span class="number">0</span>
+                    .<span class="ident">get</span>(<span class="ident">icon</span>)
+                    .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{icon}&#39; not found: please check your icons file or open a new issue on GitHub if you use precompiled icons&quot;</span>))<span class="question-mark">?</span>,
+            ))
+        }
     }
 }
 
