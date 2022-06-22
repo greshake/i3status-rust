@@ -257,6 +257,7 @@
 <span id="252">252</span>
 <span id="253">253</span>
 <span id="254">254</span>
+<span id="255">255</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block can display the current battery state (Full, Charging or Discharging), percentage</span>
@@ -446,6 +447,7 @@
 }
 
 <span class="doccomment">/// `Option&lt;Regex&gt;`, but more intuitive</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">enum</span> <span class="ident">DeviceName</span> {
     <span class="ident">Any</span>,
     <span class="ident">Regex</span>(<span class="ident">Regex</span>),

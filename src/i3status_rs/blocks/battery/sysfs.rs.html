@@ -224,6 +224,16 @@
 <span id="219">219</span>
 <span id="220">220</span>
 <span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::convert::Infallible</span>;
 <span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
 <span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
@@ -234,6 +244,8 @@
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">BatteryDevice</span>, <span class="ident">BatteryInfo</span>, <span class="ident">BatteryStatus</span>, <span class="ident">DeviceName</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::blocks::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::read_file</span>;
+
+<span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;battery&quot;</span>);
 
 <span class="doccomment">/// Path for the power supply devices</span>
 <span class="kw">const</span> <span class="ident">POWER_SUPPLY_DEVICES_PATH</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;/sys/class/power_supply&quot;</span>;
@@ -298,6 +310,7 @@
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_device_path</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Path</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">path</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">dev_path</span> {
             <span class="kw">if</span> <span class="ident"><span class="self">Self</span>::device_available</span>(<span class="ident">path</span>).<span class="kw">await</span> {
+                <span class="macro">debug!</span>(<span class="string">&quot;battery path &#39;{}&#39; is available&quot;</span>, <span class="ident">path</span>.<span class="ident">display</span>());
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">dev_path</span>.<span class="ident">as_deref</span>());
             }
         }
@@ -317,10 +330,16 @@
             <span class="kw">if</span> <span class="ident"><span class="self">Self</span>::read_prop</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>, <span class="string">&quot;type&quot;</span>).<span class="kw">await</span>.<span class="ident">as_deref</span>() <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="string">&quot;Battery&quot;</span>)
                 <span class="op">&amp;&amp;</span> <span class="ident"><span class="self">Self</span>::device_available</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>).<span class="kw">await</span>
             {
+                <span class="macro">debug!</span>(
+                    <span class="string">&quot;Couldnt find &#39;{}&#39; but found &#39;{:?}&#39; instead&quot;</span>,
+                    <span class="ident">path</span>.<span class="ident">display</span>(),
+                    <span class="self">self</span>.<span class="ident">dev_name</span>
+                );
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">dev_path</span>.<span class="ident">insert</span>(<span class="ident">path</span>)));
             }
         }
 
+        <span class="macro">debug!</span>(<span class="string">&quot;No batteries found&quot;</span>);
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
     }
 
@@ -381,6 +400,7 @@
         <span class="kw">if</span> <span class="op">!</span><span class="ident"><span class="self">Self</span>::device_available</span>(<span class="ident">path</span>).<span class="kw">await</span> {
             <span class="comment">// Device became unavailable while we were reading data from it. The simplest thing we</span>
             <span class="comment">// can do now is to pretend it wasn&#39;t available to begin with.</span>
+            <span class="macro">debug!</span>(<span class="string">&quot;battery suddenly unavailable&quot;</span>);
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
         }
 
