@@ -13,7 +13,7 @@
 //!
 //! Placeholder     | Value                                                                 | Type | Unit
 //! ----------------|-----------------------------------------------------------------------|------|-----
-//! `title`         | Window's titile (may be absent)                                       | Text | -
+//! `title`         | Window's title (may be absent)                                       | Text | -
 //! `marks`         | Window's marks (present only with sway/i3)                            | Text | -
 //! `visible_marks` | Window's marks that do not start with `_` (present only with sway/i3) | Text | -
 //!
