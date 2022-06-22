@@ -10,15 +10,15 @@
 <p><code>icon</code> is optional (default “”)<br />
 <code>state</code> is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)<br />
 <code>short_text</code> is optional.</p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>command</code></td><td>Shell command to execute &amp; display</td><td>No</td><td>None</td></tr>
-<tr><td><code>persistent</code></td><td>Run command in the background; update display for each output line of the command</td><td>No</td><td>false</td></tr>
-<tr><td><code>cycle</code></td><td>Commands to execute and change when the button is clicked</td><td>No</td><td>None</td></tr>
-<tr><td><code>interval</code></td><td>Update interval in seconds (or “once” to update only once)</td><td>No</td><td><code>10</code></td></tr>
-<tr><td><code>json</code></td><td>Use JSON from command output to format the block. If the JSON is not valid, the block will error out.</td><td>No</td><td><code>false</code></td></tr>
-<tr><td><code>watch_files</code></td><td>Watch files to trigger update on file modification</td><td>No</td><td>None</td></tr>
-<tr><td><code>hide_when_empty</code></td><td>Hides the block when the command output (or json text field) is empty</td><td>No</td><td>false</td></tr>
-<tr><td><code>shell</code></td><td>Specify the shell to use when running commands</td><td>No</td><td><code>$SHELL</code> if set, otherwise fallback to <code>sh</code></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>command</code></td><td>Shell command to execute &amp; display</td><td><code>None</code></td></tr>
+<tr><td><code>persistent</code></td><td>Run command in the background; update display for each output line of the command</td><td><code>false</code></td></tr>
+<tr><td><code>cycle</code></td><td>Commands to execute and change when the button is clicked</td><td><code>None</code></td></tr>
+<tr><td><code>interval</code></td><td>Update interval in seconds (or “once” to update only once)</td><td><code>10</code></td></tr>
+<tr><td><code>json</code></td><td>Use JSON from command output to format the block. If the JSON is not valid, the block will error out.</td><td><code>false</code></td></tr>
+<tr><td><code>watch_files</code></td><td>Watch files to trigger update on file modification</td><td><code>None</code></td></tr>
+<tr><td><code>hide_when_empty</code></td><td>Hides the block when the command output (or json text field) is empty</td><td><code>false</code></td></tr>
+<tr><td><code>shell</code></td><td>Specify the shell to use when running commands</td><td><code>$SHELL</code> if set, otherwise fallback to <code>sh</code></td></tr>
 </tbody></table>
 </div><h2 id="examples"><a href="#examples">Examples</a></h2>
 <p>Display temperature, update every 10 seconds:</p>

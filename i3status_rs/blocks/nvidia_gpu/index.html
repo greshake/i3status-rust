@@ -12,14 +12,14 @@ memory.</p>
 a fan speed setting mode. In this mode you can scroll the mouse wheel over the block to change
 the fan speeds, and left click to exit the mode.</p>
 <p>Requires <code>nvidia-smi</code> for displaying info and <code>nvidia_settings</code> for setting fan speed.</p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>gpu_id</code></td><td>GPU id in system.</td><td>No</td><td><code>0</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;$utilization $memory $temperature&quot;</code></td></tr>
-<tr><td><code>interval</code></td><td>Update interval in seconds.</td><td>No</td><td><code>1</code></td></tr>
-<tr><td><code>idle</code></td><td>Maximum temperature, below which state is set to idle</td><td>No</td><td><code>50</code></td></tr>
-<tr><td><code>good</code></td><td>Maximum temperature, below which state is set to good</td><td>No</td><td><code>70</code></td></tr>
-<tr><td><code>info</code></td><td>Maximum temperature, below which state is set to info</td><td>No</td><td><code>75</code></td></tr>
-<tr><td><code>warning</code></td><td>Maximum temperature, below which state is set to warning</td><td>No</td><td><code>80</code></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>gpu_id</code></td><td>GPU id in system.</td><td><code>0</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;$utilization $memory $temperature&quot;</code></td></tr>
+<tr><td><code>interval</code></td><td>Update interval in seconds.</td><td><code>1</code></td></tr>
+<tr><td><code>idle</code></td><td>Maximum temperature, below which state is set to idle</td><td><code>50</code></td></tr>
+<tr><td><code>good</code></td><td>Maximum temperature, below which state is set to good</td><td><code>70</code></td></tr>
+<tr><td><code>info</code></td><td>Maximum temperature, below which state is set to info</td><td><code>75</code></td></tr>
+<tr><td><code>warning</code></td><td>Maximum temperature, below which state is set to warning</td><td><code>80</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>name</code></td><td>Text</td><td>-</td></tr>

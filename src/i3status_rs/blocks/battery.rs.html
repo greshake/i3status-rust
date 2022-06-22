@@ -265,20 +265,20 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Required | Default</span>
-<span class="doccomment">//! ----|--------|----------|--------</span>
-<span class="doccomment">//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `&quot;DisplayDevice&quot;`. Regular expressions can be used. | No | Any battery device</span>
-<span class="doccomment">//! `driver` | One of `&quot;sysfs&quot;` or `&quot;upower&quot;` | No | `&quot;sysfs&quot;`</span>
-<span class="doccomment">//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;`. | No | `10`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | No | &lt;code&gt;&quot;$percentage&amp;vert;&quot;&lt;/code&gt;</span>
-<span class="doccomment">//! `full_format` | Same as `format` but for when the battery is full | No | `&quot;&quot;`</span>
-<span class="doccomment">//! `hide_missing` | Completely hide this block if the battery cannot be found. | No | `false`</span>
-<span class="doccomment">//! `hide_full` | Hide the block if battery is full | No | `false`</span>
-<span class="doccomment">//! `info` | Minimum battery level, where state is set to info | No | `60`</span>
-<span class="doccomment">//! `good` | Minimum battery level, where state is set to good | No | `60`</span>
-<span class="doccomment">//! `warning` | Minimum battery level, where state is set to warning | No | `30`</span>
-<span class="doccomment">//! `critical` | Minimum battery level, where state is set to critical | No | `15`</span>
-<span class="doccomment">//! `full_threshold` | Percentage at which the battery is considered full (`full_format` shown) | No | `100`</span>
+<span class="doccomment">//! Key | Values | Default</span>
+<span class="doccomment">//! ----|--------|--------</span>
+<span class="doccomment">//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `&quot;DisplayDevice&quot;`. Regular expressions can be used. | Any battery device</span>
+<span class="doccomment">//! `driver` | One of `&quot;sysfs&quot;` or `&quot;upower&quot;` | `&quot;sysfs&quot;`</span>
+<span class="doccomment">//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;`. | `10`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$percentage&amp;vert;&quot;&lt;/code&gt;</span>
+<span class="doccomment">//! `full_format` | Same as `format` but for when the battery is full | `&quot;&quot;`</span>
+<span class="doccomment">//! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`</span>
+<span class="doccomment">//! `hide_full` | Hide the block if battery is full | `false`</span>
+<span class="doccomment">//! `info` | Minimum battery level, where state is set to info | `60`</span>
+<span class="doccomment">//! `good` | Minimum battery level, where state is set to good | `60`</span>
+<span class="doccomment">//! `warning` | Minimum battery level, where state is set to warning | `30`</span>
+<span class="doccomment">//! `critical` | Minimum battery level, where state is set to critical | `15`</span>
+<span class="doccomment">//! `full_threshold` | Percentage at which the battery is considered full (`full_format` shown) | `100`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder  | Value                                                                   | Type              | Unit</span>
 <span class="doccomment">//! -------------|-------------------------------------------------------------------------|-------------------|-----</span>

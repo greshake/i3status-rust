@@ -15,11 +15,11 @@
 <li>If you have fewer than four checkmarks, take a short break (3–5 minutes) and then return to step 2.</li>
 <li>After four pomodoros, take a longer break (15–30 minutes), reset your checkmark count to zero, then go to step 1.</li>
 </ol>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>message</code></td><td>Message when timer expires</td><td>No</td><td><code>Pomodoro over! Take a break!</code></td></tr>
-<tr><td><code>break_message</code></td><td>Message when break is over</td><td>No</td><td><code>Break over! Time to work!</code></td></tr>
-<tr><td><code>notify_cmd</code></td><td>A shell command to run as a notifier. <code>{msg}</code> will be substituted with either <code>message</code> or <code>break_message</code>.</td><td>No</td><td>None</td></tr>
-<tr><td><code>blocking_cmd</code></td><td>Is <code>notify_cmd</code> blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed.</td><td>No</td><td><code>false</code></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>message</code></td><td>Message when timer expires</td><td><code>&quot;Pomodoro over! Take a break!&quot;</code></td></tr>
+<tr><td><code>break_message</code></td><td>Message when break is over</td><td><code>&quot;Break over! Time to work!&quot;</code></td></tr>
+<tr><td><code>notify_cmd</code></td><td>A shell command to run as a notifier. <code>{msg}</code> will be substituted with either <code>message</code> or <code>break_message</code>.</td><td><code>None</code></td></tr>
+<tr><td><code>blocking_cmd</code></td><td>Is <code>notify_cmd</code> blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed.</td><td><code>false</code></td></tr>
 </tbody></table>
 </div><h2 id="example"><a href="#example">Example</a></h2>
 <p>Use <code>swaynag</code> as a notifier:</p>

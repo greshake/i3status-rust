@@ -7,9 +7,9 @@
     <h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">notify</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../../src/i3status_rs/blocks/notify.rs.html#1-147">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Display and toggle the state of notifications daemon</p>
 <p>Right now only <code>dunst</code> is supported.</p>
 <p>Left-clicking on this block will enable/disable notifications.</p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>driver</code></td><td>Which notifications daemon is running. Available drivers are: <code>&quot;dunst&quot;</code></td><td>No</td><td><code>&quot;dunst&quot;</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;&quot;</code></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>driver</code></td><td>Which notifications daemon is running. Available drivers are: <code>&quot;dunst&quot;</code></td><td><code>&quot;dunst&quot;</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;&quot;</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>paused</code></td><td>Present only if notifications are disabled</td><td>Flag</td><td>-</td></tr>

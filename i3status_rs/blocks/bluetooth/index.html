@@ -10,11 +10,11 @@ is supported. Relies on the Bluez D-Bus API.</p>
 <p>When the device can be identified as an audio headset, a keyboard, joystick, or mouse, use the
 relevant icon. Otherwise, fall back on the generic Bluetooth symbol.</p>
 <p>Right-clicking the block will attempt to connect (or disconnect) the device.</p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>mac</code></td><td>MAC address of the Bluetooth device</td><td>Yes</td><td>-</td></tr>
-<tr><td><code>adapter_mac</code></td><td>MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters)</td><td>No</td><td>None</td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>“$name{ $percentage|}|Unavailable”</code></td></tr>
-<tr><td><code>hide_disconnected</code></td><td>Whether to hide the block when disconnected</td><td>No</td><td><code>false</code></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>mac</code></td><td>MAC address of the Bluetooth device</td><td><strong>Required</strong></td></tr>
+<tr><td><code>adapter_mac</code></td><td>MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters)</td><td><code>None</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“$name{ $percentage|}|Unavailable”</code></td></tr>
+<tr><td><code>hide_disconnected</code></td><td>Whether to hide the block when disconnected</td><td><code>false</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>name</code></td><td>Device’s name</td><td>Text</td><td>-</td></tr>

@@ -7,14 +7,14 @@
     <h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">apt</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../../src/i3status_rs/blocks/apt.rs.html#1-193">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pending updates available for your Debian/Ubuntu based system</p>
 <p>Behind the scenes this uses <code>apt</code>, and in order to run it without root privileges i3status-rust will create its own package database in <code>/tmp/i3rs-apt/</code> which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.</p>
 <p>Tip: You can grab the list of available updates using <code>APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable</code></p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>interval</code></td><td>Update interval in seconds.</td><td>No</td><td><code>600</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;$count.eng(1)&quot;</code></td></tr>
-<tr><td><code>format_singular</code></td><td>Same as <code>format</code>, but for when exactly one update is available.</td><td>No</td><td><code>&quot;$count.eng(1)&quot;</code></td></tr>
-<tr><td><code>format_up_to_date</code></td><td>Same as <code>format</code>, but for when no updates are available.</td><td>No</td><td><code>&quot;$count.eng(1)&quot;</code></td></tr>
-<tr><td><code>warning_updates_regex</code></td><td>Display block as warning if updates matching regex are available.</td><td>No</td><td><code>None</code></td></tr>
-<tr><td><code>critical_updates_regex</code></td><td>Display block as critical if updates matching regex are available.</td><td>No</td><td><code>None</code></td></tr>
-<tr><td><code>hide_when_uptodate</code></td><td>Hides the block when there are no updates available</td><td><code>false</code></td><td></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>interval</code></td><td>Update interval in seconds.</td><td><code>600</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;$count.eng(1)&quot;</code></td></tr>
+<tr><td><code>format_singular</code></td><td>Same as <code>format</code>, but for when exactly one update is available.</td><td><code>&quot;$count.eng(1)&quot;</code></td></tr>
+<tr><td><code>format_up_to_date</code></td><td>Same as <code>format</code>, but for when no updates are available.</td><td><code>&quot;$count.eng(1)&quot;</code></td></tr>
+<tr><td><code>warning_updates_regex</code></td><td>Display block as warning if updates matching regex are available.</td><td><code>None</code></td></tr>
+<tr><td><code>critical_updates_regex</code></td><td>Display block as critical if updates matching regex are available.</td><td><code>None</code></td></tr>
+<tr><td><code>hide_when_uptodate</code></td><td>Hides the block when there are no updates available</td><td><code>false</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Key</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>count</code></td><td>Number of updates available</td><td>Number</td><td>-</td></tr>

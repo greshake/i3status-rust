@@ -170,15 +170,15 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Required | Default</span>
-<span class="doccomment">//! ----|--------|----------|--------</span>
-<span class="doccomment">//! `text` | A label next to the icon | No | `&quot;&quot;`</span>
+<span class="doccomment">//! Key | Values | Default</span>
+<span class="doccomment">//! ----|--------|--------</span>
+<span class="doccomment">//! `text` | A label next to the icon | `&quot;&quot;`</span>
 <span class="doccomment">//! `command_on` | Shell command to enable the toggle | Yes | N/A</span>
 <span class="doccomment">//! `command_off` | Shell command to disable the toggle | Yes | N/A</span>
-<span class="doccomment">//! `command_state` | Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes. | Yes | N/A</span>
-<span class="doccomment">//! `icon_on` | Icon override for the toggle button while on | No | `&quot;toggle_on&quot;`</span>
-<span class="doccomment">//! `icon_off` | Icon override for the toggle button while off | No | `&quot;toggle_off&quot;`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | No | None</span>
+<span class="doccomment">//! `command_state` | Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes. | **Required**</span>
+<span class="doccomment">//! `icon_on` | Icon override for the toggle button while on | `&quot;toggle_on&quot;`</span>
+<span class="doccomment">//! `icon_off` | Icon override for the toggle button while off | `&quot;toggle_off&quot;`</span>
+<span class="doccomment">//! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Examples</span>
 <span class="doccomment">//!</span>

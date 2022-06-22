@@ -8,14 +8,14 @@
 <p>Display info from the currently connected device in KDEConnect, updated asynchronously.</p>
 <p>Block colours are updated based on the battery level, unless all bat_* thresholds are set to 0,
 in which case the block colours will depend on the notification count instead.</p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>device_id</code></td><td>Device ID as per the output of <code>kdeconnect --list-devices</code>.</td><td>No</td><td>Chooses the first found device, if any.</td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>“$name $bat_icon $bat_charge{ $notif_icon|}”</code></td></tr>
-<tr><td><code>bat_info</code></td><td>Min battery level below which state is set to info.</td><td>No</td><td><code>60</code></td></tr>
-<tr><td><code>bat_good</code></td><td>Min battery level below which state is set to good.</td><td>No</td><td><code>60</code></td></tr>
-<tr><td><code>bat_warning</code></td><td>Min battery level below which state is set to warning.</td><td>No</td><td><code>30</code></td></tr>
-<tr><td><code>bat_critical</code></td><td>Min battery level below which state is set to critical.</td><td>No</td><td><code>15</code></td></tr>
-<tr><td><code>hide_disconnected</code></td><td>Whether to hide this block when disconnected</td><td>No</td><td><code>true</code></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>device_id</code></td><td>Device ID as per the output of <code>kdeconnect --list-devices</code>.</td><td>Chooses the first found device, if any.</td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“$name $bat_icon $bat_charge{ $notif_icon|}”</code></td></tr>
+<tr><td><code>bat_info</code></td><td>Min battery level below which state is set to info.</td><td><code>60</code></td></tr>
+<tr><td><code>bat_good</code></td><td>Min battery level below which state is set to good.</td><td><code>60</code></td></tr>
+<tr><td><code>bat_warning</code></td><td>Min battery level below which state is set to warning.</td><td><code>30</code></td></tr>
+<tr><td><code>bat_critical</code></td><td>Min battery level below which state is set to critical.</td><td><code>15</code></td></tr>
+<tr><td><code>hide_disconnected</code></td><td>Whether to hide this block when disconnected</td><td><code>true</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>bat_icon</code></td><td>Battery level indicator (only when connected)</td><td>Icon</td><td>-</td></tr>

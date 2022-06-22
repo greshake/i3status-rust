@@ -7,19 +7,19 @@
     <h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">battery</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../../src/i3status_rs/blocks/battery.rs.html#1-255">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Information about the internal power supply</p>
 <p>This block can display the current battery state (Full, Charging or Discharging), percentage
 charged and estimate time until (dis)charged for an internal power supply.</p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>device</code></td><td>The device in <code>/sys/class/power_supply/</code> to read from. When using UPower, this can also be <code>&quot;DisplayDevice&quot;</code>. Regular expressions can be used.</td><td>No</td><td>Any battery device</td></tr>
-<tr><td><code>driver</code></td><td>One of <code>&quot;sysfs&quot;</code> or <code>&quot;upower&quot;</code></td><td>No</td><td><code>&quot;sysfs&quot;</code></td></tr>
-<tr><td><code>interval</code></td><td>Update interval, in seconds. Only relevant for <code>driver = &quot;sysfs&quot;</code>.</td><td>No</td><td><code>10</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>“$percentage|”</code></td></tr>
-<tr><td><code>full_format</code></td><td>Same as <code>format</code> but for when the battery is full</td><td>No</td><td><code>&quot;&quot;</code></td></tr>
-<tr><td><code>hide_missing</code></td><td>Completely hide this block if the battery cannot be found.</td><td>No</td><td><code>false</code></td></tr>
-<tr><td><code>hide_full</code></td><td>Hide the block if battery is full</td><td>No</td><td><code>false</code></td></tr>
-<tr><td><code>info</code></td><td>Minimum battery level, where state is set to info</td><td>No</td><td><code>60</code></td></tr>
-<tr><td><code>good</code></td><td>Minimum battery level, where state is set to good</td><td>No</td><td><code>60</code></td></tr>
-<tr><td><code>warning</code></td><td>Minimum battery level, where state is set to warning</td><td>No</td><td><code>30</code></td></tr>
-<tr><td><code>critical</code></td><td>Minimum battery level, where state is set to critical</td><td>No</td><td><code>15</code></td></tr>
-<tr><td><code>full_threshold</code></td><td>Percentage at which the battery is considered full (<code>full_format</code> shown)</td><td>No</td><td><code>100</code></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>device</code></td><td>The device in <code>/sys/class/power_supply/</code> to read from. When using UPower, this can also be <code>&quot;DisplayDevice&quot;</code>. Regular expressions can be used.</td><td>Any battery device</td></tr>
+<tr><td><code>driver</code></td><td>One of <code>&quot;sysfs&quot;</code> or <code>&quot;upower&quot;</code></td><td><code>&quot;sysfs&quot;</code></td></tr>
+<tr><td><code>interval</code></td><td>Update interval, in seconds. Only relevant for <code>driver = &quot;sysfs&quot;</code>.</td><td><code>10</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“$percentage|”</code></td></tr>
+<tr><td><code>full_format</code></td><td>Same as <code>format</code> but for when the battery is full</td><td><code>&quot;&quot;</code></td></tr>
+<tr><td><code>hide_missing</code></td><td>Completely hide this block if the battery cannot be found.</td><td><code>false</code></td></tr>
+<tr><td><code>hide_full</code></td><td>Hide the block if battery is full</td><td><code>false</code></td></tr>
+<tr><td><code>info</code></td><td>Minimum battery level, where state is set to info</td><td><code>60</code></td></tr>
+<tr><td><code>good</code></td><td>Minimum battery level, where state is set to good</td><td><code>60</code></td></tr>
+<tr><td><code>warning</code></td><td>Minimum battery level, where state is set to warning</td><td><code>30</code></td></tr>
+<tr><td><code>critical</code></td><td>Minimum battery level, where state is set to critical</td><td><code>15</code></td></tr>
+<tr><td><code>full_threshold</code></td><td>Percentage at which the battery is considered full (<code>full_format</code> shown)</td><td><code>100</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>percentage</code></td><td>Battery level, in percent</td><td>String or Integer</td><td>Percents</td></tr>

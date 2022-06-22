@@ -16,15 +16,15 @@ Target = *
 
 [Action]
 When = PostTransaction
-Exec = /usr/bin/pkill -SIGUSR1 i3status-rs</code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>interval</code></td><td>Update interval, in seconds.</td><td>No</td><td><code>600</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;$pacman.eng(1)&quot;</code></td></tr>
-<tr><td><code>format_singular</code></td><td>Same as <code>format</code> but for when exactly one update is available.</td><td>No</td><td><code>&quot;$pacman.eng(1)&quot;</code></td></tr>
-<tr><td><code>format_up_to_date</code></td><td>Same as <code>format</code> but for when no updates are available.</td><td>No</td><td><code>&quot;$pacman.eng(1)&quot;</code></td></tr>
-<tr><td><code>warning_updates_regex</code></td><td>Display block as warning if updates matching regex are available.</td><td>No</td><td><code>None</code></td></tr>
-<tr><td><code>critical_updates_regex</code></td><td>Display block as critical if updates matching regex are available.</td><td>No</td><td><code>None</code></td></tr>
-<tr><td><code>aur_command</code></td><td>AUR command to check available updates, which outputs in the same format as pacman. e.g. <code>yay -Qua</code></td><td>if <code>{both}</code> or <code>{aur}</code> are used.</td><td><code>None</code></td></tr>
-<tr><td><code>hide_when_uptodate</code></td><td>Hides the block when there are no updates available</td><td><code>false</code></td><td></td></tr>
+Exec = /usr/bin/pkill -SIGUSR1 i3status-rs</code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>interval</code></td><td>Update interval, in seconds.</td><td><code>600</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;$pacman.eng(1)&quot;</code></td></tr>
+<tr><td><code>format_singular</code></td><td>Same as <code>format</code> but for when exactly one update is available.</td><td><code>&quot;$pacman.eng(1)&quot;</code></td></tr>
+<tr><td><code>format_up_to_date</code></td><td>Same as <code>format</code> but for when no updates are available.</td><td><code>&quot;$pacman.eng(1)&quot;</code></td></tr>
+<tr><td><code>warning_updates_regex</code></td><td>Display block as warning if updates matching regex are available.</td><td><code>None</code></td></tr>
+<tr><td><code>critical_updates_regex</code></td><td>Display block as critical if updates matching regex are available.</td><td><code>None</code></td></tr>
+<tr><td><code>aur_command</code></td><td>AUR command to check available updates, which outputs in the same format as pacman. e.g. <code>yay -Qua</code></td><td>if <code>{both}</code> or <code>{aur}</code> are used</td></tr>
+<tr><td><code>hide_when_uptodate</code></td><td>Hides the block when there are no updates available</td><td><code>false</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Key</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>pacman</code></td><td>Number of updates available according to <code>pacman</code></td><td>Number</td><td>-</td></tr>

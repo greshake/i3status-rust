@@ -19,18 +19,18 @@ block = &quot;sound&quot;
 format = &quot;$output_name{ $volume|}&quot;
 [block.mappings]
 &quot;alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo&quot; = &quot;🔈&quot;
-&quot;alsa_output.pci-0000_00_1b.0.analog-stereo&quot; = &quot;🎧&quot;</code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>driver</code></td><td><code>&quot;auto&quot;</code>, <code>&quot;pulseaudio&quot;</code>, <code>&quot;alsa&quot;</code>.</td><td>No</td><td><code>&quot;auto&quot;</code> (Pulseaudio with ALSA fallback)</td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td>`$volume.eng(2)</td></tr>
-<tr><td><code>name</code></td><td>PulseAudio device name, or the ALSA control name as found in the output of <code>amixer -D yourdevice scontrols</code>.</td><td>No</td><td>PulseAudio: <code>@DEFAULT_SINK@</code> / ALSA: <code>Master</code></td></tr>
-<tr><td><code>device</code></td><td>ALSA device name, usually in the form “hw:X” or “hw:X,Y” where <code>X</code> is the card number and <code>Y</code> is the device number as found in the output of <code>aplay -l</code>.</td><td>No</td><td><code>default</code></td></tr>
-<tr><td><code>device_kind</code></td><td>PulseAudio device kind: <code>source</code> or <code>sink</code>.</td><td>No</td><td><code>sink</code></td></tr>
-<tr><td><code>natural_mapping</code></td><td>When using the ALSA driver, display the “mapped volume” as given by <code>alsamixer</code>/<code>amixer -M</code>, which represents the volume level more naturally with respect for the human ear.</td><td>No</td><td><code>false</code></td></tr>
-<tr><td><code>step_width</code></td><td>The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50.</td><td>No</td><td><code>5</code></td></tr>
-<tr><td><code>max_vol</code></td><td>Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application.</td><td>No</td><td><code>None</code></td></tr>
-<tr><td><code>on_click</code></td><td>Shell command to run when the sound block is clicked.</td><td>No</td><td>None</td></tr>
-<tr><td><code>show_volume_when_muted</code></td><td>Show the volume even if it is currently muted.</td><td>No</td><td><code>false</code></td></tr>
-<tr><td><code>headphones_indicator</code></td><td>Change icon when headphones are plugged in (pulseaudio only)</td><td>No</td><td><code>false</code></td></tr>
+&quot;alsa_output.pci-0000_00_1b.0.analog-stereo&quot; = &quot;🎧&quot;</code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>driver</code></td><td><code>&quot;auto&quot;</code>, <code>&quot;pulseaudio&quot;</code>, <code>&quot;alsa&quot;</code>.</td><td><code>&quot;auto&quot;</code> (Pulseaudio with ALSA fallback)</td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>$volume.eng(2)|</code></td></tr>
+<tr><td><code>name</code></td><td>PulseAudio device name, or the ALSA control name as found in the output of <code>amixer -D yourdevice scontrols</code>.</td><td>PulseAudio: <code>@DEFAULT_SINK@</code> / ALSA: <code>Master</code></td></tr>
+<tr><td><code>device</code></td><td>ALSA device name, usually in the form “hw:X” or “hw:X,Y” where <code>X</code> is the card number and <code>Y</code> is the device number as found in the output of <code>aplay -l</code>.</td><td><code>default</code></td></tr>
+<tr><td><code>device_kind</code></td><td>PulseAudio device kind: <code>source</code> or <code>sink</code>.</td><td><code>&quot;sink&quot;</code></td></tr>
+<tr><td><code>natural_mapping</code></td><td>When using the ALSA driver, display the “mapped volume” as given by <code>alsamixer</code>/<code>amixer -M</code>, which represents the volume level more naturally with respect for the human ear.</td><td><code>false</code></td></tr>
+<tr><td><code>step_width</code></td><td>The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50.</td><td><code>5</code></td></tr>
+<tr><td><code>max_vol</code></td><td>Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application.</td><td><code>None</code></td></tr>
+<tr><td><code>on_click</code></td><td>Shell command to run when the sound block is clicked.</td><td><code>None</code></td></tr>
+<tr><td><code>show_volume_when_muted</code></td><td>Show the volume even if it is currently muted.</td><td><code>false</code></td></tr>
+<tr><td><code>headphones_indicator</code></td><td>Change icon when headphones are plugged in (pulseaudio only)</td><td><code>false</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Key</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>volume</code></td><td>Current volume. Missing if muted.</td><td>Number</td><td>%</td></tr>

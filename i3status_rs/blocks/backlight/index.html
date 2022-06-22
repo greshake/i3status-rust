@@ -11,15 +11,15 @@ directly, so there is no need to set an update interval. This block uses DBus to
 level using the mouse wheel.</p>
 <h2 id="root-scaling"><a href="#root-scaling">Root scaling</a></h2>
 <p>Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for <code>root_scaling</code> between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear). More information: <a href="https://en.wikipedia.org/wiki/Lightness">https://en.wikipedia.org/wiki/Lightness</a></p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>device</code></td><td>The <code>/sys/class/backlight</code> device to read brightness information from.  When there is no <code>device</code> specified, this block will display information from the first device found in the <code>/sys/class/backlight</code> directory. If you only have one display, this approach should find it correctly.</td><td>No</td><td>Default device</td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>&quot;$brightness&quot;</code></td></tr>
-<tr><td><code>step_width</code></td><td>The brightness increment to use when scrolling, in percent</td><td>No</td><td><code>5</code></td></tr>
-<tr><td><code>minimum</code></td><td>The minimum brightness that can be scrolled down to</td><td>No</td><td><code>5</code></td></tr>
-<tr><td><code>maximum</code></td><td>The maximum brightness that can be scrolled up to</td><td>No</td><td><code>100</code></td></tr>
-<tr><td><code>cycle</code></td><td>The brightnesses to cycle through on each click</td><td>No</td><td><code>[minimum, maximum]</code></td></tr>
-<tr><td><code>root_scaling</code></td><td>Scaling exponent reciprocal (ie. root)</td><td>No</td><td><code>1.0</code></td></tr>
-<tr><td><code>invert_icons</code></td><td>Invert icons’ ordering, useful if you have colorful emoji</td><td>No</td><td><code>false</code></td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>device</code></td><td>The <code>/sys/class/backlight</code> device to read brightness information from.  When there is no <code>device</code> specified, this block will display information from the first device found in the <code>/sys/class/backlight</code> directory. If you only have one display, this approach should find it correctly.</td><td>Default device</td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;$brightness&quot;</code></td></tr>
+<tr><td><code>step_width</code></td><td>The brightness increment to use when scrolling, in percent</td><td><code>5</code></td></tr>
+<tr><td><code>minimum</code></td><td>The minimum brightness that can be scrolled down to</td><td><code>5</code></td></tr>
+<tr><td><code>maximum</code></td><td>The maximum brightness that can be scrolled up to</td><td><code>100</code></td></tr>
+<tr><td><code>cycle</code></td><td>The brightnesses to cycle through on each click</td><td><code>[minimum, maximum]</code></td></tr>
+<tr><td><code>root_scaling</code></td><td>Scaling exponent reciprocal (ie. root)</td><td><code>1.0</code></td></tr>
+<tr><td><code>invert_icons</code></td><td>Invert icons’ ordering, useful if you have colorful emoji</td><td><code>false</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>brightness</code></td><td>Current brightness</td><td>Number</td><td>%</td></tr>

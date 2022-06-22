@@ -13,14 +13,14 @@ nothing, the toggle is disabled, otherwise enabled. By specifying the interval p
 let the command_state be executed continuously.</p>
 <p>To run those commands, the shell form <code>$SHELL</code> environment variable is used. If such variable
 is not presented, <code>sh</code> is used.</p>
-<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>text</code></td><td>A label next to the icon</td><td>No</td><td><code>&quot;&quot;</code></td></tr>
-<tr><td><code>command_on</code></td><td>Shell command to enable the toggle</td><td>Yes</td><td>N/A</td></tr>
-<tr><td><code>command_off</code></td><td>Shell command to disable the toggle</td><td>Yes</td><td>N/A</td></tr>
-<tr><td><code>command_state</code></td><td>Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes.</td><td>Yes</td><td>N/A</td></tr>
-<tr><td><code>icon_on</code></td><td>Icon override for the toggle button while on</td><td>No</td><td><code>&quot;toggle_on&quot;</code></td></tr>
-<tr><td><code>icon_off</code></td><td>Icon override for the toggle button while off</td><td>No</td><td><code>&quot;toggle_off&quot;</code></td></tr>
-<tr><td><code>interval</code></td><td>Update interval in seconds. If not set, <code>command_state</code> will run only on click.</td><td>No</td><td>None</td></tr>
+<h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>text</code></td><td>A label next to the icon</td><td><code>&quot;&quot;</code></td></tr>
+<tr><td><code>command_on</code></td><td>Shell command to enable the toggle</td><td>Yes</td></tr>
+<tr><td><code>command_off</code></td><td>Shell command to disable the toggle</td><td>Yes</td></tr>
+<tr><td><code>command_state</code></td><td>Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes.</td><td><strong>Required</strong></td></tr>
+<tr><td><code>icon_on</code></td><td>Icon override for the toggle button while on</td><td><code>&quot;toggle_on&quot;</code></td></tr>
+<tr><td><code>icon_off</code></td><td>Icon override for the toggle button while off</td><td><code>&quot;toggle_off&quot;</code></td></tr>
+<tr><td><code>interval</code></td><td>Update interval in seconds. If not set, <code>command_state</code> will run only on click.</td><td>None</td></tr>
 </tbody></table>
 </div><h2 id="examples"><a href="#examples">Examples</a></h2>
 <p>This is what can be used to toggle an external monitor configuration:</p>
