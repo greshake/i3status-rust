@@ -7,7 +7,7 @@ Formatter documentation is available here: https://greshake.github.io/i3status-r
 
 This is a major release which rewrites the core code to be asynchronous.
 
-- Formatting system has breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in bracjets: `format = "$percentage"`.
+- Formatting system has been overhauled, introducing some breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in bracjets: `format = "$percentage"`.
 - `ibus` block has been removed
 - `networkmanager` block has been removed (could be revisited in the future)
 - `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
