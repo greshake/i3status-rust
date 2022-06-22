@@ -11,9 +11,7 @@ pub(super) struct Device {
     natural_mapping: bool,
     volume: u32,
     muted: bool,
-
     monitor: ChildStdout,
-    buffer: [u8; 2048],
 }
 
 impl Device {
@@ -24,15 +22,13 @@ impl Device {
             natural_mapping,
             volume: 0,
             muted: false,
-
-            monitor: Command::new("stdbuf")
-                .args(&["-oL", "alsactl", "monitor"])
+            monitor: Command::new("alsactl")
+                .arg("monitor")
                 .stdout(Stdio::piped())
                 .spawn()
                 .error("Failed to start alsactl monitor")?
                 .stdout
                 .error("Failed to pipe alsactl monitor output")?,
-            buffer: [0; 2048],
         })
     }
 }
@@ -137,10 +133,11 @@ impl SoundDevice for Device {
     }
 
     async fn wait_for_update(&mut self) -> Result<()> {
+        let mut buf = [0u8; 1024];
         self.monitor
-            .read(&mut self.buffer)
+            .read(&mut buf)
             .await
-            .error("Failed to read stdbuf output")
-            .map(|_| ())
+            .error("Failed to read stdbuf output")?;
+        Ok(())
     }
 }
