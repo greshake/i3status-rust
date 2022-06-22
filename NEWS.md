@@ -31,8 +31,8 @@ cmd = "random_command"
 ```
 
 ### New features and bugfixes
-- `custom_dbus` can now be used more than one in your config
-- Implemented "persist" command feature from i3blocks
+- `custom_dbus` block can now be used more than one in your config
+- `custom` block has new config option `"persistent"` which runs a command in the background and updates the block text for each received output line.
 
 ### Dependencies that are no longer required
 
