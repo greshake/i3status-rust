@@ -74,7 +74,7 @@ impl Device {
     async fn get_device_path(&mut self) -> Result<Option<&Path>> {
         if let Some(path) = &self.dev_path {
             if Self::device_available(path).await {
-                debug!("battery path '{}' is available", path.display());
+                debug!("battery '{}' is still available", path.display());
                 return Ok(self.dev_path.as_deref());
             }
         }
@@ -95,7 +95,7 @@ impl Device {
                 && Self::device_available(&path).await
             {
                 debug!(
-                    "Couldnt find '{}' but found '{:?}' instead",
+                    "Found matching battery: '{}' matches {:?}",
                     path.display(),
                     self.dev_name
                 );
