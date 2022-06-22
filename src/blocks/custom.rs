@@ -118,14 +118,40 @@ async fn update_bar(
     if stdout.is_empty() && hide_when_empty {
         api.hide().await
     } else if json {
-        let input: Input = serde_json::from_str(stdout).error("invalid JSON")?;
-
-        widget.set_icon(&input.icon)?;
-        widget.state = input.state;
-        if let Some(short) = input.short_text {
-            widget.set_texts(input.text, short);
-        } else {
-            widget.set_text(input.text);
+        match serde_json::from_str::<Input>(stdout) {
+            Ok(input) => {
+                widget.set_icon(&input.icon)?;
+                widget.state = input.state;
+                if let Some(short) = input.short_text {
+                    widget.set_texts(input.text, short);
+                } else {
+                    widget.set_text(input.text);
+                }
+            }
+            Err(_) => {
+                // TODO: show full error message on click.
+                //
+                // Something like:
+                //
+                // ```
+                // widget.enable_fullscreen_on_click(my_error_message);
+                // widget.disable_fullscreen_on_click();
+                // ```
+                //
+                // And somewhere in `main.rs`:
+                //
+                // ```
+                // fn handle_click(...) {
+                //     if widget.has_fullscreen_mode() {
+                //         // Toggle fullscreen mode
+                //     } else {
+                //         normal_click_handler(...);
+                //     }
+                // }
+                // ```
+                widget.set_text("Invalid JSON".into());
+                widget.state = State::Critical;
+            }
         }
         api.set_widget(widget).await
     } else {
