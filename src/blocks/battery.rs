@@ -47,16 +47,16 @@
 //! # Icons Used
 //! - `bat_charging`
 //! - `bat_not_available`
-//! - "bat_10",
-//! - "bat_20",
-//! - "bat_30",
-//! - "bat_40",
-//! - "bat_50",
-//! - "bat_60",
-//! - "bat_70",
-//! - "bat_80",
-//! - "bat_90",
-//! - "bat_full",
+//! - `bat_10`,
+//! - `bat_20`,
+//! - `bat_30`,
+//! - `bat_40`,
+//! - `bat_50`,
+//! - `bat_60`,
+//! - `bat_70`,
+//! - `bat_80`,
+//! - `bat_90`,
+//! - `bat_full`,
 
 use regex::Regex;
 use std::convert::Infallible;
