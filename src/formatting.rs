@@ -26,14 +26,14 @@
 //!
 //! Argument | Default value
 //! ---------|--------------
-//! Minimal width - if text is shorter it will be paded using spaces | `0`
+//! Minimal width - if text is shorter it will be padded using spaces | `0`
 //! Maximal width - if text is longer it will be truncated | `inf`
 //!
 //! ## `rot-str` - Rotating text
 //!
 //! Argument | Default value
 //! ---------|--------------
-//! Width - if text is shorter it will be paded using spaces | `15`
+//! Width - if text is shorter it will be padded using spaces | `15`
 //! Interval - If text is longer than `width` it will be rotated every `interval` seconds | `1.0`
 //!
 //! ## `eng` - Format numbers using engineering notation
