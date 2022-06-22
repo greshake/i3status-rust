@@ -23,6 +23,9 @@ button = "left"
 cmd = "random_command"
 ```
 
+### New features
+- Implemented "persist" command feature from i3blocks
+
 ### Dependencies that are no longer required
 
 - `curl` (was previously used in the Github and Weather blocks)
