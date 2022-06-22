@@ -530,9 +530,9 @@
             <span class="string">&quot;direction&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">convert_wind_direction</span>(<span class="ident">data</span>.<span class="ident">wind</span>.<span class="ident">deg</span>).<span class="ident">into</span>()),
         });
 
-        <span class="doccomment">/// These map to the &#39;Main&#39; entries here: https://openweathermap.org/weather-conditions</span>
-        <span class="doccomment">/// TODO: Drizzle, Mist, Fog, Haze, Smoke, etc?</span>
-        <span class="doccomment">/// TODO: Read description as well to give more details? font awesome has different rain level icons</span>
+        <span class="comment">// These map to the &#39;Main&#39; entries here: https://openweathermap.org/weather-conditions</span>
+        <span class="comment">// TODO: Drizzle, Mist, Fog, Haze, Smoke, etc?</span>
+        <span class="comment">// TODO: Read description as well to give more details? font awesome has different rain level icons</span>
         <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="kw">match</span> <span class="ident">data</span>.<span class="ident">weather</span>[<span class="number">0</span>].<span class="ident">main</span>.<span class="ident">as_str</span>() {
             <span class="string">&quot;Clear&quot;</span> =&gt; <span class="string">&quot;weather_sun&quot;</span>,
             <span class="string">&quot;Rain&quot;</span> <span class="op">|</span> <span class="string">&quot;Drizzle&quot;</span> =&gt; <span class="string">&quot;weather_rain&quot;</span>,
