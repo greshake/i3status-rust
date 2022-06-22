@@ -585,25 +585,25 @@ format = \[dq]$percentage|N/A\[dq]
 .IP \[bu] 2
 \f[V]bat_not_available\f[R]
 .IP \[bu] 2
-\[lq]bat_10\[rq],
+\f[V]bat_10\f[R],
 .IP \[bu] 2
-\[lq]bat_20\[rq],
+\f[V]bat_20\f[R],
 .IP \[bu] 2
-\[lq]bat_30\[rq],
+\f[V]bat_30\f[R],
 .IP \[bu] 2
-\[lq]bat_40\[rq],
+\f[V]bat_40\f[R],
 .IP \[bu] 2
-\[lq]bat_50\[rq],
+\f[V]bat_50\f[R],
 .IP \[bu] 2
-\[lq]bat_60\[rq],
+\f[V]bat_60\f[R],
 .IP \[bu] 2
-\[lq]bat_70\[rq],
+\f[V]bat_70\f[R],
 .IP \[bu] 2
-\[lq]bat_80\[rq],
+\f[V]bat_80\f[R],
 .IP \[bu] 2
-\[lq]bat_90\[rq],
+\f[V]bat_90\f[R],
 .IP \[bu] 2
-\[lq]bat_full\[rq],
+\f[V]bat_full\f[R],
 .SS bluetooth
 .PP
 Monitor Bluetooth device
@@ -1293,6 +1293,18 @@ alert_unit = \[dq]GB\[dq]
 alert = 10.0
 warning = 15.0
 format = \[dq]$icon.str() $available.eng(2)\[dq]
+\f[R]
+.fi
+.PP
+Update block on right click:
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]disk_space\[dq]
+[[block.click]]
+button = \[dq]right\[dq]
+update = true
 \f[R]
 .fi
 .SS Icons Used
@@ -2309,6 +2321,11 @@ T{
 T}@T{
 Wayland
 T}
+T{
+\f[V]\[dq]wlsunset\[dq]\f[R]
+T}@T{
+Wayland
+T}
 .TE
 .PP
 Note that at the moment, only
@@ -2316,7 +2333,7 @@ Note that at the moment, only
 \f[V]wl_gammarelay_rs\f[R] (https://github.com/MaxVerevkin/wl-gammarelay-rs)
 subscribe to the events and update the bar when the temperature is
 modified extenrally.
-Also, these are the only drivers at the moment that work under wayland
+Also, these are the only drivers at the moment that work under Wayland
 without flickering.
 .SS Example
 .IP
@@ -3259,19 +3276,18 @@ T{
 T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
-Text may need to be escaped, refer to Escaping Text.
 T}@T{
 No
 T}@T{
-\f[V]\[dq]$combo.rot-str() $play\[rs]|\[dq]\f[R]
+\[lq]$combo.rot-str() $play|\[rq]
 T}
 T{
 \f[V]player\f[R]
 T}@T{
 Name of the music player MPRIS interface.
-Run
-\f[V]busctl --user list \[rs]| grep \[dq]org.mpris.MediaPlayer2.\[dq] \[rs]| cut -d\[aq] \[aq] -f1\f[R]
-and the name is the part after \[lq]org.mpris.MediaPlayer2.\[rq].
+Run busctl \[en]user list | grep \[lq]org.mpris.MediaPlayer2.\[rq] | cut
+-d\[cq] \[cq] -f1 and the name is the part after
+\[lq]org.mpris.MediaPlayer2.\[rq].
 T}@T{
 No
 T}@T{
@@ -3407,7 +3423,7 @@ buttons and limit the width to 20 characters:
 \f[C]
 [[block]]
 block = \[dq]music\[dq]
-format = \[dq]$combo.str(20) $play $next\[dq]
+format = \[dq]$combo.str(20) $play $next|\[dq]
 player = \[dq]spotify\[dq]
 \f[R]
 .fi
@@ -3420,7 +3436,7 @@ name:
 \f[C]
 [[block]]
 block = \[dq]music\[dq]
-format = \[dq]$combo.str(20) $play $next\[dq]
+format = \[dq]$combo.str(20) $play $next|\[dq]
 interface_name_exclude = [\[dq].*kdeconnect.*\[dq], \[dq]mpd\[dq]]
 \f[R]
 .fi
@@ -3431,7 +3447,7 @@ Same as above, but displays with rotating text
 \f[C]
 [[block]]
 block = \[dq]music\[dq]
-format = \[dq]$combo.rot-str(20) $play $next\[dq]
+format = \[dq]$combo.rot-str(20) $play $next|\[dq]
 interface_name_exclude = [\[dq].*kdeconnect.*\[dq], \[dq]mpd\[dq]]
 \f[R]
 .fi
@@ -3466,6 +3482,16 @@ Default
 T}
 _
 T{
+\f[V]device\f[R]
+T}@T{
+Network interface to monitor (as specified in \f[V]/sys/class/net/\f[R])
+T}@T{
+No
+T}@T{
+If not set, device will be automatically selected every
+\f[V]interval\f[R]
+T}
+T{
 \f[V]format\f[R]
 T}@T{
 A string to customise the output of this block.
@@ -3486,16 +3512,6 @@ T}@T{
 None
 T}
 T{
-\f[V]device\f[R]
-T}@T{
-Network interface to monitor (as specified in \f[V]/sys/class/net/\f[R])
-T}@T{
-No
-T}@T{
-If not set, device will be automatically selected every
-\f[V]interval\f[R]
-T}
-T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds
@@ -3503,6 +3519,24 @@ T}@T{
 No
 T}@T{
 \f[V]2\f[R]
+T}
+T{
+\f[V]hide_missing\f[R]
+T}@T{
+Whether to hide interfaces that don\[cq]t exist on the system.
+T}@T{
+No
+T}@T{
+\f[V]false\f[R]
+T}
+T{
+\f[V]hide_inactive\f[R]
+T}@T{
+Whether to hide interfaces that are not connected (or missing).
+T}@T{
+No
+T}@T{
+\f[V]false\f[R]
 T}
 .TE
 .PP
@@ -4965,7 +4999,7 @@ See below for available placeholders
 T}@T{
 No
 T}@T{
-\f[V]\[dq]$average avg, $max max|\[dq]\f[R]
+\[lq]$average avg, $max max|\[rq]
 T}
 T{
 \f[V]interval\f[R]
@@ -4983,7 +5017,7 @@ Whether the block will be collapsed by default
 T}@T{
 No
 T}@T{
-\f[V]false\f[R]
+\f[V]true\f[R]
 T}
 T{
 \f[V]scale\f[R]
