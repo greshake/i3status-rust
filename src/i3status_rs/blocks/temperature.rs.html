@@ -215,6 +215,7 @@
 <span id="210">210</span>
 <span id="211">211</span>
 <span id="212">212</span>
+<span id="213">213</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The system temperature</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the system temperature, based on `libsensors` library.</span>
@@ -237,7 +238,7 @@
 <span class="doccomment">//! ----|--------|----------|--------</span>
 <span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders | No | &lt;code&gt;&quot;$average avg, $max max&amp;vert;&quot;&lt;/code&gt;</span>
 <span class="doccomment">//! `interval` | Update interval in seconds | No | `5`</span>
-<span class="doccomment">//! `collapsed` | Whether the block will be collapsed by default | No | `false`</span>
+<span class="doccomment">//! `collapsed` | Whether the block will be collapsed by default | No | `true`</span>
 <span class="doccomment">//! `scale` | Either `&quot;celsius&quot;` or `&quot;fahrenheit&quot;` | No | `&quot;celsius&quot;`</span>
 <span class="doccomment">//! `good` | Maximum temperature to set state to good | No | `20` °C (`68` °F)</span>
 <span class="doccomment">//! `idle` | Maximum temperature to set state to idle | No | `45` °C (`113` °F)</span>
@@ -283,6 +284,7 @@
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="bool-val">true</span>)]</span>
     <span class="ident">collapsed</span>: <span class="ident">bool</span>,
     <span class="ident">scale</span>: <span class="ident">TemperatureScale</span>,
     <span class="ident">good</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
