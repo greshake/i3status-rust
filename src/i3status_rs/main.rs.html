@@ -429,6 +429,7 @@
 <span id="424">424</span>
 <span id="425">425</span>
 <span id="426">426</span>
+<span id="427">427</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
@@ -504,6 +505,7 @@
 }
 
 <span class="kw">fn</span> <span class="ident">main</span>() {
+    <span class="ident">env_logger::init</span>();
     <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">CliArgs::parse</span>();
     <span class="kw">let</span> <span class="ident">blocking_threads</span> <span class="op">=</span> <span class="ident">args</span>.<span class="ident">blocking_threads</span>;
 

@@ -484,6 +484,13 @@
 <span id="479">479</span>
 <span id="480">480</span>
 <span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Also provides buttons for play/pause, previous and next.</span>
@@ -533,7 +540,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;music&quot;</span>
-<span class="doccomment">//! format = &quot;$combo.str(20) $play $next&quot;</span>
+<span class="doccomment">//! format = &quot;$combo.str(20) $play $next|&quot;</span>
 <span class="doccomment">//! player = &quot;spotify&quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
@@ -542,7 +549,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;music&quot;</span>
-<span class="doccomment">//! format = &quot;$combo.str(20) $play $next&quot;</span>
+<span class="doccomment">//! format = &quot;$combo.str(20) $play $next|&quot;</span>
 <span class="doccomment">//! interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
@@ -551,7 +558,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;music&quot;</span>
-<span class="doccomment">//! format = &quot;$combo.rot-str(20) $play $next&quot;</span>
+<span class="doccomment">//! format = &quot;$combo.rot-str(20) $play $next|&quot;</span>
 <span class="doccomment">//! interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
@@ -573,6 +580,8 @@
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">mod</span> <span class="ident">zbus_mpris</span>;
+
+<span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;music&quot;</span>);
 
 <span class="kw">const</span> <span class="ident">PLAY_PAUSE_BTN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">1</span>;
 <span class="kw">const</span> <span class="ident">NEXT_BTN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">2</span>;
@@ -651,6 +660,11 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dbus_stream</span> <span class="op">=</span> <span class="ident">MessageStream::from</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>);
 
     <span class="kw">loop</span> {
+        <span class="macro">debug!</span>(<span class="string">&quot;availeable players:&quot;</span>);
+        <span class="kw">for</span> <span class="ident">player</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">players</span> {
+            <span class="macro">debug!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">player</span>.<span class="ident">bus_name</span>);
+        }
+
         <span class="kw">let</span> <span class="ident">avail</span> <span class="op">=</span> <span class="ident">players</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">player</span> <span class="op">=</span> <span class="ident">cur_player</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">players</span>.<span class="ident">get_mut</span>(<span class="ident">c</span>).<span class="ident">unwrap</span>());
         <span class="kw">match</span> <span class="ident">player</span> {
