@@ -25,7 +25,7 @@ cmd = "random_command"
 
 ### Dependencies that are no longer required
 
-- `curl` (was previously used in the Weather block)
+- `curl` (was previously used in the Github and Weather blocks)
 
 # i3status-rust 0.22.0
 
