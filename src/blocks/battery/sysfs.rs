@@ -9,6 +9,8 @@ use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
 use crate::util::read_file;
 
+make_log_macro!(debug, "battery");
+
 /// Path for the power supply devices
 const POWER_SUPPLY_DEVICES_PATH: &str = "/sys/class/power_supply";
 
@@ -72,6 +74,7 @@ impl Device {
     async fn get_device_path(&mut self) -> Result<Option<&Path>> {
         if let Some(path) = &self.dev_path {
             if Self::device_available(path).await {
+                debug!("battery path '{}' is available", path.display());
                 return Ok(self.dev_path.as_deref());
             }
         }
@@ -91,10 +94,16 @@ impl Device {
             if Self::read_prop::<String>(&path, "type").await.as_deref() == Some("Battery")
                 && Self::device_available(&path).await
             {
+                debug!(
+                    "Couldnt find '{}' but found '{:?}' instead",
+                    path.display(),
+                    self.dev_name
+                );
                 return Ok(Some(self.dev_path.insert(path)));
             }
         }
 
+        debug!("No batteries found");
         Ok(None)
     }
 
@@ -155,6 +164,7 @@ impl BatteryDevice for Device {
         if !Self::device_available(path).await {
             // Device became unavailable while we were reading data from it. The simplest thing we
             // can do now is to pretend it wasn't available to begin with.
+            debug!("battery suddenly unavailable");
             return Ok(None);
         }
 

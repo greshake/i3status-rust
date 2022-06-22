@@ -187,6 +187,7 @@ trait BatteryDevice {
 }
 
 /// `Option<Regex>`, but more intuitive
+#[derive(Debug)]
 enum DeviceName {
     Any,
     Regex(Regex),
