@@ -28,7 +28,7 @@
 //! `format_up_to_date` | Same as `format` but for when no updates are available. | `"$pacman.eng(1)"`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
-//! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | if `{both}` or `{aur}` are used
+//! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used
 //! `hide_when_uptodate` | Hides the block when there are no updates available | `false`
 //!
 //!  Key    | Value | Type | Unit
