@@ -125,17 +125,6 @@ pub async fn has_command(command: &str) -> Result<bool> {
         .map(|status| status.success())
 }
 
-macro_rules! __map {
-    ($map:ident, $key:expr, $value:expr) => {{
-        $map.insert($key.into(), $value.into());
-    }};
-    ($map:ident, $key:expr, $value:expr, $cond:expr) => {{
-        if $cond {
-            $map.insert($key.into(), $value.into());
-        }
-    }};
-}
-
 /// # Example
 ///
 /// ```
@@ -149,9 +138,17 @@ macro_rules! map {
         #[allow(unused_mut)]
         let mut m = ::std::collections::HashMap::new();
         $(
-        __map!(m, $key, $value $(,$cond)?);
+        map!(@insert m, $key, $value $(,$cond)?);
         )*
         m
+    }};
+    (@insert $map:ident, $key:expr, $value:expr) => {{
+        $map.insert($key.into(), $value.into());
+    }};
+    (@insert $map:ident, $key:expr, $value:expr, $cond:expr) => {{
+        if $cond {
+            $map.insert($key.into(), $value.into());
+        }
     }};
 }
 
