@@ -67,6 +67,7 @@ Notes:
 * `none` (default. Uses text labels instead of icons)
 * `awesome` (Font Awesome 4.x)
 * `awesome5` (Font Awesome 5.x)
+* `awesome6` (Font Awesome 6.x)
 * `material`
 * `material-nf` (Any font from Nerd Fonts collection)
 
