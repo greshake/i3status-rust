@@ -30,7 +30,8 @@ button = "left"
 cmd = "random_command"
 ```
 
-### New features
+### New features and bugfixes
+- `custom_dbus` can now be used more than one in your config
 - Implemented "persist" command feature from i3blocks
 
 ### Dependencies that are no longer required
