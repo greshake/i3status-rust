@@ -173,6 +173,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "direction" => Value::text(convert_wind_direction(data.wind.deg).into()),
         });
 
+        /// These map to the 'Main' entries here: https://openweathermap.org/weather-conditions
+        /// TODO: Drizzle, Mist, Fog, Haze, Smoke, etc?
+        /// TODO: Read description as well to give more details? font awesome has different rain level icons
         widget.set_icon(match data.weather[0].main.as_str() {
             "Clear" => "weather_sun",
             "Rain" | "Drizzle" => "weather_rain",
