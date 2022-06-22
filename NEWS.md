@@ -8,6 +8,20 @@ This is a major release which rewrites the core code to be asynchronous.
 - `ibus` block has been removed
 - `networkmanager` block has been removed (could be revisited in the future)
 - `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
+- `on_click` is now implemented as `[[block.click]]`. For example,
+```toml
+[[block]]
+block = "pacman"
+on_click = "random_command"
+```
+needs to be changed to:
+```toml
+[[block]]
+block = "pacman"
+[[block.click]]
+button = "left"
+cmd = "random_command"
+```
 
 # i3status-rust 0.22.0
 
