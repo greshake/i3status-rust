@@ -167,7 +167,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut dbus_stream = MessageStream::from(&dbus_conn);
 
     loop {
-        debug!("availeable players:");
+        debug!("available players:");
         for player in &players {
             debug!("{}", player.bus_name);
         }
