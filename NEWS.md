@@ -11,7 +11,9 @@ This is a major release which rewrites the core code to be asynchronous.
 - `ibus` block has been removed
 - `networkmanager` block has been removed (could be revisited in the future)
 - `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
+- `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter.
 - `music` block config option `smart_trim` has been removed
+- `pomodoro` interactive configuration ??
 - `on_click` is now implemented as `[[block.click]]`. For example,
 ```toml
 [[block]]
