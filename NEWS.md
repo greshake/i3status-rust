@@ -13,7 +13,7 @@ This is a major release which rewrites the core code to be asynchronous.
 - `networkmanager` block has been removed (could be revisited in the future)
 - `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
 - `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter.
-- `focused_window` block config option `max_width` has been removed, and can instead be implemented via the new formatter, e.g. `max_width = 15; format = "{title}"` would now just be `format = $title.rot-str(15)`
+- `focused_window` block config option `max_width` has been removed, and can instead be implemented via the new formatter, e.g. `max_width = 15; format = "{title}"` would now just be `format = $title.rot(15)`
 - `music` block config option `smart_trim` has been removed
 - `pomodoro` interactive configuration ??
 - `on_click` is now implemented as `[[block.click]]`. For example,
@@ -34,6 +34,7 @@ cmd = "random_command"
 ### New features and bugfixes
 - `custom_dbus` block can now be used more than one in your config
 - `custom` block has new config option `"persistent"` which runs a command in the background and updates the block text for each received output line.
+- `focused_window` block now supports the river window manager if ristate (https://gitlab.com/snakedye/ristate) is installed
 
 ### Dependencies that are no longer required
 
