@@ -26,7 +26,6 @@ impl Default for Icons {
             "backlight_11" => "BRIGHT",
             "backlight_12" => "BRIGHT",
             "backlight_13" => "BRIGHT",
-            "bat" => "BAT",
             "bat_10" => "BAT",
             "bat_20" => "BAT",
             "bat_30" => "BAT",
