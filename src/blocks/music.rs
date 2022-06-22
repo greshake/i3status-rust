@@ -18,8 +18,8 @@
 //!
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `"$combo.rot-str() $play\|"`
-//! `player` | Name of the music player MPRIS interface. Run `busctl --user list \| grep "org.mpris.MediaPlayer2." \| cut -d' ' -f1` and the name is the part after "org.mpris.MediaPlayer2.". | No | None
+//! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$combo.rot-str() $play&vert;"</code>
+//! `player` | Name of the music player MPRIS interface. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | No | None
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | No | `[]`
 //! `separator` | String to insert between artist and title. | No | `" - "`
 //! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`
