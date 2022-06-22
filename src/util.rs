@@ -163,13 +163,16 @@ macro_rules! regex {
 }
 
 macro_rules! make_log_macro {
-    ($macro_name:ident, $block_name:literal) => {
+    (@wdoll $macro_name:ident, $block_name:literal, ($dol:tt)) => {
         #[allow(dead_code)]
         macro_rules! $macro_name {
-            ($$($$args:tt)+) => {
-                ::log::$macro_name!(target: $block_name, $$($$args)+);
+            ($dol($args:tt)+) => {
+                ::log::$macro_name!(target: $block_name, $dol($args)+);
             };
         }
+    };
+    ($macro_name:ident, $block_name:literal) => {
+        make_log_macro!(@wdoll $macro_name, $block_name, ($));
     };
 }
 
