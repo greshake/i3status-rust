@@ -17,8 +17,8 @@
 will cycle it to the next player. You can pin the widget to a given player via the “player”
 setting.</p>
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Required</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to <a href="#escaping-text">Escaping Text</a>.</td><td>No</td><td><code>&quot;$combo.rot-str() $play\|&quot;</code></td></tr>
-<tr><td><code>player</code></td><td>Name of the music player MPRIS interface. Run <code>busctl --user list \| grep &quot;org.mpris.MediaPlayer2.&quot; \| cut -d' ' -f1</code> and the name is the part after “org.mpris.MediaPlayer2.”.</td><td>No</td><td>None</td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td>No</td><td><code>“$combo.rot-str() $play|”</code></td></tr>
+<tr><td><code>player</code></td><td>Name of the music player MPRIS interface. Run <code>busctl –user list | grep “org.mpris.MediaPlayer2.” | cut -d’ ’ -f1</code> and the name is the part after “org.mpris.MediaPlayer2.”.</td><td>No</td><td>None</td></tr>
 <tr><td><code>interface_name_exclude</code></td><td>A list of regex patterns for player MPRIS interface names to ignore.</td><td>No</td><td><code>[]</code></td></tr>
 <tr><td><code>separator</code></td><td>String to insert between artist and title.</td><td>No</td><td><code>&quot; - &quot;</code></td></tr>
 <tr><td><code>seek_step</code></td><td>Number of microseconds to seek forward/backward when scrolling on the bar.</td><td>No</td><td><code>1000</code></td></tr>

@@ -511,8 +511,8 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Required | Default</span>
 <span class="doccomment">//! ----|--------|----------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | No | `&quot;$combo.rot-str() $play\|&quot;`</span>
-<span class="doccomment">//! `player` | Name of the music player MPRIS interface. Run `busctl --user list \| grep &quot;org.mpris.MediaPlayer2.&quot; \| cut -d&#39; &#39; -f1` and the name is the part after &quot;org.mpris.MediaPlayer2.&quot;. | No | None</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | No | &lt;code&gt;&quot;$combo.rot-str() $play&amp;vert;&quot;&lt;/code&gt;</span>
+<span class="doccomment">//! `player` | Name of the music player MPRIS interface. Run &lt;code&gt;busctl --user list &amp;vert; grep &quot;org.mpris.MediaPlayer2.&quot; &amp;vert; cut -d&#39; &#39; -f1&lt;/code&gt; and the name is the part after &quot;org.mpris.MediaPlayer2.&quot;. | No | None</span>
 <span class="doccomment">//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | No | `[]`</span>
 <span class="doccomment">//! `separator` | String to insert between artist and title. | No | `&quot; - &quot;`</span>
 <span class="doccomment">//! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`</span>
