@@ -205,6 +205,9 @@
 <span id="200">200</span>
 <span id="201">201</span>
 <span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserializer</span>, <span class="ident">MapAccess</span>, <span class="ident">Visitor</span>};
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
@@ -271,8 +274,10 @@
             <span class="string">&quot;music_pause&quot;</span> =&gt; <span class="string">&quot;||&quot;</span>,
             <span class="string">&quot;music_play&quot;</span> =&gt; <span class="string">&quot;&gt;&quot;</span>,
             <span class="string">&quot;music_prev&quot;</span> =&gt; <span class="string">&quot;&lt;&quot;</span>,
+            <span class="string">&quot;net_bridge&quot;</span> =&gt; <span class="string">&quot;BRIDGE&quot;</span>,
             <span class="string">&quot;net_down&quot;</span> =&gt; <span class="string">&quot;DOWN&quot;</span>,
             <span class="string">&quot;net_loopback&quot;</span> =&gt; <span class="string">&quot;LO&quot;</span>,
+            <span class="string">&quot;net_modem&quot;</span> =&gt; <span class="string">&quot;MODEM&quot;</span>,
             <span class="string">&quot;net_up&quot;</span> =&gt; <span class="string">&quot;UP &quot;</span>,
             <span class="string">&quot;net_vpn&quot;</span> =&gt; <span class="string">&quot;VPN&quot;</span>,
             <span class="string">&quot;net_wired&quot;</span> =&gt; <span class="string">&quot;ETH&quot;</span>,
@@ -292,6 +297,7 @@
             <span class="string">&quot;time&quot;</span> =&gt; <span class="string">&quot;TIME&quot;</span>,
             <span class="string">&quot;toggle_off&quot;</span> =&gt; <span class="string">&quot;OFF&quot;</span>,
             <span class="string">&quot;toggle_on&quot;</span> =&gt; <span class="string">&quot;ON&quot;</span>,
+            <span class="string">&quot;unknown&quot;</span> =&gt; <span class="string">&quot;??&quot;</span>,
             <span class="string">&quot;update&quot;</span> =&gt; <span class="string">&quot;UPD&quot;</span>,
             <span class="string">&quot;uptime&quot;</span> =&gt; <span class="string">&quot;UP&quot;</span>,
             <span class="string">&quot;volume_empty&quot;</span> =&gt; <span class="string">&quot;VOL&quot;</span>,
