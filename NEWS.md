@@ -9,6 +9,7 @@ This is a major release which rewrites the core code to be asynchronous.
 
 - Formatting system has been overhauled, introducing some breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in bracjets: `format = "$percentage"`.
 - `ibus` block has been removed
+- `custom_dbus`: `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
 - `networkmanager` block has been removed (could be revisited in the future)
 - `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
 - `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter.
