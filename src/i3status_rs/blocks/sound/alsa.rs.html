@@ -146,9 +146,6 @@
 <span id="141">141</span>
 <span id="142">142</span>
 <span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
-<span id="146">146</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>};
 <span class="kw">use</span> <span class="ident">std::process::Stdio</span>;
 <span class="kw">use</span> <span class="ident">tokio::process</span>::{<span class="ident">ChildStdout</span>, <span class="ident">Command</span>};
@@ -162,9 +159,7 @@
     <span class="ident">natural_mapping</span>: <span class="ident">bool</span>,
     <span class="ident">volume</span>: <span class="ident">u32</span>,
     <span class="ident">muted</span>: <span class="ident">bool</span>,
-
     <span class="ident">monitor</span>: <span class="ident">ChildStdout</span>,
-    <span class="ident">buffer</span>: [<span class="ident">u8</span>; <span class="number">2048</span>],
 }
 
 <span class="kw">impl</span> <span class="ident">Device</span> {
@@ -175,15 +170,13 @@
             <span class="ident">natural_mapping</span>,
             <span class="ident">volume</span>: <span class="number">0</span>,
             <span class="ident">muted</span>: <span class="bool-val">false</span>,
-
-            <span class="ident">monitor</span>: <span class="ident">Command::new</span>(<span class="string">&quot;stdbuf&quot;</span>)
-                .<span class="ident">args</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;-oL&quot;</span>, <span class="string">&quot;alsactl&quot;</span>, <span class="string">&quot;monitor&quot;</span>])
+            <span class="ident">monitor</span>: <span class="ident">Command::new</span>(<span class="string">&quot;alsactl&quot;</span>)
+                .<span class="ident">arg</span>(<span class="string">&quot;monitor&quot;</span>)
                 .<span class="ident">stdout</span>(<span class="ident">Stdio::piped</span>())
                 .<span class="ident">spawn</span>()
                 .<span class="ident">error</span>(<span class="string">&quot;Failed to start alsactl monitor&quot;</span>)<span class="question-mark">?</span>
                 .<span class="ident">stdout</span>
                 .<span class="ident">error</span>(<span class="string">&quot;Failed to pipe alsactl monitor output&quot;</span>)<span class="question-mark">?</span>,
-            <span class="ident">buffer</span>: [<span class="number">0</span>; <span class="number">2048</span>],
         })
     }
 }
@@ -288,11 +281,12 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">1024</span>];
         <span class="self">self</span>.<span class="ident">monitor</span>
-            .<span class="ident">read</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">buffer</span>)
+            .<span class="ident">read</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>)
             .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to read stdbuf output&quot;</span>)
-            .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
+            .<span class="ident">error</span>(<span class="string">&quot;Failed to read stdbuf output&quot;</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 }
 </code></pre></div>
