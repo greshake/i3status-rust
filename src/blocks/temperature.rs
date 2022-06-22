@@ -20,7 +20,7 @@
 //! ----|--------|----------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders | No | <code>"$average avg, $max max&vert;"</code>
 //! `interval` | Update interval in seconds | No | `5`
-//! `collapsed` | Whether the block will be collapsed by default | No | `false`
+//! `collapsed` | Whether the block will be collapsed by default | No | `true`
 //! `scale` | Either `"celsius"` or `"fahrenheit"` | No | `"celsius"`
 //! `good` | Maximum temperature to set state to good | No | `20` °C (`68` °F)
 //! `idle` | Maximum temperature to set state to idle | No | `45` °C (`113` °F)
@@ -66,6 +66,7 @@ struct TemperatureConfig {
     format: FormatConfig,
     #[default(5.into())]
     interval: Seconds,
+    #[default(true)]
     collapsed: bool,
     scale: TemperatureScale,
     good: Option<f64>,
