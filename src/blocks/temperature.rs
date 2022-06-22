@@ -18,7 +18,7 @@
 //!
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | No | `"$average avg, $max max|"`
+//! `format` | A string to customise the output of this block. See below for available placeholders | No | <code>"$average avg, $max max&vert;"</code>
 //! `interval` | Update interval in seconds | No | `5`
 //! `collapsed` | Whether the block will be collapsed by default | No | `false`
 //! `scale` | Either `"celsius"` or `"fahrenheit"` | No | `"celsius"`
