@@ -4,11 +4,11 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `interval` | Refresh rate in seconds. | No | `1`
-//! `format` | A string to customise the output of this block. See below for placeholders. | No | `"$num.eng(1)"`
-//! `socket_path` | Socket path for the rofication daemon. | No | "/tmp/rofi_notification_daemon"
+//! Key | Values | Default
+//! ----|--------|--------
+//! `interval` | Refresh rate in seconds. | `1`
+//! `format` | A string to customise the output of this block. See below for placeholders. | `"$num.eng(1)"`
+//! `socket_path` | Socket path for the rofication daemon. | `"/tmp/rofi_notification_daemon"`
 //!
 //!  Key | Value | Type | Unit
 //! -----|-------|------|-----

@@ -10,13 +10,13 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | No | `"setxkbmap"`
-//! `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | No | `60`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$layout"`
-//! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | No | Defaults to first input found
-//! `mappings` | Map `layout (variant)` to custom short name. | No | None
+//! Key | Values | Default
+//! ----|--------|--------
+//! `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | `"setxkbmap"`
+//! `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | `60`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$layout"`
+//! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found
+//! `mappings` | Map `layout (variant)` to custom short name. | `None`
 //!
 //!  Key     | Value | Type
 //! ---------|-------|-----

@@ -2,15 +2,15 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `path` | Path to collect information from | No | `"/"`
-//! `interval` | Update time in seconds | No | `20`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$available"`
-//! `warning` | A value which will trigger warning block state | No | `20.0`
-//! `alert` | A value which will trigger critical block state | No | `10.0`
-//! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | No | `"available"`
-//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are uesd. Possible values are `"B"`, `"KB"`, `"MB"`, `"GB"` and `"TB"` | No | None
+//! Key | Values | Default
+//! ----|--------|--------
+//! `path` | Path to collect information from | `"/"`
+//! `interval` | Update time in seconds | `20`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$available"`
+//! `warning` | A value which will trigger warning block state | `20.0`
+//! `alert` | A value which will trigger critical block state | `10.0`
+//! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
+//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are uesd. Possible values are `"B"`, `"KB"`, `"MB"`, `"GB"` and `"TB"` | `None`
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
 //! -------------|--------------------------------------------------------------------|--------|-------

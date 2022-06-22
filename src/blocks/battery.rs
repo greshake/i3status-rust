@@ -5,20 +5,20 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. Regular expressions can be used. | No | Any battery device
-//! `driver` | One of `"sysfs"` or `"upower"` | No | `"sysfs"`
-//! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | No | `10`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$percentage&vert;"</code>
-//! `full_format` | Same as `format` but for when the battery is full | No | `""`
-//! `hide_missing` | Completely hide this block if the battery cannot be found. | No | `false`
-//! `hide_full` | Hide the block if battery is full | No | `false`
-//! `info` | Minimum battery level, where state is set to info | No | `60`
-//! `good` | Minimum battery level, where state is set to good | No | `60`
-//! `warning` | Minimum battery level, where state is set to warning | No | `30`
-//! `critical` | Minimum battery level, where state is set to critical | No | `15`
-//! `full_threshold` | Percentage at which the battery is considered full (`full_format` shown) | No | `100`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. Regular expressions can be used. | Any battery device
+//! `driver` | One of `"sysfs"` or `"upower"` | `"sysfs"`
+//! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | `10`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$percentage&vert;"</code>
+//! `full_format` | Same as `format` but for when the battery is full | `""`
+//! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`
+//! `hide_full` | Hide the block if battery is full | `false`
+//! `info` | Minimum battery level, where state is set to info | `60`
+//! `good` | Minimum battery level, where state is set to good | `60`
+//! `warning` | Minimum battery level, where state is set to warning | `30`
+//! `critical` | Minimum battery level, where state is set to critical | `15`
+//! `full_threshold` | Percentage at which the battery is considered full (`full_format` shown) | `100`
 //!
 //! Placeholder  | Value                                                                   | Type              | Unit
 //! -------------|-------------------------------------------------------------------------|-------------------|-----

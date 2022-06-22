@@ -13,12 +13,12 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `message` | Message when timer expires | No | `Pomodoro over! Take a break!`
-//! `break_message` | Message when break is over | No | `Break over! Time to work!`
-//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | No | None
-//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | No | `false`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `message` | Message when timer expires | `"Pomodoro over! Take a break!"`
+//! `break_message` | Message when break is over | `"Break over! Time to work!"`
+//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | `None`
+//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | `false`
 //!
 //! # Example
 //!

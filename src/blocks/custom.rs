@@ -10,16 +10,16 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `command` | Shell command to execute & display | No | None
-//! `persistent` | Run command in the background; update display for each output line of the command | No | false
-//! `cycle` | Commands to execute and change when the button is clicked | No | None
-//! `interval` | Update interval in seconds (or "once" to update only once) | No | `10`
-//! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | No | `false`
-//! `watch_files` | Watch files to trigger update on file modification | No | None
-//! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | No | false
-//! `shell` | Specify the shell to use when running commands | No | `$SHELL` if set, otherwise fallback to `sh`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `command` | Shell command to execute & display | `None`
+//! `persistent` | Run command in the background; update display for each output line of the command | `false`
+//! `cycle` | Commands to execute and change when the button is clicked | `None`
+//! `interval` | Update interval in seconds (or "once" to update only once) | `10`
+//! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | `false`
+//! `watch_files` | Watch files to trigger update on file modification | `None`
+//! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | `false`
+//! `shell` | Specify the shell to use when running commands | `$SHELL` if set, otherwise fallback to `sh`
 //!
 //! # Examples
 //!

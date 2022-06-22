@@ -2,11 +2,11 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$ip $country_flag"`
-//! `interval` | Interval in seconds for automatic updates | No | 300
-//! `with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | No | "true"
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$ip $country_flag"`
+//! `interval` | Interval in seconds for automatic updates | `300`
+//! `with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | `true`
 //!
 //!  Key | Value | Type | Unit
 //! -----|-------|------|------

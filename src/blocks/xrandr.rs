@@ -6,11 +6,11 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$display $brightness_icon $brightness"`
-//! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | No | `5`
-//! `interval` | Update interval in seconds. | No | `5`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$display $brightness_icon $brightness"`
+//! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`
+//! `interval` | Update interval in seconds. | `5`
 //!
 //! Placeholder       | Value                        | Type   | Unit
 //! ------------------|------------------------------|--------|---------------

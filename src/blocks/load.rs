@@ -2,13 +2,13 @@
 //!
 //! # Configuration
 //!
-//! Key        | Values                                                                                | Required | Default
-//! -----------|---------------------------------------------------------------------------------------|----------|--------
-//! `format`   | A string to customise the output of this block. See below for available placeholders. | No       | `"$1m"`
-//! `interval` | Update interval in seconds                                                            | No       | `3`
-//! `info`     | Minimum load, where state is set to info                                              | No       | `0.3`
-//! `warning`  | Minimum load, where state is set to warning                                           | No       | `0.6`
-//! `critical` | Minimum load, where state is set to critical                                          | No       | `0.9`
+//! Key        | Values                                                                                | Default
+//! -----------|---------------------------------------------------------------------------------------|--------
+//! `format`   | A string to customise the output of this block. See below for available placeholders. | `"$1m"`
+//! `interval` | Update interval in seconds                                                            | `3`
+//! `info`     | Minimum load, where state is set to info                                              | `0.3`
+//! `warning`  | Minimum load, where state is set to warning                                           | `0.6`
+//! `critical` | Minimum load, where state is set to critical                                          | `0.9`
 //!
 //! Placeholder  | Value                  | Type   | Unit
 //! -------------|------------------------|--------|-----

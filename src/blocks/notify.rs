@@ -6,10 +6,10 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` | No | `"dunst"`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `""`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` | `"dunst"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `""`
 //!
 //! Placeholder | Value                                      | Type   | Unit
 //! ------------|--------------------------------------------|--------|-----

@@ -5,11 +5,11 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$title.rot-str(15)&vert;"</code>
-//! `autohide` | Whether to hide the block when no title is available | No | `true`
-//! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | No | `"auto"`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$title.rot-str(15)&vert;"</code>
+//! `autohide` | Whether to hide the block when no title is available | `true`
+//! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | `"auto"`
 //!
 //! Placeholder     | Value                                                                 | Type | Unit
 //! ----------------|-----------------------------------------------------------------------|------|-----

@@ -2,12 +2,12 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | No | `"%a %d/%m %R"`
-//! `interval` | Update interval in seconds | No | 10
-//! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | No | Local timezone
-//! `locale` | Locale to apply when formatting the time | No | System locale
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `"%a %d/%m %R"`
+//! `interval` | Update interval in seconds | `10`
+//! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | Local timezone
+//! `locale` | Locale to apply when formatting the time | System locale
 //!
 //! # Example
 //!

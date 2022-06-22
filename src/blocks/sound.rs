@@ -33,19 +33,19 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | No | `"auto"` (Pulseaudio with ALSA fallback)
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `$volume.eng(2)|`
-//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | No | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
-//! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | No | `default`
-//! `device_kind` | PulseAudio device kind: `source` or `sink`. | No | `sink`
-//! `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | No | `false`
-//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | No | `5`
-//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | No | `None`
-//! `on_click` | Shell command to run when the sound block is clicked. | No | None
-//! `show_volume_when_muted` | Show the volume even if it is currently muted. | No | `false`
-//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | No | `false`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>$volume.eng(2)&vert;</code>
+//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
+//! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
+//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
+//! `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
+//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
+//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
+//! `on_click` | Shell command to run when the sound block is clicked. | `None`
+//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
+//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
 //!
 //!  Key | Value | Type | Unit
 //! -----|-------|------|-----

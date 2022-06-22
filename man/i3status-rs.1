@@ -82,13 +82,11 @@ Tip: You can grab the list of available updates using
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -98,8 +96,6 @@ T{
 T}@T{
 Update interval in seconds.
 T}@T{
-No
-T}@T{
 \f[V]600\f[R]
 T}
 T{
@@ -108,16 +104,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$count.eng(1)\[dq]\f[R]
 T}
 T{
 \f[V]format_singular\f[R]
 T}@T{
 Same as \f[V]format\f[R], but for when exactly one update is available.
-T}@T{
-No
 T}@T{
 \f[V]\[dq]$count.eng(1)\[dq]\f[R]
 T}
@@ -126,8 +118,6 @@ T{
 T}@T{
 Same as \f[V]format\f[R], but for when no updates are available.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$count.eng(1)\[dq]\f[R]
 T}
 T{
@@ -135,16 +125,12 @@ T{
 T}@T{
 Display block as warning if updates matching regex are available.
 T}@T{
-No
-T}@T{
 \f[V]None\f[R]
 T}
 T{
 \f[V]critical_updates_regex\f[R]
 T}@T{
 Display block as critical if updates matching regex are available.
-T}@T{
-No
 T}@T{
 \f[V]None\f[R]
 T}
@@ -154,7 +140,6 @@ T}@T{
 Hides the block when there are no updates available
 T}@T{
 \f[V]false\f[R]
-T}@T{
 T}
 .TE
 .PP
@@ -224,13 +209,11 @@ More information: <https://en.wikipedia.org/wiki/Lightness>
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -245,8 +228,6 @@ information from the first device found in the
 \f[V]/sys/class/backlight\f[R] directory.
 If you only have one display, this approach should find it correctly.
 T}@T{
-No
-T}@T{
 Default device
 T}
 T{
@@ -255,16 +236,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$brightness\[dq]\f[R]
 T}
 T{
 \f[V]step_width\f[R]
 T}@T{
 The brightness increment to use when scrolling, in percent
-T}@T{
-No
 T}@T{
 \f[V]5\f[R]
 T}
@@ -273,8 +250,6 @@ T{
 T}@T{
 The minimum brightness that can be scrolled down to
 T}@T{
-No
-T}@T{
 \f[V]5\f[R]
 T}
 T{
@@ -282,16 +257,12 @@ T{
 T}@T{
 The maximum brightness that can be scrolled up to
 T}@T{
-No
-T}@T{
 \f[V]100\f[R]
 T}
 T{
 \f[V]cycle\f[R]
 T}@T{
 The brightnesses to cycle through on each click
-T}@T{
-No
 T}@T{
 \f[V][minimum, maximum]\f[R]
 T}
@@ -301,16 +272,12 @@ T}@T{
 Scaling exponent reciprocal (ie.
 root)
 T}@T{
-No
-T}@T{
 \f[V]1.0\f[R]
 T}
 T{
 \f[V]invert_icons\f[R]
 T}@T{
 Invert icons\[cq] ordering, useful if you have colorful emoji
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -390,13 +357,11 @@ for an internal power supply.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -408,16 +373,12 @@ The device in \f[V]/sys/class/power_supply/\f[R] to read from.
 When using UPower, this can also be \f[V]\[dq]DisplayDevice\[dq]\f[R].
 Regular expressions can be used.
 T}@T{
-No
-T}@T{
 Any battery device
 T}
 T{
 \f[V]driver\f[R]
 T}@T{
 One of \f[V]\[dq]sysfs\[dq]\f[R] or \f[V]\[dq]upower\[dq]\f[R]
-T}@T{
-No
 T}@T{
 \f[V]\[dq]sysfs\[dq]\f[R]
 T}
@@ -427,8 +388,6 @@ T}@T{
 Update interval, in seconds.
 Only relevant for \f[V]driver = \[dq]sysfs\[dq]\f[R].
 T}@T{
-No
-T}@T{
 \f[V]10\f[R]
 T}
 T{
@@ -437,16 +396,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \[lq]$percentage|\[rq]
 T}
 T{
 \f[V]full_format\f[R]
 T}@T{
 Same as \f[V]format\f[R] but for when the battery is full
-T}@T{
-No
 T}@T{
 \f[V]\[dq]\[dq]\f[R]
 T}
@@ -455,16 +410,12 @@ T{
 T}@T{
 Completely hide this block if the battery cannot be found.
 T}@T{
-No
-T}@T{
 \f[V]false\f[R]
 T}
 T{
 \f[V]hide_full\f[R]
 T}@T{
 Hide the block if battery is full
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -473,16 +424,12 @@ T{
 T}@T{
 Minimum battery level, where state is set to info
 T}@T{
-No
-T}@T{
 \f[V]60\f[R]
 T}
 T{
 \f[V]good\f[R]
 T}@T{
 Minimum battery level, where state is set to good
-T}@T{
-No
 T}@T{
 \f[V]60\f[R]
 T}
@@ -491,16 +438,12 @@ T{
 T}@T{
 Minimum battery level, where state is set to warning
 T}@T{
-No
-T}@T{
 \f[V]30\f[R]
 T}
 T{
 \f[V]critical\f[R]
 T}@T{
 Minimum battery level, where state is set to critical
-T}@T{
-No
 T}@T{
 \f[V]15\f[R]
 T}
@@ -509,8 +452,6 @@ T{
 T}@T{
 Percentage at which the battery is considered full
 (\f[V]full_format\f[R] shown)
-T}@T{
-No
 T}@T{
 \f[V]100\f[R]
 T}
@@ -622,13 +563,11 @@ device.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -638,9 +577,7 @@ T{
 T}@T{
 MAC address of the Bluetooth device
 T}@T{
-Yes
-T}@T{
--
+\f[B]Required\f[R]
 T}
 T{
 \f[V]adapter_mac\f[R]
@@ -648,9 +585,7 @@ T}@T{
 MAC Address of the Bluetooth adapter (in case your device was connected
 to multiple currently available adapters)
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]format\f[R]
@@ -658,16 +593,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \[lq]$name{ $percentage|}|Unavailable\[rq]
 T}
 T{
 \f[V]hide_disconnected\f[R]
 T}@T{
 Whether to hide the block when disconnected
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -759,13 +690,11 @@ CPU statistics
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -776,8 +705,6 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$utilization\[dq]\f[R]
 T}
 T{
@@ -786,16 +713,12 @@ T}@T{
 If set, block will switch between \f[V]format\f[R] and
 \f[V]format_alt\f[R] on every click
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds
-T}@T{
-No
 T}@T{
 \f[V]5\f[R]
 T}
@@ -914,13 +837,11 @@ Critical (default Idle)
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -930,9 +851,7 @@ T{
 T}@T{
 Shell command to execute & display
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]persistent\f[R]
@@ -940,25 +859,19 @@ T}@T{
 Run command in the background; update display for each output line of
 the command
 T}@T{
-No
-T}@T{
-false
+\f[V]false\f[R]
 T}
 T{
 \f[V]cycle\f[R]
 T}@T{
 Commands to execute and change when the button is clicked
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds (or \[lq]once\[rq] to update only once)
-T}@T{
-No
 T}@T{
 \f[V]10\f[R]
 T}
@@ -968,8 +881,6 @@ T}@T{
 Use JSON from command output to format the block.
 If the JSON is not valid, the block will error out.
 T}@T{
-No
-T}@T{
 \f[V]false\f[R]
 T}
 T{
@@ -977,25 +888,19 @@ T{
 T}@T{
 Watch files to trigger update on file modification
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]hide_when_empty\f[R]
 T}@T{
 Hides the block when the command output (or json text field) is empty
 T}@T{
-No
-T}@T{
-false
+\f[V]false\f[R]
 T}
 T{
 \f[V]shell\f[R]
 T}@T{
 Specify the shell to use when running commands
-T}@T{
-No
 T}@T{
 \f[V]$SHELL\f[R] if set, otherwise fallback to \f[V]sh\f[R]
 T}
@@ -1130,13 +1035,11 @@ Disk usage statistics
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -1146,16 +1049,12 @@ T{
 T}@T{
 Path to collect information from
 T}@T{
-No
-T}@T{
 \f[V]\[dq]/\[dq]\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update time in seconds
-T}@T{
-No
 T}@T{
 \f[V]20\f[R]
 T}
@@ -1165,8 +1064,6 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$available\[dq]\f[R]
 T}
 T{
@@ -1174,16 +1071,12 @@ T{
 T}@T{
 A value which will trigger warning block state
 T}@T{
-No
-T}@T{
 \f[V]20.0\f[R]
 T}
 T{
 \f[V]alert\f[R]
 T}@T{
 A value which will trigger critical block state
-T}@T{
-No
 T}@T{
 \f[V]10.0\f[R]
 T}
@@ -1193,8 +1086,6 @@ T}@T{
 Determines which information will affect the block state.
 Possible values are \f[V]\[dq]available\[dq]\f[R],
 \f[V]\[dq]free\[dq]\f[R] and \f[V]\[dq]used\[dq]\f[R]
-T}@T{
-No
 T}@T{
 \f[V]\[dq]available\[dq]\f[R]
 T}
@@ -1207,9 +1098,7 @@ Possible values are \f[V]\[dq]B\[dq]\f[R], \f[V]\[dq]KB\[dq]\f[R],
 \f[V]\[dq]MB\[dq]\f[R], \f[V]\[dq]GB\[dq]\f[R] and
 \f[V]\[dq]TB\[dq]\f[R]
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 .TE
 .PP
@@ -1317,13 +1206,11 @@ Pending updates available for your Fedora system
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -1333,8 +1220,6 @@ T{
 T}@T{
 Update interval in seconds.
 T}@T{
-No
-T}@T{
 \f[V]600\f[R]
 T}
 T{
@@ -1343,16 +1228,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$count.eng(1)\[dq]\f[R]
 T}
 T{
 \f[V]format_singular\f[R]
 T}@T{
 Same as \f[V]format\f[R], but for when exactly one update is available.
-T}@T{
-No
 T}@T{
 \f[V]\[dq]$count.eng(1)\[dq]\f[R]
 T}
@@ -1361,8 +1242,6 @@ T{
 T}@T{
 Same as \f[V]format\f[R], but for when no updates are available.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$count.eng(1)\[dq]\f[R]
 T}
 T{
@@ -1370,16 +1249,12 @@ T{
 T}@T{
 Display block as warning if updates matching regex are available.
 T}@T{
-No
-T}@T{
 \f[V]None\f[R]
 T}
 T{
 \f[V]critical_updates_regex\f[R]
 T}@T{
 Display block as critical if updates matching regex are available.
-T}@T{
-No
 T}@T{
 \f[V]None\f[R]
 T}
@@ -1389,7 +1264,6 @@ T}@T{
 Hides the block when there are no updates available
 T}@T{
 \f[V]false\f[R]
-T}@T{
 T}
 .TE
 .PP
@@ -1443,13 +1317,11 @@ Local docker daemon status
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -1459,8 +1331,6 @@ T{
 T}@T{
 Update interval, in seconds.
 T}@T{
-No
-T}@T{
 \f[V]5\f[R]
 T}
 T{
@@ -1469,16 +1339,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$running.eng(1)\[dq]\f[R]
 T}
 T{
 \f[V]socket_path\f[R]
 T}@T{
 The path to the docker socket.
-T}@T{
-No
 T}@T{
 \f[V]\[dq]/var/run/docker.sock\[dq]\f[R]
 T}
@@ -1563,13 +1429,11 @@ External IP address and various information about it
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -1580,8 +1444,6 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$ip $country_flag\[dq]\f[R]
 T}
 T{
@@ -1589,9 +1451,7 @@ T{
 T}@T{
 Interval in seconds for automatic updates
 T}@T{
-No
-T}@T{
-300
+\f[V]300\f[R]
 T}
 T{
 \f[V]with_network_manager\f[R]
@@ -1599,9 +1459,7 @@ T}@T{
 If `true', listen for NetworkManager events and update the IP
 immediately if there was a change
 T}@T{
-No
-T}@T{
-\[lq]true\[rq]
+\f[V]true\f[R]
 T}
 .TE
 .PP
@@ -1908,13 +1766,11 @@ See \f[V]driver\f[R] option for more info.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -1925,16 +1781,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \[lq]$title.rot-str(15)|\[rq]
 T}
 T{
 \f[V]autohide\f[R]
 T}@T{
 Whether to hide the block when no title is available
-T}@T{
-No
 T}@T{
 \f[V]true\f[R]
 T}
@@ -1947,8 +1799,6 @@ Available values: \f[V]sway_ipc\f[R] - for \f[V]i3\f[R] and
 \f[V]ristate\f[R] (https://gitlab.com/snakedye/ristate) binary must be
 in the \f[V]PATH\f[R]), \f[V]auto\f[R] - try to automatically guess
 which driver to use.
-T}@T{
-No
 T}@T{
 \f[V]\[dq]auto\[dq]\f[R]
 T}
@@ -2023,13 +1873,11 @@ notification in the following lists from highest to lowest:
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -2040,16 +1888,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$total.eng(1)\[dq]\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds
-T}@T{
-No
 T}@T{
 \f[V]30\f[R]
 T}
@@ -2058,16 +1902,12 @@ T{
 T}@T{
 A GitHub personal access token with the \[lq]notifications\[rq] scope
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]hide_if_total_is_zero\f[R]
 T}@T{
 Hide this block if the total count of notifications is zero
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -2076,36 +1916,28 @@ T{
 T}@T{
 List of notification types that change the block to the critical colour
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]warning\f[R]
 T}@T{
 List of notification types that change the block to the warning colour
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]info\f[R]
 T}@T{
 List of notification types that change the block to the info colour
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]good\f[R]
 T}@T{
 List of notification types that change the block to the good colour
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 .TE
 .PP
@@ -2228,13 +2060,11 @@ value (\f[V]6500K\f[R]).
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -2244,8 +2074,6 @@ T{
 T}@T{
 The step color temperature is in/decreased in Kelvin.
 T}@T{
-No
-T}@T{
 \f[V]100\f[R]
 T}
 T{
@@ -2253,16 +2081,12 @@ T{
 T}@T{
 Program used to control screen color.
 T}@T{
-No
-T}@T{
-Detect automatically.
+Detect automatically
 T}
 T{
 \f[V]max_temp\f[R]
 T}@T{
 Max color temperature in Kelvin.
-T}@T{
-No
 T}@T{
 \f[V]10000\f[R]
 T}
@@ -2271,16 +2095,12 @@ T{
 T}@T{
 Min color temperature in Kelvin.
 T}@T{
-No
-T}@T{
 \f[V]1000\f[R]
 T}
 T{
 \f[V]click_temp\f[R]
 T}@T{
 Left click color temperature in Kelvin.
-T}@T{
-No
 T}@T{
 \f[V]6500\f[R]
 T}
@@ -2365,13 +2185,11 @@ the notification count instead.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -2381,8 +2199,6 @@ T{
 T}@T{
 Device ID as per the output of \f[V]kdeconnect --list-devices\f[R].
 T}@T{
-No
-T}@T{
 Chooses the first found device, if any.
 T}
 T{
@@ -2391,16 +2207,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \[lq]$name $bat_icon $bat_charge{ $notif_icon|}\[rq]
 T}
 T{
 \f[V]bat_info\f[R]
 T}@T{
 Min battery level below which state is set to info.
-T}@T{
-No
 T}@T{
 \f[V]60\f[R]
 T}
@@ -2409,16 +2221,12 @@ T{
 T}@T{
 Min battery level below which state is set to good.
 T}@T{
-No
-T}@T{
 \f[V]60\f[R]
 T}
 T{
 \f[V]bat_warning\f[R]
 T}@T{
 Min battery level below which state is set to warning.
-T}@T{
-No
 T}@T{
 \f[V]30\f[R]
 T}
@@ -2427,16 +2235,12 @@ T{
 T}@T{
 Min battery level below which state is set to critical.
 T}@T{
-No
-T}@T{
 \f[V]15\f[R]
 T}
 T{
 \f[V]hide_disconnected\f[R]
 T}@T{
 Whether to hide this block when disconnected
-T}@T{
-No
 T}@T{
 \f[V]true\f[R]
 T}
@@ -2568,13 +2372,11 @@ Which of these methods is appropriate will depend on your system setup.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -2586,8 +2388,6 @@ One of \f[V]\[dq]setxkbmap\[dq]\f[R], \f[V]\[dq]localebus\[dq]\f[R],
 \f[V]\[dq]kbddbus\[dq]\f[R] or \f[V]\[dq]sway\[dq]\f[R], depending on
 your system.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]setxkbmap\[dq]\f[R]
 T}
 T{
@@ -2595,8 +2395,6 @@ T{
 T}@T{
 Update interval, in seconds.
 Only used by the \f[V]\[dq]setxkbmap\[dq]\f[R] driver.
-T}@T{
-No
 T}@T{
 \f[V]60\f[R]
 T}
@@ -2606,8 +2404,6 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$layout\[dq]\f[R]
 T}
 T{
@@ -2616,8 +2412,6 @@ T}@T{
 Identifier of the device you want to monitor, as found in the output of
 \f[V]swaymsg -t get_inputs\f[R].
 T}@T{
-No
-T}@T{
 Defaults to first input found
 T}
 T{
@@ -2625,9 +2419,7 @@ T{
 T}@T{
 Map \f[V]layout (variant)\f[R] to custom short name.
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 .TE
 .PP
@@ -2722,13 +2514,11 @@ System load average
 .PP
 .TS
 tab(@);
-lw(6.6n) lw(52.5n) lw(6.0n) lw(4.8n).
+lw(7.3n) lw(57.5n) lw(5.3n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -2739,16 +2529,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$1m\[dq]\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds
-T}@T{
-No
 T}@T{
 \f[V]3\f[R]
 T}
@@ -2757,8 +2543,6 @@ T{
 T}@T{
 Minimum load, where state is set to info
 T}@T{
-No
-T}@T{
 \f[V]0.3\f[R]
 T}
 T{
@@ -2766,16 +2550,12 @@ T{
 T}@T{
 Minimum load, where state is set to warning
 T}@T{
-No
-T}@T{
 \f[V]0.6\f[R]
 T}
 T{
 \f[V]critical\f[R]
 T}@T{
 Minimum load, where state is set to critical
-T}@T{
-No
 T}@T{
 \f[V]0.9\f[R]
 T}
@@ -2852,13 +2632,11 @@ cargo build --release --features maildir
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -2868,16 +2646,12 @@ T{
 T}@T{
 List of maildir inboxes to look for mails in.
 T}@T{
-Yes
-T}@T{
-None
+\f[B]Required\f[R]
 T}
 T{
 \f[V]threshold_warning\f[R]
 T}@T{
 Number of unread mails where state is set to warning.
-T}@T{
-No
 T}@T{
 \f[V]1\f[R]
 T}
@@ -2886,16 +2660,12 @@ T{
 T}@T{
 Number of unread mails where state is set to critical.
 T}@T{
-No
-T}@T{
 \f[V]10\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval, in seconds.
-T}@T{
-No
 T}@T{
 \f[V]5\f[R]
 T}
@@ -2904,8 +2674,6 @@ T{
 T}@T{
 Which part of the maildir to count: \f[V]\[dq]new\[dq]\f[R],
 \f[V]\[dq]cur\[dq]\f[R], or \f[V]\[dq]all\[dq]\f[R].
-T}@T{
-No
 T}@T{
 \f[V]\[dq]new\[dq]\f[R]
 T}
@@ -2939,13 +2707,11 @@ By default, a click switches between them.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -2957,8 +2723,6 @@ A string to customise the output of this block when in \[lq]Memory\[rq]
 view.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2))\[dq]\f[R]
 T}
 T{
@@ -2968,8 +2732,6 @@ A string to customise the output of this block when in \[lq]Swap\[rq]
 view.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2))\[dq]\f[R]
 T}
 T{
@@ -2978,16 +2740,12 @@ T}@T{
 Default view displayed on startup: \[lq]\f[V]memory\f[R]\[rq] or
 \[lq]\f[V]swap\f[R]\[rq]
 T}@T{
-No
-T}@T{
 \f[V]\[dq]memory\[dq]\f[R]
 T}
 T{
 \f[V]clickable\f[R]
 T}@T{
 Whether the view should switch between memory and swap on click
-T}@T{
-No
 T}@T{
 \f[V]true\f[R]
 T}
@@ -2996,16 +2754,12 @@ T{
 T}@T{
 Update interval in seconds
 T}@T{
-No
-T}@T{
 \f[V]5\f[R]
 T}
 T{
 \f[V]warning_mem\f[R]
 T}@T{
 Percentage of memory usage, where state is set to warning
-T}@T{
-No
 T}@T{
 \f[V]80.0\f[R]
 T}
@@ -3014,8 +2768,6 @@ T{
 T}@T{
 Percentage of swap usage, where state is set to warning
 T}@T{
-No
-T}@T{
 \f[V]80.0\f[R]
 T}
 T{
@@ -3023,16 +2775,12 @@ T{
 T}@T{
 Percentage of memory usage, where state is set to critical
 T}@T{
-No
-T}@T{
 \f[V]95.0\f[R]
 T}
 T{
 \f[V]critical_swap\f[R]
 T}@T{
 Percentage of swap usage, where state is set to critical
-T}@T{
-No
 T}@T{
 \f[V]95.0\f[R]
 T}
@@ -3260,13 +3008,11 @@ setting.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -3276,8 +3022,6 @@ T{
 T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
-T}@T{
-No
 T}@T{
 \[lq]$combo.rot-str() $play|\[rq]
 T}
@@ -3289,16 +3033,12 @@ Run busctl \[en]user list | grep \[lq]org.mpris.MediaPlayer2.\[rq] | cut
 -d\[cq] \[cq] -f1 and the name is the part after
 \[lq]org.mpris.MediaPlayer2.\[rq].
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]interface_name_exclude\f[R]
 T}@T{
 A list of regex patterns for player MPRIS interface names to ignore.
-T}@T{
-No
 T}@T{
 \f[V][]\f[R]
 T}
@@ -3306,8 +3046,6 @@ T{
 \f[V]separator\f[R]
 T}@T{
 String to insert between artist and title.
-T}@T{
-No
 T}@T{
 \f[V]\[dq] - \[dq]\f[R]
 T}
@@ -3317,16 +3055,12 @@ T}@T{
 Number of microseconds to seek forward/backward when scrolling on the
 bar.
 T}@T{
-No
-T}@T{
 \f[V]1000\f[R]
 T}
 T{
 \f[V]hide_when_empty\f[R]
 T}@T{
 Hides the block when there is no player available.
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -3470,13 +3204,11 @@ require any external dependencies.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -3485,8 +3217,6 @@ T{
 \f[V]device\f[R]
 T}@T{
 Network interface to monitor (as specified in \f[V]/sys/class/net/\f[R])
-T}@T{
-No
 T}@T{
 If not set, device will be automatically selected every
 \f[V]interval\f[R]
@@ -3497,8 +3227,6 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$speed_down.eng(3,B,K)$speed_up.eng(3,B,K)\[dq]\f[R]
 T}
 T{
@@ -3507,16 +3235,12 @@ T}@T{
 If set, block will switch between \f[V]format\f[R] and
 \f[V]format_alt\f[R] on every click
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds
-T}@T{
-No
 T}@T{
 \f[V]2\f[R]
 T}
@@ -3525,16 +3249,12 @@ T{
 T}@T{
 Whether to hide interfaces that don\[cq]t exist on the system.
 T}@T{
-No
-T}@T{
 \f[V]false\f[R]
 T}
 T{
 \f[V]hide_inactive\f[R]
 T}@T{
 Whether to hide interfaces that are not connected (or missing).
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -3661,13 +3381,11 @@ Left-clicking on this block will enable/disable notifications.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -3678,8 +3396,6 @@ T}@T{
 Which notifications daemon is running.
 Available drivers are: \f[V]\[dq]dunst\[dq]\f[R]
 T}@T{
-No
-T}@T{
 \f[V]\[dq]dunst\[dq]\f[R]
 T}
 T{
@@ -3687,8 +3403,6 @@ T{
 T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
-T}@T{
-No
 T}@T{
 \f[V]\[dq]\[dq]\f[R]
 T}
@@ -3755,13 +3469,11 @@ cargo build --release --features notmuch
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -3771,16 +3483,12 @@ T{
 T}@T{
 Path to the directory containing the notmuch database.
 T}@T{
-No
-T}@T{
-\f[V]$HOME/.mail\f[R]
+\f[V]\[ti]/.mail\f[R]
 T}
 T{
 \f[V]query\f[R]
 T}@T{
 Query to run on the database.
-T}@T{
-No
 T}@T{
 \f[V]\[dq]\[dq]\f[R]
 T}
@@ -3789,16 +3497,12 @@ T{
 T}@T{
 Mail count that triggers \f[V]critical\f[R] state.
 T}@T{
-No
-T}@T{
 \f[V]99999\f[R]
 T}
 T{
 \f[V]threshold_warning\f[R]
 T}@T{
 Mail count that triggers \f[V]warning\f[R] state.
-T}@T{
-No
 T}@T{
 \f[V]99999\f[R]
 T}
@@ -3807,16 +3511,12 @@ T{
 T}@T{
 Mail count that triggers \f[V]good\f[R] state.
 T}@T{
-No
-T}@T{
 \f[V]99999\f[R]
 T}
 T{
 \f[V]threshold_info\f[R]
 T}@T{
 Mail count that triggers \f[V]info\f[R] state.
-T}@T{
-No
 T}@T{
 \f[V]99999\f[R]
 T}
@@ -3825,16 +3525,12 @@ T{
 T}@T{
 Label to show before the mail count.
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds.
-T}@T{
-No
 T}@T{
 \f[V]10\f[R]
 T}
@@ -3873,13 +3569,11 @@ Requires \f[V]nvidia-smi\f[R] for displaying info and
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -3889,8 +3583,6 @@ T{
 T}@T{
 GPU id in system.
 T}@T{
-No
-T}@T{
 \f[V]0\f[R]
 T}
 T{
@@ -3899,16 +3591,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$utilization $memory $temperature\[dq]\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds.
-T}@T{
-No
 T}@T{
 \f[V]1\f[R]
 T}
@@ -3917,16 +3605,12 @@ T{
 T}@T{
 Maximum temperature, below which state is set to idle
 T}@T{
-No
-T}@T{
 \f[V]50\f[R]
 T}
 T{
 \f[V]good\f[R]
 T}@T{
 Maximum temperature, below which state is set to good
-T}@T{
-No
 T}@T{
 \f[V]70\f[R]
 T}
@@ -3935,16 +3619,12 @@ T{
 T}@T{
 Maximum temperature, below which state is set to info
 T}@T{
-No
-T}@T{
 \f[V]75\f[R]
 T}
 T{
 \f[V]warning\f[R]
 T}@T{
 Maximum temperature, below which state is set to warning
-T}@T{
-No
 T}@T{
 \f[V]80\f[R]
 T}
@@ -4065,13 +3745,11 @@ Exec = /usr/bin/pkill -SIGUSR1 i3status-rs
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(13.3n) lw(26.7n) lw(30.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -4081,8 +3759,6 @@ T{
 T}@T{
 Update interval, in seconds.
 T}@T{
-No
-T}@T{
 \f[V]600\f[R]
 T}
 T{
@@ -4091,16 +3767,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$pacman.eng(1)\[dq]\f[R]
 T}
 T{
 \f[V]format_singular\f[R]
 T}@T{
 Same as \f[V]format\f[R] but for when exactly one update is available.
-T}@T{
-No
 T}@T{
 \f[V]\[dq]$pacman.eng(1)\[dq]\f[R]
 T}
@@ -4109,8 +3781,6 @@ T{
 T}@T{
 Same as \f[V]format\f[R] but for when no updates are available.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$pacman.eng(1)\[dq]\f[R]
 T}
 T{
@@ -4118,16 +3788,12 @@ T{
 T}@T{
 Display block as warning if updates matching regex are available.
 T}@T{
-No
-T}@T{
 \f[V]None\f[R]
 T}
 T{
 \f[V]critical_updates_regex\f[R]
 T}@T{
 Display block as critical if updates matching regex are available.
-T}@T{
-No
 T}@T{
 \f[V]None\f[R]
 T}
@@ -4138,9 +3804,7 @@ AUR command to check available updates, which outputs in the same format
 as pacman.
 e.g.\ \f[V]yay -Qua\f[R]
 T}@T{
-if \f[V]{both}\f[R] or \f[V]{aur}\f[R] are used.
-T}@T{
-\f[V]None\f[R]
+if \f[V]{both}\f[R] or \f[V]{aur}\f[R] are used
 T}
 T{
 \f[V]hide_when_uptodate\f[R]
@@ -4148,7 +3812,6 @@ T}@T{
 Hides the block when there are no updates available
 T}@T{
 \f[V]false\f[R]
-T}@T{
 T}
 .TE
 .PP
@@ -4273,13 +3936,11 @@ your checkmark count to zero, then go to step 1.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -4289,18 +3950,14 @@ T{
 T}@T{
 Message when timer expires
 T}@T{
-No
-T}@T{
-\f[V]Pomodoro over! Take a break!\f[R]
+\f[V]\[dq]Pomodoro over! Take a break!\[dq]\f[R]
 T}
 T{
 \f[V]break_message\f[R]
 T}@T{
 Message when break is over
 T}@T{
-No
-T}@T{
-\f[V]Break over! Time to work!\f[R]
+\f[V]\[dq]Break over! Time to work!\[dq]\f[R]
 T}
 T{
 \f[V]notify_cmd\f[R]
@@ -4309,9 +3966,7 @@ A shell command to run as a notifier.
 \f[V]{msg}\f[R] will be substituted with either \f[V]message\f[R] or
 \f[V]break_message\f[R].
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]blocking_cmd\f[R]
@@ -4320,8 +3975,6 @@ Is \f[V]notify_cmd\f[R] blocking?
 If it is, then pomodoro block will wait until the command finishes
 before proceeding.
 Otherwise, you will have to click on the block in order to proceed.
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -4375,13 +4028,11 @@ Left clicking the block opens the GUI.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -4391,8 +4042,6 @@ T{
 T}@T{
 Refresh rate in seconds.
 T}@T{
-No
-T}@T{
 \f[V]1\f[R]
 T}
 T{
@@ -4401,8 +4050,6 @@ T}@T{
 A string to customise the output of this block.
 See below for placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$num.eng(1)\[dq]\f[R]
 T}
 T{
@@ -4410,9 +4057,7 @@ T{
 T}@T{
 Socket path for the rofication daemon.
 T}@T{
-No
-T}@T{
-\[lq]/tmp/rofi_notification_daemon\[rq]
+\f[V]\[dq]/tmp/rofi_notification_daemon\[dq]\f[R]
 T}
 .TE
 .PP
@@ -4499,13 +4144,11 @@ format = \[dq]$output_name{ $volume|}\[dq]
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -4516,8 +4159,6 @@ T}@T{
 \f[V]\[dq]auto\[dq]\f[R], \f[V]\[dq]pulseaudio\[dq]\f[R],
 \f[V]\[dq]alsa\[dq]\f[R].
 T}@T{
-No
-T}@T{
 \f[V]\[dq]auto\[dq]\f[R] (Pulseaudio with ALSA fallback)
 T}
 T{
@@ -4526,17 +4167,13 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
-\f[V]$volume.eng(2)|\f[R]
+$volume.eng(2)|
 T}
 T{
 \f[V]name\f[R]
 T}@T{
 PulseAudio device name, or the ALSA control name as found in the output
 of \f[V]amixer -D yourdevice scontrols\f[R].
-T}@T{
-No
 T}@T{
 PulseAudio: \f[V]\[at]DEFAULT_SINK\[at]\f[R] / ALSA: \f[V]Master\f[R]
 T}
@@ -4547,8 +4184,6 @@ ALSA device name, usually in the form \[lq]hw:X\[rq] or \[lq]hw:X,Y\[rq]
 where \f[V]X\f[R] is the card number and \f[V]Y\f[R] is the device
 number as found in the output of \f[V]aplay -l\f[R].
 T}@T{
-No
-T}@T{
 \f[V]default\f[R]
 T}
 T{
@@ -4556,9 +4191,7 @@ T{
 T}@T{
 PulseAudio device kind: \f[V]source\f[R] or \f[V]sink\f[R].
 T}@T{
-No
-T}@T{
-\f[V]sink\f[R]
+\f[V]\[dq]sink\[dq]\f[R]
 T}
 T{
 \f[V]natural_mapping\f[R]
@@ -4566,8 +4199,6 @@ T}@T{
 When using the ALSA driver, display the \[lq]mapped volume\[rq] as given
 by \f[V]alsamixer\f[R]/\f[V]amixer -M\f[R], which represents the volume
 level more naturally with respect for the human ear.
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -4578,8 +4209,6 @@ The percent volume level is increased/decreased for the selected audio
 device when scrolling.
 Capped automatically at 50.
 T}@T{
-No
-T}@T{
 \f[V]5\f[R]
 T}
 T{
@@ -4589,8 +4218,6 @@ Max volume in percent that can be set via scrolling.
 Note it can still be set above this value if changed by another
 application.
 T}@T{
-No
-T}@T{
 \f[V]None\f[R]
 T}
 T{
@@ -4598,16 +4225,12 @@ T{
 T}@T{
 Shell command to run when the sound block is clicked.
 T}@T{
-No
-T}@T{
-None
+\f[V]None\f[R]
 T}
 T{
 \f[V]show_volume_when_muted\f[R]
 T}@T{
 Show the volume even if it is currently muted.
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -4615,8 +4238,6 @@ T{
 \f[V]headphones_indicator\f[R]
 T}@T{
 Change icon when headphones are plugged in (pulseaudio only)
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -4701,9 +4322,8 @@ Key
 T}@T{
 Values
 T}@T{
-Required
-T}@T{
 Default
+T}@T{
 T}
 _
 T{
@@ -4712,18 +4332,16 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$ping$speed_down$speed_up\[dq]\f[R]
+T}@T{
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds
 T}@T{
-No
-T}@T{
 \f[V]1800\f[R]
+T}@T{
 T}
 .TE
 .PP
@@ -4798,13 +4416,11 @@ through the user\[cq]s filters.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -4814,8 +4430,6 @@ T{
 T}@T{
 Update interval in seconds
 T}@T{
-No
-T}@T{
 \f[V]600\f[R] (10min)
 T}
 T{
@@ -4823,8 +4437,6 @@ T{
 T}@T{
 The threshold of pending (or started) tasks when the block turns into a
 warning state
-T}@T{
-No
 T}@T{
 \f[V]10\f[R]
 T}
@@ -4834,16 +4446,12 @@ T}@T{
 The threshold of pending (or started) tasks when the block turns into a
 critical state
 T}@T{
-No
-T}@T{
 \f[V]20\f[R]
 T}
 T{
 \f[V]hide_when_zero\f[R]
 T}@T{
 Whethere to hide the block when the number of tasks is zero
-T}@T{
-No
 T}@T{
 \f[V]false\f[R]
 T}
@@ -4854,8 +4462,6 @@ A list of tables with the keys \f[V]name\f[R] and \f[V]filter\f[R].
 \f[V]filter\f[R] specifies the criteria that must be met for a task to
 be counted towards this filter.
 T}@T{
-No
-T}@T{
 \f[V][{name = \[dq]pending\[dq], filter = \[dq]-COMPLETED -DELETED\[dq]}]\f[R]
 T}
 T{
@@ -4864,16 +4470,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$done\[rs]|$count.eng(1)\[dq]\f[R]
 T}
 T{
 \f[V]data_location\f[R]
 T}@T{
 Directory in which taskwarrior stores its data files.
-T}@T{
-No
 T}@T{
 \f[V]\[dq]\[ti]/.task\[dq]\f[R]
 T}
@@ -4980,13 +4582,11 @@ You may need to keep this in mind if you have a misbehaving sensor.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -4997,16 +4597,12 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders
 T}@T{
-No
-T}@T{
 \[lq]$average avg, $max max|\[rq]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds
-T}@T{
-No
 T}@T{
 \f[V]5\f[R]
 T}
@@ -5015,16 +4611,12 @@ T{
 T}@T{
 Whether the block will be collapsed by default
 T}@T{
-No
-T}@T{
 \f[V]true\f[R]
 T}
 T{
 \f[V]scale\f[R]
 T}@T{
 Either \f[V]\[dq]celsius\[dq]\f[R] or \f[V]\[dq]fahrenheit\[dq]\f[R]
-T}@T{
-No
 T}@T{
 \f[V]\[dq]celsius\[dq]\f[R]
 T}
@@ -5033,8 +4625,6 @@ T{
 T}@T{
 Maximum temperature to set state to good
 T}@T{
-No
-T}@T{
 \f[V]20\f[R] \[de]C (\f[V]68\f[R] \[de]F)
 T}
 T{
@@ -5042,16 +4632,12 @@ T{
 T}@T{
 Maximum temperature to set state to idle
 T}@T{
-No
-T}@T{
 \f[V]45\f[R] \[de]C (\f[V]113\f[R] \[de]F)
 T}
 T{
 \f[V]info\f[R]
 T}@T{
 Maximum temperature to set state to info
-T}@T{
-No
 T}@T{
 \f[V]60\f[R] \[de]C (\f[V]140\f[R] \[de]F)
 T}
@@ -5061,8 +4647,6 @@ T}@T{
 Maximum temperature to set state to warning.
 Beyond this temperature, state is set to critical
 T}@T{
-No
-T}@T{
 \f[V]80\f[R] \[de]C (\f[V]176\f[R] \[de]F)
 T}
 T{
@@ -5071,16 +4655,12 @@ T}@T{
 Narrows the results to a given chip name.
 \f[V]*\f[R] may be used as a wildcard.
 T}@T{
-No
-T}@T{
 None
 T}
 T{
 \f[V]inputs\f[R]
 T}@T{
 Narrows the results to individual inputs reported by each chip.
-T}@T{
-No
 T}@T{
 None
 T}
@@ -5150,13 +4730,11 @@ The current time.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -5169,8 +4747,6 @@ See chrono
 docs (https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers)
 for all options.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]%a %d/%m %R\[dq]\f[R]
 T}
 T{
@@ -5178,16 +4754,12 @@ T{
 T}@T{
 Update interval in seconds
 T}@T{
-No
-T}@T{
-10
+\f[V]10\f[R]
 T}
 T{
 \f[V]timezone\f[R]
 T}@T{
 A timezone specifier (e.g.\ \[lq]Europe/Lisbon\[rq])
-T}@T{
-No
 T}@T{
 Local timezone
 T}
@@ -5195,8 +4767,6 @@ T{
 \f[V]locale\f[R]
 T}@T{
 Locale to apply when formatting the time
-T}@T{
-No
 T}@T{
 System locale
 T}
@@ -5240,13 +4810,11 @@ If such variable is not presented, \f[V]sh\f[R] is used.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -5256,8 +4824,6 @@ T{
 T}@T{
 A label next to the icon
 T}@T{
-No
-T}@T{
 \f[V]\[dq]\[dq]\f[R]
 T}
 T{
@@ -5266,8 +4832,6 @@ T}@T{
 Shell command to enable the toggle
 T}@T{
 Yes
-T}@T{
-N/A
 T}
 T{
 \f[V]command_off\f[R]
@@ -5275,8 +4839,6 @@ T}@T{
 Shell command to disable the toggle
 T}@T{
 Yes
-T}@T{
-N/A
 T}
 T{
 \f[V]command_state\f[R]
@@ -5284,16 +4846,12 @@ T}@T{
 Shell command to determine the state.
 Empty output => No, otherwise => Yes.
 T}@T{
-Yes
-T}@T{
-N/A
+\f[B]Required\f[R]
 T}
 T{
 \f[V]icon_on\f[R]
 T}@T{
 Icon override for the toggle button while on
-T}@T{
-No
 T}@T{
 \f[V]\[dq]toggle_on\[dq]\f[R]
 T}
@@ -5302,8 +4860,6 @@ T{
 T}@T{
 Icon override for the toggle button while off
 T}@T{
-No
-T}@T{
 \f[V]\[dq]toggle_off\[dq]\f[R]
 T}
 T{
@@ -5311,8 +4867,6 @@ T{
 T}@T{
 Update interval in seconds.
 If not set, \f[V]command_state\f[R] will run only on click.
-T}@T{
-No
 T}@T{
 None
 T}
@@ -5348,13 +4902,11 @@ days.
 .PP
 .TS
 tab(@);
-l l l l.
+l l l.
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -5363,8 +4915,6 @@ T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds
-T}@T{
-No
 T}@T{
 \f[V]60\f[R]
 T}
@@ -5399,13 +4949,11 @@ dynamically.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -5415,8 +4963,6 @@ T{
 T}@T{
 Whether to show recorded time.
 T}@T{
-No
-T}@T{
 \f[V]false\f[R]
 T}
 T{
@@ -5424,16 +4970,12 @@ T{
 T}@T{
 Path to the Watson state file.
 T}@T{
-No
-T}@T{
 \f[V]$XDG_CONFIG_HOME/watson/state\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval, in seconds.
-T}@T{
-No
 T}@T{
 \f[V]60\f[R]
 T}
@@ -5470,17 +5012,22 @@ hits.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
 T}@T{
-Required
-T}@T{
 Default
 T}
 _
+T{
+\f[V]service\f[R]
+T}@T{
+The configuration of a weather service (see below).
+T}@T{
+\f[B]Required\f[R]
+T}
 T{
 \f[V]format\f[R]
 T}@T{
@@ -5488,25 +5035,12 @@ A string to customise the output of this block.
 See below for available placeholders.
 Text may need to be escaped, refer to Escaping Text.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$weather $temp\[dq]\f[R]
-T}
-T{
-\f[V]service\f[R]
-T}@T{
-The configuration of a weather service (see below).
-T}@T{
-Yes
-T}@T{
-None
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval, in seconds.
-T}@T{
-No
 T}@T{
 \f[V]600\f[R]
 T}
@@ -5518,9 +5052,7 @@ required).
 If the API call fails then the block will fallback to \f[V]city_id\f[R]
 or \f[V]place\f[R].
 T}@T{
-No
-T}@T{
-false
+\f[V]false\f[R]
 T}
 .TE
 .SS OpenWeatherMap Options
@@ -5766,13 +5298,11 @@ may help.
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
-T}@T{
-Required
 T}@T{
 Default
 T}
@@ -5783,8 +5313,6 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-No
-T}@T{
 \f[V]\[dq]$display $brightness_icon $brightness\[dq]\f[R]
 T}
 T{
@@ -5793,16 +5321,12 @@ T}@T{
 The steps brightness is in/decreased for the selected screen (When
 greater than 50 it gets limited to 50).
 T}@T{
-No
-T}@T{
 \f[V]5\f[R]
 T}
 T{
 \f[V]interval\f[R]
 T}@T{
 Update interval in seconds.
-T}@T{
-No
 T}@T{
 \f[V]5\f[R]
 T}
@@ -5993,6 +5517,8 @@ Uses text labels instead of icons)
 \f[V]awesome\f[R] (Font Awesome 4.x)
 .IP \[bu] 2
 \f[V]awesome5\f[R] (Font Awesome 5.x)
+.IP \[bu] 2
+\f[V]awesome6\f[R] (Font Awesome 6.x)
 .IP \[bu] 2
 \f[V]material\f[R]
 .IP \[bu] 2

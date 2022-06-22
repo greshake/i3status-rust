@@ -16,14 +16,14 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$combo.rot-str() $play&vert;"</code>
-//! `player` | Name of the music player MPRIS interface. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | No | None
-//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | No | `[]`
-//! `separator` | String to insert between artist and title. | No | `" - "`
-//! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | No | `1000`
-//! `hide_when_empty` | Hides the block when there is no player available. | No | `false`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$combo.rot-str() $play&vert;"</code>
+//! `player` | Name of the music player MPRIS interface. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
+//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
+//! `separator` | String to insert between artist and title. | `" - "`
+//! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
+//! `hide_when_empty` | Hides the block when there is no player available. | `false`
 //!
 //! Note: All placeholders can be absent. See the examples below to learn how to handle this.
 //!

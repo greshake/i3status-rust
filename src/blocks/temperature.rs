@@ -16,18 +16,18 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | No | <code>"$average avg, $max max&vert;"</code>
-//! `interval` | Update interval in seconds | No | `5`
-//! `collapsed` | Whether the block will be collapsed by default | No | `true`
-//! `scale` | Either `"celsius"` or `"fahrenheit"` | No | `"celsius"`
-//! `good` | Maximum temperature to set state to good | No | `20` °C (`68` °F)
-//! `idle` | Maximum temperature to set state to idle | No | `45` °C (`113` °F)
-//! `info` | Maximum temperature to set state to info | No | `60` °C (`140` °F)
-//! `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | No | `80` °C (`176` °F)
-//! `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | No | None
-//! `inputs` | Narrows the results to individual inputs reported by each chip. | No | None
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders | <code>"$average avg, $max max&vert;"</code>
+//! `interval` | Update interval in seconds | `5`
+//! `collapsed` | Whether the block will be collapsed by default | `true`
+//! `scale` | Either `"celsius"` or `"fahrenheit"` | `"celsius"`
+//! `good` | Maximum temperature to set state to good | `20` °C (`68` °F)
+//! `idle` | Maximum temperature to set state to idle | `45` °C (`113` °F)
+//! `info` | Maximum temperature to set state to info | `60` °C (`140` °F)
+//! `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | `80` °C (`176` °F)
+//! `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | None
+//! `inputs` | Narrows the results to individual inputs reported by each chip. | None
 //!
 //! Placeholder | Value                                | Type   | Unit
 //! ------------|--------------------------------------|--------|--------

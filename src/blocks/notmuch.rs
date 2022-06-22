@@ -11,16 +11,16 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `maildir` | Path to the directory containing the notmuch database. | No | `$HOME/.mail`
-//! `query` | Query to run on the database. | No | `""`
-//! `threshold_critical` | Mail count that triggers `critical` state. | No | `99999`
-//! `threshold_warning` | Mail count that triggers `warning` state. | No | `99999`
-//! `threshold_good` | Mail count that triggers `good` state. | No | `99999`
-//! `threshold_info` | Mail count that triggers `info` state. | No | `99999`
-//! `name` | Label to show before the mail count. | No | None
-//! `interval` | Update interval in seconds. | No | `10`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `maildir` | Path to the directory containing the notmuch database. | `~/.mail`
+//! `query` | Query to run on the database. | `""`
+//! `threshold_critical` | Mail count that triggers `critical` state. | `99999`
+//! `threshold_warning` | Mail count that triggers `warning` state. | `99999`
+//! `threshold_good` | Mail count that triggers `good` state. | `99999`
+//! `threshold_info` | Mail count that triggers `info` state. | `99999`
+//! `name` | Label to show before the mail count. | `None`
+//! `interval` | Update interval in seconds. | `10`
 //!
 //! # Example
 //!

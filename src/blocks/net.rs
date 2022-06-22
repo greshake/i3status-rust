@@ -4,14 +4,14 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `device` | Network interface to monitor (as specified in `/sys/class/net/`) | No | If not set, device will be automatically selected every `interval`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$speed_down.eng(3,B,K)$speed_up.eng(3,B,K)"`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | No | None
-//! `interval` | Update interval in seconds | No | `2`
-//! `hide_missing` | Whether to hide interfaces that don't exist on the system. | No | `false`
-//! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | No | `false`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `device` | Network interface to monitor (as specified in `/sys/class/net/`) | If not set, device will be automatically selected every `interval`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$speed_down.eng(3,B,K)$speed_up.eng(3,B,K)"`
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `interval` | Update interval in seconds | `2`
+//! `hide_missing` | Whether to hide interfaces that don't exist on the system. | `false`
+//! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | `false`
 //!
 //! Placeholder  | Value                    | Type   | Unit
 //! -------------|--------------------------|--------|---------------

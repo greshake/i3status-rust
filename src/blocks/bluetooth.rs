@@ -10,12 +10,12 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `mac` | MAC address of the Bluetooth device | Yes | -
-//! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | No | None
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$name{ $percentage&vert;}&vert;Unavailable"</code>
-//! `hide_disconnected` | Whether to hide the block when disconnected | No | `false`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `mac` | MAC address of the Bluetooth device | **Required**
+//! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$name{ $percentage&vert;}&vert;Unavailable"</code>
+//! `hide_disconnected` | Whether to hide the block when disconnected | `false`
 //!
 //! Placeholder  | Value                                                                 | Type   | Unit
 //! -------------|-----------------------------------------------------------------------|--------|------

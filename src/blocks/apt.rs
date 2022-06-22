@@ -6,14 +6,14 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `interval` | Update interval in seconds. | No | `600`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$count.eng(1)"`
-//! `format_singular` | Same as `format`, but for when exactly one update is available. | No | `"$count.eng(1)"`
-//! `format_up_to_date` | Same as `format`, but for when no updates are available. | No | `"$count.eng(1)"`
-//! `warning_updates_regex` | Display block as warning if updates matching regex are available. | No | `None`
-//! `critical_updates_regex` | Display block as critical if updates matching regex are available. | No | `None`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `interval` | Update interval in seconds. | `600`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$count.eng(1)"`
+//! `format_singular` | Same as `format`, but for when exactly one update is available. | `"$count.eng(1)"`
+//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `"$count.eng(1)"`
+//! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
+//! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `hide_when_uptodate` | Hides the block when there are no updates available | `false`
 //!
 //! Key | Value | Type | Unit

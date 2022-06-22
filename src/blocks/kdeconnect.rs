@@ -7,15 +7,15 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | No | Chooses the first found device, if any.
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | <code>"$name $bat_icon $bat_charge{ $notif_icon&vert;}"</code>
-//! `bat_info` | Min battery level below which state is set to info. | No | `60`
-//! `bat_good` | Min battery level below which state is set to good. | No | `60`
-//! `bat_warning` | Min battery level below which state is set to warning. | No | `30`
-//! `bat_critical` | Min battery level below which state is set to critical. | No | `15`
-//! `hide_disconnected` | Whether to hide this block when disconnected | No | `true`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | Chooses the first found device, if any.
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$name $bat_icon $bat_charge{ $notif_icon&vert;}"</code>
+//! `bat_info` | Min battery level below which state is set to info. | `60`
+//! `bat_good` | Min battery level below which state is set to good. | `60`
+//! `bat_warning` | Min battery level below which state is set to warning. | `30`
+//! `bat_critical` | Min battery level below which state is set to critical. | `15`
+//! `hide_disconnected` | Whether to hide this block when disconnected | `true`
 //!
 //! Placeholder   | Value                                                       | Type   | Unit
 //! --------------|-------------------------------------------------------------|--------|-----

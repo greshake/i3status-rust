@@ -6,18 +6,18 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `step`        | The step color temperature is in/decreased in Kelvin. | No | `100`
-//! `hue_shifter` | Program used to control screen color. | No | Detect automatically. |
-//! `max_temp`    | Max color temperature in Kelvin. | No | `10000`
-//! `min_temp`    | Min color temperature in Kelvin. | No | `1000`
-//! `click_temp`  | Left click color temperature in Kelvin. | No | `6500`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `step`        | The step color temperature is in/decreased in Kelvin. | `100`
+//! `hue_shifter` | Program used to control screen color. | Detect automatically
+//! `max_temp`    | Max color temperature in Kelvin. | `10000`
+//! `min_temp`    | Min color temperature in Kelvin. | `1000`
+//! `click_temp`  | Left click color temperature in Kelvin. | `6500`
 //!
 //! # Available Hue Shifters
 //!
-//! Name | Supports
-//! -----|---------
+//! Name                 | Supports
+//! ---------------------|---------
 //! `"redshift"`         | X11
 //! `"sct"`              | X11
 //! `"gammastep"`        | X11 and Wayland

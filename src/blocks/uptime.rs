@@ -5,9 +5,9 @@
 //!
 //! # Configuration
 //!
-//! Key        | Values                     | Required | Default
-//! -----------|----------------------------|----------|--------
-//! `interval` | Update interval in seconds | No       | `60`
+//! Key        | Values                     | Default
+//! -----------|----------------------------|--------
+//! `interval` | Update interval in seconds | `60`
 //!
 //! # Example
 //!

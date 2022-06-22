@@ -12,15 +12,15 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `text` | A label next to the icon | No | `""`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `text` | A label next to the icon | `""`
 //! `command_on` | Shell command to enable the toggle | Yes | N/A
 //! `command_off` | Shell command to disable the toggle | Yes | N/A
-//! `command_state` | Shell command to determine the state. Empty output => No, otherwise => Yes. | Yes | N/A
-//! `icon_on` | Icon override for the toggle button while on | No | `"toggle_on"`
-//! `icon_off` | Icon override for the toggle button while off | No | `"toggle_off"`
-//! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | No | None
+//! `command_state` | Shell command to determine the state. Empty output => No, otherwise => Yes. | **Required**
+//! `icon_on` | Icon override for the toggle button while on | `"toggle_on"`
+//! `icon_off` | Icon override for the toggle button while off | `"toggle_off"`
+//! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None
 //!
 //! # Examples
 //!

@@ -12,15 +12,15 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `gpu_id` | GPU id in system. | No | `0`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$utilization $memory $temperature"`
-//! `interval` | Update interval in seconds. | No | `1`
-//! `idle` | Maximum temperature, below which state is set to idle | No | `50`
-//! `good` | Maximum temperature, below which state is set to good | No | `70`
-//! `info` | Maximum temperature, below which state is set to info | No | `75`
-//! `warning` | Maximum temperature, below which state is set to warning | No | `80`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `gpu_id` | GPU id in system. | `0`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$utilization $memory $temperature"`
+//! `interval` | Update interval in seconds. | `1`
+//! `idle` | Maximum temperature, below which state is set to idle | `50`
+//! `good` | Maximum temperature, below which state is set to good | `70`
+//! `info` | Maximum temperature, below which state is set to info | `75`
+//! `warning` | Maximum temperature, below which state is set to warning | `80`
 //!
 //! Placeholder   | Type   | Unit
 //! --------------|--------|---------------

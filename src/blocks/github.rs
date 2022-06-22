@@ -4,16 +4,16 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$total.eng(1)"`
-//! `interval` | Update interval in seconds | No | `30`
-//! `token` | A GitHub personal access token with the "notifications" scope | No | None
-//! `hide_if_total_is_zero` | Hide this block if the total count of notifications is zero | No | `false`
-//! `critical` | List of notification types that change the block to the critical colour | No | None
-//! `warning` | List of notification types that change the block to the warning colour | No | None
-//! `info` | List of notification types that change the block to the info colour | No | None
-//! `good` | List of notification types that change the block to the good colour | No | None
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$total.eng(1)"`
+//! `interval` | Update interval in seconds | `30`
+//! `token` | A GitHub personal access token with the "notifications" scope | `None`
+//! `hide_if_total_is_zero` | Hide this block if the total count of notifications is zero | `false`
+//! `critical` | List of notification types that change the block to the critical colour | `None`
+//! `warning` | List of notification types that change the block to the warning colour | `None`
+//! `info` | List of notification types that change the block to the info colour | `None`
+//! `good` | List of notification types that change the block to the good colour | `None`
 //!
 //!
 //! All the placeholders are numbers without a unit.

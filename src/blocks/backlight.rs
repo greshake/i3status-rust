@@ -11,16 +11,16 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `device` | The `/sys/class/backlight` device to read brightness information from.  When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.| No | Default device
-//! `format` | A string to customise the output of this block. See below for available placeholders. | No | `"$brightness"`
-//! `step_width` | The brightness increment to use when scrolling, in percent | No | `5`
-//! `minimum` | The minimum brightness that can be scrolled down to | No | `5`
-//! `maximum` | The maximum brightness that can be scrolled up to | No | `100`
-//! `cycle` | The brightnesses to cycle through on each click | No | `[minimum, maximum]`
-//! `root_scaling` | Scaling exponent reciprocal (ie. root) | No | `1.0`
-//! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | No | `false`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `device` | The `/sys/class/backlight` device to read brightness information from.  When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.| Default device
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$brightness"`
+//! `step_width` | The brightness increment to use when scrolling, in percent | `5`
+//! `minimum` | The minimum brightness that can be scrolled down to | `5`
+//! `maximum` | The maximum brightness that can be scrolled up to | `100`
+//! `cycle` | The brightnesses to cycle through on each click | `[minimum, maximum]`
+//! `root_scaling` | Scaling exponent reciprocal (ie. root) | `1.0`
+//! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | `false`
 //!
 //! Placeholder  | Value              | Type   | Unit
 //! -------------|--------------------|--------|---------------

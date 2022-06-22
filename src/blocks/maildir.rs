@@ -7,13 +7,13 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Required | Default
-//! ----|--------|----------|--------
-//! `inboxes` | List of maildir inboxes to look for mails in. | Yes | None
-//! `threshold_warning` | Number of unread mails where state is set to warning. | No | `1`
-//! `threshold_critical` | Number of unread mails where state is set to critical. | No | `10`
-//! `interval` | Update interval, in seconds. | No | `5`
-//! `display_type` | Which part of the maildir to count: `"new"`, `"cur"`, or `"all"`. | No | `"new"`
+//! Key | Values | Default
+//! ----|--------|--------
+//! `inboxes` | List of maildir inboxes to look for mails in. | **Required**
+//! `threshold_warning` | Number of unread mails where state is set to warning. | `1`
+//! `threshold_critical` | Number of unread mails where state is set to critical. | `10`
+//! `interval` | Update interval, in seconds. | `5`
+//! `display_type` | Which part of the maildir to count: `"new"`, `"cur"`, or `"all"`. | `"new"`
 //!
 //! # Examples
 //!
