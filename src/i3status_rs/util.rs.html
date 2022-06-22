@@ -249,9 +249,6 @@
 <span id="244">244</span>
 <span id="245">245</span>
 <span id="246">246</span>
-<span id="247">247</span>
-<span id="248">248</span>
-<span id="249">249</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::fs::File</span>;
 <span class="kw">use</span> <span class="ident">std::io</span>::{<span class="self">self</span>, <span class="ident">BufReader</span>, <span class="ident">Read</span>};
 <span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
@@ -379,17 +376,6 @@
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">success</span>())
 }
 
-<span class="macro">macro_rules!</span> <span class="ident">__map</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>) =&gt; {{
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>.<span class="ident">insert</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>.<span class="ident">into</span>(), <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>.<span class="ident">into</span>());
-    }};
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond</span>:<span class="ident">expr</span>) =&gt; {{
-        <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond</span> {
-            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>.<span class="ident">insert</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>.<span class="ident">into</span>(), <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>.<span class="ident">into</span>());
-        }
-    }};
-}
-
 <span class="doccomment">/// # Example</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
@@ -403,9 +389,17 @@
         <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_mut</span>)]</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">m</span> <span class="op">=</span> <span class="ident">::std::collections::HashMap::new</span>();
         $(
-        <span class="macro">__map!</span>(<span class="ident">m</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span> $(,<span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond</span>)<span class="question-mark">?</span>);
+        <span class="macro">map!</span>(@<span class="ident">insert</span> <span class="ident">m</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span> $(,<span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond</span>)<span class="question-mark">?</span>);
         )<span class="op">*</span>
         <span class="ident">m</span>
+    }};
+    (@<span class="ident">insert</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>) =&gt; {{
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>.<span class="ident">insert</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>.<span class="ident">into</span>(), <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>.<span class="ident">into</span>());
+    }};
+    (@<span class="ident">insert</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond</span>:<span class="ident">expr</span>) =&gt; {{
+        <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond</span> {
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>.<span class="ident">insert</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>.<span class="ident">into</span>(), <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>.<span class="ident">into</span>());
+        }
     }};
 }
 
