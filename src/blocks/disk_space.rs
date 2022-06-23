@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `path` | Path to collect information from | `"/"`
+//! `path` | Path to collect information from. Supports path expansions e.g. `~`. | `"/"`
 //! `interval` | Update time in seconds | `20`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `"$available"`
 //! `warning` | A value which will trigger warning block state | `20.0`
@@ -17,7 +17,7 @@
 //! `path`       | The value of `path` option                                         | Text   | -
 //! `percentage` | Free or used percentage. Depends on `info_type`                    | Number | %
 //! `total`      | Total disk space                                                   | Number | Bytes
-//! `used`       | Used disk space                                                   | Number | Bytes
+//! `used`       | Used disk space                                                    | Number | Bytes
 //! `free`       | Free disk space                                                    | Number | Bytes
 //! `available`  | Available disk space (free disk space minus reserved system space) | Number | Bytes
 //!
@@ -63,7 +63,7 @@ pub enum InfoType {
 #[serde(deny_unknown_fields, default)]
 struct DiskSpaceConfig {
     #[default("/".into())]
-    path: String,
+    path: ShellString,
     info_type: InfoType,
     format: FormatConfig,
     alert_unit: Option<String>,
@@ -92,8 +92,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
+    let path = config.path.expand()?;
+
     loop {
-        let statvfs = statvfs(config.path.as_str()).error("failed to retrieve statvfs")?;
+        let statvfs = statvfs(&*path).error("failed to retrieve statvfs")?;
 
         let total = (statvfs.blocks() as u64) * (statvfs.fragment_size() as u64);
         let used = ((statvfs.blocks() as u64) - (statvfs.blocks_free() as u64))
@@ -109,7 +111,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         let percentage = result / (total as f64) * 100.;
         widget.set_values(map! {
-            "path" => Value::text(config.path.clone()),
+            "path" => Value::text(path.to_owned()),
             "percentage" => Value::percents(percentage),
             "total" => Value::bytes(total as f64),
             "used" => Value::bytes(used as f64),

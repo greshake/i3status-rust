@@ -9,7 +9,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `inboxes` | List of maildir inboxes to look for mails in. | **Required**
+//! `inboxes` | List of maildir inboxes to look for mails in. Supports path expansions e.g. `~`. | **Required**
 //! `threshold_warning` | Number of unread mails where state is set to warning. | `1`
 //! `threshold_critical` | Number of unread mails where state is set to critical. | `10`
 //! `interval` | Update interval, in seconds. | `5`
@@ -51,8 +51,12 @@ struct MaildirConfig {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = MaildirConfig::deserialize(config).config_error()?;
+    let mut config = MaildirConfig::deserialize(config).config_error()?;
     let mut widget = api.new_widget().with_icon("mail")?;
+
+    for indbox in &mut config.inboxes {
+        *inbox = shellexpand::full(inbox).error("Failed to expand string")?.to_owned();
+    }
 
     loop {
         let mut newmails = 0;
