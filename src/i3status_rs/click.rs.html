@@ -222,7 +222,7 @@
     <span class="doccomment">/// Whether to update the block on click (default is `false`)</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
     <span class="ident">update</span>: <span class="ident">bool</span>,
-    <span class="doccomment">/// Whether to pass click event to the block (default is `true`)</span>
+    <span class="doccomment">/// Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true) (default is `true`)</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;return_true&quot;</span>)]</span>
     <span class="ident">pass</span>: <span class="ident">bool</span>,
 }
