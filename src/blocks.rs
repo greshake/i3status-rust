@@ -114,7 +114,6 @@ define_blocks!(
     memory,
     music,
     net,
-    // // networkmanager,
     notify,
     #[cfg(feature = "notmuch")]
     notmuch,
