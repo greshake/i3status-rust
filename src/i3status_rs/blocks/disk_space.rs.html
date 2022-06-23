@@ -277,7 +277,7 @@
 
         <span class="kw">let</span> <span class="ident">percentage</span> <span class="op">=</span> <span class="ident">result</span> <span class="op">/</span> (<span class="ident">total</span> <span class="kw">as</span> <span class="ident">f64</span>) <span class="op">*</span> <span class="number">100.</span>;
         <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;path&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">path</span>.<span class="ident">to_owned</span>()),
+            <span class="string">&quot;path&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">path</span>.<span class="ident">to_string</span>()),
             <span class="string">&quot;percentage&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">percentage</span>),
             <span class="string">&quot;total&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">total</span> <span class="kw">as</span> <span class="ident">f64</span>),
             <span class="string">&quot;used&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">used</span> <span class="kw">as</span> <span class="ident">f64</span>),
