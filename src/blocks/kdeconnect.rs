@@ -78,9 +78,11 @@ struct Config {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = Config::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default("")?);
+    let mut widget = api.new_widget().with_format(
+        config
+            .format
+            .with_default("$name $bat_icon $bat_charge{ $notif_icon|}")?,
+    );
 
     let battery_state = (
         config.bat_good,

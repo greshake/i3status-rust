@@ -4,7 +4,7 @@
 //!
 //! Key        | Values                                                                                | Default
 //! -----------|---------------------------------------------------------------------------------------|--------
-//! `format`   | A string to customise the output of this block. See below for available placeholders. | `"$1m"`
+//! `format`   | A string to customise the output of this block. See below for available placeholders. | `"$1m.eng(3)"`
 //! `interval` | Update interval in seconds                                                            | `3`
 //! `info`     | Minimum load, where state is set to info                                              | `0.3`
 //! `warning`  | Minimum load, where state is set to warning                                           | `0.6`
@@ -50,7 +50,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api
         .new_widget()
         .with_icon("cogs")?
-        .with_format(config.format.with_default("$1m")?);
+        .with_format(config.format.with_default("$1m.eng(3)")?);
 
     // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
     let logical_cores = util::read_file("/proc/cpuinfo")

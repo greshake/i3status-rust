@@ -7,7 +7,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$title.rot-str(15)&vert;"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$title.rot-str(21)&vert;"</code>
 //! `autohide` | Whether to hide the block when no title is available | `true`
 //! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | `"auto"`
 //!
@@ -58,7 +58,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = FocusedWindowConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("$title.rot-str(15)|")?);
+        .with_format(config.format.with_default("$title.rot-str(21)|")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         Driver::Auto => match SwayIpc::new().await {
