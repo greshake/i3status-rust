@@ -396,11 +396,9 @@ impl Backend for KbddBus {
     }
 
     async fn wait_for_chagne(&mut self) -> Result<()> {
-        select! {
-            Some(event) = self.stream.next() => {
-                let args = event.args().error("Failed to get the args from kbdd message")?;
-                self.current_layout = args.layout().trim().to_string();
-            }
+        if let Some(event) = self.stream.next().await {
+            let args = event.args().error("Failed to get the args from kbdd message")?;
+            self.current_layout = args.layout().trim().to_string();
         }
         Ok(())
     }
