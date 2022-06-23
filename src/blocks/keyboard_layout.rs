@@ -21,7 +21,7 @@
 //!  Key     | Value | Type
 //! ---------|-------|-----
 //! `layout` | Keyboard layout name | String
-//! `variant`| Keyboard variant. Only `localebus` and `sway` are supported so far. | String
+//! `variant`| Keyboard variant. Only `localebus`, `sway` and `kbddbus` are supported so far. | String
 //!
 //! # Examples
 //!
@@ -42,12 +42,21 @@
 //! driver = "localebus"
 //! ```
 //!
-//! Listen to kbdd for changes:
+//! Listen to kbdd for changes, the text is in the following format:
+//! "English (US)" - {$layout ($variant)}
+//! use block.mappings to override with shorter names as shown below.
+//! Also use format = "$layout ($variant)" to see the full text to map,
+//! or you can use:
+//! dbus-monitor interface=ru.gentoo.kbdd
+//! to see the exact variant spelling
 //!
 //! ```toml
 //! [[block]]
 //! block = "keyboard_layout"
 //! driver = "kbddbus"
+//! [block.mappings]
+//! "English (US)" = "us"
+//! "Bulgarian (new phonetic)" = "bg"
 //! ```
 //!
 //! Listen to sway for changes:
@@ -71,6 +80,7 @@
 //! ```
 
 use super::prelude::*;
+use regex::Regex;
 use std::collections::HashMap;
 use swayipc_async::{Connection, Event, EventType};
 use tokio::process::Command;
@@ -106,7 +116,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap(config.interval)),
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
-        KeyboardLayoutDriver::KbddBus => return Err(Error::new("KbddBus is not implemented")),
+        KeyboardLayoutDriver::KbddBus => Box::new(KbddBus::new().await?),
         KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
     };
 
@@ -127,6 +137,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "layout" => Value::text(layout),
             "variant" => Value::text(variant),
         });
+
+        api.set_widget(&widget).await?;
 
         select! {
             update = backend.wait_for_chagne() => update?,
@@ -317,4 +329,79 @@ trait LocaleBusInterface {
 
     #[dbus_proxy(property, name = "X11Variant")]
     fn variant(&self) -> zbus::Result<String>;
+}
+
+#[dbus_proxy(
+    interface = "ru.gentoo.kbdd",
+    default_service = "ru.gentoo.KbddService",
+    default_path = "/ru/gentoo/KbddService"
+)]
+trait KbddBusInterface {
+    #[dbus_proxy(signal, name = "layoutNameChanged")]
+    fn layout_updated(&self, layout: String) -> zbus::Result<()>;
+
+    #[dbus_proxy(name = "getCurrentLayout")]
+    fn current_layout_index(&self) -> zbus::Result<u32>;
+
+    #[dbus_proxy(name = "getLayoutName")]
+    fn current_layout(&self, layout_id: u32) -> zbus::Result<String>;
+}
+
+struct KbddBus {
+    stream: layoutNameChangedStream<'static>,
+    current_layout: String,
+    re_layout_name: Regex,
+}
+
+impl KbddBus {
+    async fn new() -> Result<Self> {
+        let conn = new_dbus_connection().await?;
+        let proxy = KbddBusInterfaceProxy::builder(&conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .build()
+            .await
+            .error("Failed to create KbddBusInterfaceProxy")?;
+        let stream = proxy
+            .receive_layout_updated()
+            .await
+            .error("Failed to monitor kbdd interface")?;
+        let layout_index = proxy
+            .current_layout_index()
+            .await
+            .error("Failed to get current layout index from kbdd")?;
+        let current_layout = proxy
+            .current_layout(layout_index)
+            .await
+            .error("Failed to get current layout from kbdd")?;
+        Ok(Self {
+            stream,
+            current_layout,
+            re_layout_name: Regex::new(r#"(.*) \((.*)\)"#).unwrap(), //to split layout from variant in string like 'English (US)'
+        })
+    }
+}
+
+#[async_trait]
+impl Backend for KbddBus {
+    async fn get_info(&mut self) -> Result<Info> {
+        let (layout, variant) = match self.re_layout_name.captures(&self.current_layout) {
+            Some(caps) => (
+                caps.get(1).unwrap().as_str().to_string(),
+                Some(caps.get(2).unwrap().as_str().to_string()),
+            ),
+            //fallback, although this should not happen
+            None => (self.current_layout.to_string(), None),
+        };
+        Ok(Info { layout, variant })
+    }
+
+    async fn wait_for_chagne(&mut self) -> Result<()> {
+        select! {
+            Some(event) = self.stream.next() => {
+                let args = event.args().error("Failed to get the args from kbdd message")?;
+                self.current_layout = args.layout().trim().to_string();
+            }
+        }
+        Ok(())
+    }
 }
