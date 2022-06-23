@@ -70,7 +70,7 @@ pub struct ClickConfigEntry {
     /// Whether to update the block on click (default is `false`)
     #[serde(default)]
     update: bool,
-    /// Whether to pass click event to the block (default is `true`)
+    /// Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true) (default is `true`)
     #[serde(default = "return_true")]
     pass: bool,
 }
