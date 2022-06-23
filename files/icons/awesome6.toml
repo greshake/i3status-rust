@@ -1,4 +1,4 @@
-# FontAwesome 5: https://fontawesome.com/icons?d=gallery&p=2&m=free
+# FontAwesome 6: https://fontawesome.com/v6/search?m=free
 backlight_empty = "\U0001f315"
 backlight_full = "\U0001f311"
 backlight_1 = "\U0001f314"
@@ -32,7 +32,7 @@ bell-slash = "\uf1f6"
 bluetooth = "\uf294"
 calendar = "\uf073"
 cogs = "\uf085"
-cpu = "\uf3fd"                    # fa-gauge TODO use different icons based on the percentage
+cpu = "\uf624"                    # fa-gauge TODO use different icons based on the percentage
 cpu_boost_on = "\uf205"
 cpu_boost_off = "\uf204"
 disk_drive = "\uf0a0"
