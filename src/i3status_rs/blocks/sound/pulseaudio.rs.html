@@ -475,6 +475,16 @@
 <span id="470">470</span>
 <span id="471">471</span>
 <span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">libpulse_binding::callbacks::ListResult</span>;
 <span class="kw">use</span> <span class="ident">libpulse_binding::context</span>::{
     <span class="ident">introspect::ServerInfo</span>, <span class="ident">introspect::SinkInfo</span>, <span class="ident">introspect::SourceInfo</span>, <span class="ident">subscribe::Facility</span>,
@@ -509,6 +519,7 @@
     <span class="ident">name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">description</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">active_port</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">form_factor</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">device_kind</span>: <span class="ident">DeviceKind</span>,
     <span class="ident">volume</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ChannelVolumes</span><span class="op">&gt;</span>,
     <span class="ident">volume_avg</span>: <span class="ident">u32</span>,
@@ -532,6 +543,7 @@
     <span class="ident">name</span>: <span class="ident">String</span>,
     <span class="ident">description</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">active_port</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">form_factor</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">SourceInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">VolInfo</span> {
@@ -549,6 +561,7 @@
                     .<span class="ident">active_port</span>
                     .<span class="ident">as_ref</span>()
                     .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">name</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> <span class="ident">n</span>.<span class="ident">to_string</span>())),
+                <span class="ident">form_factor</span>: <span class="ident">source_info</span>.<span class="ident">proplist</span>.<span class="ident">get_str</span>(<span class="ident">properties::DEVICE_FORM_FACTOR</span>),
             }),
         }
     }
@@ -569,6 +582,7 @@
                     .<span class="ident">active_port</span>
                     .<span class="ident">as_ref</span>()
                     .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">name</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> <span class="ident">n</span>.<span class="ident">to_string</span>())),
+                <span class="ident">form_factor</span>: <span class="ident">sink_info</span>.<span class="ident">proplist</span>.<span class="ident">get_str</span>(<span class="ident">properties::DEVICE_FORM_FACTOR</span>),
             }),
         }
     }
@@ -840,6 +854,7 @@
             <span class="ident">name</span>,
             <span class="ident">description</span>: <span class="prelude-val">None</span>,
             <span class="ident">active_port</span>: <span class="prelude-val">None</span>,
+            <span class="ident">form_factor</span>: <span class="prelude-val">None</span>,
             <span class="ident">device_kind</span>,
             <span class="ident">volume</span>: <span class="prelude-val">None</span>,
             <span class="ident">volume_avg</span>: <span class="number">0</span>,
@@ -882,8 +897,12 @@
         <span class="self">self</span>.<span class="ident">description</span>.<span class="ident">clone</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">active_port</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">active_port</span>.<span class="ident">clone</span>()
+    <span class="kw">fn</span> <span class="ident">active_port</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">active_port</span>.<span class="ident">as_deref</span>()
+    }
+
+    <span class="kw">fn</span> <span class="ident">form_factor</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">active_port</span>.<span class="ident">as_deref</span>()
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -894,6 +913,7 @@
             <span class="self">self</span>.<span class="ident">muted</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">mute</span>;
             <span class="self">self</span>.<span class="ident">description</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">description</span>.<span class="ident">clone</span>();
             <span class="self">self</span>.<span class="ident">active_port</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">active_port</span>.<span class="ident">clone</span>();
+            <span class="self">self</span>.<span class="ident">form_factor</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">form_factor</span>.<span class="ident">clone</span>();
         }
 
         <span class="prelude-val">Ok</span>(())
