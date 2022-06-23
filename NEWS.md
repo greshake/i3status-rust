@@ -32,6 +32,7 @@ cmd = "random_command"
 ```
 
 ### New features and bugfixes
+- When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
 - `custom_dbus` block can now be used more than one in your config
 - `custom` block has new config option `"persistent"` which runs a command in the background and updates the block text for each received output line.
 - `focused_window` block now supports the river window manager if ristate (https://gitlab.com/snakedye/ristate) is installed
