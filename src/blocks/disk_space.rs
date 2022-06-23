@@ -111,7 +111,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         let percentage = result / (total as f64) * 100.;
         widget.set_values(map! {
-            "path" => Value::text(path.to_owned()),
+            "path" => Value::text(path.to_string()),
             "percentage" => Value::percents(percentage),
             "total" => Value::bytes(total as f64),
             "used" => Value::bytes(used as f64),
