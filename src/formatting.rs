@@ -26,8 +26,8 @@
 //!
 //! Argument | Default value
 //! ---------|--------------
-//! Minimal width - if text is shorter it will be padded using spaces | `0`
-//! Maximal width - if text is longer it will be truncated | `inf`
+//! Min width - if text is shorter it will be padded using spaces | `0`
+//! Max width - if text is longer it will be truncated | `inf`
 //!
 //! ## `rot-str` - Rotating text
 //!
