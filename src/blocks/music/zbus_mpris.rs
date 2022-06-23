@@ -49,6 +49,11 @@ impl PlayerMetadata {
         let artist = artists.get(0)?.downcast_ref::<str>()?;
         (!artist.is_empty()).then(|| artist.into())
     }
+
+    pub fn url(&self) -> Option<String> {
+        let url = self.0.get("xesam:url")?.downcast_ref::<str>()?;
+        (!url.is_empty()).then(|| url.into())
+    }
 }
 
 #[dbus_proxy(
