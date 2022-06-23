@@ -162,6 +162,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
                 widget.set_icon(icon)?;
                 widget.state = state;
+                api.set_widget(&widget).await?;
             }
             None if config.hide_missing => {
                 api.hide().await?;
@@ -170,6 +171,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 widget.set_icon("bat_not_available")?;
                 widget.set_values(default());
                 widget.set_format(format.clone());
+                widget.state = State::Critical;
+                api.set_widget(&widget).await?;
             }
         }
 
