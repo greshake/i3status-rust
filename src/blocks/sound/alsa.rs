@@ -52,7 +52,11 @@ impl SoundDevice for Device {
         None
     }
 
-    fn active_port(&self) -> Option<String> {
+    fn active_port(&self) -> Option<&str> {
+        None
+    }
+
+    fn form_factor(&self) -> Option<&str> {
         None
     }
 

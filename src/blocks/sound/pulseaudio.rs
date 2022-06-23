@@ -32,6 +32,7 @@ pub(super) struct Device {
     name: Option<String>,
     description: Option<String>,
     active_port: Option<String>,
+    form_factor: Option<String>,
     device_kind: DeviceKind,
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
@@ -55,6 +56,7 @@ struct VolInfo {
     name: String,
     description: Option<String>,
     active_port: Option<String>,
+    form_factor: Option<String>,
 }
 
 impl TryFrom<&SourceInfo<'_>> for VolInfo {
@@ -72,6 +74,7 @@ impl TryFrom<&SourceInfo<'_>> for VolInfo {
                     .active_port
                     .as_ref()
                     .and_then(|a| a.name.as_ref().map(|n| n.to_string())),
+                form_factor: source_info.proplist.get_str(properties::DEVICE_FORM_FACTOR),
             }),
         }
     }
@@ -92,6 +95,7 @@ impl TryFrom<&SinkInfo<'_>> for VolInfo {
                     .active_port
                     .as_ref()
                     .and_then(|a| a.name.as_ref().map(|n| n.to_string())),
+                form_factor: sink_info.proplist.get_str(properties::DEVICE_FORM_FACTOR),
             }),
         }
     }
@@ -363,6 +367,7 @@ impl Device {
             name,
             description: None,
             active_port: None,
+            form_factor: None,
             device_kind,
             volume: None,
             volume_avg: 0,
@@ -405,8 +410,12 @@ impl SoundDevice for Device {
         self.description.clone()
     }
 
-    fn active_port(&self) -> Option<String> {
-        self.active_port.clone()
+    fn active_port(&self) -> Option<&str> {
+        self.active_port.as_deref()
+    }
+
+    fn form_factor(&self) -> Option<&str> {
+        self.active_port.as_deref()
     }
 
     async fn get_info(&mut self) -> Result<()> {
@@ -417,6 +426,7 @@ impl SoundDevice for Device {
             self.muted = info.mute;
             self.description = info.description.clone();
             self.active_port = info.active_port.clone();
+            self.form_factor = info.form_factor.clone();
         }
 
         Ok(())

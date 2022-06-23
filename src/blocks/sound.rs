@@ -95,30 +95,43 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .with_format(config.format.with_default("$volume.eng(2)|")?);
 
     let device_kind = config.device_kind;
-    let icon = |volume: u32, headphones: bool| -> String {
-        if config.headphones_indicator && headphones && config.device_kind == DeviceKind::Sink {
-            "headphones".into()
-        } else {
-            let mut icon = String::new();
-            let _ = write!(
-                icon,
-                "{}_{}",
-                match device_kind {
-                    DeviceKind::Source => "microphone",
-                    DeviceKind::Sink => "volume",
-                },
-                match volume {
-                    0 => "muted",
-                    1..=20 => "empty",
-                    21..=70 => "half",
-                    _ => "full",
-                }
-            );
-            icon
-        }
-    };
-
     let step_width = config.step_width.clamp(0, 50) as i32;
+
+    let icon = |volume: u32, device: &dyn SoundDevice| -> String {
+        if config.headphones_indicator && device_kind == DeviceKind::Sink {
+            let headphones = match device.form_factor() {
+                // form_factor's possible values are listed at:
+                // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
+                Some("headset") | Some("headphone") | Some("hands-free") | Some("portable") => true,
+                // Per discussion at
+                // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
+                // some sinks may not have the form_factor property, so we should fall back to the
+                // active_port if that property is not present.
+                None => device
+                    .active_port()
+                    .map_or(false, |p| p.contains("headphones")),
+                // form_factor is present and is some non-headphone value
+                _ => false,
+            };
+            if headphones {
+                return "headphones".into();
+            }
+        }
+
+        format!(
+            "{}_{}",
+            match device_kind {
+                DeviceKind::Source => "microphone",
+                DeviceKind::Sink => "volume",
+            },
+            match volume {
+                0 => "muted",
+                1..=20 => "empty",
+                21..=70 => "half",
+                _ => "full",
+            }
+        )
+    };
 
     type DeviceType = Box<dyn SoundDevice>;
     let mut device: DeviceType = match config.driver {
@@ -166,14 +179,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .output_description()
             .unwrap_or_else(|| output_name.clone());
 
-        // TODO: Query port names instead? See https://github.com/greshake/i3status-rust/pull/1363#issue-1069904082
-        // Reference: PulseAudio port name definitions are the first item in the well_known_descriptions struct:
-        // https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0ce3008605e5f644fac4bb5edbb1443110201ec1/src/modules/alsa/alsa-mixer.c#L2709-L2731
-        let headphones = device
-            .active_port()
-            .map(|p| p.contains("headphones") || p.contains("headset"))
-            .unwrap_or(false);
-
         let mut values = map! {
             "volume" => Value::percents(volume),
             "output_name" => Value::text(output_name),
@@ -181,13 +186,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         if device.muted() {
-            widget.set_icon(&icon(0, headphones))?;
+            widget.set_icon(&icon(0, &*device))?;
             widget.state = State::Warning;
             if !config.show_volume_when_muted {
                 values.remove("volume");
             }
         } else {
-            widget.set_icon(&icon(volume, headphones))?;
+            widget.set_icon(&icon(volume, &*device))?;
             widget.state = State::Idle;
         }
 
@@ -254,7 +259,8 @@ trait SoundDevice {
     fn muted(&self) -> bool;
     fn output_name(&self) -> String;
     fn output_description(&self) -> Option<String>;
-    fn active_port(&self) -> Option<String>;
+    fn active_port(&self) -> Option<&str>;
+    fn form_factor(&self) -> Option<&str>;
 
     async fn get_info(&mut self) -> Result<()>;
     async fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
