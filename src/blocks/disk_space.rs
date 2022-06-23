@@ -17,7 +17,7 @@
 //! `path`       | The value of `path` option                                         | Text   | -
 //! `percentage` | Free or used percentage. Depends on `info_type`                    | Number | %
 //! `total`      | Total disk space                                                   | Number | Bytes
-//! `used`       | Dused disk space                                                   | Number | Bytes
+//! `used`       | Used disk space                                                   | Number | Bytes
 //! `free`       | Free disk space                                                    | Number | Bytes
 //! `available`  | Available disk space (free disk space minus reserved system space) | Number | Bytes
 //!
