@@ -126,6 +126,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "layout" => Value::text(layout),
             "variant" => Value::text(variant),
         });
+        api.set_widget(&widget).await?;
 
         select! {
             update = backend.wait_for_chagne() => update?,
