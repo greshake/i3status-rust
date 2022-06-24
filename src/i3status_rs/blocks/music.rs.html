@@ -489,8 +489,6 @@
 <span id="484">484</span>
 <span id="485">485</span>
 <span id="486">486</span>
-<span id="487">487</span>
-<span id="488">488</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Also provides buttons for play/pause, previous and next.</span>
@@ -570,15 +568,13 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html</span>
 
+<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">regex::Regex</span>;
 <span class="kw">use</span> <span class="ident">zbus::fdo::DBusProxy</span>;
 <span class="kw">use</span> <span class="ident">zbus::names</span>::{<span class="ident">OwnedBusName</span>, <span class="ident">OwnedInterfaceName</span>};
 <span class="kw">use</span> <span class="ident">zbus::zvariant</span>::{<span class="ident">Optional</span>, <span class="ident">OwnedValue</span>, <span class="ident">Type</span>};
 <span class="kw">use</span> <span class="ident">zbus::MessageStream</span>;
 
-<span class="kw">use</span> <span class="ident">regex::Regex</span>;
-<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
-
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">mod</span> <span class="ident">zbus_mpris</span>;
 
 <span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;music&quot;</span>);
