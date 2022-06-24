@@ -77,15 +77,13 @@
 //!
 //! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 
+use super::prelude::*;
+use regex::Regex;
 use zbus::fdo::DBusProxy;
 use zbus::names::{OwnedBusName, OwnedInterfaceName};
 use zbus::zvariant::{Optional, OwnedValue, Type};
 use zbus::MessageStream;
 
-use regex::Regex;
-use std::collections::HashMap;
-
-use super::prelude::*;
 mod zbus_mpris;
 
 make_log_macro!(debug, "music");

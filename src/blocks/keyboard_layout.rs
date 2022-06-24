@@ -71,7 +71,6 @@
 //! ```
 
 use super::prelude::*;
-use std::collections::HashMap;
 use swayipc_async::{Connection, Event, EventType};
 use tokio::process::Command;
 use zbus::dbus_proxy;
