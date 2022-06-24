@@ -349,8 +349,9 @@ trait KbddBusInterface {
 
 struct KbddBus {
     stream: layoutNameChangedStream<'static>,
-    current_layout: String,
-    re_layout_name: Regex,
+    layout: String,
+    variant: Option<String>,
+    re_layout: Regex,
 }
 
 impl KbddBus {
@@ -373,33 +374,49 @@ impl KbddBus {
             .current_layout(layout_index)
             .await
             .error("Failed to get current layout from kbdd")?;
+        let re_layout = Regex::new(r#"(.*) \((.*)\)"#).unwrap(); //to split layout from variant in string like 'English (US)'
+        let (layout, variant) = Self::parse_kbdd_layout(&re_layout, &current_layout);
         Ok(Self {
             stream,
-            current_layout,
-            re_layout_name: Regex::new(r#"(.*) \((.*)\)"#).unwrap(), //to split layout from variant in string like 'English (US)'
+            layout,
+            variant,
+            re_layout,
         })
+    }
+
+    fn parse_kbdd_layout(re_layout: &Regex, layout_name: &str) -> (String, Option<String>) {
+        match re_layout.captures(layout_name) {
+            Some(caps) => (
+                caps.get(1).unwrap().as_str().to_string(),
+                Some(caps.get(2).unwrap().as_str().to_string()),
+            ),
+            //fallback, no variant present in kbdd layout
+            None => (layout_name.to_string(), None),
+        }
     }
 }
 
 #[async_trait]
 impl Backend for KbddBus {
     async fn get_info(&mut self) -> Result<Info> {
-        let (layout, variant) = match self.re_layout_name.captures(&self.current_layout) {
-            Some(caps) => (
-                caps.get(1).unwrap().as_str().to_string(),
-                Some(caps.get(2).unwrap().as_str().to_string()),
-            ),
-            //fallback, although this should not happen
-            None => (self.current_layout.to_string(), None),
-        };
-        Ok(Info { layout, variant })
+        Ok(Info {
+            layout: self.layout.clone(),
+            variant: self.variant.clone(),
+        })
     }
 
     async fn wait_for_chagne(&mut self) -> Result<()> {
-        if let Some(event) = self.stream.next().await {
-            let args = event.args().error("Failed to get the args from kbdd message")?;
-            self.current_layout = args.layout().trim().to_string();
-        }
+        let event = self
+            .stream
+            .next()
+            .await
+            .error("Failed to receive kbdd event from dbus")?;
+        let args = event
+            .args()
+            .error("Failed to get the args from kbdd message")?;
+        let (layout, variant) = Self::parse_kbdd_layout(&self.re_layout, args.layout());
+        self.layout = layout;
+        self.variant = variant;
         Ok(())
     }
 }
