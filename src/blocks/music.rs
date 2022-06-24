@@ -379,16 +379,16 @@ impl Player {
             owner,
             bus_name,
             player_proxy: proxy,
-            title: metadata.title().map(Into::into),
-            artist: metadata.artist().map(Into::into),
-            url: metadata.url().map(Into::into),
+            title: metadata.title(),
+            artist: metadata.artist(),
+            url: metadata.url(),
         })
     }
 
     fn update_metadata(&mut self, metadata: zbus_mpris::PlayerMetadata) {
-        self.title = metadata.title().map(Into::into);
-        self.artist = metadata.artist().map(Into::into);
-        self.url = metadata.url().map(Into::into);
+        self.title = metadata.title();
+        self.artist = metadata.artist();
+        self.url = metadata.url();
     }
 
     async fn play_pause(&self) -> Result<()> {
