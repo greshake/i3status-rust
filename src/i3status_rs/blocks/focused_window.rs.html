@@ -229,13 +229,13 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$title.rot-str(21)&amp;vert;&quot;&lt;/code&gt;</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$title.str(21)&amp;vert;&quot;&lt;/code&gt;</span>
 <span class="doccomment">//! `autohide` | Whether to hide the block when no title is available | `true`</span>
 <span class="doccomment">//! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | `&quot;auto&quot;`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder     | Value                                                                 | Type | Unit</span>
 <span class="doccomment">//! ----------------|-----------------------------------------------------------------------|------|-----</span>
-<span class="doccomment">//! `title`         | Window&#39;s title (may be absent)                                       | Text | -</span>
+<span class="doccomment">//! `title`         | Window&#39;s title (may be absent)                                        | Text | -</span>
 <span class="doccomment">//! `marks`         | Window&#39;s marks (present only with sway/i3)                            | Text | -</span>
 <span class="doccomment">//! `visible_marks` | Window&#39;s marks that do not start with `_` (present only with sway/i3) | Text | -</span>
 <span class="doccomment">//!</span>
@@ -280,7 +280,7 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">FocusedWindowConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
         .<span class="ident">new_widget</span>()
-        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$title.rot-str(21)|&quot;</span>)<span class="question-mark">?</span>);
+        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$title.str(21)|&quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">backend</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Backend</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
         <span class="ident">Driver::Auto</span> =&gt; <span class="kw">match</span> <span class="ident">SwayIpc::new</span>().<span class="kw">await</span> {

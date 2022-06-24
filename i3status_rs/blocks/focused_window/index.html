@@ -8,7 +8,7 @@
 <p>This block displays the title and/or the active marks (when used with <code>sway</code>/<code>i3</code>) of the currently
 focused window. Supported WMs are: <code>sway</code>, <code>i3</code> and <code>river</code>. See <code>driver</code> option for more info.</p>
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“$title.rot-str(21)|”</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“$title.str(21)|”</code></td></tr>
 <tr><td><code>autohide</code></td><td>Whether to hide the block when no title is available</td><td><code>true</code></td></tr>
 <tr><td><code>driver</code></td><td>Which driver to use. Available values: <code>sway_ipc</code> - for <code>i3</code> and <code>sway</code>, <code>ristate</code> - for <code>river</code> (note that <a href="https://gitlab.com/snakedye/ristate"><code>ristate</code></a> binary must be in the <code>PATH</code>), <code>auto</code> - try to automatically guess which driver to use.</td><td><code>&quot;auto&quot;</code></td></tr>
 </tbody></table>
