@@ -54,8 +54,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut config = MaildirConfig::deserialize(config).config_error()?;
     let mut widget = api.new_widget().with_icon("mail")?;
 
-    for indbox in &mut config.inboxes {
-        *inbox = shellexpand::full(inbox).error("Failed to expand string")?.to_owned();
+    for inbox in &mut config.inboxes {
+        *inbox = shellexpand::full(inbox).error("Failed to expand string")?.to_string();
     }
 
     loop {
