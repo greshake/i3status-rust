@@ -155,8 +155,8 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">MaildirConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_icon</span>(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">for</span> <span class="ident">indbox</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">config</span>.<span class="ident">inboxes</span> {
-        <span class="kw-2">*</span><span class="ident">inbox</span> <span class="op">=</span> <span class="ident">shellexpand::full</span>(<span class="ident">inbox</span>).<span class="ident">error</span>(<span class="string">&quot;Failed to expand string&quot;</span>)<span class="question-mark">?</span>.<span class="ident">to_owned</span>();
+    <span class="kw">for</span> <span class="ident">inbox</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">config</span>.<span class="ident">inboxes</span> {
+        <span class="kw-2">*</span><span class="ident">inbox</span> <span class="op">=</span> <span class="ident">shellexpand::full</span>(<span class="ident">inbox</span>).<span class="ident">error</span>(<span class="string">&quot;Failed to expand string&quot;</span>)<span class="question-mark">?</span>.<span class="ident">to_string</span>();
     }
 
     <span class="kw">loop</span> {
