@@ -291,6 +291,14 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Examples</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! Basic usage:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```toml</span>
+<span class="doccomment">//! [block]</span>
+<span class="doccomment">//! block = &quot;battery&quot;</span>
+<span class="doccomment">//! format = &quot;$percentage|N/A&quot;</span>
+<span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
 <span class="doccomment">//! Hide missing battery:</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```toml</span>
@@ -299,27 +307,19 @@
 <span class="doccomment">//! hide_missing = true</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Allow missing battery:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [block]</span>
-<span class="doccomment">//! block = &quot;battery&quot;</span>
-<span class="doccomment">//! format = &quot;$percentage|N/A&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
 <span class="doccomment">//! - `bat_charging`</span>
 <span class="doccomment">//! - `bat_not_available`</span>
-<span class="doccomment">//! - `bat_10`,</span>
-<span class="doccomment">//! - `bat_20`,</span>
-<span class="doccomment">//! - `bat_30`,</span>
-<span class="doccomment">//! - `bat_40`,</span>
-<span class="doccomment">//! - `bat_50`,</span>
-<span class="doccomment">//! - `bat_60`,</span>
-<span class="doccomment">//! - `bat_70`,</span>
-<span class="doccomment">//! - `bat_80`,</span>
-<span class="doccomment">//! - `bat_90`,</span>
-<span class="doccomment">//! - `bat_full`,</span>
+<span class="doccomment">//! - `bat_10`</span>
+<span class="doccomment">//! - `bat_20`</span>
+<span class="doccomment">//! - `bat_30`</span>
+<span class="doccomment">//! - `bat_40`</span>
+<span class="doccomment">//! - `bat_50`</span>
+<span class="doccomment">//! - `bat_60`</span>
+<span class="doccomment">//! - `bat_70`</span>
+<span class="doccomment">//! - `bat_80`</span>
+<span class="doccomment">//! - `bat_90`</span>
+<span class="doccomment">//! - `bat_full`</span>
 
 <span class="kw">use</span> <span class="ident">regex::Regex</span>;
 <span class="kw">use</span> <span class="ident">std::convert::Infallible</span>;

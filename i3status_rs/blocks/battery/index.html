@@ -27,27 +27,27 @@ charged and estimate time until (dis)charged for an internal power supply.</p>
 <tr><td><code>power</code></td><td>Power consumption by the battery or from the power supply when charging</td><td>String or Float</td><td>Watts</td></tr>
 </tbody></table>
 </div><h2 id="examples"><a href="#examples">Examples</a></h2>
+<p>Basic usage:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[block]
+block = &quot;battery&quot;
+format = &quot;$percentage|N/A&quot;</code></pre></div>
 <p>Hide missing battery:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[block]
 block = &quot;battery&quot;
-hide_missing = true</code></pre></div>
-<p>Allow missing battery:</p>
-<div class="example-wrap"><pre class="language-toml"><code>[block]
-block = &quot;battery&quot;
-format = &quot;$percentage|N/A&quot;</code></pre></div><h2 id="icons-used"><a href="#icons-used">Icons Used</a></h2>
+hide_missing = true</code></pre></div><h2 id="icons-used"><a href="#icons-used">Icons Used</a></h2>
 <ul>
 <li><code>bat_charging</code></li>
 <li><code>bat_not_available</code></li>
-<li><code>bat_10</code>,</li>
-<li><code>bat_20</code>,</li>
-<li><code>bat_30</code>,</li>
-<li><code>bat_40</code>,</li>
-<li><code>bat_50</code>,</li>
-<li><code>bat_60</code>,</li>
-<li><code>bat_70</code>,</li>
-<li><code>bat_80</code>,</li>
-<li><code>bat_90</code>,</li>
-<li><code>bat_full</code>,</li>
+<li><code>bat_10</code></li>
+<li><code>bat_20</code></li>
+<li><code>bat_30</code></li>
+<li><code>bat_40</code></li>
+<li><code>bat_50</code></li>
+<li><code>bat_60</code></li>
+<li><code>bat_70</code></li>
+<li><code>bat_80</code></li>
+<li><code>bat_90</code></li>
+<li><code>bat_full</code></li>
 </ul>
 </div></details><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2>
 <div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="mod" href="sysfs/index.html" title="i3status_rs::blocks::battery::sysfs mod">sysfs</a><span title="Restricted Visibility">&nbsp;🔒</span> </div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="upower/index.html" title="i3status_rs::blocks::battery::upower mod">upower</a><span title="Restricted Visibility">&nbsp;🔒</span> </div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="zbus_upower/index.html" title="i3status_rs::blocks::battery::zbus_upower mod">zbus_upower</a><span title="Restricted Visibility">&nbsp;🔒</span> </div><div class="item-right docblock-short"><p>DBus interface proxy for: <code>org.freedesktop.UPower.Device</code> and <code>org.freedesktop.UPower</code></p>
