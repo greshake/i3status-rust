@@ -124,7 +124,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         widget.set_values(map! {
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
-            "momory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
+            "memory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
             "temperature" => Value::degrees(info.temperature).with_state(temp_state),
             "fan_speed" => Value::percents(info.fan_speed).with_instance(FAN_BTN).with_state(fan_state),
             "clocks" => Value::hertz(info.clocks),
