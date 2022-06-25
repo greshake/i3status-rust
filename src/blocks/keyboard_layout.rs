@@ -21,7 +21,7 @@
 //!  Key     | Value | Type
 //! ---------|-------|-----
 //! `layout` | Keyboard layout name | String
-//! `variant`| Keyboard variant. Only `localebus` and `sway` are supported so far. | String
+//! `variant`| Keyboard variant. Only `localebus`, `sway` and `kbddbus` are supported so far. | String
 //!
 //! # Examples
 //!
@@ -42,12 +42,21 @@
 //! driver = "localebus"
 //! ```
 //!
-//! Listen to kbdd for changes:
+//! Listen to kbdd for changes, the text is in the following format:
+//! "English (US)" - {$layout ($variant)}
+//! use block.mappings to override with shorter names as shown below.
+//! Also use format = "$layout ($variant)" to see the full text to map,
+//! or you can use:
+//! dbus-monitor interface=ru.gentoo.kbdd
+//! to see the exact variant spelling
 //!
 //! ```toml
 //! [[block]]
 //! block = "keyboard_layout"
 //! driver = "kbddbus"
+//! [block.mappings]
+//! "English (US)" = "us"
+//! "Bulgarian (new phonetic)" = "bg"
 //! ```
 //!
 //! Listen to sway for changes:
@@ -105,7 +114,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap(config.interval)),
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
-        KeyboardLayoutDriver::KbddBus => return Err(Error::new("KbddBus is not implemented")),
+        KeyboardLayoutDriver::KbddBus => Box::new(KbddBus::new().await?),
         KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
     };
 
@@ -141,6 +150,7 @@ trait Backend {
     async fn wait_for_chagne(&mut self) -> Result<()>;
 }
 
+#[derive(Clone)]
 struct Info {
     layout: String,
     variant: Option<String>,
@@ -262,7 +272,7 @@ impl Sway {
 #[async_trait]
 impl Backend for Sway {
     async fn get_info(&mut self) -> Result<Info> {
-        Ok(parse_sway_layout(&self.cur_layout))
+        Ok(parse_layout(&self.cur_layout))
     }
 
     async fn wait_for_chagne(&mut self) -> Result<()> {
@@ -291,7 +301,7 @@ impl Backend for Sway {
     }
 }
 
-fn parse_sway_layout(layout: &str) -> Info {
+fn parse_layout(layout: &str) -> Info {
     if let Some(i) = layout.find('(') {
         Info {
             layout: layout[..i].trim_end().into(),
@@ -316,4 +326,70 @@ trait LocaleBusInterface {
 
     #[dbus_proxy(property, name = "X11Variant")]
     fn variant(&self) -> zbus::Result<String>;
+}
+
+#[dbus_proxy(
+    interface = "ru.gentoo.kbdd",
+    default_service = "ru.gentoo.KbddService",
+    default_path = "/ru/gentoo/KbddService"
+)]
+trait KbddBusInterface {
+    #[dbus_proxy(signal, name = "layoutNameChanged")]
+    fn layout_updated(&self, layout: String) -> zbus::Result<()>;
+
+    #[dbus_proxy(name = "getCurrentLayout")]
+    fn current_layout_index(&self) -> zbus::Result<u32>;
+
+    #[dbus_proxy(name = "getLayoutName")]
+    fn current_layout(&self, layout_id: u32) -> zbus::Result<String>;
+}
+
+struct KbddBus {
+    stream: layoutNameChangedStream<'static>,
+    info: Info,
+}
+
+impl KbddBus {
+    async fn new() -> Result<Self> {
+        let conn = new_dbus_connection().await?;
+        let proxy = KbddBusInterfaceProxy::builder(&conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .build()
+            .await
+            .error("Failed to create KbddBusInterfaceProxy")?;
+        let stream = proxy
+            .receive_layout_updated()
+            .await
+            .error("Failed to monitor kbdd interface")?;
+        let layout_index = proxy
+            .current_layout_index()
+            .await
+            .error("Failed to get current layout index from kbdd")?;
+        let current_layout = proxy
+            .current_layout(layout_index)
+            .await
+            .error("Failed to get current layout from kbdd")?;
+        let info = parse_layout(&current_layout);
+        Ok(Self { stream, info })
+    }
+}
+
+#[async_trait]
+impl Backend for KbddBus {
+    async fn get_info(&mut self) -> Result<Info> {
+        Ok(self.info.clone())
+    }
+
+    async fn wait_for_chagne(&mut self) -> Result<()> {
+        let event = self
+            .stream
+            .next()
+            .await
+            .error("Failed to receive kbdd event from dbus")?;
+        let args = event
+            .args()
+            .error("Failed to get the args from kbdd message")?;
+        self.info = parse_layout(args.layout());
+        Ok(())
+    }
 }
