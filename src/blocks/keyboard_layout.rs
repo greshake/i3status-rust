@@ -80,8 +80,6 @@
 //! ```
 
 use super::prelude::*;
-use regex::Regex;
-use std::collections::HashMap;
 use swayipc_async::{Connection, Event, EventType};
 use tokio::process::Command;
 use zbus::dbus_proxy;
@@ -153,6 +151,7 @@ trait Backend {
     async fn wait_for_chagne(&mut self) -> Result<()>;
 }
 
+#[derive(Clone)]
 struct Info {
     layout: String,
     variant: Option<String>,
@@ -274,7 +273,7 @@ impl Sway {
 #[async_trait]
 impl Backend for Sway {
     async fn get_info(&mut self) -> Result<Info> {
-        let (l, v) = parse_sway_layout(&self.cur_layout);
+        let (l, v) = parse_layout(&self.cur_layout);
         Ok(Info {
             layout: l,
             variant: v,
@@ -307,7 +306,7 @@ impl Backend for Sway {
     }
 }
 
-fn parse_sway_layout(layout: &str) -> (String, Option<String>) {
+fn parse_layout(layout: &str) -> (String, Option<String>) {
     if let Some(i) = layout.find('(') {
         (
             layout[..i].trim_end().into(),
@@ -349,9 +348,7 @@ trait KbddBusInterface {
 
 struct KbddBus {
     stream: layoutNameChangedStream<'static>,
-    layout: String,
-    variant: Option<String>,
-    re_layout: Regex,
+    info: Info,
 }
 
 impl KbddBus {
@@ -374,35 +371,16 @@ impl KbddBus {
             .current_layout(layout_index)
             .await
             .error("Failed to get current layout from kbdd")?;
-        let re_layout = Regex::new(r#"(.*) \((.*)\)"#).unwrap(); //to split layout from variant in string like 'English (US)'
-        let (layout, variant) = Self::parse_kbdd_layout(&re_layout, &current_layout);
-        Ok(Self {
-            stream,
-            layout,
-            variant,
-            re_layout,
-        })
-    }
-
-    fn parse_kbdd_layout(re_layout: &Regex, layout_name: &str) -> (String, Option<String>) {
-        match re_layout.captures(layout_name) {
-            Some(caps) => (
-                caps.get(1).unwrap().as_str().to_string(),
-                Some(caps.get(2).unwrap().as_str().to_string()),
-            ),
-            //fallback, no variant present in kbdd layout
-            None => (layout_name.to_string(), None),
-        }
+        let (layout, variant) = parse_layout(&current_layout);
+        let info = Info { layout, variant };
+        Ok(Self { stream, info })
     }
 }
 
 #[async_trait]
 impl Backend for KbddBus {
     async fn get_info(&mut self) -> Result<Info> {
-        Ok(Info {
-            layout: self.layout.clone(),
-            variant: self.variant.clone(),
-        })
+        Ok(self.info.clone())
     }
 
     async fn wait_for_chagne(&mut self) -> Result<()> {
@@ -414,9 +392,8 @@ impl Backend for KbddBus {
         let args = event
             .args()
             .error("Failed to get the args from kbdd message")?;
-        let (layout, variant) = Self::parse_kbdd_layout(&self.re_layout, args.layout());
-        self.layout = layout;
-        self.variant = variant;
+        let (layout, variant) = parse_layout(args.layout());
+        self.info = Info { layout, variant };
         Ok(())
     }
 }
