@@ -31,7 +31,8 @@
 //! ------------|----------------|------
 //! `artist`    | Current artist | Text
 //! `title`     | Current title  | Text
-//! `combo`     | Resolves to "`$artist[sep]$title"`, `"$artist"`, or `"$title"` depending on what information is available. `[sep]` is set by `separator` option. | Text
+//! `url`       | Current song url | Text
+//! `combo`     | Resolves to "`$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
 //! `player`    | Name of the current player (taken from the last part of its MPRIS bus name) | Text
 //! `avail`     | Total number of players available to switch between | Number
 //! `cur`       | Total number of players available to switch between | Number
@@ -190,22 +191,28 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     _ => (State::Idle, "music_play"),
                 };
                 values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN, &mut api)?);
-                match (&player.title, &player.artist) {
-                    (Some(t), None) => {
+                if let Some(url) = &player.url {
+                    values.insert("url".into(), Value::text(url.clone()));
+                }
+                match (&player.title, &player.artist, &player.url) {
+                    (Some(t), None, _) => {
                         values.insert("combo".into(), Value::text(t.clone()));
                         values.insert("title".into(), Value::text(t.clone()));
                     }
-                    (None, Some(a)) => {
+                    (None, Some(a), _) => {
                         values.insert("combo".into(), Value::text(a.clone()));
                         values.insert("artist".into(), Value::text(a.clone()));
                     }
-                    (Some(t), Some(a)) => {
+                    (Some(t), Some(a), _) => {
                         values.insert(
                             "combo".into(),
                             Value::text(format!("{t}{}{a}", config.separator)),
                         );
                         values.insert("title".into(), Value::text(t.clone()));
                         values.insert("artist".into(), Value::text(a.clone()));
+                    }
+                    (None, None, Some(url)) => {
+                        values.insert("combo".into(), Value::text(url.clone()));
                     }
                     _ => (),
                 }
@@ -343,6 +350,7 @@ struct Player {
     player_proxy: zbus_mpris::PlayerProxy<'static>,
     title: Option<String>,
     artist: Option<String>,
+    url: Option<String>,
 }
 
 impl Player {
@@ -371,14 +379,16 @@ impl Player {
             owner,
             bus_name,
             player_proxy: proxy,
-            title: metadata.title().map(Into::into),
-            artist: metadata.artist().map(Into::into),
+            title: metadata.title(),
+            artist: metadata.artist(),
+            url: metadata.url(),
         })
     }
 
     fn update_metadata(&mut self, metadata: zbus_mpris::PlayerMetadata) {
-        self.title = metadata.title().map(Into::into);
-        self.artist = metadata.artist().map(Into::into);
+        self.title = metadata.title();
+        self.artist = metadata.artist();
+        self.url = metadata.url();
     }
 
     async fn play_pause(&self) -> Result<()> {

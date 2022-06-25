@@ -135,7 +135,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "layout" => Value::text(layout),
             "variant" => Value::text(variant),
         });
-
         api.set_widget(&widget).await?;
 
         select! {
@@ -273,11 +272,7 @@ impl Sway {
 #[async_trait]
 impl Backend for Sway {
     async fn get_info(&mut self) -> Result<Info> {
-        let (l, v) = parse_layout(&self.cur_layout);
-        Ok(Info {
-            layout: l,
-            variant: v,
-        })
+        Ok(parse_layout(&self.cur_layout))
     }
 
     async fn wait_for_chagne(&mut self) -> Result<()> {
@@ -306,14 +301,17 @@ impl Backend for Sway {
     }
 }
 
-fn parse_layout(layout: &str) -> (String, Option<String>) {
+fn parse_layout(layout: &str) -> Info {
     if let Some(i) = layout.find('(') {
-        (
-            layout[..i].trim_end().into(),
-            Some(layout[(i + 1)..].trim_end_matches(')').into()),
-        )
+        Info {
+            layout: layout[..i].trim_end().into(),
+            variant: Some(layout[(i + 1)..].trim_end_matches(')').into()),
+        }
     } else {
-        (layout.into(), None)
+        Info {
+            layout: layout.into(),
+            variant: None,
+        }
     }
 }
 
@@ -371,8 +369,7 @@ impl KbddBus {
             .current_layout(layout_index)
             .await
             .error("Failed to get current layout from kbdd")?;
-        let (layout, variant) = parse_layout(&current_layout);
-        let info = Info { layout, variant };
+        let info = parse_layout(&current_layout);
         Ok(Self { stream, info })
     }
 }
@@ -392,8 +389,7 @@ impl Backend for KbddBus {
         let args = event
             .args()
             .error("Failed to get the args from kbdd message")?;
-        let (layout, variant) = parse_layout(args.layout());
-        self.info = Info { layout, variant };
+        self.info = parse_layout(args.layout());
         Ok(())
     }
 }
