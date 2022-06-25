@@ -430,6 +430,20 @@
 <span id="425">425</span>
 <span id="426">426</span>
 <span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
@@ -462,6 +476,7 @@
 <span class="kw">use</span> <span class="ident">std::pin::Pin</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
+<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>;
 
 <span class="kw">use</span> <span class="ident">blocks</span>::{<span class="ident">BlockEvent</span>, <span class="ident">BlockFuture</span>, <span class="ident">BlockType</span>, <span class="ident">CommonApi</span>, <span class="ident">CommonConfig</span>};
@@ -524,7 +539,7 @@
             <span class="kw">let</span> <span class="ident">config</span>: <span class="ident">Config</span> <span class="op">=</span> <span class="ident">util::deserialize_toml_file</span>(<span class="kw-2">&amp;</span><span class="ident">config_path</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bar</span> <span class="op">=</span> <span class="ident">BarState::new</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>);
             <span class="kw">for</span> <span class="ident">block_config</span> <span class="kw">in</span> <span class="ident">config</span>.<span class="ident">blocks</span> {
-                <span class="ident">bar</span>.<span class="ident">spawn_block</span>(<span class="ident">block_config</span>)<span class="question-mark">?</span>;
+                <span class="ident">bar</span>.<span class="ident">spawn_block</span>(<span class="ident">block_config</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }
             <span class="ident">bar</span>.<span class="ident">run_event_loop</span>().<span class="kw">await</span>
         });
@@ -624,8 +639,21 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">spawn_block</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">block_config</span>: <span class="ident">toml::Value</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">spawn_block</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">block_config</span>: <span class="ident">toml::Value</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">common_config</span> <span class="op">=</span> <span class="ident">CommonConfig::new</span>(<span class="kw-2">&amp;mut</span> <span class="ident">block_config</span>)<span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">cmd</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">common_config</span>.<span class="ident">if_command</span> {
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">Command::new</span>(<span class="string">&quot;sh&quot;</span>)
+                .<span class="ident">args</span>([<span class="string">&quot;-c&quot;</span>, <span class="ident">cmd</span>])
+                .<span class="ident">output</span>()
+                .<span class="kw">await</span>
+                .<span class="ident">error</span>(<span class="string">&quot;failed to run if_command&quot;</span>)<span class="question-mark">?</span>
+                .<span class="ident">status</span>
+                .<span class="ident">success</span>()
+            {
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+            }
+        }
+
         <span class="kw">let</span> <span class="ident">block_type</span> <span class="op">=</span> <span class="ident">common_config</span>.<span class="ident">block</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_config</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>();
 

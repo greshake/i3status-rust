@@ -354,6 +354,10 @@
 <span id="349">349</span>
 <span id="350">350</span>
 <span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
@@ -676,6 +680,9 @@
     <span class="kw">pub</span> <span class="ident">error_interval</span>: <span class="ident">u64</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
     <span class="kw">pub</span> <span class="ident">error_format</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">if_command</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">CommonConfig</span> {
@@ -692,6 +699,7 @@
             <span class="string">&quot;icons_format&quot;</span>,
             <span class="string">&quot;error_interval&quot;</span>,
             <span class="string">&quot;error_format&quot;</span>,
+            <span class="string">&quot;if_command&quot;</span>,
         ];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">common_table</span> <span class="op">=</span> <span class="ident">Table::new</span>();
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">table</span>) <span class="op">=</span> <span class="ident">from</span>.<span class="ident">as_table_mut</span>() {
