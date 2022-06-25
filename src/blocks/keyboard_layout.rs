@@ -262,11 +262,7 @@ impl Sway {
 #[async_trait]
 impl Backend for Sway {
     async fn get_info(&mut self) -> Result<Info> {
-        let (l, v) = parse_sway_layout(&self.cur_layout);
-        Ok(Info {
-            layout: l,
-            variant: v,
-        })
+        Ok(parse_sway_layout(&self.cur_layout))
     }
 
     async fn wait_for_chagne(&mut self) -> Result<()> {
@@ -295,14 +291,17 @@ impl Backend for Sway {
     }
 }
 
-fn parse_sway_layout(layout: &str) -> (String, Option<String>) {
+fn parse_sway_layout(layout: &str) -> Info {
     if let Some(i) = layout.find('(') {
-        (
-            layout[..i].trim_end().into(),
-            Some(layout[(i + 1)..].trim_end_matches(')').into()),
-        )
+        Info {
+            layout: layout[..i].trim_end().into(),
+            variant: Some(layout[(i + 1)..].trim_end_matches(')').into()),
+        }
     } else {
-        (layout.into(), None)
+        Info {
+            layout: layout.into(),
+            variant: None,
+        }
     }
 }
 
