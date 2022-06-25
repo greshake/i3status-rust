@@ -320,6 +320,9 @@ pub struct CommonConfig {
     pub error_interval: u64,
     #[serde(default)]
     pub error_format: Option<String>,
+
+    #[serde(default)]
+    pub if_command: Option<String>,
 }
 
 impl CommonConfig {
@@ -336,6 +339,7 @@ impl CommonConfig {
             "icons_format",
             "error_interval",
             "error_format",
+            "if_command",
         ];
         let mut common_table = Table::new();
         if let Some(table) = from.as_table_mut() {

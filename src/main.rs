@@ -30,6 +30,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::process::Command;
 use tokio::sync::mpsc;
 
 use blocks::{BlockEvent, BlockFuture, BlockType, CommonApi, CommonConfig};
@@ -92,7 +93,7 @@ fn main() {
             let config: Config = util::deserialize_toml_file(&config_path).config_error()?;
             let mut bar = BarState::new(&config);
             for block_config in config.blocks {
-                bar.spawn_block(block_config)?;
+                bar.spawn_block(block_config).await?;
             }
             bar.run_event_loop().await
         });
@@ -192,8 +193,21 @@ impl BarState {
         }
     }
 
-    fn spawn_block(&mut self, mut block_config: toml::Value) -> Result<()> {
+    async fn spawn_block(&mut self, mut block_config: toml::Value) -> Result<()> {
         let common_config = CommonConfig::new(&mut block_config)?;
+        if let Some(cmd) = &common_config.if_command {
+            if !Command::new("sh")
+                .args(["-c", cmd])
+                .output()
+                .await
+                .error("failed to run if_command")?
+                .status
+                .success()
+            {
+                return Ok(());
+            }
+        }
+
         let block_type = common_config.block;
         let mut shared_config = self.shared_config.clone();
 
