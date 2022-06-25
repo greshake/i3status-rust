@@ -28,6 +28,14 @@
 //!
 //! # Examples
 //!
+//! Basic usage:
+//!
+//! ```toml
+//! [block]
+//! block = "battery"
+//! format = "$percentage|N/A"
+//! ```
+//!
 //! Hide missing battery:
 //!
 //! ```toml
@@ -36,27 +44,19 @@
 //! hide_missing = true
 //! ```
 //!
-//! Allow missing battery:
-//!
-//! ```toml
-//! [block]
-//! block = "battery"
-//! format = "$percentage|N/A"
-//! ```
-//!
 //! # Icons Used
 //! - `bat_charging`
 //! - `bat_not_available`
-//! - `bat_10`,
-//! - `bat_20`,
-//! - `bat_30`,
-//! - `bat_40`,
-//! - `bat_50`,
-//! - `bat_60`,
-//! - `bat_70`,
-//! - `bat_80`,
-//! - `bat_90`,
-//! - `bat_full`,
+//! - `bat_10`
+//! - `bat_20`
+//! - `bat_30`
+//! - `bat_40`
+//! - `bat_50`
+//! - `bat_60`
+//! - `bat_70`
+//! - `bat_80`
+//! - `bat_90`
+//! - `bat_full`
 
 use regex::Regex;
 use std::convert::Infallible;
