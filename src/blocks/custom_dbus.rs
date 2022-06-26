@@ -35,7 +35,7 @@
 //! - Send a signal on click?
 
 use super::prelude::*;
-use zbus::dbus_interface;
+use zbus::{dbus_interface, fdo};
 
 // Share DBus connection between multiple block instances
 static DBUS_CONNECTION: async_once_cell::OnceCell<Result<zbus::Connection>> =
@@ -56,37 +56,29 @@ struct Block {
 
 #[dbus_interface(name = "rs.i3status.custom")]
 impl Block {
-    async fn set_icon(&mut self, icon: &str) -> String {
-        if let Err(e) = self.widget.set_icon(icon) {
-            return e.to_string();
-        }
-        if let Err(e) = self.api.set_widget(&self.widget).await {
-            return e.to_string();
-        }
-        "OK".into()
+    async fn set_icon(&mut self, icon: &str) -> fdo::Result<()> {
+        self.widget.set_icon(icon)?;
+        self.api.set_widget(&self.widget).await?;
+        Ok(())
     }
 
-    async fn set_text(&mut self, full: String, short: String) -> String {
+    async fn set_text(&mut self, full: String, short: String) -> fdo::Result<()> {
         self.widget.set_texts(full, short);
-        if let Err(e) = self.api.set_widget(&self.widget).await {
-            return e.to_string();
-        }
-        "OK".into()
+        self.api.set_widget(&self.widget).await?;
+        Ok(())
     }
 
-    async fn set_state(&mut self, state: &str) -> String {
+    async fn set_state(&mut self, state: &str) -> fdo::Result<()> {
         self.widget.state = match state {
             "idle" => State::Idle,
             "info" => State::Info,
             "good" => State::Good,
             "warning" => State::Warning,
             "critical" => State::Critical,
-            _ => return format!("'{state}' is not a valid state"),
+            _ => return Err(Error::new(format!("'{state}' is not a valid state")).into()),
         };
-        if let Err(e) = self.api.set_widget(&self.widget).await {
-            return e.to_string();
-        }
-        "OK".into()
+        self.api.set_widget(&self.widget).await?;
+        Ok(())
     }
 }
 
@@ -101,7 +93,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .get_or_init(dbus_conn())
         .await
         .as_ref()
-        .map_err(|e| Error::new(e.to_string()))?;
+        .map_err(Clone::clone)?;
     dbus_conn
         .object_server()
         .at(

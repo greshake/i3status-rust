@@ -182,6 +182,12 @@ impl fmt::Display for Error {
     }
 }
 
+impl From<Error> for zbus::fdo::Error {
+    fn from(err: Error) -> Self {
+        Self::Failed(err.to_string())
+    }
+}
+
 impl StdError for Error {}
 
 pub trait ToSerdeError<T> {
