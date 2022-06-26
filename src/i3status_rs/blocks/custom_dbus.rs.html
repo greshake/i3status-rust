@@ -120,14 +120,6 @@
 <span id="115">115</span>
 <span id="116">116</span>
 <span id="117">117</span>
-<span id="118">118</span>
-<span id="119">119</span>
-<span id="120">120</span>
-<span id="121">121</span>
-<span id="122">122</span>
-<span id="123">123</span>
-<span id="124">124</span>
-<span id="125">125</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A block controled by the DBus</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block creates a new DBus object in `rs.i3status` service. This object implements</span>
@@ -165,7 +157,7 @@
 <span class="doccomment">//! - Send a signal on click?</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">zbus::dbus_interface</span>;
+<span class="kw">use</span> <span class="ident">zbus</span>::{<span class="ident">dbus_interface</span>, <span class="ident">fdo</span>};
 
 <span class="comment">// Share DBus connection between multiple block instances</span>
 <span class="kw">static</span> <span class="ident">DBUS_CONNECTION</span>: <span class="ident">async_once_cell::OnceCell</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
@@ -186,37 +178,29 @@
 
 <span class="attribute">#[<span class="ident">dbus_interface</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;rs.i3status.custom&quot;</span>)]</span>
 <span class="kw">impl</span> <span class="ident">Block</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_icon</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">String</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">icon</span>) {
-            <span class="kw">return</span> <span class="ident">e</span>.<span class="ident">to_string</span>();
-        }
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span> {
-            <span class="kw">return</span> <span class="ident">e</span>.<span class="ident">to_string</span>();
-        }
-        <span class="string">&quot;OK&quot;</span>.<span class="ident">into</span>()
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_icon</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">fdo::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">icon</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_text</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">full</span>: <span class="ident">String</span>, <span class="ident">short</span>: <span class="ident">String</span>) -&gt; <span class="ident">String</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_text</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">full</span>: <span class="ident">String</span>, <span class="ident">short</span>: <span class="ident">String</span>) -&gt; <span class="ident">fdo::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">set_texts</span>(<span class="ident">full</span>, <span class="ident">short</span>);
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span> {
-            <span class="kw">return</span> <span class="ident">e</span>.<span class="ident">to_string</span>();
-        }
-        <span class="string">&quot;OK&quot;</span>.<span class="ident">into</span>()
+        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_state</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">String</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_state</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">fdo::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">state</span> {
             <span class="string">&quot;idle&quot;</span> =&gt; <span class="ident">State::Idle</span>,
             <span class="string">&quot;info&quot;</span> =&gt; <span class="ident">State::Info</span>,
             <span class="string">&quot;good&quot;</span> =&gt; <span class="ident">State::Good</span>,
             <span class="string">&quot;warning&quot;</span> =&gt; <span class="ident">State::Warning</span>,
             <span class="string">&quot;critical&quot;</span> =&gt; <span class="ident">State::Critical</span>,
-            <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="macro">format!</span>(<span class="string">&quot;&#39;{state}&#39; is not a valid state&quot;</span>),
+            <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;&#39;{state}&#39; is not a valid state&quot;</span>)).<span class="ident">into</span>()),
         };
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span> {
-            <span class="kw">return</span> <span class="ident">e</span>.<span class="ident">to_string</span>();
-        }
-        <span class="string">&quot;OK&quot;</span>.<span class="ident">into</span>()
+        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 }
 
@@ -231,7 +215,7 @@
         .<span class="ident">get_or_init</span>(<span class="ident">dbus_conn</span>())
         .<span class="kw">await</span>
         .<span class="ident">as_ref</span>()
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error::new</span>(<span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>;
+        .<span class="ident">map_err</span>(<span class="ident">Clone::clone</span>)<span class="question-mark">?</span>;
     <span class="ident">dbus_conn</span>
         .<span class="ident">object_server</span>()
         .<span class="ident">at</span>(
