@@ -79,6 +79,8 @@ impl Device {
             }
         }
 
+        let mut matching_battery = None;
+
         let mut sysfs_dir = read_dir(POWER_SUPPLY_DEVICES_PATH)
             .await
             .error("failed to read /sys/class/power_supply direcory")?;
@@ -87,24 +89,40 @@ impl Device {
             .await
             .error("failed to read /sys/class/power_supply direcory")?
         {
-            if !self.dev_name.matches(dir.file_name().to_str().unwrap()) {
+            let name = dir.file_name();
+            let name = name.to_str().error("non UTF-8 battery path")?;
+
+            let path = dir.path();
+
+            if !self.dev_name.matches(name)
+                || Self::read_prop::<String>(&path, "type").await.as_deref() != Some("Battery")
+                || !Self::device_available(&path).await
+            {
                 continue;
             }
-            let path = dir.path();
-            if Self::read_prop::<String>(&path, "type").await.as_deref() == Some("Battery")
-                && Self::device_available(&path).await
-            {
-                debug!(
-                    "Found matching battery: '{}' matches {:?}",
-                    path.display(),
-                    self.dev_name
-                );
+
+            debug!(
+                "Found matching battery: '{}' matches {:?}",
+                path.display(),
+                self.dev_name
+            );
+
+            // Better to default to the system battery, rather than possibly a keyboard or mouse battery.
+            // System batteries usually start with BAT or CMB.
+            if name.starts_with("BAT") || name.starts_with("CMB") {
                 return Ok(Some(self.dev_path.insert(path)));
+            } else {
+                matching_battery = Some(path);
             }
         }
 
-        debug!("No batteries found");
-        Ok(None)
+        Ok(match matching_battery {
+            Some(path) => Some(self.dev_path.insert(path)),
+            None => {
+                debug!("No batteries found");
+                None
+            }
+        })
     }
 
     async fn read_prop<T: FromStr + Send + Sync>(path: &Path, prop: &str) -> Option<T> {
