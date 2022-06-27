@@ -69,6 +69,8 @@ mod sysfs;
 mod upower;
 mod zbus_upower;
 
+make_log_macro!(debug, "battery");
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct BatteryConfig {
@@ -115,10 +117,20 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         match device.get_info().await? {
             Some(mut info) => {
-                widget.set_format(match info.status {
-                    BatteryStatus::Full | BatteryStatus::NotCharging => format_full.clone(),
-                    _ => format.clone(),
-                });
+                if info.capacity >= config.full_threshold {
+                    info.status = BatteryStatus::Full;
+                }
+
+                match info.status {
+                    BatteryStatus::Full | BatteryStatus::NotCharging => {
+                        debug!("Using `full_format`");
+                        widget.set_format(format_full.clone());
+                    }
+                    _ => {
+                        debug!("Using `format`");
+                        widget.set_format(format.clone());
+                    }
+                }
 
                 let mut values = map!("percentage" => Value::percents(info.capacity));
                 info.power
@@ -134,10 +146,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     )
                 });
                 widget.set_values(values);
-
-                if info.capacity >= config.full_threshold {
-                    info.status = BatteryStatus::Full;
-                }
 
                 let (icon, state) = match (info.status, info.capacity) {
                     (BatteryStatus::Empty, _) => (battery_level_icon(0, false), State::Critical),
