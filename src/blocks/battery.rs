@@ -8,8 +8,8 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. Regular expressions can be used. | Any battery device
-//! `driver` | One of `"sysfs"` or `"upower"` | `"sysfs"`
-//! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"`. | `10`
+//! `driver` | One of `"sysfs"`, `"apc_ups"`, or `"upower"` | `"sysfs"`
+//! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"` \|\| "apc_ups"`. | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$percentage&vert;"</code>
 //! `full_format` | Same as `format` but for when the battery is full | `""`
 //! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`
@@ -65,6 +65,7 @@ use std::str::FromStr;
 use super::prelude::*;
 use crate::util::battery_level_icon;
 
+mod apc_ups;
 mod sysfs;
 mod upower;
 mod zbus_upower;
@@ -93,10 +94,11 @@ struct BatteryConfig {
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 enum BatteryDriver {
     #[default]
     Sysfs,
+    ApcUps,
     Upower,
 }
 
@@ -109,6 +111,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let dev_name = DeviceName::new(config.device)?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
         BatteryDriver::Sysfs => Box::new(sysfs::Device::new(dev_name, config.interval)),
+        BatteryDriver::ApcUps => Box::new(apc_ups::Device::new(dev_name, config.interval).await?),
         BatteryDriver::Upower => Box::new(upower::Device::new(dev_name).await?),
     };
 
