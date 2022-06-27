@@ -378,6 +378,11 @@
     <span class="kw">loop</span> {
         <span class="kw">match</span> <span class="ident">device</span>.<span class="ident">get_info</span>().<span class="kw">await</span><span class="question-mark">?</span> {
             <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">info</span>) =&gt; {
+                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">status</span> {
+                    <span class="ident">BatteryStatus::Full</span> <span class="op">|</span> <span class="ident">BatteryStatus::NotCharging</span> =&gt; <span class="ident">format_full</span>.<span class="ident">clone</span>(),
+                    <span class="kw">_</span> =&gt; <span class="ident">format</span>.<span class="ident">clone</span>(),
+                });
+
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span>(<span class="string">&quot;percentage&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">capacity</span>));
                 <span class="ident">info</span>.<span class="ident">power</span>
                     .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;power&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::watts</span>(<span class="ident">p</span>)));
@@ -396,11 +401,6 @@
                 <span class="kw">if</span> <span class="ident">info</span>.<span class="ident">capacity</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">full_threshold</span> {
                     <span class="ident">info</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">BatteryStatus::Full</span>;
                 }
-
-                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">status</span> {
-                    <span class="ident">BatteryStatus::Full</span> <span class="op">|</span> <span class="ident">BatteryStatus::NotCharging</span> =&gt; <span class="ident">format_full</span>.<span class="ident">clone</span>(),
-                    <span class="kw">_</span> =&gt; <span class="ident">format</span>.<span class="ident">clone</span>(),
-                });
 
                 <span class="kw">let</span> (<span class="ident">icon</span>, <span class="ident">state</span>) <span class="op">=</span> <span class="kw">match</span> (<span class="ident">info</span>.<span class="ident">status</span>, <span class="ident">info</span>.<span class="ident">capacity</span>) {
                     (<span class="ident">BatteryStatus::Empty</span>, <span class="kw">_</span>) =&gt; (<span class="ident">battery_level_icon</span>(<span class="number">0</span>, <span class="bool-val">false</span>), <span class="ident">State::Critical</span>),
