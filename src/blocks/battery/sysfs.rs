@@ -168,6 +168,19 @@ impl BatteryDevice for Device {
             return Ok(None);
         }
 
+        debug!("status = {:?}", status);
+        debug!("capacity_level = {:?}", capacity_level);
+        debug!("capacity= {:?}", capacity);
+        debug!("charge_now = {:?}", charge_now);
+        debug!("charge_full = {:?}", charge_full);
+        debug!("energy_now = {:?}", energy_now);
+        debug!("energy_full = {:?}", energy_full);
+        debug!("power_now = {:?}", power_now);
+        debug!("current_now = {:?}", current_now);
+        debug!("voltage_now = {:?}", voltage_now);
+        debug!("time_to_empty = {:?}", time_to_empty);
+        debug!("time_to_full = {:?}", time_to_full);
+
         let charge_now = charge_now.map(|c| c * 1e-6); // uAh -> Ah
         let charge_full = charge_full.map(|c| c * 1e-6); // uAh -> Ah
         let energy_now = energy_now.map(|e| e * 1e-6); // uWh -> Wh
