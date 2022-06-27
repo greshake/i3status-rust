@@ -115,6 +115,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         match device.get_info().await? {
             Some(mut info) => {
+                widget.set_format(match info.status {
+                    BatteryStatus::Full | BatteryStatus::NotCharging => format_full.clone(),
+                    _ => format.clone(),
+                });
+
                 let mut values = map!("percentage" => Value::percents(info.capacity));
                 info.power
                     .map(|p| values.insert("power".into(), Value::watts(p)));
@@ -133,11 +138,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 if info.capacity >= config.full_threshold {
                     info.status = BatteryStatus::Full;
                 }
-
-                widget.set_format(match info.status {
-                    BatteryStatus::Full | BatteryStatus::NotCharging => format_full.clone(),
-                    _ => format.clone(),
-                });
 
                 let (icon, state) = match (info.status, info.capacity) {
                     (BatteryStatus::Empty, _) => (battery_level_icon(0, false), State::Critical),
