@@ -216,9 +216,8 @@ impl DeviceMonitor {
                         }
                     }
                     _ = self.interface_removed.next() => {
-                               debug!("Device interface was removed");
-                               ()
-                        },
+                       debug!("Device interface was removed");
+                    },
                 }
             },
             Some(device) if !device.available => loop {
@@ -233,7 +232,6 @@ impl DeviceMonitor {
                     }
                     _ = self.interface_removed.next() => {
                         debug!("Device interface was removed");
-                        ()
                     },
                 }
             },
@@ -255,7 +253,6 @@ impl DeviceMonitor {
                         }
                         _ = self.interface_added.next() => {
                             debug!("Device interface was added");
-                            ()
                         }
                         Some(event) = self.interface_removed.next() => {
                             let args = event.args().error("Failed to get the args")?;
