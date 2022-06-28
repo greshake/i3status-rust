@@ -99,7 +99,73 @@
 <span id="94">94</span>
 <span id="95">95</span>
 <span id="96">96</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+</pre><pre class="rust"><code><span class="doccomment">//! A custom menu</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! This block allows you to quickly run a custom shell command. Left-click on this block to</span>
+<span class="doccomment">//! activate it, then scroll through configured items. Left-click on the item to run it and</span>
+<span class="doccomment">//! optionally confirm your action by left-clicking again. Right-click any time to deactivate this</span>
+<span class="doccomment">//! block.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! # Configuration</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Key | Values | Default</span>
+<span class="doccomment">//! ----|--------|--------</span>
+<span class="doccomment">//! `text` | Text that will be displayed when the block is inactive. | **Required**</span>
+<span class="doccomment">//! `items` | A list of &quot;items&quot;. See examples below. | **Required**</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! # Example</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```toml</span>
+<span class="doccomment">//! [[block]]</span>
+<span class="doccomment">//! block = &quot;menu&quot;</span>
+<span class="doccomment">//! text = &quot;\uf011&quot;</span>
+<span class="doccomment">//! [[block.items]]</span>
+<span class="doccomment">//! display = &quot; -&amp;gt;   Sleep   &amp;lt;-&quot;</span>
+<span class="doccomment">//! cmd = &quot;systemctl suspend&quot;</span>
+<span class="doccomment">//! [[block.items]]</span>
+<span class="doccomment">//! display = &quot; -&amp;gt; Power Off &amp;lt;-&quot;</span>
+<span class="doccomment">//! cmd = &quot;poweroff&quot;</span>
+<span class="doccomment">//! confirm_msg = &quot;Are you sure you want to power off?&quot;</span>
+<span class="doccomment">//! [[block.items]]</span>
+<span class="doccomment">//! display = &quot; -&amp;gt;  Reboot   &amp;lt;-&quot;</span>
+<span class="doccomment">//! cmd = &quot;reboot&quot;</span>
+<span class="doccomment">//! confirm_msg = &quot;Are you sure you want to reboot?&quot;</span>
+<span class="doccomment">//! ```</span>
+
+<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::subprocess::spawn_shell</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
@@ -187,7 +253,7 @@
         <span class="ident">block</span>.<span class="ident">wait_for_click</span>(<span class="ident">MouseButton::Left</span>).<span class="kw">await</span>;
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">res</span>) <span class="op">=</span> <span class="ident">block</span>.<span class="ident">run_menu</span>().<span class="kw">await</span><span class="question-mark">?</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">msg</span>) <span class="op">=</span> <span class="ident">res</span>.<span class="ident">confirm_msg</span> {
-                <span class="kw">if</span> <span class="op">!</span><span class="ident">block</span>.<span class="ident">confirm</span>(<span class="ident">msg</span>.<span class="ident">clone</span>()).<span class="kw">await</span><span class="question-mark">?</span> {
+                <span class="kw">if</span> <span class="op">!</span><span class="ident">block</span>.<span class="ident">confirm</span>(<span class="ident">msg</span>).<span class="kw">await</span><span class="question-mark">?</span> {
                     <span class="kw">continue</span>;
                 }
             }
