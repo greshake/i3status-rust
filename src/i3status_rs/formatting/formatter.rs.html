@@ -454,9 +454,6 @@
 <span id="449">449</span>
 <span id="450">450</span>
 <span id="451">451</span>
-<span id="452">452</span>
-<span id="453">453</span>
-<span id="454">454</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::fmt::Debug</span>;
 <span class="kw">use</span> <span class="ident">std::iter::repeat</span>;
 <span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
@@ -830,10 +827,7 @@
                     <span class="prelude-val">None</span> =&gt; (<span class="ident">Prefix::min_available</span>(), <span class="ident">Prefix::max_available</span>()),
                 };
 
-                <span class="kw">let</span> <span class="ident">prefix</span> <span class="op">=</span> <span class="ident">unit</span>.<span class="ident">clamp_prefix</span>(
-                    <span class="ident">Prefix::from_exp_level</span>(<span class="ident">val</span>.<span class="ident">log10</span>().<span class="ident">div_euclid</span>(<span class="number">3.</span>) <span class="kw">as</span> <span class="ident">i32</span>)
-                        .<span class="ident">clamp</span>(<span class="ident">min_prefix</span>, <span class="ident">max_prefix</span>),
-                );
+                <span class="kw">let</span> <span class="ident">prefix</span> <span class="op">=</span> <span class="ident">unit</span>.<span class="ident">clamp_prefix</span>(<span class="ident">Prefix::eng</span>(<span class="ident">val</span>).<span class="ident">clamp</span>(<span class="ident">min_prefix</span>, <span class="ident">max_prefix</span>));
                 <span class="ident">val</span> <span class="op">=</span> <span class="ident">prefix</span>.<span class="ident">apply</span>(<span class="ident">val</span>);
 
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">digits</span> <span class="op">=</span> (<span class="ident">val</span>.<span class="ident">max</span>(<span class="number">1.</span>).<span class="ident">log10</span>().<span class="ident">floor</span>() <span class="op">+</span> <span class="number">1.0</span>) <span class="kw">as</span> <span class="ident">isize</span>;
