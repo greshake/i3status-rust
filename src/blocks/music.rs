@@ -19,7 +19,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$combo.rot-str() $play&vert;"</code>
-//! `player` | Name of the music player MPRIS interface. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
+//! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
 //! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
@@ -97,13 +97,21 @@ const PREV_BTN: usize = 3;
 #[serde(deny_unknown_fields, default)]
 struct MusicConfig {
     format: FormatConfig,
-    player: Option<String>,
+    player: PlayerName,
     interface_name_exclude: Vec<String>,
     #[default(" - ".into())]
     separator: String,
     #[default(1_000)]
     seek_step: i64,
     hide_when_empty: bool,
+}
+
+#[derive(Deserialize, Debug, Clone, SmartDefault)]
+#[serde(untagged)]
+pub enum PlayerName {
+    Single(String),
+    #[default]
+    Multiple(Vec<String>),
 }
 
 #[derive(Debug, Clone, Type, Deserialize)]
@@ -137,7 +145,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         "prev" => new_btn("music_prev", PREV_BTN, &mut api)?,
     };
 
-    let fileter_name = config.player.as_deref();
+    let prefered_players = match config.player {
+        PlayerName::Single(name) => vec![name],
+        PlayerName::Multiple(names) => names,
+    };
     let exclude_regex = config
         .interface_name_exclude
         .iter()
@@ -145,7 +156,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .collect::<Result<Vec<_>, _>>()
         .error("Invalid regex")?;
 
-    let mut players = get_players(&dbus_conn, fileter_name, &exclude_regex).await?;
+    let mut players = get_players(&dbus_conn, &prefered_players, &exclude_regex).await?;
     let mut cur_player = None;
     for (i, player) in players.iter().enumerate() {
         cur_player = Some(i);
@@ -258,7 +269,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         let old: Option<String> = body.old_owner.into();
                         let new: Option<String> = body.new_owner.into();
                         match (old, new) {
-                            (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), fileter_name, &exclude_regex) {
+                            (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), &prefered_players, &exclude_regex) {
                                 players.push(Player::new(&dbus_conn, body.name, new).await?);
                                 cur_player = Some(players.len() - 1);
                             }
@@ -318,7 +329,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
 async fn get_players(
     dbus_conn: &zbus::Connection,
-    filter_name: Option<&str>,
+    prefered_players: &[String],
     exclude_regex: &[Regex],
 ) -> Result<Vec<Player>> {
     let proxy = DBusProxy::new(dbus_conn)
@@ -330,7 +341,7 @@ async fn get_players(
         .error("failed to list dbus names")?;
     let mut players = Vec::new();
     for name in names {
-        if player_matches(name.as_str(), filter_name, exclude_regex) {
+        if player_matches(name.as_str(), prefered_players, exclude_regex) {
             let owner = proxy
                 .get_name_owner(name.as_ref())
                 .await
@@ -444,14 +455,14 @@ fn extract_player_name(full_name: &str) -> Option<&str> {
         .then(|| &full_name[NAME_PREFIX.len()..])
 }
 
-fn player_matches(full_name: &str, filter_name: Option<&str>, exclude_regex: &[Regex]) -> bool {
+fn player_matches(full_name: &str, prefered_players: &[String], exclude_regex: &[Regex]) -> bool {
     let name = match extract_player_name(full_name) {
         Some(name) => name,
         None => return false,
     };
 
-    filter_name.map_or(true, |f| name.starts_with(f))
-        && !exclude_regex.iter().any(|r| r.is_match(name))
+    exclude_regex.iter().all(|r| !r.is_match(name))
+        && (prefered_players.is_empty() || prefered_players.iter().any(|p| name.starts_with(&**p)))
 }
 
 #[cfg(test)]
@@ -479,17 +490,17 @@ mod tests {
         let exclude = vec![Regex::new("mpd").unwrap(), Regex::new("firefox.*").unwrap()];
         assert!(player_matches(
             "org.mpris.MediaPlayer2.playerctld",
-            None,
+            &[],
             &exclude
         ));
         assert!(!player_matches(
             "org.mpris.MediaPlayer2.playerctld",
-            Some("spotify"),
+            &["spotify".into()],
             &exclude
         ));
         assert!(!player_matches(
             "org.mpris.MediaPlayer2.firefox.instance852",
-            None,
+            &[],
             &exclude
         ));
     }
