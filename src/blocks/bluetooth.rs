@@ -48,6 +48,8 @@ use zbus::fdo::{
     InterfacesAddedStream, InterfacesRemovedStream, ObjectManagerProxy, PropertiesProxy,
 };
 
+make_log_macro!(debug, "bluetooth");
+
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 struct BluetoothConfig {
@@ -88,24 +90,30 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     if connected {
                         widget.state = State::Good;
                         values.insert("connected".into(), Value::flag());
+                        debug!("Showing device as connected");
                     } else {
+                        debug!("Showing device as disconnected");
                         widget.state = State::Idle;
                     }
                     widget.set_icon(device.icon().await?)?;
                     widget.set_values(values);
+
                     api.set_widget(&widget).await?;
                 } else {
+                    debug!("Hiding block since device is not connected");
                     api.hide().await?;
                 }
             }
             // Unavailable
             None => {
+                debug!("Showing device as unavailable");
                 if !config.hide_disconnected {
                     widget.state = State::Idle;
                     widget.set_icon("bluetooth")?;
                     widget.set_values(default());
                     api.set_widget(&widget).await?;
                 } else {
+                    debug!("Hiding block since block is unavailable");
                     api.hide().await?;
                 }
             }
@@ -203,10 +211,14 @@ impl DeviceMonitor {
                         ).await?
                         {
                             self.device = Some(device);
+                            debug!("Device has been added");
                             return Ok(());
                         }
                     }
-                    _ = self.interface_removed.next() => (),
+                    _ = self.interface_removed.next() => {
+                               debug!("Device interface was removed");
+                               ()
+                        },
                 }
             },
             Some(device) if !device.available => loop {
@@ -215,10 +227,14 @@ impl DeviceMonitor {
                         let args = event.args().error("Failed to get the args")?;
                         if args.object_path() == device.device.path() {
                             device.available = true;
+                            debug!("Device is now available");
                             return Ok(());
                         }
                     }
-                    _ = self.interface_removed.next() => (),
+                    _ = self.interface_removed.next() => {
+                        debug!("Device interface was removed");
+                        ()
+                    },
                 }
             },
             Some(device) => {
@@ -234,13 +250,18 @@ impl DeviceMonitor {
                             let _ = tokio::time::timeout(Duration::from_millis(100), async {
                                 loop { let _ = updates.next().await; }
                             }).await;
+                            debug!("Got update for device");
                             return Ok(());
                         }
-                        _ = self.interface_added.next() => (),
+                        _ = self.interface_added.next() => {
+                            debug!("Device interface was added");
+                            ()
+                        }
                         Some(event) = self.interface_removed.next() => {
                             let args = event.args().error("Failed to get the args")?;
                             if args.object_path() == device.device.path() {
                                 device.available = false;
+                                debug!("Device is no longer available");
                                 return Ok(());
                             }
                         },
@@ -257,7 +278,7 @@ impl Device {
         mac: &str,
         adapter_mac: Option<&str>,
     ) -> Result<Option<Self>> {
-        let root_oject: String = match adapter_mac {
+        let root_object: String = match adapter_mac {
             Some(adapter_mac) => {
                 let adapters = manager_proxy
                     .get_managed_objects()
@@ -286,13 +307,18 @@ impl Device {
             None => String::new(),
         };
 
+        debug!("root object: {:?}", root_object);
+
         // Iterate over all devices
         let devices = manager_proxy
             .get_managed_objects()
             .await
             .error("Failed to get the list of devices")?;
+
+        debug!("all managed devices: {:?}", devices);
+
         for (path, interfaces) in devices {
-            if !path.starts_with(&format!("{root_oject}/")) {
+            if !path.starts_with(&format!("{root_object}/")) {
                 continue;
             }
 
@@ -308,6 +334,8 @@ impl Device {
             if addr != mac {
                 continue;
             }
+
+            debug!("Found device with path {:?}", path);
 
             return Ok(Some(Self {
                 available: true,
@@ -338,6 +366,8 @@ impl Device {
                 },
             }));
         }
+
+        debug!("No device found");
         Ok(None)
     }
 
