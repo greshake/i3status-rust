@@ -208,6 +208,10 @@
 <span id="203">203</span>
 <span id="204">204</span>
 <span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserializer</span>, <span class="ident">MapAccess</span>, <span class="ident">Visitor</span>};
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
@@ -327,6 +331,10 @@
             <span class="kw">let</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">util::find_file</span>(<span class="ident">file</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;icons&quot;</span>), <span class="prelude-val">Some</span>(<span class="string">&quot;toml&quot;</span>))<span class="question-mark">?</span>;
             <span class="prelude-val">Some</span>(<span class="ident">Icons</span>(<span class="ident">util::deserialize_toml_file</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>))
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply_overrides</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">overrides</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span>) {
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">extend</span>(<span class="ident">overrides</span>);
     }
 }
 
