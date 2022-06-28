@@ -431,9 +431,6 @@
 <span id="426">426</span>
 <span id="427">427</span>
 <span id="428">428</span>
-<span id="429">429</span>
-<span id="430">430</span>
-<span id="431">431</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the connectivity of a given Bluetooth device and the battery level if this</span>
@@ -652,9 +649,8 @@
                         }
                     }
                     <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
-                               <span class="macro">debug!</span>(<span class="string">&quot;Device interface was removed&quot;</span>);
-                               ()
-                        },
+                       <span class="macro">debug!</span>(<span class="string">&quot;Device interface was removed&quot;</span>);
+                    },
                 }
             },
             <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="kw">if</span> <span class="op">!</span><span class="ident">device</span>.<span class="ident">available</span> =&gt; <span class="kw">loop</span> {
@@ -669,7 +665,6 @@
                     }
                     <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
                         <span class="macro">debug!</span>(<span class="string">&quot;Device interface was removed&quot;</span>);
-                        ()
                     },
                 }
             },
@@ -691,7 +686,6 @@
                         }
                         <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_added</span>.<span class="ident">next</span>() =&gt; {
                             <span class="macro">debug!</span>(<span class="string">&quot;Device interface was added&quot;</span>);
-                            ()
                         }
                         <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
                             <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">args</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
