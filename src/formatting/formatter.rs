@@ -392,14 +392,18 @@ impl Formatter for EngFormatter {
                     1 => format!(" {}", val.floor() as i64),
                     rest => format!("{:.*}", rest as usize - 1, val),
                 });
-                if !self.0.prefix.hidden {
+
+                let display_prefix = !self.0.prefix.hidden && prefix != Prefix::One;
+                let display_unit = !self.0.unit.hidden && unit != Unit::None;
+
+                if display_prefix {
                     if self.0.prefix.has_space {
                         retval.push(' ');
                     }
                     retval.push_str(&prefix.to_string());
                 }
-                if !self.0.unit.hidden {
-                    if self.0.unit.has_space {
+                if display_unit {
+                    if self.0.unit.has_space || (self.0.prefix.has_space && !display_prefix) {
                         retval.push(' ');
                     }
                     retval.push_str(&unit.to_string());
