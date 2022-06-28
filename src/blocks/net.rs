@@ -13,16 +13,16 @@
 //! `hide_missing` | Whether to hide interfaces that don't exist on the system. | `false`
 //! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | `false`
 //!
-//! Placeholder  | Value                    | Type   | Unit
-//! -------------|--------------------------|--------|---------------
-//! `speed_down` | Download speed           | Number | Bytes per second
-//! `speed_up`   | Upload speed             | Number | Bytes per second
-//! `graph_down` | Download speed graph     | Text   | -
-//! `graph_up`   | Upload speed graph       | Text   | -
-//! `device`     | The name of device       | Text   | -
-//! `ssid`       | Netfork SSID (WiFi only) | Text   | -
-//! `frequency`  | WiFi frequency           | Number | Hz
-//! `signal`     | WiFi signal              | Number | %
+//! Placeholder       | Value                    | Type   | Unit
+//! ------------------|--------------------------|--------|---------------
+//! `speed_down`      | Download speed           | Number | Bytes per second
+//! `speed_up`        | Upload speed             | Number | Bytes per second
+//! `graph_down`      | Download speed graph     | Text   | -
+//! `graph_up`        | Upload speed graph       | Text   | -
+//! `device`          | The name of device       | Text   | -
+//! `ssid`            | Netfork SSID (WiFi only) | Text   | -
+//! `frequency`       | WiFi frequency           | Number | Hz
+//! `signal_strength` | WiFi signal              | Number | %
 //!
 //! # Example
 //!
@@ -31,7 +31,7 @@
 //! ```toml
 //! [[block]]
 //! block = "net"
-//! format = "{$signal.eng(2) $ssid.str() $frequency.eng()|Wired connection} via $device.str()"
+//! format = "{$signal_strength $ssid $frequency|Wired connection} via $device"
 //! ```
 //!
 //! # Icons Used
@@ -134,7 +134,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 wifi.1
                     .map(|f| values.insert("frequency".into(), Value::hertz(f)));
                 wifi.2
-                    .map(|s| values.insert("signal".into(), Value::percents(s)));
+                    .map(|s| values.insert("signal_strength".into(), Value::percents(s)));
 
                 widget.set_values(values);
                 widget.set_icon(device.icon)?;
