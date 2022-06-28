@@ -371,10 +371,7 @@ impl Formatter for EngFormatter {
                     None => (Prefix::min_available(), Prefix::max_available()),
                 };
 
-                let prefix = unit.clamp_prefix(
-                    Prefix::from_exp_level(val.log10().div_euclid(3.) as i32)
-                        .clamp(min_prefix, max_prefix),
-                );
+                let prefix = unit.clamp_prefix(Prefix::eng(val).clamp(min_prefix, max_prefix));
                 val = prefix.apply(val);
 
                 let mut digits = (val.max(1.).log10().floor() + 1.0) as isize;

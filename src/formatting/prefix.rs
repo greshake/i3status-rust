@@ -56,6 +56,14 @@ impl Prefix {
         value / 1_000f64.powi(self as i32)
     }
 
+    pub fn eng(number: f64) -> Self {
+        if number == 0.0 {
+            Self::One
+        } else {
+            Self::from_exp_level(number.abs().log10().div_euclid(3.) as i32)
+        }
+    }
+
     pub fn from_exp_level(exp_level: i32) -> Self {
         match exp_level {
             i32::MIN..=-3 => Prefix::Nano,
