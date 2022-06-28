@@ -51,7 +51,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">proc</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="ident">cmd</span>);
     <span class="ident">proc</span>.<span class="ident">args</span>(<span class="ident">args</span>);
     <span class="ident">proc</span>.<span class="ident">stdin</span>(<span class="ident">Stdio::null</span>());
-    <span class="ident">proc</span>.<span class="ident">stdin</span>(<span class="ident">Stdio::null</span>());
+    <span class="ident">proc</span>.<span class="ident">stdout</span>(<span class="ident">Stdio::null</span>());
     <span class="comment">// Safety: libc::daemon() is async-signal-safe</span>
     <span class="kw">unsafe</span> {
         <span class="ident">proc</span>.<span class="ident">pre_exec</span>(<span class="op">|</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">libc::daemon</span>(<span class="number">0</span>, <span class="number">0</span>) {
