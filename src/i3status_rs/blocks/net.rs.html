@@ -212,16 +212,16 @@
 <span class="doccomment">//! `hide_missing` | Whether to hide interfaces that don&#39;t exist on the system. | `false`</span>
 <span class="doccomment">//! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | `false`</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder  | Value                    | Type   | Unit</span>
-<span class="doccomment">//! -------------|--------------------------|--------|---------------</span>
-<span class="doccomment">//! `speed_down` | Download speed           | Number | Bytes per second</span>
-<span class="doccomment">//! `speed_up`   | Upload speed             | Number | Bytes per second</span>
-<span class="doccomment">//! `graph_down` | Download speed graph     | Text   | -</span>
-<span class="doccomment">//! `graph_up`   | Upload speed graph       | Text   | -</span>
-<span class="doccomment">//! `device`     | The name of device       | Text   | -</span>
-<span class="doccomment">//! `ssid`       | Netfork SSID (WiFi only) | Text   | -</span>
-<span class="doccomment">//! `frequency`  | WiFi frequency           | Number | Hz</span>
-<span class="doccomment">//! `signal`     | WiFi signal              | Number | %</span>
+<span class="doccomment">//! Placeholder       | Value                    | Type   | Unit</span>
+<span class="doccomment">//! ------------------|--------------------------|--------|---------------</span>
+<span class="doccomment">//! `speed_down`      | Download speed           | Number | Bytes per second</span>
+<span class="doccomment">//! `speed_up`        | Upload speed             | Number | Bytes per second</span>
+<span class="doccomment">//! `graph_down`      | Download speed graph     | Text   | -</span>
+<span class="doccomment">//! `graph_up`        | Upload speed graph       | Text   | -</span>
+<span class="doccomment">//! `device`          | The name of device       | Text   | -</span>
+<span class="doccomment">//! `ssid`            | Netfork SSID (WiFi only) | Text   | -</span>
+<span class="doccomment">//! `frequency`       | WiFi frequency           | Number | Hz</span>
+<span class="doccomment">//! `signal_strength` | WiFi signal              | Number | %</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Example</span>
 <span class="doccomment">//!</span>
@@ -230,7 +230,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;net&quot;</span>
-<span class="doccomment">//! format = &quot;{$signal.eng(2) $ssid.str() $frequency.eng()|Wired connection} via $device.str()&quot;</span>
+<span class="doccomment">//! format = &quot;{$signal_strength $ssid $frequency|Wired connection} via $device&quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
@@ -333,7 +333,7 @@
                 <span class="ident">wifi</span>.<span class="number">1</span>
                     .<span class="ident">map</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;frequency&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::hertz</span>(<span class="ident">f</span>)));
                 <span class="ident">wifi</span>.<span class="number">2</span>
-                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;signal&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::percents</span>(<span class="ident">s</span>)));
+                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;signal_strength&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::percents</span>(<span class="ident">s</span>)));
 
                 <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
                 <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">device</span>.<span class="ident">icon</span>)<span class="question-mark">?</span>;

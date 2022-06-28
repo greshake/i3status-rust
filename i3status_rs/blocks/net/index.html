@@ -22,13 +22,13 @@
 <tr><td><code>device</code></td><td>The name of device</td><td>Text</td><td>-</td></tr>
 <tr><td><code>ssid</code></td><td>Netfork SSID (WiFi only)</td><td>Text</td><td>-</td></tr>
 <tr><td><code>frequency</code></td><td>WiFi frequency</td><td>Number</td><td>Hz</td></tr>
-<tr><td><code>signal</code></td><td>WiFi signal</td><td>Number</td><td>%</td></tr>
+<tr><td><code>signal_strength</code></td><td>WiFi signal</td><td>Number</td><td>%</td></tr>
 </tbody></table>
 </div><h2 id="example"><a href="#example">Example</a></h2>
 <p>Display WiFi info if available</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;net&quot;
-format = &quot;{$signal.eng(2) $ssid.str() $frequency.eng()|Wired connection} via $device.str()&quot;</code></pre></div><h2 id="icons-used"><a href="#icons-used">Icons Used</a></h2>
+format = &quot;{$signal_strength $ssid $frequency|Wired connection} via $device&quot;</code></pre></div><h2 id="icons-used"><a href="#icons-used">Icons Used</a></h2>
 <ul>
 <li><code>net_loopback</code></li>
 <li><code>net_vpn</code></li>
