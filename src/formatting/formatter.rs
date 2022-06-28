@@ -279,8 +279,14 @@ impl FromStr for PrefixConfig {
             false
         };
 
+        let prefix = if s == "auto" {
+            None
+        } else {
+            Some((s.parse()?, forced))
+        };
+
         Ok(Self {
-            prefix: Some((s.parse()?, forced)),
+            prefix,
             has_space,
             hidden,
         })
@@ -313,7 +319,7 @@ impl FromStr for UnitConfig {
         };
 
         Ok(Self {
-            unit: Some(s.parse()?),
+            unit: if s == "auto" { None } else { Some(s.parse()?) },
             has_space,
             hidden,
         })
@@ -329,22 +335,23 @@ struct EngFixConfig {
 
 impl EngFixConfig {
     fn from_args(args: &[String]) -> Result<Self> {
-        let width: usize = match args.get(EngFixArgs::Width as usize) {
-            Some(v) => v.parse().error("Width must be a positive integer")?,
-            None => 3,
-        };
-        let unit: UnitConfig = match args.get(EngFixArgs::Unit as usize).map(|x| x.as_str()) {
-            Some("auto") | None => Default::default(),
-            Some(v) => v.parse()?,
-        };
-        let prefix: PrefixConfig = match args.get(EngFixArgs::Prefix as usize).map(|x| x.as_str()) {
-            Some("auto") | None => Default::default(),
-            Some(v) => v.parse()?,
-        };
         Ok(Self {
-            width,
-            unit,
-            prefix,
+            width: args
+                .get(EngFixArgs::Width as usize)
+                .map(|x| x.parse::<usize>())
+                .transpose()
+                .error("Width must be a positive integer")?
+                .unwrap_or(3),
+            unit: args
+                .get(EngFixArgs::Unit as usize)
+                .map(|x| x.parse::<UnitConfig>())
+                .transpose()?
+                .unwrap_or_default(),
+            prefix: args
+                .get(EngFixArgs::Prefix as usize)
+                .map(|x| x.parse::<PrefixConfig>())
+                .transpose()?
+                .unwrap_or_default(),
         })
     }
 }
