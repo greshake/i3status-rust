@@ -7,7 +7,7 @@ pub fn spawn_process(cmd: &str, args: &[&str]) -> io::Result<()> {
     let mut proc = Command::new(cmd);
     proc.args(args);
     proc.stdin(Stdio::null());
-    proc.stdin(Stdio::null());
+    proc.stdout(Stdio::null());
     // Safety: libc::daemon() is async-signal-safe
     unsafe {
         proc.pre_exec(|| match libc::daemon(0, 0) {
