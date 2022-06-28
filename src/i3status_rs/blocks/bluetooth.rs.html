@@ -404,6 +404,36 @@
 <span id="399">399</span>
 <span id="400">400</span>
 <span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the connectivity of a given Bluetooth device and the battery level if this</span>
@@ -454,6 +484,8 @@
     <span class="ident">InterfacesAddedStream</span>, <span class="ident">InterfacesRemovedStream</span>, <span class="ident">ObjectManagerProxy</span>, <span class="ident">PropertiesProxy</span>,
 };
 
+<span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;bluetooth&quot;</span>);
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
 <span class="kw">struct</span> <span class="ident">BluetoothConfig</span> {
@@ -494,24 +526,30 @@
                     <span class="kw">if</span> <span class="ident">connected</span> {
                         <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Good</span>;
                         <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;connected&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::flag</span>());
+                        <span class="macro">debug!</span>(<span class="string">&quot;Showing device as connected&quot;</span>);
                     } <span class="kw">else</span> {
+                        <span class="macro">debug!</span>(<span class="string">&quot;Showing device as disconnected&quot;</span>);
                         <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
                     }
                     <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">device</span>.<span class="ident">icon</span>().<span class="kw">await</span><span class="question-mark">?</span>)<span class="question-mark">?</span>;
                     <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
+
                     <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 } <span class="kw">else</span> {
+                    <span class="macro">debug!</span>(<span class="string">&quot;Hiding block since device is not connected&quot;</span>);
                     <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
                 }
             }
             <span class="comment">// Unavailable</span>
             <span class="prelude-val">None</span> =&gt; {
+                <span class="macro">debug!</span>(<span class="string">&quot;Showing device as unavailable&quot;</span>);
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">hide_disconnected</span> {
                     <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
                     <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;bluetooth&quot;</span>)<span class="question-mark">?</span>;
                     <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
                     <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 } <span class="kw">else</span> {
+                    <span class="macro">debug!</span>(<span class="string">&quot;Hiding block since block is unavailable&quot;</span>);
                     <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
                 }
             }
@@ -609,10 +647,14 @@
                         ).<span class="kw">await</span><span class="question-mark">?</span>
                         {
                             <span class="self">self</span>.<span class="ident">device</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>);
+                            <span class="macro">debug!</span>(<span class="string">&quot;Device has been added&quot;</span>);
                             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
                         }
                     }
-                    <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; (),
+                    <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
+                               <span class="macro">debug!</span>(<span class="string">&quot;Device interface was removed&quot;</span>);
+                               ()
+                        },
                 }
             },
             <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="kw">if</span> <span class="op">!</span><span class="ident">device</span>.<span class="ident">available</span> =&gt; <span class="kw">loop</span> {
@@ -621,10 +663,14 @@
                         <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">args</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
                         <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">object_path</span>() <span class="op">==</span> <span class="ident">device</span>.<span class="ident">device</span>.<span class="ident">path</span>() {
                             <span class="ident">device</span>.<span class="ident">available</span> <span class="op">=</span> <span class="bool-val">true</span>;
+                            <span class="macro">debug!</span>(<span class="string">&quot;Device is now available&quot;</span>);
                             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
                         }
                     }
-                    <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; (),
+                    <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
+                        <span class="macro">debug!</span>(<span class="string">&quot;Device interface was removed&quot;</span>);
+                        ()
+                    },
                 }
             },
             <span class="prelude-val">Some</span>(<span class="ident">device</span>) =&gt; {
@@ -640,13 +686,18 @@
                             <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">tokio::time::timeout</span>(<span class="ident">Duration::from_millis</span>(<span class="number">100</span>), <span class="kw">async</span> {
                                 <span class="kw">loop</span> { <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">updates</span>.<span class="ident">next</span>().<span class="kw">await</span>; }
                             }).<span class="kw">await</span>;
+                            <span class="macro">debug!</span>(<span class="string">&quot;Got update for device&quot;</span>);
                             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
                         }
-                        <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_added</span>.<span class="ident">next</span>() =&gt; (),
+                        <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_added</span>.<span class="ident">next</span>() =&gt; {
+                            <span class="macro">debug!</span>(<span class="string">&quot;Device interface was added&quot;</span>);
+                            ()
+                        }
                         <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
                             <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">args</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
                             <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">object_path</span>() <span class="op">==</span> <span class="ident">device</span>.<span class="ident">device</span>.<span class="ident">path</span>() {
                                 <span class="ident">device</span>.<span class="ident">available</span> <span class="op">=</span> <span class="bool-val">false</span>;
+                                <span class="macro">debug!</span>(<span class="string">&quot;Device is no longer available&quot;</span>);
                                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
                             }
                         },
@@ -663,7 +714,7 @@
         <span class="ident">mac</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">adapter_mac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">root_oject</span>: <span class="ident">String</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">adapter_mac</span> {
+        <span class="kw">let</span> <span class="ident">root_object</span>: <span class="ident">String</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">adapter_mac</span> {
             <span class="prelude-val">Some</span>(<span class="ident">adapter_mac</span>) =&gt; {
                 <span class="kw">let</span> <span class="ident">adapters</span> <span class="op">=</span> <span class="ident">manager_proxy</span>
                     .<span class="ident">get_managed_objects</span>()
@@ -692,13 +743,18 @@
             <span class="prelude-val">None</span> =&gt; <span class="ident">String::new</span>(),
         };
 
+        <span class="macro">debug!</span>(<span class="string">&quot;root object: {:?}&quot;</span>, <span class="ident">root_object</span>);
+
         <span class="comment">// Iterate over all devices</span>
         <span class="kw">let</span> <span class="ident">devices</span> <span class="op">=</span> <span class="ident">manager_proxy</span>
             .<span class="ident">get_managed_objects</span>()
             .<span class="kw">await</span>
             .<span class="ident">error</span>(<span class="string">&quot;Failed to get the list of devices&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="macro">debug!</span>(<span class="string">&quot;all managed devices: {:?}&quot;</span>, <span class="ident">devices</span>);
+
         <span class="kw">for</span> (<span class="ident">path</span>, <span class="ident">interfaces</span>) <span class="kw">in</span> <span class="ident">devices</span> {
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">path</span>.<span class="ident">starts_with</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{root_oject}/&quot;</span>)) {
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">path</span>.<span class="ident">starts_with</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{root_object}/&quot;</span>)) {
                 <span class="kw">continue</span>;
             }
 
@@ -714,6 +770,8 @@
             <span class="kw">if</span> <span class="ident">addr</span> <span class="op">!</span><span class="op">=</span> <span class="ident">mac</span> {
                 <span class="kw">continue</span>;
             }
+
+            <span class="macro">debug!</span>(<span class="string">&quot;Found device with path {:?}&quot;</span>, <span class="ident">path</span>);
 
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self</span> {
                 <span class="ident">available</span>: <span class="bool-val">true</span>,
@@ -744,6 +802,8 @@
                 },
             }));
         }
+
+        <span class="macro">debug!</span>(<span class="string">&quot;No device found&quot;</span>);
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
     }
 
