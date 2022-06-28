@@ -118,6 +118,10 @@ impl Icons {
             Some(Icons(util::deserialize_toml_file(&file).ok()?))
         }
     }
+
+    pub fn apply_overrides(&mut self, overrides: HashMap<String, String>) {
+        self.0.extend(overrides);
+    }
 }
 
 impl<'de> Deserialize<'de> for Icons {

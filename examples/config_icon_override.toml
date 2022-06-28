@@ -10,3 +10,8 @@ bat_discharging = " |v| "
 
 [[block]]
 block = "battery"
+
+[[block]]
+block = "time"
+[block.icons_overrides]
+time = "+"

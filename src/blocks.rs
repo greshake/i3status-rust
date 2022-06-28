@@ -315,6 +315,8 @@ pub struct CommonConfig {
     pub icons_format: Option<String>,
     #[serde(default)]
     pub theme_overrides: Option<HashMap<String, String>>,
+    #[serde(default)]
+    pub icons_overrides: Option<HashMap<String, String>>,
 
     #[serde(default = "CommonConfig::default_error_interval")]
     pub error_interval: u64,
@@ -335,8 +337,9 @@ impl CommonConfig {
             "block",
             "click",
             "signal",
-            "theme_overrides",
             "icons_format",
+            "theme_overrides",
+            "icons_overrides",
             "error_interval",
             "error_format",
             "if_command",
