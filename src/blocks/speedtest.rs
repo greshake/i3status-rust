@@ -5,7 +5,7 @@
 //! # Configuration
 //!
 //! Key | Values | Default
-//! ----|--------|----------|--------
+//! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `"$ping$speed_down$speed_up"`
 //! `interval` | Update interval in seconds | `1800`
 //!

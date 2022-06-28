@@ -1,3 +1,36 @@
+//! A custom menu
+//!
+//! This block allows you to quickly run a custom shell command. Left-click on this block to
+//! activate it, then scroll through configured items. Left-click on the item to run it and
+//! optionally confirm your action by left-clicking again. Right-click any time to deactivate this
+//! block.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `text` | Text that will be displayed when the block is inactive. | **Required**
+//! `items` | A list of "items". See examples below. | **Required**
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "menu"
+//! text = "\uf011"
+//! [[block.items]]
+//! display = " -&gt;   Sleep   &lt;-"
+//! cmd = "systemctl suspend"
+//! [[block.items]]
+//! display = " -&gt; Power Off &lt;-"
+//! cmd = "poweroff"
+//! confirm_msg = "Are you sure you want to power off?"
+//! [[block.items]]
+//! display = " -&gt;  Reboot   &lt;-"
+//! cmd = "reboot"
+//! confirm_msg = "Are you sure you want to reboot?"
+//! ```
+
 use super::prelude::*;
 use crate::subprocess::spawn_shell;
 
@@ -86,7 +119,7 @@ pub async fn run(config: toml::Value, api: CommonApi) -> Result<()> {
         block.wait_for_click(MouseButton::Left).await;
         if let Some(res) = block.run_menu().await? {
             if let Some(msg) = res.confirm_msg {
-                if !block.confirm(msg.clone()).await? {
+                if !block.confirm(msg).await? {
                     continue;
                 }
             }
