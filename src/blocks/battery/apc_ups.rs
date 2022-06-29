@@ -15,8 +15,8 @@ impl PropertyMap {
         self.0.insert(k, v)
     }
 
-    fn get(&self, k: &str) -> Option<&String> {
-        self.0.get(k)
+    fn get(&self, k: &str) -> Option<&str> {
+        self.0.get(k).map(|v| v.as_str())
     }
 
     fn get_property<T: FromStr + Send + Sync>(
@@ -27,7 +27,6 @@ impl PropertyMap {
         let stat = self
             .get(property_name)
             .or_error(|| format!("{} not in apc ups data", property_name))?;
-
         let (value, unit) = stat
             .split_once(' ')
             .or_error(|| format!("could not split {}", property_name))?;
@@ -36,10 +35,10 @@ impl PropertyMap {
                 .parse::<T>()
                 .map_err(|_| Error::new("Could not parse data"))
         } else {
-            return Err(Error::new(format!(
+            Err(Error::new(format!(
                 "Expected unit for {} are {}, but got {}",
                 property_name, required_unit, unit
-            )));
+            )))
         }
     }
 }
@@ -48,7 +47,7 @@ impl PropertyMap {
 struct ApcConnection(TcpStream);
 
 impl ApcConnection {
-    async fn connect(addr: String) -> Result<Self> {
+    async fn connect(addr: &str) -> Result<Self> {
         Ok(Self(
             TcpStream::connect(addr)
                 .await
@@ -71,26 +70,24 @@ impl ApcConnection {
         Ok(())
     }
 
-    async fn read_response(&mut self) -> Result<String> {
-        let mut buf = String::new();
-        loop {
-            let read_size = self
-                .0
-                .read_u16()
-                .await
-                .error("Could not read response length from socket")?
-                .into();
-            if read_size == 0 {
-                break;
-            }
-            let mut read_buf = vec![0_u8; read_size];
-            self.0
-                .read_exact(&mut read_buf)
-                .await
-                .error("Could not read from socket")?;
-            buf.extend(String::from_utf8(read_buf));
+    async fn read_line<'a>(&'_ mut self, buf: &'a mut Vec<u8>) -> Result<Option<&'a str>> {
+        let read_size = self
+            .0
+            .read_u16()
+            .await
+            .error("Could not read response length from socket")?
+            .into();
+        if read_size == 0 {
+            return Ok(None);
         }
-        Ok(buf)
+
+        buf.resize(read_size, 0);
+        self.0
+            .read_exact(buf)
+            .await
+            .error("Could not read from socket")?;
+
+        std::str::from_utf8(buf).error("invalid UTF8").map(Some)
     }
 }
 
@@ -109,14 +106,14 @@ impl Device {
     }
 
     async fn get_status(&mut self) -> Result<PropertyMap> {
-        let mut conn = ApcConnection::connect(self.addr.clone()).await?;
+        let mut conn = ApcConnection::connect(&self.addr).await?;
 
         conn.write(b"status").await?;
-        let response = conn.read_response().await?;
 
+        let mut buf = vec![];
         let mut property_map = PropertyMap::default();
 
-        for line in response.lines() {
+        while let Some(line) = conn.read_line(&mut buf).await? {
             if let Some((key, value)) = line.split_once(':') {
                 property_map.insert(key.trim().to_string(), value.trim().to_string());
             }
@@ -138,7 +135,7 @@ impl BatteryDevice for Device {
             })
             .unwrap_or_default();
 
-        let status_str = status_data.get("STATUS").map_or("COMMLOST", |x| x);
+        let status_str = status_data.get("STATUS").unwrap_or("COMMLOST");
 
         // Even if the connection is valid, in the first few seconds
         // after apcupsd starts BCHARGE may not be present
