@@ -454,8 +454,8 @@
             }
             <span class="prelude-val">None</span> =&gt; {
                 <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;bat_not_available&quot;</span>)<span class="question-mark">?</span>;
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
                 <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
                 <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Critical</span>;
                 <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }
