@@ -269,6 +269,9 @@
 <span id="264">264</span>
 <span id="265">265</span>
 <span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block can display the current battery state (Full, Charging or Discharging), percentage</span>
@@ -279,8 +282,8 @@
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
 <span class="doccomment">//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `&quot;DisplayDevice&quot;`. Regular expressions can be used. | Any battery device</span>
-<span class="doccomment">//! `driver` | One of `&quot;sysfs&quot;` or `&quot;upower&quot;` | `&quot;sysfs&quot;`</span>
-<span class="doccomment">//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;`. | `10`</span>
+<span class="doccomment">//! `driver` | One of `&quot;sysfs&quot;`, `&quot;apc_ups&quot;`, or `&quot;upower&quot;` | `&quot;sysfs&quot;`</span>
+<span class="doccomment">//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;` \|\| &quot;apc_ups&quot;`. | `10`</span>
 <span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$percentage&amp;vert;&quot;&lt;/code&gt;</span>
 <span class="doccomment">//! `full_format` | Same as `format` but for when the battery is full | `&quot;&quot;`</span>
 <span class="doccomment">//! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`</span>
@@ -336,6 +339,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::battery_level_icon</span>;
 
+<span class="kw">mod</span> <span class="ident">apc_ups</span>;
 <span class="kw">mod</span> <span class="ident">sysfs</span>;
 <span class="kw">mod</span> <span class="ident">upower</span>;
 <span class="kw">mod</span> <span class="ident">zbus_upower</span>;
@@ -366,10 +370,11 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
 <span class="kw">enum</span> <span class="ident">BatteryDriver</span> {
     <span class="attribute">#[<span class="ident">default</span>]</span>
     <span class="ident">Sysfs</span>,
+    <span class="ident">ApcUps</span>,
     <span class="ident">Upower</span>,
 }
 
@@ -382,6 +387,7 @@
     <span class="kw">let</span> <span class="ident">dev_name</span> <span class="op">=</span> <span class="ident">DeviceName::new</span>(<span class="ident">config</span>.<span class="ident">device</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">device</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BatteryDevice</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
         <span class="ident">BatteryDriver::Sysfs</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">sysfs::Device::new</span>(<span class="ident">dev_name</span>, <span class="ident">config</span>.<span class="ident">interval</span>)),
+        <span class="ident">BatteryDriver::ApcUps</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">apc_ups::Device::new</span>(<span class="ident">dev_name</span>, <span class="ident">config</span>.<span class="ident">interval</span>).<span class="kw">await</span><span class="question-mark">?</span>),
         <span class="ident">BatteryDriver::Upower</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">upower::Device::new</span>(<span class="ident">dev_name</span>).<span class="kw">await</span><span class="question-mark">?</span>),
     };
 
