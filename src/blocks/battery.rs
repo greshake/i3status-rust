@@ -180,8 +180,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             None => {
                 widget.set_icon("bat_not_available")?;
-                widget.set_values(default());
                 widget.set_format(format.clone());
+                widget.set_values(default());
                 widget.state = State::Critical;
                 api.set_widget(&widget).await?;
             }
