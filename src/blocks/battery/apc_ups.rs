@@ -1,19 +1,16 @@
 use std::str::FromStr;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::Interval;
 
 use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct PropertyMap(HashMap<String, String>);
 
-impl PropertyMap {
-    fn new() -> Self {
-        Self(HashMap::new())
-    }
+make_log_macro!(debug, "battery[apc_ups]");
 
+impl PropertyMap {
     fn insert(&mut self, k: String, v: String) -> Option<String> {
         self.0.insert(k, v)
     }
@@ -27,80 +24,58 @@ impl PropertyMap {
         property_name: &str,
         required_unit: &str,
     ) -> Result<T> {
-        if let Some(stat) = self.get(property_name) {
-            let (value, unit) = stat
-                .split_once(' ')
-                .error(format!("could not split {}", property_name))
-                .unwrap();
-            if unit == required_unit {
-                value
-                    .parse::<T>()
-                    .map_err(|_| Error::new("Could not parse data"))
-            } else {
-                return Err(Error::new(format!(
-                    "Expected unit for {} are {}, but got {}",
-                    property_name, required_unit, unit
-                )));
-            }
+        let stat = self
+            .get(property_name)
+            .or_error(|| format!("{} not in apc ups data", property_name))?;
+
+        let (value, unit) = stat
+            .split_once(' ')
+            .or_error(|| format!("could not split {}", property_name))?;
+        if unit == required_unit {
+            value
+                .parse::<T>()
+                .map_err(|_| Error::new("Could not parse data"))
         } else {
-            return Err(Error::new(format!("{} not in apc ups data", property_name)));
+            return Err(Error::new(format!(
+                "Expected unit for {} are {}, but got {}",
+                property_name, required_unit, unit
+            )));
         }
     }
 }
 
-pub(super) struct Device {
-    stream: TcpStream,
-    interval: Interval,
-}
+#[derive(Debug)]
+struct ApcConnection(TcpStream);
 
-impl Device {
-    pub(super) async fn new(dev_name: DeviceName, interval: Seconds) -> Result<Self> {
-        Ok(Self {
-            stream: TcpStream::connect(dev_name.exact().unwrap_or("localhost:3551"))
+impl ApcConnection {
+    async fn connect(addr: String) -> Result<Self> {
+        Ok(Self(
+            TcpStream::connect(addr)
                 .await
                 .error("Failed to connect to socket")?,
-            interval: interval.timer(),
-        })
-    }
-
-    async fn get_status(&mut self) -> Result<PropertyMap> {
-        self.write(b"status").await?;
-        let response = self.read_response().await?;
-
-        let mut property_map = PropertyMap::new();
-
-        for line in response.lines() {
-            let (key, value) = line.split_once(':').unwrap();
-            property_map.insert(key.trim().to_string(), value.trim().to_string());
-        }
-
-        Ok(property_map)
+        ))
     }
 
     async fn write(&mut self, msg: &[u8]) -> Result<()> {
-        match u16::try_from(msg.len()) {
-            Ok(msg_len) => {
-                self.stream
-                    .write_u16(msg_len)
-                    .await
-                    .error("Could not write message length to socket")?;
-                self.stream
-                    .write_all(msg)
-                    .await
-                    .error("Could not write message to socket")?;
-                Ok(())
-            }
-            _ => Err(Error::new(
-                "msg is too long, it must be less than 2^16 characters long",
-            )),
-        }
+        let msg_len = u16::try_from(msg.len())
+            .error("msg is too long, it must be less than 2^16 characters long")?;
+
+        self.0
+            .write_u16(msg_len)
+            .await
+            .error("Could not write message length to socket")?;
+        self.0
+            .write_all(msg)
+            .await
+            .error("Could not write message to socket")?;
+        Ok(())
     }
 
     async fn read_response(&mut self) -> Result<String> {
         let mut buf = String::new();
         loop {
             let read_size = self
-                .stream
+                .0
                 .read_u16()
                 .await
                 .error("Could not read response length from socket")?
@@ -109,7 +84,7 @@ impl Device {
                 break;
             }
             let mut read_buf = vec![0_u8; read_size];
-            self.stream
+            self.0
                 .read_exact(&mut read_buf)
                 .await
                 .error("Could not read from socket")?;
@@ -119,33 +94,76 @@ impl Device {
     }
 }
 
+pub(super) struct Device {
+    addr: String,
+    interval: Interval,
+}
+
+impl Device {
+    pub(super) async fn new(dev_name: DeviceName, interval: Seconds) -> Result<Self> {
+        let addr = dev_name.exact().unwrap_or("localhost:3551");
+        Ok(Self {
+            addr: addr.to_string(),
+            interval: interval.timer(),
+        })
+    }
+
+    async fn get_status(&mut self) -> Result<PropertyMap> {
+        let mut conn = ApcConnection::connect(self.addr.clone()).await?;
+
+        conn.write(b"status").await?;
+        let response = conn.read_response().await?;
+
+        let mut property_map = PropertyMap::default();
+
+        for line in response.lines() {
+            if let Some((key, value)) = line.split_once(':') {
+                property_map.insert(key.trim().to_string(), value.trim().to_string());
+            }
+        }
+
+        Ok(property_map)
+    }
+}
+
 #[async_trait]
 impl BatteryDevice for Device {
     async fn get_info(&mut self) -> Result<Option<BatteryInfo>> {
-        let status_data = self.get_status().await?;
+        let status_data = self
+            .get_status()
+            .await
+            .map_err(|e| {
+                debug!("{e}");
+                e
+            })
+            .unwrap_or_default();
 
-        let capacity = status_data.get_property::<f64>("BCHARGE", "Percent")?;
+        let status_str = status_data.get("STATUS").map_or("COMMLOST", |x| x);
 
-        let status = if let Some(status) = status_data.get("STATUS") {
-            if status == "COMMLOST" {
-                return Ok(None);
-            } else if status == "ONBATT" {
-                if capacity == 0.0 {
-                    BatteryStatus::Empty
-                } else {
-                    BatteryStatus::Discharging
-                }
-            } else if status == "ONLINE" {
-                if capacity == 100.0 {
-                    BatteryStatus::Full
-                } else {
-                    BatteryStatus::Charging
-                }
+        // Even if the connection is valid, in the first few seconds
+        // after apcupsd starts BCHARGE may not be present
+        let capacity = status_data
+            .get_property::<f64>("BCHARGE", "Percent")
+            .unwrap_or(f64::MIN);
+
+        if status_str == "COMMLOST" || capacity == f64::MIN {
+            return Ok(None);
+        }
+
+        let status = if status_str == "ONBATT" {
+            if capacity == 0.0 {
+                BatteryStatus::Empty
             } else {
-                BatteryStatus::Unknown
+                BatteryStatus::Discharging
+            }
+        } else if status_str == "ONLINE" {
+            if capacity == 100.0 {
+                BatteryStatus::Full
+            } else {
+                BatteryStatus::Charging
             }
         } else {
-            return Ok(None);
+            BatteryStatus::Unknown
         };
 
         let power = status_data
