@@ -378,7 +378,8 @@ T}
 T{
 \f[V]driver\f[R]
 T}@T{
-One of \f[V]\[dq]sysfs\[dq]\f[R] or \f[V]\[dq]upower\[dq]\f[R]
+One of \f[V]\[dq]sysfs\[dq]\f[R], \f[V]\[dq]apc_ups\[dq]\f[R], or
+\f[V]\[dq]upower\[dq]\f[R]
 T}@T{
 \f[V]\[dq]sysfs\[dq]\f[R]
 T}
@@ -386,74 +387,9 @@ T{
 \f[V]interval\f[R]
 T}@T{
 Update interval, in seconds.
-Only relevant for \f[V]driver = \[dq]sysfs\[dq]\f[R].
+Only relevant for \f[V]driver = \[dq]sysfs\[dq]\f[R] ||
+\[lq]apc_ups\[rq]\f[V]. |\f[R]10\f[V]\f[R]format\f[V]| A string to customise the output of this block. See below for available placeholders. | <code>\[dq]$percentage&vert;\[dq]</code>\f[R]full_format\f[V]| Same as\f[R]format\f[V]but for when the battery is full |\f[R]\[lq]\[lq]\f[V]\f[R]hide_missing\f[V]| Completely hide this block if the battery cannot be found. |\f[R]false\f[V]\f[R]hide_full\f[V]| Hide the block if battery is full |\f[R]false\f[V]\f[R]info\f[V]| Minimum battery level, where state is set to info |\f[R]60\f[V]\f[R]good\f[V]| Minimum battery level, where state is set to good |\f[R]60\f[V]\f[R]warning\f[V]| Minimum battery level, where state is set to warning |\f[R]30\f[V]\f[R]critical\f[V]| Minimum battery level, where state is set to critical |\f[R]15\f[V]\f[R]full_threshold\f[V]| Percentage at which the battery is considered full (\f[R]full_format\f[V]shown) |\f[R]100\[ga]
 T}@T{
-\f[V]10\f[R]
-T}
-T{
-\f[V]format\f[R]
-T}@T{
-A string to customise the output of this block.
-See below for available placeholders.
-T}@T{
-\[lq]$percentage|\[rq]
-T}
-T{
-\f[V]full_format\f[R]
-T}@T{
-Same as \f[V]format\f[R] but for when the battery is full
-T}@T{
-\f[V]\[dq]\[dq]\f[R]
-T}
-T{
-\f[V]hide_missing\f[R]
-T}@T{
-Completely hide this block if the battery cannot be found.
-T}@T{
-\f[V]false\f[R]
-T}
-T{
-\f[V]hide_full\f[R]
-T}@T{
-Hide the block if battery is full
-T}@T{
-\f[V]false\f[R]
-T}
-T{
-\f[V]info\f[R]
-T}@T{
-Minimum battery level, where state is set to info
-T}@T{
-\f[V]60\f[R]
-T}
-T{
-\f[V]good\f[R]
-T}@T{
-Minimum battery level, where state is set to good
-T}@T{
-\f[V]60\f[R]
-T}
-T{
-\f[V]warning\f[R]
-T}@T{
-Minimum battery level, where state is set to warning
-T}@T{
-\f[V]30\f[R]
-T}
-T{
-\f[V]critical\f[R]
-T}@T{
-Minimum battery level, where state is set to critical
-T}@T{
-\f[V]15\f[R]
-T}
-T{
-\f[V]full_threshold\f[R]
-T}@T{
-Percentage at which the battery is considered full
-(\f[V]full_format\f[R] shown)
-T}@T{
-\f[V]100\f[R]
 T}
 .TE
 .PP
@@ -501,6 +437,16 @@ T}
 .TE
 .SS Examples
 .PP
+Basic usage:
+.IP
+.nf
+\f[C]
+[block]
+block = \[dq]battery\[dq]
+format = \[dq]$percentage|N/A\[dq]
+\f[R]
+.fi
+.PP
 Hide missing battery:
 .IP
 .nf
@@ -510,41 +456,31 @@ block = \[dq]battery\[dq]
 hide_missing = true
 \f[R]
 .fi
-.PP
-Allow missing battery:
-.IP
-.nf
-\f[C]
-[block]
-block = \[dq]battery\[dq]
-format = \[dq]$percentage|N/A\[dq]
-\f[R]
-.fi
 .SS Icons Used
 .IP \[bu] 2
 \f[V]bat_charging\f[R]
 .IP \[bu] 2
 \f[V]bat_not_available\f[R]
 .IP \[bu] 2
-\f[V]bat_10\f[R],
+\f[V]bat_10\f[R]
 .IP \[bu] 2
-\f[V]bat_20\f[R],
+\f[V]bat_20\f[R]
 .IP \[bu] 2
-\f[V]bat_30\f[R],
+\f[V]bat_30\f[R]
 .IP \[bu] 2
-\f[V]bat_40\f[R],
+\f[V]bat_40\f[R]
 .IP \[bu] 2
-\f[V]bat_50\f[R],
+\f[V]bat_50\f[R]
 .IP \[bu] 2
-\f[V]bat_60\f[R],
+\f[V]bat_60\f[R]
 .IP \[bu] 2
-\f[V]bat_70\f[R],
+\f[V]bat_70\f[R]
 .IP \[bu] 2
-\f[V]bat_80\f[R],
+\f[V]bat_80\f[R]
 .IP \[bu] 2
-\f[V]bat_90\f[R],
+\f[V]bat_90\f[R]
 .IP \[bu] 2
-\f[V]bat_full\f[R],
+\f[V]bat_full\f[R]
 .SS bluetooth
 .PP
 Monitor Bluetooth device
@@ -1047,7 +983,8 @@ _
 T{
 \f[V]path\f[R]
 T}@T{
-Path to collect information from
+Path to collect information from.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 \f[V]\[dq]/\[dq]\f[R]
 T}
@@ -1146,7 +1083,7 @@ T}
 T{
 \f[V]used\f[R]
 T}@T{
-Dused disk space
+Used disk space
 T}@T{
 Number
 T}@T{
@@ -1781,7 +1718,7 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-\[lq]$title.rot-str(15)|\[rq]
+\[lq]$title.str(21)|\[rq]
 T}
 T{
 \f[V]autohide\f[R]
@@ -1820,7 +1757,7 @@ _
 T{
 \f[V]title\f[R]
 T}@T{
-Window\[cq]s titile (may be absent)
+Window\[cq]s title (may be absent)
 T}@T{
 Text
 T}@T{
@@ -2445,7 +2382,8 @@ T{
 \f[V]variant\f[R]
 T}@T{
 Keyboard variant.
-Only \f[V]localebus\f[R] and \f[V]sway\f[R] are supported so far.
+Only \f[V]localebus\f[R], \f[V]sway\f[R] and \f[V]kbddbus\f[R] are
+supported so far.
 T}@T{
 String
 T}
@@ -2473,13 +2411,23 @@ driver = \[dq]localebus\[dq]
 \f[R]
 .fi
 .PP
-Listen to kbdd for changes:
+Listen to kbdd for changes, the text is in the following format:
+\[lq]English (US)\[rq] -
+{\f[I]l\f[R]\f[I]a\f[R]\f[I]y\f[R]\f[I]o\f[R]\f[I]u\f[R]\f[I]t\f[R](variant)}
+use block.mappings to override with shorter names as shown below.
+Also use format =
+\[lq]\f[I]l\f[R]\f[I]a\f[R]\f[I]y\f[R]\f[I]o\f[R]\f[I]u\f[R]\f[I]t\f[R](variant)\[rq]
+to see the full text to map, or you can use: dbus-monitor
+interface=ru.gentoo.kbdd to see the exact variant spelling
 .IP
 .nf
 \f[C]
 [[block]]
 block = \[dq]keyboard_layout\[dq]
 driver = \[dq]kbddbus\[dq]
+[block.mappings]
+\[dq]English (US)\[dq] = \[dq]us\[dq]
+\[dq]Bulgarian (new phonetic)\[dq] = \[dq]bg\[dq]
 \f[R]
 .fi
 .PP
@@ -2529,7 +2477,7 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-\f[V]\[dq]$1m\[dq]\f[R]
+\f[V]\[dq]$1m.eng(3)\[dq]\f[R]
 T}
 T{
 \f[V]interval\f[R]
@@ -2645,6 +2593,7 @@ T{
 \f[V]inboxes\f[R]
 T}@T{
 List of maildir inboxes to look for mails in.
+Supports path expansions e.g.\ \f[V]\[ti]\f[R].
 T}@T{
 \f[B]Required\f[R]
 T}
@@ -3095,11 +3044,18 @@ T}@T{
 Text
 T}
 T{
+\f[V]url\f[R]
+T}@T{
+Current song url
+T}@T{
+Text
+T}
+T{
 \f[V]combo\f[R]
 T}@T{
 Resolves to \[lq]\f[V]$artist[sep]$title\[dq]\f[R],
-\f[V]\[dq]$artist\[dq]\f[R], or \f[V]\[dq]$title\[dq]\f[R] depending on
-what information is available.
+\f[V]\[dq]$artist\[dq]\f[R], \f[V]\[dq]$title\[dq]\f[R], or
+\f[V]\[dq]$url\[dq]\f[R] depending on what information is available.
 \f[V][sep]\f[R] is set by \f[V]separator\f[R] option.
 T}@T{
 Text
@@ -3804,7 +3760,7 @@ AUR command to check available updates, which outputs in the same format
 as pacman.
 e.g.\ \f[V]yay -Qua\f[R]
 T}@T{
-if \f[V]{both}\f[R] or \f[V]{aur}\f[R] are used
+Required if \f[V]$both\f[R] or \f[V]$aur\f[R] are used
 T}
 T{
 \f[V]hide_when_uptodate\f[R]
