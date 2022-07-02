@@ -81,13 +81,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .with_format(config.format.with_default("$total.eng(1)")?);
 
     let mut interval = config.interval.timer();
-    let token = match config.token {
-        Some(token) => token,
-        None => match std::env::var("I3RS_GITHUB_TOKEN") {
-            Ok(var) => var,
-            Err(_) => return Err(Error::new("Github token not found")),
-        },
-    };
+    let token = config
+        .token
+        .or_else(|| std::env::var("I3RS_GITHUB_TOKEN").ok())
+        .error("Github token not found")?;
 
     loop {
         let stats = api.recoverable(|| get_stats(&token)).await?;
