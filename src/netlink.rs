@@ -140,12 +140,8 @@ impl NetDevice {
 }
 
 fn index_to_interface(index: u32) -> String {
-    let mut buff = [0i8; 16];
-    let buff: [u8; 16] = unsafe {
-        libc::if_indextoname(index, &mut buff[0]);
-        std::mem::transmute(buff)
-    };
-
+    let mut buff = [0u8; 16];
+    unsafe { libc::if_indextoname(index, buff.as_mut_ptr() as *mut i8) };
     std::str::from_utf8(&buff)
         .unwrap()
         .trim_matches(char::from(0))

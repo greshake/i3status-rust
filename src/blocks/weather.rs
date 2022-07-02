@@ -117,19 +117,13 @@ enum WeatherService {
 
 impl WeatherService {
     fn getenv_openweathermap_api_key() -> Option<String> {
-        std::env::var(OPEN_WEATHER_MAP_API_KEY_ENV)
-            .map(Into::into)
-            .ok()
+        std::env::var(OPEN_WEATHER_MAP_API_KEY_ENV).ok()
     }
     fn getenv_openweathermap_city_id() -> Option<String> {
-        std::env::var(OPEN_WEATHER_MAP_CITY_ID_ENV)
-            .map(Into::into)
-            .ok()
+        std::env::var(OPEN_WEATHER_MAP_CITY_ID_ENV).ok()
     }
     fn getenv_openweathermap_place() -> Option<String> {
-        std::env::var(OPEN_WEATHER_MAP_PLACE_ENV)
-            .map(Into::into)
-            .ok()
+        std::env::var(OPEN_WEATHER_MAP_PLACE_ENV).ok()
     }
     fn default_lang() -> String {
         "en".into()

@@ -383,11 +383,7 @@ impl Device {
     }
 
     async fn name(&self) -> Result<String> {
-        self.device
-            .name()
-            .await
-            .map(Into::into)
-            .error("Failed to get name")
+        self.device.name().await.error("Failed to get name")
     }
 
     async fn connected(&self) -> Result<bool> {

@@ -244,11 +244,7 @@ impl Device {
     }
 
     async fn name(&self) -> Result<String> {
-        self.device_proxy
-            .name()
-            .await
-            .error("Failed to get name")
-            .map(Into::into)
+        self.device_proxy.name().await.error("Failed to get name")
     }
 
     async fn battery(&self) -> Result<(u8, bool)> {
@@ -284,7 +280,6 @@ async fn any_device_id(conn: &zbus::Connection) -> Result<String> {
         .into_iter()
         .next()
         .error("No devices found")
-        .map(Into::into)
 }
 
 #[dbus_proxy(
