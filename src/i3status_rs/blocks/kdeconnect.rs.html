@@ -347,11 +347,6 @@
 <span id="342">342</span>
 <span id="343">343</span>
 <span id="344">344</span>
-<span id="345">345</span>
-<span id="346">346</span>
-<span id="347">347</span>
-<span id="348">348</span>
-<span id="349">349</span>
 </pre><pre class="rust"><code><span class="doccomment">//! [KDEConnect](https://community.kde.org/KDEConnect) indicator</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Display info from the currently connected device in KDEConnect, updated asynchronously.</span>
@@ -598,11 +593,7 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">device_proxy</span>
-            .<span class="ident">name</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get name&quot;</span>)
-            .<span class="ident">map</span>(<span class="ident">Into::into</span>)
+        <span class="self">self</span>.<span class="ident">device_proxy</span>.<span class="ident">name</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to get name&quot;</span>)
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">battery</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">u8</span>, <span class="ident">bool</span>)<span class="op">&gt;</span> {
@@ -638,7 +629,6 @@
         .<span class="ident">into_iter</span>()
         .<span class="ident">next</span>()
         .<span class="ident">error</span>(<span class="string">&quot;No devices found&quot;</span>)
-        .<span class="ident">map</span>(<span class="ident">Into::into</span>)
 }
 
 <span class="attribute">#[<span class="ident">dbus_proxy</span>(
@@ -702,5 +692,5 @@
     <span class="kw">fn</span> <span class="ident">notification_removed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.61.0 (fe5b13d68 2022-05-18)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
 </body></html>

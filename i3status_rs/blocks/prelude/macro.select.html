@@ -216,8 +216,8 @@ is complete, all calls to <code>next()</code> return <code>None</code>.</p>
     <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>], <span class="kw-2">&amp;</span><span class="ident">values</span>[..]);
 }</code></pre></div>
 <p>Using the same future in multiple <code>select!</code> expressions can be done by passing
-a reference to the future. Doing so requires the future to be <a href="https://doc.rust-lang.org/1.61.0/core/marker/trait.Unpin.html"><code>Unpin</code></a>. A
-future can be made <a href="https://doc.rust-lang.org/1.61.0/core/marker/trait.Unpin.html"><code>Unpin</code></a> by either using <a href="https://doc.rust-lang.org/1.61.0/alloc/boxed/struct.Box.html#method.pin"><code>Box::pin</code></a> or stack pinning.</p>
+a reference to the future. Doing so requires the future to be <a href="https://doc.rust-lang.org/1.62.0/core/marker/trait.Unpin.html"><code>Unpin</code></a>. A
+future can be made <a href="https://doc.rust-lang.org/1.62.0/core/marker/trait.Unpin.html"><code>Unpin</code></a> by either using <a href="https://doc.rust-lang.org/1.62.0/alloc/boxed/struct.Box.html#method.pin"><code>Box::pin</code></a> or stack pinning.</p>
 <p>Here, a stream is consumed for at most 1 second.</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">tokio_stream</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">stream</span>, <span class="ident">StreamExt</span>};
@@ -374,5 +374,5 @@ run uninterrupted despite the sleep having elapsed.</p>
         }
     }
 }</code></pre></div>
-</div></details></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.61.0 (fe5b13d68 2022-05-18)" ></div>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
 </body></html>
