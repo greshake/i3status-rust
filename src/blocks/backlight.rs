@@ -153,8 +153,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let brightness = device.brightness().await?;
         let mut icon_index = (usize::from(brightness) * BACKLIGHT_ICONS.len()) / 101;
         if config.invert_icons {
-            // FIXME
-            icon_index = BACKLIGHT_ICONS.len() - icon_index;
+            icon_index = BACKLIGHT_ICONS.len() - icon_index - 1;
         }
 
         widget.set_icon(BACKLIGHT_ICONS[icon_index])?;
