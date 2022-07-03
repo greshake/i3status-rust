@@ -236,7 +236,7 @@ impl BacklightDevice {
         })
     }
 
-    /// Use the default backlit device, i.e. the first one found in the
+    /// Use the default backlight device, i.e. the first one found in the
     /// `/sys/class/backlight` directory.
     async fn default(root_scaling: f64) -> Result<Self> {
         let device = read_dir(DEVICES_PATH)
@@ -244,18 +244,18 @@ impl BacklightDevice {
             .error("Failed to read backlight device directory")?
             .next_entry()
             .await
-            .error("No backlit devices found")?
+            .error("No backlight devices found")?
             .error("Failed to read default device file")?;
         Self::new(device.path(), root_scaling).await
     }
 
-    /// Use the backlit device `device`. Returns an error if a directory for
+    /// Use the backlight device `device`. Returns an error if a directory for
     /// that device is not found.
     async fn from_device(device: &str, root_scaling: f64) -> Result<Self> {
         Self::new(Path::new(DEVICES_PATH).join(device), root_scaling).await
     }
 
-    /// Query the brightness value for this backlit device, as a percent.
+    /// Query the brightness value for this backlight device, as a percent.
     async fn brightness(&self) -> Result<u8> {
         let raw = read_brightness_raw(&self.brightness_file).await?;
 
