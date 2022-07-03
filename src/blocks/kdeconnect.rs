@@ -17,14 +17,14 @@
 //! `bat_critical` | Min battery level below which state is set to critical. | `15`
 //! `hide_disconnected` | Whether to hide this block when disconnected | `true`
 //!
-//! Placeholder   | Value                                                          | Type   | Unit
-//! --------------|----------------------------------------------------------------|--------|-----
-//! `bat_icon`    | Battery level indicator (only when connected and if supported) | Icon   | -
-//! `bat_charge`  | Battery charge level (only when connected and if supported)    | Number | %
-//! `notif_icon`  | Only when connected and there are notifications                | Icon   | -
-//! `notif_count` | Number of notifications on your phone (only when connected)    | Number | -
-//! `name`        | Name of your device as reported by KDEConnect                  | Text   | -
-//! `connected`   | Present if your device is connected                            | Flag   | -
+//! Placeholder   | Value                                                                    | Type   | Unit
+//! --------------|--------------------------------------------------------------------------|--------|-----
+//! `bat_icon`    | Battery level indicator (only when connected and if supported)           | Icon   | -
+//! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %
+//! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -
+//! `notif_count` | Number of notifications on your phone (only when connected and non-zero) | Number | -
+//! `name`        | Name of your device as reported by KDEConnect                            | Text   | -
+//! `connected`   | Present if your device is connected                                      | Flag   | -
 //!
 //! # Example
 //!
