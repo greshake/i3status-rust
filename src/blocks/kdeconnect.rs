@@ -17,14 +17,14 @@
 //! `bat_critical` | Min battery level below which state is set to critical. | `15`
 //! `hide_disconnected` | Whether to hide this block when disconnected | `true`
 //!
-//! Placeholder   | Value                                                       | Type   | Unit
-//! --------------|-------------------------------------------------------------|--------|-----
-//! `bat_icon`    | Battery level indicator (only when connected)               | Icon   | -
-//! `bat_charge`  | Battery charge level (only when connected)                  | Number | %
-//! `notif_icon`  | Only when connected and there are notifications             | Icon   | -
-//! `notif_count` | Number of notifications on your phone (only when connected) | Number | -
-//! `name`        | Name of your device as reported by KDEConnect               | Text   | -
-//! `connected`   | Present if your device is connected                         | Flag   | -
+//! Placeholder   | Value                                                          | Type   | Unit
+//! --------------|----------------------------------------------------------------|--------|-----
+//! `bat_icon`    | Battery level indicator (only when connected and if supported) | Icon   | -
+//! `bat_charge`  | Battery charge level (only when connected and if supported)    | Number | %
+//! `notif_icon`  | Only when connected and there are notifications                | Icon   | -
+//! `notif_count` | Number of notifications on your phone (only when connected)    | Number | -
+//! `name`        | Name of your device as reported by KDEConnect                  | Text   | -
+//! `connected`   | Present if your device is connected                            | Flag   | -
 //!
 //! # Example
 //!
@@ -104,7 +104,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let connected = device.connected().await?;
 
         if connected || !config.hide_disconnected {
-            let mut state = State::Idle;
+            widget.state = State::Idle;
 
             let mut values = map! {
                 "name" => Value::text(device.name().await?),
@@ -113,28 +113,30 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 widget.set_icon("phone")?;
                 values.insert("connected".into(), Value::flag());
 
-                let (level, charging) = device.battery().await?;
-                values.insert("bat_charge".into(), Value::percents(level));
-                values.insert(
-                    "bat_icon".into(),
-                    Value::icon(
-                        api.get_icon(battery_level_icon(level, charging))?
-                            .trim()
-                            .into(),
-                    ),
-                );
-                if battery_state {
-                    state = if charging {
-                        State::Good
-                    } else if level <= config.bat_critical {
-                        State::Critical
-                    } else if level <= config.bat_info {
-                        State::Info
-                    } else if level > config.bat_good {
-                        State::Good
-                    } else {
-                        State::Idle
-                    };
+                let (level, charging) = device.battery().await;
+                if let Some(level) = level {
+                    values.insert("bat_charge".into(), Value::percents(level));
+                    values.insert(
+                        "bat_icon".into(),
+                        Value::icon(
+                            api.get_icon(battery_level_icon(level, charging))?
+                                .trim()
+                                .into(),
+                        ),
+                    );
+                    if battery_state {
+                        widget.state = if charging {
+                            State::Good
+                        } else if level <= config.bat_critical {
+                            State::Critical
+                        } else if level <= config.bat_info {
+                            State::Info
+                        } else if level > config.bat_good {
+                            State::Good
+                        } else {
+                            State::Idle
+                        };
+                    }
                 }
 
                 let notif_count = device.notifications().await?;
@@ -146,7 +148,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     );
                 }
                 if !battery_state {
-                    state = if notif_count == 0 {
+                    widget.state = if notif_count == 0 {
                         State::Idle
                     } else {
                         State::Info
@@ -157,7 +159,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
 
             widget.set_values(values);
-            widget.state = state;
             api.set_widget(&widget).await?;
         } else {
             api.hide().await?;
@@ -247,18 +248,15 @@ impl Device {
         self.device_proxy.name().await.error("Failed to get name")
     }
 
-    async fn battery(&self) -> Result<(u8, bool)> {
-        Ok((
+    async fn battery(&self) -> (Option<u8>, bool) {
+        (
             self.battery_proxy
                 .charge()
                 .await
-                .error("Failed to read charge")?
-                .clamp(0, 100) as u8,
-            self.battery_proxy
-                .is_charging()
-                .await
-                .error("Failed to read isCharging")?,
-        ))
+                .ok()
+                .map(|p| p.clamp(0, 100) as u8),
+            self.battery_proxy.is_charging().await.unwrap_or(false),
+        )
     }
 
     async fn notifications(&self) -> Result<usize> {
