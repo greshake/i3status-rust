@@ -38,17 +38,17 @@
 //! ```
 //!
 //! # Icons Used
-//! - "bat_charging",
-//! - "bat_10",
-//! - "bat_20",
-//! - "bat_30",
-//! - "bat_40",
-//! - "bat_50",
-//! - "bat_60",
-//! - "bat_70",
-//! - "bat_80",
-//! - "bat_90",
-//! - "bat_full",
+//! - `bat_charging`,
+//! - `bat_10`,
+//! - `bat_20`,
+//! - `bat_30`,
+//! - `bat_40`,
+//! - `bat_50`,
+//! - `bat_60`,
+//! - `bat_70`,
+//! - `bat_80`,
+//! - `bat_90`,
+//! - `bat_full`,
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`
