@@ -101,7 +101,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let device = Device::new(&dbus_conn, tx, &id).await?;
 
     loop {
-        let connected = device.connected().await?;
+        let connected = device.connected().await;
 
         if connected || !config.hide_disconnected {
             widget.state = State::Idle;
@@ -237,11 +237,8 @@ impl Device {
         })
     }
 
-    async fn connected(&self) -> Result<bool> {
-        self.device_proxy
-            .is_reachable()
-            .await
-            .error("Failed to get is_reachable")
+    async fn connected(&self) -> bool {
+        self.device_proxy.is_reachable().await.unwrap_or(false)
     }
 
     async fn name(&self) -> Result<String> {
