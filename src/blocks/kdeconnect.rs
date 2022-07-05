@@ -10,7 +10,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | Chooses the first found device, if any.
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$name $bat_icon $bat_charge{ $notif_icon&vert;}"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$name{ $bat_icon $bat_charge&vert;}{ $notif_icon&vert;}"</code>
 //! `bat_info` | Min battery level below which state is set to info. | `60`
 //! `bat_good` | Min battery level below which state is set to good. | `60`
 //! `bat_warning` | Min battery level below which state is set to warning. | `30`
@@ -23,7 +23,7 @@
 //! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %
 //! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -
 //! `notif_count` | Number of notifications on your phone (only when connected and non-zero) | Number | -
-//! `name`        | Name of your device as reported by KDEConnect                            | Text   | -
+//! `name`        | Name of your device as reported by KDEConnect (if available)             | Text   | -
 //! `connected`   | Present if your device is connected                                      | Flag   | -
 //!
 //! # Example
@@ -33,7 +33,7 @@
 //! ```toml
 //! [[block]]
 //! block = "kdeconnect"
-//! format = "$bat_icon $bat_charge{ $notif_icon|}"
+//! format = "{$bat_icon $bat_charge|}{ $notif_icon|}"
 //! bat_good = 101
 //! ```
 //!
@@ -81,7 +81,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api.new_widget().with_format(
         config
             .format
-            .with_default("$name $bat_icon $bat_charge{ $notif_icon|}")?,
+            .with_default("$name{ $bat_icon $bat_charge|}{ $notif_icon|}")?,
     );
 
     let battery_state = (
@@ -106,9 +106,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         if connected || !config.hide_disconnected {
             widget.state = State::Idle;
 
-            let mut values = map! {
-                "name" => Value::text(device.name().await?),
-            };
+            let mut values = map!();
+
+            if let Some(name) = device.name().await {
+                values.insert("name".into(), Value::text(name));
+            }
+
             if connected {
                 widget.set_icon("phone")?;
                 values.insert("connected".into(), Value::flag());
@@ -241,8 +244,8 @@ impl Device {
         self.device_proxy.is_reachable().await.unwrap_or(false)
     }
 
-    async fn name(&self) -> Result<String> {
-        self.device_proxy.name().await.error("Failed to get name")
+    async fn name(&self) -> Option<String> {
+        self.device_proxy.name().await.ok()
     }
 
     async fn battery(&self) -> (Option<u8>, bool) {
