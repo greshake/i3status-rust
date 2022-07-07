@@ -417,16 +417,6 @@
 <span id="412">412</span>
 <span id="413">413</span>
 <span id="414">414</span>
-<span id="415">415</span>
-<span id="416">416</span>
-<span id="417">417</span>
-<span id="418">418</span>
-<span id="419">419</span>
-<span id="420">420</span>
-<span id="421">421</span>
-<span id="422">422</span>
-<span id="423">423</span>
-<span id="424">424</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the connectivity of a given Bluetooth device and the battery level if this</span>
@@ -586,7 +576,7 @@
     <span class="ident">available</span>: <span class="ident">bool</span>,
     <span class="ident">props</span>: <span class="ident">PropertiesProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
     <span class="ident">device</span>: <span class="ident">Device1Proxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">battery</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Battery1Proxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">battery</span>: <span class="ident">Battery1Proxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">DeviceMonitor</span> {
@@ -778,18 +768,12 @@
                     .<span class="ident">build</span>()
                     .<span class="kw">await</span>
                     .<span class="ident">error</span>(<span class="string">&quot;Failed to create Device1Proxy&quot;</span>)<span class="question-mark">?</span>,
-                <span class="ident">battery</span>: <span class="kw">if</span> <span class="ident">interfaces</span>.<span class="ident">get</span>(<span class="string">&quot;ogr.bluez.Battery1&quot;</span>).<span class="ident">is_some</span>() {
-                    <span class="prelude-val">Some</span>(
-                        <span class="ident">Battery1Proxy::builder</span>(<span class="ident">manager_proxy</span>.<span class="ident">connection</span>())
-                            .<span class="ident">path</span>(<span class="ident">path</span>)
-                            .<span class="ident">unwrap</span>()
-                            .<span class="ident">build</span>()
-                            .<span class="kw">await</span>
-                            .<span class="ident">error</span>(<span class="string">&quot;Failed to create Battery1Proxy&quot;</span>)<span class="question-mark">?</span>,
-                    )
-                } <span class="kw">else</span> {
-                    <span class="prelude-val">None</span>
-                },
+                <span class="ident">battery</span>: <span class="ident">Battery1Proxy::builder</span>(<span class="ident">manager_proxy</span>.<span class="ident">connection</span>())
+                    .<span class="ident">path</span>(<span class="ident">path</span>)
+                    .<span class="ident">unwrap</span>()
+                    .<span class="ident">build</span>()
+                    .<span class="kw">await</span>
+                    .<span class="ident">error</span>(<span class="string">&quot;Failed to create Battery1Proxy&quot;</span>)<span class="question-mark">?</span>,
             }));
         }
 
@@ -823,11 +807,7 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">percentage</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">bp</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">battery</span> {
-            <span class="ident">bp</span>.<span class="ident">percentage</span>().<span class="kw">await</span>.<span class="ident">ok</span>()
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
-        }
+        <span class="self">self</span>.<span class="ident">battery</span>.<span class="ident">percentage</span>().<span class="kw">await</span>.<span class="ident">ok</span>()
     }
 }
 
