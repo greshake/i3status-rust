@@ -157,7 +157,7 @@ struct Device {
     available: bool,
     props: PropertiesProxy<'static>,
     device: Device1Proxy<'static>,
-    battery: Option<Battery1Proxy<'static>>,
+    battery: Battery1Proxy<'static>,
 }
 
 impl DeviceMonitor {
@@ -349,18 +349,12 @@ impl Device {
                     .build()
                     .await
                     .error("Failed to create Device1Proxy")?,
-                battery: if interfaces.get("ogr.bluez.Battery1").is_some() {
-                    Some(
-                        Battery1Proxy::builder(manager_proxy.connection())
-                            .path(path)
-                            .unwrap()
-                            .build()
-                            .await
-                            .error("Failed to create Battery1Proxy")?,
-                    )
-                } else {
-                    None
-                },
+                battery: Battery1Proxy::builder(manager_proxy.connection())
+                    .path(path)
+                    .unwrap()
+                    .build()
+                    .await
+                    .error("Failed to create Battery1Proxy")?,
             }));
         }
 
@@ -394,11 +388,7 @@ impl Device {
     }
 
     async fn percentage(&self) -> Option<u8> {
-        if let Some(bp) = &self.battery {
-            bp.percentage().await.ok()
-        } else {
-            None
-        }
+        self.battery.percentage().await.ok()
     }
 }
 
