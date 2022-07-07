@@ -447,9 +447,11 @@
 <span id="442">442</span>
 <span id="443">443</span>
 <span id="444">444</span>
+<span id="445">445</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
+<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::explicit_auto_deref</span>)]</span> <span class="comment">// TODO: remove once https://github.com/rust-lang/rust-clippy/issues/9101 is resloved</span>
 
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">mod</span> <span class="ident">util</span>;

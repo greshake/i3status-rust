@@ -410,13 +410,6 @@
 <span id="405">405</span>
 <span id="406">406</span>
 <span id="407">407</span>
-<span id="408">408</span>
-<span id="409">409</span>
-<span id="410">410</span>
-<span id="411">411</span>
-<span id="412">412</span>
-<span id="413">413</span>
-<span id="414">414</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the connectivity of a given Bluetooth device and the battery level if this</span>
@@ -463,9 +456,7 @@
 <span class="doccomment">//! - `bluetooth` for all other devices</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">zbus::fdo</span>::{
-    <span class="ident">InterfacesAddedStream</span>, <span class="ident">InterfacesRemovedStream</span>, <span class="ident">ObjectManagerProxy</span>, <span class="ident">PropertiesProxy</span>,
-};
+<span class="kw">use</span> <span class="ident">zbus::fdo</span>::{<span class="ident">ObjectManagerProxy</span>, <span class="ident">PropertiesProxy</span>};
 
 <span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;bluetooth&quot;</span>);
 
@@ -489,8 +480,7 @@
             .<span class="ident">with_default</span>(<span class="string">&quot;$name{ $percentage|}|Unavailable&quot;</span>)<span class="question-mark">?</span>,
     );
 
-    <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">monitor</span> <span class="op">=</span> <span class="ident">DeviceMonitor::new</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>, <span class="ident">config</span>.<span class="ident">mac</span>, <span class="ident">config</span>.<span class="ident">adapter_mac</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">monitor</span> <span class="op">=</span> <span class="ident">DeviceMonitor::new</span>(<span class="ident">config</span>.<span class="ident">mac</span>, <span class="ident">config</span>.<span class="ident">adapter_mac</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">loop</span> {
         <span class="kw">match</span> <span class="ident">monitor</span>.<span class="ident">device</span>() {
@@ -567,8 +557,6 @@
     <span class="ident">adapter_mac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">manager_proxy</span>: <span class="ident">ObjectManagerProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
     <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Device</span><span class="op">&gt;</span>,
-    <span class="ident">interface_added</span>: <span class="ident">InterfacesAddedStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">interface_removed</span>: <span class="ident">InterfacesRemovedStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
@@ -580,34 +568,21 @@
 }
 
 <span class="kw">impl</span> <span class="ident">DeviceMonitor</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">dbus_conn</span>: <span class="kw-2">&amp;</span><span class="ident">zbus::Connection</span>,
-        <span class="ident">mac</span>: <span class="ident">String</span>,
-        <span class="ident">adapter_mac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">manager_proxy</span> <span class="op">=</span> <span class="ident">ObjectManagerProxy::builder</span>(<span class="ident">dbus_conn</span>)
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">mac</span>: <span class="ident">String</span>, <span class="ident">adapter_mac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">manager_proxy</span> <span class="op">=</span> <span class="ident">ObjectManagerProxy::builder</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>)
             .<span class="ident">destination</span>(<span class="string">&quot;org.bluez&quot;</span>)
             .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">path</span>(<span class="string">&quot;/&quot;</span>))
             .<span class="ident">unwrap</span>()
             .<span class="ident">build</span>()
             .<span class="kw">await</span>
             .<span class="ident">error</span>(<span class="string">&quot;Failed to create ObjectManagerProxy&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">interface_added</span> <span class="op">=</span> <span class="ident">manager_proxy</span>
-            .<span class="ident">receive_interfaces_added</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">interface_removed</span> <span class="op">=</span> <span class="ident">manager_proxy</span>
-            .<span class="ident">receive_interfaces_removed</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">Device::try_find</span>(<span class="kw-2">&amp;</span><span class="ident">manager_proxy</span>, <span class="kw-2">&amp;</span><span class="ident">mac</span>, <span class="ident">adapter_mac</span>.<span class="ident">as_deref</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">mac</span>,
             <span class="ident">adapter_mac</span>,
             <span class="ident">manager_proxy</span>,
             <span class="ident">device</span>,
-            <span class="ident">interface_added</span>,
-            <span class="ident">interface_removed</span>,
         })
     }
 
@@ -620,46 +595,60 @@
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">device</span> {
-            <span class="prelude-val">None</span> =&gt; <span class="kw">loop</span> {
-                <span class="macro">select!</span> {
-                    <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_added</span>.<span class="ident">next</span>() =&gt; {
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="op">=</span> <span class="ident">Device::try_find</span>(
-                            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manager_proxy</span>,
-                            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">mac</span>,
-                            <span class="self">self</span>.<span class="ident">adapter_mac</span>.<span class="ident">as_deref</span>()
-                        ).<span class="kw">await</span><span class="question-mark">?</span>
-                        {
-                            <span class="self">self</span>.<span class="ident">device</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>);
-                            <span class="macro">debug!</span>(<span class="string">&quot;Device has been added&quot;</span>);
-                            <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
-                        }
+            <span class="prelude-val">None</span> =&gt; {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interface_added</span> <span class="op">=</span> <span class="self">self</span>
+                    .<span class="ident">manager_proxy</span>
+                    .<span class="ident">receive_interfaces_added</span>()
+                    .<span class="kw">await</span>
+                    .<span class="ident">error</span>(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">loop</span> {
+                    <span class="ident">interface_added</span>
+                        .<span class="ident">next</span>()
+                        .<span class="kw">await</span>
+                        .<span class="ident">error</span>(<span class="string">&quot;Stream ended unexpectedly&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="op">=</span> <span class="ident">Device::try_find</span>(
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manager_proxy</span>,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">mac</span>,
+                        <span class="self">self</span>.<span class="ident">adapter_mac</span>.<span class="ident">as_deref</span>(),
+                    )
+                    .<span class="kw">await</span><span class="question-mark">?</span>
+                    {
+                        <span class="self">self</span>.<span class="ident">device</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>);
+                        <span class="macro">debug!</span>(<span class="string">&quot;Device has been added&quot;</span>);
+                        <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
                     }
-                    <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
-                       <span class="macro">debug!</span>(<span class="string">&quot;Device interface was removed&quot;</span>);
-                    },
                 }
-            },
-            <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="kw">if</span> <span class="op">!</span><span class="ident">device</span>.<span class="ident">available</span> =&gt; <span class="kw">loop</span> {
-                <span class="macro">select!</span> {
-                    <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_added</span>.<span class="ident">next</span>() =&gt; {
-                        <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">args</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
-                        <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">object_path</span>() <span class="op">==</span> <span class="ident">device</span>.<span class="ident">device</span>.<span class="ident">path</span>() {
-                            <span class="ident">device</span>.<span class="ident">available</span> <span class="op">=</span> <span class="bool-val">true</span>;
-                            <span class="macro">debug!</span>(<span class="string">&quot;Device is now available&quot;</span>);
-                            <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
-                        }
+            }
+            <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="kw">if</span> <span class="op">!</span><span class="ident">device</span>.<span class="ident">available</span> =&gt; {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interface_added</span> <span class="op">=</span> <span class="self">self</span>
+                    .<span class="ident">manager_proxy</span>
+                    .<span class="ident">receive_interfaces_added</span>()
+                    .<span class="kw">await</span>
+                    .<span class="ident">error</span>(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">loop</span> {
+                    <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="ident">interface_added</span>
+                        .<span class="ident">next</span>()
+                        .<span class="kw">await</span>
+                        .<span class="ident">error</span>(<span class="string">&quot;Stream ended unexpectedly&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">args</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">object_path</span>() <span class="op">==</span> <span class="ident">device</span>.<span class="ident">device</span>.<span class="ident">path</span>() {
+                        <span class="ident">device</span>.<span class="ident">available</span> <span class="op">=</span> <span class="bool-val">true</span>;
+                        <span class="macro">debug!</span>(<span class="string">&quot;Device is now available&quot;</span>);
+                        <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
                     }
-                    <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
-                        <span class="macro">debug!</span>(<span class="string">&quot;Device interface was removed&quot;</span>);
-                    },
                 }
-            },
+            }
             <span class="prelude-val">Some</span>(<span class="ident">device</span>) =&gt; {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">updates</span> <span class="op">=</span> <span class="ident">device</span>
                     .<span class="ident">props</span>
                     .<span class="ident">receive_properties_changed</span>()
                     .<span class="kw">await</span>
                     .<span class="ident">error</span>(<span class="string">&quot;Failed to receive updates&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interface_removed</span> <span class="op">=</span> <span class="self">self</span>
+                    .<span class="ident">manager_proxy</span>
+                    .<span class="ident">receive_interfaces_removed</span>()
+                    .<span class="kw">await</span>
+                    .<span class="ident">error</span>(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
                 <span class="kw">loop</span> {
                     <span class="macro">select!</span> {
                         <span class="kw">_</span> <span class="op">=</span> <span class="ident">updates</span>.<span class="ident">next</span>() =&gt; {
@@ -670,10 +659,7 @@
                             <span class="macro">debug!</span>(<span class="string">&quot;Got update for device&quot;</span>);
                             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
                         }
-                        <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_added</span>.<span class="ident">next</span>() =&gt; {
-                            <span class="macro">debug!</span>(<span class="string">&quot;Device interface was added&quot;</span>);
-                        }
-                        <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
+                        <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
                             <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">args</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
                             <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">object_path</span>() <span class="op">==</span> <span class="ident">device</span>.<span class="ident">device</span>.<span class="ident">path</span>() {
                                 <span class="ident">device</span>.<span class="ident">available</span> <span class="op">=</span> <span class="bool-val">false</span>;
