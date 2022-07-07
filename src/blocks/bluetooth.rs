@@ -44,9 +44,7 @@
 //! - `bluetooth` for all other devices
 
 use super::prelude::*;
-use zbus::fdo::{
-    InterfacesAddedStream, InterfacesRemovedStream, ObjectManagerProxy, PropertiesProxy,
-};
+use zbus::fdo::{ObjectManagerProxy, PropertiesProxy};
 
 make_log_macro!(debug, "bluetooth");
 
@@ -70,8 +68,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .with_default("$name{ $percentage|}|Unavailable")?,
     );
 
-    let dbus_conn = new_system_dbus_connection().await?;
-    let mut monitor = DeviceMonitor::new(&dbus_conn, config.mac, config.adapter_mac).await?;
+    let mut monitor = DeviceMonitor::new(config.mac, config.adapter_mac).await?;
 
     loop {
         match monitor.device() {
@@ -148,8 +145,6 @@ struct DeviceMonitor {
     adapter_mac: Option<String>,
     manager_proxy: ObjectManagerProxy<'static>,
     device: Option<Device>,
-    interface_added: InterfacesAddedStream<'static>,
-    interface_removed: InterfacesRemovedStream<'static>,
 }
 
 #[derive(Clone)]
@@ -161,34 +156,21 @@ struct Device {
 }
 
 impl DeviceMonitor {
-    async fn new(
-        dbus_conn: &zbus::Connection,
-        mac: String,
-        adapter_mac: Option<String>,
-    ) -> Result<Self> {
-        let manager_proxy = ObjectManagerProxy::builder(dbus_conn)
+    async fn new(mac: String, adapter_mac: Option<String>) -> Result<Self> {
+        let dbus_conn = new_system_dbus_connection().await?;
+        let manager_proxy = ObjectManagerProxy::builder(&dbus_conn)
             .destination("org.bluez")
             .and_then(|x| x.path("/"))
             .unwrap()
             .build()
             .await
             .error("Failed to create ObjectManagerProxy")?;
-        let interface_added = manager_proxy
-            .receive_interfaces_added()
-            .await
-            .error("Failed to monitor interfaces")?;
-        let interface_removed = manager_proxy
-            .receive_interfaces_removed()
-            .await
-            .error("Failed to monitor interfaces")?;
         let device = Device::try_find(&manager_proxy, &mac, adapter_mac.as_deref()).await?;
         Ok(Self {
             mac,
             adapter_mac,
             manager_proxy,
             device,
-            interface_added,
-            interface_removed,
         })
     }
 
@@ -201,46 +183,60 @@ impl DeviceMonitor {
 
     async fn wait_for_change(&mut self) -> Result<()> {
         match &mut self.device {
-            None => loop {
-                select! {
-                    _ = self.interface_added.next() => {
-                        if let Some(device) = Device::try_find(
-                            &self.manager_proxy,
-                            &self.mac,
-                            self.adapter_mac.as_deref()
-                        ).await?
-                        {
-                            self.device = Some(device);
-                            debug!("Device has been added");
-                            return Ok(());
-                        }
+            None => {
+                let mut interface_added = self
+                    .manager_proxy
+                    .receive_interfaces_added()
+                    .await
+                    .error("Failed to monitor interfaces")?;
+                loop {
+                    interface_added
+                        .next()
+                        .await
+                        .error("Stream ended unexpectedly")?;
+                    if let Some(device) = Device::try_find(
+                        &self.manager_proxy,
+                        &self.mac,
+                        self.adapter_mac.as_deref(),
+                    )
+                    .await?
+                    {
+                        self.device = Some(device);
+                        debug!("Device has been added");
+                        return Ok(());
                     }
-                    _ = self.interface_removed.next() => {
-                       debug!("Device interface was removed");
-                    },
                 }
-            },
-            Some(device) if !device.available => loop {
-                select! {
-                    Some(event) = self.interface_added.next() => {
-                        let args = event.args().error("Failed to get the args")?;
-                        if args.object_path() == device.device.path() {
-                            device.available = true;
-                            debug!("Device is now available");
-                            return Ok(());
-                        }
+            }
+            Some(device) if !device.available => {
+                let mut interface_added = self
+                    .manager_proxy
+                    .receive_interfaces_added()
+                    .await
+                    .error("Failed to monitor interfaces")?;
+                loop {
+                    let event = interface_added
+                        .next()
+                        .await
+                        .error("Stream ended unexpectedly")?;
+                    let args = event.args().error("Failed to get the args")?;
+                    if args.object_path() == device.device.path() {
+                        device.available = true;
+                        debug!("Device is now available");
+                        return Ok(());
                     }
-                    _ = self.interface_removed.next() => {
-                        debug!("Device interface was removed");
-                    },
                 }
-            },
+            }
             Some(device) => {
                 let mut updates = device
                     .props
                     .receive_properties_changed()
                     .await
                     .error("Failed to receive updates")?;
+                let mut interface_removed = self
+                    .manager_proxy
+                    .receive_interfaces_removed()
+                    .await
+                    .error("Failed to monitor interfaces")?;
                 loop {
                     select! {
                         _ = updates.next() => {
@@ -251,10 +247,7 @@ impl DeviceMonitor {
                             debug!("Got update for device");
                             return Ok(());
                         }
-                        _ = self.interface_added.next() => {
-                            debug!("Device interface was added");
-                        }
-                        Some(event) = self.interface_removed.next() => {
+                        Some(event) = interface_removed.next() => {
                             let args = event.args().error("Failed to get the args")?;
                             if args.object_path() == device.device.path() {
                                 device.available = false;
