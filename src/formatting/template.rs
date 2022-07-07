@@ -21,7 +21,7 @@ pub enum Token {
     Recursive(FormatTemplate),
     Var {
         name: String,
-        formatter: Option<Box<dyn Formatter + Send + Sync>>,
+        formatter: Option<Box<dyn Formatter>>,
     },
 }
 

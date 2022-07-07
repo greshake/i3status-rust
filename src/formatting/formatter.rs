@@ -61,7 +61,7 @@ enum EngFixArgs {
     Prefix,
 }
 
-pub trait Formatter: Debug {
+pub trait Formatter: Debug + Send + Sync {
     fn format(&self, val: &Value) -> Result<String>;
 
     fn interval(&self) -> Option<Duration> {
@@ -69,7 +69,7 @@ pub trait Formatter: Debug {
     }
 }
 
-pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter + Send + Sync>> {
+pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter>> {
     match name {
         "str" => {
             let min_width: usize = match args.get(StrArgs::MinWidth as usize) {
