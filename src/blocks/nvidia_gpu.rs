@@ -175,6 +175,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     }
 }
 
+#[derive(Debug)]
 struct GpuInfo {
     name: String,
     mem_total: f64,   // bytes
@@ -214,13 +215,13 @@ impl FromStr for GpuInfo {
                 let info = GpuInfo {
                     $(
                     $part: {
-                    let $part = parts
-                        .next()
-                        .or_error(|| format!("missing property: '{}'", stringify!($part)))?
-                        .parse::<$t>()
-                        .or_error(|| format!("bad property '{}'", stringify!($part)))?;
-                    $(let $part = $part * $mul;)?
-                    $part
+                        let $part = parts
+                            .next()
+                            .error(concat!("missing property: ", stringify!($part)))?
+                            .parse::<$t>()
+                            .error(concat!("bad property: ", stringify!($part)))?;
+                        $(let $part = $part * $mul;)?
+                        $part
                     },
                     )*
                 };
