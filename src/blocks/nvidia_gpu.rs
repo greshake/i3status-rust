@@ -227,8 +227,8 @@ impl FromStr for GpuInfo {
                 Ok(info)
             }}
         }
-        // `memory` and `clocks` are initially in MB and MHz, so we have to divide them by 1_000_000
-        parse!(s -> name: String, mem_total: f64 * 1e-6, utilization: f64, mem_used: f64 * 1e-6, temperature: u32, fan_speed: u32, clocks: f64 * 1e-6, power_draw: f64)
+        // `memory` and `clocks` are initially in MB and MHz, so we have to multiply them by 1_000_000
+        parse!(s -> name: String, mem_total: f64 * 1e6, utilization: f64, mem_used: f64 * 1e6, temperature: u32, fan_speed: u32, clocks: f64 * 1e6, power_draw: f64)
     }
 }
 
