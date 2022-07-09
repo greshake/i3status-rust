@@ -263,6 +263,7 @@
 <span id="258">258</span>
 <span id="259">259</span>
 <span id="260">260</span>
+<span id="261">261</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Display the stats of your NVidia GPU</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! By default `show_temperature` shows the used memory. Clicking the left mouse on the</span>
@@ -440,6 +441,7 @@
     }
 }
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">struct</span> <span class="ident">GpuInfo</span> {
     <span class="ident">name</span>: <span class="ident">String</span>,
     <span class="ident">mem_total</span>: <span class="ident">f64</span>,   <span class="comment">// bytes</span>
@@ -479,21 +481,21 @@
                 <span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">GpuInfo</span> {
                     $(
                     <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>: {
-                    <span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">=</span> <span class="ident">parts</span>
-                        .<span class="ident">next</span>()
-                        .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;missing property: &#39;{}&#39;&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>)))<span class="question-mark">?</span>
-                        .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span><span class="op">&gt;</span>()
-                        .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;bad property &#39;{}&#39;&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>)))<span class="question-mark">?</span>;
-                    $(<span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">*</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mul</span>;)<span class="question-mark">?</span>
-                    <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>
+                        <span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">=</span> <span class="ident">parts</span>
+                            .<span class="ident">next</span>()
+                            .<span class="ident">error</span>(<span class="macro">concat!</span>(<span class="string">&quot;missing property: &quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>)))<span class="question-mark">?</span>
+                            .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span><span class="op">&gt;</span>()
+                            .<span class="ident">error</span>(<span class="macro">concat!</span>(<span class="string">&quot;bad property: &quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>)))<span class="question-mark">?</span>;
+                        $(<span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">*</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mul</span>;)<span class="question-mark">?</span>
+                        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>
                     },
                     )<span class="op">*</span>
                 };
                 <span class="prelude-val">Ok</span>(<span class="ident">info</span>)
             }}
         }
-        <span class="comment">// `memory` and `clocks` are initially in MB and MHz, so we have to divide them by 1_000_000</span>
-        <span class="macro">parse!</span>(<span class="ident">s</span> -&gt; <span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">mem_total</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e-6</span>, <span class="ident">utilization</span>: <span class="ident">f64</span>, <span class="ident">mem_used</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e-6</span>, <span class="ident">temperature</span>: <span class="ident">u32</span>, <span class="ident">fan_speed</span>: <span class="ident">u32</span>, <span class="ident">clocks</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e-6</span>, <span class="ident">power_draw</span>: <span class="ident">f64</span>)
+        <span class="comment">// `memory` and `clocks` are initially in MB and MHz, so we have to multiply them by 1_000_000</span>
+        <span class="macro">parse!</span>(<span class="ident">s</span> -&gt; <span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">mem_total</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>, <span class="ident">utilization</span>: <span class="ident">f64</span>, <span class="ident">mem_used</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>, <span class="ident">temperature</span>: <span class="ident">u32</span>, <span class="ident">fan_speed</span>: <span class="ident">u32</span>, <span class="ident">clocks</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>, <span class="ident">power_draw</span>: <span class="ident">f64</span>)
     }
 }
 
