@@ -6,7 +6,7 @@
 //!
 //! Tip: On Arch Linux you can setup a `pacman` hook to signal i3status-rs to update after packages have been upgraded, so you won't have stale info in your pacman block. Create `/etc/pacman.d/hooks/i3status-rust.hook` with the below contents:
 //!
-//! Note: `pikaur` may hang the whole block if there is no internet connectivity. In that case, try a different AUR helper.
+//! Note: `pikaur` may hang the whole block if there is no internet connectivity (reference)[https://github.com/actionless/pikaur/issues/595]. In that case, try a different AUR helper.
 //! ```ini
 //! [Trigger]
 //! Operation = Upgrade
