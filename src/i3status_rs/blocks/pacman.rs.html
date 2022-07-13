@@ -376,10 +376,6 @@
 <span id="371">371</span>
 <span id="372">372</span>
 <span id="373">373</span>
-<span id="374">374</span>
-<span id="375">375</span>
-<span id="376">376</span>
-<span id="377">377</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available on pacman or an AUR helper.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Requires fakeroot to be installed (only required for pacman).</span>
@@ -404,7 +400,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|---------</span>
-<span class="doccomment">//! `interval` | Update interval, in seconds. | `600`</span>
+<span class="doccomment">//! `interval` | Update interval, in seconds. If setting `aur_command` then set interval appropriately as to not exceed the AUR&#39;s daily rate limit. | `600`</span>
 <span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot;$pacman.eng(1)&quot;`</span>
 <span class="doccomment">//! `format_singular` | Same as `format` but for when exactly one update is available. | `&quot;$pacman.eng(1)&quot;`</span>
 <span class="doccomment">//! `format_up_to_date` | Same as `format` but for when no updates are available. | `&quot;$pacman.eng(1)&quot;`</span>
@@ -420,10 +416,6 @@
 <span class="doccomment">//! `both`  | Cumulative number of updates available according to `pacman` and `&lt;aur_command&gt;` | Number | -</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Examples</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Update the list of pending updates every ten minutes (600 seconds):</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Update interval should be set appropriately as to not exceed the AUR&#39;s daily rate limit.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! pacman only config:</span>
 <span class="doccomment">//!</span>
