@@ -100,6 +100,30 @@ use tokio::process::Command;
 use super::prelude::*;
 use crate::util::has_command;
 
+make_log_macro!(debug, "pacman");
+
+static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
+    let path = match env::var_os("CHECKUPDATES_DB") {
+        Some(val) => val.into(),
+        None => {
+            let mut path = env::temp_dir();
+            let user = env::var("USER").unwrap_or_default();
+            path.push(format!("checkup-db-{user}"));
+            path
+        }
+    };
+    debug!("Using {} as updates DB path", path.display());
+    path
+});
+
+static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
+    let path = env::var_os("DBPath")
+        .map(Into::into)
+        .unwrap_or_else(|| PathBuf::from("/var/lib/pacman/"));
+    debug!("Using {} as pacman DB path", path.display());
+    path
+});
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct PacmanConfig {
@@ -282,50 +306,33 @@ async fn check_fakeroot_command_exists() -> Result<()> {
     }
 }
 
-fn get_updates_db_dir() -> PathBuf {
-    match env::var_os("CHECKUPDATES_DB") {
-        Some(val) => val.into(),
-        None => {
-            let mut path = env::temp_dir();
-            let user = env::var("USER").unwrap_or_default();
-            path.push(format!("checkup-db-{user}"));
-            path
-        }
-    }
-}
-
 async fn get_pacman_available_updates() -> Result<String> {
-    let updates_db = get_updates_db_dir();
-
-    // Determine pacman database path
-    let db_path = env::var_os("DBPath")
-        .map(Into::into)
-        .unwrap_or_else(|| PathBuf::from("/var/lib/pacman/"));
-
     // Create the determined `checkup-db` path recursively
-    create_dir_all(&updates_db).await.or_error(|| {
+    create_dir_all(&*PACMAN_UPDATES_DB).await.or_error(|| {
         format!(
             "Failed to create checkup-db directory at '{}'",
-            updates_db.display()
+            PACMAN_UPDATES_DB.display()
         )
     })?;
 
     // Create symlink to local cache in `checkup-db` if required
-    let local_cache = updates_db.join("local");
+    let local_cache = PACMAN_UPDATES_DB.join("local");
     if !local_cache.exists() {
-        symlink(db_path.join("local"), local_cache)
+        symlink(PACMAN_DB.join("local"), local_cache)
             .await
             .error("Failed to created required symlink")?;
     }
 
     // Update database
+    //
+    // Why is this a shell command anyway?
     let status = Command::new("sh")
         .env("LC_ALL", "C")
         .args([
             "-c",
             &format!(
                 "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null",
-                updates_db.display()
+                PACMAN_UPDATES_DB.display()
             ),
         ])
         .stdout(Stdio::null())
@@ -340,7 +347,10 @@ async fn get_pacman_available_updates() -> Result<String> {
         .env("LC_ALL", "C")
         .args([
             "-c",
-            &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db.display()),
+            &format!(
+                "fakeroot pacman -Qu --dbpath \"{}\"",
+                PACMAN_UPDATES_DB.display()
+            ),
         ])
         .output()
         .await
