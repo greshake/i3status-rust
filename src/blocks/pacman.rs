@@ -22,7 +22,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|---------
-//! `interval` | Update interval, in seconds. | `600`
+//! `interval` | Update interval, in seconds. If setting `aur_command` then set interval appropriately as to not exceed the AUR's daily rate limit. | `600`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `"$pacman.eng(1)"`
 //! `format_singular` | Same as `format` but for when exactly one update is available. | `"$pacman.eng(1)"`
 //! `format_up_to_date` | Same as `format` but for when no updates are available. | `"$pacman.eng(1)"`
@@ -38,10 +38,6 @@
 //! `both`  | Cumulative number of updates available according to `pacman` and `<aur_command>` | Number | -
 //!
 //! # Examples
-//!
-//! Update the list of pending updates every ten minutes (600 seconds):
-//!
-//! Update interval should be set appropriately as to not exceed the AUR's daily rate limit.
 //!
 //! pacman only config:
 //!
