@@ -324,16 +324,16 @@ async fn get_pacman_available_updates() -> Result<String> {
     }
 
     // Update database
-    //
-    // Why is this a shell command anyway?
-    let status = Command::new("sh")
+    let status = Command::new("fakeroot")
         .env("LC_ALL", "C")
         .args([
-            "-c",
-            &format!(
-                "fakeroot -- pacman -Sy --dbpath \"{}\" --logfile /dev/null",
-                PACMAN_UPDATES_DB.display()
-            ),
+            "--".as_ref(),
+            "pacman".as_ref(),
+            "-Sy".as_ref(),
+            "--dbpath".as_ref(),
+            PACMAN_UPDATES_DB.as_os_str(),
+            "--logfile".as_ref(),
+            "/dev/null".as_ref(),
         ])
         .stdout(Stdio::null())
         .status()
@@ -343,14 +343,14 @@ async fn get_pacman_available_updates() -> Result<String> {
         return Err(Error::new("pacman -Sy exited with non zero exit status"));
     }
 
-    let stdout = Command::new("sh")
+    let stdout = Command::new("fakeroot")
         .env("LC_ALL", "C")
         .args([
-            "-c",
-            &format!(
-                "fakeroot pacman -Qu --dbpath \"{}\"",
-                PACMAN_UPDATES_DB.display()
-            ),
+            "--".as_ref(),
+            "pacman".as_ref(),
+            "-Qu".as_ref(),
+            "--dbpath".as_ref(),
+            PACMAN_UPDATES_DB.as_os_str(),
         ])
         .output()
         .await
