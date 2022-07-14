@@ -29,8 +29,10 @@
 //! format_singular = "One update available"
 //! format_up_to_date = "system up to date"
 //! critical_updates_regex = "(linux|linux-lts|linux-zen)"
+//! [[block.click]]
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.
-//! on_click = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
+//! button = "left"
+//! cmd = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
 //! ```
 //!
 //! # Icons Used
