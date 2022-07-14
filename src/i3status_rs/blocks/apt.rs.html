@@ -196,6 +196,8 @@
 <span id="191">191</span>
 <span id="192">192</span>
 <span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Debian/Ubuntu based system</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.</span>
@@ -230,8 +232,10 @@
 <span class="doccomment">//! format_singular = &quot;One update available&quot;</span>
 <span class="doccomment">//! format_up_to_date = &quot;system up to date&quot;</span>
 <span class="doccomment">//! critical_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;</span>
+<span class="doccomment">//! [[block.click]]</span>
 <span class="doccomment">//! # shows dmenu with cached available updates. Any dmenu alternative should also work.</span>
-<span class="doccomment">//! on_click = &quot;APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu&quot;</span>
+<span class="doccomment">//! button = &quot;left&quot;</span>
+<span class="doccomment">//! cmd = &quot;APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu&quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
