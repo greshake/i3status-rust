@@ -22,7 +22,7 @@ file = "<file_2>"
 where `<file>` can be either a filename or a full path and will be checked in this order:
 
 1. If full path given, then use it as is: `/home/foo/custom_theme.toml`
-2. If filename given, e.g. "custom_theme.toml", then first check `XDG_CONFIG_HOME/i3status-rust/themes`
+2. If filename given, e.g. "custom_theme.toml", then first check `$XDG_CONFIG_HOME/i3status-rust/themes`
 3. Then look for it in `~/.local/share/i3status-rust/themes`
 4. Otherwise look for it in `/usr/share/i3status-rust/themes`
 
