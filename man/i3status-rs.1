@@ -179,8 +179,10 @@ format = \[dq]$count updates available\[dq]
 format_singular = \[dq]One update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
 critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
+[[block.click]]
 ### shows dmenu with cached available updates. Any dmenu alternative should also work.
-on_click = \[dq]APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu\[dq]
+button = \[dq]left\[dq]
+cmd = \[dq]APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu\[dq]
 \f[R]
 .fi
 .SS Icons Used
@@ -1240,8 +1242,10 @@ format = \[dq]$count.eng(1) updates available\[dq]
 format_singular = \[dq]One update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
 critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
+[[block.click]]
 ### shows dmenu with cached available updates. Any dmenu alternative should also work.
-on_click = \[dq]dnf list -q --upgrades | tail -n +2 | rofi -dmenu\[dq]
+button = \[dq]left\[dq]
+cmd = \[dq]dnf list -q --upgrades | tail -n +2 | rofi -dmenu\[dq]
 \f[R]
 .fi
 .SS Icons Used
@@ -2144,7 +2148,7 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-\[lq]$name $bat_icon $bat_charge{ $notif_icon|}\[rq]
+\[lq]$name{ $bat_icon $bat_charge|}{ $notif_icon|}\[rq]
 T}
 T{
 \f[V]bat_info\f[R]
@@ -2185,7 +2189,7 @@ T}
 .PP
 .TS
 tab(@);
-lw(11.1n) lw(48.5n) lw(6.4n) lw(4.0n).
+lw(9.7n) lw(51.3n) lw(5.5n) lw(3.5n).
 T{
 Placeholder
 T}@T{
@@ -2199,7 +2203,7 @@ _
 T{
 \f[V]bat_icon\f[R]
 T}@T{
-Battery level indicator (only when connected)
+Battery level indicator (only when connected and if supported)
 T}@T{
 Icon
 T}@T{
@@ -2208,7 +2212,7 @@ T}
 T{
 \f[V]bat_charge\f[R]
 T}@T{
-Battery charge level (only when connected)
+Battery charge level (only when connected and if supported)
 T}@T{
 Number
 T}@T{
@@ -2226,7 +2230,7 @@ T}
 T{
 \f[V]notif_count\f[R]
 T}@T{
-Number of notifications on your phone (only when connected)
+Number of notifications on your phone (only when connected and non-zero)
 T}@T{
 Number
 T}@T{
@@ -2235,7 +2239,7 @@ T}
 T{
 \f[V]name\f[R]
 T}@T{
-Name of your device as reported by KDEConnect
+Name of your device as reported by KDEConnect (if available)
 T}@T{
 Text
 T}@T{
@@ -2259,33 +2263,33 @@ Do not show the name, do not set the \[lq]good\[rq] state.
 \f[C]
 [[block]]
 block = \[dq]kdeconnect\[dq]
-format = \[dq]$bat_icon $bat_charge{ $notif_icon|}\[dq]
+format = \[dq]{$bat_icon $bat_charge|}{ $notif_icon|}\[dq]
 bat_good = 101
 \f[R]
 .fi
 .SS Icons Used
 .IP \[bu] 2
-\[lq]bat_charging\[rq],
+\f[V]bat_charging\f[R],
 .IP \[bu] 2
-\[lq]bat_10\[rq],
+\f[V]bat_10\f[R],
 .IP \[bu] 2
-\[lq]bat_20\[rq],
+\f[V]bat_20\f[R],
 .IP \[bu] 2
-\[lq]bat_30\[rq],
+\f[V]bat_30\f[R],
 .IP \[bu] 2
-\[lq]bat_40\[rq],
+\f[V]bat_40\f[R],
 .IP \[bu] 2
-\[lq]bat_50\[rq],
+\f[V]bat_50\f[R],
 .IP \[bu] 2
-\[lq]bat_60\[rq],
+\f[V]bat_60\f[R],
 .IP \[bu] 2
-\[lq]bat_70\[rq],
+\f[V]bat_70\f[R],
 .IP \[bu] 2
-\[lq]bat_80\[rq],
+\f[V]bat_80\f[R],
 .IP \[bu] 2
-\[lq]bat_90\[rq],
+\f[V]bat_90\f[R],
 .IP \[bu] 2
-\[lq]bat_full\[rq],
+\f[V]bat_full\f[R],
 .IP \[bu] 2
 \f[V]notification\f[R]
 .IP \[bu] 2
@@ -2931,6 +2935,65 @@ critical_mem = 90
 \f[V]memory_mem\f[R]
 .IP \[bu] 2
 \f[V]memory_swap\f[R]
+.SS menu
+.PP
+A custom menu
+.PP
+This block allows you to quickly run a custom shell command.
+Left-click on this block to activate it, then scroll through configured
+items.
+Left-click on the item to run it and optionally confirm your action by
+left-clicking again.
+Right-click any time to deactivate this block.
+.SS Configuration
+.PP
+.TS
+tab(@);
+lw(14.0n) lw(28.0n) lw(28.0n).
+T{
+Key
+T}@T{
+Values
+T}@T{
+Default
+T}
+_
+T{
+\f[V]text\f[R]
+T}@T{
+Text that will be displayed when the block is inactive.
+T}@T{
+\f[B]Required\f[R]
+T}
+T{
+\f[V]items\f[R]
+T}@T{
+A list of \[lq]items\[rq].
+See examples below.
+T}@T{
+\f[B]Required\f[R]
+T}
+.TE
+.SS Example
+.IP
+.nf
+\f[C]
+[[block]]
+block = \[dq]menu\[dq]
+text = \[dq]\[rs]uf011\[dq]
+[[block.items]]
+display = \[dq] -&gt;   Sleep   &lt;-\[dq]
+cmd = \[dq]systemctl suspend\[dq]
+[[block.items]]
+display = \[dq] -&gt; Power Off &lt;-\[dq]
+cmd = \[dq]poweroff\[dq]
+confirm_msg = \[dq]Are you sure you want to power off?\[dq]
+[[block.items]]
+display = \[dq] -&gt;  Reboot   &lt;-\[dq]
+cmd = \[dq]reboot\[dq]
+confirm_msg = \[dq]Are you sure you want to reboot?\[dq]
+\f[R]
+.fi
 .SS music
 .PP
 The current song title and artist
@@ -2977,7 +3040,9 @@ T}
 T{
 \f[V]player\f[R]
 T}@T{
-Name of the music player MPRIS interface.
+Name(s) of the music player(s) MPRIS interface.
+This can be either a music player name or an array of music player
+names.
 Run busctl \[en]user list | grep \[lq]org.mpris.MediaPlayer2.\[rq] | cut
 -d\[cq] \[cq] -f1 and the name is the part after
 \[lq]org.mpris.MediaPlayer2.\[rq].
@@ -3218,7 +3283,7 @@ T}
 .PP
 .TS
 tab(@);
-l l l l.
+lw(18.8n) lw(27.2n) lw(8.4n) lw(15.7n).
 T{
 Placeholder
 T}@T{
@@ -3293,7 +3358,7 @@ T}@T{
 Hz
 T}
 T{
-\f[V]signal\f[R]
+\f[V]signal_strength\f[R]
 T}@T{
 WiFi signal
 T}@T{
@@ -3310,7 +3375,7 @@ Display WiFi info if available
 \f[C]
 [[block]]
 block = \[dq]net\[dq]
-format = \[dq]{$signal.eng(2) $ssid.str() $frequency.eng()|Wired connection} via $device.str()\[dq]
+format = \[dq]{$signal_strength $ssid $frequency|Wired connection} via $device\[dq]
 \f[R]
 .fi
 .SS Icons Used
@@ -3678,11 +3743,12 @@ substitute that dir instead of /tmp/checkup-db-yourusername.
 Tip: On Arch Linux you can setup a \f[V]pacman\f[R] hook to signal
 i3status-rs to update after packages have been upgraded, so you
 won\[cq]t have stale info in your pacman block.
-Create \f[V]/usr/share/libalpm/hooks/i3status.hook\f[R] with the below
+Create \f[V]/etc/pacman.d/hooks/i3status-rust.hook\f[R] with the below
 contents:
 .PP
 Note: \f[V]pikaur\f[R] may hang the whole block if there is no internet
-connectivity.
+connectivity
+(reference)[https://github.com/actionless/pikaur/issues/595].
 In that case, try a different AUR helper.
 .IP
 .nf
@@ -3714,6 +3780,8 @@ T{
 \f[V]interval\f[R]
 T}@T{
 Update interval, in seconds.
+If setting \f[V]aur_command\f[R] then set interval appropriately as to
+not exceed the AUR\[cq]s daily rate limit.
 T}@T{
 \f[V]600\f[R]
 T}
@@ -3815,11 +3883,6 @@ T}
 .TE
 .SS Examples
 .PP
-Update the list of pending updates every ten minutes (600 seconds):
-.PP
-Update interval should be set appropriately as to not exceed the
-AUR\[cq]s daily rate limit.
-.PP
 pacman only config:
 .IP
 .nf
@@ -3831,8 +3894,10 @@ format = \[dq]$pacman updates available\[dq]
 format_singular = \[dq]$pacman update available\[dq]
 format_up_to_date = \[dq]system up to date\[dq]
 critical_updates_regex = \[dq](linux|linux-lts|linux-zen)\[dq]
+[[block.click]]
 ### pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
-on_click = \[dq]fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu\[dq]
+button = \[dq]left\[dq]
+cmd = \[dq]fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu\[dq]
 \f[R]
 .fi
 .PP
@@ -4177,13 +4242,6 @@ T}@T{
 \f[V]None\f[R]
 T}
 T{
-\f[V]on_click\f[R]
-T}@T{
-Shell command to run when the sound block is clicked.
-T}@T{
-\f[V]None\f[R]
-T}
-T{
 \f[V]show_volume_when_muted\f[R]
 T}@T{
 Show the volume even if it is currently muted.
@@ -4272,14 +4330,13 @@ This block which requires
 .PP
 .TS
 tab(@);
-lw(9.3n) lw(18.7n) lw(23.3n) lw(18.7n).
+lw(14.0n) lw(28.0n) lw(28.0n).
 T{
 Key
 T}@T{
 Values
 T}@T{
 Default
-T}@T{
 T}
 _
 T{
@@ -4289,7 +4346,6 @@ A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
 \f[V]\[dq]$ping$speed_down$speed_up\[dq]\f[R]
-T}@T{
 T}
 T{
 \f[V]interval\f[R]
@@ -4297,7 +4353,6 @@ T}@T{
 Update interval in seconds
 T}@T{
 \f[V]1800\f[R]
-T}@T{
 T}
 .TE
 .PP
@@ -5513,8 +5568,8 @@ Example configurations can be found as \f[V]example_theme.toml\f[R] and
 \f[V]example_icon.toml\f[R].
 .PP
 Besides global overrides you may also use per-block overrides using the
-\f[V]theme_overrides\f[R] and \f[V]icons_format\f[R] options available
-for all blocks.
+\f[V]theme_overrides\f[R], \f[V]icons_overrides\f[R] and
+\f[V]icons_format\f[R] options available for all blocks.
 For example:
 .IP
 .nf
@@ -5525,6 +5580,9 @@ icons_format = \[dq]{icon}\[dq] # Remove spaces aroud icons for this block.
 [block.theme_overrides]
 idle_bg = \[dq]#123456\[dq]
 idle_fg = \[dq]#abcdef\[dq]
+[block.icons_overrides]
+cpu_boost_on = \[dq]ON\[dq]
+cpu_boost_off = \[dq]OFF\[dq]
 \f[R]
 .fi
 .SS Available theme overrides
