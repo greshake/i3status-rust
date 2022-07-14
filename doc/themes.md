@@ -1,4 +1,4 @@
-The bar can be themed either by specifying a pre-complied theme or overriding defaults in the configuration.  
+The bar can be themed either by specifying a predefined theme or overriding defaults in the configuration.  
 We differentiate between themes and icon sets.
 
 ## Choosing your theme and icon set
