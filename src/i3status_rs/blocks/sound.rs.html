@@ -271,7 +271,6 @@
 <span id="266">266</span>
 <span id="267">267</span>
 <span id="268">268</span>
-<span id="269">269</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.</span>
@@ -317,7 +316,6 @@
 <span class="doccomment">//! `natural_mapping` | When using the ALSA driver, display the &quot;mapped volume&quot; as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`</span>
 <span class="doccomment">//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`</span>
 <span class="doccomment">//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`</span>
-<span class="doccomment">//! `on_click` | Shell command to run when the sound block is clicked. | `None`</span>
 <span class="doccomment">//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`</span>
 <span class="doccomment">//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`</span>
 <span class="doccomment">//!</span>
