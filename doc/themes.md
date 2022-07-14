@@ -62,7 +62,7 @@ Notes:
 * `nord-dark` (polar night)
 ![nord-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)
 * `dracula`
-![dracula](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/dracula.png)
+//TODO add an image
 * `srcery`
 ![srcery](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/srcery.png)
 
