@@ -14,7 +14,7 @@
 //! ```toml
 //! [[block]]
 //! block = "uptime"
-//! interval = "3600" # update every hour
+//! interval = 3600 # update every hour
 //! ```
 //!
 //! # Used Icons
