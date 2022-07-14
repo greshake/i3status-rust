@@ -1,291 +1,358 @@
-pub mod apt;
-pub mod backlight;
-pub mod base_block;
-pub mod battery;
-pub mod bluetooth;
-pub mod cpu;
-pub mod custom;
-pub mod custom_dbus;
-pub mod disk_space;
-pub mod dnf;
-pub mod docker;
-pub mod external_ip;
-pub mod focused_window;
-pub mod github;
-pub mod hueshift;
-pub mod ibus;
-pub mod kdeconnect;
-pub mod keyboard_layout;
-pub mod load;
-#[cfg(feature = "maildir")]
-pub mod maildir;
-pub mod memory;
-pub mod music;
-pub mod net;
-pub mod networkmanager;
-pub mod notify;
-#[cfg(feature = "notmuch")]
-pub mod notmuch;
-pub mod nvidia_gpu;
-pub mod pacman;
-pub mod pomodoro;
-pub mod rofication;
-pub mod sound;
-pub mod speedtest;
-pub mod taskwarrior;
-pub mod temperature;
-pub mod template;
-pub mod time;
-pub mod toggle;
-pub mod uptime;
-pub mod watson;
-pub mod weather;
-pub mod xrandr;
+//! The collection of blocks
 
-use self::apt::*;
-use self::backlight::*;
-use self::base_block::*;
-use self::battery::*;
-use self::bluetooth::*;
-use self::cpu::*;
-use self::custom::*;
-use self::custom_dbus::*;
-use self::disk_space::*;
-use self::dnf::*;
-use self::docker::*;
-use self::external_ip::*;
-use self::focused_window::*;
-use self::github::*;
-use self::hueshift::*;
-use self::ibus::*;
-use self::kdeconnect::*;
-use self::keyboard_layout::*;
-use self::load::*;
-#[cfg(feature = "maildir")]
-use self::maildir::*;
-use self::memory::*;
-use self::music::*;
-use self::net::*;
-use self::networkmanager::*;
-use self::notify::*;
-#[cfg(feature = "notmuch")]
-use self::notmuch::*;
-use self::nvidia_gpu::*;
-use self::pacman::*;
-use self::pomodoro::*;
-use self::rofication::*;
-use self::sound::*;
-use self::speedtest::*;
-use self::taskwarrior::*;
-use self::temperature::*;
-use self::template::*;
-use self::time::*;
-use self::toggle::*;
-use self::uptime::*;
-use self::watson::*;
-use self::weather::*;
-use self::xrandr::*;
+pub mod prelude;
 
+use crate::BoxedFuture;
+use futures::future::FutureExt;
+use serde::de::{self, Deserializer};
+use serde::Deserialize;
+use tokio::sync::mpsc;
+use toml::value::Table;
+
+use std::collections::HashMap;
+use std::future::Future;
 use std::time::Duration;
 
-use crossbeam_channel::Sender;
-use serde::de::Deserialize;
-use toml::value::Value;
-
+use crate::click::{ClickHandler, MouseButton};
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::protocol::i3bar_event::I3BarEvent;
-use crate::scheduler::Task;
-use crate::widgets::I3BarWidget;
+use crate::widget::{State, Widget};
+use crate::{Request, RequestCmd};
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum Update {
-    Every(Duration),
-    Once,
+macro_rules! define_blocks {
+    {
+        $( $(#[cfg($attr: meta)])? $block: ident $(,)? )*
+    } => {
+        $(
+            $(#[cfg($attr)])?
+            pub mod $block;
+        )*
+
+        #[derive(Debug, Clone, Copy)]
+        pub enum BlockType {
+            $(
+                $(#[cfg($attr)])?
+                #[allow(non_camel_case_types)]
+                $block,
+            )*
+        }
+
+        impl BlockType {
+            pub fn run(self, config: toml::Value, api: CommonApi) -> BlockFuture {
+                let id = api.id;
+                match self {
+                    $(
+                        $(#[cfg($attr)])?
+                        Self::$block => {
+                            $block::run(config, api).map(move |e| e.in_block(self, id)).boxed_local()
+                        }
+                    )*
+                }
+            }
+        }
+
+        impl<'de> Deserialize<'de> for BlockType {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct Visitor;
+
+                impl<'de> de::Visitor<'de> for Visitor {
+                    type Value = BlockType;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        formatter.write_str("a block name")
+                    }
+
+                    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+                    where
+                        E: de::Error,
+                    {
+                        match v {
+                            $(
+                            $(#[cfg($attr)])?
+                            stringify!($block) => Ok(BlockType::$block),
+                            $(
+                            #[cfg(not($attr))]
+                            stringify!($block) => Err(E::custom(format!("Block '{}' has to be enabled at the compile time", stringify!($block)))),
+                            )?
+                            )*
+                            unknown => Err(E::custom(format!("Unknown block '{unknown}'")))
+                        }
+                    }
+                }
+
+                deserializer.deserialize_str(Visitor)
+            }
+        }
+
+    };
 }
 
-impl Default for Update {
-    fn default() -> Self {
-        Update::Once
+define_blocks!(
+    apt,
+    backlight,
+    battery,
+    bluetooth,
+    cpu,
+    custom,
+    custom_dbus,
+    disk_space,
+    dnf,
+    docker,
+    external_ip,
+    focused_window,
+    github,
+    hueshift,
+    kdeconnect,
+    load,
+    #[cfg(feature = "maildir")]
+    maildir,
+    menu,
+    memory,
+    music,
+    net,
+    notify,
+    #[cfg(feature = "notmuch")]
+    notmuch,
+    nvidia_gpu,
+    pacman,
+    pomodoro,
+    rofication,
+    sound,
+    speedtest,
+    keyboard_layout,
+    taskwarrior,
+    temperature,
+    time,
+    toggle,
+    uptime,
+    watson,
+    weather,
+    xrandr,
+);
+
+pub type BlockFuture = BoxedFuture<Result<()>>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BlockEvent {
+    Click(I3BarEvent),
+    UpdateRequest,
+}
+
+pub struct CommonApi {
+    pub id: usize,
+    pub shared_config: SharedConfig,
+    pub event_receiver: mpsc::Receiver<BlockEvent>,
+
+    pub request_sender: mpsc::Sender<Request>,
+
+    pub error_interval: Duration,
+    pub error_format: Option<String>,
+}
+
+impl CommonApi {
+    /// A convenience function to create a new `Widget`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut widget = api
+    ///     .new_widget()
+    ///     .with_icon("docker")?
+    ///     .with_format(config.format.with_default("$running.eng(1)")?);
+    /// ```
+    pub fn new_widget(&self) -> Widget {
+        Widget::new(self.id, self.shared_config.clone())
     }
-}
 
-impl From<Duration> for Update {
-    fn from(d: Duration) -> Update {
-        Update::Every(d)
+    /// Sends the widget to be displayed.
+    pub async fn set_widget(&self, widget: &Widget) -> Result<()> {
+        self.request_sender
+            .send(Request {
+                block_id: self.id,
+                cmd: RequestCmd::SetWidget(Some(widget.clone())),
+            })
+            .await
+            .error("Failed to send Request")
     }
-}
 
-/// The ConfigBlock trait combines a constructor (new(...)) and an associated configuration type
-/// to form a block that can be instantiated from a piece of TOML (from the block configuration).
-/// The associated type has to be a deserializable struct, which you can then use to get your
-/// configurations from. The template shows you how to instantiate a simple Text widget.
-/// For more info on how to use widgets, just look into other Blocks. More documentation to come.
-///
-/// The sender object can be used to send asynchronous update request for any block from a separate
-/// thread, provide you know the Block's ID. This advanced feature can be used to reduce
-/// the number of system calls by asynchronously waiting for events. A usage example can be found
-/// in the Music block, which updates only when dbus signals a new song.
-pub trait ConfigBlock: Block {
-    type Config;
+    /// Hides the block. Send new widget to make it visible again.
+    pub async fn hide(&self) -> Result<()> {
+        self.request_sender
+            .send(Request {
+                block_id: self.id,
+                cmd: RequestCmd::SetWidget(None),
+            })
+            .await
+            .error("Failed to send Request")
+    }
 
-    /// Creates a new block from the relevant configuration.
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        update_request: Sender<Task>,
-    ) -> Result<Self>
+    /// Receive the next event, such as click notification or update request.
+    ///
+    /// This method should be called regularly to avoid sender blocking. Currently, the runtime is
+    /// single threaded, so full channel buffer will cause a deadlock. If receiving events is
+    /// impossible / meaningless, call `event_receiver.close()`.
+    ///
+    /// # Cancel safety
+    ///
+    /// This method is cancel safe.
+    ///
+    /// # Panics
+    ///
+    /// Panics if event sender is closed
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// tokio::select! {
+    ///     _ = timer.tick() => (),
+    ///     event = api.event() => match event {
+    ///         // ...
+    ///         _ => (),
+    ///     }
+    /// }
+    /// ```
+    pub async fn event(&mut self) -> BlockEvent {
+        match self.event_receiver.recv().await {
+            Some(event) => event,
+            None => panic!("events stream ended"),
+        }
+    }
+
+    /// Wait for the next update request.
+    ///
+    /// The update request can be send by clicking on the block (with `update=true`) or sending a
+    /// signal.
+    ///
+    /// # Cancel safety
+    ///
+    /// This method is cancel safe.
+    ///
+    /// # Panics
+    ///
+    /// Panics if event sender is closed
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// tokio::select! {
+    ///     _ = timer.tick() => (),
+    ///     _ = api.wait_for_update_request() => (),
+    /// }
+    /// ```
+    pub async fn wait_for_update_request(&mut self) {
+        while self.event().await != BlockEvent::UpdateRequest {}
+    }
+
+    pub fn get_icon(&self, icon: &str) -> Result<String> {
+        self.shared_config.get_icon(icon)
+    }
+
+    /// Repeatedly call provided async function until it succeeds.
+    ///
+    /// This function will call `f` in a loop. If it succeeds, the result will be returned.
+    /// Otherwise, the block will enter error mode: "X" will be shown and on left click the error
+    /// message will be shown.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let status = api.recoverable(|| Status::new(&*socket_path)).await?;
+    /// ```
+    pub async fn recoverable<Fn, Fut, T, E>(&mut self, mut f: Fn) -> Result<T>
     where
-        Self: Sized;
+        Fn: FnMut() -> Fut,
+        Fut: Future<Output = Result<T, E>>,
+        E: StdError,
+    {
+        let mut err_widget = None;
+        loop {
+            match f().await {
+                Ok(res) => return Ok(res),
+                Err(err) => {
+                    let widget = err_widget
+                        .get_or_insert_with(|| self.new_widget().with_state(State::Critical));
+                    let retry_at = tokio::time::Instant::now() + self.error_interval;
 
-    /// TODO: write documentation
-    fn override_on_click(&mut self) -> Option<&mut Option<String>> {
-        None
+                    loop {
+                        widget.set_text(if widget.full_screen {
+                            err.to_string()
+                        } else {
+                            "X".to_string()
+                        });
+                        self.set_widget(widget).await?;
+
+                        tokio::select! {
+                            _ = tokio::time::sleep_until(retry_at) => break,
+                            event = self.event() => match event {
+                                BlockEvent::UpdateRequest => break,
+                                BlockEvent::Click(click) => {
+                                    if click.button == MouseButton::Left {
+                                        widget.full_screen = !widget.full_screen;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
-/// The Block trait is used to interact with a block after it has been instantiated from ConfigBlock
-pub trait Block {
-    /// A unique id for the block (asigend by the constructor).
-    fn id(&self) -> usize;
+#[derive(Deserialize, Debug)]
+pub struct CommonConfig {
+    pub block: BlockType,
 
-    /// Use this function to return the widgets that comprise the UI of your component.
-    ///
-    /// The music block may, for example, be comprised of a text widget and multiple
-    /// buttons (buttons are also TextWidgets). Use a vec to wrap the references to your view.
-    fn view(&self) -> Vec<&dyn I3BarWidget>;
+    #[serde(default)]
+    pub click: ClickHandler,
+    #[serde(default)]
+    pub signal: Option<i32>,
+    #[serde(default)]
+    pub icons_format: Option<String>,
+    #[serde(default)]
+    pub theme_overrides: Option<HashMap<String, String>>,
+    #[serde(default)]
+    pub icons_overrides: Option<HashMap<String, String>>,
 
-    /// Required if you don't want a static block.
-    ///
-    /// Use this function to update the internal state of your block, for example during
-    /// periodic updates. Return the duration until your block wants to be updated next.
-    /// For example, a clock could request only to be updated every 60 seconds by returning
-    /// Some(Update::Every(Duration::new(60, 0))) every time. If you return None,
-    /// this function will not be called again automatically.
-    fn update(&mut self) -> Result<Option<Update>> {
-        Ok(None)
-    }
+    #[serde(default = "CommonConfig::default_error_interval")]
+    pub error_interval: u64,
+    #[serde(default)]
+    pub error_format: Option<String>,
 
-    /// Sends a signal event with the provided signal, this function is called on every block
-    /// for every signal event
-    fn signal(&mut self, _signal: i32) -> Result<()> {
-        Ok(())
-    }
-
-    /// Sends click events to the block.
-    ///
-    /// Here you can react to the user clicking your block. The I3BarEvent instance contains all
-    /// fields to describe the click action, including mouse button and location down to the pixel.
-    /// You may also update the internal state here.
-    ///
-    /// If block uses more that one widget, use the event.instance property to determine which widget was clicked.
-    fn click(&mut self, _event: &I3BarEvent) -> Result<()> {
-        Ok(())
-    }
+    #[serde(default)]
+    pub if_command: Option<String>,
 }
 
-macro_rules! block {
-    ($block_type:ident, $id:expr, $block_config:expr, $shared_config:expr, $update_request:expr) => {{
-        // Extract base(common) config
-        let common_config = BaseBlockConfig::extract(&mut $block_config);
-        let mut common_config = BaseBlockConfig::deserialize(common_config)
-            .configuration_error("Failed to deserialize common block config.")?;
+impl CommonConfig {
+    fn default_error_interval() -> u64 {
+        5
+    }
 
-        // Apply theme overrides if presented
-        if let Some(ref overrides) = common_config.theme_overrides {
-            $shared_config.theme_override(overrides)?;
+    pub fn new(from: &mut toml::Value) -> Result<Self> {
+        const FIELDS: &[&str] = &[
+            "block",
+            "click",
+            "signal",
+            "icons_format",
+            "theme_overrides",
+            "icons_overrides",
+            "error_interval",
+            "error_format",
+            "if_command",
+        ];
+        let mut common_table = Table::new();
+        if let Some(table) = from.as_table_mut() {
+            for &field in FIELDS {
+                if let Some(it) = table.remove(field) {
+                    common_table.insert(field.to_string(), it);
+                }
+            }
         }
-        if let Some(overrides) = common_config.icons_format {
-            $shared_config.icons_format_override(overrides);
-        }
-
-        // Extract block-specific config
-        let block_config = <$block_type as ConfigBlock>::Config::deserialize($block_config)
-            .configuration_error("Failed to deserialize block config.")?;
-
-        let mut block = $block_type::new($id, block_config, $shared_config, $update_request)?;
-        if let Some(overrided) = block.override_on_click() {
-            *overrided = common_config.on_click.take();
-        }
-
-        Ok(Box::new(BaseBlock {
-            name: stringify!($block_type).to_string(),
-            inner: block,
-            on_click: common_config.on_click,
-        }) as Box<dyn Block>)
-    }};
-}
-
-pub fn create_block(
-    id: usize,
-    name: &str,
-    mut block_config: Value,
-    mut shared_config: SharedConfig,
-    update_request: Sender<Task>,
-) -> Result<Box<dyn Block>> {
-    match name {
-        // Please keep these in alphabetical order.
-        "apt" => block!(Apt, id, block_config, shared_config, update_request),
-        "backlight" => block!(Backlight, id, block_config, shared_config, update_request),
-        "battery" => block!(Battery, id, block_config, shared_config, update_request),
-        "bluetooth" => block!(Bluetooth, id, block_config, shared_config, update_request),
-        "cpu" => block!(Cpu, id, block_config, shared_config, update_request),
-        "custom" => block!(Custom, id, block_config, shared_config, update_request),
-        "custom_dbus" => block!(CustomDBus, id, block_config, shared_config, update_request),
-        "disk_space" => block!(DiskSpace, id, block_config, shared_config, update_request),
-        "dnf" => block!(Dnf, id, block_config, shared_config, update_request),
-        "docker" => block!(Docker, id, block_config, shared_config, update_request), ///////
-        "external_ip" => block!(ExternalIP, id, block_config, shared_config, update_request),
-        "focused_window" => block!(
-            FocusedWindow,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "github" => block!(Github, id, block_config, shared_config, update_request),
-        "hueshift" => block!(Hueshift, id, block_config, shared_config, update_request),
-        "ibus" => block!(IBus, id, block_config, shared_config, update_request),
-        "kdeconnect" => block!(KDEConnect, id, block_config, shared_config, update_request),
-        "keyboard_layout" => block!(
-            KeyboardLayout,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "load" => block!(Load, id, block_config, shared_config, update_request),
-        #[cfg(feature = "maildir")]
-        "maildir" => block!(Maildir, id, block_config, shared_config, update_request),
-        "memory" => block!(Memory, id, block_config, shared_config, update_request),
-        "music" => block!(Music, id, block_config, shared_config, update_request),
-        "net" => block!(Net, id, block_config, shared_config, update_request),
-        "networkmanager" => block!(
-            NetworkManager,
-            id,
-            block_config,
-            shared_config,
-            update_request
-        ),
-        "notify" => block!(Notify, id, block_config, shared_config, update_request),
-        #[cfg(feature = "notmuch")]
-        "notmuch" => block!(Notmuch, id, block_config, shared_config, update_request),
-        "nvidia_gpu" => block!(NvidiaGpu, id, block_config, shared_config, update_request),
-        "pacman" => block!(Pacman, id, block_config, shared_config, update_request),
-        "pomodoro" => block!(Pomodoro, id, block_config, shared_config, update_request),
-        "rofication" => block!(Rofication, id, block_config, shared_config, update_request),
-        "sound" => block!(Sound, id, block_config, shared_config, update_request),
-        "speedtest" => block!(SpeedTest, id, block_config, shared_config, update_request),
-        "taskwarrior" => block!(Taskwarrior, id, block_config, shared_config, update_request),
-        "temperature" => block!(Temperature, id, block_config, shared_config, update_request),
-        "template" => block!(Template, id, block_config, shared_config, update_request),
-        "time" => block!(Time, id, block_config, shared_config, update_request), /////////
-        "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
-        "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
-        "watson" => block!(Watson, id, block_config, shared_config, update_request),
-        "weather" => block!(Weather, id, block_config, shared_config, update_request),
-        "xrandr" => block!(Xrandr, id, block_config, shared_config, update_request),
-        other => Err(BlockError(other.to_string(), "Unknown block!".to_string())),
+        let common_value: toml::Value = common_table.into();
+        CommonConfig::deserialize(common_value).config_error()
     }
 }

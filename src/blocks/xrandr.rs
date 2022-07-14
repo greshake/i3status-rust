@@ -1,22 +1,117 @@
-use std::process::Command;
-use std::str::FromStr;
-use std::time::Duration;
+//! X11 screen information
+//!
+//! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.
+//!
+//! NOTE: Some users report issues (e.g. [here](https://github.com/greshake/i3status-rust/issues/274) and [here](https://github.com/greshake/i3status-rust/issues/668) when using this block. The cause is currently unknown, however setting a higher update interval may help.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$display $brightness_icon $brightness"`
+//! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`
+//! `interval` | Update interval in seconds. | `5`
+//!
+//! Placeholder       | Value                        | Type   | Unit
+//! ------------------|------------------------------|--------|---------------
+//! `display`         | The name of a monitor        | Text   | -
+//! `brightness`      | The brightness of a monitor  | Number | %
+//! `brightness_icon` | A static icon                | Icon   | -
+//! `resolution`      | The resolution of a monitor  | Text   | -
+//! `res_icon`        | A static icon                | Icon   | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "xrandr"
+//! format = "$brightness $resolution"
+//! ```
+//!
+//! # Used Icons
+//! - `xrandr`
+//! - `backlight_full`
+//! - `resolution`
 
-use crossbeam_channel::Sender;
+use super::prelude::*;
+use crate::subprocess::spawn_shell;
 use regex::RegexSet;
-use serde_derive::Deserialize;
+use tokio::process::Command;
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::{LogicalDirection, SharedConfig};
-use crate::de::deserialize_duration;
-use crate::errors::*;
-use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
-use crate::protocol::i3bar_event::{I3BarEvent, MouseButton};
-use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
-use crate::widgets::text::TextWidget;
-use crate::widgets::I3BarWidget;
+#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+struct XrandrConfig {
+    #[default(5.into())]
+    interval: Seconds,
+    format: FormatConfig,
+    #[default(5)]
+    step_width: u32,
+}
+
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let config = XrandrConfig::deserialize(config).config_error()?;
+    let mut widget = api.new_widget().with_icon("xrandr")?.with_format(
+        config
+            .format
+            .with_default("$display $brightness_icon $brightness")?,
+    );
+
+    let mut cur_indx = 0;
+    let mut timer = config.interval.timer();
+
+    loop {
+        let mut monitors = get_monitors().await?;
+        if cur_indx > monitors.len() {
+            cur_indx = 0;
+        }
+
+        loop {
+            widget.set_values(if let Some(mon) = monitors.get(cur_indx) {
+                map! {
+                    "display" => Value::text(mon.name.clone()),
+                    "brightness" => Value::percents(mon.brightness),
+                    //TODO: change `brightness_icon` based on `brightness`
+                    "brightness_icon" => Value::icon(api.get_icon("backlight_full")?),
+                    "resolution" => Value::text(mon.resolution.clone()),
+                    "res_icon" => Value::icon(api.get_icon("resolution")?),
+                }
+            } else {
+                default()
+            });
+            api.set_widget(&widget).await?;
+
+            select! {
+                _ = timer.tick() => break,
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        match click.button {
+                            MouseButton::Left => {
+                                cur_indx += 1;
+                                if cur_indx >= monitors.len() {
+                                    cur_indx = 0;
+                                }
+                            }
+                            MouseButton::WheelUp => {
+                                if let Some(monitor) = monitors.get_mut(cur_indx) {
+                                    let bright = (monitor.brightness + config.step_width).min(100);
+                                    monitor.set_brightness(bright);
+                                }
+                            }
+                            MouseButton::WheelDown => {
+                                if let Some(monitor) = monitors.get_mut(cur_indx) {
+                                    let bright = monitor.brightness.saturating_sub(config.step_width);
+                                    monitor.set_brightness(bright);
+                                }
+                            }
+                            _ => (),
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 struct Monitor {
     name: String,
@@ -25,272 +120,83 @@ struct Monitor {
 }
 
 impl Monitor {
-    fn new(name: &str, brightness: u32, resolution: &str) -> Self {
-        Monitor {
-            name: String::from(name),
-            brightness,
-            resolution: String::from(resolution),
-        }
-    }
-
-    fn set_brightness(&mut self, step: i32) {
-        spawn_child_async(
-            "xrandr",
-            &[
-                "--output",
-                &self.name,
-                "--brightness",
-                &format!("{}", (self.brightness as i32 + step) as f32 / 100.0),
-            ],
-        )
-        .expect("Failed to set xrandr output.");
-        self.brightness = (self.brightness as i32 + step) as u32;
+    fn set_brightness(&mut self, brightness: u32) {
+        let _ = spawn_shell(&format!(
+            "xrandr --output {} --brightness  {}",
+            self.name,
+            brightness as f64 / 100.0
+        ));
+        self.brightness = brightness;
     }
 }
 
-pub struct Xrandr {
-    id: usize,
-    text: TextWidget,
-    format: FormatTemplate,
-    update_interval: Duration,
-    monitors: Vec<Monitor>,
-    step_width: u32,
-    current_idx: usize,
-    shared_config: SharedConfig,
-}
-
-// TODO add `format`
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields, default)]
-pub struct XrandrConfig {
-    format: FormatTemplate,
-
-    /// Update interval in seconds
-    #[serde(deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-
-    /// Show icons for brightness and resolution (needs awesome fonts support)
-    pub icons: bool,
-
-    /// Shows the screens resolution
-    pub resolution: bool,
-
-    /// The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50)
-    pub step_width: u32,
-}
-
-impl Default for XrandrConfig {
-    fn default() -> Self {
-        Self {
-            format: Default::default(),
-            interval: Duration::from_secs(5),
-            icons: true,
-            resolution: false,
-            step_width: 5,
-        }
-    }
-}
-
-macro_rules! unwrap_or_continue {
+macro_rules! unwrap_or_break {
     ($e: expr) => {
         match $e {
             Some(e) => e,
-            None => continue,
+            None => break,
         }
     };
 }
 
-impl Xrandr {
-    fn get_active_monitors() -> Result<Option<Vec<String>>> {
-        let active_monitors_cli = String::from_utf8(
-            Command::new("xrandr")
-                .args(&["--listactivemonitors"])
-                .output()
-                .block_error("xrandr", "couldn't collect active xrandr monitors")?
-                .stdout,
-        )
-        .block_error("xrandr", "couldn't parse xrandr monitor list")?;
+async fn get_monitors() -> Result<Vec<Monitor>> {
+    let mut monitors = Vec::new();
 
-        let monitors: Vec<&str> = active_monitors_cli.split('\n').collect();
-        let mut active_monitors: Vec<String> = Vec::new();
-        for monitor in monitors {
-            if let Some((name, _)) = monitor
-                .split_whitespace()
-                .collect::<Vec<&str>>()
-                .split_last()
-            {
-                active_monitors.push(String::from(*name));
-            }
-        }
-        if !active_monitors.is_empty() {
-            Ok(Some(active_monitors))
-        } else {
-            Ok(None)
-        }
+    let active_monitors = Command::new("xrandr")
+        .arg("--listactivemonitors")
+        .output()
+        .await
+        .error("Failed to collect active xrandr monitors")?
+        .stdout;
+    let active_monitors =
+        String::from_utf8(active_monitors).error("xrandr produced non-UTF8 output")?;
+
+    let regex = active_monitors
+        .lines()
+        .filter_map(|line| line.split_ascii_whitespace().last())
+        .map(|name| format!("{name} connected"))
+        .chain(Some("Brightness:".into()));
+    let regex = RegexSet::new(regex).error("Failed to create RegexSet")?;
+
+    let monitors_info = Command::new("xrandr")
+        .arg("--verbose")
+        .output()
+        .await
+        .error("Failed to collect xrandr monitors info")?
+        .stdout;
+    let monitors_info =
+        String::from_utf8(monitors_info).error("xrandr produced non-UTF8 output")?;
+
+    let mut it = monitors_info.lines().filter(|line| regex.is_match(line));
+
+    #[allow(clippy::while_let_loop)]
+    loop {
+        let line1 = unwrap_or_break!(it.next());
+        let line2 = unwrap_or_break!(it.next());
+
+        let mut tokens = line1.split_ascii_whitespace();
+        let name = tokens.next().error("Failed to parse xrandr output")?.into();
+        let _ = tokens.next();
+        let resolution = tokens
+            .next()
+            .and_then(|x| x.split('+').next())
+            .error("Failed to parse xrandr output")?
+            .into();
+        let brightness = (line2
+            .split(':')
+            .nth(1)
+            .error("Failed to parse xrandr output")?
+            .trim()
+            .parse::<f64>()
+            .error("Failed to parse xrandr output")?
+            * 100.0) as u32;
+
+        monitors.push(Monitor {
+            name,
+            brightness,
+            resolution,
+        });
     }
 
-    fn get_monitor_metrics(monitor_names: &[String]) -> Result<Option<Vec<Monitor>>> {
-        let mut monitor_metrics: Vec<Monitor> = Vec::new();
-        let monitor_info_cli = String::from_utf8(
-            Command::new("xrandr")
-                .args(&["--verbose"])
-                .output()
-                .block_error("xrandr", "couldn't collect xrandr monitor info")?
-                .stdout,
-        )
-        .block_error("xrandr", "couldn't parse xrandr monitor info")?;
-
-        let regex_set = RegexSet::new(
-            monitor_names
-                .iter()
-                .map(|x| format!("{} connected", x))
-                .chain(std::iter::once("Brightness:".to_string())),
-        )
-        .block_error("xrandr", "invalid monitor name")?;
-
-        let monitor_infos: Vec<&str> = monitor_info_cli
-            .split('\n')
-            .filter(|l| regex_set.is_match(l))
-            .collect();
-        for chunk in monitor_infos.chunks_exact(2) {
-            let mut brightness = 0;
-            let mut display: &str = "";
-            let mi_line = unwrap_or_continue!(chunk.get(0));
-            let b_line = unwrap_or_continue!(chunk.get(1));
-            let mi_line_args: Vec<&str> = mi_line.split_whitespace().collect();
-            if let Some(name) = mi_line_args.get(0) {
-                display = name.trim();
-                if let Some(brightness_raw) = b_line.split(':').collect::<Vec<&str>>().get(1) {
-                    brightness = (f32::from_str(brightness_raw.trim())
-                        .block_error("xrandr", "unable to parse brightness")?
-                        * 100.0)
-                        .floor() as u32;
-                }
-            }
-            if let Some(mut res) = mi_line_args.get(2) {
-                if res.find('+').is_none() {
-                    res = unwrap_or_continue!(mi_line_args.get(3));
-                }
-                if let Some(resolution) = res.split('+').collect::<Vec<&str>>().get(0) {
-                    monitor_metrics.push(Monitor::new(display, brightness, resolution.trim()));
-                }
-            }
-        }
-        if !monitor_metrics.is_empty() {
-            Ok(Some(monitor_metrics))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn display(&mut self) -> Result<()> {
-        if let Some(m) = self.monitors.get(self.current_idx) {
-            let values = map!(
-                "display" => Value::from_string(m.name.clone()),
-                "brightness" => Value::from_integer(m.brightness as i64).percents(),
-                //TODO: change `brightness_icon` based on `brightness`
-                "brightness_icon" => Value::from_string(self.shared_config.get_icon("backlight_full")?),
-                "resolution" => Value::from_string(m.resolution.clone()),
-                "res_icon" => Value::from_string(self.shared_config.get_icon("resolution")?),
-            );
-            self.text.set_texts(self.format.render(&values)?);
-        }
-
-        Ok(())
-    }
-}
-
-impl ConfigBlock for Xrandr {
-    type Config = XrandrConfig;
-
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
-    ) -> Result<Self> {
-        let mut step_width = block_config.step_width;
-        if step_width > 50 {
-            step_width = 50;
-        }
-
-        let format_str = if block_config.resolution {
-            if block_config.icons {
-                "{display} {brightness_icon} {brightness} {res_icon} {resolution}"
-            } else {
-                "{display}: {brightness} [{resolution}]"
-            }
-        } else if block_config.icons {
-            "{display} {brightness_icon} {brightness}"
-        } else {
-            "{display}: {brightness}"
-        };
-
-        Ok(Xrandr {
-            id,
-            text: TextWidget::new(id, 0, shared_config.clone()).with_icon("xrandr")?,
-            format: block_config.format.with_default(format_str)?,
-            update_interval: block_config.interval,
-            current_idx: 0,
-            step_width,
-            monitors: Vec::new(),
-            shared_config,
-        })
-    }
-}
-
-impl Block for Xrandr {
-    fn update(&mut self) -> Result<Option<Update>> {
-        if let Some(am) = Xrandr::get_active_monitors()? {
-            if let Some(mm) = Xrandr::get_monitor_metrics(&am)? {
-                self.monitors = mm;
-                self.display()?;
-            }
-        }
-
-        Ok(Some(self.update_interval.into()))
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
-    }
-
-    fn click(&mut self, e: &I3BarEvent) -> Result<()> {
-        match e.button {
-            MouseButton::Left => {
-                if self.current_idx < self.monitors.len() - 1 {
-                    self.current_idx += 1;
-                } else {
-                    self.current_idx = 0;
-                }
-            }
-            mb => {
-                use LogicalDirection::*;
-                match self.shared_config.scrolling.to_logical_direction(mb) {
-                    Some(Up) => {
-                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                            if monitor.brightness <= (100 - self.step_width) {
-                                monitor.set_brightness(self.step_width as i32);
-                            }
-                        }
-                    }
-                    Some(Down) => {
-                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                            if monitor.brightness >= self.step_width {
-                                monitor.set_brightness(-(self.step_width as i32));
-                            }
-                        }
-                    }
-                    None => {}
-                }
-            }
-        }
-        self.display()?;
-
-        Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
-    }
+    Ok(monitors)
 }

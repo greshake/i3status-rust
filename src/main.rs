@@ -1,104 +1,111 @@
-#[macro_use]
-mod de;
+#![warn(clippy::match_same_arms)]
+#![warn(clippy::semicolon_if_nothing_returned)]
+#![warn(clippy::unnecessary_wraps)]
+#![allow(clippy::explicit_auto_deref)] // TODO: remove once https://github.com/rust-lang/rust-clippy/issues/9101 is resloved
+
 #[macro_use]
 mod util;
-#[macro_use]
-mod formatting;
-mod apcaccess;
-pub mod blocks;
+mod blocks;
+mod click;
 mod config;
 mod errors;
-mod http;
+mod escape;
+mod formatting;
 mod icons;
+mod netlink;
 mod protocol;
-mod scheduler;
 mod signals;
 mod subprocess;
 mod themes;
-mod widgets;
+mod widget;
+mod wrappers;
 
-#[cfg(feature = "pulseaudio")]
-use libpulse_binding as pulse;
-
+use clap::Parser;
+use futures::future::{abortable, FutureExt};
+use futures::stream::futures_unordered::FuturesUnordered;
+use futures::stream::{AbortHandle, Stream, StreamExt};
+use once_cell::sync::Lazy;
+use protocol::i3bar_block::I3BarBlock;
+use protocol::i3bar_event::I3BarEvent;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::process::Command;
+use tokio::sync::mpsc;
 
-use clap::{crate_authors, crate_description, App, Arg, ArgMatches};
-use crossbeam_channel::{select, Receiver, Sender};
+use blocks::{BlockEvent, BlockFuture, BlockType, CommonApi, CommonConfig};
+use click::ClickHandler;
+use config::Config;
+use config::SharedConfig;
+use errors::*;
+use formatting::scheduling;
+use protocol::i3bar_event::events_stream;
+use signals::{signals_stream, Signal};
+use widget::{State, Widget};
 
-use crate::blocks::create_block;
-use crate::blocks::Block;
-use crate::config::Config;
-use crate::config::SharedConfig;
-use crate::errors::*;
-use crate::protocol::i3bar_event::{process_events, I3BarEvent};
-use crate::scheduler::{Task, UpdateScheduler};
-use crate::signals::process_signals;
-use crate::util::deserialize_file;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, State};
+pub type BoxedFuture<T> = Pin<Box<dyn Future<Output = T>>>;
+pub type BoxedStream<T> = Pin<Box<dyn Stream<Item = T>>>;
+
+pub static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
+    const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+    const REQWEST_TIMEOUT: Duration = Duration::from_secs(5);
+    reqwest::Client::builder()
+        .user_agent(APP_USER_AGENT)
+        .timeout(REQWEST_TIMEOUT)
+        .build()
+        .unwrap()
+});
+
+#[derive(Debug, Parser)]
+#[clap(author, about, version = env!("VERSION"))]
+struct CliArgs {
+    /// Sets a TOML config file
+    #[clap(default_value = "config.toml")]
+    config: String,
+    /// Ignore any attempts by i3 to pause the bar when hidden/fullscreen
+    #[clap(long = "never-pause")]
+    never_pause: bool,
+    /// Do not send the init sequence
+    #[clap(long = "no-init")]
+    no_init: bool,
+    /// The maximum number of blocking threads spawned by tokio
+    #[clap(long = "threads", short = 'j', default_value = "2")]
+    blocking_threads: usize,
+}
 
 fn main() {
-    let ver = if env!("GIT_COMMIT_HASH").is_empty() || env!("GIT_COMMIT_DATE").is_empty() {
-        env!("CARGO_PKG_VERSION").to_string()
-    } else {
-        format!(
-            "{} (commit {} {})",
-            env!("CARGO_PKG_VERSION"),
-            env!("GIT_COMMIT_HASH"),
-            env!("GIT_COMMIT_DATE")
-        )
-    };
+    env_logger::init();
+    let args = CliArgs::parse();
+    let blocking_threads = args.blocking_threads;
 
-    let mut builder = App::new("i3status-rs");
-    builder = builder
-        .version(&*ver)
-        .author(crate_authors!())
-        .about(crate_description!())
-        .arg(
-            Arg::with_name("config")
-                .value_name("CONFIG_FILE")
-                .help("Sets a toml config file")
-                .required(false)
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("exit-on-error")
-                .help("Exit rather than printing errors to i3bar and continuing")
-                .long("exit-on-error")
-                .takes_value(false),
-        )
-        .arg(
-            Arg::with_name("never-pause")
-                .help("Ignore any attempts by i3 to pause the bar when hidden/fullscreen")
-                .long("never-pause")
-                .takes_value(false),
-        )
-        .arg(
-            Arg::with_name("no-init")
-                .help("Do not send an init sequence")
-                .long("no-init")
-                .takes_value(false)
-                .hidden(true),
+    if !args.no_init {
+        protocol::init(args.never_pause);
+    }
+
+    let result = tokio::runtime::Builder::new_current_thread()
+        .max_blocking_threads(blocking_threads)
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async move {
+            let config_path = util::find_file(&args.config, None, Some("toml"))
+                .or_error(|| format!("Configuration file '{}' not found", args.config))?;
+            let config: Config = util::deserialize_toml_file(&config_path).config_error()?;
+            let mut bar = BarState::new(&config);
+            for block_config in config.blocks {
+                bar.spawn_block(block_config).await?;
+            }
+            bar.run_event_loop().await
+        });
+    if let Err(error) = result {
+        let error_widget = Widget::new(0, Default::default()).with_text(error.to_string());
+        println!(
+            "{},",
+            serde_json::to_string(&error_widget.get_data().unwrap()).unwrap()
         );
-
-    let matches = builder.get_matches();
-    let exit_on_error = matches.is_present("exit-on-error");
-
-    // Run and match for potential error
-    if let Err(error) = run(&matches) {
-        if exit_on_error {
-            eprintln!("{:?}", error);
-            ::std::process::exit(1);
-        }
-
-        // Create widget with error message
-        let error_widget = TextWidget::new(0, 0, Default::default())
-            .with_state(State::Critical)
-            .with_text(&format!("{:?}", error));
-
-        // Print errors
-        println!("[{}],", error_widget.get_data().render());
-        eprintln!("\n\n{:?}", error);
+        eprintln!("\n\n{}\n\n", error);
+        dbg!(error);
 
         // Wait for USR2 signal to restart
         signal_hook::iterator::Signals::new(&[signal_hook::consts::SIGUSR2])
@@ -110,120 +117,309 @@ fn main() {
     }
 }
 
-fn run(matches: &ArgMatches) -> Result<()> {
-    if !matches.is_present("no-init") {
-        // Now we can start to run the i3bar protocol
-        protocol::init(matches.is_present("never-pause"));
+pub struct RunningBlock {
+    id: usize,
+
+    event_sender: mpsc::Sender<BlockEvent>,
+    abort_handle: AbortHandle,
+    click_handler: ClickHandler,
+    signal: Option<i32>,
+
+    widget: Option<Widget>,
+}
+
+pub struct FailedBlock {
+    id: usize,
+    error_widget: Widget,
+    error: Error,
+}
+
+pub enum Block {
+    Running(RunningBlock),
+    Failed(FailedBlock),
+}
+
+#[derive(Debug)]
+pub struct Request {
+    pub block_id: usize,
+    pub cmd: RequestCmd,
+}
+
+#[derive(Debug)]
+pub enum RequestCmd {
+    SetWidget(Option<Widget>),
+}
+
+struct BarState {
+    shared_config: SharedConfig,
+
+    blocks: Vec<(Block, BlockType)>,
+    fullscreen_block: Option<usize>,
+    running_blocks: FuturesUnordered<BlockFuture>,
+
+    widget_updates_stream: BoxedStream<Vec<usize>>,
+    widget_updates_sender: mpsc::UnboundedSender<(usize, Vec<u64>)>,
+    blocks_render_cache: Vec<Vec<I3BarBlock>>,
+
+    request_sender: mpsc::Sender<Request>,
+    request_receiver: mpsc::Receiver<Request>,
+
+    signals_stream: BoxedStream<Signal>,
+    events_stream: BoxedStream<I3BarEvent>,
+}
+
+impl BarState {
+    fn new(config: &Config) -> Self {
+        let (request_sender, request_receiver) = mpsc::channel(64);
+        let (widget_updates_sender, widget_updates_stream) = scheduling::manage_widgets_updates();
+        Self {
+            shared_config: config.shared.clone(),
+
+            blocks: Vec::new(),
+            fullscreen_block: None,
+            running_blocks: FuturesUnordered::new(),
+
+            widget_updates_stream,
+            widget_updates_sender,
+            blocks_render_cache: Vec::new(),
+
+            request_sender,
+            request_receiver,
+
+            signals_stream: signals_stream(),
+            events_stream: events_stream(
+                config.invert_scrolling,
+                Duration::from_millis(config.double_click_delay),
+            ),
+        }
     }
 
-    // Read & parse the config file
-    let config_path = match matches.value_of("config") {
-        Some(config_path) => std::path::PathBuf::from(config_path),
-        None => util::xdg_config_home().join("i3status-rust/config.toml"),
-    };
-    let config: Config = deserialize_file(&config_path)?;
-
-    // Update request channel
-    let (tx_update_requests, rx_update_requests): (Sender<Task>, Receiver<Task>) =
-        crossbeam_channel::unbounded();
-
-    let shared_config = SharedConfig::new(&config);
-
-    // Initialize the blocks
-    let mut blocks: Vec<Box<dyn Block>> = Vec::new();
-    for &(ref block_name, ref block_config) in &config.blocks {
-        blocks.push(create_block(
-            blocks.len(),
-            block_name,
-            block_config.clone(),
-            shared_config.clone(),
-            tx_update_requests.clone(),
-        )?);
-    }
-
-    let mut scheduler = UpdateScheduler::new(&blocks);
-
-    // We wait for click events in a separate thread, to avoid blocking to wait for stdin
-    let (tx_clicks, rx_clicks): (Sender<I3BarEvent>, Receiver<I3BarEvent>) =
-        crossbeam_channel::unbounded();
-    process_events(tx_clicks);
-
-    // We wait for signals in a separate thread
-    let (tx_signals, rx_signals): (Sender<i32>, Receiver<i32>) = crossbeam_channel::unbounded();
-    process_signals(tx_signals);
-
-    // Time to next update channel.
-    // Fires immediately for first updates
-    let mut ttnu = crossbeam_channel::after(Duration::from_millis(0));
-
-    loop {
-        // We use the message passing concept of channel selection
-        // to avoid busy wait
-        select! {
-            // Receive click events
-            recv(rx_clicks) -> res => if let Ok(event) = res {
-                if let Some(id) = event.id {
-                        blocks.get_mut(id)
-                    .internal_error("click handler", "could not get required block")?
-                            .click(&event)?;
-                    protocol::print_blocks(&blocks, &shared_config)?;
-                }
-            },
-            // Receive async update requests
-            recv(rx_update_requests) -> request => if let Ok(req) = request {
-                if scheduler.schedule.iter().any(|x| x.id == req.id) {
-                // If block is already scheduled then process immediately and forget
-                blocks.get_mut(req.id)
-                    .internal_error("scheduler", "could not get required block")?
-                    .update()?;
-                } else {
-                // Otherwise add to scheduler tasks and trigger update
-                // In case this needs to schedule further updates e.g. marquee
-                scheduler.schedule.push(req);
-                scheduler.do_scheduled_updates(&mut blocks)?;
-                }
-                protocol::print_blocks(&blocks, &shared_config)?;
-            },
-            // Receive update timer events
-            recv(ttnu) -> _ => {
-                scheduler.do_scheduled_updates(&mut blocks)?;
-                // redraw the blocks, state changed
-                protocol::print_blocks(&blocks, &shared_config)?;
-            },
-            // Receive signal events
-            recv(rx_signals) -> res => if let Ok(sig) = res {
-                match sig {
-                    signal_hook::consts::SIGUSR1 => {
-                        //USR1 signal that updates every block in the bar
-                        for block in blocks.iter_mut() {
-                            block.update()?;
-                        }
-                    },
-                    signal_hook::consts::SIGUSR2 => {
-                        //USR2 signal that should reload the config
-                        blocks.drain(..);
-                        restart();
-                    },
-                    _ => {
-                        //Real time signal that updates only the blocks listening
-                        //for that signal
-                        for block in blocks.iter_mut() {
-                            block.signal(sig)?;
-                        }
-                    },
-                };
-                protocol::print_blocks(&blocks, &shared_config)?;
+    async fn spawn_block(&mut self, mut block_config: toml::Value) -> Result<()> {
+        let common_config = CommonConfig::new(&mut block_config)?;
+        if let Some(cmd) = &common_config.if_command {
+            if !Command::new("sh")
+                .args(["-c", cmd])
+                .output()
+                .await
+                .error("failed to run if_command")?
+                .status
+                .success()
+            {
+                return Ok(());
             }
         }
 
-        // Set the time-to-next-update timer
-        if let Some(time) = scheduler.time_to_next_update() {
-            ttnu = crossbeam_channel::after(time)
+        let block_type = common_config.block;
+        let mut shared_config = self.shared_config.clone();
+
+        // Overrides
+        if let Some(icons_format) = common_config.icons_format {
+            shared_config.icons_format = Arc::new(icons_format);
+        }
+        if let Some(theme_overrides) = common_config.theme_overrides {
+            Arc::make_mut(&mut shared_config.theme).apply_overrides(&theme_overrides)?;
+        }
+        if let Some(icons_overrides) = common_config.icons_overrides {
+            Arc::make_mut(&mut shared_config.icons).apply_overrides(icons_overrides);
+        }
+
+        let (event_sender, event_receiver) = mpsc::channel(64);
+
+        let id = self.blocks.len();
+        let api = CommonApi {
+            id,
+            shared_config: shared_config.clone(),
+            event_receiver,
+
+            request_sender: self.request_sender.clone(),
+
+            error_interval: Duration::from_secs(common_config.error_interval),
+            error_format: common_config.error_format,
+        };
+
+        let (block_fut, abort_handle) = abortable(block_type.run(block_config, api));
+
+        let block = Block::Running(RunningBlock {
+            id,
+
+            event_sender,
+            abort_handle,
+            click_handler: common_config.click,
+            signal: common_config.signal,
+
+            widget: None,
+        });
+
+        self.running_blocks
+            .push(Box::pin(block_fut.map(|res| match res {
+                Ok(res) => res,
+                Err(_aborted) => Ok(()),
+            })));
+        self.blocks.push((block, block_type));
+        self.blocks_render_cache.push(Vec::new());
+        Ok(())
+    }
+
+    async fn process_request(&mut self, request: Request) -> Result<()> {
+        let (block, block_type) = self
+            .blocks
+            .get_mut(request.block_id)
+            .error("Message receiver: ID out of bounds")?;
+        let block = match block {
+            Block::Running(block) => block,
+            Block::Failed(_) => {
+                // Ignore requests from failed blocks
+                return Ok(());
+            }
+        };
+        match request.cmd {
+            RequestCmd::SetWidget(widget) => {
+                block.widget = widget;
+                if let Some(widget) = &block.widget {
+                    let _ = self
+                        .widget_updates_sender
+                        .send((block.id, widget.intervals()));
+                    if self.fullscreen_block.is_none() && widget.full_screen {
+                        self.fullscreen_block = Some(block.id);
+                    } else if self.fullscreen_block == Some(block.id) && !widget.full_screen {
+                        self.fullscreen_block = None;
+                    }
+                } else if self.fullscreen_block == Some(block.id) {
+                    self.fullscreen_block = None;
+                }
+            }
+        }
+
+        let data = &mut self.blocks_render_cache[block.id];
+        if let Some(widget) = &block.widget {
+            *data = widget.get_data().in_block(*block_type, block.id)?;
+        } else {
+            data.clear();
+        }
+
+        Ok(())
+    }
+
+    fn render(&self) {
+        if let Some(id) = self.fullscreen_block {
+            protocol::print_blocks(&[self.blocks_render_cache[id].clone()], &self.shared_config);
+        } else {
+            protocol::print_blocks(&self.blocks_render_cache, &self.shared_config);
+        }
+    }
+
+    async fn process_event(&mut self) -> Result<()> {
+        tokio::select! {
+            // Handle blocks' errors
+            Some(block_result) = self.running_blocks.next() => {
+                block_result
+            }
+            // Recieve messages from blocks
+            Some(request) = self.request_receiver.recv() => {
+                self.process_request(request).await?;
+                self.render();
+                Ok(())
+            }
+            // Handle scheduled updates
+            Some(ids) = self.widget_updates_stream.next() => {
+                for id in ids {
+                    let data = &mut self.blocks_render_cache[id];
+                    let (block, block_type) = &self.blocks[id];
+                    if let Block::Running(block) = block {
+                        if let Some(widget) = &block.widget {
+                            *data = widget.get_data().in_block(*block_type, id)?;
+                        } else {
+                            data.clear();
+                        }
+                    }
+                }
+                self.render();
+                Ok(())
+            }
+            // Handle clicks
+            Some(event) = self.events_stream.next() => {
+                let (block, block_type) = self.blocks.get_mut(event.id).error("Events receiver: ID out of bounds")?;
+                match block {
+                    Block::Running(block) => {
+                        let post_actions = block.click_handler.handle(event.button).await.in_block(*block_type, event.id)?;
+                        if post_actions.pass {
+                            let _ = block.event_sender.send(BlockEvent::Click(event)).await;
+                        }
+                        if post_actions.update {
+                            let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
+                        }
+                    }
+                    Block::Failed(block) => {
+                        let text = if self.fullscreen_block == Some(block.id) {
+                            self.fullscreen_block = None;
+                            block.error.message.as_deref().unwrap_or("Error").into()
+                        } else {
+                            self.fullscreen_block = Some(block.id);
+                            block.error.to_string()
+                        };
+                        block.error_widget.set_text(text);
+                        self.blocks_render_cache[block.id] = block.error_widget.get_data()?;
+                        self.render();
+                    }
+                }
+                Ok(())
+            }
+            // Handle signals
+            Some(signal) = self.signals_stream.next() => match signal {
+                Signal::Usr1 => {
+                    for (block, _) in &self.blocks {
+                        if let Block::Running(block) = block {
+                            let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
+                        }
+                    }
+                    Ok(())
+                }
+                Signal::Usr2 => restart(),
+                Signal::Custom(signal) => {
+                    for (block, _) in &self.blocks {
+                        if let Block::Running(block) = block {
+                            if block.signal == Some(signal) {
+                                let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
+                            }
+                        }
+                    }
+                    Ok(())
+                }
+            }
+        }
+    }
+
+    async fn run_event_loop(mut self) -> Result<()> {
+        loop {
+            if let Err(error) = self.process_event().await {
+                match error.block {
+                    Some((_, id)) => {
+                        if let Block::Running(block) = &self.blocks[id].0 {
+                            block.abort_handle.abort();
+                        }
+                        let block = FailedBlock {
+                            id,
+                            error_widget: Widget::new(id, self.shared_config.clone())
+                                .with_state(State::Critical)
+                                .with_text(error.message.as_deref().unwrap_or("Error").into()),
+                            error,
+                        };
+
+                        self.blocks_render_cache[block.id] = block.error_widget.get_data()?;
+
+                        self.render();
+
+                        self.blocks[id].0 = Block::Failed(block);
+                        self.fullscreen_block = None;
+                    }
+                    None => return Err(error),
+                }
+            }
         }
     }
 }
 
-/// Restart `i3status-rs` in-place
+/// Restart in-place
 fn restart() -> ! {
     use std::env;
     use std::ffi::CString;
@@ -233,9 +429,9 @@ fn restart() -> ! {
     let exe = CString::new(env::current_exe().unwrap().into_os_string().into_vec()).unwrap();
 
     // Get current arguments
-    let mut arg = env::args()
-        .map(|a| CString::new(a).unwrap())
-        .collect::<Vec<CString>>();
+    let mut arg: Vec<CString> = env::args_os()
+        .map(|a| CString::new(a.into_vec()).unwrap())
+        .collect();
 
     // Add "--no-init" argument if not already added
     let no_init_arg = CString::new("--no-init").unwrap();

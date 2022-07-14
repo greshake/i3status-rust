@@ -1,109 +1,77 @@
-use std::path::Path;
-use std::time::Duration;
+//! System's uptime
+//!
+//! This block displays system uptime in terms of two biggest units, so minutes and seconds, or
+//! hours and minutes or days and hours or weeks and days.
+//!
+//! # Configuration
+//!
+//! Key        | Values                     | Default
+//! -----------|----------------------------|--------
+//! `interval` | Update interval in seconds | `60`
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "uptime"
+//! interval = 3600 # update every hour
+//! ```
+//!
+//! # Used Icons
+//! - `uptime`
+//!
+//! # TODO:
+//! - Add `time` or `dur` formatter to `src/formatting/formatter.rs`
 
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
+use super::prelude::*;
+use tokio::fs::read_to_string;
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::de::deserialize_duration;
-use crate::errors::*;
-use crate::scheduler::Task;
-use crate::util::read_file;
-use crate::widgets::text::TextWidget;
-use crate::widgets::I3BarWidget;
-
-pub struct Uptime {
-    id: usize,
-    text: TextWidget,
-    update_interval: Duration,
-}
-
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-pub struct UptimeConfig {
-    /// Update interval in seconds
-    #[serde(deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
+struct UptimeConfig {
+    #[default(60.into())]
+    interval: Seconds,
 }
 
-impl Default for UptimeConfig {
-    fn default() -> Self {
-        Self {
-            interval: Duration::from_secs(60),
-        }
-    }
-}
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let config = UptimeConfig::deserialize(config).config_error()?;
+    let mut widget = api.new_widget().with_icon("uptime")?;
 
-impl ConfigBlock for Uptime {
-    type Config = UptimeConfig;
-
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
-    ) -> Result<Self> {
-        Ok(Uptime {
-            id,
-            update_interval: block_config.interval,
-            text: TextWidget::new(id, 0, shared_config).with_icon("uptime")?,
-        })
-    }
-}
-
-impl Block for Uptime {
-    fn update(&mut self) -> Result<Option<Update>> {
-        let uptime_raw = read_file("uptime", Path::new("/proc/uptime")).map_err(|e| {
-            BlockError(
-                "Uptime".to_owned(),
-                format!("Uptime failed to read /proc/uptime: '{}'", e),
-            )
-        })?;
-        let uptime = uptime_raw
-            .split_whitespace()
+    loop {
+        let uptime = read_to_string("/proc/uptime")
+            .await
+            .error("Failed to read /proc/uptime")?;
+        let mut seconds: u64 = uptime
+            .split('.')
             .next()
-            .block_error("Uptime", "Uptime failed to read uptime string.")?;
+            .and_then(|u| u.parse().ok())
+            .error("/proc/uptime has invalid content")?;
 
-        let total_seconds = uptime
-            .parse::<f64>()
-            .map(|x| x as u32)
-            .block_error("Uptime", "Failed to convert uptime float to integer)")?;
+        let weeks = seconds / 604_800;
+        seconds %= 604_800;
+        let days = seconds / 86_400;
+        seconds %= 86_400;
+        let hours = seconds / 3_600;
+        seconds %= 3_600;
+        let minutes = seconds / 60;
+        seconds %= 60;
 
-        // split up seconds into more human readable portions
-        let weeks = (total_seconds / 604_800) as u32;
-        let rem_weeks = (total_seconds % 604_800) as u32;
-        let days = (rem_weeks / 86_400) as u32;
-        let rem_days = (rem_weeks % 86_400) as u32;
-        let hours = (rem_days / 3600) as u32;
-        let rem_hours = (rem_days % 3600) as u32;
-        let minutes = (rem_hours / 60) as u32;
-        let rem_minutes = (rem_hours % 60) as u32;
-        let seconds = rem_minutes as u32;
-
-        // Display the two largest units.
-        let text = if hours == 0 && days == 0 && weeks == 0 {
-            format!("{}m {}s", minutes, seconds)
-        } else if hours > 0 && days == 0 && weeks == 0 {
-            format!("{}h {}m", hours, minutes)
-        } else if days > 0 && weeks == 0 {
-            format!("{}d {}h", days, hours)
-        } else if days == 0 && weeks > 0 {
-            format!("{}w {}h", weeks, hours)
-        } else if weeks > 0 {
-            format!("{}w {}d", weeks, days)
+        let text = if weeks > 0 {
+            format!("{weeks}w {days}d")
+        } else if days > 0 {
+            format!("{days}d {hours}h")
+        } else if hours > 0 {
+            format!("{hours}h {minutes}m")
         } else {
-            unreachable!()
+            format!("{minutes}m {seconds}s")
         };
-        self.text.set_text(text);
-        Ok(Some(self.update_interval.into()))
-    }
 
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
-    }
+        widget.set_text(text);
+        api.set_widget(&widget).await?;
 
-    fn id(&self) -> usize {
-        self.id
+        select! {
+            _ = sleep(config.interval.0) => (),
+            _ = api.wait_for_update_request() => (),
+        }
     }
 }

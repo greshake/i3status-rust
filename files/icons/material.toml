@@ -2,7 +2,6 @@
 # https://github.com/google/material-design-icons/blob/master/font/MaterialIcons-Regular.codepoints
 bat_charging = "\ue1a3" # battery_charging_full
 bat_discharging = "\ue19c" # battery_alert
-bat_empty = "\ue19c" # battery_alert TODO remove on next release
 bat_10 = "\ue19c" # battery_alert
 bat_20 = "\ue1a5"
 bat_30 = "\ue1a5"
@@ -13,9 +12,6 @@ bat_70 = "\ue1a5"
 bat_80 = "\ue1a5"
 bat_90 = "\ue1a5"
 bat_full = "\ue1a4" # battery_full
-bat_half = "\ue1a5" # battery_std  TODO remove on next release
-bat_quarter = "\ue1a5" # TODO remove on next release
-bat_three_quarters = "\ue1a5" # TODO remove on next release
 bat_not_available = "\ue1a6" # battery_unknown
 bell = "\ue7f4" # notifications
 bell-slash = "\ue7f8" # notifications_paused

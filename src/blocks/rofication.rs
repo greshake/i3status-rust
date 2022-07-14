@@ -1,173 +1,109 @@
-use std::time::Duration;
+//! The number of pending notifications in rofication-daemon
+//!
+//! A different color is used is there are critical notications. Left clicking the block opens the GUI.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `interval` | Refresh rate in seconds. | `1`
+//! `format` | A string to customise the output of this block. See below for placeholders. | `"$num.eng(1)"`
+//! `socket_path` | Socket path for the rofication daemon. | `"/tmp/rofi_notification_daemon"`
+//!
+//!  Key | Value | Type | Unit
+//! -----|-------|------|-----
+//! `num` | Number of pending notifications | Number | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "rofication"
+//! interval = 1
+//! socket_path = "/tmp/rofi_notification_daemon"
+//! ```
+//!
+//! # Icons Used
+//! - `bell`
 
-use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
+use tokio::net::UnixStream;
 
-use std::io::Read;
-use std::io::Write;
-use std::os::unix::net::UnixStream;
-use std::path::Path;
+use super::prelude::*;
+use crate::subprocess::spawn_shell;
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::de::deserialize_duration;
-use crate::errors::*;
-use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
-use crate::protocol::i3bar_event::I3BarEvent;
-use crate::protocol::i3bar_event::MouseButton;
-use crate::scheduler::Task;
-use crate::subprocess::spawn_child_async;
-use crate::widgets::text::TextWidget;
-use crate::widgets::I3BarWidget;
-use crate::widgets::State;
-
-#[derive(Debug)]
-struct RotificationStatus {
-    num: u64,
-    crit: u64,
-}
-
-pub struct Rofication {
-    id: usize,
-    text: TextWidget,
-    update_interval: Duration,
-    format: FormatTemplate,
-
-    // UNIX socket to read from
-    pub socket_path: String,
-}
-
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-pub struct RoficationConfig {
-    /// Update interval in seconds
-    #[serde(deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-
-    // UNIX socket to read from
-    pub socket_path: String,
-
-    /// Format override
-    pub format: FormatTemplate,
+struct RoficationConfig {
+    #[default(1.into())]
+    interval: Seconds,
+    #[default("/tmp/rofi_notification_daemon".into())]
+    socket_path: ShellString,
+    format: FormatConfig,
 }
 
-impl Default for RoficationConfig {
-    fn default() -> Self {
-        Self {
-            interval: Duration::from_secs(1),
-            socket_path: "/tmp/rofi_notification_daemon".to_string(),
-            format: FormatTemplate::default(),
-        }
-    }
-}
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let config = RoficationConfig::deserialize(config).config_error()?;
+    let mut widget = api
+        .new_widget()
+        .with_icon("bell")?
+        .with_format(config.format.with_default("$num.eng(1)")?);
 
-impl ConfigBlock for Rofication {
-    type Config = RoficationConfig;
+    let path = config.socket_path.expand()?;
+    let mut timer = config.interval.timer();
 
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        _tx_update_request: Sender<Task>,
-    ) -> Result<Self> {
-        let text = TextWidget::new(id, 0, shared_config)
-            .with_text("?")
-            .with_icon("bell")?
-            .with_state(State::Good);
+    loop {
+        let (num, crit) = api.recoverable(|| rofication_status(&path)).await?;
 
-        Ok(Rofication {
-            id,
-            update_interval: block_config.interval,
-            text,
-            socket_path: block_config.socket_path,
-            format: block_config.format.with_default("{num}")?,
-        })
-    }
-}
+        widget.set_values(map!("num" => Value::number(num)));
+        widget.state = if crit > 0 {
+            State::Warning
+        } else if num > 0 {
+            State::Info
+        } else {
+            State::Idle
+        };
+        api.set_widget(&widget).await?;
 
-impl Block for Rofication {
-    fn update(&mut self) -> Result<Option<Update>> {
-        match rofication_status(&self.socket_path) {
-            Ok(status) => {
-                let values = map!(
-                    "num" => Value::from_string(status.num.to_string()),
-                );
-
-                self.text.set_texts(self.format.render(&values)?);
-                if status.crit > 0 {
-                    self.text.set_state(State::Critical)
-                } else if status.num > 0 {
-                    self.text.set_state(State::Warning)
-                } else {
-                    self.text.set_state(State::Good)
+        loop {
+            tokio::select! {
+                _ = timer.tick() => break,
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left {
+                            let _ = spawn_shell("rofication-gui");
+                        }
+                    }
                 }
-                self.text.set_icon("bell")?;
-            }
-            Err(_) => {
-                self.text.set_text("?".to_string());
-                self.text.set_state(State::Critical);
-                self.text.set_icon("bell-slash")?;
             }
         }
-
-        Ok(Some(self.update_interval.into()))
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
-    }
-
-    fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.button == MouseButton::Left {
-            spawn_child_async("rofication-gui", &[])
-                .block_error("rofication", "could not spawn gui")?;
-        }
-        Ok(())
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
 
-fn rofication_status(socket_path: &str) -> Result<RotificationStatus> {
-    let socket = Path::new(socket_path);
-    // Connect to socket
-    let mut stream = match UnixStream::connect(&socket) {
-        Err(_) => {
-            return Err(BlockError(
-                "rofication".to_string(),
-                "Failed to connect to socket".to_string(),
-            ))
-        }
-        Ok(stream) => stream,
-    };
+async fn rofication_status(socket_path: &str) -> Result<(usize, usize)> {
+    let mut stream = UnixStream::connect(socket_path)
+        .await
+        .error("Failed to connect to socket")?;
 
     // Request count
     stream
-        .write(b"num:\n")
-        .block_error("rofication", "Failed to write to socket")?;
+        .write_all(b"num")
+        .await
+        .error("Failed to write to socket")?;
 
-    // Response must be two comma separated integers: regular and critical
-    let mut buffer = String::new();
+    let mut responce = String::new();
     stream
-        .read_to_string(&mut buffer)
-        .block_error("rofication", "Failed to read from socket")?;
+        .read_to_string(&mut responce)
+        .await
+        .error("Failed to read from socket")?;
 
-    // Original rofication uses newline to separate, while regolith forks uses comma.
-    let values = buffer
-        .split_once(|c| c == ',' || c == '\n')
-        .block_error("rofication", "Format error")?;
+    // Response must be two integers: regular and critical, separated eihter by a comma or a \n
+    let (num, crit) = responce
+        .split_once(|x| x == ',' || x == '\n')
+        .error("Incorrect responce")?;
 
-    let num = values
-        .0
-        .parse::<u64>()
-        .block_error("rofication", "Failed to parse num")?;
-    let crit = values
-        .1
-        .parse::<u64>()
-        .block_error("rofication", "Failed to parse crit")?;
-
-    Ok(RotificationStatus { num, crit })
+    Ok((
+        num.parse().error("Incorrect responce")?,
+        crit.parse().error("Incorrect responce")?,
+    ))
 }

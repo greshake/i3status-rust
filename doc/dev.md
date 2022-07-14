@@ -1,6 +1,6 @@
 ## Requirements for Compilation
 
-The Rust compiler `rustc`, `cargo` package manager, C compiler `gcc`, `libsensors-dev` and `libssl-dev` packages are required to build the binary.
+The Rust compiler `rustc`, `cargo` package manager, C compiler `gcc` and `libssl-dev` packages are required to build the binary.
 
 We also require Libdbus 1.6 or higher. On some older systems this may require installing `libdbus-1-dev`. 
 

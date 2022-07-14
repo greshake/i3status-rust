@@ -1,27 +1,175 @@
-use std::thread;
-use std::time::Instant;
+//! External IP address and various information about it
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$ip $country_flag"`
+//! `interval` | Interval in seconds for automatic updates | `300`
+//! `with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | `true`
+//!
+//!  Key | Value | Type | Unit
+//! -----|-------|------|------
+//! `ip` | The external IP address, as seen from a remote server | Text | -
+//! `version` | IPv4 or IPv6 | Text | -
+//! `city` | City name, such as "San Francisco" | Text | -
+//! `region` | Region name, such as "California" | Text | -
+//! `region_code` | Region code, such as "CA" for California | Text | -
+//! `country` | Country code (2 letter, ISO 3166-1 alpha-2) | Text | -
+//! `country_name` | Short country name | Text | -
+//! `country_code` | Country code (2 letter, ISO 3166-1 alpha-2) | Text | -
+//! `country_code_iso3` | Country code (3 letter, ISO 3166-1 alpha-3) | Text | -
+//! `country_capital` | Capital of the country | Text | -
+//! `country_tld` | Country specific TLD (top-level domain) | Text | -
+//! `continent_code` | Continent code | Text | -
+//! `in_eu` | Region code, such as "CA" | Flag | -
+//! `postal` | ZIP / Postal code | Text | -
+//! `latitude` | Latitude | Number | - (TOOD: make degrees?)
+//! `longitude` | Longitude | Number | - (TOOD: make degrees?)
+//! `timezone` | City | Text | -
+//! `utc_offset` | UTC offset (with daylight saving time) as +HHMM or -HHMM (HH is hours, MM is minutes) | Text | -
+//! `country_calling_code` | Country calling code (dial in code, comma separated) | Text | -
+//! `currency` | Currency code (ISO 4217) | Text | -
+//! `currency_name` | Currency name | Text | -
+//! `languages` | Languages spoken (comma separated 2 or 3 letter ISO 639 code with optional hyphen separated country suffix) | Text | -
+//! `country_area` | Area of the country (in sq km) | Number | -
+//! `country_population` | Population of the country | Number | -
+//! `timezone` | Time zone | Text | -
+//! `org` | Organization | Text | -
+//! `asn` | Autonomous system (AS) | Text | -
+//! `country_flag` | Flag of the country | Text (glyph) | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "external_ip"
+//! format = "$ip $country_code"
+//! ```
+//!
+//! # Notes
+//! All the information comes from https://ipapi.co/json/
+//! Check their documentation here: https://ipapi.co/api/#complete-location5
+//!
+//! The IP is queried, 1) When i3status-rs starts, 2) When a signal is received
+//! on D-Bus about a network configuration change, 3) Every 5 minutes. This
+//! periodic refresh exists to catch IP updates that don't trigger a notification,
+//! for example due to a IP refresh at the router.
+//!
+//! Flags: They are not icons but unicode glyphs. You will need a font that
+//! includes them. Tested with: https://www.babelstone.co.uk/Fonts/Flags.html
 
-use crossbeam_channel::Sender;
-use dbus::ffidisp::{BusType, Connection, ConnectionItem};
-use serde::{Deserialize as des, Serialize as ser};
-use serde_derive::Deserialize;
-
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::errors::*;
-use crate::formatting::value::Value;
-use crate::formatting::FormatTemplate;
-use crate::http;
-use crate::scheduler::Task;
-use crate::util::country_flag_from_iso_code;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, State};
-use crate::Duration;
+use super::prelude::*;
+use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
 const API_ENDPOINT: &str = "https://ipapi.co/json/";
-const BLOCK_NAME: &str = "external_ip";
 
-#[derive(ser, des, Default)]
+#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+struct ExternalIpConfig {
+    format: FormatConfig,
+    #[default(300.into())]
+    interval: Seconds,
+    #[default(true)]
+    with_network_manager: bool,
+}
+
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let config = ExternalIpConfig::deserialize(config).config_error()?;
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default("$ip $country_flag")?);
+
+    type UpdatesStream = Pin<Box<dyn Stream<Item = ()>>>;
+    let mut stream: UpdatesStream = if config.with_network_manager {
+        let dbus = new_system_dbus_connection().await?;
+        let proxy = zbus::fdo::DBusProxy::new(&dbus)
+            .await
+            .error("Failed to create DBusProxy")?;
+        proxy
+            .add_match(
+                "type='signal',\
+                    path='/org/freedesktop/NetworkManager',\
+                    interface='org.freedesktop.DBus.Properties',\
+                    member='PropertiesChanged'",
+            )
+            .await
+            .error("Failed to add match")?;
+        proxy
+            .add_match(
+                "type='signal',\
+                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
+                    interface='org.freedesktop.DBus.Properties',\
+                    member='PropertiesChanged'",
+            )
+            .await
+            .error("Failed to add match")?;
+        proxy
+            .add_match(
+                "type='signal',\
+                    path_namespace='/org/freedesktop/NetworkManager/IP4Config',\
+                    interface='org.freedesktop.DBus',\
+                    member='PropertiesChanged'",
+            )
+            .await
+            .error("Failed to add match")?;
+        let stream: zbus::MessageStream = dbus.into();
+        Box::pin(stream.map(|_| ()))
+    } else {
+        Box::pin(futures::stream::empty())
+    };
+
+    loop {
+        let info = api.recoverable(IPAddressInfo::new).await?;
+        let mut values = map! {
+            "ip" => Value::text(info.ip),
+            "version" => Value::text(info.version),
+            "city" => Value::text(info.city),
+            "region" => Value::text(info.region),
+            "region_code" => Value::text(info.region_code),
+            "country" => Value::text(info.country),
+            "country_name" => Value::text(info.country_name),
+            "country_flag" => Value::text(country_flag_from_iso_code(&info.country_code)),
+            "country_code" => Value::text(info.country_code),
+            "country_code_iso3" => Value::text(info.country_code_iso3),
+            "country_capital" => Value::text(info.country_capital),
+            "country_tld" => Value::text(info.country_tld),
+            "continent_code" => Value::text(info.continent_code),
+            "latitude" => Value::number(info.latitude),
+            "longitude" => Value::number(info.longitude),
+            "timezone" => Value::text(info.timezone),
+            "utc_offset" => Value::text(info.utc_offset),
+            "country_calling_code" => Value::text(info.country_calling_code),
+            "currency" => Value::text(info.currency),
+            "currency_name" => Value::text(info.currency_name),
+            "languages" => Value::text(info.languages),
+            "country_area" => Value::number(info.country_area),
+            "country_population" => Value::number(info.country_population),
+            "asn" => Value::text(info.asn),
+            "org" => Value::text(info.org),
+        };
+        info.postal
+            .map(|x| values.insert("postal".into(), Value::text(x)));
+        if info.in_eu {
+            values.insert("in_eu".into(), Value::flag());
+        }
+        widget.set_values(values);
+        api.set_widget(&widget).await?;
+
+        select! {
+            _ = sleep(config.interval.0) => (),
+            _ = api.wait_for_update_request() => (),
+            _ = stream.next() => {
+                // avoid too frequent updates
+                let _ = tokio::time::timeout(Duration::from_millis(100), async {
+                    loop { let _ = stream.next().await; }
+                }).await;
+            }
+        }
+    }
+}
+
+#[derive(Deserialize, Default)]
 #[serde(default)]
 struct IPAddressInfo {
     error: bool,
@@ -54,180 +202,20 @@ struct IPAddressInfo {
     org: String,
 }
 
-pub struct ExternalIP {
-    id: usize,
-    output: TextWidget,
-    format: FormatTemplate,
-    refresh_interval_success: u64,
-    refresh_interval_failure: u64,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields, default)]
-pub struct ExternalIPConfig {
-    /// External IP formatter.
-    pub format: FormatTemplate,
-    pub interval: u64,
-    pub error_interval: u64,
-    pub with_network_manager: bool,
-}
-
-impl Default for ExternalIPConfig {
-    fn default() -> Self {
-        Self {
-            format: FormatTemplate::default(),
-            interval: 300,
-            error_interval: 15,
-            with_network_manager: true,
+impl IPAddressInfo {
+    async fn new() -> Result<Self> {
+        let info: Self = REQWEST_CLIENT
+            .get(API_ENDPOINT)
+            .send()
+            .await
+            .error("Failed to request current location")?
+            .json::<Self>()
+            .await
+            .error("Failed to parse JSON")?;
+        if info.error {
+            Err(Error::new(info.reason))
+        } else {
+            Ok(info)
         }
-    }
-}
-
-impl ConfigBlock for ExternalIP {
-    type Config = ExternalIPConfig;
-
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        send: Sender<Task>,
-    ) -> Result<Self> {
-        if block_config.with_network_manager {
-            thread::Builder::new()
-                .name("externalip".into())
-                .spawn(move || {
-                    let c = Connection::get_private(BusType::System).unwrap();
-                    c.add_match(
-                        "type='signal',\
-                    path='/org/freedesktop/NetworkManager',\
-                    interface='org.freedesktop.DBus.Properties',\
-                    member='PropertiesChanged'",
-                    )
-                    .unwrap();
-                    c.add_match(
-                        "type='signal',\
-                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
-                    interface='org.freedesktop.DBus.Properties',\
-                    member='PropertiesChanged'",
-                    )
-                    .unwrap();
-                    c.add_match(
-                        "type='signal',\
-                    path_namespace='/org/freedesktop/NetworkManager/IP4Config',\
-                    interface='org.freedesktop.DBus',\
-                    member='PropertiesChanged'",
-                    )
-                    .unwrap();
-
-                    loop {
-                        let timeout = 300_000;
-
-                        for event in c.iter(timeout) {
-                            match event {
-                                ConnectionItem::Nothing => (),
-                                _ => {
-                                    send.send(Task {
-                                        id,
-                                        update_time: Instant::now(),
-                                    })
-                                    .unwrap();
-                                }
-                            }
-                        }
-                    }
-                })
-                .unwrap();
-        }
-        Ok(ExternalIP {
-            id,
-            output: TextWidget::new(id, 0, shared_config),
-            format: block_config.format.with_default("{ip} {country_flag}")?,
-            refresh_interval_success: block_config.interval,
-            refresh_interval_failure: block_config.error_interval,
-        })
-    }
-}
-
-impl Block for ExternalIP {
-    fn id(&self) -> usize {
-        self.id
-    }
-
-    fn update(&mut self) -> Result<Option<Update>> {
-        let (external_ip, success) = {
-            let ip_info: Result<IPAddressInfo> =
-                match http::http_get_json(API_ENDPOINT, Some(Duration::from_secs(3)), vec![]) {
-                    Ok(ip_info_json) => serde_json::from_value(ip_info_json.content)
-                        .block_error(BLOCK_NAME, "Failed to decode JSON"),
-                    _ => Err(BlockError(
-                        BLOCK_NAME.to_string(),
-                        "Failed to contact API".to_string(),
-                    )),
-                };
-            match ip_info {
-                Ok(ip_info) => match ip_info.error {
-                    false => {
-                        self.output.set_state(State::Idle);
-                        let flag = country_flag_from_iso_code(ip_info.country_code.as_str());
-                        let values = map!(
-                            "ip" => Value::from_string (ip_info.ip),
-                            "version" => Value::from_string (ip_info.version),
-                            "city" => Value::from_string (ip_info.city),
-                            "region" => Value::from_string (ip_info.region),
-                            "region_code" => Value::from_string (ip_info.region_code),
-                            "country" => Value::from_string (ip_info.country),
-                            "country_name" => Value::from_string (ip_info.country_name),
-                            "country_code" => Value::from_string (ip_info.country_code),
-                            "country_code_iso3" => Value::from_string (ip_info.country_code_iso3),
-                            "country_capital" => Value::from_string (ip_info.country_capital),
-                            "country_tld" => Value::from_string (ip_info.country_tld),
-                            "continent_code" => Value::from_string (ip_info.continent_code),
-                            "in_eu" => Value::from_boolean (ip_info.in_eu),
-                            "postal" => Value::from_string (ip_info.postal.unwrap_or_else(|| "No postal code".to_string())),
-                            "latitude" => Value::from_float (ip_info.latitude),
-                            "longitude" => Value::from_float (ip_info.longitude),
-                            "timezone" => Value::from_string (ip_info.timezone),
-                            "utc_offset" => Value::from_string (ip_info.utc_offset),
-                            "country_calling_code" => Value::from_string (ip_info.country_calling_code),
-                            "currency" => Value::from_string (ip_info.currency),
-                            "currency_name" => Value::from_string (ip_info.currency_name),
-                            "languages" => Value::from_string (ip_info.languages),
-                            "country_area" => Value::from_float (ip_info.country_area),
-                            "country_population" => Value::from_float (ip_info.country_population),
-                            "asn" => Value::from_string (ip_info.asn),
-                            "org" => Value::from_string (ip_info.org),
-                            "country_flag" => Value::from_string(flag),
-                        );
-                        let s = self.format.render(&values)?;
-                        (s.0, true)
-                    }
-                    true => {
-                        self.output.set_state(State::Critical);
-                        (format!("Error: {}", ip_info.reason), false)
-                    }
-                },
-                Err(err) => {
-                    self.output.set_state(State::Critical);
-                    (err.to_string(), false)
-                }
-            }
-        };
-
-        self.output.set_text(external_ip);
-        match success {
-            /* The external IP address can change without triggering a
-             * notification (for example a refresh between the router and
-             * the ISP) so check from time to time even on success */
-            true => Ok(Some(
-                Duration::from_secs(self.refresh_interval_success).into(),
-            )),
-            false => Ok(Some(
-                Duration::from_secs(self.refresh_interval_failure).into(),
-            )),
-        }
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.output]
     }
 }

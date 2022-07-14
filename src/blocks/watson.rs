@@ -1,199 +1,129 @@
-use std::fs::File;
-use std::io::BufReader;
+//! Watson statistics
+//!
+//! [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `show_time` | Whether to show recorded time. | `false`
+//! `state_path` | Path to the Watson state file. | `$XDG_CONFIG_HOME/watson/state`
+//! `interval` | Update interval, in seconds. | `60`
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "watson"
+//! show_time = true
+//! state_path = "/home/user/.config/watson/state"
+//! ```
+//!
+//! # TODO
+//! - Extend functionality: start / stop watson using this block
+
+use chrono::{offset::Local, DateTime};
+use dirs_next::config_dir;
+use inotify::{Inotify, WatchMask};
+use serde::de::Deserializer;
 use std::path::PathBuf;
-use std::thread;
-use std::time::{Duration, Instant};
+use tokio::fs::read_to_string;
 
-use crate::blocks::{Block, ConfigBlock, Update};
-use crate::config::SharedConfig;
-use crate::de::deserialize_duration;
-use crate::de::deserialize_local_timestamp;
-use crate::errors::*;
-use crate::protocol::i3bar_event::I3BarEvent;
-use crate::scheduler::Task;
-use crate::util::xdg_config_home;
-use crate::widgets::text::TextWidget;
-use crate::widgets::{I3BarWidget, State};
-use chrono::offset::Local;
-use chrono::DateTime;
-use crossbeam_channel::Sender;
-use inotify::{EventMask, Inotify, WatchMask};
-use serde_derive::Deserialize;
+use super::prelude::*;
 
-pub struct Watson {
-    id: usize,
-    text: TextWidget,
-    state_path: PathBuf,
-    show_time: bool,
-    prev_state: Option<WatsonState>,
-    update_interval: Duration,
-}
-
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
-pub struct WatsonConfig {
-    /// Path to state of watson
-    pub state_path: PathBuf,
-
-    /// Update interval in seconds
-    #[serde(deserialize_with = "deserialize_duration")]
-    pub interval: Duration,
-
-    /// Show time spent
-    pub show_time: bool,
+struct WatsonConfig {
+    state_path: Option<ShellString>,
+    #[default(60.into())]
+    interval: Seconds,
+    show_time: bool,
 }
 
-impl Default for WatsonConfig {
-    fn default() -> Self {
-        let mut config_dir = xdg_config_home();
-        config_dir.push("watson/state");
-        Self {
-            state_path: config_dir,
-            interval: Duration::from_secs(60),
-            show_time: false,
+pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+    let config = WatsonConfig::deserialize(config).config_error()?;
+    let mut widget = api.new_widget();
+
+    let mut show_time = config.show_time;
+
+    let (state_dir, state_file, state_path) = match config.state_path {
+        Some(p) => {
+            let mut p: PathBuf = (*p.expand()?).into();
+            let path = p.clone();
+            let file = p.file_name().error("Failed to parse state_dir")?.to_owned();
+            p.pop();
+            (p, file, path)
         }
-    }
-}
+        None => {
+            let mut path = config_dir().error("xdg config directory not found")?;
+            path.push("watson");
+            let dir = path.clone();
+            path.push("state");
+            (dir, "state".into(), path)
+        }
+    };
 
-impl ConfigBlock for Watson {
-    type Config = WatsonConfig;
+    let mut notify = Inotify::init().error("Failed to start inotify")?;
+    notify
+        .add_watch(&state_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
+        .error("Failed to watch watson state directory")?;
+    let mut state_updates = notify
+        .event_stream([0; 1024])
+        .error("Failed to create event stream")?;
 
-    fn new(
-        id: usize,
-        block_config: Self::Config,
-        shared_config: SharedConfig,
-        tx_update_request: Sender<Task>,
-    ) -> Result<Self> {
-        let watson = Watson {
-            id,
-            text: TextWidget::new(id, 0, shared_config),
-            state_path: block_config.state_path.clone(),
-            show_time: block_config.show_time,
-            update_interval: block_config.interval,
-            prev_state: None,
-        };
+    let mut timer = config.interval.timer();
+    let mut prev_state = None;
 
-        // Spin up a thread to watch for changes to the watson state file
-        // and schedule an update if needed.
-        thread::spawn(move || {
-            // Split filepath into filename and parent directory
-            let (file_name, parent_dir) = {
-                let name = block_config
-                    .state_path
-                    .file_name()
-                    .expect("watson state file had no name")
-                    .to_owned();
-
-                let mut s = block_config.state_path;
-                s.pop();
-                (name, s)
-            };
-            let mut notify = Inotify::init().expect("failed to start inotify");
-
-            // We have to watch the parent directory because watson never modifies the state file,
-            // but rather write to a temporary file, ensures its not corrupted, backups the
-            // previous state file and then renames the new state file. This means that we're
-            // always looking for `CREATE` events with the name of the state file.
-            notify
-                .add_watch(&parent_dir, WatchMask::CREATE)
-                .expect("failed to watch watson state file");
-
-            let mut buffer = [0; 1024];
-            loop {
-                let events = notify
-                    .read_events_blocking(&mut buffer)
-                    .expect("error while reading inotify events");
-
-                for event in events {
-                    match event.mask {
-                        EventMask::CREATE if event.name == Some(&file_name) => {
-                            tx_update_request
-                                .send(Task {
-                                    id,
-                                    update_time: Instant::now(),
-                                })
-                                .expect("unable to send task from watson watcher");
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        });
-
-        Ok(watson)
-    }
-}
-
-impl Block for Watson {
-    fn update(&mut self) -> Result<Option<Update>> {
-        let state = {
-            let file = BufReader::new(
-                File::open(&self.state_path).block_error("watson", "unable to open state file")?,
-            );
-            serde_json::from_reader(file).block_error("watson", "unable to deserialize state")?
-        };
-
+    loop {
+        let state = read_to_string(&state_path)
+            .await
+            .error("Failed to read state file")?;
+        let state = serde_json::from_str(&state).error("Fnable to deserialize state")?;
         match state {
             state @ WatsonState::Active { .. } => {
-                self.text.set_state(State::Good);
-                self.text
-                    .set_text(state.format(self.show_time, "started", format_delta_past));
-
-                self.prev_state = Some(state);
-                Ok(if self.show_time {
-                    // regular updates if time is enabled
-                    Some(self.update_interval.into())
-                } else {
-                    None
-                })
+                widget.state = State::Good;
+                widget.set_text(state.format(show_time, "started", format_delta_past));
+                prev_state = Some(state);
             }
             WatsonState::Idle {} => {
-                if let Some(prev_state @ WatsonState::Active { .. }) = &self.prev_state {
+                if let Some(prev @ WatsonState::Active { .. }) = &prev_state {
                     // The previous state was active, which means that we just now stopped the time
                     // tracking. This means that we could show some statistics.
-                    self.show_time = true;
-                    self.text.set_text(prev_state.format(
-                        self.show_time,
-                        "stopped",
-                        format_delta_after,
-                    ));
-                    self.text.set_state(State::Idle);
-                    self.prev_state = Some(state);
-
-                    // Show stopped status for some seconds before returning to idle
-                    Ok(Some(Duration::from_secs(5).into()))
+                    widget.state = State::Idle;
+                    widget.set_text(prev.format(true, "stopped", format_delta_after));
                 } else {
                     // File is empty which means that there is currently no active time tracking,
                     // and the previous state wasn't time tracking neither so we reset the
                     // contents.
-                    self.show_time = false;
-                    self.text.set_state(State::Idle);
-                    self.text.set_text(String::new());
+                    widget.state = State::Idle;
+                    widget.set_text(String::new());
+                }
+                prev_state = Some(state);
+            }
+        }
 
-                    self.prev_state = Some(state);
-                    Ok(if self.show_time {
-                        // regular updates if time is enabled
-                        Some(Duration::from_secs(60).into())
-                    } else {
-                        None
-                    })
+        api.set_widget(&widget).await?;
+
+        loop {
+            select! {
+                _ = timer.tick() => break,
+                Some(update) = state_updates.next() => {
+                    let update = update.error("Bad inoify update")?;
+                    if update.name.map(|x| state_file == x).unwrap_or(false) {
+                        break;
+                    }
+                }
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left {
+                            show_time = !show_time;
+                            break;
+                        }
+                    }
                 }
             }
         }
-    }
-
-    fn click(&mut self, _e: &I3BarEvent) -> Result<()> {
-        self.show_time = !self.show_time;
-        self.update()?;
-        Ok(())
-    }
-
-    fn view(&self) -> Vec<&dyn I3BarWidget> {
-        vec![&self.text]
-    }
-
-    fn id(&self) -> usize {
-        self.id
     }
 }
 
@@ -208,7 +138,7 @@ fn format_delta_past(delta: &chrono::Duration) -> String {
     spans
         .iter()
         .filter(|&(_, n)| *n != 0)
-        .map(|&(label, n)| format!("{} {}{} ago", n, label, if n > 1 { "s" } else { "" }))
+        .map(|&(label, n)| format!("{n} {label}{} ago", if n > 1 { "s" } else { "" }))
         .next()
         .unwrap_or_else(|| "now".into())
 }
@@ -224,9 +154,8 @@ fn format_delta_after(delta: &chrono::Duration) -> String {
 
     spans
         .iter()
-        .filter(|&(_, n)| *n != 0)
-        .map(|&(label, n)| format!("after {} {}{}", n, label, if n > 1 { "s" } else { "" }))
-        .next()
+        .find(|&(_, n)| *n != 0)
+        .map(|&(label, n)| format!("after {n} {label}{}", if n > 1 { "s" } else { "" }))
         .unwrap_or_else(|| "now".into())
 }
 
@@ -251,12 +180,14 @@ impl WatsonState {
             tags,
         } = self
         {
-            let mut s = String::with_capacity(16);
-            s.push_str(project);
-            if !tags.is_empty() {
-                s.push(' ');
-                s.push('[');
-                s.push_str(&tags.join(" "));
+            let mut s = project.clone();
+            if let [first, other @ ..] = &tags[..] {
+                s.push_str(" [");
+                s.push_str(first);
+                for tag in other {
+                    s.push(' ');
+                    s.push_str(tag);
+                }
                 s.push(']');
             }
             if show_time {
@@ -271,4 +202,12 @@ impl WatsonState {
             panic!("WatsonState::Idle does not have a specified format")
         }
     }
+}
+
+pub fn deserialize_local_timestamp<'de, D>(deserializer: D) -> Result<DateTime<Local>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use chrono::TimeZone;
+    i64::deserialize(deserializer).map(|seconds| Local.timestamp(seconds, 0))
 }

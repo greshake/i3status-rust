@@ -1,10 +1,8 @@
+use crate::util;
+use serde::de::{self, Deserializer, MapAccess, Visitor};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
-
-use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
-use serde_derive::Deserialize;
-
-use crate::util;
 
 #[derive(Debug, Clone)]
 pub struct Icons(pub HashMap<String, String>);
@@ -12,7 +10,7 @@ pub struct Icons(pub HashMap<String, String>);
 impl Default for Icons {
     fn default() -> Self {
         // "none" icon set
-        Self(map_to_owned! {
+        Self(map! {
             "backlight_empty" => "BRIGHT",
             "backlight_full" => "BRIGHT",
             "backlight_1" =>  "BRIGHT",
@@ -28,21 +26,28 @@ impl Default for Icons {
             "backlight_11" => "BRIGHT",
             "backlight_12" => "BRIGHT",
             "backlight_13" => "BRIGHT",
-            "bat" => "BAT",
+            "bat_10" => "BAT",
+            "bat_20" => "BAT",
+            "bat_30" => "BAT",
+            "bat_40" => "BAT",
+            "bat_50" => "BAT",
+            "bat_60" => "BAT",
+            "bat_70" => "BAT",
+            "bat_80" => "BAT",
+            "bat_90" => "BAT",
             "bat_charging" => "CHG",
             "bat_discharging" => "DCG",
             "bat_empty" => "EMP",
             "bat_full" => "FULL",
-            "bat_half" => "BAT",
             "bat_not_available" => "BAT N/A",
-            "bat_quarter" => "BAT",
-            "bat_three_quarters" => "BAT",
             "bell" => "ON",
             "bell-slash" => "OFF",
             "bluetooth" => "BT",
             "calendar" => "CAL",
             "cogs" => "LOAD",
             "cpu" => "CPU",
+            "cpu_boost_on" => "BOOST ON",
+            "cpu_boost_off" => "BOOST OFF",
             "disk_drive" => "DISK",
             "docker" => "DOCKER",
             "github" => "GITHUB",
@@ -55,14 +60,14 @@ impl Default for Icons {
             "memory_swap" => "SWAP",
             "mouse" => "MOUSE",
             "music" => "MUSIC",
+            "music_next" => ">",
             "music_pause" => "||",
-            // these need to be pango escaped
-            // TODO: more general fix?
-            "music_play" => "&gt;",
-            "music_next" => "&gt;",
-            "music_prev" => "&lt;",
+            "music_play" => ">",
+            "music_prev" => "<",
+            "net_bridge" => "BRIDGE",
             "net_down" => "DOWN",
             "net_loopback" => "LO",
+            "net_modem" => "MODEM",
             "net_up" => "UP ",
             "net_vpn" => "VPN",
             "net_wired" => "ETH",
@@ -72,7 +77,7 @@ impl Default for Icons {
             "phone_disconnected" => "PHONE",
             "ping" => "PING",
             "pomodoro" => "POMODORO",
-            "pomodoro_break" => "",
+            "pomodoro_break" => "BREAK",
             "pomodoro_paused" => "PAUSED",
             "pomodoro_started" => "STARTED",
             "pomodoro_stopped" => "STOPPED",
@@ -82,6 +87,7 @@ impl Default for Icons {
             "time" => "TIME",
             "toggle_off" => "OFF",
             "toggle_on" => "ON",
+            "unknown" => "??",
             "update" => "UPD",
             "uptime" => "UP",
             "volume_empty" => "VOL",
@@ -98,9 +104,7 @@ impl Default for Icons {
             "weather_snow" => "SNOW",
             "weather_sun" => "SUNNY",
             "weather_thunder" => "STORM",
-            "xrandr" => "SCREEN",
-            "cpu_boost_on" => "ON",
-            "cpu_boost_off" => "OFF"
+            "xrandr" => "SCREEN"
         })
     }
 }
@@ -111,8 +115,12 @@ impl Icons {
             Some(Icons::default())
         } else {
             let file = util::find_file(file, Some("icons"), Some("toml"))?;
-            Some(Icons(util::deserialize_file(&file).ok()?))
+            Some(Icons(util::deserialize_toml_file(&file).ok()?))
         }
+    }
+
+    pub fn apply_overrides(&mut self, overrides: HashMap<String, String>) {
+        self.0.extend(overrides);
     }
 }
 
@@ -165,14 +173,7 @@ impl<'de> Deserialize<'de> for Icons {
                 let mut overrides: Option<HashMap<String, String>> = None;
                 while let Some(key) = map.next_key()? {
                     match key {
-                        // TODO merge name and file into one option (let's say "icons")
-                        Field::Name => {
-                            if icons.is_some() {
-                                return Err(de::Error::duplicate_field("name or file"));
-                            }
-                            icons = Some(map.next_value()?);
-                        }
-                        Field::File => {
+                        Field::Name | Field::File => {
                             if icons.is_some() {
                                 return Err(de::Error::duplicate_field("name or file"));
                             }

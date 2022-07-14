@@ -1,110 +1,97 @@
-use std::fmt;
-use std::io;
-use std::option::Option;
-use std::string::*;
-use std::thread;
+use std::os::unix::io::FromRawFd;
+use std::time::Duration;
 
-use crossbeam_channel::Sender;
-use serde::{de, Deserializer};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum MouseButton {
-    Left,
-    Middle,
-    Right,
-    WheelUp,
-    WheelDown,
-    Forward, // On my mouse, these map to forward and back
-    Back,
-    Unknown,
-}
+use futures::StreamExt;
+use tokio::fs::File;
+use tokio::io::{AsyncBufReadExt, BufReader};
 
-#[derive(Deserialize, Debug, Clone)]
-struct I3BarEventInternal {
-    pub name: Option<String>,
-    pub instance: Option<String>,
-    #[allow(dead_code)]
-    pub x: u64,
-    #[allow(dead_code)]
-    pub y: u64,
+use crate::click::MouseButton;
+use crate::BoxedStream;
 
-    #[serde(deserialize_with = "deserialize_mousebutton")]
-    pub button: MouseButton,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct I3BarEvent {
-    pub id: Option<usize>,
+    pub id: usize,
     pub instance: Option<usize>,
     pub button: MouseButton,
 }
 
-impl I3BarEvent {
-    pub fn matches_id(&self, other: usize) -> bool {
-        match self.id {
-            Some(id) => id == other,
-            _ => false,
-        }
-    }
-}
+fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> {
+    // Avoid spawning a blocking therad (why doesn't tokio do this too?)
+    // This should be safe given that this function is called only once
+    let stdin = unsafe { File::from_raw_fd(0) };
+    let lines = BufReader::new(stdin).lines();
 
-pub fn process_events(sender: Sender<I3BarEvent>) {
-    thread::Builder::new()
-        .name("input".into())
-        .spawn(move || loop {
-            let mut input = String::new();
-            io::stdin().read_line(&mut input).unwrap();
-
+    futures::stream::unfold(lines, move |mut lines| async move {
+        loop {
             // Take only the valid JSON object betweem curly braces (cut off leading bracket, commas and whitespace)
-            let slice = input.trim_start_matches(|c| c != '{');
-            let slice = slice.trim_end_matches(|c| c != '}');
+            let line = lines.next_line().await.ok().flatten()?;
+            let line = line.trim_start_matches(|c| c != '{');
+            let line = line.trim_end_matches(|c| c != '}');
 
-            if !slice.is_empty() {
-                let e: I3BarEventInternal = serde_json::from_str(slice).unwrap();
-                sender
-                    .send(I3BarEvent {
-                        id: e.name.map(|x| x.parse::<usize>().unwrap()),
-                        instance: e.instance.map(|x| x.parse::<usize>().unwrap()),
-                        button: e.button,
-                    })
-                    .unwrap();
+            if line.is_empty() {
+                continue;
             }
-        })
-        .unwrap();
+
+            #[derive(Deserialize)]
+            struct I3BarEventRaw {
+                name: Option<String>,
+                instance: Option<String>,
+                button: MouseButton,
+            }
+
+            let event: I3BarEventRaw = serde_json::from_str(line).unwrap();
+            let id = match event.name {
+                Some(name) => name.parse().unwrap(),
+                None => continue,
+            };
+            let instance = event.instance.map(|x| x.parse::<usize>().unwrap());
+
+            use MouseButton::*;
+            let button = match (event.button, invert_scrolling) {
+                (WheelUp, false) | (WheelDown, true) => WheelUp,
+                (WheelUp, true) | (WheelDown, false) => WheelDown,
+                (other, _) => other,
+            };
+
+            let event = I3BarEvent {
+                id,
+                instance,
+                button,
+            };
+
+            break Some((event, lines));
+        }
+    })
+    .boxed_local()
 }
 
-fn deserialize_mousebutton<'de, D>(deserializer: D) -> Result<MouseButton, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    struct MouseButtonVisitor;
-
-    impl<'de> de::Visitor<'de> for MouseButtonVisitor {
-        type Value = MouseButton;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("u64")
+pub fn events_stream(
+    invert_scrolling: bool,
+    double_click_delay: Duration,
+) -> BoxedStream<I3BarEvent> {
+    let events = unprocessed_events_stream(invert_scrolling);
+    futures::stream::unfold((events, None), move |(mut events, pending)| async move {
+        if let Some(pending) = pending {
+            return Some((pending, (events, None)));
         }
 
-        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            // TODO: put this behind `--debug` flag
-            //eprintln!("{}", value);
-            Ok(match value {
-                1 => MouseButton::Left,
-                2 => MouseButton::Middle,
-                3 => MouseButton::Right,
-                4 => MouseButton::WheelUp,
-                5 => MouseButton::WheelDown,
-                9 => MouseButton::Forward,
-                8 => MouseButton::Back,
-                _ => MouseButton::Unknown,
-            })
-        }
-    }
+        let mut event = events.next().await?;
 
-    deserializer.deserialize_any(MouseButtonVisitor)
+        // Handle double clicks (for now only left)
+        if event.button == MouseButton::Left && !double_click_delay.is_zero() {
+            if let Ok(new_event) = tokio::time::timeout(double_click_delay, events.next()).await {
+                let new_event = new_event?;
+                if event == new_event {
+                    event.button = MouseButton::DoubleLeft;
+                } else {
+                    return Some((event, (events, Some(new_event))));
+                }
+            }
+        }
+
+        Some((event, (events, None)))
+    })
+    .boxed_local()
 }
