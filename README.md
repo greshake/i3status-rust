@@ -51,9 +51,9 @@ Blocks        | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/d
 Formatting    | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/blocks.md#formatting) | [click](https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html)
 Themes and Icons | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/themes.md) | [click](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md)
 
-## Integrate it into i3
+## Integrate it into i3/sway
 
-Next, edit your i3 bar configuration to use `i3status-rust`. For example:
+Next, edit your bar configuration to use `i3status-rust`. For example:
 
 ```text
 bar {
