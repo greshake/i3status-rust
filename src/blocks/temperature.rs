@@ -42,7 +42,7 @@
 //! ```toml
 //! [[block]]
 //! block = "temperature"
-//! format = "{min} min, {max} max, {average} avg|"
+//! format = "$min min, $max max, $average avg|"
 //! interval = 10
 //! chip = "*-isa-*"
 //! ```
