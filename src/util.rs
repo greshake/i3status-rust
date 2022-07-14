@@ -11,8 +11,8 @@ use crate::errors::*;
 
 /// Tries to find a file in standard locations:
 /// - Fist try to find a file by full path
-/// - Then try XDG_CONFIG_HOME (`~/.config`)
-/// - Then try XDG_DATA_HOME (`~/.local/share/`)
+/// - Then try XDG_CONFIG_HOME (e.g. `~/.config`)
+/// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)
 /// - Then try `/usr/share/`
 ///
 /// Automaticaly append an extension if not presented.
@@ -28,7 +28,7 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
         return Some(file);
     }
 
-    // Try XDG_CONFIG_HOME (`~/.config`)
+    // Try XDG_CONFIG_HOME (e.g. `~/.config`)
     if let Some(mut xdg_config) = config_dir() {
         xdg_config.push("i3status-rust");
         if let Some(subdir) = subdir {
@@ -40,7 +40,7 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
         }
     }
 
-    // Try XDG_DATA_HOME (`~/.local/share/`)
+    // Try XDG_DATA_HOME (e.g. `~/.local/share/`)
     if let Some(mut xdg_data) = data_dir() {
         xdg_data.push("i3status-rust");
         if let Some(subdir) = subdir {
