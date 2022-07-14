@@ -1,6 +1,3 @@
-The bar can be themed either by specifying a predefined theme or overriding defaults in the configuration.  
-We differentiate between themes and icon sets.
-
 ## Choosing your theme and icon set
 To use a theme or icon set other than the default, add them to your configuration file like so:
 ```toml
