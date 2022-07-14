@@ -91,7 +91,9 @@ block = "custom"
 json = true
 command = ''' echo "{\"icon\":\"ping\",\"text\":\"`ping -c4 1.1.1.1 | tail -n1 | cut -d'/' -f5`\"}" '''
 interval = 60
-on_click = "<command>"
+[[block.click]]
+button = "left"
+cmd = "<command>"
 ```
 
 ### System (Suspend/Shutdown/Reboot)
@@ -102,8 +104,10 @@ Opens a `dmenu`/`rofi` menu to choose between suspend/poweroff/reboot. Uses `sys
 [[block]]
 block = "custom"
 command = "echo \uf011" # assumes fontawesome icons
-on_click = "systemctl `echo -e 'suspend\npoweroff\nreboot' | dmenu`"
 interval = "once"
+[[block.click]]
+button = "left"
+cmd = "systemctl `echo -e 'suspend\npoweroff\nreboot' | dmenu`"
 ```
 
 ### XKCD
@@ -114,8 +118,10 @@ Opens a random xkcd comic in the default browser. Requires working `xdg-open`.
 [[block]]
 block = "custom"
 command = "echo xkcd"
-on_click = "xdg-open 'https://c.xkcd.com/random/comic/'"
 interval = "once"
+[[block.click]]
+button = "left"
+cmd = "xdg-open 'https://c.xkcd.com/random/comic/'"
 ```
 
 ### Screenshot
@@ -128,8 +134,10 @@ Optionally upload to imgbb and copy public link (requires `curl`, `jq`, `xclip`)
 [[block]]
 block = "custom"
 command = "echo \uf030" # assumes fontawesome icons
-on_click = "~/Projects/i3status-rust/examples/scripts/screenshot.sh"
 interval = "once"
+[[block.click]]
+button = "left"
+cmd = "~/Projects/i3status-rust/examples/scripts/screenshot.sh"
 ```
 
 ### Monitors
@@ -163,8 +171,10 @@ Switch between a dark and a light GTK theme using `gsettings`.
 [[block]]
 block = "custom"
 cycle = ["gsettings set org.gnome.desktop.interface gtk-theme Adapta; echo \U0001f311", "gsettings set org.gnome.desktop.interface gtk-theme None; echo \U0001f315"]
-on_click = "<command>"
 interval = "once"
+[[block.click]]
+button = "left"
+on_click = "<command>"
 ```
 
 And if you're feeling adventurous, here's a super sketchy version that also adjusts your `i3status-rs` and `i3bar` color scheme as well. The [`theme-switch.sh`](scripts/theme-switch.sh) script will likely need a lot of adjustments for your system before this works:
@@ -173,8 +183,10 @@ And if you're feeling adventurous, here's a super sketchy version that also adju
 [[block]]
 block = "custom"
 command = "cat ~/.config/i3status-rust/mode.txt"
-on_click = "~/Projects/i3status-rust/examples/scripts/theme-switch.sh"
 interval = "once"
+[[block.click]]
+button = "left"
+cmd = "~/Projects/i3status-rust/examples/scripts/theme-switch.sh"
 ```
 
 ### Pi-hole status
@@ -186,8 +198,10 @@ Displays the status of Pi-hole server and number of ads blocked. Requires `curl`
 block = "custom"
 command = ''' curl --max-time 3 --silent 'http://pi.hole/admin/api.php?summary' | jq '{icon:"pi_hole", state: "\(.status | sub("enabled";"Good") | sub("disabled";"Warning"))", text: "\(.status | sub("enabled";"Up") | sub("disabled";"Down")) \(.ads_blocked_today)"}' '''
 json = true
-on_click = "xdg-open http://pi.hole"
 interval = 180
+[[block.click]]
+button = "left"
+cmd = "xdg-open http://pi.hole"
 ```
 
 **Note:**
@@ -219,8 +233,10 @@ Display song with [Spotify TUI](https://github.com/Rigellute/spotify-tui)
 [[block]]
 block = "custom"
 command = "spt playback --format"
-on_click = "spt playback --toggle"
 interval = 3
+[[block.click]]
+button = "left"
+cmd = "spt playback --toggle"
 ```
 
 ### Nextcloud
@@ -231,5 +247,7 @@ Show Nextcloud GUI (if `nextcloud` is already running in background)
 [[block]]
 block = "custom"
 command = "echo \uf0c2 Nextcloud" # icon is for nerdfont, replace if other
-on_click = "nextcloud"
+[[block.click]]
+button = "left"
+cmd = "nextcloud"
 ```
