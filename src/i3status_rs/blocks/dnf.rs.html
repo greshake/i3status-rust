@@ -150,6 +150,8 @@
 <span id="145">145</span>
 <span id="146">146</span>
 <span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Fedora system</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!</span>
@@ -181,8 +183,10 @@
 <span class="doccomment">//! format_singular = &quot;One update available&quot;</span>
 <span class="doccomment">//! format_up_to_date = &quot;system up to date&quot;</span>
 <span class="doccomment">//! critical_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;</span>
+<span class="doccomment">//! [[block.click]]</span>
 <span class="doccomment">//! # shows dmenu with cached available updates. Any dmenu alternative should also work.</span>
-<span class="doccomment">//! on_click = &quot;dnf list -q --upgrades | tail -n +2 | rofi -dmenu&quot;</span>
+<span class="doccomment">//! button = &quot;left&quot;</span>
+<span class="doccomment">//! cmd = &quot;dnf list -q --upgrades | tail -n +2 | rofi -dmenu&quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
