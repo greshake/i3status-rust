@@ -12,7 +12,7 @@ name = "solarized-dark"
 name = "awesome"
 ```
 
-Both theme and an icon set can be loaded from a separate file. 
+Both the theme and icon set can be loaded from a separate file. 
 ```toml
 [theme]
 file = "<file>"
