@@ -30,7 +30,7 @@ Notes:
 - In case with icon sets, the file should be in `icons` subdirectory instead of `themes`.
 - You can omit the `.toml` extension while specifying `file` parameter.
 - `file` parameter is an alias to `name`, they are completely interchangeable.
-- All the standard themes are provides in files, so you can take them as examples of how to write your own themes/icon sets.
+- All the predefined themes are provided as files, so you use them as examples of how to write your own themes/icon sets.
 
 # Available themes
 
