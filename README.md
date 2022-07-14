@@ -24,9 +24,7 @@ Stable releases are packaged on some distributions:
 
 * On Void Linux: `xbps-install -S i3status-rust`
 
-* On NixOS: `nix-env -iA nixos.i3status-rust`
-
-* With [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.html#opt-programs.i3status-rust.enable)
+* On NixOS: `nix-env -iA nixos.i3status-rust` or with [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.html#opt-programs.i3status-rust.enable)
 
 Otherwise refer to [manual install](https://github.com/greshake/i3status-rust/blob/master/doc/dev.md) docs
 
