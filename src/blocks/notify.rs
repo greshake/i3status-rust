@@ -20,7 +20,7 @@
 //! How to use `paused` flag
 //!
 //! ```toml
-//! [block]
+//! [[block]]
 //! block = "notify"
 //! format = "$paused{Off}|On"
 //! ```
