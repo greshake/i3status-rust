@@ -386,6 +386,8 @@
 <span id="381">381</span>
 <span id="382">382</span>
 <span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available on pacman or an AUR helper.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Requires fakeroot to be installed (only required for pacman).</span>
@@ -437,8 +439,10 @@
 <span class="doccomment">//! format_singular = &quot;$pacman update available&quot;</span>
 <span class="doccomment">//! format_up_to_date = &quot;system up to date&quot;</span>
 <span class="doccomment">//! critical_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;</span>
+<span class="doccomment">//! [[block.click]]</span>
 <span class="doccomment">//! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.</span>
-<span class="doccomment">//! on_click = &quot;fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu&quot;</span>
+<span class="doccomment">//! button = &quot;left&quot;</span>
+<span class="doccomment">//! cmd = &quot;fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu&quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! pacman only config using warnings with ZFS modules:</span>
