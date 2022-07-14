@@ -39,7 +39,7 @@ There are some top-level configuration variables:
 
 Key | Description | Required | Default
 ----|-------------|----------|--------
-`icons` | The icon set that should be used. | No | `none`
+`icons` | The [icon set](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-sets) that should be used. | No | `none`
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, set it to `" <span font_family='NotoSans Nerd Font'>{icon}</span> "` to set font of the icons to be 'NotoSans Nerd Font' | No | `" {icon} "`
 `theme` | The predefined theme that should be used. You can also add your own overrides. | No | `plain`
 `scrolling` | The direction of scrolling, either `natural` or `reverse` | No | `reverse`
