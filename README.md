@@ -41,9 +41,9 @@ Key | Description | Required | Default
 ----|-------------|----------|--------
 `icons` | The icon set that should be used. Possible values are `none`, `awesome`, `awesome5`, `material` and `material-nf`. | No | `none`
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, set it to `" <span font_family='NotoSans Nerd Font'>{icon}</span> "` to set font of the icons to be 'NotoSans Nerd Font' | No | `" {icon} "`
-`theme` | The predefined theme that should be used. You can also add your own overrides.  for all available themes. | No | `plain`
+`theme` | The predefined theme that should be used. You can also add your own overrides. | No | `plain`
 `scrolling` | The direction of scrolling, either `natural` or `reverse` | No | `reverse`
-`block` | All blocks that will exist in your i3bar. | No | none
+`block` | All blocks that will exist in your bar. | No | none
 
 Documentation | Latest release (v0.22) | Git master (v0.30)
 --------------|------------------------|--------------------
