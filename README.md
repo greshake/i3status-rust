@@ -20,7 +20,7 @@ Stable releases are packaged on some distributions:
 
 * On Arch Linux: `sudo pacman -Syu i3status-rust`
 
-* On Fedora 31+: `sudo dnf install i3status-rs`. For older releases and CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
+* On Fedora/CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
 
 * On Void Linux: `xbps-install -S i3status-rust`
 
