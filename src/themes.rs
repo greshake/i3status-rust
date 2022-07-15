@@ -3,7 +3,6 @@ use std::fmt;
 use std::ops::Add;
 use std::str::FromStr;
 
-use color_space::{Hsv, Rgb};
 use serde::de::{self, Deserializer, MapAccess, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 
