@@ -99,6 +99,11 @@ i3status-rs can be signalled to force an update of all blocks by sending it the 
 
 i3status-rs can also be restarted in place (useful for testing changes to the config file) by sending it the SIGUSR2 signal.
 
+## Debugging
+
+Run `i3status-rust` in a terminal to check the JSON it is outputting.
+In addition, some blocks have debug logs that can be enabled like so: `RUST_LOG=block=debug i3status-rs` where block is the block name.
+
 ## Contributing
 
 We welcome new contributors! Take a gander at [CONTRIBUTING.md](CONTRIBUTING.md).
