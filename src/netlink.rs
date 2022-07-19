@@ -96,7 +96,7 @@ impl NetDevice {
     }
 
     pub async fn read_stats(&self) -> Option<NetDeviceStats> {
-        let (rx, tx) = futures::try_join!(
+        let (rx, tx) = tokio::try_join!(
             util::read_file(&self.rx_stat_path),
             util::read_file(&self.tx_stat_path)
         )
