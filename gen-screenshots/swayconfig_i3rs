@@ -1,0 +1,16 @@
+bar {
+    position top
+    height 16
+    status_padding 0
+    tray_output none
+    font pango:DejaVu Sans Mono, Font Awesome 6 Free 10
+    status_command i3status-rs $I3RS_PWD/screenshot_config.toml
+
+    colors {
+        statusline #00ff00
+        background #676767
+        inactive_workspace #32323200 #32323200 #5c5c5c
+    }
+}
+
+include /etc/sway/config.d/*

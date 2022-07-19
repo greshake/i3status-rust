@@ -1,0 +1,27 @@
+theme = "srcery"
+icons = "awesome6"
+
+[[block]]
+block = "custom"
+command = "echo '{\"icon\":\"time\",\"state\":\"Idle\", \"text\": \"Fri 19/05 18:22\"}'"
+json = true
+
+[[block]]
+block = "custom"
+command = "echo '{\"icon\":\"music\",\"state\":\"Info\", \"text\": \"Becoming The Bull | A\"}'"
+json = true
+
+[[block]]
+block = "custom"
+command = "echo '{\"icon\":\"cogs\",\"state\":\"Critical\", \"text\": \"7.76 3.29 2.20\"}'"
+json = true
+
+[[block]]
+block = "custom"
+command = "echo '{\"icon\":\"cpu\",\"state\":\"Warning\", \"text\": \"85%\"}'"
+json = true
+
+[[block]]
+block = "custom"
+command = "echo '{\"icon\":\"memory_mem\",\"state\":\"Idle\", \"text\": \"45.58%\"}'"
+json = true

@@ -37,29 +37,29 @@ Notes:
 * `plain` (default)
 ![plain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/plain.png)
 * `solarized-dark`
-![solarized-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized_dark.png)
+![solarized-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized-dark.png)
 * `solarized-light`
-![solarized-light](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized_light.png)
+![solarized-light](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized-light.png)
 * `slick`
 ![slick](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/slick.png)
 * `modern`
 ![modern](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/modern.png)
 * `bad-wolf`
-![bad-wolf](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/bad_wolf.png)
+![bad-wolf](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/bad-wolf.png)
 * `gruvbox-light`
-![gruvbox-light](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox_light.png)
+![gruvbox-light](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox-light.png)
 * `gruvbox-dark`
-![gruvbox-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox_dark.png)
+![gruvbox-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox-dark.png)
 * `space-villain`
-![space-villain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/space_villain.png)
+![space-villain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/space-villain.png)
 * `native` (like plain with no background and native separators)
 ![native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)
 * `semi-native` (like native but with background)
-//TODO add an image
+![semi-native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/semi-native.png)
 * `nord-dark` (polar night)
 ![nord-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)
 * `dracula`
-//TODO add an image
+![dracula](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/dracula.png)
 * `srcery`
 ![srcery](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/srcery.png)
 
