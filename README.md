@@ -101,8 +101,8 @@ i3status-rs can also be restarted in place (useful for testing changes to the co
 
 ## Debugging
 
-Run `i3status-rust` in a terminal to check the JSON it is outputting.
-In addition, some blocks have debug logs that can be enabled like so: `RUST_LOG=block=debug i3status-rs` where block is the block name.
+Run `i3status-rust` in a terminal to check the JSON it is outputting.  
+In addition, some blocks have debug logs that can be enabled like so: `RUST_LOG=block=debug i3status-rs` where "block" is the block name.
 
 ## Contributing
 
