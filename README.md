@@ -16,15 +16,11 @@ Optional:
 
 ## Getting Started
 
-Stable releases are packaged on some distributions:
+[![Packaging status](https://repology.org/badge/vertical-allrepos/i3status-rust.svg)](https://repology.org/project/i3status-rust/versions)
 
-* On Arch Linux: `sudo pacman -Syu i3status-rust`
+* For Fedora/CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
 
-* On Fedora/CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
-
-* On Void Linux: `xbps-install -S i3status-rust`
-
-* On NixOS: `nix-env -iA nixos.i3status-rust` or with [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.html#opt-programs.i3status-rust.enable)
+* On NixOS: [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.html#opt-programs.i3status-rust.enable)
 
 Otherwise refer to [manual install](https://github.com/greshake/i3status-rust/blob/master/doc/dev.md) docs
 
