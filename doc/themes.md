@@ -34,7 +34,7 @@ Notes:
 
 # Available themes
 
-Note: screenshots were generated using [this config](https://github.com/greshake/i3status-rust/blob/master/gen-screenshots/screenshot_config.toml) with (this swaybar config)(https://github.com/greshake/i3status-rust/blob/master/gen-screenshots/swayconfig_i3rs).
+Note: screenshots were generated using [this config](https://github.com/greshake/i3status-rust/blob/master/gen-screenshots/screenshot_config.toml) with [this swaybar config](https://github.com/greshake/i3status-rust/blob/master/gen-screenshots/swayconfig_i3rs).
 
 * `plain` (default)
 ![plain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/plain.png)
