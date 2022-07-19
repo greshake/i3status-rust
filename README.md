@@ -18,7 +18,7 @@ Optional:
 
 Install from one of the packages below:
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/i3status-rust.svg?columns=3)](https://repology.org/project/i3status-rust/versions)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/i3status-rust.svg?columns=5)](https://repology.org/project/i3status-rust/versions)
 
 * For Fedora/CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
 
