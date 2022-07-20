@@ -25,10 +25,10 @@ There are some optional top-level configuration variables:
 
 Key | Description | Default
 ----|-------------|----------
-`icons` | The [icon set](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-sets) that should be used. | `none`
+`icons` | The [icon set](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-sets) that should be used. | `"none"`
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, set it to `" <span font_family='NotoSans Nerd Font'>{icon}</span> "` to set font of the icons to be 'NotoSans Nerd Font' | `" {icon} "`
-`theme` | The [theme](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-themes) that should be used. | `plain`
-`scrolling` | The direction of scrolling, either `natural` or `reverse`. | `reverse`
+`theme` | The [theme](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-themes) that should be used. | `"plain"`
+`scrolling` | The direction of scrolling, either `natural` or `reverse`. | `"reverse"`
 `block` | All blocks that will exist in your bar. | none
 
 Documentation | Latest release (v0.22) | Git master (v0.30)
