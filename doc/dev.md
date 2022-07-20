@@ -11,7 +11,7 @@ Compilation is only tested with very recent stable versions of `rustc`. If you u
 ```shell
 $ git clone https://github.com/greshake/i3status-rust
 $ cd i3status-rust
-$ cargo install --path .
+$ cargo install --path . --locked
 $ ./install.sh
 ```
 
