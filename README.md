@@ -4,16 +4,6 @@
 
 `i3status-rs` is a feature-rich and resource-friendly replacement for i3status, written in pure Rust. It provides a way to display "blocks" of system information (time, battery status, volume, etc) on the [i3](https://i3wm.org/) or [sway](http://swaywm.org/) bar.
 
-## Requirements
-
-Most blocks assume you are running Linux, and some have their own system requirements; refer to the block documentation.
-
-Optional:
-
-* Font Awesome 4.x/5.x/6.x is required when using the icons config `name = "awesome"`, `name = "awesome5"` or `name = "awesome6"`.
-* For icons config `name = material`, a patched version of Google's MaterialIcons-Regular.ttf is required which includes \u{0020} (space), sets a descent ands lower all glyphs to properly align. It can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf).
-* Powerline Fonts are required for all themes using the powerline arrow char.
-
 ## Getting Started
 
 Install from one of the packages below:
