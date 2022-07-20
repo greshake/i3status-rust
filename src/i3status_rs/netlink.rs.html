@@ -332,7 +332,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_stats</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NetDeviceStats</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">rx</span>, <span class="ident">tx</span>) <span class="op">=</span> <span class="macro">futures::try_join!</span>(
+        <span class="kw">let</span> (<span class="ident">rx</span>, <span class="ident">tx</span>) <span class="op">=</span> <span class="macro">tokio::try_join!</span>(
             <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">rx_stat_path</span>),
             <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">tx_stat_path</span>)
         )
