@@ -24,6 +24,7 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 - [XKCD](#xkcd)
 - [Spotify TUI](#spt)
 - [Nextcloud](#nextcloud)
+- [Wttr.in](#wttr.in)
 
 ### Hostname
 
@@ -250,4 +251,15 @@ command = "echo \uf0c2 Nextcloud" # icon is for nerdfont, replace if other
 [[block.click]]
 button = "left"
 cmd = "nextcloud"
+```
+
+### Wttr.in
+
+Minimalistic weather block which uses (wttr.in)[https://github.com/chubin/wttr.in]
+
+```toml
+[[block]]
+block = "custom"
+command = "sed 's/  //' <(curl 'https://wttr.in/?format=1' -s)"
+interval = 600
 ```
