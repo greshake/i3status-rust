@@ -312,6 +312,10 @@
 <span id="307">307</span>
 <span id="308">308</span>
 <span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Current weather</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays local weather and temperature information. In order to use this block, you</span>
@@ -374,7 +378,11 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;weather&quot;</span>
 <span class="doccomment">//! format = &quot;$weather ($location) $temp, $wind m/s $direction&quot;</span>
-<span class="doccomment">//! service = { name = &quot;openweathermap&quot;, api_key = &quot;XXX&quot;, city_id = &quot;5398563&quot;, units = &quot;metric&quot; }</span>
+<span class="doccomment">//! [block.service]</span>
+<span class="doccomment">//! name = &quot;openweathermap&quot;</span>
+<span class="doccomment">//! api_key = &quot;XXX&quot;</span>
+<span class="doccomment">//! city_id = &quot;5398563&quot;</span>
+<span class="doccomment">//! units = &quot;metric&quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Used Icons</span>

@@ -716,16 +716,16 @@
     }
 
     <span class="comment">// Update database</span>
-    <span class="comment">//</span>
-    <span class="comment">// Why is this a shell command anyway?</span>
-    <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;sh&quot;</span>)
+    <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;fakeroot&quot;</span>)
         .<span class="ident">env</span>(<span class="string">&quot;LC_ALL&quot;</span>, <span class="string">&quot;C&quot;</span>)
         .<span class="ident">args</span>([
-            <span class="string">&quot;-c&quot;</span>,
-            <span class="kw-2">&amp;</span><span class="macro">format!</span>(
-                <span class="string">&quot;fakeroot -- pacman -Sy --dbpath \&quot;{}\&quot; --logfile /dev/null&quot;</span>,
-                <span class="ident">PACMAN_UPDATES_DB</span>.<span class="ident">display</span>()
-            ),
+            <span class="string">&quot;--&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="string">&quot;pacman&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="string">&quot;-Sy&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="string">&quot;--dbpath&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="ident">PACMAN_UPDATES_DB</span>.<span class="ident">as_os_str</span>(),
+            <span class="string">&quot;--logfile&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="string">&quot;/dev/null&quot;</span>.<span class="ident">as_ref</span>(),
         ])
         .<span class="ident">stdout</span>(<span class="ident">Stdio::null</span>())
         .<span class="ident">status</span>()
@@ -735,14 +735,14 @@
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="string">&quot;pacman -Sy exited with non zero exit status&quot;</span>));
     }
 
-    <span class="kw">let</span> <span class="ident">stdout</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;sh&quot;</span>)
+    <span class="kw">let</span> <span class="ident">stdout</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;fakeroot&quot;</span>)
         .<span class="ident">env</span>(<span class="string">&quot;LC_ALL&quot;</span>, <span class="string">&quot;C&quot;</span>)
         .<span class="ident">args</span>([
-            <span class="string">&quot;-c&quot;</span>,
-            <span class="kw-2">&amp;</span><span class="macro">format!</span>(
-                <span class="string">&quot;fakeroot pacman -Qu --dbpath \&quot;{}\&quot;&quot;</span>,
-                <span class="ident">PACMAN_UPDATES_DB</span>.<span class="ident">display</span>()
-            ),
+            <span class="string">&quot;--&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="string">&quot;pacman&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="string">&quot;-Qu&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="string">&quot;--dbpath&quot;</span>.<span class="ident">as_ref</span>(),
+            <span class="ident">PACMAN_UPDATES_DB</span>.<span class="ident">as_os_str</span>(),
         ])
         .<span class="ident">output</span>()
         .<span class="kw">await</span>
