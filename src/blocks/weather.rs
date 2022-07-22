@@ -141,13 +141,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .recoverable(|| config.service.get(config.autolocate))
             .await?;
 
-        let apparent_temp = australian_apparent_temp(
-            data.main.temp,
-            data.main.humidity,
-            data.wind.speed,
-            config.service.units(),
-        );
-
         let kmh_wind_speed = data.wind.speed
             * 3.6
             * match config.service.units() {
@@ -158,7 +151,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         widget.set_values(map! {
             "location" => Value::text(data.name),
             "temp" => Value::degrees(data.main.temp),
-            "apparent" => Value::degrees(apparent_temp),
+            "apparent" => Value::degrees(data.main.feels_like),
             "humidity" => Value::percents(data.main.humidity),
             "weather" => Value::text(data.weather[0].main.clone()),
             "weather_verbose" => Value::text(data.weather[0].description.clone()),
@@ -205,6 +198,7 @@ struct ApiWind {
 #[derive(Deserialize, Debug)]
 struct ApiMain {
     temp: f64,
+    feels_like: f64,
     humidity: f64,
 }
 
@@ -295,37 +289,6 @@ async fn find_ip_location() -> Result<Option<String>> {
         .await
         .error("Failed while parsing location API result")
         .map(|x| x.city)
-}
-
-// Compute the Australian Apparent Temperature (AT),
-// using the metric formula found on Wikipedia.
-// If using imperial units, we must first convert to metric.
-fn australian_apparent_temp(
-    raw_temp: f64,
-    raw_humidity: f64,
-    raw_wind_speed: f64,
-    units: UnitSystem,
-) -> f64 {
-    let temp_celsius = match units {
-        UnitSystem::Metric => raw_temp,
-        UnitSystem::Imperial => (raw_temp - 32.0) * 0.556,
-    };
-
-    let exponent = 17.27 * temp_celsius / (237.7 + temp_celsius);
-    let water_vapor_pressure = raw_humidity * 0.06105 * exponent.exp();
-
-    let metric_wind_speed = match units {
-        UnitSystem::Metric => raw_wind_speed,
-        UnitSystem::Imperial => raw_wind_speed * 0.447,
-    };
-
-    let metric_apparent_temp =
-        temp_celsius + 0.33 * water_vapor_pressure - 0.7 * metric_wind_speed - 4.0;
-
-    match units {
-        UnitSystem::Metric => metric_apparent_temp,
-        UnitSystem::Imperial => 1.8 * metric_apparent_temp + 32.,
-    }
 }
 
 // Convert wind direction in azimuth degrees to abbreviation names
