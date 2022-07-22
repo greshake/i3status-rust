@@ -312,43 +312,6 @@
 <span id="307">307</span>
 <span id="308">308</span>
 <span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
-<span id="327">327</span>
-<span id="328">328</span>
-<span id="329">329</span>
-<span id="330">330</span>
-<span id="331">331</span>
-<span id="332">332</span>
-<span id="333">333</span>
-<span id="334">334</span>
-<span id="335">335</span>
-<span id="336">336</span>
-<span id="337">337</span>
-<span id="338">338</span>
-<span id="339">339</span>
-<span id="340">340</span>
-<span id="341">341</span>
-<span id="342">342</span>
-<span id="343">343</span>
-<span id="344">344</span>
-<span id="345">345</span>
-<span id="346">346</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Current weather</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays local weather and temperature information. In order to use this block, you</span>
@@ -492,13 +455,6 @@
             .<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">config</span>.<span class="ident">service</span>.<span class="ident">get</span>(<span class="ident">config</span>.<span class="ident">autolocate</span>))
             .<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">apparent_temp</span> <span class="op">=</span> <span class="ident">australian_apparent_temp</span>(
-            <span class="ident">data</span>.<span class="ident">main</span>.<span class="ident">temp</span>,
-            <span class="ident">data</span>.<span class="ident">main</span>.<span class="ident">humidity</span>,
-            <span class="ident">data</span>.<span class="ident">wind</span>.<span class="ident">speed</span>,
-            <span class="ident">config</span>.<span class="ident">service</span>.<span class="ident">units</span>(),
-        );
-
         <span class="kw">let</span> <span class="ident">kmh_wind_speed</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">wind</span>.<span class="ident">speed</span>
             <span class="op">*</span> <span class="number">3.6</span>
             <span class="op">*</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">service</span>.<span class="ident">units</span>() {
@@ -509,7 +465,7 @@
         <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
             <span class="string">&quot;location&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">data</span>.<span class="ident">name</span>),
             <span class="string">&quot;temp&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">data</span>.<span class="ident">main</span>.<span class="ident">temp</span>),
-            <span class="string">&quot;apparent&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">apparent_temp</span>),
+            <span class="string">&quot;apparent&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">data</span>.<span class="ident">main</span>.<span class="ident">feels_like</span>),
             <span class="string">&quot;humidity&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">data</span>.<span class="ident">main</span>.<span class="ident">humidity</span>),
             <span class="string">&quot;weather&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">data</span>.<span class="ident">weather</span>[<span class="number">0</span>].<span class="ident">main</span>.<span class="ident">clone</span>()),
             <span class="string">&quot;weather_verbose&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">data</span>.<span class="ident">weather</span>[<span class="number">0</span>].<span class="ident">description</span>.<span class="ident">clone</span>()),
@@ -556,6 +512,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">struct</span> <span class="ident">ApiMain</span> {
     <span class="ident">temp</span>: <span class="ident">f64</span>,
+    <span class="ident">feels_like</span>: <span class="ident">f64</span>,
     <span class="ident">humidity</span>: <span class="ident">f64</span>,
 }
 
@@ -646,37 +603,6 @@
         .<span class="kw">await</span>
         .<span class="ident">error</span>(<span class="string">&quot;Failed while parsing location API result&quot;</span>)
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">city</span>)
-}
-
-<span class="comment">// Compute the Australian Apparent Temperature (AT),</span>
-<span class="comment">// using the metric formula found on Wikipedia.</span>
-<span class="comment">// If using imperial units, we must first convert to metric.</span>
-<span class="kw">fn</span> <span class="ident">australian_apparent_temp</span>(
-    <span class="ident">raw_temp</span>: <span class="ident">f64</span>,
-    <span class="ident">raw_humidity</span>: <span class="ident">f64</span>,
-    <span class="ident">raw_wind_speed</span>: <span class="ident">f64</span>,
-    <span class="ident">units</span>: <span class="ident">UnitSystem</span>,
-) -&gt; <span class="ident">f64</span> {
-    <span class="kw">let</span> <span class="ident">temp_celsius</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">units</span> {
-        <span class="ident">UnitSystem::Metric</span> =&gt; <span class="ident">raw_temp</span>,
-        <span class="ident">UnitSystem::Imperial</span> =&gt; (<span class="ident">raw_temp</span> <span class="op">-</span> <span class="number">32.0</span>) <span class="op">*</span> <span class="number">0.556</span>,
-    };
-
-    <span class="kw">let</span> <span class="ident">exponent</span> <span class="op">=</span> <span class="number">17.27</span> <span class="op">*</span> <span class="ident">temp_celsius</span> <span class="op">/</span> (<span class="number">237.7</span> <span class="op">+</span> <span class="ident">temp_celsius</span>);
-    <span class="kw">let</span> <span class="ident">water_vapor_pressure</span> <span class="op">=</span> <span class="ident">raw_humidity</span> <span class="op">*</span> <span class="number">0.06105</span> <span class="op">*</span> <span class="ident">exponent</span>.<span class="ident">exp</span>();
-
-    <span class="kw">let</span> <span class="ident">metric_wind_speed</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">units</span> {
-        <span class="ident">UnitSystem::Metric</span> =&gt; <span class="ident">raw_wind_speed</span>,
-        <span class="ident">UnitSystem::Imperial</span> =&gt; <span class="ident">raw_wind_speed</span> <span class="op">*</span> <span class="number">0.447</span>,
-    };
-
-    <span class="kw">let</span> <span class="ident">metric_apparent_temp</span> <span class="op">=</span>
-        <span class="ident">temp_celsius</span> <span class="op">+</span> <span class="number">0.33</span> <span class="op">*</span> <span class="ident">water_vapor_pressure</span> <span class="op">-</span> <span class="number">0.7</span> <span class="op">*</span> <span class="ident">metric_wind_speed</span> <span class="op">-</span> <span class="number">4.0</span>;
-
-    <span class="kw">match</span> <span class="ident">units</span> {
-        <span class="ident">UnitSystem::Metric</span> =&gt; <span class="ident">metric_apparent_temp</span>,
-        <span class="ident">UnitSystem::Imperial</span> =&gt; <span class="number">1.8</span> <span class="op">*</span> <span class="ident">metric_apparent_temp</span> <span class="op">+</span> <span class="number">32.</span>,
-    }
 }
 
 <span class="comment">// Convert wind direction in azimuth degrees to abbreviation names</span>
