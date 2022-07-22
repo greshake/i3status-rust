@@ -159,17 +159,29 @@ async fn get_stats(token: &str) -> Result<HashMap<String, usize>> {
 }
 
 async fn get_on_page(token: &str, page: usize) -> Result<Vec<Notification>> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Response {
+        Notifications(Vec<Notification>),
+        ErrorMessage { message: String },
+    }
+
     // https://docs.github.com/en/rest/reference/activity#notifications
     let request = REQWEST_CLIENT
         .get(format!(
             "https://api.github.com/notifications?per_page=100&page={page}",
         ))
         .header("Authorization", format!("token {token}"));
-    request
+    let responce = request
         .send()
         .await
         .error("Failed to send request")?
-        .json()
+        .json::<Response>()
         .await
-        .error("Failed to get JSON")
+        .error("Failed to get JSON")?;
+
+    match responce {
+        Response::Notifications(n) => Ok(n),
+        Response::ErrorMessage { message } => Err(Error::new(format!("API error: {message}"))),
+    }
 }
