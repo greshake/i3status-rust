@@ -60,7 +60,11 @@
 //! [[block]]
 //! block = "weather"
 //! format = "$weather ($location) $temp, $wind m/s $direction"
-//! service = { name = "openweathermap", api_key = "XXX", city_id = "5398563", units = "metric" }
+//! [block.service]
+//! name = "openweathermap"
+//! api_key = "XXX"
+//! city_id = "5398563"
+//! units = "metric"
 //! ```
 //!
 //! # Used Icons
