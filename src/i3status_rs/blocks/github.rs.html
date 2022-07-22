@@ -178,6 +178,18 @@
 <span id="173">173</span>
 <span id="174">174</span>
 <span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of GitHub notifications</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the &quot;notifications&quot; scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable or `token` configuration option. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: `critical`,`warning`,`info`,`good`</span>
@@ -339,19 +351,31 @@
 }
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_on_page</span>(<span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">page</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Notification</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>)]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">untagged</span>)]</span>
+    <span class="kw">enum</span> <span class="ident">Response</span> {
+        <span class="ident">Notifications</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Notification</span><span class="op">&gt;</span>),
+        <span class="ident">ErrorMessage</span> { <span class="ident">message</span>: <span class="ident">String</span> },
+    }
+
     <span class="comment">// https://docs.github.com/en/rest/reference/activity#notifications</span>
     <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">REQWEST_CLIENT</span>
         .<span class="ident">get</span>(<span class="macro">format!</span>(
             <span class="string">&quot;https://api.github.com/notifications?per_page=100&amp;page={page}&quot;</span>,
         ))
         .<span class="ident">header</span>(<span class="string">&quot;Authorization&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;token {token}&quot;</span>));
-    <span class="ident">request</span>
+    <span class="kw">let</span> <span class="ident">responce</span> <span class="op">=</span> <span class="ident">request</span>
         .<span class="ident">send</span>()
         .<span class="kw">await</span>
         .<span class="ident">error</span>(<span class="string">&quot;Failed to send request&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">json</span>()
+        .<span class="ident">json</span>::<span class="op">&lt;</span><span class="ident">Response</span><span class="op">&gt;</span>()
         .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to get JSON&quot;</span>)
+        .<span class="ident">error</span>(<span class="string">&quot;Failed to get JSON&quot;</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">match</span> <span class="ident">responce</span> {
+        <span class="ident">Response::Notifications</span>(<span class="ident">n</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">n</span>),
+        <span class="ident">Response::ErrorMessage</span> { <span class="ident">message</span> } =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;API error: {message}&quot;</span>))),
+    }
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.1 (e092d0b6b 2022-07-16)" ></div>
