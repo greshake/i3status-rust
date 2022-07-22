@@ -24,7 +24,7 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 - [XKCD](#xkcd)
 - [Spotify TUI](#spt)
 - [Nextcloud](#nextcloud)
-- [Wttr.in](#wttr.in)
+- [Wttr.in](#wttrin)
 
 ### Hostname
 
@@ -255,7 +255,7 @@ cmd = "nextcloud"
 
 ### Wttr.in
 
-Minimalistic weather block which uses (wttr.in)[https://github.com/chubin/wttr.in]
+Minimalistic weather block which uses [wttr.in](https://github.com/chubin/wttr.in)
 
 ```toml
 [[block]]
