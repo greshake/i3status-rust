@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["OnceDuration",""]],"struct":[["Seconds",""],["ShellString",""]]});
+initSidebarItems({"struct":[["Seconds",""],["ShellString",""]]});
