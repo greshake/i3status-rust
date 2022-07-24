@@ -125,7 +125,7 @@ mod open_weather_map {
                     city_id: city_id.clone(),
                     place: place.clone(),
                     coordinates: coordinates.clone(),
-                    units: units.clone(),
+                    units: *units,
                     lang: lang.clone(),
                 }),
                 _ => Err(Error::new("Illegal variant")),
@@ -260,9 +260,9 @@ mod met_no {
                 None => coordinates.clone(),
             };
 
-            if c.is_some() {
+            if let Some(coordinates) = c {
                 Ok(Config {
-                    coordinates: c.unwrap(),
+                    coordinates,
                     altitude: altitude.clone(),
                     lang: language.to_owned().unwrap_or_default(),
                 })
@@ -386,7 +386,7 @@ mod met_no {
         let querystr: HashMap<&str, String> = map! {
             "lat" => config.coordinates.0,
             "lon" => config.coordinates.1,
-            "altitude" => config.altitude.unwrap_or_default().clone(); if config.altitude.is_some()
+            "altitude" => config.altitude.unwrap_or_default(); if config.altitude.is_some()
         };
 
         let data: ForecastResponse = REQWEST_CLIENT
@@ -410,10 +410,10 @@ mod met_no {
             .unwrap()
             .summary
             .symbol_code
-            .split("_")
+            .split('_')
             .next()
             .unwrap();
-        let verbose = translate(&summary, config.lang).await?;
+        let verbose = translate(summary, config.lang).await?;
 
         Ok(WeatherResult {
             location: "Unknown".to_string(),
