@@ -87,12 +87,8 @@
 use super::prelude::*;
 use inotify::{Inotify, WatchMask};
 use std::process::Stdio;
-use tokio::{
-    io::{self, AsyncBufReadExt, BufReader},
-    process::Command,
-    time::Instant,
-};
-use tokio_stream::wrappers::IntervalStream;
+use tokio::io::{self, AsyncBufReadExt, BufReader};
+use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -101,7 +97,7 @@ struct CustomConfig {
     persistent: bool,
     cycle: Option<Vec<String>>,
     #[default(10.into())]
-    interval: OnceDuration,
+    interval: Seconds,
     json: bool,
     hide_when_empty: bool,
     shell: Option<String>,
@@ -164,11 +160,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = CustomConfig::deserialize(config).config_error()?;
     let mut widget = api.new_widget();
 
-    type TimerStream = Pin<Box<dyn Stream<Item = Instant> + Send + Sync>>;
-    let mut timer: TimerStream = match config.interval {
-        OnceDuration::Once => Box::pin(futures::stream::pending()),
-        OnceDuration::Duration(dur) => Box::pin(IntervalStream::new(dur.timer())),
-    };
+    let mut timer = config.interval.timer();
 
     type FileStream = Pin<Box<dyn Stream<Item = io::Result<inotify::EventOwned>> + Send + Sync>>;
     let mut file_updates: FileStream = match config.watch_files.as_slice() {
@@ -259,13 +251,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             )
             .await?;
 
-            if config.interval == OnceDuration::Once && config.watch_files.is_empty() {
-                return Ok(());
-            }
-
             loop {
                 select! {
-                    _ = timer.next() => break,
+                    _ = timer.tick() => break,
                     _ = file_updates.next() => break,
                     event = api.event() => match event {
                         UpdateRequest => break,
