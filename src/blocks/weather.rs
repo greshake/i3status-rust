@@ -118,12 +118,18 @@ pub enum WeatherService {
 }
 
 impl WeatherService {
-    async fn get(&self, autolocated_location: &Option<LocationResponse>) -> Result<WeatherResult> {
+    async fn get(
+        &self,
+        legend: &HashMap<String, met_no::LegendsResult>,
+        autolocated_location: &Option<LocationResponse>,
+    ) -> Result<WeatherResult> {
         match self {
             WeatherService::OpenWeatherMap(config) => {
                 open_weather_map::get(config, autolocated_location).await
             }
-            WeatherService::MetNo(config) => met_no::get(config, autolocated_location).await,
+            WeatherService::MetNo(config) => {
+                met_no::get(config, autolocated_location, legend).await
+            }
         }
     }
 }
@@ -184,13 +190,22 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .new_widget()
         .with_format(config.format.with_default("$weather $temp")?);
 
+    // met_no requires a one-time fetch of a set of "legends", which are
+    // translations of symbols into weather strings.
+    let legends_store: met_no::LegendsStore = match config.service {
+        WeatherService::MetNo(_) => met_no::get_legend().await?,
+        _ => HashMap::new(),
+    };
+
     loop {
         let location = match config.autolocate {
             true => find_ip_location().await.unwrap_or(None),
             false => None,
         };
 
-        let data = api.recoverable(|| config.service.get(&location)).await?;
+        let data = api
+            .recoverable(|| config.service.get(&legends_store, &location))
+            .await?;
 
         widget.set_values(data.values());
         widget.set_icon(data.icon.to_icon_str())?;

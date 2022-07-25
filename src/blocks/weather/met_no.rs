@@ -1,5 +1,7 @@
 use super::*;
 
+pub type LegendsStore = HashMap<String, LegendsResult>;
+
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
 pub struct Config {
@@ -10,7 +12,7 @@ pub struct Config {
 }
 
 #[derive(Deserialize)]
-struct LegendsResult {
+pub struct LegendsResult {
     desc_en: String,
     desc_nb: String,
     desc_nn: String,
@@ -82,8 +84,8 @@ struct ForecastTimeInstant {
 const LEGENDS_URL: &str = "https://api.met.no/weatherapi/weathericon/2.0/legends";
 const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
 
-async fn translate(summary: &str, lang: &ApiLanguage) -> Result<String> {
-    let legend: HashMap<String, LegendsResult> = REQWEST_CLIENT
+pub async fn get_legend() -> Result<LegendsStore> {
+    let res: LegendsStore = REQWEST_CLIENT
         .get(LEGENDS_URL)
         .send()
         .await
@@ -92,23 +94,26 @@ async fn translate(summary: &str, lang: &ApiLanguage) -> Result<String> {
         .await
         .error("Legend replied in unknown format")?;
 
-    let default_result = LegendsResult {
-        desc_en: summary.into(),
-        desc_nb: summary.into(),
-        desc_nn: summary.into(),
-    };
+    Ok(res)
+}
 
-    let data = legend.get(summary).unwrap_or(&default_result);
-    Ok(match lang {
-        ApiLanguage::English => data.desc_en.clone(),
-        ApiLanguage::NorwegianBokmaal => data.desc_nb.clone(),
-        ApiLanguage::NorwegianNynorsk => data.desc_nn.clone(),
-    })
+fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String {
+    legend
+        .get(summary)
+        .map(|res| match lang {
+            ApiLanguage::English => res.desc_en.as_str(),
+            ApiLanguage::NorwegianBokmaal => res.desc_nb.as_str(),
+            ApiLanguage::NorwegianNynorsk => res.desc_nn.as_str(),
+        })
+        .or_else(|| Some(summary))
+        .unwrap()
+        .into()
 }
 
 pub async fn get(
     config: &Config,
     autolocation: &Option<LocationResponse>,
+    legend: &LegendsStore,
 ) -> Result<WeatherResult> {
     let (lat, lon) = autolocation
         .as_ref()
@@ -146,15 +151,15 @@ pub async fn get(
         .split('_')
         .next()
         .unwrap();
-    let verbose = translate(summary, &config.lang).await?;
+    let translated = translate(legend, summary, &config.lang);
 
     Ok(WeatherResult {
         location: "Unknown".to_string(),
         temp: instant.air_temperature.unwrap_or_default(),
         apparent: None,
         humidity: instant.relative_humidity.unwrap_or_default(),
-        weather: verbose.clone(),
-        weather_verbose: verbose,
+        weather: translated.clone(),
+        weather_verbose: translated,
         wind: instant.wind_speed.unwrap_or_default(),
         wind_kmh: instant.wind_speed.unwrap_or_default() * 3.6,
         wind_direction: convert_wind_direction(instant.wind_from_direction).into(),
