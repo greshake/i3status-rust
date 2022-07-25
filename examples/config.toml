@@ -1,5 +1,19 @@
-theme = "solarized-dark"
-icons = "awesome"
+[theme]
+name = "solarized-dark"
+[theme.overrides]
+idle_bg = "#123456"
+idle_fg = "#abcdef"
+
+[icons]
+name = "awesome"
+[icons.overrides]
+bat = " | | "
+bat_full = " |X| "
+bat_charging = " |^| "
+bat_discharging = " |v| "
+
+[[block]]
+block = "cpu"
 
 [[block]]
 block = "disk_space"
@@ -18,14 +32,10 @@ format_mem = "$mem_total_used_percents.eng(2)"
 format_swap = "$swap_used_percents.eng(2)"
 
 [[block]]
-block = "cpu"
-
-[[block]]
-block = "load"
-interval = 5
-
-[[block]]
 block = "sound"
+[[block.click]]
+button = "left"
+cmd = "pavucontrol"
 
 [[block]]
 block = "time"
