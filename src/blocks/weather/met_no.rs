@@ -5,6 +5,7 @@ use super::*;
 pub struct Config {
     coordinates: Option<(String, String)>,
     altitude: Option<String>,
+    #[serde(default)]
     lang: ApiLanguage,
 }
 
