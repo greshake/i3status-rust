@@ -23,7 +23,7 @@ The default location is `$XDG_CONFIG_HOME/i3status-rust/config.toml`.
 
 There are some optional top-level configuration variables:
 
-Key | Description | Default
+Key | Description | &nbsp; &nbsp; &nbsp; &nbsp; Default &nbsp; &nbsp; &nbsp; &nbsp;
 ----|-------------|----------
 `icons` | The [icon set](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-sets) that should be used. | `"none"`
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, `" <span font_family='NotoSans Nerd Font'>{icon}</span> "`. | `" {icon} "`
@@ -33,7 +33,7 @@ Key | Description | Default
 
 There are also some optional block-level configuration variables, common to all blocks:
 
-Key | Description | Default
+Key | Description | &nbsp; &nbsp; &nbsp; &nbsp; Default &nbsp; &nbsp; &nbsp; &nbsp;
 ----|-------------|----------
 `signal` | Signal value that causes an update for this block with `0` corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | None
 `icons_format` | Same as top-level config option, but for this block only. | `" {icon} "`
