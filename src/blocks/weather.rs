@@ -28,9 +28,9 @@
 //! `api_key` | Your OpenWeatherMap API key. | Yes | None
 //! `city_id` | OpenWeatherMap's ID for the city. | Yes* | None
 //! `place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
-//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.236229089090216","9.331730718685696"]`
-//! `units` | Either `metric` or `imperial`. | Yes | `metric`
-//! `lang` | Language code. See [here](https://openweathermap.org/current#multi). Currently only affects `weather_verbose` key. | No | `en`
+//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.2362","9.3317"]` | Yes* | None
+//! `units` | Either `"metric"` or `"imperial"`. | No | `"metric"`
+//! `lang` | Language code. See [here](https://openweathermap.org/current#multi). Currently only affects `weather_verbose` key. | No | `"en"`
 //!
 //! One of `city_id`, `place` or `coordinates` is required. If more than one are supplied, `city_id` takes precedence over `place` which takes place over `coordinates`.
 //!
