@@ -41,3 +41,5 @@ cmd = "pavucontrol"
 block = "time"
 interval = 5
 format = "%a %d/%m %R"
+[block.icons_overrides]
+time = ""
