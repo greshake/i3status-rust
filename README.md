@@ -37,9 +37,8 @@ Key | Description | Default
 ----|-------------|----------
 `signal` | Signal value that causes an update for this block with `0` corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | None
 `icons_format` | Same as top-level config option, but for this block only. | `" {icon} "`
-`if_command` | | 
-`error_interval` | | 
-`error_format` | | 
+`if_command` | Only display the block if the supplied command returns 0 | None 
+`error_interval` | How long to wait until restarting the block after an error occurred | `5`
 `theme_overrides` | Same as top-level config option, but for this block only. | `" {icon} "`
 `icons_overrides` | Same as top-level config option, but for this block only. | `" {icon} "`
 
