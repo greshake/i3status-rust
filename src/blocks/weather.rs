@@ -121,9 +121,9 @@ impl WeatherService {
     async fn get(&self, autolocated_location: &Option<LocationResponse>) -> Result<WeatherResult> {
         match self {
             WeatherService::OpenWeatherMap(config) => {
-                open_weather_map::get(&config, autolocated_location).await
+                open_weather_map::get(config, autolocated_location).await
             }
-            WeatherService::MetNo(config) => met_no::get(&config, autolocated_location).await,
+            WeatherService::MetNo(config) => met_no::get(config, autolocated_location).await,
         }
     }
 }
