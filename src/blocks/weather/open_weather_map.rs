@@ -1,9 +1,9 @@
 use super::*;
 
-pub const OPEN_WEATHER_MAP_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
-pub const OPEN_WEATHER_MAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
-pub const OPEN_WEATHER_MAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
-pub const OPEN_WEATHER_MAP_PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
+pub const URL: &str = "https://api.openweathermap.org/data/2.5/weather";
+pub const API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
+pub const CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
+pub const PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -59,9 +59,7 @@ pub async fn get(config: &Config, autolocated: &Option<LocationResponse>) -> Res
     } = config;
 
     let api_key = api_key.as_ref().or_error(|| {
-        format!(
-            "missing key 'service.api_key' and environment variable {OPEN_WEATHER_MAP_API_KEY_ENV}",
-        )
+        format!("missing key 'service.api_key' and environment variable {API_KEY_ENV}",)
     })?;
 
     // If autolocated is Some, and then if autolocated.city is Some
@@ -83,7 +81,7 @@ pub async fn get(config: &Config, autolocated: &Option<LocationResponse>) -> Res
 
     // Refer to https://openweathermap.org/current
     let url = format!(
-        "{OPEN_WEATHER_MAP_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
+        "{URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
         units = match units {
             UnitSystem::Metric => "metric",
             UnitSystem::Imperial => "imperial",
