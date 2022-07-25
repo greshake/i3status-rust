@@ -45,7 +45,7 @@ Key | Description | Default
 `[block.icons_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `[[block.click]]` | Set or override click action for the block. See below for details. | Block default / None
 
-Click configuration:
+Per block click configuration `[[block.click]]`:
 
 Key | Description | Default
 ----|-------------|----------
