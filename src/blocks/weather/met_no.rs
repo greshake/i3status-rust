@@ -32,19 +32,6 @@ impl Default for ApiLanguage {
     }
 }
 
-impl From<&Option<&str>> for ApiLanguage {
-    fn from(o: &Option<&str>) -> Self {
-        match o.as_deref() {
-            Some(s) => match s {
-                "nn" => ApiLanguage::NorwegianNynorsk,
-                "nb" => ApiLanguage::NorwegianBokmaal,
-                _ => ApiLanguage::English,
-            },
-            None => ApiLanguage::English,
-        }
-    }
-}
-
 #[derive(Deserialize, Debug)]
 struct ForecastResponse {
     properties: ForecastProperties,
