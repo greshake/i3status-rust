@@ -1,33 +1,11 @@
 use super::*;
 
+#[derive(Deserialize, Debug)]
+#[serde(tag = "name", rename_all = "lowercase")]
 pub struct Config {
-    coordinates: (String, String),
+    coordinates: Option<(String, String)>,
     altitude: Option<String>,
     lang: ApiLanguage,
-}
-
-impl Config {
-    pub fn create(
-        autoloc: Option<LocationResponse>,
-        coordinates: &Option<(String, String)>,
-        altitude: &Option<String>,
-        language: &Option<ApiLanguage>,
-    ) -> Result<Self> {
-        let c = match autoloc {
-            Some(loc) => Some((format!("{}", loc.latitude), format!("{}", loc.longitude))),
-            None => coordinates.clone(),
-        };
-
-        if let Some(coordinates) = c {
-            Ok(Config {
-                coordinates,
-                altitude: altitude.clone(),
-                lang: language.to_owned().unwrap_or_default(),
-            })
-        } else {
-            Err(Error::new_format("No location given to weather (Yr)"))
-        }
-    }
 }
 
 #[derive(Deserialize)]
@@ -116,7 +94,7 @@ struct ForecastTimeInstant {
 const LEGENDS_URL: &str = "https://api.met.no/weatherapi/weathericon/2.0/legends";
 const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
 
-async fn translate(summary: &str, lang: ApiLanguage) -> Result<String> {
+async fn translate(summary: &str, lang: &ApiLanguage) -> Result<String> {
     let legend: HashMap<String, LegendsResult> = REQWEST_CLIENT
         .get(LEGENDS_URL)
         .send()
@@ -140,11 +118,20 @@ async fn translate(summary: &str, lang: ApiLanguage) -> Result<String> {
     })
 }
 
-pub async fn get(config: Config) -> Result<WeatherResult> {
+pub async fn get(
+    config: &Config,
+    autolocation: &Option<LocationResponse>,
+) -> Result<WeatherResult> {
+    let (lat, lon) = autolocation
+        .as_ref()
+        .map(|loc| loc.as_coordinates())
+        .or(config.coordinates.clone())
+        .error("No location given")?;
+
     let querystr: HashMap<&str, String> = map! {
-        "lat" => config.coordinates.0,
-        "lon" => config.coordinates.1,
-        "altitude" => config.altitude.unwrap_or_default(); if config.altitude.is_some()
+        "lat" => lat,
+        "lon" => lon,
+        "altitude" => config.altitude.as_ref().unwrap(); if config.altitude.is_some()
     };
 
     let data: ForecastResponse = REQWEST_CLIENT
@@ -171,7 +158,7 @@ pub async fn get(config: Config) -> Result<WeatherResult> {
         .split('_')
         .next()
         .unwrap();
-    let verbose = translate(summary, config.lang).await?;
+    let verbose = translate(summary, &config.lang).await?;
 
     Ok(WeatherResult {
         location: "Unknown".to_string(),

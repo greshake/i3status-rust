@@ -113,25 +113,8 @@ fn default_interval() -> Seconds {
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
 pub enum WeatherService {
-    OpenWeatherMap {
-        #[serde(default = "WeatherService::getenv_openweathermap_api_key")]
-        api_key: Option<String>,
-        #[serde(default = "WeatherService::getenv_openweathermap_city_id")]
-        city_id: Option<String>,
-        #[serde(default = "WeatherService::getenv_openweathermap_place")]
-        place: Option<String>,
-        coordinates: Option<(String, String)>,
-        #[serde(default)]
-        units: UnitSystem,
-        #[serde(default = "WeatherService::default_lang")]
-        lang: String,
-    },
-    MetNo {
-        coordinates: Option<(String, String)>,
-        altitude: Option<String>,
-        #[serde(default)]
-        lang: Option<met_no::ApiLanguage>,
-    },
+    OpenWeatherMap(open_weather_map::Config),
+    MetNo(met_no::Config),
 }
 
 impl WeatherService {
@@ -148,24 +131,12 @@ impl WeatherService {
         "en".into()
     }
 
-    async fn get(&self, autolocated_location: Option<LocationResponse>) -> Result<WeatherResult> {
+    async fn get(&self, autolocated_location: &Option<LocationResponse>) -> Result<WeatherResult> {
         match self {
-            WeatherService::OpenWeatherMap { .. } => {
-                open_weather_map::get(self.try_into()?, autolocated_location).await
+            WeatherService::OpenWeatherMap(config) => {
+                open_weather_map::get(&config, autolocated_location).await
             }
-            WeatherService::MetNo {
-                coordinates,
-                altitude,
-                lang,
-            } => {
-                met_no::get(met_no::Config::create(
-                    autolocated_location,
-                    coordinates,
-                    altitude,
-                    lang,
-                )?)
-                .await
-            }
+            WeatherService::MetNo(config) => met_no::get(&config, autolocated_location).await,
         }
     }
 }
@@ -232,9 +203,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             false => None,
         };
 
-        let data = api
-            .recoverable(|| config.service.get(location.clone()))
-            .await?;
+        let data = api.recoverable(|| config.service.get(&location)).await?;
 
         widget.set_values(data.values());
         widget.set_icon(data.icon.to_icon_str())?;
@@ -260,6 +229,12 @@ pub struct LocationResponse {
     city: Option<String>,
     latitude: f64,
     longitude: f64,
+}
+
+impl LocationResponse {
+    fn as_coordinates(&self) -> (String, String) {
+        (format!("{}", self.latitude), format!("{}", self.longitude))
+    }
 }
 
 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API

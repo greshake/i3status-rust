@@ -5,38 +5,20 @@ pub const OPEN_WEATHER_MAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 pub const OPEN_WEATHER_MAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
 pub const OPEN_WEATHER_MAP_PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
 
-pub struct OpenWeatherMapConfig {
+#[derive(Deserialize, Debug)]
+#[serde(tag = "name", rename_all = "lowercase")]
+pub struct Config {
+    #[serde(default = "WeatherService::getenv_openweathermap_api_key")]
     api_key: Option<String>,
+    #[serde(default = "WeatherService::getenv_openweathermap_city_id")]
     city_id: Option<String>,
+    #[serde(default = "WeatherService::getenv_openweathermap_place")]
     place: Option<String>,
     coordinates: Option<(String, String)>,
+    #[serde(default)]
     units: UnitSystem,
+    #[serde(default = "WeatherService::default_lang")]
     lang: String,
-}
-
-impl TryFrom<&WeatherService> for OpenWeatherMapConfig {
-    type Error = Error;
-
-    fn try_from(w: &WeatherService) -> Result<Self, Self::Error> {
-        match w {
-            WeatherService::OpenWeatherMap {
-                api_key,
-                city_id,
-                place,
-                coordinates,
-                units,
-                lang,
-            } => Ok(OpenWeatherMapConfig {
-                api_key: api_key.clone(),
-                city_id: city_id.clone(),
-                place: place.clone(),
-                coordinates: coordinates.clone(),
-                units: *units,
-                lang: lang.clone(),
-            }),
-            _ => Err(Error::new("Illegal variant")),
-        }
-    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -66,11 +48,8 @@ struct ApiWeather {
     description: String,
 }
 
-pub async fn get(
-    config: OpenWeatherMapConfig,
-    autolocated: Option<LocationResponse>,
-) -> Result<WeatherResult> {
-    let OpenWeatherMapConfig {
+pub async fn get(config: &Config, autolocated: &Option<LocationResponse>) -> Result<WeatherResult> {
+    let Config {
         api_key,
         city_id,
         place,
@@ -85,8 +64,9 @@ pub async fn get(
         )
     })?;
 
+    // If autolocated is Some, and then if autolocated.city is Some
     let city = match autolocated {
-        Some(loc) => loc.city,
+        Some(loc) => loc.city.as_ref(),
         None => None,
     };
 
