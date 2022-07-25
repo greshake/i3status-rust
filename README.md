@@ -55,6 +55,8 @@ Key | Description | Default
 `update` | Whether to update the block on click. | `false`
 `pass` | Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true) | `true`
 
+Further documentation:
+
 Documentation | Latest release (v0.22) | Git master (v0.30)
 --------------|------------------------|--------------------
 Blocks        | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/blocks.md) | [click](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
