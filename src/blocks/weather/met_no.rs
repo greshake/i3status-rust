@@ -105,8 +105,7 @@ fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String
             ApiLanguage::NorwegianBokmaal => res.desc_nb.as_str(),
             ApiLanguage::NorwegianNynorsk => res.desc_nn.as_str(),
         })
-        .or_else(|| Some(summary))
-        .unwrap()
+        .unwrap_or(summary)
         .into()
 }
 
