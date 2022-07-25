@@ -125,7 +125,7 @@ pub async fn get(
     let (lat, lon) = autolocation
         .as_ref()
         .map(|loc| loc.as_coordinates())
-        .or(config.coordinates.clone())
+        .or_else(|| config.coordinates.clone())
         .error("No location given")?;
 
     let querystr: HashMap<&str, String> = map! {
