@@ -31,6 +31,18 @@ Key | Description | Default
 `scrolling` | The direction of scrolling, either `natural` or `reverse`. | `"reverse"`
 `block` | All blocks that will exist in your bar. | none
 
+There are also some optional block-level configuration variables, common to all blocks:
+
+Key | Description | Default
+----|-------------|----------
+`signal` | Signal value that causes an update for this block with `0` corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | None
+`icons_format` | Same as top-level config option, but for this block only. | `" {icon} "`
+`if_command` | | 
+`error_interval` | | 
+`error_format` | | 
+`theme_overrides` | Same as top-level config option, but for this block only. | `" {icon} "`
+`icons_overrides` | Same as top-level config option, but for this block only. | `" {icon} "`
+
 Documentation | Latest release (v0.22) | Git master (v0.30)
 --------------|------------------------|--------------------
 Blocks        | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/blocks.md) | [click](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
