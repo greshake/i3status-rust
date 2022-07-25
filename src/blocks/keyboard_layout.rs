@@ -138,7 +138,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         api.set_widget(&widget).await?;
 
         select! {
-            update = backend.wait_for_chagne() => update?,
+            update = backend.wait_for_change() => update?,
             _ = api.wait_for_update_request() => (),
         }
     }
@@ -147,7 +147,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 #[async_trait]
 trait Backend {
     async fn get_info(&mut self) -> Result<Info>;
-    async fn wait_for_chagne(&mut self) -> Result<()>;
+    async fn wait_for_change(&mut self) -> Result<()>;
 }
 
 #[derive(Clone)]
@@ -182,7 +182,7 @@ impl Backend for SetXkbMap {
         })
     }
 
-    async fn wait_for_chagne(&mut self) -> Result<()> {
+    async fn wait_for_change(&mut self) -> Result<()> {
         sleep(self.0 .0).await;
         Ok(())
     }
@@ -222,7 +222,7 @@ impl Backend for LocaleBus {
         })
     }
 
-    async fn wait_for_chagne(&mut self) -> Result<()> {
+    async fn wait_for_change(&mut self) -> Result<()> {
         select! {
             _ = self.stream1.next() => (),
             _ = self.stream2.next() => (),
@@ -275,7 +275,7 @@ impl Backend for Sway {
         Ok(parse_layout(&self.cur_layout))
     }
 
-    async fn wait_for_chagne(&mut self) -> Result<()> {
+    async fn wait_for_change(&mut self) -> Result<()> {
         loop {
             let event = self
                 .events
@@ -380,7 +380,7 @@ impl Backend for KbddBus {
         Ok(self.info.clone())
     }
 
-    async fn wait_for_chagne(&mut self) -> Result<()> {
+    async fn wait_for_change(&mut self) -> Result<()> {
         let event = self
             .stream
             .next()
