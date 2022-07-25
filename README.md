@@ -43,7 +43,9 @@ Key | Description | Default
 `error_interval` | How long to wait until restarting the block after an error occurred | `5`
 `theme_overrides` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `icons_overrides` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
-`click` | Set or override click action for the block | Block default / None
+`click` | Set or override click action for the block. See below for details. | Block default / None
+
+Click configuration:
 
 Key | Description | Default
 ----|-------------|----------
