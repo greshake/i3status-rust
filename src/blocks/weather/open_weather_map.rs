@@ -8,17 +8,30 @@ pub const PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
 pub struct Config {
-    #[serde(default = "WeatherService::getenv_openweathermap_api_key")]
+    #[serde(default = "getenv_openweathermap_api_key")]
     api_key: Option<String>,
-    #[serde(default = "WeatherService::getenv_openweathermap_city_id")]
+    #[serde(default = "getenv_openweathermap_city_id")]
     city_id: Option<String>,
-    #[serde(default = "WeatherService::getenv_openweathermap_place")]
+    #[serde(default = "getenv_openweathermap_place")]
     place: Option<String>,
     coordinates: Option<(String, String)>,
     #[serde(default)]
     units: UnitSystem,
-    #[serde(default = "WeatherService::default_lang")]
+    #[serde(default = "default_lang")]
     lang: String,
+}
+
+fn getenv_openweathermap_api_key() -> Option<String> {
+    std::env::var(open_weather_map::API_KEY_ENV).ok()
+}
+fn getenv_openweathermap_city_id() -> Option<String> {
+    std::env::var(open_weather_map::CITY_ID_ENV).ok()
+}
+fn getenv_openweathermap_place() -> Option<String> {
+    std::env::var(open_weather_map::PLACE_ENV).ok()
+}
+fn default_lang() -> String {
+    "en".into()
 }
 
 #[derive(Deserialize, Debug)]
