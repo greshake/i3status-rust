@@ -45,6 +45,7 @@
 //! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
+//! `mappings` | Map `output_name` to custom name. | `None`
 //!
 //!  Key | Value | Type | Unit
 //! -----|-------|------|-----
