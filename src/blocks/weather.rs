@@ -43,7 +43,7 @@
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
 //! `name` | `metno`. | Yes | None
-//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.236229089090216","9.331730718685696"]`
+//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.2362","9.3317"]` | Required if `autolocate = false` | None
 //! `lang` | Language code: `en`, `nn` or `nb` | No | `en`
 //! `altitude` | Meters above sea level of the ground | No | Approximated by server
 //!
