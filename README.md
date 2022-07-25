@@ -30,8 +30,8 @@ Key | Description | Default
 `theme` | The [theme](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-themes) that should be used. | `"plain"`
 `scrolling` | The direction of scrolling, either `natural` or `reverse`. | `"reverse"`
 `block` | All blocks that will exist in your bar. | none
-`theme_overrides` | Refer to `Themes and Icons` below. | None
-`icons_overrides` | Refer to `Themes and Icons` below. | None
+`[theme.theme_overrides]` | Refer to `Themes and Icons` below. | None
+`[icons.icons_overrides]` | Refer to `Themes and Icons` below. | None
 
 There are also some optional block-level configuration variables, common to all blocks:
 
