@@ -24,9 +24,9 @@ other parameters.</p>
 <tr><td><code>api_key</code></td><td>Your OpenWeatherMap API key.</td><td>Yes</td><td>None</td></tr>
 <tr><td><code>city_id</code></td><td>OpenWeatherMap’s ID for the city.</td><td>Yes*</td><td>None</td></tr>
 <tr><td><code>place</code></td><td>OpenWeatherMap ‘By city name’ search query. See <a href="https://openweathermap.org/current">here</a></td><td>Yes*</td><td>None</td></tr>
-<tr><td><code>coordinates</code></td><td>GPS latitude longitude coordinates as a tuple, example: <code>[&quot;39.236229089090216&quot;,&quot;9.331730718685696&quot;]</code></td><td></td><td></td></tr>
-<tr><td><code>units</code></td><td>Either <code>metric</code> or <code>imperial</code>.</td><td>Yes</td><td><code>metric</code></td></tr>
-<tr><td><code>lang</code></td><td>Language code. See <a href="https://openweathermap.org/current#multi">here</a>. Currently only affects <code>weather_verbose</code> key.</td><td>No</td><td><code>en</code></td></tr>
+<tr><td><code>coordinates</code></td><td>GPS latitude longitude coordinates as a tuple, example: <code>[&quot;39.2362&quot;,&quot;9.3317&quot;]</code></td><td>Yes*</td><td>None</td></tr>
+<tr><td><code>units</code></td><td>Either <code>&quot;metric&quot;</code> or <code>&quot;imperial&quot;</code>.</td><td>No</td><td><code>&quot;metric&quot;</code></td></tr>
+<tr><td><code>lang</code></td><td>Language code. See <a href="https://openweathermap.org/current#multi">here</a>. Currently only affects <code>weather_verbose</code> key.</td><td>No</td><td><code>&quot;en&quot;</code></td></tr>
 </tbody></table>
 </div>
 <p>One of <code>city_id</code>, <code>place</code> or <code>coordinates</code> is required. If more than one are supplied, <code>city_id</code> takes precedence over <code>place</code> which takes place over <code>coordinates</code>.</p>

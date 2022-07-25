@@ -346,9 +346,9 @@
 <span class="doccomment">//! `api_key` | Your OpenWeatherMap API key. | Yes | None</span>
 <span class="doccomment">//! `city_id` | OpenWeatherMap&#39;s ID for the city. | Yes* | None</span>
 <span class="doccomment">//! `place` | OpenWeatherMap &#39;By city name&#39; search query. See [here](https://openweathermap.org/current) | Yes* | None</span>
-<span class="doccomment">//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `[&quot;39.236229089090216&quot;,&quot;9.331730718685696&quot;]`</span>
-<span class="doccomment">//! `units` | Either `metric` or `imperial`. | Yes | `metric`</span>
-<span class="doccomment">//! `lang` | Language code. See [here](https://openweathermap.org/current#multi). Currently only affects `weather_verbose` key. | No | `en`</span>
+<span class="doccomment">//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `[&quot;39.2362&quot;,&quot;9.3317&quot;]` | Yes* | None</span>
+<span class="doccomment">//! `units` | Either `&quot;metric&quot;` or `&quot;imperial&quot;`. | No | `&quot;metric&quot;`</span>
+<span class="doccomment">//! `lang` | Language code. See [here](https://openweathermap.org/current#multi). Currently only affects `weather_verbose` key. | No | `&quot;en&quot;`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! One of `city_id`, `place` or `coordinates` is required. If more than one are supplied, `city_id` takes precedence over `place` which takes place over `coordinates`.</span>
 <span class="doccomment">//!</span>
