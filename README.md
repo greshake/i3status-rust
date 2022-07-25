@@ -30,6 +30,8 @@ Key | Description | Default
 `theme` | The [theme](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-themes) that should be used. | `"plain"`
 `scrolling` | The direction of scrolling, either `natural` or `reverse`. | `"reverse"`
 `block` | All blocks that will exist in your bar. | none
+`theme_overrides` | Refer to `Themes and Icons` below. | None
+`icons_overrides` | Refer to `Themes and Icons` below. | None
 
 There are also some optional block-level configuration variables, common to all blocks:
 
@@ -39,8 +41,17 @@ Key | Description | Default
 `icons_format` | Same as top-level config option, but for this block only. | `" {icon} "`
 `if_command` | Only display the block if the supplied command returns 0 | None 
 `error_interval` | How long to wait until restarting the block after an error occurred | `5`
-`theme_overrides` | Same as top-level config option, but for this block only. | `" {icon} "`
-`icons_overrides` | Same as top-level config option, but for this block only. | `" {icon} "`
+`theme_overrides` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
+`icons_overrides` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
+`click` | Set or override click action for the block | Block default / None
+
+Key | Description | Default
+----|-------------|----------
+`button` | One of "Left", "Middle", "Right", "WheelUp", "WheelDown", "Forward", "Back" or "DoubleLeft" | -
+`cmd` | Command to run when mouse button event is detected. | None
+`sync` | Whether to wait for command to exit or not | `false`
+`update` | Whether to update the block on click. | `false`
+`pass` | Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true) | `true`
 
 Documentation | Latest release (v0.22) | Git master (v0.30)
 --------------|------------------------|--------------------
