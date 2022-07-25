@@ -39,8 +39,8 @@ Key | Description | Default
 ----|-------------|----------
 `signal` | Signal value that causes an update for this block with `0` corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | None
 `icons_format` | Same as top-level config option, but for this block only. | `" {icon} "`
-`if_command` | Only display the block if the supplied command returns 0 | None 
-`error_interval` | How long to wait until restarting the block after an error occurred | `5`
+`if_command` | Only display the block if the supplied command returns 0. | None 
+`error_interval` | How long to wait until restarting the block after an error occurred. | `5`
 `[block.theme_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `[block.icons_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `[[block.click]]` | Set or override click action for the block. See below for details. | Block default / None
@@ -49,11 +49,11 @@ Per block click configuration `[[block.click]]`:
 
 Key | Description | Default
 ----|-------------|----------
-`button` | One of "Left", "Middle", "Right", "WheelUp", "WheelDown", "Forward", "Back" or "DoubleLeft" | -
+`button` | One of "Left", "Middle", "Right", "WheelUp", "WheelDown", "Forward", "Back" or "DoubleLeft". | -
 `cmd` | Command to run when mouse button event is detected. | None
-`sync` | Whether to wait for command to exit or not | `false`
+`sync` | Whether to wait for command to exit or not. | `false`
 `update` | Whether to update the block on click. | `false`
-`pass` | Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true) | `true`
+`pass` | Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true). | `true`
 
 Further documentation:
 
