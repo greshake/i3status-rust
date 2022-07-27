@@ -29,7 +29,7 @@ Key | Description | Default
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, `" <span font_family='NotoSans Nerd Font'>{icon}</span> "`. | `" {icon} "`
 `theme` | The [theme](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-themes) that should be used. | `"plain"`
 `scrolling` | The direction of scrolling, either `natural` or `reverse`. | `"reverse"`
-`block` | All blocks that will exist in your bar. | none
+`[[block]]` | All blocks that will exist in your bar. | none
 `[theme.theme_overrides]` | Refer to `Themes and Icons` below. | None
 `[icons.icons_overrides]` | Refer to `Themes and Icons` below. | None
 
