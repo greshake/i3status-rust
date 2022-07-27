@@ -21,7 +21,7 @@
 //! path = "/my_path"
 //! ```
 //!
-//! Useage:
+//! Usage:
 //! ```sh
 //! # set full text to 'hello' and short text to 'hi'
 //! busctl --user call rs.i3status /my_path rs.i3status.custom SetText ss hello hi
@@ -31,11 +31,18 @@
 //! busctl --user call rs.i3status /my_path rs.i3status.custom SetState s good
 //! ```
 //!
+//! Because it's impossible to publish objects to the same name from different
+//! processes, having multiple dbus blocks in different bars won't work. As a workaround,
+//! you can set the env var `I3RS_DBUS_NAME` to set the interface a bar works on to
+//! differentiate between different processes. For example, setting this to 'top', will allow you
+//! to use `rs.i3status.top`.
+//!
 //! # TODO
 //! - Send a signal on click?
 
 use super::prelude::*;
 use zbus::{dbus_interface, fdo};
+use std::env;
 
 // Share DBus connection between multiple block instances
 static DBUS_CONNECTION: async_once_cell::OnceCell<Result<zbus::Connection>> =
@@ -109,9 +116,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 }
 
 async fn dbus_conn() -> Result<zbus::Connection> {
+
+    let dbus_interface_name = match env::var("I3RS_DBUS_NAME") {
+        Ok(v) => format!("{}.{}", DBUS_NAME, v),
+        Err(_) => DBUS_NAME.to_string()
+    };
+
     let conn = new_dbus_connection().await?;
-    conn.request_name(DBUS_NAME)
+    conn.request_name(dbus_interface_name)
         .await
-        .error("Failed to reuqest DBus name")?;
+        .error("Failed to request DBus name")?;
     Ok(conn)
 }
