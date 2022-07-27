@@ -120,6 +120,19 @@
 <span id="115">115</span>
 <span id="116">116</span>
 <span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A block controled by the DBus</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block creates a new DBus object in `rs.i3status` service. This object implements</span>
@@ -143,7 +156,7 @@
 <span class="doccomment">//! path = &quot;/my_path&quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Useage:</span>
+<span class="doccomment">//! Usage:</span>
 <span class="doccomment">//! ```sh</span>
 <span class="doccomment">//! # set full text to &#39;hello&#39; and short text to &#39;hi&#39;</span>
 <span class="doccomment">//! busctl --user call rs.i3status /my_path rs.i3status.custom SetText ss hello hi</span>
@@ -153,11 +166,18 @@
 <span class="doccomment">//! busctl --user call rs.i3status /my_path rs.i3status.custom SetState s good</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
+<span class="doccomment">//! Because it&#39;s impossible to publish objects to the same name from different</span>
+<span class="doccomment">//! processes, having multiple dbus blocks in different bars won&#39;t work. As a workaround,</span>
+<span class="doccomment">//! you can set the env var `I3RS_DBUS_NAME` to set the interface a bar works on to</span>
+<span class="doccomment">//! differentiate between different processes. For example, setting this to &#39;top&#39;, will allow you</span>
+<span class="doccomment">//! to use `rs.i3status.top`.</span>
+<span class="doccomment">//!</span>
 <span class="doccomment">//! # TODO</span>
 <span class="doccomment">//! - Send a signal on click?</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">zbus</span>::{<span class="ident">dbus_interface</span>, <span class="ident">fdo</span>};
+<span class="kw">use</span> <span class="ident">std::env</span>;
 
 <span class="comment">// Share DBus connection between multiple block instances</span>
 <span class="kw">static</span> <span class="ident">DBUS_CONNECTION</span>: <span class="ident">async_once_cell::OnceCell</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
@@ -231,10 +251,16 @@
 }
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">dbus_conn</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span> {
+
+    <span class="kw">let</span> <span class="ident">dbus_interface_name</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">env::var</span>(<span class="string">&quot;I3RS_DBUS_NAME&quot;</span>) {
+        <span class="prelude-val">Ok</span>(<span class="ident">v</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;{}.{}&quot;</span>, <span class="ident">DBUS_NAME</span>, <span class="ident">v</span>),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">DBUS_NAME</span>.<span class="ident">to_string</span>()
+    };
+
     <span class="kw">let</span> <span class="ident">conn</span> <span class="op">=</span> <span class="ident">new_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="ident">conn</span>.<span class="ident">request_name</span>(<span class="ident">DBUS_NAME</span>)
+    <span class="ident">conn</span>.<span class="ident">request_name</span>(<span class="ident">dbus_interface_name</span>)
         .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to reuqest DBus name&quot;</span>)<span class="question-mark">?</span>;
+        .<span class="ident">error</span>(<span class="string">&quot;Failed to request DBus name&quot;</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">conn</span>)
 }
 </code></pre></div>
