@@ -197,6 +197,7 @@
 <span id="192">192</span>
 <span id="193">193</span>
 <span id="194">194</span>
+<span id="195">195</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Network information</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.</span>
@@ -329,10 +330,11 @@
                     <span class="string">&quot;device&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">device</span>.<span class="ident">interface</span>),
                 };
 
-                <span class="ident">wifi</span>.<span class="number">0</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;ssid&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::text</span>(<span class="ident">s</span>)));
-                <span class="ident">wifi</span>.<span class="number">1</span>
+                <span class="ident">wifi</span>.<span class="ident">ssid</span>
+                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;ssid&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::text</span>(<span class="ident">s</span>)));
+                <span class="ident">wifi</span>.<span class="ident">frequency</span>
                     .<span class="ident">map</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;frequency&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::hertz</span>(<span class="ident">f</span>)));
-                <span class="ident">wifi</span>.<span class="number">2</span>
+                <span class="ident">wifi</span>.<span class="ident">signal</span>
                     .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;signal_strength&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::percents</span>(<span class="ident">s</span>)));
 
                 <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
