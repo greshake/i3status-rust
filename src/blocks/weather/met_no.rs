@@ -1,25 +1,27 @@
 use super::*;
 
-pub type LegendsStore = HashMap<String, LegendsResult>;
+type LegendsStore = HashMap<String, LegendsResult>;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
-pub struct Config {
+pub(super) struct Config {
     coordinates: Option<(String, String)>,
     altitude: Option<String>,
     #[serde(default)]
     lang: ApiLanguage,
+    #[serde(default)]
+    legend: Option<LegendsStore>,
 }
 
 #[derive(Deserialize)]
-pub struct LegendsResult {
+struct LegendsResult {
     desc_en: String,
     desc_nb: String,
     desc_nn: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub enum ApiLanguage {
+pub(super) enum ApiLanguage {
     #[serde(rename = "en")]
     English,
     #[serde(rename = "nn")]
@@ -84,7 +86,7 @@ struct ForecastTimeInstant {
 const LEGENDS_URL: &str = "https://api.met.no/weatherapi/weathericon/2.0/legends";
 const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
 
-pub async fn get_legend() -> Result<LegendsStore> {
+async fn get_legend() -> Result<LegendsStore> {
     let res: LegendsStore = REQWEST_CLIENT
         .get(LEGENDS_URL)
         .send()
@@ -109,86 +111,93 @@ fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String
         .into()
 }
 
-pub async fn get(
-    config: &Config,
-    autolocation: &Option<LocationResponse>,
-    legend: &LegendsStore,
-) -> Result<WeatherResult> {
-    let (lat, lon) = autolocation
-        .as_ref()
-        .map(|loc| loc.as_coordinates())
-        .or_else(|| config.coordinates.clone())
-        .error("No location given")?;
+#[async_trait]
+impl WeatherProvider for Config {
+    async fn get_weather(&mut self, location: &Option<LocationResponse>) -> Result<WeatherResult> {
+        if self.legend.is_none() {
+            self.legend = Some(get_legend().await?);
+        }
 
-    let querystr: HashMap<&str, String> = map! {
-        "lat" => lat,
-        "lon" => lon,
-        "altitude" => config.altitude.as_ref().unwrap(); if config.altitude.is_some()
-    };
+        let (lat, lon) = location
+            .as_ref()
+            .map(|loc| loc.as_coordinates())
+            .or_else(|| self.coordinates.clone())
+            .error("No location given")?;
 
-    let data: ForecastResponse = REQWEST_CLIENT
-        .get(FORECAST_URL)
-        .query(&querystr)
-        .header(reqwest::header::CONTENT_TYPE, "application/json")
-        .send()
-        .await
-        .error("Failed during request for current location")?
-        .json()
-        .await
-        .error("Failed while parsing location API result")?;
+        let querystr: HashMap<&str, String> = map! {
+            "lat" => lat,
+            "lon" => lon,
+            "altitude" => self.altitude.as_ref().unwrap(); if self.altitude.is_some()
+        };
 
-    let first = &data.properties.timeseries.first().unwrap().data;
+        let data: ForecastResponse = REQWEST_CLIENT
+            .get(FORECAST_URL)
+            .query(&querystr)
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .send()
+            .await
+            .error("Failed during request for current location")?
+            .json()
+            .await
+            .error("Failed while parsing location API result")?;
 
-    let instant = &first.instant.details;
+        let first = &data.properties.timeseries.first().unwrap().data;
 
-    let summary = first
-        .next_1_hours
-        .as_ref()
-        .unwrap()
-        .summary
-        .symbol_code
-        .split('_')
-        .next()
-        .unwrap();
-    let translated = translate(legend, summary, &config.lang);
+        let instant = &first.instant.details;
 
-    Ok(WeatherResult {
-        location: "Unknown".to_string(),
-        temp: instant.air_temperature.unwrap_or_default(),
-        apparent: None,
-        humidity: instant.relative_humidity.unwrap_or_default(),
-        weather: translated.clone(),
-        weather_verbose: translated,
-        wind: instant.wind_speed.unwrap_or_default(),
-        wind_kmh: instant.wind_speed.unwrap_or_default() * 3.6,
-        wind_direction: convert_wind_direction(instant.wind_from_direction).into(),
-        icon: match summary {
-            "cloudy" | "partlycloudy" | "fair" | "fog" => WeatherIcon::Clouds,
-            "clearsky" => WeatherIcon::Sun,
-            "heavyrain" | "heavyrainshowers" | "lightrain" | "lightrainshowers" | "rain"
-            | "rainshowers" => WeatherIcon::Rain,
-            "rainandthunder"
-            | "heavyrainandthunder"
-            | "rainshowersandthunder"
-            | "sleetandthunder"
-            | "sleetshowersandthunder"
-            | "snowandthunder"
-            | "snowshowersandthunder"
-            | "heavyrainshowersandthunder"
-            | "heavysleetandthunder"
-            | "heavysleetshowersandthunder"
-            | "heavysnowandthunder"
-            | "heavysnowshowersandthunder"
-            | "lightsleetandthunder"
-            | "lightrainandthunder"
-            | "lightsnowandthunder"
-            | "lightssleetshowersandthunder"
-            | "lightssnowshowersandthunder"
-            | "lightrainshowersandthunder" => WeatherIcon::Thunder,
-            "heavysleet" | "heavysleetshowers" | "heavysnow" | "heavysnowshowers"
-            | "lightsleet" | "lightsleetshowers" | "lightsnow" | "lightsnowshowers" | "sleet"
-            | "sleetshowers" | "snow" | "snowshowers" => WeatherIcon::Snow,
-            _ => WeatherIcon::Default,
-        },
-    })
+        let summary = first
+            .next_1_hours
+            .as_ref()
+            .unwrap()
+            .summary
+            .symbol_code
+            .split('_')
+            .next()
+            .unwrap();
+        let translated = translate(self.legend.as_ref().unwrap(), summary, &self.lang);
+
+        Ok(WeatherResult {
+            location: "Unknown".to_string(),
+            temp: instant.air_temperature.unwrap_or_default(),
+            apparent: None,
+            humidity: instant.relative_humidity.unwrap_or_default(),
+            weather: translated.clone(),
+            weather_verbose: translated,
+            wind: instant.wind_speed.unwrap_or_default(),
+            wind_kmh: instant.wind_speed.unwrap_or_default() * 3.6,
+            wind_direction: convert_wind_direction(instant.wind_from_direction).into(),
+            icon: weather_to_icon(summary),
+        })
+    }
+}
+
+fn weather_to_icon(weather: &str) -> WeatherIcon {
+    match weather {
+        "cloudy" | "partlycloudy" | "fair" | "fog" => WeatherIcon::Clouds,
+        "clearsky" => WeatherIcon::Sun,
+        "heavyrain" | "heavyrainshowers" | "lightrain" | "lightrainshowers" | "rain"
+        | "rainshowers" => WeatherIcon::Rain,
+        "rainandthunder"
+        | "heavyrainandthunder"
+        | "rainshowersandthunder"
+        | "sleetandthunder"
+        | "sleetshowersandthunder"
+        | "snowandthunder"
+        | "snowshowersandthunder"
+        | "heavyrainshowersandthunder"
+        | "heavysleetandthunder"
+        | "heavysleetshowersandthunder"
+        | "heavysnowandthunder"
+        | "heavysnowshowersandthunder"
+        | "lightsleetandthunder"
+        | "lightrainandthunder"
+        | "lightsnowandthunder"
+        | "lightssleetshowersandthunder"
+        | "lightssnowshowersandthunder"
+        | "lightrainshowersandthunder" => WeatherIcon::Thunder,
+        "heavysleet" | "heavysleetshowers" | "heavysnow" | "heavysnowshowers" | "lightsleet"
+        | "lightsleetshowers" | "lightsnow" | "lightsnowshowers" | "sleet" | "sleetshowers"
+        | "snow" | "snowshowers" => WeatherIcon::Snow,
+        _ => WeatherIcon::Default,
+    }
 }

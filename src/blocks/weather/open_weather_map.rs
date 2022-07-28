@@ -61,76 +61,82 @@ struct ApiWeather {
     description: String,
 }
 
-pub async fn get(config: &Config, autolocated: &Option<LocationResponse>) -> Result<WeatherResult> {
-    let Config {
-        api_key,
-        city_id,
-        place,
-        coordinates,
-        units,
-        lang,
-    } = config;
+#[async_trait]
+impl WeatherProvider for Config {
+    async fn get_weather(
+        &mut self,
+        autolocated: &Option<LocationResponse>,
+    ) -> Result<WeatherResult> {
+        let Config {
+            api_key,
+            city_id,
+            place,
+            coordinates,
+            units,
+            lang,
+        } = self;
 
-    let api_key = api_key.as_ref().or_error(|| {
-        format!("missing key 'service.api_key' and environment variable {API_KEY_ENV}",)
-    })?;
+        let api_key = api_key.as_ref().or_error(|| {
+            format!("missing key 'service.api_key' and environment variable {API_KEY_ENV}",)
+        })?;
 
-    // If autolocated is Some, and then if autolocated.city is Some
-    let city = match autolocated {
-        Some(loc) => loc.city.as_ref(),
-        None => None,
-    };
+        // If autolocated is Some, and then if autolocated.city is Some
+        let city = match autolocated {
+            Some(loc) => loc.city.as_ref(),
+            None => None,
+        };
 
-    let location_query = city
-        .map(|c| format!("q={}", c))
-        .or_else(|| city_id.as_ref().map(|x| format!("id={}", x)))
-        .or_else(|| place.as_ref().map(|x| format!("q={}", x)))
-        .or_else(|| {
-            coordinates
-                .as_ref()
-                .map(|(lat, lon)| format!("lat={}&lon={}", lat, lon))
-        })
-        .error("no location was provided")?;
+        let location_query = city
+            .map(|c| format!("q={}", c))
+            .or_else(|| city_id.as_ref().map(|x| format!("id={}", x)))
+            .or_else(|| place.as_ref().map(|x| format!("q={}", x)))
+            .or_else(|| {
+                coordinates
+                    .as_ref()
+                    .map(|(lat, lon)| format!("lat={}&lon={}", lat, lon))
+            })
+            .error("no location was provided")?;
 
-    // Refer to https://openweathermap.org/current
-    let url = format!(
-        "{URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
-        units = match units {
-            UnitSystem::Metric => "metric",
-            UnitSystem::Imperial => "imperial",
-        },
-    );
-
-    let data: ApiResponse = REQWEST_CLIENT
-        .get(url)
-        .send()
-        .await
-        .error("Failed during request for current location")?
-        .json()
-        .await
-        .error("Failed while parsing location API result")?;
-
-    Ok(WeatherResult {
-        location: data.name,
-        temp: data.main.temp,
-        apparent: Some(data.main.feels_like),
-        humidity: data.main.humidity,
-        weather: data.weather[0].main.clone(),
-        weather_verbose: data.weather[0].description.clone(),
-        wind: data.wind.speed,
-        wind_kmh: data.wind.speed
-            * match units {
-                UnitSystem::Metric => 3.6,
-                UnitSystem::Imperial => 3.6 * 0.447,
+        // Refer to https://openweathermap.org/current
+        let url = format!(
+            "{URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
+            units = match units {
+                UnitSystem::Metric => "metric",
+                UnitSystem::Imperial => "imperial",
             },
-        wind_direction: convert_wind_direction(data.wind.deg).into(),
-        icon: match data.weather[0].main.as_str() {
-            "Clear" => WeatherIcon::Sun,
-            "Rain" | "Drizzle" => WeatherIcon::Rain,
-            "Clouds" | "Fog" | "Mist" => WeatherIcon::Clouds,
-            "Thunderstorm" => WeatherIcon::Thunder,
-            "Snow" => WeatherIcon::Snow,
-            _ => WeatherIcon::Default,
-        },
-    })
+        );
+
+        let data: ApiResponse = REQWEST_CLIENT
+            .get(url)
+            .send()
+            .await
+            .error("Failed during request for current location")?
+            .json()
+            .await
+            .error("Failed while parsing location API result")?;
+
+        Ok(WeatherResult {
+            location: data.name,
+            temp: data.main.temp,
+            apparent: Some(data.main.feels_like),
+            humidity: data.main.humidity,
+            weather: data.weather[0].main.clone(),
+            weather_verbose: data.weather[0].description.clone(),
+            wind: data.wind.speed,
+            wind_kmh: data.wind.speed
+                * match units {
+                    UnitSystem::Metric => 3.6,
+                    UnitSystem::Imperial => 3.6 * 0.447,
+                },
+            wind_direction: convert_wind_direction(data.wind.deg).into(),
+            icon: match data.weather[0].main.as_str() {
+                "Clear" => WeatherIcon::Sun,
+                "Rain" | "Drizzle" => WeatherIcon::Rain,
+                "Clouds" | "Fog" | "Mist" => WeatherIcon::Clouds,
+                "Thunderstorm" => WeatherIcon::Thunder,
+                "Snow" => WeatherIcon::Snow,
+                _ => WeatherIcon::Default,
+            },
+        })
+    }
 }

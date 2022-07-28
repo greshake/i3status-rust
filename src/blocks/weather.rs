@@ -87,6 +87,8 @@
 //! - `weather_snow` (when weather is reported as "Snow")
 //! - `weather_default` (in all other cases)
 
+use std::sync::{Arc, Mutex};
+
 use super::prelude::*;
 
 mod met_no;
@@ -94,7 +96,7 @@ mod open_weather_map;
 
 const IP_API_URL: &str = "https://ipapi.co/json";
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WeatherConfig {
     #[serde(default = "default_interval")]
@@ -110,29 +112,21 @@ fn default_interval() -> Seconds {
     Seconds::new(600)
 }
 
-#[derive(Deserialize, Debug)]
+#[async_trait]
+trait WeatherProvider {
+    async fn get_weather(
+        &mut self,
+        autolocated_location: &Option<LocationResponse>,
+    ) -> Result<WeatherResult>;
+}
+
+#[derive(Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
-pub enum WeatherService {
+enum WeatherService {
     OpenWeatherMap(open_weather_map::Config),
     MetNo(met_no::Config),
 }
 
-impl WeatherService {
-    async fn get(
-        &self,
-        legend: &HashMap<String, met_no::LegendsResult>,
-        autolocated_location: &Option<LocationResponse>,
-    ) -> Result<WeatherResult> {
-        match self {
-            WeatherService::OpenWeatherMap(config) => {
-                open_weather_map::get(config, autolocated_location).await
-            }
-            WeatherService::MetNo(config) => {
-                met_no::get(config, autolocated_location, legend).await
-            }
-        }
-    }
-}
 pub enum WeatherIcon {
     Sun,
     Rain,
@@ -190,21 +184,21 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .new_widget()
         .with_format(config.format.with_default("$weather $temp")?);
 
-    // met_no requires a one-time fetch of a set of "legends", which are
-    // translations of symbols into weather strings.
-    let legends_store: met_no::LegendsStore = match config.service {
-        WeatherService::MetNo(_) => met_no::get_legend().await?,
-        _ => HashMap::new(),
+    let provider: Arc<Mutex<dyn WeatherProvider + Send + Sync>> = match config.service {
+        WeatherService::MetNo(config) => Arc::new(Mutex::new(config)),
+        WeatherService::OpenWeatherMap(config) => Arc::new(Mutex::new(config)),
     };
 
     loop {
-        let location = match config.autolocate {
-            true => find_ip_location().await.unwrap_or(None),
-            false => None,
-        };
-
         let data = api
-            .recoverable(|| config.service.get(&legends_store, &location))
+            .recoverable(|| async {
+                let location = match config.autolocate {
+                    true => find_ip_location().await.unwrap_or(None),
+                    false => None,
+                };
+                let mut p = provider.lock().unwrap();
+                p.get_weather(&location).await
+            })
             .await?;
 
         widget.set_values(data.values());
