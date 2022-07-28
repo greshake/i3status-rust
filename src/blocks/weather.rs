@@ -47,7 +47,7 @@
 //! `lang` | Language code: `en`, `nn` or `nb` | No | `en`
 //! `altitude` | Meters above sea level of the ground | No | Approximated by server
 //!
-//! Met.no does not support location name or apparent temperature.
+//! Met.no does not support location name.
 //!
 //! # Available Format Keys
 //!
