@@ -17,10 +17,10 @@ pub(super) struct Service {
 }
 
 impl Service {
-    pub(super) async fn new(config: Config) -> Result<Self> {
+    pub(super) async fn new(api: &mut CommonApi, config: Config) -> Result<Self> {
         Ok(Self {
             config,
-            legend: get_legend().await?,
+            legend: api.recoverable(get_legend).await?,
         })
     }
 }
