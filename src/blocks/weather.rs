@@ -87,8 +87,6 @@
 //! - `weather_snow` (when weather is reported as "Snow")
 //! - `weather_default` (in all other cases)
 
-use std::sync::{Arc, Mutex};
-
 use super::prelude::*;
 
 mod met_no;
@@ -115,7 +113,7 @@ fn default_interval() -> Seconds {
 #[async_trait]
 trait WeatherProvider {
     async fn get_weather(
-        &mut self,
+        &self,
         autolocated_location: &Option<LocationResponse>,
     ) -> Result<WeatherResult>;
 }
@@ -184,9 +182,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .new_widget()
         .with_format(config.format.with_default("$weather $temp")?);
 
-    let provider: Arc<Mutex<dyn WeatherProvider + Send + Sync>> = match config.service {
-        WeatherService::MetNo(config) => Arc::new(Mutex::new(config)),
-        WeatherService::OpenWeatherMap(config) => Arc::new(Mutex::new(config)),
+    let provider: Box<dyn WeatherProvider + Send + Sync> = match config.service {
+        WeatherService::MetNo(config) => Box::new(met_no::Service::new(config).await?),
+        WeatherService::OpenWeatherMap(config) => Box::new(open_weather_map::Service::new(config)),
     };
 
     loop {
@@ -196,8 +194,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     true => find_ip_location().await?,
                     false => None,
                 };
-                let mut p = provider.lock().unwrap();
-                p.get_weather(&location).await
+                provider.get_weather(&location).await
             })
             .await?;
 

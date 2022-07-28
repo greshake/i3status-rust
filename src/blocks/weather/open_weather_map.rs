@@ -21,6 +21,16 @@ pub struct Config {
     lang: String,
 }
 
+pub(super) struct Service {
+    config: Config,
+}
+
+impl Service {
+    pub(super) fn new(config: Config) -> Self {
+        Self { config }
+    }
+}
+
 fn getenv_openweathermap_api_key() -> Option<String> {
     std::env::var(open_weather_map::API_KEY_ENV).ok()
 }
@@ -62,11 +72,8 @@ struct ApiWeather {
 }
 
 #[async_trait]
-impl WeatherProvider for Config {
-    async fn get_weather(
-        &mut self,
-        autolocated: &Option<LocationResponse>,
-    ) -> Result<WeatherResult> {
+impl WeatherProvider for Service {
+    async fn get_weather(&self, autolocated: &Option<LocationResponse>) -> Result<WeatherResult> {
         let Config {
             api_key,
             city_id,
@@ -74,7 +81,7 @@ impl WeatherProvider for Config {
             coordinates,
             units,
             lang,
-        } = self;
+        } = &self.config;
 
         let api_key = api_key.as_ref().or_error(|| {
             format!("missing key 'service.api_key' and environment variable {API_KEY_ENV}",)

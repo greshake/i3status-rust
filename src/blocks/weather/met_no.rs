@@ -9,8 +9,20 @@ pub(super) struct Config {
     altitude: Option<String>,
     #[serde(default)]
     lang: ApiLanguage,
-    #[serde(default)]
-    legend: Option<LegendsStore>,
+}
+
+pub(super) struct Service {
+    config: Config,
+    legend: LegendsStore,
+}
+
+impl Service {
+    pub(super) async fn new(config: Config) -> Result<Self> {
+        Ok(Self {
+            config,
+            legend: get_legend().await?,
+        })
+    }
 }
 
 #[derive(Deserialize)]
@@ -112,22 +124,24 @@ fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String
 }
 
 #[async_trait]
-impl WeatherProvider for Config {
-    async fn get_weather(&mut self, location: &Option<LocationResponse>) -> Result<WeatherResult> {
-        if self.legend.is_none() {
-            self.legend = Some(get_legend().await?);
-        }
+impl WeatherProvider for Service {
+    async fn get_weather(&self, location: &Option<LocationResponse>) -> Result<WeatherResult> {
+        let Config {
+            coordinates,
+            altitude,
+            lang,
+        } = &self.config;
 
         let (lat, lon) = location
             .as_ref()
             .map(|loc| loc.as_coordinates())
-            .or_else(|| self.coordinates.clone())
+            .or_else(|| coordinates.clone())
             .error("No location given")?;
 
         let querystr: HashMap<&str, String> = map! {
             "lat" => lat,
             "lon" => lon,
-            "altitude" => self.altitude.as_ref().unwrap(); if self.altitude.is_some()
+            "altitude" => altitude.as_ref().unwrap(); if altitude.is_some()
         };
 
         let data: ForecastResponse = REQWEST_CLIENT
@@ -154,7 +168,7 @@ impl WeatherProvider for Config {
             .split('_')
             .next()
             .unwrap();
-        let translated = translate(self.legend.as_ref().unwrap(), summary, &self.lang);
+        let translated = translate(&self.legend, summary, lang);
 
         let temp = instant.air_temperature.unwrap_or_default();
         let humidity = instant.relative_humidity.unwrap_or_default();
