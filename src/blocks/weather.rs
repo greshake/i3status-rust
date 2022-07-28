@@ -125,7 +125,7 @@ enum WeatherService {
     MetNo(met_no::Config),
 }
 
-pub enum WeatherIcon {
+enum WeatherIcon {
     Sun,
     Rain,
     Clouds,
@@ -147,17 +147,17 @@ impl WeatherIcon {
     }
 }
 
-pub struct WeatherResult {
-    pub location: String,
-    pub temp: f64,
-    pub apparent: f64,
-    pub humidity: f64,
-    pub weather: String,
-    pub weather_verbose: String,
-    pub wind: f64,
-    pub wind_kmh: f64,
-    pub wind_direction: String,
-    pub icon: WeatherIcon,
+struct WeatherResult {
+    location: String,
+    temp: f64,
+    apparent: f64,
+    humidity: f64,
+    weather: String,
+    weather_verbose: String,
+    wind: f64,
+    wind_kmh: f64,
+    wind_direction: String,
+    icon: WeatherIcon,
 }
 
 impl WeatherResult {
@@ -211,14 +211,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, SmartDefault)]
 #[serde(rename_all = "lowercase")]
-pub enum UnitSystem {
+enum UnitSystem {
     #[default]
     Metric,
     Imperial,
 }
 
 #[derive(Deserialize, Clone)]
-pub struct LocationResponse {
+struct LocationResponse {
     city: Option<String>,
     latitude: f64,
     longitude: f64,
@@ -243,7 +243,7 @@ async fn find_ip_location() -> Result<Option<LocationResponse>> {
 }
 
 // Convert wind direction in azimuth degrees to abbreviation names
-pub fn convert_wind_direction(direction_opt: Option<f64>) -> &'static str {
+fn convert_wind_direction(direction_opt: Option<f64>) -> &'static str {
     match direction_opt {
         Some(direction) => match direction.round() as i64 {
             24..=68 => "NE",
@@ -260,7 +260,7 @@ pub fn convert_wind_direction(direction_opt: Option<f64>) -> &'static str {
 }
 
 /// Compute the Australian Apparent Temperature from metric units
-pub fn australian_apparent_temp(temp: f64, humidity: f64, wind_speed: f64) -> f64 {
+fn australian_apparent_temp(temp: f64, humidity: f64, wind_speed: f64) -> f64 {
     let exponent = 17.27 * temp / (237.7 + temp);
     let water_vapor_pressure = humidity * 0.06105 * exponent.exp();
     temp + 0.33 * water_vapor_pressure - 0.7 * wind_speed - 4.0

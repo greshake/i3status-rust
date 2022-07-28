@@ -1,13 +1,13 @@
 use super::*;
 
-pub const URL: &str = "https://api.openweathermap.org/data/2.5/weather";
-pub const API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
-pub const CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
-pub const PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
+pub(super) const URL: &str = "https://api.openweathermap.org/data/2.5/weather";
+pub(super) const API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
+pub(super) const CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
+pub(super) const PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
-pub struct Config {
+pub(super) struct Config {
     #[serde(default = "getenv_openweathermap_api_key")]
     api_key: Option<String>,
     #[serde(default = "getenv_openweathermap_city_id")]
