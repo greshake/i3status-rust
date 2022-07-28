@@ -161,17 +161,17 @@ struct WeatherResult {
 }
 
 impl WeatherResult {
-    fn values(&self) -> HashMap<Cow<'static, str>, Value> {
+    fn into_values(self) -> HashMap<Cow<'static, str>, Value> {
         map! {
-            "location" => Value::text(self.location.clone()),
+            "location" => Value::text(self.location),
             "temp" => Value::degrees(self.temp),
             "apparent" => Value::degrees(self.apparent),
             "humidity" => Value::percents(self.humidity),
-            "weather" => Value::text(self.weather.clone()),
-            "weather_verbose" => Value::text(self.weather_verbose.clone()),
+            "weather" => Value::text(self.weather),
+            "weather_verbose" => Value::text(self.weather_verbose),
             "wind" => Value::number(self.wind),
             "wind_kmh" => Value::number(self.wind_kmh),
-            "direction" => Value::text(self.wind_direction.clone()),
+            "direction" => Value::text(self.wind_direction),
         }
     }
 }
@@ -198,8 +198,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             })
             .await?;
 
-        widget.set_values(data.values());
         widget.set_icon(data.icon.to_icon_str())?;
+        widget.set_values(data.into_values());
         api.set_widget(&widget).await?;
 
         select! {
