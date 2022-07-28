@@ -130,10 +130,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     "device" => Value::text(device.interface),
                 };
 
-                wifi.0.map(|s| values.insert("ssid".into(), Value::text(s)));
-                wifi.1
+                wifi.ssid
+                    .map(|s| values.insert("ssid".into(), Value::text(s)));
+                wifi.frequency
                     .map(|f| values.insert("frequency".into(), Value::hertz(f)));
-                wifi.2
+                wifi.signal
                     .map(|s| values.insert("signal_strength".into(), Value::percents(s)));
 
                 widget.set_values(values);

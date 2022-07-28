@@ -23,6 +23,13 @@ pub struct NetDevice {
     pub icon: &'static str,
 }
 
+#[derive(Debug, Default)]
+pub struct WifiInfo {
+    pub ssid: Option<String>,
+    pub signal: Option<f64>,
+    pub frequency: Option<f64>,
+}
+
 impl NetDevice {
     /// Use the network device `device`. Returns `None` if device is missing.
     pub async fn from_interface(interface: String) -> Option<Self> {
@@ -108,7 +115,7 @@ impl NetDevice {
     }
 
     /// Queries the wireless SSID of this device, if it is connected to one.
-    pub async fn wifi_info(&self) -> Result<(Option<String>, Option<f64>, Option<f64>)> {
+    pub async fn wifi_info(&self) -> Result<WifiInfo> {
         let mut socket =
             neli_wifi::AsyncSocket::connect().error("Failed to open nl80211 socket")?;
         let interfaces = socket
@@ -119,23 +126,24 @@ impl NetDevice {
             if let Some(index) = &interface.index {
                 if let Ok(ap) = socket.get_station_info(index).await {
                     // SSID is `None` when not connected
-                    if let (Some(ssid), Some(device)) = (interface.ssid, interface.name) {
-                        let device = String::from_utf8_lossy(&device);
+                    if let (Some(ssid), Some(device)) = (
+                        interface.ssid,
+                        interface.name.and_then(|s| String::from_utf8(s).ok()),
+                    ) {
                         let device = device.trim_matches(char::from(0));
                         if device != self.interface {
                             continue;
                         }
-
-                        let ssid = Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?);
-                        let freq = interface.frequency.map(|f| f as f64 * 1e6);
-                        let signal = ap.signal.map(|s| signal_percents(s as f64));
-                        return Ok((ssid, freq, signal));
+                        return Ok(WifiInfo {
+                            ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
+                            frequency: interface.frequency.map(|f| f as f64 * 1e6),
+                            signal: ap.signal.map(|s| signal_percents(s as f64)),
+                        });
                     }
                 }
             }
         }
-
-        Ok((None, None, None))
+        Ok(Default::default())
     }
 }
 
