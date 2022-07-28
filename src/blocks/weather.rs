@@ -193,7 +193,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let data = api
             .recoverable(|| async {
                 let location = match config.autolocate {
-                    true => find_ip_location().await.unwrap_or(None),
+                    true => find_ip_location().await?,
                     false => None,
                 };
                 let mut p = provider.lock().unwrap();
