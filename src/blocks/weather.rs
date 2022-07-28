@@ -152,7 +152,7 @@ impl WeatherIcon {
 pub struct WeatherResult {
     pub location: String,
     pub temp: f64,
-    pub apparent: Option<f64>,
+    pub apparent: f64,
     pub humidity: f64,
     pub weather: String,
     pub weather_verbose: String,
@@ -167,7 +167,7 @@ impl WeatherResult {
         map! {
             "location" => Value::text(self.location.clone()),
             "temp" => Value::degrees(self.temp),
-            "apparent" => Value::degrees(self.apparent.unwrap_or_default()),
+            "apparent" => Value::degrees(self.apparent),
             "humidity" => Value::percents(self.humidity),
             "weather" => Value::text(self.weather.clone()),
             "weather_verbose" => Value::text(self.weather_verbose.clone()),
@@ -260,4 +260,11 @@ pub fn convert_wind_direction(direction_opt: Option<f64>) -> &'static str {
         },
         None => "-",
     }
+}
+
+/// Compute the Australian Apparent Temperature from metric units
+pub fn australian_apparent_temp(temp: f64, humidity: f64, wind_speed: f64) -> f64 {
+    let exponent = 17.27 * temp / (237.7 + temp);
+    let water_vapor_pressure = humidity * 0.06105 * exponent.exp();
+    temp + 0.33 * water_vapor_pressure - 0.7 * wind_speed - 4.0
 }

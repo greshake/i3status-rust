@@ -156,14 +156,18 @@ impl WeatherProvider for Config {
             .unwrap();
         let translated = translate(self.legend.as_ref().unwrap(), summary, &self.lang);
 
+        let temp = instant.air_temperature.unwrap_or_default();
+        let humidity = instant.relative_humidity.unwrap_or_default();
+        let wind_speed = instant.wind_speed.unwrap_or_default();
+
         Ok(WeatherResult {
             location: "Unknown".to_string(),
-            temp: instant.air_temperature.unwrap_or_default(),
-            apparent: None,
-            humidity: instant.relative_humidity.unwrap_or_default(),
+            temp,
+            apparent: australian_apparent_temp(temp, humidity, wind_speed),
+            humidity,
             weather: translated.clone(),
             weather_verbose: translated,
-            wind: instant.wind_speed.unwrap_or_default(),
+            wind: wind_speed,
             wind_kmh: instant.wind_speed.unwrap_or_default() * 3.6,
             wind_direction: convert_wind_direction(instant.wind_from_direction).into(),
             icon: weather_to_icon(summary),

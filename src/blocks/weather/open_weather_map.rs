@@ -118,7 +118,7 @@ impl WeatherProvider for Config {
         Ok(WeatherResult {
             location: data.name,
             temp: data.main.temp,
-            apparent: Some(data.main.feels_like),
+            apparent: data.main.feels_like,
             humidity: data.main.humidity,
             weather: data.weather[0].main.clone(),
             weather_verbose: data.weather[0].description.clone(),
