@@ -186,13 +186,13 @@
 }
 
 <span class="kw">fn</span> <span class="ident">getenv_openweathermap_api_key</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-    <span class="ident">std::env::var</span>(<span class="ident">open_weather_map::API_KEY_ENV</span>).<span class="ident">ok</span>()
+    <span class="ident">std::env::var</span>(<span class="ident">API_KEY_ENV</span>).<span class="ident">ok</span>()
 }
 <span class="kw">fn</span> <span class="ident">getenv_openweathermap_city_id</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-    <span class="ident">std::env::var</span>(<span class="ident">open_weather_map::CITY_ID_ENV</span>).<span class="ident">ok</span>()
+    <span class="ident">std::env::var</span>(<span class="ident">CITY_ID_ENV</span>).<span class="ident">ok</span>()
 }
 <span class="kw">fn</span> <span class="ident">getenv_openweathermap_place</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-    <span class="ident">std::env::var</span>(<span class="ident">open_weather_map::PLACE_ENV</span>).<span class="ident">ok</span>()
+    <span class="ident">std::env::var</span>(<span class="ident">PLACE_ENV</span>).<span class="ident">ok</span>()
 }
 <span class="kw">fn</span> <span class="ident">default_lang</span>() -&gt; <span class="ident">String</span> {
     <span class="string">&quot;en&quot;</span>.<span class="ident">into</span>()
