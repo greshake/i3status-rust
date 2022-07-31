@@ -242,6 +242,15 @@
 <span id="237">237</span>
 <span id="238">238</span>
 <span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">neli::consts</span>::{<span class="ident">nl</span>::<span class="kw-2">*</span>, <span class="ident">rtnl</span>::<span class="kw-2">*</span>, <span class="ident">socket</span>::<span class="kw-2">*</span>};
 <span class="kw">use</span> <span class="ident">neli::nl</span>::{<span class="ident">NlPayload</span>, <span class="ident">Nlmsghdr</span>};
 <span class="kw">use</span> <span class="ident">neli::rtnl::Rtmsg</span>;
@@ -378,10 +387,19 @@
                         <span class="kw">if</span> <span class="ident">device</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">interface</span> {
                             <span class="kw">continue</span>;
                         }
+                        <span class="kw">let</span> <span class="ident">raw_signal</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ap</span>.<span class="ident">signal</span> {
+                            <span class="prelude-val">Some</span>(<span class="ident">signal</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">signal</span>),
+                            <span class="prelude-val">None</span> =&gt; <span class="ident">socket</span>
+                                .<span class="ident">get_bss_info</span>(<span class="ident">index</span>)
+                                .<span class="kw">await</span>
+                                .<span class="ident">ok</span>()
+                                .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">bss</span><span class="op">|</span> <span class="ident">bss</span>.<span class="ident">signal</span>)
+                                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> (<span class="ident">s</span> <span class="op">/</span> <span class="number">100</span>) <span class="kw">as</span> <span class="ident">i8</span>),
+                        };
                         <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">WifiInfo</span> {
                             <span class="ident">ssid</span>: <span class="prelude-val">Some</span>(<span class="ident">String::from_utf8</span>(<span class="ident">ssid</span>).<span class="ident">error</span>(<span class="string">&quot;SSID is not valid UTF8&quot;</span>)<span class="question-mark">?</span>),
                             <span class="ident">frequency</span>: <span class="ident">interface</span>.<span class="ident">frequency</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> <span class="ident">f</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>),
-                            <span class="ident">signal</span>: <span class="ident">ap</span>.<span class="ident">signal</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">signal_percents</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">f64</span>)),
+                            <span class="ident">signal</span>: <span class="ident">raw_signal</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">signal_percents</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">f64</span>)),
                         });
                     }
                 }
