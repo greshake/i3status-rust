@@ -134,10 +134,19 @@ impl NetDevice {
                         if device != self.interface {
                             continue;
                         }
+                        let raw_signal = match ap.signal {
+                            Some(signal) => Some(signal),
+                            None => socket
+                                .get_bss_info(index)
+                                .await
+                                .ok()
+                                .and_then(|bss| bss.signal)
+                                .map(|s| (s / 100) as i8),
+                        };
                         return Ok(WifiInfo {
                             ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
                             frequency: interface.frequency.map(|f| f as f64 * 1e6),
-                            signal: ap.signal.map(|s| signal_percents(s as f64)),
+                            signal: raw_signal.map(|s| signal_percents(s as f64)),
                         });
                     }
                 }
