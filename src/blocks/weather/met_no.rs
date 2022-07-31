@@ -99,16 +99,14 @@ const LEGENDS_URL: &str = "https://api.met.no/weatherapi/weathericon/2.0/legends
 const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
 
 async fn get_legend() -> Result<LegendsStore> {
-    let res: LegendsStore = REQWEST_CLIENT
+    REQWEST_CLIENT
         .get(LEGENDS_URL)
         .send()
         .await
         .error("Failed to fetch legend from met.no")?
         .json()
         .await
-        .error("Legend replied in unknown format")?;
-
-    Ok(res)
+        .error("Legend replied in unknown format")
 }
 
 fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String {

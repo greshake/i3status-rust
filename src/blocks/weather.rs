@@ -137,12 +137,12 @@ enum WeatherIcon {
 impl WeatherIcon {
     fn to_icon_str(&self) -> &str {
         match self {
-            WeatherIcon::Sun => "weather_sun",
-            WeatherIcon::Rain => "weather_rain",
-            WeatherIcon::Clouds => "weather_clouds",
-            WeatherIcon::Thunder => "weather_thunder",
-            WeatherIcon::Snow => "weather_snow",
-            WeatherIcon::Default => "weather_default",
+            Self::Sun => "weather_sun",
+            Self::Rain => "weather_rain",
+            Self::Clouds => "weather_clouds",
+            Self::Thunder => "weather_thunder",
+            Self::Snow => "weather_snow",
+            Self::Default => "weather_default",
         }
     }
 }
