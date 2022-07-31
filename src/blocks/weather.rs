@@ -1,8 +1,8 @@
 //! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
-//! will need access to a supported weather API service. At the time of writing, OpenWeatherMap is
-//! the only supported service.
+//! will need access to a supported weather API service. At the time of writing, OpenWeatherMap and
+//! met.no are supported.
 //!
 //! Configuring this block requires configuring a weather service, which may require API keys and
 //! other parameters.
@@ -37,6 +37,17 @@
 //! The options `api_key`, `city_id`, `place` can be omitted from configuration,
 //! in which case they must be provided in the environment variables
 //! `OPENWEATHERMAP_API_KEY`, `OPENWEATHERMAP_CITY_ID`, `OPENWEATHERMAP_PLACE`.
+//!
+//! # met.no Options
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `name` | `metno`. | Yes | None
+//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.2362","9.3317"]` | Required if `autolocate = false` | None
+//! `lang` | Language code: `en`, `nn` or `nb` | No | `en`
+//! `altitude` | Meters above sea level of the ground | No | Approximated by server
+//!
+//! Met.no does not support location name.
 //!
 //! # Available Format Keys
 //!
@@ -78,14 +89,12 @@
 
 use super::prelude::*;
 
+mod met_no;
+mod open_weather_map;
+
 const IP_API_URL: &str = "https://ipapi.co/json";
 
-const OPEN_WEATHER_MAP_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
-const OPEN_WEATHER_MAP_API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
-const OPEN_WEATHER_MAP_CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
-const OPEN_WEATHER_MAP_PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
-
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WeatherConfig {
     #[serde(default = "default_interval")]
@@ -101,36 +110,69 @@ fn default_interval() -> Seconds {
     Seconds::new(600)
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(tag = "name", rename_all = "lowercase")]
-enum WeatherService {
-    OpenWeatherMap {
-        #[serde(default = "WeatherService::getenv_openweathermap_api_key")]
-        api_key: Option<String>,
-        #[serde(default = "WeatherService::getenv_openweathermap_city_id")]
-        city_id: Option<String>,
-        #[serde(default = "WeatherService::getenv_openweathermap_place")]
-        place: Option<String>,
-        coordinates: Option<(String, String)>,
-        #[serde(default)]
-        units: UnitSystem,
-        #[serde(default = "WeatherService::default_lang")]
-        lang: String,
-    },
+#[async_trait]
+trait WeatherProvider {
+    async fn get_weather(
+        &self,
+        autolocated_location: &Option<LocationResponse>,
+    ) -> Result<WeatherResult>;
 }
 
-impl WeatherService {
-    fn getenv_openweathermap_api_key() -> Option<String> {
-        std::env::var(OPEN_WEATHER_MAP_API_KEY_ENV).ok()
+#[derive(Deserialize)]
+#[serde(tag = "name", rename_all = "lowercase")]
+enum WeatherService {
+    OpenWeatherMap(open_weather_map::Config),
+    MetNo(met_no::Config),
+}
+
+enum WeatherIcon {
+    Sun,
+    Rain,
+    Clouds,
+    Thunder,
+    Snow,
+    Default,
+}
+
+impl WeatherIcon {
+    fn to_icon_str(&self) -> &str {
+        match self {
+            WeatherIcon::Sun => "weather_sun",
+            WeatherIcon::Rain => "weather_rain",
+            WeatherIcon::Clouds => "weather_clouds",
+            WeatherIcon::Thunder => "weather_thunder",
+            WeatherIcon::Snow => "weather_snow",
+            WeatherIcon::Default => "weather_default",
+        }
     }
-    fn getenv_openweathermap_city_id() -> Option<String> {
-        std::env::var(OPEN_WEATHER_MAP_CITY_ID_ENV).ok()
-    }
-    fn getenv_openweathermap_place() -> Option<String> {
-        std::env::var(OPEN_WEATHER_MAP_PLACE_ENV).ok()
-    }
-    fn default_lang() -> String {
-        "en".into()
+}
+
+struct WeatherResult {
+    location: String,
+    temp: f64,
+    apparent: f64,
+    humidity: f64,
+    weather: String,
+    weather_verbose: String,
+    wind: f64,
+    wind_kmh: f64,
+    wind_direction: String,
+    icon: WeatherIcon,
+}
+
+impl WeatherResult {
+    fn into_values(self) -> HashMap<Cow<'static, str>, Value> {
+        map! {
+            "location" => Value::text(self.location),
+            "temp" => Value::degrees(self.temp),
+            "apparent" => Value::degrees(self.apparent),
+            "humidity" => Value::percents(self.humidity),
+            "weather" => Value::text(self.weather),
+            "weather_verbose" => Value::text(self.weather_verbose),
+            "wind" => Value::number(self.wind),
+            "wind_kmh" => Value::number(self.wind_kmh),
+            "direction" => Value::text(self.wind_direction),
+        }
     }
 }
 
@@ -140,133 +182,30 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .new_widget()
         .with_format(config.format.with_default("$weather $temp")?);
 
+    let provider: Box<dyn WeatherProvider + Send + Sync> = match config.service {
+        WeatherService::MetNo(config) => Box::new(met_no::Service::new(&mut api, config).await?),
+        WeatherService::OpenWeatherMap(config) => Box::new(open_weather_map::Service::new(config)),
+    };
+
     loop {
         let data = api
-            .recoverable(|| config.service.get(config.autolocate))
+            .recoverable(|| async {
+                let location = match config.autolocate {
+                    true => find_ip_location().await?,
+                    false => None,
+                };
+                provider.get_weather(&location).await
+            })
             .await?;
 
-        let kmh_wind_speed = data.wind.speed
-            * 3.6
-            * match config.service.units() {
-                UnitSystem::Metric => 1.0,
-                UnitSystem::Imperial => 0.447,
-            };
-
-        widget.set_values(map! {
-            "location" => Value::text(data.name),
-            "temp" => Value::degrees(data.main.temp),
-            "apparent" => Value::degrees(data.main.feels_like),
-            "humidity" => Value::percents(data.main.humidity),
-            "weather" => Value::text(data.weather[0].main.clone()),
-            "weather_verbose" => Value::text(data.weather[0].description.clone()),
-            "wind" => Value::number(data.wind.speed),
-            "wind_kmh" => Value::number(kmh_wind_speed),
-            "direction" => Value::text(convert_wind_direction(data.wind.deg).into()),
-        });
-
-        // These map to the 'Main' entries here: https://openweathermap.org/weather-conditions
-        // TODO: Drizzle, Mist, Fog, Haze, Smoke, etc?
-        // TODO: Read description as well to give more details? font awesome has different rain level icons
-        widget.set_icon(match data.weather[0].main.as_str() {
-            "Clear" => "weather_sun",
-            "Rain" | "Drizzle" => "weather_rain",
-            "Clouds" | "Fog" | "Mist" => "weather_clouds",
-            "Thunderstorm" => "weather_thunder",
-            "Snow" => "weather_snow",
-            _ => "weather_default",
-        })?;
-
+        widget.set_icon(data.icon.to_icon_str())?;
+        widget.set_values(data.into_values());
         api.set_widget(&widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),
             _ = api.wait_for_update_request() => (),
         }
-    }
-}
-
-#[derive(Deserialize, Debug)]
-struct ApiResponse {
-    weather: Vec<ApiWeather>,
-    main: ApiMain,
-    wind: ApiWind,
-    name: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct ApiWind {
-    speed: f64,
-    deg: Option<f64>,
-}
-
-#[derive(Deserialize, Debug)]
-struct ApiMain {
-    temp: f64,
-    feels_like: f64,
-    humidity: f64,
-}
-
-#[derive(Deserialize, Debug)]
-struct ApiWeather {
-    main: String,
-    description: String,
-}
-
-impl WeatherService {
-    fn units(&self) -> UnitSystem {
-        let Self::OpenWeatherMap { units, .. } = self;
-        *units
-    }
-
-    async fn get(&self, autolocate: bool) -> Result<ApiResponse> {
-        let Self::OpenWeatherMap {
-            api_key,
-            city_id,
-            place,
-            coordinates,
-            units,
-            lang,
-        } = self;
-
-        let api_key = api_key.as_ref().or_error(|| {
-            format!(
-                "missing key 'service.api_key' and environment variable {OPEN_WEATHER_MAP_API_KEY_ENV}",
-            )
-        })?;
-
-        let city = if autolocate {
-            find_ip_location().await.unwrap_or(None)
-        } else {
-            None
-        };
-
-        let location_query = {
-            city.map(|x| format!("q={x}"))
-                .or_else(|| city_id.as_ref().map(|x| format!("id={x}")))
-                .or_else(|| place.as_ref().map(|x| format!("q={x}")))
-                .or_else(|| {
-                    coordinates
-                        .as_ref()
-                        .map(|(lat, lon)| format!("lat={lat}&lon={lon}"))
-                })
-                .error("no localization was provided")?
-        };
-
-        // Refer to https://openweathermap.org/current
-        let url = format!(
-            "{OPEN_WEATHER_MAP_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
-            units = match *units {
-                UnitSystem::Metric => "metric",
-                UnitSystem::Imperial => "imperial",
-            },
-        );
-
-        reqwest::get(url)
-            .await
-            .error("Failed during request for current location")?
-            .json()
-            .await
-            .error("Failed while parsing location API result")
     }
 }
 
@@ -278,21 +217,29 @@ enum UnitSystem {
     Imperial,
 }
 
-// TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
-async fn find_ip_location() -> Result<Option<String>> {
-    #[derive(Deserialize)]
-    struct ApiResponse {
-        city: Option<String>,
+#[derive(Deserialize, Clone)]
+struct LocationResponse {
+    city: Option<String>,
+    latitude: f64,
+    longitude: f64,
+}
+
+impl LocationResponse {
+    fn as_coordinates(&self) -> (String, String) {
+        (format!("{}", self.latitude), format!("{}", self.longitude))
     }
+}
+
+// TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
+async fn find_ip_location() -> Result<Option<LocationResponse>> {
     REQWEST_CLIENT
         .get(IP_API_URL)
         .send()
         .await
         .error("Failed during request for current location")?
-        .json::<ApiResponse>()
+        .json()
         .await
         .error("Failed while parsing location API result")
-        .map(|x| x.city)
 }
 
 // Convert wind direction in azimuth degrees to abbreviation names
@@ -310,4 +257,11 @@ fn convert_wind_direction(direction_opt: Option<f64>) -> &'static str {
         },
         None => "-",
     }
+}
+
+/// Compute the Australian Apparent Temperature from metric units
+fn australian_apparent_temp(temp: f64, humidity: f64, wind_speed: f64) -> f64 {
+    let exponent = 17.27 * temp / (237.7 + temp);
+    let water_vapor_pressure = humidity * 0.06105 * exponent.exp();
+    temp + 0.33 * water_vapor_pressure - 0.7 * wind_speed - 4.0
 }
