@@ -72,7 +72,7 @@ mod sysfs;
 mod upower;
 mod zbus_upower;
 
-make_log_macro!(debug, "battery");
+// make_log_macro!(debug, "battery");
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -132,20 +132,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     info.status = BatteryStatus::Empty;
                 }
 
-                match info.status {
-                    BatteryStatus::Empty => {
-                        debug!("Using `empty_format`");
-                        widget.set_format(format_empty.clone());
-                    }
-                    BatteryStatus::Full | BatteryStatus::NotCharging => {
-                        debug!("Using `full_format`");
-                        widget.set_format(format_full.clone());
-                    }
-                    _ => {
-                        debug!("Using `format`");
-                        widget.set_format(format.clone());
-                    }
-                }
+                widget.set_format(match info.status {
+                    BatteryStatus::Empty => format_empty.clone(),
+                    BatteryStatus::Full | BatteryStatus::NotCharging => format_full.clone(),
+                    _ => format.clone(),
+                });
 
                 let mut values = map!("percentage" => Value::percents(info.capacity));
                 info.power
