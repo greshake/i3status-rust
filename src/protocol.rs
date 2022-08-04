@@ -2,7 +2,7 @@ pub mod i3bar_block;
 pub mod i3bar_event;
 
 use crate::config::SharedConfig;
-use crate::themes::Color;
+use crate::themes::color::Color;
 
 use i3bar_block::I3BarBlock;
 
