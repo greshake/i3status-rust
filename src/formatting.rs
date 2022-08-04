@@ -126,10 +126,13 @@ impl FormatInner {
 
     pub fn render(&self, vars: &Values) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
         let full = self.full.render(vars).error("Failed to render full text")?;
-        let short = match &self.short {
-            Some(short) => short.render(vars).error("Failed to render short text")?,
-            None => vec![],
-        };
+        let short = self
+            .short
+            .as_ref()
+            .map(|s| s.render(vars))
+            .transpose()
+            .error("Failed to render short text")?
+            .unwrap_or_default();
         Ok((full, short))
     }
 }
