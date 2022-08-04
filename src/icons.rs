@@ -125,7 +125,8 @@ impl Icons {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
+#[serde(deny_unknown_fields, default)]
 struct IconsConfigRaw {
     icons: Option<String>,
     overrides: Option<HashMap<String, String>>,
