@@ -23,10 +23,16 @@ block = "net"
 #TODO
 ```
 
+- `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. Example:
+```toml
+[[block]]
+block = "taskwarrior"
+#TODO
+```
+
 - `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
 - `battery` now defaults `full_threshold` to `95` as often batteries never fully charge
 - `custom_dbus`: `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
-- `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter.
 - `focused_window` block config option `max_width` has been removed, and can instead be implemented via the new formatter, e.g. `max_width = 15; format = "{title}"` would now just be `format = "$title.str(15)"`
 - `music` block config option `smart_trim` has been removed
 - `pomodoro` interactive configuration ??
