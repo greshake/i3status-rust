@@ -1,23 +1,17 @@
 ## Choosing your theme and icon set
 To use a theme or icon set other than the default, add them to your configuration file like so:
 ```toml
+[theme]
 theme = "solarized-dark"
+[icons]
 icons = "awesome"
 ```
-NOTE: If you plan on [overriding](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#overriding-themes-and-icon-sets) parts of the theme/icon set then you will need to change your config file like so:
-```toml
-[theme]
-name = "solarized-dark"
-[icons]
-name = "awesome"
-```
-
 Both the theme and icon set can be loaded from a separate file. 
 ```toml
 [theme]
-file = "<file>"
+theme = "<file>"
 [icons]
-file = "<file_2>"
+icons = "<file>"
 ```
 where `<file>` can be either a filename or a full path and will be checked in this order:
 
@@ -82,13 +76,13 @@ Create a block in the configuration called `theme` or `icons` like so:
 
 ```toml
 [theme]
-name = "solarized-dark"
+theme = "solarized-dark"
 [theme.overrides]
 idle_bg = "#123456"
 idle_fg = "#abcdef"
 
 [icons]
-name = "awesome"
+icons = "awesome"
 [icons.overrides]
 bat = " | | "
 bat_full = " |X| "

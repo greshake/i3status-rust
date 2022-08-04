@@ -1,11 +1,11 @@
 [theme]
-name = "solarized-dark"
+theme = "solarized-dark"
 [theme.overrides]
 idle_bg = "#123456"
 idle_fg = "#abcdef"
 
 [icons]
-name = "awesome"
+icons = "awesome"
 [icons.overrides]
 bat = " | | "
 bat_full = " |X| "
