@@ -12,13 +12,15 @@
 //! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"` \|\| "apc_ups"`. | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$percentage&vert;"</code>
 //! `full_format` | Same as `format` but for when the battery is full | `""`
+//! `empty_format` | Same as `format` but for when the battery is empty | `""`
 //! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`
 //! `hide_full` | Hide the block if battery is full | `false`
 //! `info` | Minimum battery level, where state is set to info | `60`
 //! `good` | Minimum battery level, where state is set to good | `60`
 //! `warning` | Minimum battery level, where state is set to warning | `30`
 //! `critical` | Minimum battery level, where state is set to critical | `15`
-//! `full_threshold` | Percentage at which the battery is considered full (`full_format` shown) | `100`
+//! `full_threshold` | Percentage above which the battery is considered full (`full_format` shown) | `95`
+//! `empty_threshold` | Percentage below which the battery is considered empty | `7.5`
 //!
 //! Placeholder  | Value                                                                   | Type              | Unit
 //! -------------|-------------------------------------------------------------------------|-------------------|-----
@@ -81,6 +83,7 @@ struct BatteryConfig {
     interval: Seconds,
     format: FormatConfig,
     full_format: FormatConfig,
+    empty_format: FormatConfig,
     hide_missing: bool,
     hide_full: bool,
     #[default(60.0)]
@@ -91,8 +94,10 @@ struct BatteryConfig {
     warning: f64,
     #[default(15.0)]
     critical: f64,
-    #[default(100.0)]
+    #[default(95.0)]
     full_threshold: f64,
+    #[default(7.5)]
+    empty_threshold: f64,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -108,6 +113,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = BatteryConfig::deserialize(config).config_error()?;
     let format = config.format.with_default("$percentage")?;
     let format_full = config.full_format.with_default("")?;
+    let format_empty = config.empty_format.with_default("")?;
     let mut widget = api.new_widget();
 
     let dev_name = DeviceName::new(config.device)?;
@@ -122,9 +128,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             Some(mut info) => {
                 if info.capacity >= config.full_threshold {
                     info.status = BatteryStatus::Full;
+                } else if info.capacity <= config.empty_threshold {
+                    info.status = BatteryStatus::Empty;
                 }
 
                 match info.status {
+                    BatteryStatus::Empty => {
+                        debug!("Using `empty_format`");
+                        widget.set_format(format_empty.clone());
+                    }
                     BatteryStatus::Full | BatteryStatus::NotCharging => {
                         debug!("Using `full_format`");
                         widget.set_format(format_full.clone());
