@@ -272,6 +272,18 @@
 <span id="267">267</span>
 <span id="268">268</span>
 <span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block can display the current battery state (Full, Charging or Discharging), percentage</span>
@@ -286,13 +298,15 @@
 <span class="doccomment">//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;` \|\| &quot;apc_ups&quot;`. | `10`</span>
 <span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$percentage&amp;vert;&quot;&lt;/code&gt;</span>
 <span class="doccomment">//! `full_format` | Same as `format` but for when the battery is full | `&quot;&quot;`</span>
+<span class="doccomment">//! `empty_format` | Same as `format` but for when the battery is empty | `&quot;&quot;`</span>
 <span class="doccomment">//! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`</span>
 <span class="doccomment">//! `hide_full` | Hide the block if battery is full | `false`</span>
 <span class="doccomment">//! `info` | Minimum battery level, where state is set to info | `60`</span>
 <span class="doccomment">//! `good` | Minimum battery level, where state is set to good | `60`</span>
 <span class="doccomment">//! `warning` | Minimum battery level, where state is set to warning | `30`</span>
 <span class="doccomment">//! `critical` | Minimum battery level, where state is set to critical | `15`</span>
-<span class="doccomment">//! `full_threshold` | Percentage at which the battery is considered full (`full_format` shown) | `100`</span>
+<span class="doccomment">//! `full_threshold` | Percentage above which the battery is considered full (`full_format` shown) | `95`</span>
+<span class="doccomment">//! `empty_threshold` | Percentage below which the battery is considered empty | `7.5`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder  | Value                                                                   | Type              | Unit</span>
 <span class="doccomment">//! -------------|-------------------------------------------------------------------------|-------------------|-----</span>
@@ -355,6 +369,7 @@
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">full_format</span>: <span class="ident">FormatConfig</span>,
+    <span class="ident">empty_format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">hide_missing</span>: <span class="ident">bool</span>,
     <span class="ident">hide_full</span>: <span class="ident">bool</span>,
     <span class="attribute">#[<span class="ident">default</span>(<span class="number">60.0</span>)]</span>
@@ -365,8 +380,10 @@
     <span class="ident">warning</span>: <span class="ident">f64</span>,
     <span class="attribute">#[<span class="ident">default</span>(<span class="number">15.0</span>)]</span>
     <span class="ident">critical</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">100.0</span>)]</span>
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">95.0</span>)]</span>
     <span class="ident">full_threshold</span>: <span class="ident">f64</span>,
+    <span class="attribute">#[<span class="ident">default</span>(<span class="number">7.5</span>)]</span>
+    <span class="ident">empty_threshold</span>: <span class="ident">f64</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
@@ -382,6 +399,7 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">BatteryConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$percentage&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">format_full</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">full_format</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format_empty</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">empty_format</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>();
 
     <span class="kw">let</span> <span class="ident">dev_name</span> <span class="op">=</span> <span class="ident">DeviceName::new</span>(<span class="ident">config</span>.<span class="ident">device</span>)<span class="question-mark">?</span>;
@@ -396,9 +414,15 @@
             <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">info</span>) =&gt; {
                 <span class="kw">if</span> <span class="ident">info</span>.<span class="ident">capacity</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">full_threshold</span> {
                     <span class="ident">info</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">BatteryStatus::Full</span>;
+                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">info</span>.<span class="ident">capacity</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">empty_threshold</span> {
+                    <span class="ident">info</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">BatteryStatus::Empty</span>;
                 }
 
                 <span class="kw">match</span> <span class="ident">info</span>.<span class="ident">status</span> {
+                    <span class="ident">BatteryStatus::Empty</span> =&gt; {
+                        <span class="macro">debug!</span>(<span class="string">&quot;Using `empty_format`&quot;</span>);
+                        <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format_empty</span>.<span class="ident">clone</span>());
+                    }
                     <span class="ident">BatteryStatus::Full</span> <span class="op">|</span> <span class="ident">BatteryStatus::NotCharging</span> =&gt; {
                         <span class="macro">debug!</span>(<span class="string">&quot;Using `full_format`&quot;</span>);
                         <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format_full</span>.<span class="ident">clone</span>());
