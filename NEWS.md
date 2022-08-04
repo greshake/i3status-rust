@@ -1,6 +1,6 @@
 # i3status-rust 0.30.0 [unreleased]
 
-Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html
+Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html  
 Formatter documentation is available here: https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html
 
 ### Breaking changes
