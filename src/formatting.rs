@@ -42,7 +42,7 @@
 //! ---------|--------------
 //! Width - the resulting text will be at least `width` characters long | `2`
 //! Unit - some values have a [unit](unit::Unit), and it is possible to convert them by setting this option. Perpend this with a space to split unit from number/prefix. Prepend this with a `_` to hide. | `auto`
-//! Prefix - specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix). Prepend this width a space to split prefix from number. Perpend this with a `_` to hide. Perpend this with a `!` to force the prefix. | `auto`
+//! Prefix - specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix). Prepend this with a space to split prefix from number. Perpend this with a `_` to hide. Perpend this with a `!` to force the prefix. | `auto`
 //!
 //! ## `bar` - Display numbers as progress bars
 //!
