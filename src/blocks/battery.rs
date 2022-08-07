@@ -124,14 +124,21 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     };
 
     loop {
-        match device.get_info().await? {
-            Some(mut info) => {
-                if info.capacity >= config.full_threshold {
-                    info.status = BatteryStatus::Full;
-                } else if info.capacity <= config.empty_threshold {
-                    info.status = BatteryStatus::Empty;
-                }
+        let mut info = device.get_info().await?;
 
+        if let Some(info) = &mut info {
+            if info.capacity >= config.full_threshold {
+                info.status = BatteryStatus::Full;
+            } else if info.capacity <= config.empty_threshold {
+                info.status = BatteryStatus::Empty;
+            }
+        }
+
+        match info {
+            Some(info) if info.status == BatteryStatus::Full && config.hide_full => {
+                api.hide().await?;
+            }
+            Some(info) => {
                 widget.set_format(match info.status {
                     BatteryStatus::Empty => format_empty.clone(),
                     BatteryStatus::Full | BatteryStatus::NotCharging => format_full.clone(),
