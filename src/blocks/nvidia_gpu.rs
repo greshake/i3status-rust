@@ -144,7 +144,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         Some(FAN_BTN ) => match click.button {
                             MouseButton::Left => {
                                 fan_controlled = !fan_controlled;
-                                set_fan_speed(config.gpu_id, fan_controlled.then(|| info.fan_speed)).await?;
+                                set_fan_speed(config.gpu_id, fan_controlled.then_some(info.fan_speed)).await?;
                                 break;
                             }
                             MouseButton::WheelUp if fan_controlled && info.fan_speed < 100 => {
