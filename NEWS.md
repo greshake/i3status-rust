@@ -47,6 +47,19 @@ This is a major release which rewrites the core code to be asynchronous.
   button = "left"
   cmd = "random_command"
   ```
+- Top-level `theme` and `icons` config options have been removed. For example,
+  ```toml
+  theme = "solarized-dark"
+  icons = "awesome"
+  ```
+  needs to be changed to:
+  ```toml
+  [theme]
+  theme = "solarized-dark"
+  [icons]
+  icons = "awesome"
+  ```
+- `theme` and `icons`: `name` and `file` options have been merged into `theme`/`icons`. See above for an example.
 
 ### New features and bugfixes
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
