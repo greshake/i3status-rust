@@ -1,4 +1,6 @@
+[theme]
 theme = "srcery"
+[icons]
 icons = "awesome6"
 
 [[block]]

@@ -1,4 +1,4 @@
-use crate::themes::Color;
+use crate::themes::color::Color;
 use serde::Serialize;
 
 /// Represent block as described in <https://i3wm.org/docs/i3bar-protocol.html>

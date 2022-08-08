@@ -1,10 +1,10 @@
+use crate::errors::*;
 use crate::util;
-use serde::de::{self, Deserializer, MapAccess, Visitor};
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
+#[serde(try_from = "IconsConfigRaw")]
 pub struct Icons(pub HashMap<String, String>);
 
 impl Default for Icons {
@@ -110,12 +110,13 @@ impl Default for Icons {
 }
 
 impl Icons {
-    pub fn from_file(file: &str) -> Option<Self> {
+    pub fn from_file(file: &str) -> Result<Self> {
         if file == "none" {
-            Some(Icons::default())
+            Ok(Icons::default())
         } else {
-            let file = util::find_file(file, Some("icons"), Some("toml"))?;
-            Some(Icons(util::deserialize_toml_file(&file).ok()?))
+            let file = util::find_file(file, Some("icons"), Some("toml"))
+                .or_error(|| format!("Icon set '{}' not found", file))?;
+            Ok(Icons(util::deserialize_toml_file(&file)?))
         }
     }
 
@@ -124,86 +125,23 @@ impl Icons {
     }
 }
 
-impl<'de> Deserialize<'de> for Icons {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(field_identifier, rename_all = "lowercase")]
-        enum Field {
-            Name,
-            File,
-            Overrides,
-        }
+#[derive(Deserialize, Default)]
+#[serde(deny_unknown_fields, default)]
+struct IconsConfigRaw {
+    icons: Option<String>,
+    overrides: Option<HashMap<String, String>>,
+}
 
-        struct IconsVisitor;
+impl TryFrom<IconsConfigRaw> for Icons {
+    type Error = Error;
 
-        impl<'de> Visitor<'de> for IconsVisitor {
-            type Value = Icons;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct Icons")
-            }
-
-            /// Handle configs like:
-            ///
-            /// ```toml
-            /// icons = "awesome"
-            /// ```
-            fn visit_str<E>(self, file: &str) -> Result<Icons, E>
-            where
-                E: de::Error,
-            {
-                Icons::from_file(file)
-                    .ok_or_else(|| de::Error::custom(format!("Icon set '{}' not found.", file)))
-            }
-
-            /// Handle configs like:
-            ///
-            /// ```toml
-            /// [icons]
-            /// name = "awesome"
-            /// ```
-            fn visit_map<V>(self, mut map: V) -> Result<Icons, V::Error>
-            where
-                V: MapAccess<'de>,
-            {
-                let mut icons: Option<&str> = None;
-                let mut overrides: Option<HashMap<String, String>> = None;
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Name | Field::File => {
-                            if icons.is_some() {
-                                return Err(de::Error::duplicate_field("name or file"));
-                            }
-                            icons = Some(map.next_value()?);
-                        }
-                        Field::Overrides => {
-                            if overrides.is_some() {
-                                return Err(de::Error::duplicate_field("overrides"));
-                            }
-                            overrides = Some(map.next_value()?);
-                        }
-                    }
-                }
-
-                let mut icons = match icons {
-                    Some(icons) => Icons::from_file(icons).ok_or_else(|| {
-                        de::Error::custom(format!("Icon set '{}' not found", icons))
-                    })?,
-                    None => Icons::default(),
-                };
-
-                if let Some(overrides) = overrides {
-                    for icon in overrides {
-                        icons.0.insert(icon.0, icon.1);
-                    }
-                }
-                Ok(icons)
+    fn try_from(raw: IconsConfigRaw) -> Result<Self, Self::Error> {
+        let mut icons = Self::from_file(raw.icons.as_deref().unwrap_or("none"))?;
+        if let Some(overrides) = raw.overrides {
+            for icon in overrides {
+                icons.0.insert(icon.0, icon.1);
             }
         }
-
-        deserializer.deserialize_any(IconsVisitor)
+        Ok(icons)
     }
 }

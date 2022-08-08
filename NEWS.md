@@ -10,26 +10,23 @@ This is a major release which rewrites the core code to be asynchronous.
 - Formatting system has been overhauled, introducing some breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in brackets: `format = "$percentage"`.
 
 - `ibus` block has been removed. Suggested example replacement:
-```toml
-[[block]]
-block = "custom"
-#TODO
-```
-
+  ```toml
+  [[block]]
+  block = "custom"
+  #TODO
+  ```
 - `networkmanager` block has been removed (could be revisited in the future). Suggested example replacement:
-```toml
-[[block]]
-block = "net"
-#TODO
-```
-
+  ```toml
+  [[block]]
+  block = "net"
+  #TODO
+  ```
 - `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. Example:
-```toml
-[[block]]
-block = "taskwarrior"
-#TODO
-```
-
+  ```toml
+  [[block]]
+  block = "taskwarrior"
+  #TODO
+  ```
 - `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
 - `battery` now defaults `full_threshold` to `95` as often batteries never fully charge
 - `custom_dbus`: `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
@@ -37,19 +34,32 @@ block = "taskwarrior"
 - `music` block config option `smart_trim` has been removed
 - `pomodoro` interactive configuration ??
 - `on_click` is now implemented as `[[block.click]]`. For example,
-```toml
-[[block]]
-block = "pacman"
-on_click = "random_command"
-```
-needs to be changed to:
-```toml
-[[block]]
-block = "pacman"
-[[block.click]]
-button = "left"
-cmd = "random_command"
-```
+  ```toml
+  [[block]]
+  block = "pacman"
+  on_click = "random_command"
+  ```
+  needs to be changed to:
+  ```toml
+  [[block]]
+  block = "pacman"
+  [[block.click]]
+  button = "left"
+  cmd = "random_command"
+  ```
+- Top-level `theme` and `icons` config options have been removed. For example,
+  ```toml
+  theme = "solarized-dark"
+  icons = "awesome"
+  ```
+  needs to be changed to:
+  ```toml
+  [theme]
+  theme = "solarized-dark"
+  [icons]
+  icons = "awesome"
+  ```
+- `theme` and `icons`: `name` and `file` options have been merged into `theme`/`icons`. See above for an example.
 
 ### New features and bugfixes
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
