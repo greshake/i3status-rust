@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Color",""]],"struct":[["Theme",""]]});
+initSidebarItems({"mod":[["color",""]],"struct":[["Theme",""],["ThemeConfigRaw",""]]});

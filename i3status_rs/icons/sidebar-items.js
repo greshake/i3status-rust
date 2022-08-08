@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Icons",""]]});
+initSidebarItems({"struct":[["Icons",""],["IconsConfigRaw",""]]});
