@@ -164,6 +164,10 @@
 <span id="159">159</span>
 <span id="160">160</span>
 <span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -286,11 +290,11 @@
         });
 
         <span class="comment">// Send percentage to alert check if we don&#39;t want absolute alerts</span>
-        <span class="kw">let</span> <span class="ident">alert_val</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">unit</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">Prefix::Tera</span>) =&gt; <span class="ident">result</span> <span class="op">*</span> <span class="number">1e12</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">Prefix::Giga</span>) =&gt; <span class="ident">result</span> <span class="op">*</span> <span class="number">1e9</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">Prefix::Mega</span>) =&gt; <span class="ident">result</span> <span class="op">*</span> <span class="number">1e6</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">Prefix::Kilo</span>) =&gt; <span class="ident">result</span> <span class="op">*</span> <span class="number">1e3</span>,
+        <span class="kw">let</span> <span class="ident">alert_val_in_config_units</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">unit</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">Prefix::Tera</span>) =&gt; <span class="ident">result</span> <span class="op">*</span> <span class="number">1e-12</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">Prefix::Giga</span>) =&gt; <span class="ident">result</span> <span class="op">*</span> <span class="number">1e-9</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">Prefix::Mega</span>) =&gt; <span class="ident">result</span> <span class="op">*</span> <span class="number">1e-6</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">Prefix::Kilo</span>) =&gt; <span class="ident">result</span> <span class="op">*</span> <span class="number">1e-3</span>,
             <span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="ident">result</span>,
             <span class="prelude-val">None</span> =&gt; <span class="ident">percentage</span>,
         };
@@ -298,18 +302,22 @@
         <span class="comment">// Compute state</span>
         <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">info_type</span> {
             <span class="ident">InfoType::Used</span> =&gt; {
-                <span class="kw">if</span> <span class="ident">alert_val</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">alert</span> {
+                <span class="kw">if</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">alert</span> {
                     <span class="ident">State::Critical</span>
-                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">alert_val</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">alert</span> <span class="op">&amp;&amp;</span> <span class="ident">alert_val</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">warning</span> {
+                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">alert</span>
+                    <span class="op">&amp;&amp;</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">warning</span>
+                {
                     <span class="ident">State::Warning</span>
                 } <span class="kw">else</span> {
                     <span class="ident">State::Idle</span>
                 }
             }
             <span class="ident">InfoType::Free</span> <span class="op">|</span> <span class="ident">InfoType::Available</span> =&gt; {
-                <span class="kw">if</span> <span class="number">0.</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">alert_val</span> <span class="op">&amp;&amp;</span> <span class="ident">alert_val</span> <span class="op">&lt;</span> <span class="ident">config</span>.<span class="ident">alert</span> {
+                <span class="kw">if</span> <span class="number">0.</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&amp;&amp;</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&lt;</span> <span class="ident">config</span>.<span class="ident">alert</span> {
                     <span class="ident">State::Critical</span>
-                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">alert</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">alert_val</span> <span class="op">&amp;&amp;</span> <span class="ident">alert_val</span> <span class="op">&lt;</span> <span class="ident">config</span>.<span class="ident">warning</span> {
+                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">alert</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">alert_val_in_config_units</span>
+                    <span class="op">&amp;&amp;</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&lt;</span> <span class="ident">config</span>.<span class="ident">warning</span>
+                {
                     <span class="ident">State::Warning</span>
                 } <span class="kw">else</span> {
                     <span class="ident">State::Idle</span>
