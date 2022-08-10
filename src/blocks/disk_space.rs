@@ -120,11 +120,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         });
 
         // Send percentage to alert check if we don't want absolute alerts
-        let alert_val = match unit {
-            Some(Prefix::Tera) => result * 1e12,
-            Some(Prefix::Giga) => result * 1e9,
-            Some(Prefix::Mega) => result * 1e6,
-            Some(Prefix::Kilo) => result * 1e3,
+        let alert_val_in_config_units = match unit {
+            Some(Prefix::Tera) => result * 1e-12,
+            Some(Prefix::Giga) => result * 1e-9,
+            Some(Prefix::Mega) => result * 1e-6,
+            Some(Prefix::Kilo) => result * 1e-3,
             Some(_) => result,
             None => percentage,
         };
@@ -132,18 +132,22 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         // Compute state
         widget.state = match config.info_type {
             InfoType::Used => {
-                if alert_val > config.alert {
+                if alert_val_in_config_units > config.alert {
                     State::Critical
-                } else if alert_val <= config.alert && alert_val > config.warning {
+                } else if alert_val_in_config_units <= config.alert
+                    && alert_val_in_config_units > config.warning
+                {
                     State::Warning
                 } else {
                     State::Idle
                 }
             }
             InfoType::Free | InfoType::Available => {
-                if 0. <= alert_val && alert_val < config.alert {
+                if 0. <= alert_val_in_config_units && alert_val_in_config_units < config.alert {
                     State::Critical
-                } else if config.alert <= alert_val && alert_val < config.warning {
+                } else if config.alert <= alert_val_in_config_units
+                    && alert_val_in_config_units < config.warning
+                {
                     State::Warning
                 } else {
                     State::Idle
