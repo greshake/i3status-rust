@@ -216,6 +216,8 @@
 <span class="doccomment">//! # Icons Used</span>
 <span class="doccomment">//! - `disk_drive`</span>
 
+<span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;disk_space&quot;</span>);
+
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting::prefix::Prefix</span>;
 <span class="kw">use</span> <span class="ident">nix::sys::statvfs::statvfs</span>;
@@ -299,25 +301,23 @@
             <span class="prelude-val">None</span> =&gt; <span class="ident">percentage</span>,
         };
 
+        <span class="macro">debug!</span>(<span class="string">&quot;alert_val_in_config_units = {alert_val_in_config_units}&quot;</span>);
+
         <span class="comment">// Compute state</span>
         <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">info_type</span> {
             <span class="ident">InfoType::Used</span> =&gt; {
-                <span class="kw">if</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">alert</span> {
+                <span class="kw">if</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">alert</span> {
                     <span class="ident">State::Critical</span>
-                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">alert</span>
-                    <span class="op">&amp;&amp;</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">warning</span>
-                {
+                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">warning</span> {
                     <span class="ident">State::Warning</span>
                 } <span class="kw">else</span> {
                     <span class="ident">State::Idle</span>
                 }
             }
             <span class="ident">InfoType::Free</span> <span class="op">|</span> <span class="ident">InfoType::Available</span> =&gt; {
-                <span class="kw">if</span> <span class="number">0.</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&amp;&amp;</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&lt;</span> <span class="ident">config</span>.<span class="ident">alert</span> {
+                <span class="kw">if</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">alert</span> {
                     <span class="ident">State::Critical</span>
-                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">alert</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">alert_val_in_config_units</span>
-                    <span class="op">&amp;&amp;</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&lt;</span> <span class="ident">config</span>.<span class="ident">warning</span>
-                {
+                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">alert_val_in_config_units</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">warning</span> {
                     <span class="ident">State::Warning</span>
                 } <span class="kw">else</span> {
                     <span class="ident">State::Idle</span>
