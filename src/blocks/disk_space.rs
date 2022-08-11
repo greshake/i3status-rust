@@ -46,6 +46,8 @@
 //! # Icons Used
 //! - `disk_drive`
 
+make_log_macro!(debug, "disk_space");
+
 use super::prelude::*;
 use crate::formatting::prefix::Prefix;
 use nix::sys::statvfs::statvfs;
@@ -129,25 +131,23 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             None => percentage,
         };
 
+        debug!("alert_val_in_config_units = {alert_val_in_config_units}");
+
         // Compute state
         widget.state = match config.info_type {
             InfoType::Used => {
-                if alert_val_in_config_units > config.alert {
+                if alert_val_in_config_units >= config.alert {
                     State::Critical
-                } else if alert_val_in_config_units <= config.alert
-                    && alert_val_in_config_units > config.warning
-                {
+                } else if alert_val_in_config_units >= config.warning {
                     State::Warning
                 } else {
                     State::Idle
                 }
             }
             InfoType::Free | InfoType::Available => {
-                if 0. <= alert_val_in_config_units && alert_val_in_config_units < config.alert {
+                if alert_val_in_config_units <= config.alert {
                     State::Critical
-                } else if config.alert <= alert_val_in_config_units
-                    && alert_val_in_config_units < config.warning
-                {
+                } else if alert_val_in_config_units <= config.warning {
                     State::Warning
                 } else {
                     State::Idle
