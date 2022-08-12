@@ -1084,9 +1084,9 @@ dependencies = [
 
 [[package]]
 name = "neli-wifi"
-version = "0.3.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "357d0e6939587b666e8600c698ccc4052d5089754960c53044cb2df15d5f011c"
+checksum = "4714dd86601f4da56faffa07bc24c684048d01575f064e2256cef45c5722a10b"
 dependencies = [
  "neli",
  "neli-proc-macros",

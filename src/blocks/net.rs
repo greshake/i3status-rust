@@ -23,6 +23,7 @@
 //! `ssid`            | Netfork SSID (WiFi only) | Text   | -
 //! `frequency`       | WiFi frequency           | Number | Hz
 //! `signal_strength` | WiFi signal              | Number | %
+//! `bitrate`         | WiFi connection bitrate  | Number | Bits per second
 //!
 //! # Example
 //!
@@ -136,6 +137,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     .map(|f| values.insert("frequency".into(), Value::hertz(f)));
                 wifi.signal
                     .map(|s| values.insert("signal_strength".into(), Value::percents(s)));
+                wifi.bitrate
+                    .map(|b| values.insert("bitrate".into(), Value::bits(b)));
 
                 widget.set_values(values);
                 widget.set_icon(device.icon)?;

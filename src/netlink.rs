@@ -28,6 +28,7 @@ pub struct WifiInfo {
     pub ssid: Option<String>,
     pub signal: Option<f64>,
     pub frequency: Option<f64>,
+    pub bitrate: Option<f64>,
 }
 
 impl NetDevice {
@@ -123,7 +124,7 @@ impl NetDevice {
             .await
             .error("Failed to get nl80211 interfaces")?;
         for interface in interfaces {
-            if let Some(index) = &interface.index {
+            if let Some(index) = interface.index {
                 if let Ok(ap) = socket.get_station_info(index).await {
                     // SSID is `None` when not connected
                     if let (Some(ssid), Some(device)) = (
@@ -147,6 +148,7 @@ impl NetDevice {
                             ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
                             frequency: interface.frequency.map(|f| f as f64 * 1e6),
                             signal: raw_signal.map(|s| signal_percents(s as f64)),
+                            bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
                         });
                     }
                 }
