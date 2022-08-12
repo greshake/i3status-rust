@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["color",""]],"struct":[["Theme",""],["ThemeConfigRaw",""]]});
+window.SIDEBAR_ITEMS = {"mod":[["color",""]],"struct":[["Theme",""],["ThemeConfigRaw",""]]};

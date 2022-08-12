@@ -1,1 +1,1 @@
-initSidebarItems({"macro":[["debug",""]],"struct":[["ApcConnection",""],["Device",""],["PropertyMap",""]]});
+window.SIDEBAR_ITEMS = {"macro":[["debug",""]],"struct":[["ApcConnection",""],["Device",""],["PropertyMap",""]]};

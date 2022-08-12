@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["init",""],["print_blocks",""]],"mod":[["i3bar_block",""],["i3bar_event",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["init",""],["print_blocks",""]],"mod":[["i3bar_block",""],["i3bar_event",""]]};

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Source","The source of text for widget"],["State","State of the widget. Affects the theming."]],"struct":[["Widget",""]]});
+window.SIDEBAR_ITEMS = {"enum":[["Source","The source of text for widget"],["State","State of the widget. Affects the theming."]],"struct":[["Widget",""]]};

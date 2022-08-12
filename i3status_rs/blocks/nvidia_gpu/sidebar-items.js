@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["FAN_BTN",""],["FORMAT",""],["MEM_BTN",""],["QUERY",""]],"fn":[["run",""],["set_fan_speed",""]],"struct":[["GpuInfo",""],["NvidiaGpuConfig",""]]});
+window.SIDEBAR_ITEMS = {"constant":[["FAN_BTN",""],["FORMAT",""],["MEM_BTN",""],["QUERY",""]],"fn":[["run",""],["set_fan_speed",""]],"struct":[["GpuInfo",""],["NvidiaGpuConfig",""]]};

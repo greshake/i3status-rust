@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["CollectEscaped",""]]});
+window.SIDEBAR_ITEMS = {"trait":[["CollectEscaped",""]]};

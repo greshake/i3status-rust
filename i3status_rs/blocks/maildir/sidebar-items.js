@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["MailType",""]],"fn":[["run",""]],"struct":[["MaildirConfig",""]]});
+window.SIDEBAR_ITEMS = {"enum":[["MailType",""]],"fn":[["run",""]],"struct":[["MaildirConfig",""]]};

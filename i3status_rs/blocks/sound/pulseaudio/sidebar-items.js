@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ClientRequest",""]],"static":[["CLIENT",""],["DEFAULT_SINK",""],["DEFAULT_SOURCE",""],["DEVICES",""],["EVENT_LISTENER",""]],"struct":[["Client",""],["Connection",""],["Device",""],["VolInfo",""]]});
+window.SIDEBAR_ITEMS = {"enum":[["ClientRequest",""]],"static":[["CLIENT",""],["DEFAULT_SINK",""],["DEFAULT_SOURCE",""],["DEVICES",""],["EVENT_LISTENER",""]],"struct":[["Client",""],["Connection",""],["Device",""],["VolInfo",""]]};

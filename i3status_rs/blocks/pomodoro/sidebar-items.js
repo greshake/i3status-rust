@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["run",""]],"struct":[["Block",""],["PomodoroConfig",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Block",""],["PomodoroConfig",""]]};

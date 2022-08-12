@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["rofication_status",""],["run",""]],"struct":[["RoficationConfig",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["rofication_status",""],["run",""]],"struct":[["RoficationConfig",""]]};

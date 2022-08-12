@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["HueShifter",""]],"fn":[["run",""]],"struct":[["Gammastep",""],["HueshiftConfig",""],["Redshift",""],["Sct",""],["WlGammarelayRs",""],["WlGammarelayRsBusProxy",""],["WlGammarelayRsBusProxyBlocking",""],["Wlsunset",""]],"trait":[["HueShiftDriver",""]]});
+window.SIDEBAR_ITEMS = {"enum":[["HueShifter",""]],"fn":[["run",""]],"struct":[["Gammastep",""],["HueshiftConfig",""],["Redshift",""],["Sct",""],["WlGammarelayRs",""],["WlGammarelayRsBusProxy",""],["WlGammarelayRsBusProxyBlocking",""],["Wlsunset",""]],"trait":[["HueShiftDriver",""]]};

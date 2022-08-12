@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["get_on_page",""],["get_stats",""],["run",""]],"struct":[["GithubConfig",""],["Notification",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["get_on_page",""],["get_stats",""],["run",""]],"struct":[["GithubConfig",""],["Notification",""]]};

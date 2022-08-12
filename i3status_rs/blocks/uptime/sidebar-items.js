@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["run",""]],"struct":[["UptimeConfig",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["UptimeConfig",""]]};

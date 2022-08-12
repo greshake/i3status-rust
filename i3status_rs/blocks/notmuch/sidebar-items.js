@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["run",""],["run_query",""]],"struct":[["NotmuchConfig",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["run",""],["run_query",""]],"struct":[["NotmuchConfig",""]]};

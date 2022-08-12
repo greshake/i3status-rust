@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Signal",""]],"fn":[["signals_stream","Returns an infinite stream of `Signal`s"]]});
+window.SIDEBAR_ITEMS = {"enum":[["Signal",""]],"fn":[["signals_stream","Returns an infinite stream of `Signal`s"]]};

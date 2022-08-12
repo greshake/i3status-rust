@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["push_to_hist",""],["run",""]],"struct":[["NetConfig",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["push_to_hist",""],["run",""]],"struct":[["NetConfig",""]]};
