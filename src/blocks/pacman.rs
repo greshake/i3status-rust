@@ -2,11 +2,28 @@
 //!
 //! Requires fakeroot to be installed (only required for pacman).
 //!
-//! Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/`. If you have the CHECKUPDATES_DB env var set on your system then substitute that dir instead of /tmp/checkup-db-yourusername.
+//! Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/`.
+//! If you have the `CHECKUPDATES_DB` env var set on your system then substitute that dir instead of
+//! `/tmp/checkup-db-yourusername`.
 //!
-//! Tip: On Arch Linux you can setup a `pacman` hook to signal i3status-rs to update after packages have been upgraded, so you won't have stale info in your pacman block. Create `/etc/pacman.d/hooks/i3status-rust.hook` with the below contents:
+//! Note: `pikaur` may hang the whole block if there is no internet connectivity [reference](https://github.com/actionless/pikaur/issues/595). In that case, try a different AUR helper.
 //!
-//! Note: `pikaur` may hang the whole block if there is no internet connectivity (reference)[https://github.com/actionless/pikaur/issues/595]. In that case, try a different AUR helper.
+//! # Pacman hook
+//!
+//! Tip: On Arch Linux you can setup a `pacman` hook to signal i3status-rs to update after packages
+//! have been upgraded, so you won't have stale info in your pacman block.
+//!
+//! In the block configuration, set `signal = 1` (or other number if `1` is being used by some
+//! other block):
+//!
+//! ```toml
+//! [[block]]
+//! block = "pacman"
+//! signal = 1
+//! ```
+//!
+//! Create `/etc/pacman.d/hooks/i3status-rust.hook` with the below contents:
+//!
 //! ```ini
 //! [Trigger]
 //! Operation = Upgrade
@@ -15,7 +32,7 @@
 //!
 //! [Action]
 //! When = PostTransaction
-//! Exec = /usr/bin/pkill -SIGUSR1 i3status-rs
+//! Exec = /usr/bin/pkill -SIGRTMIN+1 i3status-rs
 //! ```
 //!
 //! # Configuration
