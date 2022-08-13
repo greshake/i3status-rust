@@ -48,8 +48,8 @@
 //! ```
 //!
 //! # Notes
-//! All the information comes from https://ipapi.co/json/
-//! Check their documentation here: https://ipapi.co/api/#complete-location5
+//! All the information comes from <https://ipapi.co/json/>
+//! Check their documentation here: <https://ipapi.co/api/#complete-location5>
 //!
 //! The IP is queried, 1) When i3status-rs starts, 2) When a signal is received
 //! on D-Bus about a network configuration change, 3) Every 5 minutes. This
@@ -57,7 +57,7 @@
 //! for example due to a IP refresh at the router.
 //!
 //! Flags: They are not icons but unicode glyphs. You will need a font that
-//! includes them. Tested with: https://www.babelstone.co.uk/Fonts/Flags.html
+//! includes them. Tested with: <https://www.babelstone.co.uk/Fonts/Flags.html>
 
 use super::prelude::*;
 use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};

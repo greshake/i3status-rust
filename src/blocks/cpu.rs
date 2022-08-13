@@ -24,7 +24,7 @@
 //! block = "cpu"
 //! interval = 1
 //! format = "$barchart.str() $utilization.eng()"
-//! format_alt = "$frequency.eng() \\|$boost.str()"
+//! format_alt = "$frequency.eng(){ $boost.str()|}"
 //! ```
 //!
 //! # Icons Used
