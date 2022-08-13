@@ -5,11 +5,21 @@
         </a><h2 class="location"><a href="#">Module pacman</a></h2><div class="sidebar-elems"><section><div class="block"><ul><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#statics">Statics</a></li><li><a href="#functions">Functions</a></li></ul></div></section></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
                                 <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
                         </div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
-    <h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">pacman</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../../src/i3status_rs/blocks/pacman.rs.html#1-385">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pending updates available on pacman or an AUR helper.</p>
+    <h1 class="fqn"><span class="in-band">Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">pacman</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../../src/i3status_rs/blocks/pacman.rs.html#1-402">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pending updates available on pacman or an AUR helper.</p>
 <p>Requires fakeroot to be installed (only required for pacman).</p>
-<p>Tip: You can grab the list of available updates using <code>fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/</code>. If you have the CHECKUPDATES_DB env var set on your system then substitute that dir instead of /tmp/checkup-db-yourusername.</p>
-<p>Tip: On Arch Linux you can setup a <code>pacman</code> hook to signal i3status-rs to update after packages have been upgraded, so you won’t have stale info in your pacman block. Create <code>/etc/pacman.d/hooks/i3status-rust.hook</code> with the below contents:</p>
-<p>Note: <code>pikaur</code> may hang the whole block if there is no internet connectivity (reference)[https://github.com/actionless/pikaur/issues/595]. In that case, try a different AUR helper.</p>
+<p>Tip: You can grab the list of available updates using <code>fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/</code>.
+If you have the <code>CHECKUPDATES_DB</code> env var set on your system then substitute that dir instead of
+<code>/tmp/checkup-db-yourusername</code>.</p>
+<p>Note: <code>pikaur</code> may hang the whole block if there is no internet connectivity <a href="https://github.com/actionless/pikaur/issues/595">reference</a>. In that case, try a different AUR helper.</p>
+<h2 id="pacman-hook"><a href="#pacman-hook">Pacman hook</a></h2>
+<p>Tip: On Arch Linux you can setup a <code>pacman</code> hook to signal i3status-rs to update after packages
+have been upgraded, so you won’t have stale info in your pacman block.</p>
+<p>In the block configuration, set <code>signal = 1</code> (or other number if <code>1</code> is being used by some
+other block):</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;pacman&quot;
+signal = 1</code></pre></div>
+<p>Create <code>/etc/pacman.d/hooks/i3status-rust.hook</code> with the below contents:</p>
 <div class="example-wrap"><pre class="language-ini"><code>[Trigger]
 Operation = Upgrade
 Type = Package
@@ -17,7 +27,7 @@ Target = *
 
 [Action]
 When = PostTransaction
-Exec = /usr/bin/pkill -SIGUSR1 i3status-rs</code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+Exec = /usr/bin/pkill -SIGRTMIN+1 i3status-rs</code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>interval</code></td><td>Update interval, in seconds. If setting <code>aur_command</code> then set interval appropriately as to not exceed the AUR’s daily rate limit.</td><td><code>600</code></td></tr>
 <tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;$pacman.eng(1)&quot;</code></td></tr>
 <tr><td><code>format_singular</code></td><td>Same as <code>format</code> but for when exactly one update is available.</td><td><code>&quot;$pacman.eng(1)&quot;</code></td></tr>
