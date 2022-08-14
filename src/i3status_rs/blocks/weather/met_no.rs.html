@@ -364,7 +364,7 @@
         <span class="kw">let</span> <span class="ident">querystr</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">String</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">map!</span> {
             <span class="string">&quot;lat&quot;</span> =&gt; <span class="ident">lat</span>,
             <span class="string">&quot;lon&quot;</span> =&gt; <span class="ident">lon</span>,
-            <span class="string">&quot;altitude&quot;</span> =&gt; <span class="ident">altitude</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>(); <span class="kw">if</span> <span class="ident">altitude</span>.<span class="ident">is_some</span>()
+            [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">alt</span>) <span class="op">=</span> <span class="ident">altitude</span>] <span class="string">&quot;altitude&quot;</span> =&gt; <span class="ident">alt</span>,
         };
 
         <span class="kw">let</span> <span class="ident">data</span>: <span class="ident">ForecastResponse</span> <span class="op">=</span> <span class="ident">REQWEST_CLIENT</span>

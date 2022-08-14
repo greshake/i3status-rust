@@ -264,8 +264,8 @@
             <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
                 <span class="string">&quot;count&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">number_of_tasks</span>),
                 <span class="string">&quot;filter_name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">filter</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
-                <span class="string">&quot;done&quot;</span> =&gt; <span class="ident">Value::flag</span>(); <span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">==</span> <span class="number">0</span>,
-                <span class="string">&quot;single&quot;</span> =&gt; <span class="ident">Value::flag</span>(); <span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">==</span> <span class="number">1</span>,
+                [<span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">==</span> <span class="number">0</span>] <span class="string">&quot;done&quot;</span> =&gt; <span class="ident">Value::flag</span>(),
+                [<span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">==</span> <span class="number">1</span>] <span class="string">&quot;single&quot;</span> =&gt; <span class="ident">Value::flag</span>(),
             });
 
             <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">critical_threshold</span> {
