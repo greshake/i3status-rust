@@ -123,22 +123,17 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
                 let wifi = device.wifi_info().await?;
 
-                let mut values = map! {
+                let values = map! {
                     "speed_down" => Value::bytes(speed_down).with_icon(api.get_icon("net_down")?),
                     "speed_up" => Value::bytes(speed_up).with_icon(api.get_icon("net_up")?),
                     "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
                     "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
                     "device" => Value::text(device.interface),
+                    [if let Some(v) = wifi.ssid] "ssid" => Value::text(v),
+                    [if let Some(v) = wifi.frequency] "frequency" => Value::hertz(v),
+                    [if let Some(v) = wifi.bitrate] "bitrate" => Value::bits(v),
+                    [if let Some(v) = wifi.signal] "signal_strength" => Value::percents(v),
                 };
-
-                wifi.ssid
-                    .map(|s| values.insert("ssid".into(), Value::text(s)));
-                wifi.frequency
-                    .map(|f| values.insert("frequency".into(), Value::hertz(f)));
-                wifi.signal
-                    .map(|s| values.insert("signal_strength".into(), Value::percents(s)));
-                wifi.bitrate
-                    .map(|b| values.insert("bitrate".into(), Value::bits(b)));
 
                 widget.set_values(values);
                 widget.set_icon(device.icon)?;

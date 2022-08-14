@@ -139,7 +139,7 @@ impl WeatherProvider for Service {
         let querystr: HashMap<&str, String> = map! {
             "lat" => lat,
             "lon" => lon,
-            "altitude" => altitude.as_ref().unwrap(); if altitude.is_some()
+            [if let Some(alt) = altitude] "altitude" => alt,
         };
 
         let data: ForecastResponse = REQWEST_CLIENT

@@ -102,8 +102,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             widget.set_values(map! {
                 "count" => Value::number(number_of_tasks),
                 "filter_name" => Value::text(filter.name.clone()),
-                "done" => Value::flag(); if number_of_tasks == 0,
-                "single" => Value::flag(); if number_of_tasks == 1,
+                [if number_of_tasks == 0] "done" => Value::flag(),
+                [if number_of_tasks == 1] "single" => Value::flag(),
             });
 
             widget.state = if number_of_tasks >= config.critical_threshold {

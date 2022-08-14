@@ -128,26 +128,33 @@ pub async fn has_command(command: &str) -> Result<bool> {
 /// # Example
 ///
 /// ```
-/// map! {
-///     "key" => Value,
-///     "conditional" => Value; if conditon,
-/// }
+/// let opt = Some(1);
+/// let map: HashMap<&'static str, String> = map! {
+///     "key" => "value",
+///     [if true] "hello" => "world",
+///     [if let Some(x) = opt] "opt" => x.to_string(),
+/// };
 /// ```
 macro_rules! map {
-    ($($key:expr => $value:expr $(; if $cond:expr)?),* $(,)*) => {{
+    ($( $([$($cond_tokens:tt)*])? $key:literal => $value:expr ),* $(,)?) => {{
         #[allow(unused_mut)]
         let mut m = ::std::collections::HashMap::new();
         $(
-        map!(@insert m, $key, $value $(,$cond)?);
+        map!(@insert m, $key, $value $(,$($cond_tokens)*)?);
         )*
         m
     }};
     (@insert $map:ident, $key:expr, $value:expr) => {{
         $map.insert($key.into(), $value.into());
     }};
-    (@insert $map:ident, $key:expr, $value:expr, $cond:expr) => {{
+    (@insert $map:ident, $key:expr, $value:expr, if $cond:expr) => {{
         if $cond {
-            $map.insert($key.into(), $value.into());
+        $map.insert($key.into(), $value.into());
+        }
+    }};
+    (@insert $map:ident, $key:expr, $value:expr, if let $pat:pat = $match_on:expr) => {{
+        if let $pat = $match_on {
+        $map.insert($key.into(), $value.into());
         }
     }};
 }
