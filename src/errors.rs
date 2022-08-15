@@ -52,12 +52,16 @@ pub trait InBlock {
     fn in_block(self, block: BlockType, block_id: usize) -> Self;
 }
 
+impl InBlock for Error {
+    fn in_block(mut self, block: BlockType, block_id: usize) -> Self {
+        self.block = Some((block, block_id));
+        self
+    }
+}
+
 impl<T> InBlock for Result<T> {
     fn in_block(self, block: BlockType, block_id: usize) -> Self {
-        self.map_err(|mut e| {
-            e.block = Some((block, block_id));
-            e
-        })
+        self.map_err(|e| e.in_block(block, block_id))
     }
 }
 

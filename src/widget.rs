@@ -1,5 +1,6 @@
 use crate::config::SharedConfig;
 use crate::errors::*;
+use crate::escape::CollectEscaped;
 use crate::formatting::{Format, Rendered, Values};
 use crate::protocol::i3bar_block::I3BarBlock;
 use serde::Deserialize;
@@ -9,28 +10,25 @@ pub struct Widget {
     pub icon: String,
     pub shared_config: SharedConfig,
     pub state: State,
-    pub full_screen: bool,
-
-    inner: I3BarBlock,
+    id: usize,
     source: Source,
 }
 
 impl Widget {
     pub fn new(id: usize, shared_config: SharedConfig) -> Self {
-        let inner = I3BarBlock {
-            name: Some(id.to_string()),
-            ..I3BarBlock::default()
-        };
-
         Widget {
             icon: String::new(),
             shared_config,
             state: State::Idle,
-            full_screen: false,
-
-            inner,
+            id,
             source: Source::Text(String::new()),
         }
+    }
+
+    pub fn new_error(id: usize, shared_config: SharedConfig, error: &Error) -> Self {
+        Self::new(id, shared_config)
+            .with_text(error.to_string().chars().collect_pango())
+            .with_state(State::Critical)
     }
 
     /*
@@ -101,11 +99,14 @@ impl Widget {
     /// Constuct `I3BarBlock` from this widget
     pub fn get_data(&self) -> Result<Vec<I3BarBlock>> {
         // Create a "template" block
-        let mut template = self.inner.clone();
         let (key_bg, key_fg) = self.shared_config.theme.get_colors(self.state);
         let (full, short) = self.source.render()?;
-        template.background = key_bg;
-        template.color = key_fg;
+        let mut template = I3BarBlock {
+            name: Some(self.id.to_string()),
+            background: key_bg,
+            color: key_fg,
+            ..I3BarBlock::default()
+        };
 
         // Collect all the pieces into "parts"
         let mut parts = Vec::new();

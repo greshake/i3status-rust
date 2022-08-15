@@ -106,12 +106,6 @@ impl Deref for Format {
     }
 }
 
-impl Format {
-    pub fn intervals(&self) -> Vec<u64> {
-        self.inner.intervals.clone()
-    }
-}
-
 #[derive(Debug)]
 pub struct FormatInner {
     full: FormatTemplate,
@@ -122,6 +116,10 @@ pub struct FormatInner {
 impl FormatInner {
     pub fn contains_key(&self, key: &str) -> bool {
         self.full.contains_key(key) || self.short.as_ref().map_or(false, |x| x.contains_key(key))
+    }
+
+    pub fn intervals(&self) -> Vec<u64> {
+        self.intervals.clone()
     }
 
     pub fn render(&self, vars: &Values) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
