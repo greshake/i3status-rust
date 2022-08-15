@@ -98,7 +98,7 @@ fn main() {
             bar.run_event_loop().await
         });
     if let Err(error) = result {
-        let error_widget = Widget::new(0, Default::default()).with_text(error.to_string());
+        let error_widget = Widget::new_error(0, Default::default(), &error);
         println!(
             "{},",
             serde_json::to_string(&error_widget.get_data().unwrap()).unwrap()
@@ -116,26 +116,29 @@ fn main() {
     }
 }
 
-pub struct RunningBlock {
-    id: usize,
-
-    event_sender: mpsc::Sender<BlockEvent>,
+pub struct Block {
+    event_sender: Option<mpsc::Sender<BlockEvent>>,
     abort_handle: AbortHandle,
+
     click_handler: ClickHandler,
     signal: Option<i32>,
+    shared_config: SharedConfig,
 
-    widget: Option<Widget>,
+    state: BlockState,
 }
 
-pub struct FailedBlock {
-    id: usize,
-    error_widget: Widget,
-    error: Error,
+impl Block {
+    fn abort(&mut self) {
+        self.abort_handle.abort();
+        self.event_sender = None;
+        self.state = BlockState::None;
+    }
 }
 
-pub enum Block {
-    Running(RunningBlock),
-    Failed(FailedBlock),
+pub enum BlockState {
+    None,
+    Normal { widget: Widget },
+    Error { widget: Widget, error: Error },
 }
 
 #[derive(Debug)]
@@ -146,7 +149,9 @@ pub struct Request {
 
 #[derive(Debug)]
 pub enum RequestCmd {
-    SetWidget(Option<Widget>),
+    SetWidget(Widget),
+    UnsetWidget,
+    SetError(Error),
 }
 
 struct BarState {
@@ -224,9 +229,8 @@ impl BarState {
 
         let (event_sender, event_receiver) = mpsc::channel(64);
 
-        let id = self.blocks.len();
         let api = CommonApi {
-            id,
+            id: self.blocks.len(),
             shared_config: shared_config.clone(),
             event_receiver,
 
@@ -238,16 +242,16 @@ impl BarState {
 
         let (block_fut, abort_handle) = abortable(block_type.run(block_config, api));
 
-        let block = Block::Running(RunningBlock {
-            id,
-
-            event_sender,
+        let block = Block {
+            event_sender: Some(event_sender),
             abort_handle,
+
             click_handler: common_config.click,
             signal: common_config.signal,
+            shared_config,
 
-            widget: None,
-        });
+            state: BlockState::None,
+        };
 
         self.running_blocks
             .push(Box::pin(block_fut.map(|res| match res {
@@ -259,43 +263,53 @@ impl BarState {
         Ok(())
     }
 
-    async fn process_request(&mut self, request: Request) -> Result<()> {
-        let (block, block_type) = self
-            .blocks
-            .get_mut(request.block_id)
-            .error("Message receiver: ID out of bounds")?;
-        let block = match block {
-            Block::Running(block) => block,
-            Block::Failed(_) => {
-                // Ignore requests from failed blocks
-                return Ok(());
-            }
-        };
+    fn process_request(&mut self, request: Request) {
+        let block = &mut self.blocks[request.block_id].0;
         match request.cmd {
             RequestCmd::SetWidget(widget) => {
-                block.widget = widget;
-                if let Some(widget) = &block.widget {
-                    let _ = self
-                        .widget_updates_sender
-                        .send((block.id, widget.intervals()));
-                    if self.fullscreen_block.is_none() && widget.full_screen {
-                        self.fullscreen_block = Some(block.id);
-                    } else if self.fullscreen_block == Some(block.id) && !widget.full_screen {
-                        self.fullscreen_block = None;
-                    }
-                } else if self.fullscreen_block == Some(block.id) {
+                let _ = self
+                    .widget_updates_sender
+                    .send((request.block_id, widget.intervals()));
+                block.state = BlockState::Normal { widget };
+                if self.fullscreen_block == Some(request.block_id) {
                     self.fullscreen_block = None;
                 }
             }
+            RequestCmd::UnsetWidget => {
+                let _ = self
+                    .widget_updates_sender
+                    .send((request.block_id, Vec::new()));
+                block.state = BlockState::None;
+            }
+            RequestCmd::SetError(error) => {
+                let _ = self
+                    .widget_updates_sender
+                    .send((request.block_id, Vec::new()));
+                block.state = BlockState::Error {
+                    widget: if self.fullscreen_block == Some(request.block_id) {
+                        Widget::new_error(request.block_id, block.shared_config.clone(), &error)
+                    } else {
+                        Widget::new(request.block_id, block.shared_config.clone())
+                            .with_text("X".into())
+                            .with_state(State::Critical)
+                    },
+                    error,
+                };
+            }
         }
+    }
 
-        let data = &mut self.blocks_render_cache[block.id];
-        if let Some(widget) = &block.widget {
-            *data = widget.get_data().in_block(*block_type, block.id)?;
-        } else {
-            data.clear();
+    fn render_block(&mut self, id: usize) -> Result<()> {
+        let (block, block_type) = &mut self.blocks[id];
+        let data = &mut self.blocks_render_cache[id];
+        match &block.state {
+            BlockState::None => {
+                data.clear();
+            }
+            BlockState::Normal { widget } | BlockState::Error { widget, .. } => {
+                *data = widget.get_data().in_block(*block_type, id)?;
+            }
         }
-
         Ok(())
     }
 
@@ -313,24 +327,18 @@ impl BarState {
             Some(block_result) = self.running_blocks.next() => {
                 block_result
             }
-            // Recieve messages from blocks
+            // Receive messages from blocks
             Some(request) = self.request_receiver.recv() => {
-                self.process_request(request).await?;
+                let id = request.block_id;
+                self.process_request(request);
+                self.render_block(id)?;
                 self.render();
                 Ok(())
             }
             // Handle scheduled updates
             Some(ids) = self.widget_updates_stream.next() => {
                 for id in ids {
-                    let data = &mut self.blocks_render_cache[id];
-                    let (block, block_type) = &self.blocks[id];
-                    if let Block::Running(block) = block {
-                        if let Some(widget) = &block.widget {
-                            *data = widget.get_data().in_block(*block_type, id)?;
-                        } else {
-                            data.clear();
-                        }
-                    }
+                    self.render_block(id)?;
                 }
                 self.render();
                 Ok(())
@@ -338,26 +346,28 @@ impl BarState {
             // Handle clicks
             Some(event) = self.events_stream.next() => {
                 let (block, block_type) = self.blocks.get_mut(event.id).error("Events receiver: ID out of bounds")?;
-                match block {
-                    Block::Running(block) => {
+                match &mut block.state {
+                    BlockState::None => (),
+                    BlockState::Normal { .. } => {
                         let post_actions = block.click_handler.handle(event.button).await.in_block(*block_type, event.id)?;
-                        if post_actions.pass {
-                            let _ = block.event_sender.send(BlockEvent::Click(event)).await;
-                        }
-                        if post_actions.update {
-                            let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
+                        if let Some(sender) = &block.event_sender {
+                            if post_actions.pass {
+                                let _ = sender.send(BlockEvent::Click(event)).await;
+                            }
+                            if post_actions.update {
+                                let _ = sender.send(BlockEvent::UpdateRequest).await;
+                            }
                         }
                     }
-                    Block::Failed(block) => {
-                        let text = if self.fullscreen_block == Some(block.id) {
+                    BlockState::Error { widget, error } => {
+                        if self.fullscreen_block == Some(event.id) {
                             self.fullscreen_block = None;
-                            block.error.message.as_deref().unwrap_or("Error").into()
+                            *widget = Widget::new(event.id, block.shared_config.clone()).with_text("X".into()).with_state(State::Critical);
                         } else {
-                            self.fullscreen_block = Some(block.id);
-                            block.error.to_string()
-                        };
-                        block.error_widget.set_text(text);
-                        self.blocks_render_cache[block.id] = block.error_widget.get_data()?;
+                            self.fullscreen_block = Some(event.id);
+                            *widget = Widget::new_error(event.id, block.shared_config.clone(), error);
+                        }
+                        self.render_block(event.id)?;
                         self.render();
                     }
                 }
@@ -367,8 +377,8 @@ impl BarState {
             Some(signal) = self.signals_stream.next() => match signal {
                 Signal::Usr1 => {
                     for (block, _) in &self.blocks {
-                        if let Block::Running(block) = block {
-                            let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
+                        if let Some(sender) = &block.event_sender {
+                            let _ = sender.send(BlockEvent::UpdateRequest).await;
                         }
                     }
                     Ok(())
@@ -376,9 +386,9 @@ impl BarState {
                 Signal::Usr2 => restart(),
                 Signal::Custom(signal) => {
                     for (block, _) in &self.blocks {
-                        if let Block::Running(block) = block {
+                        if let Some(sender) = &block.event_sender {
                             if block.signal == Some(signal) {
-                                let _ = block.event_sender.send(BlockEvent::UpdateRequest).await;
+                                let _ = sender.send(BlockEvent::UpdateRequest).await;
                             }
                         }
                     }
@@ -393,23 +403,30 @@ impl BarState {
             if let Err(error) = self.process_event().await {
                 match error.block {
                     Some((_, id)) => {
-                        if let Block::Running(block) = &self.blocks[id].0 {
-                            block.abort_handle.abort();
+                        let block = &mut self.blocks[id].0;
+
+                        if matches!(block.state, BlockState::Error { .. }) {
+                            // This should never happen. If this code runs, it cound mean that we
+                            // got an error while trying to display and error. We better stop here.
+                            return Err(error);
                         }
-                        let block = FailedBlock {
-                            id,
-                            error_widget: Widget::new(id, self.shared_config.clone())
-                                .with_state(State::Critical)
-                                .with_text(error.message.as_deref().unwrap_or("Error").into()),
+
+                        block.abort();
+                        let _ = self.widget_updates_sender.send((id, Vec::new()));
+
+                        block.state = BlockState::Error {
+                            widget: if self.fullscreen_block == Some(id) {
+                                Widget::new_error(id, block.shared_config.clone(), &error)
+                            } else {
+                                Widget::new(id, block.shared_config.clone())
+                                    .with_text("X".into())
+                                    .with_state(State::Critical)
+                            },
                             error,
                         };
 
-                        self.blocks_render_cache[block.id] = block.error_widget.get_data()?;
-
+                        self.render_block(id)?;
                         self.render();
-
-                        self.blocks[id].0 = Block::Failed(block);
-                        self.fullscreen_block = None;
                     }
                     None => return Err(error),
                 }

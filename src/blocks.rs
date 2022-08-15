@@ -13,11 +13,11 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::time::Duration;
 
-use crate::click::{ClickHandler, MouseButton};
+use crate::click::ClickHandler;
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::protocol::i3bar_event::I3BarEvent;
-use crate::widget::{State, Widget};
+use crate::widget::Widget;
 use crate::{Request, RequestCmd};
 
 macro_rules! define_blocks {
@@ -173,7 +173,7 @@ impl CommonApi {
         self.request_sender
             .send(Request {
                 block_id: self.id,
-                cmd: RequestCmd::SetWidget(Some(widget.clone())),
+                cmd: RequestCmd::SetWidget(widget.clone()),
             })
             .await
             .error("Failed to send Request")
@@ -184,7 +184,18 @@ impl CommonApi {
         self.request_sender
             .send(Request {
                 block_id: self.id,
-                cmd: RequestCmd::SetWidget(None),
+                cmd: RequestCmd::UnsetWidget,
+            })
+            .await
+            .error("Failed to send Request")
+    }
+
+    /// Sends the error to be displayed.
+    pub async fn set_error(&self, error: Error) -> Result<()> {
+        self.request_sender
+            .send(Request {
+                block_id: self.id,
+                cmd: RequestCmd::SetError(error),
             })
             .await
             .error("Failed to send Request")
@@ -262,40 +273,19 @@ impl CommonApi {
     /// ```
     /// let status = api.recoverable(|| Status::new(&*socket_path)).await?;
     /// ```
-    pub async fn recoverable<Fn, Fut, T, E>(&mut self, mut f: Fn) -> Result<T>
+    pub async fn recoverable<Fn, Fut, T>(&mut self, mut f: Fn) -> Result<T>
     where
         Fn: FnMut() -> Fut,
-        Fut: Future<Output = Result<T, E>>,
-        E: StdError,
+        Fut: Future<Output = Result<T>>,
     {
-        let mut err_widget = None;
         loop {
             match f().await {
                 Ok(res) => return Ok(res),
                 Err(err) => {
-                    let widget = err_widget
-                        .get_or_insert_with(|| self.new_widget().with_state(State::Critical));
-                    let retry_at = tokio::time::Instant::now() + self.error_interval;
-
-                    loop {
-                        widget.set_text(if widget.full_screen {
-                            err.to_string()
-                        } else {
-                            "X".to_string()
-                        });
-                        self.set_widget(widget).await?;
-
-                        tokio::select! {
-                            _ = tokio::time::sleep_until(retry_at) => break,
-                            event = self.event() => match event {
-                                BlockEvent::UpdateRequest => break,
-                                BlockEvent::Click(click) => {
-                                    if click.button == MouseButton::Left {
-                                        widget.full_screen = !widget.full_screen;
-                                    }
-                                }
-                            }
-                        }
+                    self.set_error(err).await?;
+                    tokio::select! {
+                        _ = tokio::time::sleep(self.error_interval) => (),
+                        _ = self.wait_for_update_request() => (),
                     }
                 }
             }
