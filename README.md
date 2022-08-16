@@ -31,7 +31,16 @@ Key | Description | Default
 `theme` | The [theme](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-themes) that should be used. | `"plain"`
 `[theme.theme_overrides]` | Refer to `Themes and Icons` below. | None
 `scrolling` | The direction of scrolling, either `natural` or `reverse`. | `"reverse"`
+`error_format` | A string to customise how block errors are displayed. See below for available placeholders. | `$short_error_message|X`
+`error_fullscreen_format` | A string to customise how block errors are displayed when clicked. See below for available placeholders. | `$full_error_message`
 `[[block]]` | All blocks that will exist in your bar. | none
+
+Available `error_format` and `error_fullscreen_format` placeholders:
+
+Placeholder         | Value
+--------------------|------
+full_error_message  | The full error message
+short_error_message | The short error message, if available
 
 There are also some optional block-level configuration variables, common to all blocks:
 
@@ -41,6 +50,8 @@ Key | Description | Default
 `icons_format` | Same as top-level config option, but for this block only. | `" {icon} "`
 `if_command` | Only display the block if the supplied command returns 0 on startup. | None 
 `error_interval` | How long to wait until restarting the block after an error occurred. | `5`
+`error_format` | Overrides global `error_format` | None
+`error_fullscreen_format` | Overrides global `error_fullscreen_format` | None
 `[block.theme_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `[block.icons_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `[[block.click]]` | Set or override click action for the block. See below for details. | Block default / None
