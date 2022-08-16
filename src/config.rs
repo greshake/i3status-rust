@@ -43,7 +43,7 @@ impl Default for SharedConfig {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     #[serde(flatten)]
     pub shared: SharedConfig,
@@ -56,6 +56,11 @@ pub struct Config {
     #[serde(default = "Config::default_double_click_delay")]
     pub double_click_delay: u64,
 
+    #[serde(default = "Config::default_error_format")]
+    pub error_format: String,
+    #[serde(default = "Config::default_error_fullscreen_format")]
+    pub error_fullscreen_format: String,
+
     #[serde(rename = "block")]
     pub blocks: Vec<value::Value>,
 }
@@ -67,5 +72,13 @@ impl Config {
 
     fn default_double_click_delay() -> u64 {
         200
+    }
+
+    fn default_error_format() -> String {
+        "$short_error_message|X".into()
+    }
+
+    fn default_error_fullscreen_format() -> String {
+        "$full_error_message".into()
     }
 }

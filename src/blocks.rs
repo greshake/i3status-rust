@@ -2,6 +2,7 @@
 
 pub mod prelude;
 
+use crate::formatting::config::Config as FormatConfig;
 use crate::BoxedFuture;
 use futures::future::FutureExt;
 use serde::de::{self, Deserializer};
@@ -150,7 +151,6 @@ pub struct CommonApi {
     pub request_sender: mpsc::Sender<Request>,
 
     pub error_interval: Duration,
-    pub error_format: Option<String>,
 }
 
 impl CommonApi {
@@ -311,7 +311,9 @@ pub struct CommonConfig {
     #[serde(default = "CommonConfig::default_error_interval")]
     pub error_interval: u64,
     #[serde(default)]
-    pub error_format: Option<String>,
+    pub error_format: FormatConfig,
+    #[serde(default)]
+    pub error_fullscreen_format: FormatConfig,
 
     #[serde(default)]
     pub if_command: Option<String>,
@@ -332,6 +334,7 @@ impl CommonConfig {
             "icons_overrides",
             "error_interval",
             "error_format",
+            "error_fullscreen_format",
             "if_command",
         ];
         let mut common_table = Table::new();
