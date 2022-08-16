@@ -20,6 +20,7 @@ mod widget;
 mod wrappers;
 
 use clap::Parser;
+use formatting::value::Value;
 use futures::future::{abortable, FutureExt};
 use futures::stream::futures_unordered::FuturesUnordered;
 use futures::stream::{AbortHandle, Stream, StreamExt};
@@ -38,7 +39,7 @@ use click::ClickHandler;
 use config::Config;
 use config::SharedConfig;
 use errors::*;
-use formatting::scheduling;
+use formatting::{scheduling, Format};
 use protocol::i3bar_event::events_stream;
 use signals::{signals_stream, Signal};
 use widget::{State, Widget};
@@ -90,9 +91,10 @@ fn main() {
         .block_on(async move {
             let config_path = util::find_file(&args.config, None, Some("toml"))
                 .or_error(|| format!("Configuration file '{}' not found", args.config))?;
-            let config: Config = util::deserialize_toml_file(&config_path).config_error()?;
-            let mut bar = BarState::new(&config);
-            for block_config in config.blocks {
+            let mut config: Config = util::deserialize_toml_file(&config_path).config_error()?;
+            let blocks = std::mem::take(&mut config.blocks);
+            let mut bar = BarState::new(config);
+            for block_config in blocks {
                 bar.spawn_block(block_config).await?;
             }
             bar.run_event_loop().await
@@ -117,12 +119,18 @@ fn main() {
 }
 
 pub struct Block {
+    id: usize,
+
     event_sender: Option<mpsc::Sender<BlockEvent>>,
+    widget_updates_sender: mpsc::UnboundedSender<(usize, Vec<u64>)>,
     abort_handle: AbortHandle,
 
     click_handler: ClickHandler,
     signal: Option<i32>,
     shared_config: SharedConfig,
+
+    error_format: Format,
+    error_fullscreen_format: Format,
 
     state: BlockState,
 }
@@ -133,12 +141,37 @@ impl Block {
         self.event_sender = None;
         self.state = BlockState::None;
     }
+
+    fn notify_intervals(&self) {
+        let widget = match &self.state {
+            BlockState::None => return,
+            BlockState::Normal { widget } | BlockState::Error { widget } => widget,
+        };
+        let _ = self
+            .widget_updates_sender
+            .send((self.id, widget.intervals()));
+    }
+
+    fn set_error(&mut self, fullscreen: bool, error: Error) {
+        let mut widget = Widget::new(self.id, self.shared_config.clone())
+            .with_state(State::Critical)
+            .with_format(if fullscreen {
+                self.error_fullscreen_format.clone()
+            } else {
+                self.error_format.clone()
+            });
+        widget.set_values(map! {
+            "full_error_message" => Value::text(error.to_string()),
+            [if let Some(v) = &error.message] "short_error_message" => Value::text(v.to_string()),
+        });
+        self.state = BlockState::Error { widget };
+    }
 }
 
 pub enum BlockState {
     None,
     Normal { widget: Widget },
-    Error { widget: Widget, error: Error },
+    Error { widget: Widget },
 }
 
 #[derive(Debug)]
@@ -155,7 +188,7 @@ pub enum RequestCmd {
 }
 
 struct BarState {
-    shared_config: SharedConfig,
+    config: Config,
 
     blocks: Vec<(Block, BlockType)>,
     fullscreen_block: Option<usize>,
@@ -173,12 +206,10 @@ struct BarState {
 }
 
 impl BarState {
-    fn new(config: &Config) -> Self {
+    fn new(config: Config) -> Self {
         let (request_sender, request_receiver) = mpsc::channel(64);
         let (widget_updates_sender, widget_updates_stream) = scheduling::manage_widgets_updates();
         Self {
-            shared_config: config.shared.clone(),
-
             blocks: Vec::new(),
             fullscreen_block: None,
             running_blocks: FuturesUnordered::new(),
@@ -195,6 +226,8 @@ impl BarState {
                 config.invert_scrolling,
                 Duration::from_millis(config.double_click_delay),
             ),
+
+            config,
         }
     }
 
@@ -214,7 +247,7 @@ impl BarState {
         }
 
         let block_type = common_config.block;
-        let mut shared_config = self.shared_config.clone();
+        let mut shared_config = self.config.shared.clone();
 
         // Overrides
         if let Some(icons_format) = common_config.icons_format {
@@ -237,18 +270,30 @@ impl BarState {
             request_sender: self.request_sender.clone(),
 
             error_interval: Duration::from_secs(common_config.error_interval),
-            error_format: common_config.error_format,
         };
+
+        let error_format = common_config
+            .error_format
+            .with_default(&self.config.error_format)?;
+        let error_fullscreen_format = common_config
+            .error_fullscreen_format
+            .with_default(&self.config.error_fullscreen_format)?;
 
         let (block_fut, abort_handle) = abortable(block_type.run(block_config, api));
 
         let block = Block {
+            id: self.blocks.len(),
+
             event_sender: Some(event_sender),
+            widget_updates_sender: self.widget_updates_sender.clone(),
             abort_handle,
 
             click_handler: common_config.click,
             signal: common_config.signal,
             shared_config,
+
+            error_format,
+            error_fullscreen_format,
 
             state: BlockState::None,
         };
@@ -267,36 +312,19 @@ impl BarState {
         let block = &mut self.blocks[request.block_id].0;
         match request.cmd {
             RequestCmd::SetWidget(widget) => {
-                let _ = self
-                    .widget_updates_sender
-                    .send((request.block_id, widget.intervals()));
                 block.state = BlockState::Normal { widget };
                 if self.fullscreen_block == Some(request.block_id) {
                     self.fullscreen_block = None;
                 }
             }
             RequestCmd::UnsetWidget => {
-                let _ = self
-                    .widget_updates_sender
-                    .send((request.block_id, Vec::new()));
                 block.state = BlockState::None;
             }
             RequestCmd::SetError(error) => {
-                let _ = self
-                    .widget_updates_sender
-                    .send((request.block_id, Vec::new()));
-                block.state = BlockState::Error {
-                    widget: if self.fullscreen_block == Some(request.block_id) {
-                        Widget::new_error(request.block_id, block.shared_config.clone(), &error)
-                    } else {
-                        Widget::new(request.block_id, block.shared_config.clone())
-                            .with_text("X".into())
-                            .with_state(State::Critical)
-                    },
-                    error,
-                };
+                block.set_error(self.fullscreen_block == Some(request.block_id), error);
             }
         }
+        block.notify_intervals();
     }
 
     fn render_block(&mut self, id: usize) -> Result<()> {
@@ -315,9 +343,9 @@ impl BarState {
 
     fn render(&self) {
         if let Some(id) = self.fullscreen_block {
-            protocol::print_blocks(&[self.blocks_render_cache[id].clone()], &self.shared_config);
+            protocol::print_blocks(&[self.blocks_render_cache[id].clone()], &self.config.shared);
         } else {
-            protocol::print_blocks(&self.blocks_render_cache, &self.shared_config);
+            protocol::print_blocks(&self.blocks_render_cache, &self.config.shared);
         }
     }
 
@@ -359,14 +387,15 @@ impl BarState {
                             }
                         }
                     }
-                    BlockState::Error { widget, error } => {
+                    BlockState::Error { widget } => {
                         if self.fullscreen_block == Some(event.id) {
                             self.fullscreen_block = None;
-                            *widget = Widget::new(event.id, block.shared_config.clone()).with_text("X".into()).with_state(State::Critical);
+                            widget.set_format(block.error_format.clone());
                         } else {
                             self.fullscreen_block = Some(event.id);
-                            *widget = Widget::new_error(event.id, block.shared_config.clone(), error);
+                            widget.set_format(block.error_fullscreen_format.clone());
                         }
+                        block.notify_intervals();
                         self.render_block(event.id)?;
                         self.render();
                     }
@@ -412,18 +441,8 @@ impl BarState {
                         }
 
                         block.abort();
-                        let _ = self.widget_updates_sender.send((id, Vec::new()));
-
-                        block.state = BlockState::Error {
-                            widget: if self.fullscreen_block == Some(id) {
-                                Widget::new_error(id, block.shared_config.clone(), &error)
-                            } else {
-                                Widget::new(id, block.shared_config.clone())
-                                    .with_text("X".into())
-                                    .with_state(State::Critical)
-                            },
-                            error,
-                        };
+                        block.set_error(self.fullscreen_block == Some(id), error);
+                        block.notify_intervals();
 
                         self.render_block(id)?;
                         self.render();
