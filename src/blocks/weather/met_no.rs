@@ -148,10 +148,10 @@ impl WeatherProvider for Service {
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .send()
             .await
-            .error("Failed during request for current location")?
+            .error("Forecast request failed")?
             .json()
             .await
-            .error("Failed while parsing location API result")?;
+            .error("Forecast request failed")?;
 
         let first = &data.properties.timeseries.first().unwrap().data;
 

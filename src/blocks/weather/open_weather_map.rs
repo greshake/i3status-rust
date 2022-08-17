@@ -117,10 +117,10 @@ impl WeatherProvider for Service {
             .get(url)
             .send()
             .await
-            .error("Failed during request for current location")?
+            .error("Forecast request failed")?
             .json()
             .await
-            .error("Failed while parsing location API result")?;
+            .error("Forecast request failed")?;
 
         Ok(WeatherResult {
             location: data.name,
