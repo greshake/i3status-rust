@@ -272,10 +272,10 @@
             .<span class="ident">get</span>(<span class="ident">url</span>)
             .<span class="ident">send</span>()
             .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed during request for current location&quot;</span>)<span class="question-mark">?</span>
+            .<span class="ident">error</span>(<span class="string">&quot;Forecast request failed&quot;</span>)<span class="question-mark">?</span>
             .<span class="ident">json</span>()
             .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed while parsing location API result&quot;</span>)<span class="question-mark">?</span>;
+            .<span class="ident">error</span>(<span class="string">&quot;Forecast request failed&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="ident">WeatherResult</span> {
             <span class="ident">location</span>: <span class="ident">data</span>.<span class="ident">name</span>,
