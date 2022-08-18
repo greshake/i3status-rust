@@ -63,12 +63,6 @@ struct Block {
 
 #[dbus_interface(name = "rs.i3status.custom")]
 impl Block {
-    async fn set_icon(&mut self, icon: &str) -> fdo::Result<()> {
-        self.widget.set_icon(icon)?;
-        self.api.set_widget(&self.widget).await?;
-        Ok(())
-    }
-
     async fn set_text(&mut self, full: String, short: String) -> fdo::Result<()> {
         self.widget.set_texts(full, short);
         self.api.set_widget(&self.widget).await?;

@@ -7,7 +7,6 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone)]
 pub struct Widget {
-    pub icon: String,
     pub shared_config: SharedConfig,
     pub state: State,
     id: usize,
@@ -17,7 +16,6 @@ pub struct Widget {
 impl Widget {
     pub fn new(id: usize, shared_config: SharedConfig) -> Self {
         Widget {
-            icon: String::new(),
             shared_config,
             state: State::Idle,
             id,
@@ -38,11 +36,6 @@ impl Widget {
     pub fn with_text(mut self, text: String) -> Self {
         self.source = Source::Text(text);
         self
-    }
-
-    pub fn with_icon(mut self, icon: &str) -> Result<Self> {
-        self.icon = self.shared_config.get_icon(icon)?;
-        Ok(self)
     }
 
     pub fn with_state(mut self, state: State) -> Self {
@@ -69,11 +62,6 @@ impl Widget {
 
     pub fn set_texts(&mut self, short: String, full: String) {
         self.source = Source::TextWithShort(short, full);
-    }
-
-    pub fn set_icon(&mut self, icon: &str) -> Result<()> {
-        self.icon = self.shared_config.get_icon(icon)?;
-        Ok(())
     }
 
     pub fn set_format(&mut self, format: Format) {
@@ -111,21 +99,8 @@ impl Widget {
         // Collect all the pieces into "parts"
         let mut parts = Vec::new();
 
-        // Icon block
-        if !self.icon.is_empty() {
-            let mut data = template.clone();
-            data.full_text = self.icon.clone();
-            parts.push(data);
-        }
-
         if full.is_empty() {
             return Ok(parts);
-        }
-
-        if self.icon.is_empty() {
-            let mut padding = template.clone();
-            padding.full_text = " ".into();
-            parts.push(padding);
         }
 
         // If short text is available, it's necessary to hide all full blocks. `swaybar`/`i3bar`
@@ -136,13 +111,9 @@ impl Widget {
             template.short_text = "<span/>".into();
         }
 
-        let full_cnt = full.len();
-        parts.extend(full.into_iter().enumerate().map(|(i, w)| {
+        parts.extend(full.into_iter().enumerate().map(|(_i, w)| {
             let mut data = template.clone();
             data.full_text = w.text;
-            if i + 1 == full_cnt {
-                data.full_text.push(' ');
-            }
             data.instance = w.metadata.instance.map(|i| i.to_string());
             if let Some(state) = w.metadata.state {
                 let (key_bg, key_fg) = self.shared_config.theme.get_colors(state);
@@ -152,14 +123,10 @@ impl Widget {
             data
         }));
 
-        let short_cnt = short.len();
         template.full_text = "<span/>".into();
-        parts.extend(short.into_iter().enumerate().map(|(i, w)| {
+        parts.extend(short.into_iter().enumerate().map(|(_i, w)| {
             let mut data = template.clone();
             data.short_text = w.text;
-            if i + 1 == short_cnt {
-                data.short_text.push(' ');
-            }
             data.instance = w.metadata.instance.map(|i| i.to_string());
             if let Some(state) = w.metadata.state {
                 let (key_bg, key_fg) = self.shared_config.theme.get_colors(state);

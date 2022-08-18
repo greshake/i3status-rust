@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$total.eng(1)"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $total.eng(1) "`
 //! `interval` | Update interval in seconds | `30`
 //! `token` | A GitHub personal access token with the "notifications" scope | `None`
 //! `hide_if_total_is_zero` | Hide this block if the total count of notifications is zero | `false`
@@ -77,8 +77,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = GithubConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_icon("github")?
-        .with_format(config.format.with_default("$total.eng(1)")?);
+        .with_format(config.format.with_default(" $icon $total.eng(1) ")?);
 
     let mut interval = config.interval.timer();
     let token = config
@@ -105,12 +104,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     }
                 }
             }
-            let stats: HashMap<_, _> = stats
+            let mut values: HashMap<_, _> = stats
                 .into_iter()
                 .map(|(k, v)| (k.into(), Value::number(v)))
                 .collect();
+            values.insert("icon".into(), Value::icon(api.get_icon("github")?));
+            widget.set_values(values);
             widget.state = state;
-            widget.set_values(stats);
             api.set_widget(&widget).await?;
         } else {
             api.hide().await?;

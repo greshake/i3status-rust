@@ -14,7 +14,7 @@
 //! ----|--------|--------
 //! `mac` | MAC address of the Bluetooth device | **Required**
 //! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$name{ $percentage&vert;}&vert;Unavailable"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $name{ $percentage&vert;}&vert;Unavailable "</code>
 //! `hide_disconnected` | Whether to hide the block when disconnected | `false`
 //!
 //! Placeholder  | Value                                                                 | Type   | Unit
@@ -65,7 +65,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api.new_widget().with_format(
         config
             .format
-            .with_default("$name{ $percentage|}|Unavailable")?,
+            .with_default(" $icon $name{ $percentage|}|Unavailable ")?,
     );
 
     let mut monitor = DeviceMonitor::new(config.mac, config.adapter_mac).await?;
@@ -77,6 +77,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 let connected = device.connected().await?;
                 if connected || !config.hide_disconnected {
                     let mut values = map! {
+                        "icon" => Value::icon(api.get_icon(device.icon().await?)?),
                         "name" => Value::text(device.name().await?),
                         "available" => Value::flag(),
                     };
@@ -92,7 +93,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         debug!("Showing device as disconnected");
                         widget.state = State::Idle;
                     }
-                    widget.set_icon(device.icon().await?)?;
                     widget.set_values(values);
 
                     api.set_widget(&widget).await?;
@@ -106,8 +106,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 debug!("Showing device as unavailable");
                 if !config.hide_disconnected {
                     widget.state = State::Idle;
-                    widget.set_icon("bluetooth")?;
-                    widget.set_values(default());
+                    widget.set_values(map!("icon" => Value::icon(api.get_icon("bluetooth")?)));
                     api.set_widget(&widget).await?;
                 } else {
                     debug!("Hiding block since block is unavailable");

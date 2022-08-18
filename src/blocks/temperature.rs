@@ -18,7 +18,8 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | <code>"$average avg, $max max&vert;"</code>
+//! `format` | A string to customise the output of this block when collapsed (default). See below for available placeholders | <code>" $icon "</code>
+//! `format_alt` | A string to customise the output of this block. See below for available placeholders | <code>" $icon {$average avg, $max max&vert;} "</code>
 //! `interval` | Update interval in seconds | `5`
 //! `collapsed` | Whether the block will be collapsed by default | `true`
 //! `scale` | Either `"celsius"` or `"fahrenheit"` | `"celsius"`
@@ -42,7 +43,8 @@
 //! ```toml
 //! [[block]]
 //! block = "temperature"
-//! format = "$min min, $max max, $average avg|"
+//! format = " $icon "
+//! format_alt = " $icon {$min min, $max max, $average avg|} "
 //! interval = 10
 //! chip = "*-isa-*"
 //! ```
@@ -64,6 +66,7 @@ const DEFAULT_WARN: f64 = 80.0;
 #[serde(deny_unknown_fields, default)]
 struct TemperatureConfig {
     format: FormatConfig,
+    format_alt: FormatConfig,
     #[default(5.into())]
     interval: Seconds,
     #[default(true)]
@@ -98,10 +101,15 @@ impl TemperatureScale {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TemperatureConfig::deserialize(config).config_error()?;
     let mut collapsed = config.collapsed;
-    let mut widget = api
-        .new_widget()
-        .with_icon("thermometer")?
-        .with_format(config.format.with_default("$average avg, $max max|")?);
+    let icon = Value::icon(api.get_icon("thermometer")?);
+    let mut format = config.format.with_default(" $icon ")?;
+    let mut format_alt = config.format_alt.with_default(" $icon {$average avg, $max max|} ")?;
+
+    if !collapsed {
+        std::mem::swap(&mut format_alt, &mut format);
+    }
+
+    let mut widget = api.new_widget().with_format(format.clone());
 
     let good = config
         .good
@@ -182,15 +190,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         'outer: loop {
-            if collapsed {
-                widget.set_values(default());
-            } else {
-                widget.set_values(map! {
-                    "average" => Value::degrees(avg_temp),
-                    "min" => Value::degrees(min_temp),
-                    "max" => Value::degrees(max_temp),
-                });
-            }
+            widget.set_format(format.clone());
+            widget.set_values(map! {
+                "icon" => icon.clone(),
+                "average" => Value::degrees(avg_temp),
+                "min" => Value::degrees(min_temp),
+                "max" => Value::degrees(max_temp),
+            });
 
             api.set_widget(&widget).await?;
 
@@ -202,6 +208,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         Click(click) => {
                             if click.button == MouseButton::Left  {
                                 collapsed = !collapsed;
+                                std::mem::swap(&mut format_alt, &mut format);
                                 break;
                             }
                         }

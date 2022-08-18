@@ -1,6 +1,6 @@
 # i3status-rust 0.30.0 [unreleased]
 
-Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html  
+Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html
 Formatter documentation is available here: https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html
 
 ### Breaking changes
@@ -60,6 +60,21 @@ This is a major release which rewrites the core code to be asynchronous.
   icons = "awesome"
   ```
 - `theme` and `icons`: `name` and `file` options have been merged into `theme`/`icons`. See above for an example.
+
+- Major icons and whitespace change. Icons are now part of `format` option as a placeholder in blocks where format is customizable.
+  If you've modified `format` and would like to keep the same behaviour (icon, whitespace)
+  you need to update the value. For example,
+  ```toml
+  [[block]]
+  block = "cpu"
+  format = "cpu:{utilization}"
+  ```
+  needs to be changed to:
+  ```toml
+  [[block]]
+  block = "cpu"
+  format = " $icon $utilization "
+  ```
 
 ### New features and bugfixes
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.

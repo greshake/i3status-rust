@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 #[derive(Debug, Default)]
 pub struct Config {
-    full: Option<FormatTemplate>,
-    short: Option<FormatTemplate>,
+    pub full: Option<FormatTemplate>,
+    pub short: Option<FormatTemplate>,
 }
 
 #[derive(Debug, Default)]

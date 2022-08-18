@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$ping$speed_down$speed_up"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $ping$speed_down$speed_up "`
 //! `interval` | Update interval in seconds | `1800`
 //!
 //! Placeholder  | Value          | Type   | Unit
@@ -44,9 +44,9 @@ struct SpeedtestConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = SpeedtestConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default("$ping$speed_down$speed_up")?);
+    let mut widget = api.
+        new_widget().
+        with_format(config.format.with_default(" $icon $ping$speed_down$speed_up ")?);
 
     let icon_ping = api.get_icon("ping")?;
     let icon_down = api.get_icon("net_down")?;

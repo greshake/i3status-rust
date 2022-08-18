@@ -8,7 +8,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$display $brightness_icon $brightness"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $display $brightness_icon $brightness "`
 //! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`
 //! `interval` | Update interval in seconds. | `5`
 //!
@@ -50,10 +50,10 @@ struct XrandrConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = XrandrConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_icon("xrandr")?.with_format(
+    let mut widget = api.new_widget().with_format(
         config
             .format
-            .with_default("$display $brightness_icon $brightness")?,
+            .with_default(" $icon $display $brightness_icon $brightness ")?,
     );
 
     let mut cur_indx = 0;
@@ -73,6 +73,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     //TODO: change `brightness_icon` based on `brightness`
                     "brightness_icon" => Value::icon(api.get_icon("backlight_full")?),
                     "resolution" => Value::text(mon.resolution.clone()),
+                    "icon" => Value::icon(api.get_icon("xrandr")?),
                     "res_icon" => Value::icon(api.get_icon("resolution")?),
                 }
             } else {

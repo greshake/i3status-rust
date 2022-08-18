@@ -10,7 +10,7 @@
 //! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. Regular expressions can be used. | Any battery device
 //! `driver` | One of `"sysfs"`, `"apc_ups"`, or `"upower"` | `"sysfs"`
 //! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"` \|\| "apc_ups"`. | `10`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$percentage&vert;"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $percentage&vert; "</code>
 //! `full_format` | Same as `format` but for when the battery is full | `""`
 //! `empty_format` | Same as `format` but for when the battery is empty | `""`
 //! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`
@@ -111,7 +111,7 @@ enum BatteryDriver {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = BatteryConfig::deserialize(config).config_error()?;
-    let format = config.format.with_default("$percentage")?;
+    let format = config.format.with_default(" $icon $percentage ")?;
     let format_full = config.full_format.with_default("")?;
     let format_empty = config.empty_format.with_default("")?;
     let mut widget = api.new_widget();
@@ -145,7 +145,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     _ => format.clone(),
                 });
 
-                let mut values = map!("percentage" => Value::percents(info.capacity));
+                let mut values = map!(
+                    "percentage" => Value::percents(info.capacity)
+                );
+
                 info.power
                     .map(|p| values.insert("power".into(), Value::watts(p)));
                 info.time_remaining.map(|t| {
@@ -158,7 +161,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         )),
                     )
                 });
-                widget.set_values(values);
 
                 let (icon, state) = match (info.status, info.capacity) {
                     (BatteryStatus::Empty, _) => (battery_level_icon(0, false), State::Critical),
@@ -180,8 +182,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         },
                     ),
                 };
+                values.insert("icon".into(), Value::icon(api.get_icon(icon)?));
 
-                widget.set_icon(icon)?;
+                widget.set_values(values);
                 widget.state = state;
                 api.set_widget(&widget).await?;
             }
@@ -189,9 +192,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 api.hide().await?;
             }
             None => {
-                widget.set_icon("bat_not_available")?;
                 widget.set_format(format.clone());
-                widget.set_values(default());
+                widget.set_values(map!("icon" => Value::icon(api.get_icon("bat_not_available")?)));
                 widget.state = State::Critical;
                 api.set_widget(&widget).await?;
             }

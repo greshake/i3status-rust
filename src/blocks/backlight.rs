@@ -14,7 +14,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | The `/sys/class/backlight` device to read brightness information from.  When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.| Default device
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$brightness"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $format $brightness "`
 //! `step_width` | The brightness increment to use when scrolling, in percent | `5`
 //! `minimum` | The minimum brightness that can be scrolled down to | `5`
 //! `maximum` | The maximum brightness that can be scrolled up to | `100`
@@ -127,7 +127,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = BacklightConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("$brightness")?);
+        .with_format(config.format.with_default(" $icon $brightness ")?);
 
     let mut cycle = config
         .cycle
@@ -156,8 +156,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             icon_index = BACKLIGHT_ICONS.len() - icon_index - 1;
         }
 
-        widget.set_icon(BACKLIGHT_ICONS[icon_index])?;
-        widget.set_values(map! { "brightness" => Value::percents(brightness) });
+        widget.set_values(map! {
+            "icon" => Value::icon(api.get_icon(BACKLIGHT_ICONS[icon_index])?),
+            "brightness" => Value::percents(brightness)
+        });
         api.set_widget(&widget).await?;
 
         select! {

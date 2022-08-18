@@ -13,6 +13,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon "`
 //! `maildir` | Path to the directory containing the notmuch database. Supports path expansions e.g. `~`. | `~/.mail`
 //! `query` | Query to run on the database. | `""`
 //! `threshold_critical` | Mail count that triggers `critical` state. | `99999`
@@ -41,6 +42,7 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct NotmuchConfig {
+    format: FormatConfig,
     #[default(10.into())]
     interval: Seconds,
     #[default("~/.mail".into())]
@@ -59,7 +61,11 @@ struct NotmuchConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NotmuchConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_icon("mail")?;
+    let mut widget = api.new_widget().with_format(
+        config.format.with_default(" $icon ")?,
+    );
+
+    widget.set_values(map!("icon" => Value::icon(api.get_icon("mail")?)));
 
     let db = config.maildir.expand()?;
     let mut timer = config.interval.timer();

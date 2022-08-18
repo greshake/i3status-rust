@@ -38,7 +38,7 @@ impl Default for SharedConfig {
         Self {
             theme: default(),
             icons: default(),
-            icons_format: Arc::new(" {icon} ".into()),
+            icons_format: Arc::new("{icon}".into()),
         }
     }
 }
@@ -67,7 +67,7 @@ pub struct Config {
 
 impl Config {
     fn default_icons_format() -> Arc<String> {
-        Arc::new(" {icon} ".into())
+        Arc::new("{icon}".into())
     }
 
     fn default_double_click_delay() -> u64 {

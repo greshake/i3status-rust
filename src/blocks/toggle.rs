@@ -14,7 +14,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `text` | A label next to the icon | `""`
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon "`
 //! `command_on` | Shell command to enable the toggle | Yes | N/A
 //! `command_off` | Shell command to disable the toggle | Yes | N/A
 //! `command_state` | Shell command to determine the state. Empty output => No, otherwise => Yes. | **Required**
@@ -29,7 +29,6 @@
 //! ```toml
 //! [[block]]
 //! block = "toggle"
-//! text = "4k"
 //! command_state = "xrandr | grep 'DP1 connected 38' | grep -v eDP1"
 //! command_on = "~/.screenlayout/4kmon_default.sh"
 //! command_off = "~/.screenlayout/builtin.sh"
@@ -47,8 +46,7 @@ use tokio::process::Command;
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ToggleConfig {
-    #[serde(default)]
-    text: Option<String>,
+    format: FormatConfig,
     command_on: String,
     command_off: String,
     command_state: String,
@@ -63,11 +61,7 @@ pub struct ToggleConfig {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = ToggleConfig::deserialize(config).config_error()?;
     let interval = config.interval.map(Duration::from_secs);
-    let mut widget = api.new_widget();
-
-    if let Some(text) = config.text {
-        widget.set_text(text);
-    }
+    let mut widget = api.new_widget().with_format(config.format.with_default(" $icon ")?);
 
     let icon_on = config.icon_on.unwrap_or_else(|| "toggle_on".into());
     let icon_off = config.icon_off.unwrap_or_else(|| "toggle_off".into());
@@ -89,8 +83,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .trim()
             .is_empty();
 
-        // Update widget
-        widget.set_icon(if is_toggled { &icon_on } else { &icon_off })?;
+
+        widget.set_values(map!(
+            "icon" => Value::icon(
+                api.get_icon(if is_toggled { &icon_on } else { &icon_off })?
+            )
+        ));
         api.set_widget(&widget).await?;
 
         // TODO: try not to duplicate code

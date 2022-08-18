@@ -11,7 +11,7 @@
 //! `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state | `20`
 //! `hide_when_zero` | Whethere to hide the block when the number of tasks is zero | `false`
 //! `filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | ```[{name = "pending", filter = "-COMPLETED -DELETED"}]```
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$done\|$count.eng(1)"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $done\|$count.eng(1) "`
 //! `data_location`| Directory in which taskwarrior stores its data files. Supports path expansions e.g. `~`. | `"~/.task"`
 //!
 //! Placeholder   | Value                                       | Type   | Unit
@@ -30,7 +30,7 @@
 //! [[block]]
 //! block = "taskwarrior"
 //! interval = 60
-//! format = "$done{All done}|$single{One task}|Tasks: $count.eng(1)"
+//! format = " $icon $done{All done}|$single{One task}|Tasks: $count.eng(1) "
 //! warning_threshold = 10
 //! critical_threshold = 20
 //! [[block.filters]]
@@ -81,8 +81,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TaskwarriorConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_icon("tasks")?
-        .with_format(config.format.with_default("$done|$count.eng(1)")?);
+        .with_format(config.format.with_default(" $icon $done|$count.eng(1) ")?);
 
     let mut filters = config.filters.iter().cycle();
     let mut filter = filters.next().error("failed to get next filter")?;
@@ -100,6 +99,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         if number_of_tasks != 0 || !config.hide_when_zero {
             widget.set_values(map! {
+                "icon" => Value::icon(api.get_icon("tasks")?),
                 "count" => Value::number(number_of_tasks),
                 "filter_name" => Value::text(filter.name.clone()),
                 [if number_of_tasks == 0] "done" => Value::flag(),

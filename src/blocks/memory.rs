@@ -6,8 +6,8 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `"$mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2))"`
-//! `format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. | `"$swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2))"`
+//! `format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) "`
+//! `format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. | `" $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "`
 //! `display_type` | Default view displayed on startup: "`memory`" or "`swap`" | `"memory"`
 //! `clickable` | Whether the view should switch between memory and swap on click | `true`
 //! `interval` | Update interval in seconds | `5`
@@ -42,7 +42,7 @@
 //! ```toml
 //! [[block]]
 //! block = "memory"
-//! format_mem = "mem_used_percents.eng(1)"
+//! format_mem = " $icon $mem_used_percents.eng(1) "
 //! clickable = false
 //! interval = 30
 //! warning_mem = 70
@@ -86,22 +86,20 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api.new_widget();
 
     let format_mem = config.format_mem.with_default(
-        "$mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2))",
+        " $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
     )?;
     let format_swap = config
         .format_swap
-        .with_default("$swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2))")?;
+        .with_default(" $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) ")?;
 
     let clickable = config.clickable;
     let mut memtype = config.display_type;
-    let mut format = match memtype {
+    let (icon, mut format) = match memtype {
         Memtype::Memory => {
-            widget.set_icon("memory_mem")?;
-            &format_mem
+            ("memory_mem", &format_mem)
         }
         Memtype::Swap => {
-            widget.set_icon("memory_swap")?;
-            &format_swap
+            ("memory_swap", &format_swap)
         }
     };
     widget.set_format(format.clone());
@@ -122,7 +120,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let mem_used = mem_total_used - (buffers + cached);
         let mem_avail = mem_total - mem_used;
 
-        widget.set_values(map! {
+        let mut values = map! {
+            "icon" => Value::icon(api.get_icon(icon)?),
             "mem_total" => Value::bytes(mem_total),
             "mem_free" => Value::bytes(mem_free),
             "mem_free_percents" => Value::percents(mem_free / mem_total * 100.),
@@ -140,8 +139,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "buffers" => Value::bytes(buffers),
             "buffers_percent" => Value::percents(buffers / mem_total * 100.),
             "cached" => Value::bytes(cached),
-            "cached_percent" => Value::percents(cached / mem_total * 100.),
-        });
+            "cached_percent" => Value::percents(cached / mem_total * 100.)
+        };
+        widget.set_values(values.clone());
 
         widget.state = match memtype {
             Memtype::Memory => match mem_used / mem_total * 100. {
@@ -169,14 +169,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                                 Memtype::Swap => {
                                     format = &format_mem;
                                     memtype = Memtype::Memory;
-                                    widget.set_icon("memory_mem")?;
+                                    values.insert("icon".into(),Value::icon(api.get_icon("memory_mem")?));
                                 }
                                 Memtype::Memory => {
                                     format = &format_swap;
                                     memtype = Memtype::Swap;
-                                    widget.set_icon("memory_swap")?;
+                                    values.insert("icon".into(),Value::icon(api.get_icon("memory_swap")?));
                                 }
                             }
+                            widget.set_values(values.clone());
                             widget.set_format(format.clone());
                             break;
                         }

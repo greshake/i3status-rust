@@ -10,7 +10,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | Chooses the first found device, if any.
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$name{ $bat_icon $bat_charge&vert;}{ $notif_icon&vert;}"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $name{ $bat_icon $bat_charge&vert;}{ $notif_icon&vert;} "</code>
 //! `bat_info` | Min battery level below which state is set to info. | `60`
 //! `bat_good` | Min battery level below which state is set to good. | `60`
 //! `bat_warning` | Min battery level below which state is set to warning. | `30`
@@ -81,7 +81,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api.new_widget().with_format(
         config
             .format
-            .with_default("$name{ $bat_icon $bat_charge|}{ $notif_icon|}")?,
+            .with_default(" $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} ")?,
     );
 
     let battery_state = (
@@ -113,7 +113,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
 
             if connected {
-                widget.set_icon("phone")?;
+                values.insert("icon".into(), Value::icon(api.get_icon("phone")?));
                 values.insert("connected".into(), Value::flag());
 
                 let (level, charging) = device.battery().await;
@@ -121,11 +121,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     values.insert("bat_charge".into(), Value::percents(level));
                     values.insert(
                         "bat_icon".into(),
-                        Value::icon(
-                            api.get_icon(battery_level_icon(level, charging))?
-                                .trim()
-                                .into(),
-                        ),
+                        Value::icon(api.get_icon(battery_level_icon(level, charging))?),
                     );
                     if battery_state {
                         widget.state = if charging {
@@ -158,7 +154,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     };
                 }
             } else {
-                widget.set_icon("phone_disconnected")?;
+                values.insert("icon".into(), Value::icon(api.get_icon("phone_disconnected")?));
             }
 
             widget.set_values(values);

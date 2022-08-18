@@ -5,7 +5,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Update interval, in seconds. | `5`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$running.eng(1)"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $running.eng(1) "`
 //! `socket_path` | The path to the docker socket. Supports path expansions e.g. `~`. | `"/var/run/docker.sock"`
 //!
 //! Key       | Value                          | Type   | Unit
@@ -22,7 +22,7 @@
 //! [[block]]
 //! block = "docker"
 //! interval = 2
-//! format = "$running/$total"
+//! format = " $icon $running/$total "
 //! ```
 //!
 //! # Icons Used
@@ -47,14 +47,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = DockerConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_icon("docker")?
-        .with_format(config.format.with_default("$running.eng(1)")?);
+        .with_format(config.format.with_default(" $icon $running.eng(1) ")?);
     let socket_path = config.socket_path.expand()?;
 
     loop {
         let status = api.recoverable(|| Status::new(&*socket_path)).await?;
 
         widget.set_values(map! {
+            "icon" => Value::icon(api.get_icon("docker")?),
             "total" =>   Value::number(status.total),
             "running" => Value::number(status.running),
             "paused" =>  Value::number(status.paused),

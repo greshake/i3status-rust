@@ -9,7 +9,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` | `"dunst"`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `""`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon "`
 //!
 //! Placeholder | Value                                      | Type   | Unit
 //! ------------|--------------------------------------------|--------|-----
@@ -54,7 +54,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NotifyConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("")?);
+        .with_format(config.format.with_default(" $icon ")?);
 
     let mut driver: Box<dyn Driver + Send + Sync> = match config.driver {
         DriverType::Dunst => Box::new(MakoDriver::new().await?),
@@ -62,13 +62,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     loop {
         let is_paused = driver.is_paused().await?;
+        let mut values = map!(
+            "icon" => Value::icon(api.get_icon(if is_paused { ICON_OFF } else { ICON_ON })?)
+        );
 
-        widget.set_icon(if is_paused { ICON_OFF } else { ICON_ON })?;
-        widget.set_values(if is_paused {
-            map!("paused" => Value::flag())
-        } else {
-            default()
-        });
+        if is_paused {
+            values.insert("paused".into(), Value::flag());
+        }
+
+        widget.set_values(values);
         api.set_widget(&widget).await?;
 
         loop {

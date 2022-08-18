@@ -66,9 +66,9 @@ struct AptConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = AptConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_icon("update")?;
+    let mut widget = api.new_widget();
 
-    let format = config.format.with_default("$count.eng(1)")?;
+    let format = config.format.with_default(" $icon $count.eng(1) ")?;
     let format_singular = config.format_singular.with_default("$count.eng(1)")?;
     let format_up_to_date = config.format_up_to_date.with_default("$count.eng(1)")?;
 
@@ -124,7 +124,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 1 => format_singular.clone(),
                 _ => format.clone(),
             });
-            widget.set_values(map!("count" => Value::number(count)));
+            widget.set_values(map!(
+                "count" => Value::number(count),
+                "icon" => Value::icon(api.get_icon("update")?)
+            ));
 
             let warning = warning_updates_regex
                 .as_ref()
