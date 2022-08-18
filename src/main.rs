@@ -1,7 +1,6 @@
 #![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
-#![allow(clippy::explicit_auto_deref)] // TODO: remove once https://github.com/rust-lang/rust-clippy/issues/9101 is resloved
 
 #[macro_use]
 mod util;
