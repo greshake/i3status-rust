@@ -73,44 +73,31 @@ struct ApiWeather {
 
 #[async_trait]
 impl WeatherProvider for Service {
-    async fn get_weather(&self, autolocated: &Option<LocationResponse>) -> Result<WeatherResult> {
-        let Config {
-            api_key,
-            city_id,
-            place,
-            coordinates,
-            units,
-            lang,
-        } = &self.config;
-
-        let api_key = api_key.as_ref().or_error(|| {
+    async fn get_weather(&self, autolocated: Option<Coordinates>) -> Result<WeatherResult> {
+        let api_key = self.config.api_key.as_ref().or_error(|| {
             format!("missing key 'service.api_key' and environment variable {API_KEY_ENV}",)
         })?;
 
-        // If autolocated is Some, and then if autolocated.city is Some
-        let city = match autolocated {
-            Some(loc) => loc.city.as_ref(),
-            None => None,
-        };
-
-        let location_query = city
-            .map(|c| format!("q={}", c))
-            .or_else(|| city_id.as_ref().map(|x| format!("id={}", x)))
-            .or_else(|| place.as_ref().map(|x| format!("q={}", x)))
+        let location_query = autolocated
+            .map(|al| format!("lat={}&lon={}", al.latitude, al.longitude))
             .or_else(|| {
-                coordinates
+                self.config
+                    .coordinates
                     .as_ref()
-                    .map(|(lat, lon)| format!("lat={}&lon={}", lat, lon))
+                    .map(|(lat, lon)| format!("lat={lat}&lon={lon}"))
             })
+            .or_else(|| self.config.city_id.as_ref().map(|x| format!("id={}", x)))
+            .or_else(|| self.config.place.as_ref().map(|x| format!("q={}", x)))
             .error("no location was provided")?;
 
         // Refer to https://openweathermap.org/current
         let url = format!(
             "{URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
-            units = match units {
+            units = match self.config.units {
                 UnitSystem::Metric => "metric",
                 UnitSystem::Imperial => "imperial",
             },
+            lang = self.config.lang,
         );
 
         let data: ApiResponse = REQWEST_CLIENT
@@ -131,7 +118,7 @@ impl WeatherProvider for Service {
             weather_verbose: data.weather[0].description.clone(),
             wind: data.wind.speed,
             wind_kmh: data.wind.speed
-                * match units {
+                * match self.config.units {
                     UnitSystem::Metric => 3.6,
                     UnitSystem::Imperial => 3.6 * 0.447,
                 },

@@ -112,10 +112,8 @@ fn default_interval() -> Seconds {
 
 #[async_trait]
 trait WeatherProvider {
-    async fn get_weather(
-        &self,
-        autolocated_location: &Option<LocationResponse>,
-    ) -> Result<WeatherResult>;
+    async fn get_weather(&self, autolocated_location: Option<Coordinates>)
+        -> Result<WeatherResult>;
 }
 
 #[derive(Deserialize)]
@@ -194,7 +192,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     true => find_ip_location().await?,
                     false => None,
                 };
-                provider.get_weather(&location).await
+                provider.get_weather(location).await
             })
             .await?;
 
@@ -217,29 +215,28 @@ enum UnitSystem {
     Imperial,
 }
 
-#[derive(Deserialize, Clone)]
-struct LocationResponse {
-    city: Option<String>,
+#[derive(Deserialize, Clone, Copy)]
+struct Coordinates {
     latitude: f64,
     longitude: f64,
 }
 
-impl LocationResponse {
-    fn as_coordinates(&self) -> (String, String) {
-        (format!("{}", self.latitude), format!("{}", self.longitude))
-    }
-}
-
 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
-async fn find_ip_location() -> Result<Option<LocationResponse>> {
-    REQWEST_CLIENT
+async fn find_ip_location() -> Result<Option<Coordinates>> {
+    #[derive(Deserialize, Clone)]
+    struct ApiResponse {
+        #[serde(flatten)]
+        location: Coordinates,
+    }
+    let response: Option<ApiResponse> = REQWEST_CLIENT
         .get(IP_API_URL)
         .send()
         .await
         .error("Failed during request for current location")?
         .json()
         .await
-        .error("Failed while parsing location API result")
+        .error("Failed while parsing location API result")?;
+    Ok(response.map(|r| r.location))
 }
 
 // Convert wind direction in azimuth degrees to abbreviation names
