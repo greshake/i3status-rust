@@ -123,7 +123,7 @@ fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String
 
 #[async_trait]
 impl WeatherProvider for Service {
-    async fn get_weather(&self, location: &Option<LocationResponse>) -> Result<WeatherResult> {
+    async fn get_weather(&self, location: Option<Coordinates>) -> Result<WeatherResult> {
         let Config {
             coordinates,
             altitude,
@@ -132,7 +132,7 @@ impl WeatherProvider for Service {
 
         let (lat, lon) = location
             .as_ref()
-            .map(|loc| loc.as_coordinates())
+            .map(|loc| (loc.latitude.to_string(), loc.longitude.to_string()))
             .or_else(|| coordinates.clone())
             .error("No location given")?;
 
