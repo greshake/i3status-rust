@@ -126,11 +126,7 @@ impl NetDevice {
         for interface in interfaces {
             if let Some(index) = interface.index {
                 if let Ok(ap) = socket.get_station_info(index).await {
-                    // SSID is `None` when not connected
-                    if let (Some(ssid), Some(device)) = (
-                        interface.ssid,
-                        interface.name.and_then(|s| String::from_utf8(s).ok()),
-                    ) {
+                    if let Some(device) = interface.name.and_then(|s| String::from_utf8(s).ok()) {
                         let device = device.trim_matches(char::from(0));
                         if device != self.interface {
                             continue;
@@ -145,7 +141,11 @@ impl NetDevice {
                                 .map(|s| (s / 100) as i8),
                         };
                         return Ok(WifiInfo {
-                            ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
+                            ssid: interface
+                                .ssid
+                                .map(String::from_utf8)
+                                .transpose()
+                                .error("SSID is not valid UTF8")?, // ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
                             frequency: interface.frequency.map(|f| f as f64 * 1e6),
                             signal: raw_signal.map(|s| signal_percents(s as f64)),
                             bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
