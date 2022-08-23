@@ -302,7 +302,7 @@ async fn get_default_inerface(
                 _ => (),
             }
         }
-        if is_default {
+        if is_default && default_index == 0 {
             default_index = index.unwrap();
         }
     });
