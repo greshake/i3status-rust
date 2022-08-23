@@ -7,7 +7,7 @@
 //! Configuring this block requires configuring a weather service, which may require API keys and
 //! other parameters.
 //!
-//! If using the `autolocate` feature, set the block update interval such that you do not exceed ipapi.co's free daily limit of 1000 hits.
+//! If using the `autolocate` feature, set the autolocate update interval such that you do not exceed ipapi.co's free daily limit of 1000 hits. Or use `autolocate_interval = "once"` to only run on initialization.
 //!
 //! # Configuration
 //!
@@ -17,6 +17,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `"$weather $temp"`
 //! `interval` | Update interval, in seconds. | `600`
 //! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | `false`
+//! `autolocate_interval` | Update interval for `autolocate` in seconds. Or "once" | `600`
 //!
 //! # OpenWeatherMap Options
 //!
@@ -104,9 +105,15 @@ struct WeatherConfig {
     service: WeatherService,
     #[serde(default)]
     autolocate: bool,
+    #[serde(default = "default_autolocate_interval")]
+    autolocate_interval: Seconds,
 }
 
 fn default_interval() -> Seconds {
+    Seconds::new(600)
+}
+
+fn default_autolocate_interval() -> Seconds {
     Seconds::new(600)
 }
 
@@ -185,24 +192,38 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         WeatherService::OpenWeatherMap(config) => Box::new(open_weather_map::Service::new(config)),
     };
 
+    let mut location: Option<Coordinates> = match config.autolocate {
+        true => find_ip_location().await?,
+        false => None,
+    };
+
     loop {
         let data = api
-            .recoverable(|| async {
-                let location = match config.autolocate {
-                    true => find_ip_location().await?,
-                    false => None,
-                };
-                provider.get_weather(location).await
-            })
+            .recoverable(|| async { provider.get_weather(location).await })
             .await?;
 
         widget.set_icon(data.icon.to_icon_str())?;
         widget.set_values(data.into_values());
         api.set_widget(&widget).await?;
 
-        select! {
-            _ = sleep(config.interval.0) => (),
-            _ = api.wait_for_update_request() => (),
+        if config.autolocate {
+            select! {
+                _ = sleep(config.interval.0) => (),
+                _ = sleep(config.autolocate_interval.0) => {
+                    location =
+                        match config.autolocate {
+                            true => find_ip_location().await?,
+                            false => None,
+                        };
+                }
+                _ = api.wait_for_update_request() => (),
+            }
+        } else {
+            // If autolocate is not enabled then we ignore the 'autolocate_interval`
+            select! {
+                _ = sleep(config.interval.0) => (),
+                _ = api.wait_for_update_request() => (),
+            }
         }
     }
 }
