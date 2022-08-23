@@ -218,7 +218,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
             loop {
                 select! {
-                    biased; // both timers instantly `tick()` prefer that autolocate should run first
+                    biased; // both timers instantly `tick()` autolocate should always run first
                     _ = autolocate_interval.tick() => {
                         location = api.recoverable(find_ip_location).await?;
                     }
