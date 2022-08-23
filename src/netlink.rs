@@ -44,7 +44,7 @@ impl NetDevice {
         let iface = match iface {
             Some(iface) => ifaces.into_iter().find(|i| i.name == iface),
             None => {
-                let default_iface = get_default_inerface(&mut sock)
+                let default_iface = get_default_interface(&mut sock)
                     .await
                     .map_err(BoxErrorWrapper)
                     .error("Failed to get default interface")?;
@@ -263,7 +263,7 @@ async fn get_interfaces(
     Ok(interfaces)
 }
 
-async fn get_default_inerface(
+async fn get_default_interface(
     sock: &mut NlSocket,
 ) -> Result<i32, Box<dyn StdError + Send + Sync + 'static>> {
     sock.send(&Nlmsghdr::new(
