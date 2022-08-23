@@ -105,8 +105,7 @@ struct WeatherConfig {
     service: WeatherService,
     #[serde(default)]
     autolocate: bool,
-    #[serde(default = "default_interval")]
-    autolocate_interval: Seconds,
+    autolocate_interval: Option<Seconds>,
 }
 
 fn default_interval() -> Seconds {
@@ -178,7 +177,7 @@ impl WeatherResult {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = WeatherConfig::deserialize(config).config_error()?;
+    let mut config = WeatherConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
         .with_format(config.format.with_default("$weather $temp")?);
@@ -189,8 +188,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     };
 
     if config.autolocate {
+        // Default behavior is to mirror `interval`
+        if config.autolocate_interval.is_none() {
+            config.autolocate_interval = Some(config.interval);
+        }
+
         if config.autolocate_interval == Some(config.interval) {
-            // In the case where `autolocate_interval` matches `interval` we don't need two timers
+            // In the case where `autolocate_interval` matches `interval` merge both actions.
             loop {
                 let location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
                 let data = api
@@ -206,13 +210,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 }
             }
         } else {
+            // Two timers, one to rerender the block and the other to update the location.
             let mut interval = tokio::time::interval(config.interval.0);
-            let mut autolocate_interval = tokio::time::interval(config.autolocate_interval.0)
+            let mut autolocate_interval =
+                tokio::time::interval(config.autolocate_interval.unwrap().0);
             let mut location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
 
             loop {
                 select! {
-                    biased;
+                    biased; // both timers instantly `tick()` prefer that autolocate should run first
                     _ = autolocate_interval.tick() => {
                         location = api.recoverable(find_ip_location).await?;
                     }
