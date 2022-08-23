@@ -17,7 +17,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `"$weather $temp"`
 //! `interval` | Update interval, in seconds. | `600`
 //! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | `false`
-//! `autolocate_interval` | Update interval for `autolocate` in seconds or "once" | `600`
+//! `autolocate_interval` | Update interval for `autolocate` in seconds or "once" | `interval`
 //!
 //! # OpenWeatherMap Options
 //!
@@ -105,15 +105,10 @@ struct WeatherConfig {
     service: WeatherService,
     #[serde(default)]
     autolocate: bool,
-    #[serde(default = "default_autolocate_interval")]
-    autolocate_interval: Seconds,
+    autolocate_interval: Option<Seconds>,
 }
 
 fn default_interval() -> Seconds {
-    Seconds::new(600)
-}
-
-fn default_autolocate_interval() -> Seconds {
     Seconds::new(600)
 }
 
@@ -194,11 +189,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     if config.autolocate {
         let mut interval = tokio::time::interval(config.interval.0);
-        let mut autolocate_interval = tokio::time::interval(config.autolocate_interval.0);
+        let mut autolocate_interval = tokio::time::interval(match config.autolocate_interval {
+            Some(s) => s.0,
+            None => config.interval.0,
+        });
         let mut location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
 
         loop {
             select! {
+                biased;
                 _ = autolocate_interval.tick() => {
                     location = api.recoverable(find_ip_location).await?;
                 }
@@ -210,7 +209,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     widget.set_values(data.into_values());
                     api.set_widget(&widget).await?;
                 },
-                // On update request autolocate and re-render the block.
+                // On update request autolocate and update the block.
                 _ = api.wait_for_update_request() => {
                     location = api.recoverable(find_ip_location).await?;
 
@@ -221,6 +220,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     widget.set_values(data.into_values());
                     api.set_widget(&widget).await?;
 
+                    // both intervals should be reset after a manual sync
                     autolocate_interval.reset();
                     interval.reset();
                 },
