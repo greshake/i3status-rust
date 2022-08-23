@@ -44,7 +44,7 @@
 //! - `net_down`
 
 use super::prelude::*;
-use crate::netlink::{default_interface, NetDevice};
+use crate::netlink::NetDevice;
 use crate::util;
 use std::time::Instant;
 
@@ -81,17 +81,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut rx_hist = [0f64; 8];
 
     loop {
-        let mut speed_down: f64 = 0.0;
-        let mut speed_up: f64 = 0.0;
-
-        let device = NetDevice::from_interface(match &config.device {
-            Some(i) => i.clone(),
-            None => default_interface().await.unwrap_or_else(|| "lo".into()),
-        })
-        .await;
-
-        match device {
-            Some(device) if !device.is_up().await? => {
+        match NetDevice::new(config.device.as_deref()).await? {
+            Some(device) if !device.iface.is_up => {
                 if config.hide_inactive {
                     api.hide().await?;
                 } else {
@@ -102,8 +93,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             Some(device) => {
                 widget.set_format(format.clone());
 
+                let mut speed_down: f64 = 0.0;
+                let mut speed_up: f64 = 0.0;
+
                 // Calculate speed
-                match (stats, device.read_stats().await) {
+                match (stats, device.iface.stats) {
                     // No previous stats available
                     (None, new_stats) => stats = new_stats,
                     // No new stats available
@@ -121,18 +115,18 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 push_to_hist(&mut rx_hist, speed_down);
                 push_to_hist(&mut tx_hist, speed_up);
 
-                let wifi = device.wifi_info().await?;
-
                 let values = map! {
                     "speed_down" => Value::bytes(speed_down).with_icon(api.get_icon("net_down")?),
                     "speed_up" => Value::bytes(speed_up).with_icon(api.get_icon("net_up")?),
                     "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
                     "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
-                    "device" => Value::text(device.interface),
-                    [if let Some(v) = wifi.ssid] "ssid" => Value::text(v),
-                    [if let Some(v) = wifi.frequency] "frequency" => Value::hertz(v),
-                    [if let Some(v) = wifi.bitrate] "bitrate" => Value::bits(v),
-                    [if let Some(v) = wifi.signal] "signal_strength" => Value::percents(v),
+                    [if let Some(v) = device.ip] "ip" => Value::text(v.to_string()),
+                    [if let Some(v) = device.ipv6] "ipv6" => Value::text(v.to_string()),
+                    [if let Some(v) = device.ssid()] "ssid" => Value::text(v),
+                    [if let Some(v) = device.frequency()] "frequency" => Value::hertz(v),
+                    [if let Some(v) = device.bitrate()] "bitrate" => Value::bits(v),
+                    [if let Some(v) = device.signal()] "signal_strength" => Value::percents(v),
+                    "device" => Value::text(device.iface.name),
                 };
 
                 widget.set_values(values);
