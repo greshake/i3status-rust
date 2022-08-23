@@ -268,9 +268,6 @@
 <span id="262">262</span>
 <span id="263">263</span>
 <span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Current weather</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays local weather and temperature information. In order to use this block, you</span>
@@ -385,10 +382,8 @@
 
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
 <span class="kw">trait</span> <span class="ident">WeatherProvider</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_weather</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">autolocated_location</span>: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LocationResponse</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">WeatherResult</span><span class="op">&gt;</span>;
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_weather</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">autolocated_location</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Coordinates</span><span class="op">&gt;</span>)
+        -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">WeatherResult</span><span class="op">&gt;</span>;
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>)]</span>
@@ -467,7 +462,7 @@
                     <span class="bool-val">true</span> =&gt; <span class="ident">find_ip_location</span>().<span class="kw">await</span><span class="question-mark">?</span>,
                     <span class="bool-val">false</span> =&gt; <span class="prelude-val">None</span>,
                 };
-                <span class="ident">provider</span>.<span class="ident">get_weather</span>(<span class="kw-2">&amp;</span><span class="ident">location</span>).<span class="kw">await</span>
+                <span class="ident">provider</span>.<span class="ident">get_weather</span>(<span class="ident">location</span>).<span class="kw">await</span>
             })
             .<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -490,29 +485,28 @@
     <span class="ident">Imperial</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">struct</span> <span class="ident">LocationResponse</span> {
-    <span class="ident">city</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Coordinates</span> {
     <span class="ident">latitude</span>: <span class="ident">f64</span>,
     <span class="ident">longitude</span>: <span class="ident">f64</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">LocationResponse</span> {
-    <span class="kw">fn</span> <span class="ident">as_coordinates</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">String</span>, <span class="ident">String</span>) {
-        (<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.<span class="ident">latitude</span>), <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.<span class="ident">longitude</span>))
-    }
-}
-
 <span class="comment">// TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">find_ip_location</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LocationResponse</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="ident">REQWEST_CLIENT</span>
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">find_ip_location</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Coordinates</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Clone</span>)]</span>
+    <span class="kw">struct</span> <span class="ident">ApiResponse</span> {
+        <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">flatten</span>)]</span>
+        <span class="ident">location</span>: <span class="ident">Coordinates</span>,
+    }
+    <span class="kw">let</span> <span class="ident">response</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ApiResponse</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">REQWEST_CLIENT</span>
         .<span class="ident">get</span>(<span class="ident">IP_API_URL</span>)
         .<span class="ident">send</span>()
         .<span class="kw">await</span>
         .<span class="ident">error</span>(<span class="string">&quot;Failed during request for current location&quot;</span>)<span class="question-mark">?</span>
         .<span class="ident">json</span>()
         .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed while parsing location API result&quot;</span>)
+        .<span class="ident">error</span>(<span class="string">&quot;Failed while parsing location API result&quot;</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(<span class="ident">response</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">location</span>))
 }
 
 <span class="comment">// Convert wind direction in azimuth degrees to abbreviation names</span>

@@ -348,7 +348,7 @@
 
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">WeatherProvider</span> <span class="kw">for</span> <span class="ident">Service</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_weather</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">location</span>: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LocationResponse</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">WeatherResult</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_weather</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">location</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Coordinates</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">WeatherResult</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">Config</span> {
             <span class="ident">coordinates</span>,
             <span class="ident">altitude</span>,
@@ -357,7 +357,7 @@
 
         <span class="kw">let</span> (<span class="ident">lat</span>, <span class="ident">lon</span>) <span class="op">=</span> <span class="ident">location</span>
             .<span class="ident">as_ref</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">loc</span><span class="op">|</span> <span class="ident">loc</span>.<span class="ident">as_coordinates</span>())
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">loc</span><span class="op">|</span> (<span class="ident">loc</span>.<span class="ident">latitude</span>.<span class="ident">to_string</span>(), <span class="ident">loc</span>.<span class="ident">longitude</span>.<span class="ident">to_string</span>()))
             .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">coordinates</span>.<span class="ident">clone</span>())
             .<span class="ident">error</span>(<span class="string">&quot;No location given&quot;</span>)<span class="question-mark">?</span>;
 
