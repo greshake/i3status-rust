@@ -261,29 +261,6 @@
 <span id="255">255</span>
 <span id="256">256</span>
 <span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
-<span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
-<span id="274">274</span>
-<span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
-<span id="278">278</span>
-<span id="279">279</span>
-<span id="280">280</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  </span>
@@ -400,7 +377,7 @@
     <span class="kw">if</span> <span class="ident">stdout</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="ident">hide_when_empty</span> {
         <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span>
     } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">json</span> {
-        <span class="kw">match</span> <span class="ident">serde_json::from_str</span>::<span class="op">&lt;</span><span class="ident">Input</span><span class="op">&gt;</span>(<span class="ident">stdout</span>) {
+        <span class="kw">match</span> <span class="ident">serde_json::from_str</span>::<span class="op">&lt;</span><span class="ident">Input</span><span class="op">&gt;</span>(<span class="ident">stdout</span>).<span class="ident">error</span>(<span class="string">&quot;Invalid JSON&quot;</span>) {
             <span class="prelude-val">Ok</span>(<span class="ident">input</span>) =&gt; {
                 <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>.<span class="ident">icon</span>)<span class="question-mark">?</span>;
                 <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">state</span>;
@@ -409,33 +386,10 @@
                 } <span class="kw">else</span> {
                     <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">input</span>.<span class="ident">text</span>);
                 }
+                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="ident">widget</span>).<span class="kw">await</span>
             }
-            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-                <span class="comment">// TODO: show full error message on click.</span>
-                <span class="comment">//</span>
-                <span class="comment">// Something like:</span>
-                <span class="comment">//</span>
-                <span class="comment">// ```</span>
-                <span class="comment">// widget.enable_fullscreen_on_click(my_error_message);</span>
-                <span class="comment">// widget.disable_fullscreen_on_click();</span>
-                <span class="comment">// ```</span>
-                <span class="comment">//</span>
-                <span class="comment">// And somewhere in `main.rs`:</span>
-                <span class="comment">//</span>
-                <span class="comment">// ```</span>
-                <span class="comment">// fn handle_click(...) {</span>
-                <span class="comment">//     if widget.has_fullscreen_mode() {</span>
-                <span class="comment">//         // Toggle fullscreen mode</span>
-                <span class="comment">//     } else {</span>
-                <span class="comment">//         normal_click_handler(...);</span>
-                <span class="comment">//     }</span>
-                <span class="comment">// }</span>
-                <span class="comment">// ```</span>
-                <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="string">&quot;Invalid JSON&quot;</span>.<span class="ident">into</span>());
-                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Critical</span>;
-            }
+            <span class="prelude-val">Err</span>(<span class="ident">error</span>) =&gt; <span class="ident">api</span>.<span class="ident">set_error</span>(<span class="ident">error</span>).<span class="kw">await</span>,
         }
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="ident">widget</span>).<span class="kw">await</span>
     } <span class="kw">else</span> {
         <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">stdout</span>.<span class="ident">into</span>());
         <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="ident">widget</span>).<span class="kw">await</span>

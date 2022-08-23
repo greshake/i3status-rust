@@ -219,8 +219,10 @@
 <span id="213">213</span>
 <span id="214">214</span>
 <span id="215">215</span>
+<span id="216">216</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::escape::CollectEscaped</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Format</span>, <span class="ident">Rendered</span>, <span class="ident">Values</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::protocol::i3bar_block::I3BarBlock</span>;
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
@@ -230,28 +232,25 @@
     <span class="kw">pub</span> <span class="ident">icon</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">shared_config</span>: <span class="ident">SharedConfig</span>,
     <span class="kw">pub</span> <span class="ident">state</span>: <span class="ident">State</span>,
-    <span class="kw">pub</span> <span class="ident">full_screen</span>: <span class="ident">bool</span>,
-
-    <span class="ident">inner</span>: <span class="ident">I3BarBlock</span>,
+    <span class="ident">id</span>: <span class="ident">usize</span>,
     <span class="ident">source</span>: <span class="ident">Source</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Widget</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">id</span>: <span class="ident">usize</span>, <span class="ident">shared_config</span>: <span class="ident">SharedConfig</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">I3BarBlock</span> {
-            <span class="ident">name</span>: <span class="prelude-val">Some</span>(<span class="ident">id</span>.<span class="ident">to_string</span>()),
-            ..<span class="ident">I3BarBlock::default</span>()
-        };
-
         <span class="ident">Widget</span> {
             <span class="ident">icon</span>: <span class="ident">String::new</span>(),
             <span class="ident">shared_config</span>,
             <span class="ident">state</span>: <span class="ident">State::Idle</span>,
-            <span class="ident">full_screen</span>: <span class="bool-val">false</span>,
-
-            <span class="ident">inner</span>,
+            <span class="ident">id</span>,
             <span class="ident">source</span>: <span class="ident">Source::Text</span>(<span class="ident">String::new</span>()),
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_error</span>(<span class="ident">id</span>: <span class="ident">usize</span>, <span class="ident">shared_config</span>: <span class="ident">SharedConfig</span>, <span class="ident">error</span>: <span class="kw-2">&amp;</span><span class="ident">Error</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">id</span>, <span class="ident">shared_config</span>)
+            .<span class="ident">with_text</span>(<span class="ident">error</span>.<span class="ident">to_string</span>().<span class="ident">chars</span>().<span class="ident">collect_pango</span>())
+            .<span class="ident">with_state</span>(<span class="ident">State::Critical</span>)
     }
 
     <span class="comment">/*
@@ -322,11 +321,14 @@
     <span class="doccomment">/// Constuct `I3BarBlock` from this widget</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">I3BarBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="comment">// Create a &quot;template&quot; block</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">template</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">clone</span>();
         <span class="kw">let</span> (<span class="ident">key_bg</span>, <span class="ident">key_fg</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">theme</span>.<span class="ident">get_colors</span>(<span class="self">self</span>.<span class="ident">state</span>);
         <span class="kw">let</span> (<span class="ident">full</span>, <span class="ident">short</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">source</span>.<span class="ident">render</span>()<span class="question-mark">?</span>;
-        <span class="ident">template</span>.<span class="ident">background</span> <span class="op">=</span> <span class="ident">key_bg</span>;
-        <span class="ident">template</span>.<span class="ident">color</span> <span class="op">=</span> <span class="ident">key_fg</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">template</span> <span class="op">=</span> <span class="ident">I3BarBlock</span> {
+            <span class="ident">name</span>: <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">id</span>.<span class="ident">to_string</span>()),
+            <span class="ident">background</span>: <span class="ident">key_bg</span>,
+            <span class="ident">color</span>: <span class="ident">key_fg</span>,
+            ..<span class="ident">I3BarBlock::default</span>()
+        };
 
         <span class="comment">// Collect all the pieces into &quot;parts&quot;</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parts</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
