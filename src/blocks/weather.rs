@@ -177,7 +177,7 @@ impl WeatherResult {
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut config = WeatherConfig::deserialize(config).config_error()?;
+    let config = WeatherConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
         .with_format(config.format.with_default("$weather $temp")?);
@@ -188,12 +188,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     };
 
     if config.autolocate {
-        // Default behavior is to mirror `interval`
-        if config.autolocate_interval.is_none() {
-            config.autolocate_interval = Some(config.interval);
-        }
+        // The default behavior is to mirror `interval`
+        let autolocate_interval = match config.autolocate_interval {
+            Some(s) => s,
+            None => config.interval,
+        };
 
-        if config.autolocate_interval == Some(config.interval) {
+        if autolocate_interval == config.interval {
             // In the case where `autolocate_interval` matches `interval` merge both actions.
             loop {
                 let location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
@@ -211,20 +212,28 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
         } else {
             // Two timers, one to rerender the block and the other to update the location.
-            let mut interval = tokio::time::interval(config.interval.0);
-            let mut autolocate_interval =
-                tokio::time::interval(config.autolocate_interval.unwrap().0);
+            let mut interval = config.interval.timer();
+            let mut autolocate_interval = autolocate_interval.timer();
+
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+            autolocate_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+            // Initial pass
             let mut location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
+            let data = api.recoverable(|| provider.get_weather(location)).await?;
+            widget.set_icon(data.icon.to_icon_str())?;
+            widget.set_values(data.into_values());
+            api.set_widget(&widget).await?;
 
             loop {
                 select! {
-                    biased; // both timers instantly `tick()` autolocate should always run first
+                    biased; // if both timers `tick()` autolocate should run first
                     _ = autolocate_interval.tick() => {
                         location = api.recoverable(find_ip_location).await?;
                     }
                     _ = interval.tick() => {
                         let data = api
-                            .recoverable(|| async { provider.get_weather(location).await })
+                            .recoverable(|| provider.get_weather(location))
                             .await?;
                         widget.set_icon(data.icon.to_icon_str())?;
                         widget.set_values(data.into_values());
@@ -235,7 +244,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         location = api.recoverable(find_ip_location).await?;
 
                         let data = api
-                            .recoverable(|| async { provider.get_weather(location).await })
+                            .recoverable(|| provider.get_weather(location))
                             .await?;
                         widget.set_icon(data.icon.to_icon_str())?;
                         widget.set_values(data.into_values());
