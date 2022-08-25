@@ -215,9 +215,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             let mut interval = config.interval.timer();
             let mut autolocate_interval = autolocate_interval.timer();
 
-            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-            autolocate_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-
             // Initial pass
             let mut location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
             let data = api.recoverable(|| provider.get_weather(location)).await?;
