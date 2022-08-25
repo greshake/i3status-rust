@@ -7,7 +7,7 @@
 //! Configuring this block requires configuring a weather service, which may require API keys and
 //! other parameters.
 //!
-//! If using the `autolocate` feature, set the block update interval such that you do not exceed ipapi.co's free daily limit of 1000 hits.
+//! If using the `autolocate` feature, set the autolocate update interval such that you do not exceed ipapi.co's free daily limit of 1000 hits. Or use `autolocate_interval = "once"` to only run on initialization.
 //!
 //! # Configuration
 //!
@@ -17,6 +17,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `"$weather $temp"`
 //! `interval` | Update interval, in seconds. | `600`
 //! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | `false`
+//! `autolocate_interval` | Update interval for `autolocate` in seconds or "once" | `interval`
 //!
 //! # OpenWeatherMap Options
 //!
@@ -104,6 +105,7 @@ struct WeatherConfig {
     service: WeatherService,
     #[serde(default)]
     autolocate: bool,
+    autolocate_interval: Option<Seconds>,
 }
 
 fn default_interval() -> Seconds {
@@ -185,24 +187,86 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         WeatherService::OpenWeatherMap(config) => Box::new(open_weather_map::Service::new(config)),
     };
 
-    loop {
-        let data = api
-            .recoverable(|| async {
-                let location = match config.autolocate {
-                    true => find_ip_location().await?,
-                    false => None,
-                };
-                provider.get_weather(location).await
-            })
-            .await?;
+    if config.autolocate {
+        // The default behavior is to mirror `interval`
+        let autolocate_interval = match config.autolocate_interval {
+            Some(s) => s,
+            None => config.interval,
+        };
 
-        widget.set_icon(data.icon.to_icon_str())?;
-        widget.set_values(data.into_values());
-        api.set_widget(&widget).await?;
+        if autolocate_interval == config.interval {
+            // In the case where `autolocate_interval` matches `interval` merge both actions.
+            loop {
+                let location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
+                let data = api
+                    .recoverable(|| provider.get_weather(location))
+                    .await?;
+                widget.set_icon(data.icon.to_icon_str())?;
+                widget.set_values(data.into_values());
+                api.set_widget(&widget).await?;
 
-        select! {
-            _ = sleep(config.interval.0) => (),
-            _ = api.wait_for_update_request() => (),
+                select! {
+                    _ = sleep(config.interval.0) => (),
+                    _ = api.wait_for_update_request() => (),
+                }
+            }
+        } else {
+            // Two timers, one to rerender the block and the other to update the location.
+            let mut interval = config.interval.timer();
+            let mut autolocate_interval = autolocate_interval.timer();
+
+            // Initial pass
+            let mut location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
+            let data = api.recoverable(|| provider.get_weather(location)).await?;
+            widget.set_icon(data.icon.to_icon_str())?;
+            widget.set_values(data.into_values());
+            api.set_widget(&widget).await?;
+
+            loop {
+                select! {
+                    biased; // if both timers `tick()` autolocate should run first
+                    _ = autolocate_interval.tick() => {
+                        location = api.recoverable(find_ip_location).await?;
+                    }
+                    _ = interval.tick() => {
+                        let data = api
+                            .recoverable(|| provider.get_weather(location))
+                            .await?;
+                        widget.set_icon(data.icon.to_icon_str())?;
+                        widget.set_values(data.into_values());
+                        api.set_widget(&widget).await?;
+                    },
+                    // On update request autolocate and update the block.
+                    _ = api.wait_for_update_request() => {
+                        location = api.recoverable(find_ip_location).await?;
+
+                        let data = api
+                            .recoverable(|| provider.get_weather(location))
+                            .await?;
+                        widget.set_icon(data.icon.to_icon_str())?;
+                        widget.set_values(data.into_values());
+                        api.set_widget(&widget).await?;
+
+                        // both intervals should be reset after a manual sync
+                        autolocate_interval.reset();
+                        interval.reset();
+                    },
+                }
+            }
+        }
+    } else {
+        loop {
+            let data = api
+                .recoverable(|| provider.get_weather(None))
+                .await?;
+            widget.set_icon(data.icon.to_icon_str())?;
+            widget.set_values(data.into_values());
+            api.set_widget(&widget).await?;
+
+            select! {
+                _ = sleep(config.interval.0) => (),
+                _ = api.wait_for_update_request() => ()
+            }
         }
     }
 }
