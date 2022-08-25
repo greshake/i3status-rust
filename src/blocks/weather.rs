@@ -199,7 +199,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             loop {
                 let location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
                 let data = api
-                    .recoverable(|| async { provider.get_weather(location).await })
+                    .recoverable(|| provider.get_weather(location))
                     .await?;
                 widget.set_icon(data.icon.to_icon_str())?;
                 widget.set_values(data.into_values());
@@ -257,7 +257,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     } else {
         loop {
             let data = api
-                .recoverable(|| async { provider.get_weather(None).await })
+                .recoverable(|| provider.get_weather(None))
                 .await?;
             widget.set_icon(data.icon.to_icon_str())?;
             widget.set_values(data.into_values());
