@@ -268,6 +268,70 @@
 <span id="262">262</span>
 <span id="263">263</span>
 <span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Current weather</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays local weather and temperature information. In order to use this block, you</span>
@@ -277,7 +341,7 @@
 <span class="doccomment">//! Configuring this block requires configuring a weather service, which may require API keys and</span>
 <span class="doccomment">//! other parameters.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! If using the `autolocate` feature, set the block update interval such that you do not exceed ipapi.co&#39;s free daily limit of 1000 hits.</span>
+<span class="doccomment">//! If using the `autolocate` feature, set the autolocate update interval such that you do not exceed ipapi.co&#39;s free daily limit of 1000 hits. Or use `autolocate_interval = &quot;once&quot;` to only run on initialization.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
 <span class="doccomment">//!</span>
@@ -287,6 +351,7 @@
 <span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `&quot;$weather $temp&quot;`</span>
 <span class="doccomment">//! `interval` | Update interval, in seconds. | `600`</span>
 <span class="doccomment">//! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | `false`</span>
+<span class="doccomment">//! `autolocate_interval` | Update interval for `autolocate` in seconds or &quot;once&quot; | `interval`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # OpenWeatherMap Options</span>
 <span class="doccomment">//!</span>
@@ -374,6 +439,7 @@
     <span class="ident">service</span>: <span class="ident">WeatherService</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
     <span class="ident">autolocate</span>: <span class="ident">bool</span>,
+    <span class="ident">autolocate_interval</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Seconds</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">fn</span> <span class="ident">default_interval</span>() -&gt; <span class="ident">Seconds</span> {
@@ -455,24 +521,86 @@
         <span class="ident">WeatherService::OpenWeatherMap</span>(<span class="ident">config</span>) =&gt; <span class="ident">Box::new</span>(<span class="ident">open_weather_map::Service::new</span>(<span class="ident">config</span>)),
     };
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">api</span>
-            .<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="kw">async</span> {
-                <span class="kw">let</span> <span class="ident">location</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">autolocate</span> {
-                    <span class="bool-val">true</span> =&gt; <span class="ident">find_ip_location</span>().<span class="kw">await</span><span class="question-mark">?</span>,
-                    <span class="bool-val">false</span> =&gt; <span class="prelude-val">None</span>,
-                };
-                <span class="ident">provider</span>.<span class="ident">get_weather</span>(<span class="ident">location</span>).<span class="kw">await</span>
-            })
-            .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">autolocate</span> {
+        <span class="comment">// The default behavior is to mirror `interval`</span>
+        <span class="kw">let</span> <span class="ident">autolocate_interval</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">autolocate_interval</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; <span class="ident">s</span>,
+            <span class="prelude-val">None</span> =&gt; <span class="ident">config</span>.<span class="ident">interval</span>,
+        };
 
-        <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">data</span>.<span class="ident">icon</span>.<span class="ident">to_icon_str</span>())<span class="question-mark">?</span>;
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">data</span>.<span class="ident">into_values</span>());
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="ident">autolocate_interval</span> <span class="op">==</span> <span class="ident">config</span>.<span class="ident">interval</span> {
+            <span class="comment">// In the case where `autolocate_interval` matches `interval` merge both actions.</span>
+            <span class="kw">loop</span> {
+                <span class="kw">let</span> <span class="ident">location</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Coordinates</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">recoverable</span>(<span class="ident">find_ip_location</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">api</span>
+                    .<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">provider</span>.<span class="ident">get_weather</span>(<span class="ident">location</span>))
+                    .<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">data</span>.<span class="ident">icon</span>.<span class="ident">to_icon_str</span>())<span class="question-mark">?</span>;
+                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">data</span>.<span class="ident">into_values</span>());
+                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+                <span class="macro">select!</span> {
+                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
+                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+                }
+            }
+        } <span class="kw">else</span> {
+            <span class="comment">// Two timers, one to rerender the block and the other to update the location.</span>
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">autolocate_interval</span> <span class="op">=</span> <span class="ident">autolocate_interval</span>.<span class="ident">timer</span>();
+
+            <span class="comment">// Initial pass</span>
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">location</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Coordinates</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">recoverable</span>(<span class="ident">find_ip_location</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">provider</span>.<span class="ident">get_weather</span>(<span class="ident">location</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">data</span>.<span class="ident">icon</span>.<span class="ident">to_icon_str</span>())<span class="question-mark">?</span>;
+            <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">data</span>.<span class="ident">into_values</span>());
+            <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+            <span class="kw">loop</span> {
+                <span class="macro">select!</span> {
+                    <span class="ident">biased</span>; <span class="comment">// if both timers `tick()` autolocate should run first</span>
+                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">autolocate_interval</span>.<span class="ident">tick</span>() =&gt; {
+                        <span class="ident">location</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">recoverable</span>(<span class="ident">find_ip_location</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                    }
+                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">interval</span>.<span class="ident">tick</span>() =&gt; {
+                        <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">api</span>
+                            .<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">provider</span>.<span class="ident">get_weather</span>(<span class="ident">location</span>))
+                            .<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">data</span>.<span class="ident">icon</span>.<span class="ident">to_icon_str</span>())<span class="question-mark">?</span>;
+                        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">data</span>.<span class="ident">into_values</span>());
+                        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                    },
+                    <span class="comment">// On update request autolocate and update the block.</span>
+                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; {
+                        <span class="ident">location</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">recoverable</span>(<span class="ident">find_ip_location</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+                        <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">api</span>
+                            .<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">provider</span>.<span class="ident">get_weather</span>(<span class="ident">location</span>))
+                            .<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">data</span>.<span class="ident">icon</span>.<span class="ident">to_icon_str</span>())<span class="question-mark">?</span>;
+                        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">data</span>.<span class="ident">into_values</span>());
+                        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+                        <span class="comment">// both intervals should be reset after a manual sync</span>
+                        <span class="ident">autolocate_interval</span>.<span class="ident">reset</span>();
+                        <span class="ident">interval</span>.<span class="ident">reset</span>();
+                    },
+                }
+            }
+        }
+    } <span class="kw">else</span> {
+        <span class="kw">loop</span> {
+            <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">api</span>
+                .<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">provider</span>.<span class="ident">get_weather</span>(<span class="prelude-val">None</span>))
+                .<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">data</span>.<span class="ident">icon</span>.<span class="ident">to_icon_str</span>())<span class="question-mark">?</span>;
+            <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">data</span>.<span class="ident">into_values</span>());
+            <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+            <span class="macro">select!</span> {
+                <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
+                <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; ()
+            }
         }
     }
 }
