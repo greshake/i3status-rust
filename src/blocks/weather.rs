@@ -88,6 +88,9 @@
 //! - `weather_snow` (when weather is reported as "Snow")
 //! - `weather_default` (in all other cases)
 
+use std::fmt;
+use std::sync::Arc;
+
 use super::prelude::*;
 
 mod met_no;
@@ -197,9 +200,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         if autolocate_interval == config.interval {
             // In the case where `autolocate_interval` matches `interval` merge both actions.
             loop {
-                let location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
+                let location = api.recoverable(find_ip_location).await?;
                 let data = api
-                    .recoverable(|| provider.get_weather(location))
+                    .recoverable(|| provider.get_weather(Some(location)))
                     .await?;
                 widget.set_icon(data.icon.to_icon_str())?;
                 widget.set_values(data.into_values());
@@ -216,8 +219,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             let mut autolocate_interval = autolocate_interval.timer();
 
             // Initial pass
-            let mut location: Option<Coordinates> = api.recoverable(find_ip_location).await?;
-            let data = api.recoverable(|| provider.get_weather(location)).await?;
+            let mut location = api.recoverable(find_ip_location).await?;
+            let data = api
+                .recoverable(|| provider.get_weather(Some(location)))
+                .await?;
             widget.set_icon(data.icon.to_icon_str())?;
             widget.set_values(data.into_values());
             api.set_widget(&widget).await?;
@@ -230,7 +235,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     }
                     _ = interval.tick() => {
                         let data = api
-                            .recoverable(|| provider.get_weather(location))
+                            .recoverable(|| provider.get_weather(Some(location)))
                             .await?;
                         widget.set_icon(data.icon.to_icon_str())?;
                         widget.set_values(data.into_values());
@@ -241,7 +246,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         location = api.recoverable(find_ip_location).await?;
 
                         let data = api
-                            .recoverable(|| provider.get_weather(location))
+                            .recoverable(|| provider.get_weather(Some(location)))
                             .await?;
                         widget.set_icon(data.icon.to_icon_str())?;
                         widget.set_values(data.into_values());
@@ -256,9 +261,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
     } else {
         loop {
-            let data = api
-                .recoverable(|| provider.get_weather(None))
-                .await?;
+            let data = api.recoverable(|| provider.get_weather(None)).await?;
             widget.set_icon(data.icon.to_icon_str())?;
             widget.set_values(data.into_values());
             api.set_widget(&widget).await?;
@@ -286,13 +289,29 @@ struct Coordinates {
 }
 
 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
-async fn find_ip_location() -> Result<Option<Coordinates>> {
-    #[derive(Deserialize, Clone)]
+async fn find_ip_location() -> Result<Coordinates> {
+    #[derive(Deserialize)]
     struct ApiResponse {
         #[serde(flatten)]
-        location: Coordinates,
+        location: Option<Coordinates>,
+        #[serde(default)]
+        error: bool,
+        #[serde(default)]
+        reason: ApiError,
     }
-    let response: Option<ApiResponse> = REQWEST_CLIENT
+
+    #[derive(Deserialize, Default, Debug)]
+    #[serde(transparent)]
+    struct ApiError(Option<String>);
+
+    impl fmt::Display for ApiError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str(self.0.as_deref().unwrap_or("Unknown Error"))
+        }
+    }
+    impl StdError for ApiError {}
+
+    let response: ApiResponse = REQWEST_CLIENT
         .get(IP_API_URL)
         .send()
         .await
@@ -300,7 +319,19 @@ async fn find_ip_location() -> Result<Option<Coordinates>> {
         .json()
         .await
         .error("Failed while parsing location API result")?;
-    Ok(response.map(|r| r.location))
+
+    if response.error {
+        Err(Error {
+            kind: ErrorKind::Other,
+            message: Some("ipapi.co error".into()),
+            cause: Some(Arc::new(response.reason)),
+            block: None,
+        })
+    } else {
+        response
+            .location
+            .error("Failed while parsing location API result")
+    }
 }
 
 // Convert wind direction in azimuth degrees to abbreviation names
