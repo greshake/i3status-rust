@@ -1,25 +1,23 @@
+use neli::attr::Attribute;
 use neli::consts::{nl::*, rtnl::*, socket::*};
 use neli::nl::{NlPayload, Nlmsghdr};
-use neli::rtnl::Rtmsg;
+use neli::rtnl::{Ifaddrmsg, Ifinfomsg, Rtmsg};
 use neli::socket::{tokio::NlSocket, NlSocketHandle};
 use neli::types::RtBuffer;
 
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::ops;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::errors::*;
 use crate::util;
 
 #[derive(Debug)]
 pub struct NetDevice {
-    rx_stat_path: PathBuf,
-    tx_stat_path: PathBuf,
-    path: PathBuf,
-    pub interface: String,
-    pub wireless: bool,
-    pub tun: bool,
-    pub wg: bool,
-    pub ppp: bool,
+    pub iface: Interface,
+    pub wifi_info: Option<WifiInfo>,
+    pub ip: Option<Ipv4Addr>,
+    pub ipv6: Option<Ipv6Addr>,
     pub icon: &'static str,
 }
 
@@ -32,91 +30,96 @@ pub struct WifiInfo {
 }
 
 impl NetDevice {
-    /// Use the network device `device`. Returns `None` if device is missing.
-    pub async fn from_interface(interface: String) -> Option<Self> {
-        let path = Path::new("/sys/class/net").join(&interface);
-        if !path.exists() {
-            return None;
-        }
+    pub async fn new(iface: Option<&str>) -> Result<Option<Self>> {
+        let mut sock = NlSocket::new(
+            NlSocketHandle::connect(NlFamily::Route, None, &[]).error("Socket error")?,
+        )
+        .error("Socket error")?;
 
+        let ifaces = get_interfaces(&mut sock)
+            .await
+            .map_err(BoxErrorWrapper)
+            .error("Failed to fetch interfaces")?;
+
+        let iface = match iface {
+            Some(iface) => ifaces.into_iter().find(|i| i.name == iface),
+            None => {
+                let default_iface = get_default_interface(&mut sock)
+                    .await
+                    .map_err(BoxErrorWrapper)
+                    .error("Failed to get default interface")?;
+                ifaces.into_iter().find(|i| i.index == default_iface)
+            }
+        };
+
+        let iface = match iface {
+            Some(iface) => iface,
+            None => return Ok(None),
+        };
+
+        let wifi_info = WifiInfo::new(iface.index).await?;
+        let ip = ipv4(&mut sock, iface.index).await?;
+        let ipv6 = ipv6(&mut sock, iface.index).await?;
+
+        // TODO: use netlink for the these too
         // I don't believe that this should ever change, so set it now:
-        let wireless = path.join("wireless").exists();
-        let tun = interface.starts_with("tun")
-            || interface.starts_with("tap")
+        let path = Path::new("/sys/class/net").join(&iface.name);
+        let tun = iface.name.starts_with("tun")
+            || iface.name.starts_with("tap")
             || path.join("tun_flags").exists();
+        let (wg, ppp) = util::read_file(path.join("uevent"))
+            .await
+            .map_or((false, false), |c| {
+                (c.contains("wireguard"), c.contains("ppp"))
+            });
 
-        let uevent_path = path.join("uevent");
-        let uevent_content = util::read_file(&uevent_path).await;
-
-        let (wg, ppp) = uevent_content.map_or((false, false), |c| {
-            (c.contains("wireguard"), c.contains("ppp"))
-        });
-
-        let icon = if wireless {
+        let icon = if wifi_info.is_some() {
             "net_wireless"
         } else if tun || wg || ppp {
             "net_vpn"
-        } else if interface == "lo" {
+        } else if iface.name == "lo" {
             "net_loopback"
         } else {
             "net_wired"
         };
 
-        Some(NetDevice {
-            rx_stat_path: path.join("statistics/rx_bytes"),
-            tx_stat_path: path.join("statistics/tx_bytes"),
-            path,
-            interface,
-            wireless,
-            tun,
-            wg,
-            ppp,
+        Ok(Some(Self {
+            iface,
+            wifi_info,
+            ip,
+            ipv6,
             icon,
-        })
+        }))
     }
 
-    pub async fn is_up(&self) -> Result<bool> {
-        let operstate_file = self.path.join("operstate");
-        if !operstate_file.exists() {
-            // It seems more reasonable to treat these as inactive networks as
-            // opposed to erroring out the entire block.
-            return Ok(false);
-        }
-
-        if self.tun || self.wg || self.ppp {
-            return Ok(true);
-        }
-
-        let operstate = util::read_file(&operstate_file)
-            .await
-            .error("Failed to read device operstate")?;
-        if operstate == "up" {
-            return Ok(true);
-        }
-
-        let carrier_file = self.path.join("carrier");
-        if !carrier_file.exists() {
-            return Ok(false);
-        }
-
-        let carrier = util::read_file(&carrier_file).await.ok();
-        Ok(carrier.as_deref() == Some("1"))
+    pub fn ssid(&self) -> Option<String> {
+        self.wifi_info.as_ref()?.ssid.clone()
     }
 
-    pub async fn read_stats(&self) -> Option<NetDeviceStats> {
-        let (rx, tx) = tokio::try_join!(
-            util::read_file(&self.rx_stat_path),
-            util::read_file(&self.tx_stat_path)
-        )
-        .ok()?;
-        Some(NetDeviceStats {
-            rx_bytes: rx.parse().ok()?,
-            tx_bytes: tx.parse().ok()?,
-        })
+    pub fn frequency(&self) -> Option<f64> {
+        self.wifi_info.as_ref()?.frequency
     }
 
-    /// Queries the wireless SSID of this device, if it is connected to one.
-    pub async fn wifi_info(&self) -> Result<WifiInfo> {
+    pub fn bitrate(&self) -> Option<f64> {
+        self.wifi_info.as_ref()?.bitrate
+    }
+
+    pub fn signal(&self) -> Option<f64> {
+        self.wifi_info.as_ref()?.signal
+    }
+}
+
+impl WifiInfo {
+    async fn new(if_index: i32) -> Result<Option<Self>> {
+        /// <https://github.com/torvalds/linux/blob/9ff9b0d392ea08090cd1780fb196f36dbb586529/drivers/net/wireless/intel/ipw2x00/ipw2200.c#L4322-L4334>
+        fn signal_percents(raw: f64) -> f64 {
+            const MAX_LEVEL: f64 = -20.;
+            const MIN_LEVEL: f64 = -85.;
+            const DIFF: f64 = MAX_LEVEL - MIN_LEVEL;
+            (100. - (MAX_LEVEL - raw) * (15. * DIFF + 62. * (MAX_LEVEL - raw)) / (DIFF * DIFF))
+                .clamp(0., 100.)
+        }
+
         let mut socket =
             neli_wifi::AsyncSocket::connect().error("Failed to open nl80211 socket")?;
         let interfaces = socket
@@ -125,112 +128,43 @@ impl NetDevice {
             .error("Failed to get nl80211 interfaces")?;
         for interface in interfaces {
             if let Some(index) = interface.index {
+                if index != if_index {
+                    continue;
+                }
                 if let Ok(ap) = socket.get_station_info(index).await {
-                    if let Some(device) = interface.name.and_then(|s| String::from_utf8(s).ok()) {
-                        let device = device.trim_matches(char::from(0));
-                        if device != self.interface {
-                            continue;
-                        }
-                        let raw_signal = match ap.signal {
-                            Some(signal) => Some(signal),
-                            None => socket
-                                .get_bss_info(index)
-                                .await
-                                .ok()
-                                .and_then(|bss| bss.signal)
-                                .map(|s| (s / 100) as i8),
-                        };
-                        return Ok(WifiInfo {
-                            ssid: interface
-                                .ssid
-                                .map(String::from_utf8)
-                                .transpose()
-                                .error("SSID is not valid UTF8")?, // ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
-                            frequency: interface.frequency.map(|f| f as f64 * 1e6),
-                            signal: raw_signal.map(|s| signal_percents(s as f64)),
-                            bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
-                        });
-                    }
+                    let raw_signal = match ap.signal {
+                        Some(signal) => Some(signal),
+                        None => socket
+                            .get_bss_info(index)
+                            .await
+                            .ok()
+                            .and_then(|bss| bss.signal)
+                            .map(|s| (s / 100) as i8),
+                    };
+                    return Ok(Some(Self {
+                        ssid: interface
+                            .ssid
+                            .map(String::from_utf8)
+                            .transpose()
+                            .error("SSID is not valid UTF8")?, // ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
+                        frequency: interface.frequency.map(|f| f as f64 * 1e6),
+                        signal: raw_signal.map(|s| signal_percents(s as f64)),
+                        bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
+                    }));
                 }
             }
         }
-        Ok(Default::default())
+        Ok(None)
     }
 }
 
-fn index_to_interface(index: u32) -> String {
-    let mut buff = [0u8; 16];
-    unsafe { libc::if_indextoname(index, buff.as_mut_ptr() as *mut i8) };
-    std::str::from_utf8(&buff)
-        .unwrap()
-        .trim_matches(char::from(0))
-        .to_string()
-}
-
-pub async fn default_interface() -> Option<String> {
-    let mut socket =
-        NlSocket::new(NlSocketHandle::connect(NlFamily::Route, None, &[]).ok()?).ok()?;
-
-    let rtmsg = Rtmsg {
-        rtm_family: RtAddrFamily::Inet,
-        rtm_dst_len: 0,
-        rtm_src_len: 0,
-        rtm_tos: 0,
-        rtm_table: RtTable::Main,
-        rtm_protocol: Rtprot::Unspec,
-        rtm_scope: RtScope::Universe,
-        rtm_type: Rtn::Unspec,
-        rtm_flags: RtmFFlags::empty(),
-        rtattrs: RtBuffer::new(),
-    };
-    let nlhdr = {
-        let len = None;
-        let nl_type = Rtm::Getroute;
-        let flags = NlmFFlags::new(&[NlmF::Request, NlmF::Dump]);
-        let seq = None;
-        let pid = None;
-        let payload = rtmsg;
-        Nlmsghdr::new(len, nl_type, flags, seq, pid, NlPayload::Payload(payload))
-    };
-
-    socket.send(&nlhdr).await.ok()?;
-
-    let mut buf = Vec::new();
-    let msgs = socket.recv::<NlTypeWrapper, Rtmsg>(&mut buf).await.ok()?;
-    for rtm in msgs {
-        if let NlTypeWrapper::Rtm(_) = rtm.nl_type {
-            let payload = rtm.get_payload().ok()?;
-            if payload.rtm_table == RtTable::Main {
-                let mut is_default = false;
-                let mut name = None;
-                for attr in payload.rtattrs.iter() {
-                    match attr.rta_type {
-                        Rta::Dst => is_default = true,
-                        Rta::Oif => {
-                            name = Some(index_to_interface(u32::from_le_bytes(
-                                attr.rta_payload.as_ref().try_into().unwrap(),
-                            )));
-                        }
-                        _ => (),
-                    }
-                }
-                if is_default {
-                    return name;
-                }
-            }
-        }
-    }
-
-    None
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct NetDeviceStats {
+#[derive(Debug, Default, Clone, Copy)]
+pub struct InterfaceStats {
     pub rx_bytes: u64,
     pub tx_bytes: u64,
 }
 
-impl ops::Sub for NetDeviceStats {
+impl ops::Sub for InterfaceStats {
     type Output = Self;
 
     fn sub(mut self, rhs: Self) -> Self::Output {
@@ -240,11 +174,202 @@ impl ops::Sub for NetDeviceStats {
     }
 }
 
-/// <https://github.com/torvalds/linux/blob/9ff9b0d392ea08090cd1780fb196f36dbb586529/drivers/net/wireless/intel/ipw2x00/ipw2200.c#L4322-L4334>
-fn signal_percents(raw: f64) -> f64 {
-    const MAX_LEVEL: f64 = -20.;
-    const MIN_LEVEL: f64 = -85.;
-    const DIFF: f64 = MAX_LEVEL - MIN_LEVEL;
-    (100. - (MAX_LEVEL - raw) * (15. * DIFF + 62. * (MAX_LEVEL - raw)) / (DIFF * DIFF))
-        .clamp(0., 100.)
+impl InterfaceStats {
+    fn from_stats64(stats: &[u8]) -> Self {
+        // stats looks something like that:
+        //
+        // #[repr(C)]
+        // struct RtnlLinkStats64 {
+        //     rx_packets: u64,
+        //     tx_packets: u64,
+        //     rx_bytes: u64,
+        //     tx_bytes: u64,
+        //     // the rest is omitted
+        // }
+        assert!(stats.len() >= 8 * 4);
+        let stats = stats.as_ptr() as *const u64;
+        Self {
+            rx_bytes: unsafe { stats.add(2).read_unaligned() },
+            tx_bytes: unsafe { stats.add(3).read_unaligned() },
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Interface {
+    pub index: i32,
+    pub is_up: bool,
+    pub name: String,
+    pub stats: Option<InterfaceStats>,
+}
+
+macro_rules! recv_until_done {
+    ($sock:ident, $payload:ident: $payload_type:ty => $($code:tt)*) => {
+        let mut buf = Vec::new();
+        'recv: loop {
+            let msgs = $sock.recv::<u16, $payload_type>(&mut buf).await?;
+            for msg in msgs {
+                if msg.nl_type == libc::NLMSG_DONE as u16 {
+                    break 'recv;
+                }
+                if let NlPayload::Payload($payload) = msg.nl_payload {
+                    $($code)*
+                }
+            }
+        }
+    };
+}
+
+async fn get_interfaces(
+    sock: &mut NlSocket,
+) -> Result<Vec<Interface>, Box<dyn StdError + Send + Sync + 'static>> {
+    sock.send(&Nlmsghdr::new(
+        None,
+        Rtm::Getlink,
+        NlmFFlags::new(&[NlmF::Dump, NlmF::Request]),
+        None,
+        None,
+        NlPayload::Payload(Ifinfomsg::new(
+            RtAddrFamily::Unspecified,
+            Arphrd::None,
+            0,
+            IffFlags::empty(),
+            IffFlags::empty(),
+            RtBuffer::new(),
+        )),
+    ))
+    .await?;
+
+    let mut interfaces = Vec::new();
+
+    recv_until_done!(sock, msg: Ifinfomsg => {
+        let mut name = None;
+        let mut stats = None;
+        for attr in msg.rtattrs.iter() {
+            match attr.rta_type {
+                Ifla::Ifname => name = Some(attr.get_payload_as_with_len()?),
+                Ifla::Stats64 => stats = Some(InterfaceStats::from_stats64(attr.payload().as_ref())),
+                _ => (),
+            }
+        }
+        interfaces.push(Interface {
+            index: msg.ifi_index,
+            is_up: msg.ifi_flags.contains(&Iff::Up),
+            name: name.unwrap(),
+            stats,
+        });
+    });
+
+    Ok(interfaces)
+}
+
+async fn get_default_interface(
+    sock: &mut NlSocket,
+) -> Result<i32, Box<dyn StdError + Send + Sync + 'static>> {
+    sock.send(&Nlmsghdr::new(
+        None,
+        Rtm::Getroute,
+        NlmFFlags::new(&[NlmF::Request, NlmF::Dump]),
+        None,
+        None,
+        NlPayload::Payload(Rtmsg {
+            rtm_family: RtAddrFamily::Inet,
+            rtm_dst_len: 0,
+            rtm_src_len: 0,
+            rtm_tos: 0,
+            rtm_table: RtTable::Unspec,
+            rtm_protocol: Rtprot::Unspec,
+            rtm_scope: RtScope::Universe,
+            rtm_type: Rtn::Unspec,
+            rtm_flags: RtmFFlags::empty(),
+            rtattrs: RtBuffer::new(),
+        }),
+    ))
+    .await?;
+
+    let mut default_index = 0;
+
+    recv_until_done!(sock, msg: Rtmsg => {
+        if msg.rtm_type != Rtn::Unicast {
+            continue;
+        }
+        let mut index = None;
+        let mut is_default = false;
+        for attr in msg.rtattrs.iter() {
+            match attr.rta_type {
+                Rta::Oif => index = Some(attr.get_payload_as::<i32>()?),
+                Rta::Gateway => is_default = true,
+                _ => (),
+            }
+        }
+        if is_default && default_index == 0 {
+            default_index = index.unwrap();
+        }
+    });
+
+    Ok(default_index)
+}
+
+async fn ip_payload(
+    sock: &mut NlSocket,
+    ifa_family: RtAddrFamily,
+    ifa_index: i32,
+) -> Result<Option<neli::types::Buffer>, Box<dyn StdError + Send + Sync + 'static>> {
+    sock.send(&Nlmsghdr::new(
+        None,
+        Rtm::Getaddr,
+        NlmFFlags::new(&[NlmF::Dump, NlmF::Request]),
+        None,
+        None,
+        NlPayload::Payload(Ifaddrmsg {
+            ifa_family,
+            ifa_prefixlen: 0,
+            ifa_flags: IfaFFlags::empty(),
+            ifa_scope: 0,
+            ifa_index: 0,
+            rtattrs: RtBuffer::new(),
+        }),
+    ))
+    .await?;
+
+    let mut payload = None;
+
+    recv_until_done!(sock, msg: Ifaddrmsg => {
+        if msg.ifa_index != ifa_index {
+            continue;
+        }
+        if let Some(rtattr) = msg.rtattrs.into_iter().find(|a| a.rta_type == Ifa::Address) {
+            payload = Some(rtattr.rta_payload);
+        }
+    });
+
+    Ok(payload)
+}
+
+async fn ipv4(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv4Addr>> {
+    match ip_payload(sock, RtAddrFamily::Inet, ifa_index)
+        .await
+        .map_err(BoxErrorWrapper)
+        .error("Failed to get IP address")?
+    {
+        None => Ok(None),
+        Some(payload) => {
+            let payload: &[u8; 4] = payload.as_ref().try_into().unwrap();
+            Ok(Some(Ipv4Addr::from(*payload)))
+        }
+    }
+}
+
+async fn ipv6(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv6Addr>> {
+    match ip_payload(sock, RtAddrFamily::Inet6, ifa_index)
+        .await
+        .map_err(BoxErrorWrapper)
+        .error("Failed to get IPv6 address")?
+    {
+        None => Ok(None),
+        Some(payload) => {
+            let payload: &[u8; 16] = payload.as_ref().try_into().unwrap();
+            Ok(Some(Ipv6Addr::from(*payload)))
+        }
+    }
 }

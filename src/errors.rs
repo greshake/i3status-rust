@@ -206,3 +206,19 @@ where
         self.map_err(E::custom)
     }
 }
+
+pub struct BoxErrorWrapper(pub Box<dyn StdError + Send + Sync + 'static>);
+
+impl fmt::Debug for BoxErrorWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+impl fmt::Display for BoxErrorWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl StdError for BoxErrorWrapper {}
