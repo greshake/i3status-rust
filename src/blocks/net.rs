@@ -98,6 +98,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
+            None => {
+                if config.hide_missing || config.hide_inactive {
+                    api.hide().await?;
+                } else {
+                    widget.set_text("×".to_string());
+                    api.set_widget(&widget).await?;
+                }
+            }
             Some(device) if !device.iface.is_up => {
                 if config.hide_inactive {
                     api.hide().await?;
@@ -148,12 +156,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 widget.set_values(values);
                 widget.set_icon(device.icon)?;
                 api.set_widget(&widget).await?;
-            }
-            None if config.hide_missing || config.hide_inactive => {
-                api.hide().await?;
-            }
-            None => {
-                return Err(Error::new("device not found"));
             }
         }
 
