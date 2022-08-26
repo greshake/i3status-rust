@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `device` | Network interface to monitor (as specified in `/sys/class/net/`) | If not set, device will be automatically selected every `interval`
+//! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `"$speed_down.eng(3,B,K)$speed_up.eng(3,B,K)"`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
@@ -35,6 +35,14 @@
 //! format = "{$signal_strength $ssid $frequency|Wired connection} via $device"
 //! ```
 //!
+//! Display exact device
+//!
+//! ```toml
+//! [[block]]
+//! block = "net"
+//! device = "^wlo0$"
+//! ```
+//!
 //! # Icons Used
 //! - `net_loopback`
 //! - `net_vpn`
@@ -46,6 +54,7 @@
 use super::prelude::*;
 use crate::netlink::NetDevice;
 use crate::util;
+use regex::Regex;
 use std::time::Instant;
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -74,6 +83,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api.new_widget().with_format(format.clone());
     let mut timer = config.interval.timer();
 
+    let device_re = config
+        .device
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error("Failed to parse device regex")?;
+
     // Stats
     let mut stats = None;
     let mut stats_timer = Instant::now();
@@ -81,7 +97,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut rx_hist = [0f64; 8];
 
     loop {
-        match NetDevice::new(config.device.as_deref()).await? {
+        match NetDevice::new(device_re.as_ref()).await? {
             Some(device) if !device.iface.is_up => {
                 if config.hide_inactive {
                     api.hide().await?;

@@ -5,6 +5,8 @@ use neli::rtnl::{Ifaddrmsg, Ifinfomsg, Rtmsg};
 use neli::socket::{tokio::NlSocket, NlSocketHandle};
 use neli::types::RtBuffer;
 
+use regex::Regex;
+
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::ops;
 use std::path::Path;
@@ -30,7 +32,7 @@ pub struct WifiInfo {
 }
 
 impl NetDevice {
-    pub async fn new(iface: Option<&str>) -> Result<Option<Self>> {
+    pub async fn new(iface_re: Option<&Regex>) -> Result<Option<Self>> {
         let mut sock = NlSocket::new(
             NlSocketHandle::connect(NlFamily::Route, None, &[]).error("Socket error")?,
         )
@@ -41,8 +43,8 @@ impl NetDevice {
             .map_err(BoxErrorWrapper)
             .error("Failed to fetch interfaces")?;
 
-        let iface = match iface {
-            Some(iface) => ifaces.into_iter().find(|i| i.name == iface),
+        let iface = match iface_re {
+            Some(re) => ifaces.into_iter().find(|i| re.is_match(&i.name)),
             None => {
                 let default_iface = get_default_interface(&mut sock)
                     .await
