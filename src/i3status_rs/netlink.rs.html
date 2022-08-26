@@ -254,28 +254,151 @@
 <span id="248">248</span>
 <span id="249">249</span>
 <span id="250">250</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">neli::consts</span>::{<span class="ident">nl</span>::<span class="kw-2">*</span>, <span class="ident">rtnl</span>::<span class="kw-2">*</span>, <span class="ident">socket</span>::<span class="kw-2">*</span>};
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">neli::attr::Attribute</span>;
+<span class="kw">use</span> <span class="ident">neli::consts</span>::{<span class="ident">nl</span>::<span class="kw-2">*</span>, <span class="ident">rtnl</span>::<span class="kw-2">*</span>, <span class="ident">socket</span>::<span class="kw-2">*</span>};
 <span class="kw">use</span> <span class="ident">neli::nl</span>::{<span class="ident">NlPayload</span>, <span class="ident">Nlmsghdr</span>};
-<span class="kw">use</span> <span class="ident">neli::rtnl::Rtmsg</span>;
+<span class="kw">use</span> <span class="ident">neli::rtnl</span>::{<span class="ident">Ifaddrmsg</span>, <span class="ident">Ifinfomsg</span>, <span class="ident">Rtmsg</span>};
 <span class="kw">use</span> <span class="ident">neli::socket</span>::{<span class="ident">tokio::NlSocket</span>, <span class="ident">NlSocketHandle</span>};
 <span class="kw">use</span> <span class="ident">neli::types::RtBuffer</span>;
 
+<span class="kw">use</span> <span class="ident">std::net</span>::{<span class="ident">Ipv4Addr</span>, <span class="ident">Ipv6Addr</span>};
 <span class="kw">use</span> <span class="ident">std::ops</span>;
-<span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
+<span class="kw">use</span> <span class="ident">std::path::Path</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NetDevice</span> {
-    <span class="ident">rx_stat_path</span>: <span class="ident">PathBuf</span>,
-    <span class="ident">tx_stat_path</span>: <span class="ident">PathBuf</span>,
-    <span class="ident">path</span>: <span class="ident">PathBuf</span>,
-    <span class="kw">pub</span> <span class="ident">interface</span>: <span class="ident">String</span>,
-    <span class="kw">pub</span> <span class="ident">wireless</span>: <span class="ident">bool</span>,
-    <span class="kw">pub</span> <span class="ident">tun</span>: <span class="ident">bool</span>,
-    <span class="kw">pub</span> <span class="ident">wg</span>: <span class="ident">bool</span>,
-    <span class="kw">pub</span> <span class="ident">ppp</span>: <span class="ident">bool</span>,
+    <span class="kw">pub</span> <span class="ident">iface</span>: <span class="ident">Interface</span>,
+    <span class="kw">pub</span> <span class="ident">wifi_info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">WifiInfo</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">ip</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ipv4Addr</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">ipv6</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ipv6Addr</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>,
 }
 
@@ -288,91 +411,96 @@
 }
 
 <span class="kw">impl</span> <span class="ident">NetDevice</span> {
-    <span class="doccomment">/// Use the network device `device`. Returns `None` if device is missing.</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">from_interface</span>(<span class="ident">interface</span>: <span class="ident">String</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">Path::new</span>(<span class="string">&quot;/sys/class/net&quot;</span>).<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="ident">interface</span>);
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">path</span>.<span class="ident">exists</span>() {
-            <span class="kw">return</span> <span class="prelude-val">None</span>;
-        }
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">iface</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sock</span> <span class="op">=</span> <span class="ident">NlSocket::new</span>(
+            <span class="ident">NlSocketHandle::connect</span>(<span class="ident">NlFamily::Route</span>, <span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">error</span>(<span class="string">&quot;Socket error&quot;</span>)<span class="question-mark">?</span>,
+        )
+        .<span class="ident">error</span>(<span class="string">&quot;Socket error&quot;</span>)<span class="question-mark">?</span>;
 
+        <span class="kw">let</span> <span class="ident">ifaces</span> <span class="op">=</span> <span class="ident">get_interfaces</span>(<span class="kw-2">&amp;mut</span> <span class="ident">sock</span>)
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="ident">BoxErrorWrapper</span>)
+            .<span class="ident">error</span>(<span class="string">&quot;Failed to fetch interfaces&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="ident">iface</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">iface</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">iface</span>) =&gt; <span class="ident">ifaces</span>.<span class="ident">into_iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">i</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">iface</span>),
+            <span class="prelude-val">None</span> =&gt; {
+                <span class="kw">let</span> <span class="ident">default_iface</span> <span class="op">=</span> <span class="ident">get_default_interface</span>(<span class="kw-2">&amp;mut</span> <span class="ident">sock</span>)
+                    .<span class="kw">await</span>
+                    .<span class="ident">map_err</span>(<span class="ident">BoxErrorWrapper</span>)
+                    .<span class="ident">error</span>(<span class="string">&quot;Failed to get default interface&quot;</span>)<span class="question-mark">?</span>;
+                <span class="ident">ifaces</span>.<span class="ident">into_iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">i</span>.<span class="ident">index</span> <span class="op">==</span> <span class="ident">default_iface</span>)
+            }
+        };
+
+        <span class="kw">let</span> <span class="ident">iface</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">iface</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">iface</span>) =&gt; <span class="ident">iface</span>,
+            <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+        };
+
+        <span class="kw">let</span> <span class="ident">wifi_info</span> <span class="op">=</span> <span class="ident">WifiInfo::new</span>(<span class="ident">iface</span>.<span class="ident">index</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">ip</span> <span class="op">=</span> <span class="ident">ipv4</span>(<span class="kw-2">&amp;mut</span> <span class="ident">sock</span>, <span class="ident">iface</span>.<span class="ident">index</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">ipv6</span> <span class="op">=</span> <span class="ident">ipv6</span>(<span class="kw-2">&amp;mut</span> <span class="ident">sock</span>, <span class="ident">iface</span>.<span class="ident">index</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="comment">// TODO: use netlink for the these too</span>
         <span class="comment">// I don&#39;t believe that this should ever change, so set it now:</span>
-        <span class="kw">let</span> <span class="ident">wireless</span> <span class="op">=</span> <span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;wireless&quot;</span>).<span class="ident">exists</span>();
-        <span class="kw">let</span> <span class="ident">tun</span> <span class="op">=</span> <span class="ident">interface</span>.<span class="ident">starts_with</span>(<span class="string">&quot;tun&quot;</span>)
-            <span class="op">|</span><span class="op">|</span> <span class="ident">interface</span>.<span class="ident">starts_with</span>(<span class="string">&quot;tap&quot;</span>)
+        <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">Path::new</span>(<span class="string">&quot;/sys/class/net&quot;</span>).<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="ident">iface</span>.<span class="ident">name</span>);
+        <span class="kw">let</span> <span class="ident">tun</span> <span class="op">=</span> <span class="ident">iface</span>.<span class="ident">name</span>.<span class="ident">starts_with</span>(<span class="string">&quot;tun&quot;</span>)
+            <span class="op">|</span><span class="op">|</span> <span class="ident">iface</span>.<span class="ident">name</span>.<span class="ident">starts_with</span>(<span class="string">&quot;tap&quot;</span>)
             <span class="op">|</span><span class="op">|</span> <span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;tun_flags&quot;</span>).<span class="ident">exists</span>();
+        <span class="kw">let</span> (<span class="ident">wg</span>, <span class="ident">ppp</span>) <span class="op">=</span> <span class="ident">util::read_file</span>(<span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;uevent&quot;</span>))
+            .<span class="kw">await</span>
+            .<span class="ident">map_or</span>((<span class="bool-val">false</span>, <span class="bool-val">false</span>), <span class="op">|</span><span class="ident">c</span><span class="op">|</span> {
+                (<span class="ident">c</span>.<span class="ident">contains</span>(<span class="string">&quot;wireguard&quot;</span>), <span class="ident">c</span>.<span class="ident">contains</span>(<span class="string">&quot;ppp&quot;</span>))
+            });
 
-        <span class="kw">let</span> <span class="ident">uevent_path</span> <span class="op">=</span> <span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;uevent&quot;</span>);
-        <span class="kw">let</span> <span class="ident">uevent_content</span> <span class="op">=</span> <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="ident">uevent_path</span>).<span class="kw">await</span>;
-
-        <span class="kw">let</span> (<span class="ident">wg</span>, <span class="ident">ppp</span>) <span class="op">=</span> <span class="ident">uevent_content</span>.<span class="ident">map_or</span>((<span class="bool-val">false</span>, <span class="bool-val">false</span>), <span class="op">|</span><span class="ident">c</span><span class="op">|</span> {
-            (<span class="ident">c</span>.<span class="ident">contains</span>(<span class="string">&quot;wireguard&quot;</span>), <span class="ident">c</span>.<span class="ident">contains</span>(<span class="string">&quot;ppp&quot;</span>))
-        });
-
-        <span class="kw">let</span> <span class="ident">icon</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">wireless</span> {
+        <span class="kw">let</span> <span class="ident">icon</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">wifi_info</span>.<span class="ident">is_some</span>() {
             <span class="string">&quot;net_wireless&quot;</span>
         } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">tun</span> <span class="op">|</span><span class="op">|</span> <span class="ident">wg</span> <span class="op">|</span><span class="op">|</span> <span class="ident">ppp</span> {
             <span class="string">&quot;net_vpn&quot;</span>
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">interface</span> <span class="op">==</span> <span class="string">&quot;lo&quot;</span> {
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">iface</span>.<span class="ident">name</span> <span class="op">==</span> <span class="string">&quot;lo&quot;</span> {
             <span class="string">&quot;net_loopback&quot;</span>
         } <span class="kw">else</span> {
             <span class="string">&quot;net_wired&quot;</span>
         };
 
-        <span class="prelude-val">Some</span>(<span class="ident">NetDevice</span> {
-            <span class="ident">rx_stat_path</span>: <span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;statistics/rx_bytes&quot;</span>),
-            <span class="ident">tx_stat_path</span>: <span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;statistics/tx_bytes&quot;</span>),
-            <span class="ident">path</span>,
-            <span class="ident">interface</span>,
-            <span class="ident">wireless</span>,
-            <span class="ident">tun</span>,
-            <span class="ident">wg</span>,
-            <span class="ident">ppp</span>,
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self</span> {
+            <span class="ident">iface</span>,
+            <span class="ident">wifi_info</span>,
+            <span class="ident">ip</span>,
+            <span class="ident">ipv6</span>,
             <span class="ident">icon</span>,
-        })
+        }))
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">is_up</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">operstate_file</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;operstate&quot;</span>);
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">operstate_file</span>.<span class="ident">exists</span>() {
-            <span class="comment">// It seems more reasonable to treat these as inactive networks as</span>
-            <span class="comment">// opposed to erroring out the entire block.</span>
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>);
-        }
-
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">tun</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">wg</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">ppp</span> {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>);
-        }
-
-        <span class="kw">let</span> <span class="ident">operstate</span> <span class="op">=</span> <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="ident">operstate_file</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to read device operstate&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">operstate</span> <span class="op">==</span> <span class="string">&quot;up&quot;</span> {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>);
-        }
-
-        <span class="kw">let</span> <span class="ident">carrier_file</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">path</span>.<span class="ident">join</span>(<span class="string">&quot;carrier&quot;</span>);
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">carrier_file</span>.<span class="ident">exists</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>);
-        }
-
-        <span class="kw">let</span> <span class="ident">carrier</span> <span class="op">=</span> <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="ident">carrier_file</span>).<span class="kw">await</span>.<span class="ident">ok</span>();
-        <span class="prelude-val">Ok</span>(<span class="ident">carrier</span>.<span class="ident">as_deref</span>() <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="string">&quot;1&quot;</span>))
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ssid</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">wifi_info</span>.<span class="ident">as_ref</span>()<span class="question-mark">?</span>.<span class="ident">ssid</span>.<span class="ident">clone</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_stats</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NetDeviceStats</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">rx</span>, <span class="ident">tx</span>) <span class="op">=</span> <span class="macro">tokio::try_join!</span>(
-            <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">rx_stat_path</span>),
-            <span class="ident">util::read_file</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">tx_stat_path</span>)
-        )
-        .<span class="ident">ok</span>()<span class="question-mark">?</span>;
-        <span class="prelude-val">Some</span>(<span class="ident">NetDeviceStats</span> {
-            <span class="ident">rx_bytes</span>: <span class="ident">rx</span>.<span class="ident">parse</span>().<span class="ident">ok</span>()<span class="question-mark">?</span>,
-            <span class="ident">tx_bytes</span>: <span class="ident">tx</span>.<span class="ident">parse</span>().<span class="ident">ok</span>()<span class="question-mark">?</span>,
-        })
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">frequency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">wifi_info</span>.<span class="ident">as_ref</span>()<span class="question-mark">?</span>.<span class="ident">frequency</span>
     }
 
-    <span class="doccomment">/// Queries the wireless SSID of this device, if it is connected to one.</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wifi_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">WifiInfo</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bitrate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">wifi_info</span>.<span class="ident">as_ref</span>()<span class="question-mark">?</span>.<span class="ident">bitrate</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">signal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">wifi_info</span>.<span class="ident">as_ref</span>()<span class="question-mark">?</span>.<span class="ident">signal</span>
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">WifiInfo</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">if_index</span>: <span class="ident">i32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="doccomment">/// &lt;https://github.com/torvalds/linux/blob/9ff9b0d392ea08090cd1780fb196f36dbb586529/drivers/net/wireless/intel/ipw2x00/ipw2200.c#L4322-L4334&gt;</span>
+        <span class="kw">fn</span> <span class="ident">signal_percents</span>(<span class="ident">raw</span>: <span class="ident">f64</span>) -&gt; <span class="ident">f64</span> {
+            <span class="kw">const</span> <span class="ident">MAX_LEVEL</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="op">-</span><span class="number">20.</span>;
+            <span class="kw">const</span> <span class="ident">MIN_LEVEL</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="op">-</span><span class="number">85.</span>;
+            <span class="kw">const</span> <span class="ident">DIFF</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="ident">MAX_LEVEL</span> <span class="op">-</span> <span class="ident">MIN_LEVEL</span>;
+            (<span class="number">100.</span> <span class="op">-</span> (<span class="ident">MAX_LEVEL</span> <span class="op">-</span> <span class="ident">raw</span>) <span class="op">*</span> (<span class="number">15.</span> <span class="op">*</span> <span class="ident">DIFF</span> <span class="op">+</span> <span class="number">62.</span> <span class="op">*</span> (<span class="ident">MAX_LEVEL</span> <span class="op">-</span> <span class="ident">raw</span>)) <span class="op">/</span> (<span class="ident">DIFF</span> <span class="op">*</span> <span class="ident">DIFF</span>))
+                .<span class="ident">clamp</span>(<span class="number">0.</span>, <span class="number">100.</span>)
+        }
+
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">socket</span> <span class="op">=</span>
             <span class="ident">neli_wifi::AsyncSocket::connect</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to open nl80211 socket&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">interfaces</span> <span class="op">=</span> <span class="ident">socket</span>
@@ -381,112 +509,43 @@
             .<span class="ident">error</span>(<span class="string">&quot;Failed to get nl80211 interfaces&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">for</span> <span class="ident">interface</span> <span class="kw">in</span> <span class="ident">interfaces</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">index</span>) <span class="op">=</span> <span class="ident">interface</span>.<span class="ident">index</span> {
+                <span class="kw">if</span> <span class="ident">index</span> <span class="op">!</span><span class="op">=</span> <span class="ident">if_index</span> {
+                    <span class="kw">continue</span>;
+                }
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">ap</span>) <span class="op">=</span> <span class="ident">socket</span>.<span class="ident">get_station_info</span>(<span class="ident">index</span>).<span class="kw">await</span> {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="op">=</span> <span class="ident">interface</span>.<span class="ident">name</span>.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">String::from_utf8</span>(<span class="ident">s</span>).<span class="ident">ok</span>()) {
-                        <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">trim_matches</span>(<span class="ident">char::from</span>(<span class="number">0</span>));
-                        <span class="kw">if</span> <span class="ident">device</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">interface</span> {
-                            <span class="kw">continue</span>;
-                        }
-                        <span class="kw">let</span> <span class="ident">raw_signal</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ap</span>.<span class="ident">signal</span> {
-                            <span class="prelude-val">Some</span>(<span class="ident">signal</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">signal</span>),
-                            <span class="prelude-val">None</span> =&gt; <span class="ident">socket</span>
-                                .<span class="ident">get_bss_info</span>(<span class="ident">index</span>)
-                                .<span class="kw">await</span>
-                                .<span class="ident">ok</span>()
-                                .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">bss</span><span class="op">|</span> <span class="ident">bss</span>.<span class="ident">signal</span>)
-                                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> (<span class="ident">s</span> <span class="op">/</span> <span class="number">100</span>) <span class="kw">as</span> <span class="ident">i8</span>),
-                        };
-                        <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">WifiInfo</span> {
-                            <span class="ident">ssid</span>: <span class="ident">interface</span>
-                                .<span class="ident">ssid</span>
-                                .<span class="ident">map</span>(<span class="ident">String::from_utf8</span>)
-                                .<span class="ident">transpose</span>()
-                                .<span class="ident">error</span>(<span class="string">&quot;SSID is not valid UTF8&quot;</span>)<span class="question-mark">?</span>, <span class="comment">// ssid: Some(String::from_utf8(ssid).error(&quot;SSID is not valid UTF8&quot;)?),</span>
-                            <span class="ident">frequency</span>: <span class="ident">interface</span>.<span class="ident">frequency</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> <span class="ident">f</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>),
-                            <span class="ident">signal</span>: <span class="ident">raw_signal</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">signal_percents</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">f64</span>)),
-                            <span class="ident">bitrate</span>: <span class="ident">ap</span>.<span class="ident">tx_bitrate</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">b</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e5</span>), <span class="comment">// 100kbit/s -&gt; bit/s</span>
-                        });
-                    }
+                    <span class="kw">let</span> <span class="ident">raw_signal</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ap</span>.<span class="ident">signal</span> {
+                        <span class="prelude-val">Some</span>(<span class="ident">signal</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">signal</span>),
+                        <span class="prelude-val">None</span> =&gt; <span class="ident">socket</span>
+                            .<span class="ident">get_bss_info</span>(<span class="ident">index</span>)
+                            .<span class="kw">await</span>
+                            .<span class="ident">ok</span>()
+                            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">bss</span><span class="op">|</span> <span class="ident">bss</span>.<span class="ident">signal</span>)
+                            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> (<span class="ident">s</span> <span class="op">/</span> <span class="number">100</span>) <span class="kw">as</span> <span class="ident">i8</span>),
+                    };
+                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self</span> {
+                        <span class="ident">ssid</span>: <span class="ident">interface</span>
+                            .<span class="ident">ssid</span>
+                            .<span class="ident">map</span>(<span class="ident">String::from_utf8</span>)
+                            .<span class="ident">transpose</span>()
+                            .<span class="ident">error</span>(<span class="string">&quot;SSID is not valid UTF8&quot;</span>)<span class="question-mark">?</span>, <span class="comment">// ssid: Some(String::from_utf8(ssid).error(&quot;SSID is not valid UTF8&quot;)?),</span>
+                        <span class="ident">frequency</span>: <span class="ident">interface</span>.<span class="ident">frequency</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> <span class="ident">f</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>),
+                        <span class="ident">signal</span>: <span class="ident">raw_signal</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">signal_percents</span>(<span class="ident">s</span> <span class="kw">as</span> <span class="ident">f64</span>)),
+                        <span class="ident">bitrate</span>: <span class="ident">ap</span>.<span class="ident">tx_bitrate</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">b</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e5</span>), <span class="comment">// 100kbit/s -&gt; bit/s</span>
+                    }));
                 }
             }
         }
-        <span class="prelude-val">Ok</span>(<span class="ident">Default::default</span>())
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
     }
 }
 
-<span class="kw">fn</span> <span class="ident">index_to_interface</span>(<span class="ident">index</span>: <span class="ident">u32</span>) -&gt; <span class="ident">String</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buff</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">16</span>];
-    <span class="kw">unsafe</span> { <span class="ident">libc::if_indextoname</span>(<span class="ident">index</span>, <span class="ident">buff</span>.<span class="ident">as_mut_ptr</span>() <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">i8</span>) };
-    <span class="ident">std::str::from_utf8</span>(<span class="kw-2">&amp;</span><span class="ident">buff</span>)
-        .<span class="ident">unwrap</span>()
-        .<span class="ident">trim_matches</span>(<span class="ident">char::from</span>(<span class="number">0</span>))
-        .<span class="ident">to_string</span>()
-}
-
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">default_interface</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">socket</span> <span class="op">=</span>
-        <span class="ident">NlSocket::new</span>(<span class="ident">NlSocketHandle::connect</span>(<span class="ident">NlFamily::Route</span>, <span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">ok</span>()<span class="question-mark">?</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-
-    <span class="kw">let</span> <span class="ident">rtmsg</span> <span class="op">=</span> <span class="ident">Rtmsg</span> {
-        <span class="ident">rtm_family</span>: <span class="ident">RtAddrFamily::Inet</span>,
-        <span class="ident">rtm_dst_len</span>: <span class="number">0</span>,
-        <span class="ident">rtm_src_len</span>: <span class="number">0</span>,
-        <span class="ident">rtm_tos</span>: <span class="number">0</span>,
-        <span class="ident">rtm_table</span>: <span class="ident">RtTable::Main</span>,
-        <span class="ident">rtm_protocol</span>: <span class="ident">Rtprot::Unspec</span>,
-        <span class="ident">rtm_scope</span>: <span class="ident">RtScope::Universe</span>,
-        <span class="ident">rtm_type</span>: <span class="ident">Rtn::Unspec</span>,
-        <span class="ident">rtm_flags</span>: <span class="ident">RtmFFlags::empty</span>(),
-        <span class="ident">rtattrs</span>: <span class="ident">RtBuffer::new</span>(),
-    };
-    <span class="kw">let</span> <span class="ident">nlhdr</span> <span class="op">=</span> {
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-        <span class="kw">let</span> <span class="ident">nl_type</span> <span class="op">=</span> <span class="ident">Rtm::Getroute</span>;
-        <span class="kw">let</span> <span class="ident">flags</span> <span class="op">=</span> <span class="ident">NlmFFlags::new</span>(<span class="kw-2">&amp;</span>[<span class="ident">NlmF::Request</span>, <span class="ident">NlmF::Dump</span>]);
-        <span class="kw">let</span> <span class="ident">seq</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-        <span class="kw">let</span> <span class="ident">pid</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-        <span class="kw">let</span> <span class="ident">payload</span> <span class="op">=</span> <span class="ident">rtmsg</span>;
-        <span class="ident">Nlmsghdr::new</span>(<span class="ident">len</span>, <span class="ident">nl_type</span>, <span class="ident">flags</span>, <span class="ident">seq</span>, <span class="ident">pid</span>, <span class="ident">NlPayload::Payload</span>(<span class="ident">payload</span>))
-    };
-
-    <span class="ident">socket</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="ident">nlhdr</span>).<span class="kw">await</span>.<span class="ident">ok</span>()<span class="question-mark">?</span>;
-
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-    <span class="kw">let</span> <span class="ident">msgs</span> <span class="op">=</span> <span class="ident">socket</span>.<span class="ident">recv</span>::<span class="op">&lt;</span><span class="ident">NlTypeWrapper</span>, <span class="ident">Rtmsg</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>).<span class="kw">await</span>.<span class="ident">ok</span>()<span class="question-mark">?</span>;
-    <span class="kw">for</span> <span class="ident">rtm</span> <span class="kw">in</span> <span class="ident">msgs</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">NlTypeWrapper::Rtm</span>(<span class="kw">_</span>) <span class="op">=</span> <span class="ident">rtm</span>.<span class="ident">nl_type</span> {
-            <span class="kw">let</span> <span class="ident">payload</span> <span class="op">=</span> <span class="ident">rtm</span>.<span class="ident">get_payload</span>().<span class="ident">ok</span>()<span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="ident">payload</span>.<span class="ident">rtm_table</span> <span class="op">==</span> <span class="ident">RtTable::Main</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">is_default</span> <span class="op">=</span> <span class="bool-val">false</span>;
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">name</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-                <span class="kw">for</span> <span class="ident">attr</span> <span class="kw">in</span> <span class="ident">payload</span>.<span class="ident">rtattrs</span>.<span class="ident">iter</span>() {
-                    <span class="kw">match</span> <span class="ident">attr</span>.<span class="ident">rta_type</span> {
-                        <span class="ident">Rta::Dst</span> =&gt; <span class="ident">is_default</span> <span class="op">=</span> <span class="bool-val">true</span>,
-                        <span class="ident">Rta::Oif</span> =&gt; {
-                            <span class="ident">name</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">index_to_interface</span>(<span class="ident">u32::from_le_bytes</span>(
-                                <span class="ident">attr</span>.<span class="ident">rta_payload</span>.<span class="ident">as_ref</span>().<span class="ident">try_into</span>().<span class="ident">unwrap</span>(),
-                            )));
-                        }
-                        <span class="kw">_</span> =&gt; (),
-                    }
-                }
-                <span class="kw">if</span> <span class="ident">is_default</span> {
-                    <span class="kw">return</span> <span class="ident">name</span>;
-                }
-            }
-        }
-    }
-
-    <span class="prelude-val">None</span>
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NetDeviceStats</span> {
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InterfaceStats</span> {
     <span class="kw">pub</span> <span class="ident">rx_bytes</span>: <span class="ident">u64</span>,
     <span class="kw">pub</span> <span class="ident">tx_bytes</span>: <span class="ident">u64</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">ops::Sub</span> <span class="kw">for</span> <span class="ident">NetDeviceStats</span> {
+<span class="kw">impl</span> <span class="ident">ops::Sub</span> <span class="kw">for</span> <span class="ident">InterfaceStats</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="self">Self</span>;
 
     <span class="kw">fn</span> <span class="ident">sub</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="self">Self</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
@@ -496,13 +555,204 @@
     }
 }
 
-<span class="doccomment">/// &lt;https://github.com/torvalds/linux/blob/9ff9b0d392ea08090cd1780fb196f36dbb586529/drivers/net/wireless/intel/ipw2x00/ipw2200.c#L4322-L4334&gt;</span>
-<span class="kw">fn</span> <span class="ident">signal_percents</span>(<span class="ident">raw</span>: <span class="ident">f64</span>) -&gt; <span class="ident">f64</span> {
-    <span class="kw">const</span> <span class="ident">MAX_LEVEL</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="op">-</span><span class="number">20.</span>;
-    <span class="kw">const</span> <span class="ident">MIN_LEVEL</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="op">-</span><span class="number">85.</span>;
-    <span class="kw">const</span> <span class="ident">DIFF</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="ident">MAX_LEVEL</span> <span class="op">-</span> <span class="ident">MIN_LEVEL</span>;
-    (<span class="number">100.</span> <span class="op">-</span> (<span class="ident">MAX_LEVEL</span> <span class="op">-</span> <span class="ident">raw</span>) <span class="op">*</span> (<span class="number">15.</span> <span class="op">*</span> <span class="ident">DIFF</span> <span class="op">+</span> <span class="number">62.</span> <span class="op">*</span> (<span class="ident">MAX_LEVEL</span> <span class="op">-</span> <span class="ident">raw</span>)) <span class="op">/</span> (<span class="ident">DIFF</span> <span class="op">*</span> <span class="ident">DIFF</span>))
-        .<span class="ident">clamp</span>(<span class="number">0.</span>, <span class="number">100.</span>)
+<span class="kw">impl</span> <span class="ident">InterfaceStats</span> {
+    <span class="kw">fn</span> <span class="ident">from_stats64</span>(<span class="ident">stats</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="self">Self</span> {
+        <span class="comment">// stats looks something like that:</span>
+        <span class="comment">//</span>
+        <span class="comment">// #[repr(C)]</span>
+        <span class="comment">// struct RtnlLinkStats64 {</span>
+        <span class="comment">//     rx_packets: u64,</span>
+        <span class="comment">//     tx_packets: u64,</span>
+        <span class="comment">//     rx_bytes: u64,</span>
+        <span class="comment">//     tx_bytes: u64,</span>
+        <span class="comment">//     // the rest is omitted</span>
+        <span class="comment">// }</span>
+        <span class="macro">assert!</span>(<span class="ident">stats</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="number">8</span> <span class="op">*</span> <span class="number">4</span>);
+        <span class="kw">let</span> <span class="ident">stats</span> <span class="op">=</span> <span class="ident">stats</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">u64</span>;
+        <span class="self">Self</span> {
+            <span class="ident">rx_bytes</span>: <span class="kw">unsafe</span> { <span class="ident">stats</span>.<span class="ident">add</span>(<span class="number">2</span>).<span class="ident">read_unaligned</span>() },
+            <span class="ident">tx_bytes</span>: <span class="kw">unsafe</span> { <span class="ident">stats</span>.<span class="ident">add</span>(<span class="number">3</span>).<span class="ident">read_unaligned</span>() },
+        }
+    }
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Interface</span> {
+    <span class="kw">pub</span> <span class="ident">index</span>: <span class="ident">i32</span>,
+    <span class="kw">pub</span> <span class="ident">is_up</span>: <span class="ident">bool</span>,
+    <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
+    <span class="kw">pub</span> <span class="ident">stats</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">InterfaceStats</span><span class="op">&gt;</span>,
+}
+
+<span class="macro">macro_rules!</span> <span class="ident">recv_until_done</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">sock</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">payload</span>:<span class="ident">ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">payload_type</span>:<span class="ident">ty</span> =&gt; $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">code</span>:<span class="ident">tt</span>)<span class="kw-2">*</span>) =&gt; {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+        <span class="lifetime">&#39;recv</span>: <span class="kw">loop</span> {
+            <span class="kw">let</span> <span class="ident">msgs</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">sock</span>.<span class="ident">recv</span>::<span class="op">&lt;</span><span class="ident">u16</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">payload_type</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">for</span> <span class="ident">msg</span> <span class="kw">in</span> <span class="ident">msgs</span> {
+                <span class="kw">if</span> <span class="ident">msg</span>.<span class="ident">nl_type</span> <span class="op">==</span> <span class="ident">libc::NLMSG_DONE</span> <span class="kw">as</span> <span class="ident">u16</span> {
+                    <span class="kw">break</span> <span class="lifetime">&#39;recv</span>;
+                }
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">NlPayload::Payload</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">payload</span>) <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">nl_payload</span> {
+                    $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">code</span>)<span class="op">*</span>
+                }
+            }
+        }
+    };
+}
+
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_interfaces</span>(
+    <span class="ident">sock</span>: <span class="kw-2">&amp;mut</span> <span class="ident">NlSocket</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Interface</span><span class="op">&gt;</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StdError</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="ident">sock</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="ident">Nlmsghdr::new</span>(
+        <span class="prelude-val">None</span>,
+        <span class="ident">Rtm::Getlink</span>,
+        <span class="ident">NlmFFlags::new</span>(<span class="kw-2">&amp;</span>[<span class="ident">NlmF::Dump</span>, <span class="ident">NlmF::Request</span>]),
+        <span class="prelude-val">None</span>,
+        <span class="prelude-val">None</span>,
+        <span class="ident">NlPayload::Payload</span>(<span class="ident">Ifinfomsg::new</span>(
+            <span class="ident">RtAddrFamily::Unspecified</span>,
+            <span class="ident">Arphrd::None</span>,
+            <span class="number">0</span>,
+            <span class="ident">IffFlags::empty</span>(),
+            <span class="ident">IffFlags::empty</span>(),
+            <span class="ident">RtBuffer::new</span>(),
+        )),
+    ))
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interfaces</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+
+    <span class="macro">recv_until_done!</span>(<span class="ident">sock</span>, <span class="ident">msg</span>: <span class="ident">Ifinfomsg</span> =&gt; {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">name</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">for</span> <span class="ident">attr</span> <span class="kw">in</span> <span class="ident">msg</span>.<span class="ident">rtattrs</span>.<span class="ident">iter</span>() {
+            <span class="kw">match</span> <span class="ident">attr</span>.<span class="ident">rta_type</span> {
+                <span class="ident">Ifla::Ifname</span> =&gt; <span class="ident">name</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">attr</span>.<span class="ident">get_payload_as_with_len</span>()<span class="question-mark">?</span>),
+                <span class="ident">Ifla::Stats64</span> =&gt; <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">InterfaceStats::from_stats64</span>(<span class="ident">attr</span>.<span class="ident">payload</span>().<span class="ident">as_ref</span>())),
+                <span class="kw">_</span> =&gt; (),
+            }
+        }
+        <span class="ident">interfaces</span>.<span class="ident">push</span>(<span class="ident">Interface</span> {
+            <span class="ident">index</span>: <span class="ident">msg</span>.<span class="ident">ifi_index</span>,
+            <span class="ident">is_up</span>: <span class="ident">msg</span>.<span class="ident">ifi_flags</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">Iff::Up</span>),
+            <span class="ident">name</span>: <span class="ident">name</span>.<span class="ident">unwrap</span>(),
+            <span class="ident">stats</span>,
+        });
+    });
+
+    <span class="prelude-val">Ok</span>(<span class="ident">interfaces</span>)
+}
+
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_default_interface</span>(
+    <span class="ident">sock</span>: <span class="kw-2">&amp;mut</span> <span class="ident">NlSocket</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">i32</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StdError</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="ident">sock</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="ident">Nlmsghdr::new</span>(
+        <span class="prelude-val">None</span>,
+        <span class="ident">Rtm::Getroute</span>,
+        <span class="ident">NlmFFlags::new</span>(<span class="kw-2">&amp;</span>[<span class="ident">NlmF::Request</span>, <span class="ident">NlmF::Dump</span>]),
+        <span class="prelude-val">None</span>,
+        <span class="prelude-val">None</span>,
+        <span class="ident">NlPayload::Payload</span>(<span class="ident">Rtmsg</span> {
+            <span class="ident">rtm_family</span>: <span class="ident">RtAddrFamily::Inet</span>,
+            <span class="ident">rtm_dst_len</span>: <span class="number">0</span>,
+            <span class="ident">rtm_src_len</span>: <span class="number">0</span>,
+            <span class="ident">rtm_tos</span>: <span class="number">0</span>,
+            <span class="ident">rtm_table</span>: <span class="ident">RtTable::Unspec</span>,
+            <span class="ident">rtm_protocol</span>: <span class="ident">Rtprot::Unspec</span>,
+            <span class="ident">rtm_scope</span>: <span class="ident">RtScope::Universe</span>,
+            <span class="ident">rtm_type</span>: <span class="ident">Rtn::Unspec</span>,
+            <span class="ident">rtm_flags</span>: <span class="ident">RtmFFlags::empty</span>(),
+            <span class="ident">rtattrs</span>: <span class="ident">RtBuffer::new</span>(),
+        }),
+    ))
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">default_index</span> <span class="op">=</span> <span class="number">0</span>;
+
+    <span class="macro">recv_until_done!</span>(<span class="ident">sock</span>, <span class="ident">msg</span>: <span class="ident">Rtmsg</span> =&gt; {
+        <span class="kw">if</span> <span class="ident">msg</span>.<span class="ident">rtm_type</span> <span class="op">!</span><span class="op">=</span> <span class="ident">Rtn::Unicast</span> {
+            <span class="kw">continue</span>;
+        }
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">index</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">is_default</span> <span class="op">=</span> <span class="bool-val">false</span>;
+        <span class="kw">for</span> <span class="ident">attr</span> <span class="kw">in</span> <span class="ident">msg</span>.<span class="ident">rtattrs</span>.<span class="ident">iter</span>() {
+            <span class="kw">match</span> <span class="ident">attr</span>.<span class="ident">rta_type</span> {
+                <span class="ident">Rta::Oif</span> =&gt; <span class="ident">index</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">attr</span>.<span class="ident">get_payload_as</span>::<span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>()<span class="question-mark">?</span>),
+                <span class="ident">Rta::Gateway</span> =&gt; <span class="ident">is_default</span> <span class="op">=</span> <span class="bool-val">true</span>,
+                <span class="kw">_</span> =&gt; (),
+            }
+        }
+        <span class="kw">if</span> <span class="ident">is_default</span> <span class="op">&amp;&amp;</span> <span class="ident">default_index</span> <span class="op">==</span> <span class="number">0</span> {
+            <span class="ident">default_index</span> <span class="op">=</span> <span class="ident">index</span>.<span class="ident">unwrap</span>();
+        }
+    });
+
+    <span class="prelude-val">Ok</span>(<span class="ident">default_index</span>)
+}
+
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">ip_payload</span>(
+    <span class="ident">sock</span>: <span class="kw-2">&amp;mut</span> <span class="ident">NlSocket</span>,
+    <span class="ident">ifa_family</span>: <span class="ident">RtAddrFamily</span>,
+    <span class="ident">ifa_index</span>: <span class="ident">i32</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">neli::types::Buffer</span><span class="op">&gt;</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StdError</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="ident">sock</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="ident">Nlmsghdr::new</span>(
+        <span class="prelude-val">None</span>,
+        <span class="ident">Rtm::Getaddr</span>,
+        <span class="ident">NlmFFlags::new</span>(<span class="kw-2">&amp;</span>[<span class="ident">NlmF::Dump</span>, <span class="ident">NlmF::Request</span>]),
+        <span class="prelude-val">None</span>,
+        <span class="prelude-val">None</span>,
+        <span class="ident">NlPayload::Payload</span>(<span class="ident">Ifaddrmsg</span> {
+            <span class="ident">ifa_family</span>,
+            <span class="ident">ifa_prefixlen</span>: <span class="number">0</span>,
+            <span class="ident">ifa_flags</span>: <span class="ident">IfaFFlags::empty</span>(),
+            <span class="ident">ifa_scope</span>: <span class="number">0</span>,
+            <span class="ident">ifa_index</span>: <span class="number">0</span>,
+            <span class="ident">rtattrs</span>: <span class="ident">RtBuffer::new</span>(),
+        }),
+    ))
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+
+    <span class="macro">recv_until_done!</span>(<span class="ident">sock</span>, <span class="ident">msg</span>: <span class="ident">Ifaddrmsg</span> =&gt; {
+        <span class="kw">if</span> <span class="ident">msg</span>.<span class="ident">ifa_index</span> <span class="op">!</span><span class="op">=</span> <span class="ident">ifa_index</span> {
+            <span class="kw">continue</span>;
+        }
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">rtattr</span>) <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">rtattrs</span>.<span class="ident">into_iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">rta_type</span> <span class="op">==</span> <span class="ident">Ifa::Address</span>) {
+            <span class="ident">payload</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">rtattr</span>.<span class="ident">rta_payload</span>);
+        }
+    });
+
+    <span class="prelude-val">Ok</span>(<span class="ident">payload</span>)
+}
+
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">ipv4</span>(<span class="ident">sock</span>: <span class="kw-2">&amp;mut</span> <span class="ident">NlSocket</span>, <span class="ident">ifa_index</span>: <span class="ident">i32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ipv4Addr</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">match</span> <span class="ident">ip_payload</span>(<span class="ident">sock</span>, <span class="ident">RtAddrFamily::Inet</span>, <span class="ident">ifa_index</span>)
+        .<span class="kw">await</span>
+        .<span class="ident">map_err</span>(<span class="ident">BoxErrorWrapper</span>)
+        .<span class="ident">error</span>(<span class="string">&quot;Failed to get IP address&quot;</span>)<span class="question-mark">?</span>
+    {
+        <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+        <span class="prelude-val">Some</span>(<span class="ident">payload</span>) =&gt; {
+            <span class="kw">let</span> <span class="ident">payload</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>; <span class="number">4</span>] <span class="op">=</span> <span class="ident">payload</span>.<span class="ident">as_ref</span>().<span class="ident">try_into</span>().<span class="ident">unwrap</span>();
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">Ipv4Addr::from</span>(<span class="kw-2">*</span><span class="ident">payload</span>)))
+        }
+    }
+}
+
+<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">ipv6</span>(<span class="ident">sock</span>: <span class="kw-2">&amp;mut</span> <span class="ident">NlSocket</span>, <span class="ident">ifa_index</span>: <span class="ident">i32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ipv6Addr</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">match</span> <span class="ident">ip_payload</span>(<span class="ident">sock</span>, <span class="ident">RtAddrFamily::Inet6</span>, <span class="ident">ifa_index</span>)
+        .<span class="kw">await</span>
+        .<span class="ident">map_err</span>(<span class="ident">BoxErrorWrapper</span>)
+        .<span class="ident">error</span>(<span class="string">&quot;Failed to get IPv6 address&quot;</span>)<span class="question-mark">?</span>
+    {
+        <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+        <span class="prelude-val">Some</span>(<span class="ident">payload</span>) =&gt; {
+            <span class="kw">let</span> <span class="ident">payload</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>; <span class="number">16</span>] <span class="op">=</span> <span class="ident">payload</span>.<span class="ident">as_ref</span>().<span class="ident">try_into</span>().<span class="ident">unwrap</span>();
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">Ipv6Addr::from</span>(<span class="kw-2">*</span><span class="ident">payload</span>)))
+        }
+    }
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0 (4b91a6ea7 2022-08-08)" ></div>
