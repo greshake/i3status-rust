@@ -379,12 +379,16 @@
 <span id="373">373</span>
 <span id="374">374</span>
 <span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">neli::attr::Attribute</span>;
 <span class="kw">use</span> <span class="ident">neli::consts</span>::{<span class="ident">nl</span>::<span class="kw-2">*</span>, <span class="ident">rtnl</span>::<span class="kw-2">*</span>, <span class="ident">socket</span>::<span class="kw-2">*</span>};
 <span class="kw">use</span> <span class="ident">neli::nl</span>::{<span class="ident">NlPayload</span>, <span class="ident">Nlmsghdr</span>};
 <span class="kw">use</span> <span class="ident">neli::rtnl</span>::{<span class="ident">Ifaddrmsg</span>, <span class="ident">Ifinfomsg</span>, <span class="ident">Rtmsg</span>};
 <span class="kw">use</span> <span class="ident">neli::socket</span>::{<span class="ident">tokio::NlSocket</span>, <span class="ident">NlSocketHandle</span>};
 <span class="kw">use</span> <span class="ident">neli::types::RtBuffer</span>;
+
+<span class="kw">use</span> <span class="ident">regex::Regex</span>;
 
 <span class="kw">use</span> <span class="ident">std::net</span>::{<span class="ident">Ipv4Addr</span>, <span class="ident">Ipv6Addr</span>};
 <span class="kw">use</span> <span class="ident">std::ops</span>;
@@ -411,7 +415,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">NetDevice</span> {
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">iface</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">iface_re</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Regex</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sock</span> <span class="op">=</span> <span class="ident">NlSocket::new</span>(
             <span class="ident">NlSocketHandle::connect</span>(<span class="ident">NlFamily::Route</span>, <span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">error</span>(<span class="string">&quot;Socket error&quot;</span>)<span class="question-mark">?</span>,
         )
@@ -422,8 +426,8 @@
             .<span class="ident">map_err</span>(<span class="ident">BoxErrorWrapper</span>)
             .<span class="ident">error</span>(<span class="string">&quot;Failed to fetch interfaces&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">iface</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">iface</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">iface</span>) =&gt; <span class="ident">ifaces</span>.<span class="ident">into_iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">i</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">iface</span>),
+        <span class="kw">let</span> <span class="ident">iface</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">iface_re</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">re</span>) =&gt; <span class="ident">ifaces</span>.<span class="ident">into_iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">re</span>.<span class="ident">is_match</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>.<span class="ident">name</span>)),
             <span class="prelude-val">None</span> =&gt; {
                 <span class="kw">let</span> <span class="ident">default_iface</span> <span class="op">=</span> <span class="ident">get_default_interface</span>(<span class="kw-2">&amp;mut</span> <span class="ident">sock</span>)
                     .<span class="kw">await</span>
