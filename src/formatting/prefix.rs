@@ -1,29 +1,40 @@
-use std::fmt;
-use std::ops::AddAssign;
-use std::str::FromStr;
-
 use crate::errors::*;
+use std::fmt;
+use std::str::FromStr;
 
 /// SI prefix
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Prefix {
-    /// `n`
-    Nano = -3,
-    /// `u`
-    Micro = -2,
-    /// `m`
-    Milli = -1,
-    /// `1`
-    One = 0,
-    /// `K`
-    Kilo = 1,
-    /// `M`
-    Mega = 2,
-    /// `G`
-    Giga = 3,
-    /// `T`
-    Tera = 4,
+    Nano,
+    Micro,
+    Milli,
+    One,
+    OneButBinary,
+    Kilo,
+    Kibi,
+    Mega,
+    Mebi,
+    Giga,
+    Gibi,
+    Tera,
+    Tebi,
 }
+
+const MUL: [f64; 13] = [
+    1e-9,
+    1e-6,
+    1e-3,
+    1.0,
+    1.0,
+    1e3,
+    1024.0,
+    1e6,
+    1024.0 * 1024.0,
+    1e9,
+    1024.0 * 1024.0 * 1024.0,
+    1e12,
+    1024.0 * 1024.0 * 1024.0 * 1024.0,
+];
 
 impl Prefix {
     pub fn min_available() -> Self {
@@ -53,34 +64,45 @@ impl Prefix {
     }
 
     pub fn apply(self, value: f64) -> f64 {
-        value / 1_000f64.powi(self as i32)
+        value / MUL[self as usize]
     }
 
     pub fn eng(number: f64) -> Self {
         if number == 0.0 {
             Self::One
         } else {
-            Self::from_exp_level(number.abs().log10().div_euclid(3.) as i32)
+            match number.abs().log10().div_euclid(3.) as i32 {
+                i32::MIN..=-3 => Prefix::Nano,
+                -2 => Prefix::Micro,
+                -1 => Prefix::Milli,
+                0 => Prefix::One,
+                1 => Prefix::Kilo,
+                2 => Prefix::Mega,
+                3 => Prefix::Giga,
+                4..=i32::MAX => Prefix::Tera,
+            }
         }
     }
 
-    pub fn from_exp_level(exp_level: i32) -> Self {
-        match exp_level {
-            i32::MIN..=-3 => Prefix::Nano,
-            -2 => Prefix::Micro,
-            -1 => Prefix::Milli,
-            0 => Prefix::One,
-            1 => Prefix::Kilo,
-            2 => Prefix::Mega,
-            3 => Prefix::Giga,
-            4..=i32::MAX => Prefix::Tera,
+    pub fn eng_binary(number: f64) -> Self {
+        if number == 0.0 {
+            Self::One
+        } else {
+            match number.abs().log2().div_euclid(10.) as i32 {
+                i32::MIN..=0 => Prefix::OneButBinary,
+                1 => Prefix::Kibi,
+                2 => Prefix::Mebi,
+                3 => Prefix::Gibi,
+                4..=i32::MAX => Prefix::Tebi,
+            }
         }
     }
-}
 
-impl AddAssign<i32> for Prefix {
-    fn add_assign(&mut self, rhs: i32) {
-        *self = Self::from_exp_level(*self as i32 + rhs);
+    pub fn is_binary(&self) -> bool {
+        matches!(
+            self,
+            Self::OneButBinary | Self::Kibi | Self::Mebi | Self::Gibi | Self::Tebi
+        )
     }
 }
 
@@ -90,11 +112,15 @@ impl fmt::Display for Prefix {
             Self::Nano => "n",
             Self::Micro => "u",
             Self::Milli => "m",
-            Self::One => "",
+            Self::One | Self::OneButBinary => "",
             Self::Kilo => "K",
+            Self::Kibi => "Ki",
             Self::Mega => "M",
+            Self::Mebi => "Mi",
             Self::Giga => "G",
+            Self::Gibi => "Gi",
             Self::Tera => "T",
+            Self::Tebi => "Ti",
         })
     }
 }
@@ -108,10 +134,15 @@ impl FromStr for Prefix {
             "u" => Ok(Prefix::Micro),
             "m" => Ok(Prefix::Milli),
             "1" => Ok(Prefix::One),
+            "1i" => Ok(Prefix::OneButBinary),
             "K" => Ok(Prefix::Kilo),
+            "Ki" => Ok(Prefix::Kibi),
             "M" => Ok(Prefix::Mega),
+            "Mi" => Ok(Prefix::Mebi),
             "G" => Ok(Prefix::Giga),
+            "Gi" => Ok(Prefix::Gibi),
             "T" => Ok(Prefix::Tera),
+            "Ti" => Ok(Prefix::Tebi),
             x => Err(Error::new(format!("Unknown prefix: '{}'", x))),
         }
     }

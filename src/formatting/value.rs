@@ -1,3 +1,4 @@
+use super::formatter;
 use super::unit::Unit;
 use super::Metadata;
 use crate::widget::State;
@@ -105,5 +106,13 @@ impl Value {
     pub fn with_state(mut self, state: State) -> Self {
         self.metadata.state = Some(state);
         self
+    }
+
+    pub fn default_formatter(&self) -> &'static dyn formatter::Formatter {
+        match &self.inner {
+            ValueInner::Text(_) | ValueInner::Icon(_) => &formatter::DEFAULT_STRING_FORMATTER,
+            ValueInner::Number { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
+            ValueInner::Flag => &formatter::DEFAULT_FLAG_FORMATTER,
+        }
     }
 }
