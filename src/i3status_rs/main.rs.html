@@ -484,6 +484,9 @@
 <span id="478">478</span>
 <span id="479">479</span>
 <span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
@@ -805,6 +808,9 @@
             }
             <span class="ident">RequestCmd::UnsetWidget</span> =&gt; {
                 <span class="ident">block</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">BlockState::None</span>;
+                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">fullscreen_block</span> <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="ident">request</span>.<span class="ident">block_id</span>) {
+                    <span class="self">self</span>.<span class="ident">fullscreen_block</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+                }
             }
             <span class="ident">RequestCmd::SetError</span>(<span class="ident">error</span>) =&gt; {
                 <span class="ident">block</span>.<span class="ident">set_error</span>(<span class="self">self</span>.<span class="ident">fullscreen_block</span> <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="ident">request</span>.<span class="ident">block_id</span>), <span class="ident">error</span>);
