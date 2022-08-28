@@ -44,12 +44,12 @@ setting.</p>
 to 20 characters:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;music&quot;
-format = &quot;$combo.str(20) $play $next|&quot;
+format = &quot;$combo.str(0,20) $play $next|&quot;
 player = &quot;spotify&quot;</code></pre></div>
 <p>Same thing for any compatible player, takes the first active on the bus, but ignores “mpd” or anything with “kdeconnect” in the name:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;music&quot;
-format = &quot;$combo.str(20) $play $next|&quot;
+format = &quot;$combo.str(0,20) $play $next|&quot;
 interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]</code></pre></div>
 <p>Same as above, but displays with rotating text</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
