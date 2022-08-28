@@ -9,13 +9,13 @@
 <p><a href="http://tailordev.github.io/Watson/">Watson</a> is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the <code>show_time</code> variable dynamically.</p>
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>show_time</code></td><td>Whether to show recorded time.</td><td><code>false</code></td></tr>
-<tr><td><code>state_path</code></td><td>Path to the Watson state file.</td><td><code>$XDG_CONFIG_HOME/watson/state</code></td></tr>
+<tr><td><code>state_path</code></td><td>Path to the Watson state file. Supports path expansions e.g. <code>~</code>.</td><td><code>$XDG_CONFIG_HOME/watson/state</code></td></tr>
 <tr><td><code>interval</code></td><td>Update interval, in seconds.</td><td><code>60</code></td></tr>
 </tbody></table>
 </div><h2 id="example"><a href="#example">Example</a></h2><div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;watson&quot;
 show_time = true
-state_path = &quot;/home/user/.config/watson/state&quot;</code></pre></div><h2 id="todo"><a href="#todo">TODO</a></h2>
+state_path = &quot;~/.config/watson/state&quot;</code></pre></div><h2 id="todo"><a href="#todo">TODO</a></h2>
 <ul>
 <li>Extend functionality: start / stop watson using this block</li>
 </ul>

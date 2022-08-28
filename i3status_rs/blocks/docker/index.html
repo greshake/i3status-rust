@@ -9,7 +9,7 @@
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>interval</code></td><td>Update interval, in seconds.</td><td><code>5</code></td></tr>
 <tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;$running.eng(1)&quot;</code></td></tr>
-<tr><td><code>socket_path</code></td><td>The path to the docker socket.</td><td><code>&quot;/var/run/docker.sock&quot;</code></td></tr>
+<tr><td><code>socket_path</code></td><td>The path to the docker socket. Supports path expansions e.g. <code>~</code>.</td><td><code>&quot;/var/run/docker.sock&quot;</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Key</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>total</code></td><td>Total containers on the host</td><td>Number</td><td>-</td></tr>
