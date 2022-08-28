@@ -6,7 +6,7 @@
 //! ----|--------|--------
 //! `interval` | Update interval, in seconds. | `5`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `"$running.eng(1)"`
-//! `socket_path` | The path to the docker socket. | `"/var/run/docker.sock"`
+//! `socket_path` | The path to the docker socket. Supports path expansions e.g. `~`. | `"/var/run/docker.sock"`
 //!
 //! Key       | Value                          | Type   | Unit
 //! ----------|--------------------------------|--------|-----

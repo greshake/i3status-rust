@@ -13,7 +13,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `maildir` | Path to the directory containing the notmuch database. | `~/.mail`
+//! `maildir` | Path to the directory containing the notmuch database. Supports path expansions e.g. `~`. | `~/.mail`
 //! `query` | Query to run on the database. | `""`
 //! `threshold_critical` | Mail count that triggers `critical` state. | `99999`
 //! `threshold_warning` | Mail count that triggers `warning` state. | `99999`

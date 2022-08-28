@@ -12,7 +12,7 @@
 //! `hide_when_zero` | Whethere to hide the block when the number of tasks is zero | `false`
 //! `filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | ```[{name = "pending", filter = "-COMPLETED -DELETED"}]```
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `"$done\|$count.eng(1)"`
-//! `data_location`| Directory in which taskwarrior stores its data files. | `"~/.task"`
+//! `data_location`| Directory in which taskwarrior stores its data files. Supports path expansions e.g. `~`. | `"~/.task"`
 //!
 //! Placeholder   | Value                                       | Type   | Unit
 //! --------------|---------------------------------------------|--------|-----

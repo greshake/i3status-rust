@@ -7,7 +7,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `show_time` | Whether to show recorded time. | `false`
-//! `state_path` | Path to the Watson state file. | `$XDG_CONFIG_HOME/watson/state`
+//! `state_path` | Path to the Watson state file. Supports path expansions e.g. `~`. | `$XDG_CONFIG_HOME/watson/state`
 //! `interval` | Update interval, in seconds. | `60`
 //!
 //! # Example
@@ -16,7 +16,7 @@
 //! [[block]]
 //! block = "watson"
 //! show_time = true
-//! state_path = "/home/user/.config/watson/state"
+//! state_path = "~/.config/watson/state"
 //! ```
 //!
 //! # TODO
