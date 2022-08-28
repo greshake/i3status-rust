@@ -319,6 +319,9 @@ impl BarState {
             }
             RequestCmd::UnsetWidget => {
                 block.state = BlockState::None;
+                if self.fullscreen_block == Some(request.block_id) {
+                    self.fullscreen_block = None;
+                }
             }
             RequestCmd::SetError(error) => {
                 block.set_error(self.fullscreen_block == Some(request.block_id), error);
