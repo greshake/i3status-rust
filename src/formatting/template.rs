@@ -197,19 +197,8 @@ fn read_text(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
 
 fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
     let mut retval = String::new();
-    let mut escaped = false;
     while let Some(&c) = it.peek() {
-        if escaped {
-            escaped = false;
-            retval.push(c);
-            let _ = it.next();
-            continue;
-        }
         match c {
-            '\\' => {
-                let _ = it.next();
-                escaped = true;
-            }
             x if !x.is_alphanumeric() && x != '_' => break,
             x => {
                 let _ = it.next();
@@ -222,15 +211,8 @@ fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> Strin
 
 fn read_formatter(it: &mut impl Iterator<Item = char>) -> Result<String> {
     let mut retval = String::new();
-    let mut escaped = false;
     for c in it {
-        if escaped {
-            escaped = false;
-            retval.push(c);
-            continue;
-        }
         match c {
-            '\\' => escaped = true,
             '(' => return Ok(retval),
             x => retval.push(x),
         }
