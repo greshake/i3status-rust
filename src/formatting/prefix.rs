@@ -5,18 +5,31 @@ use std::str::FromStr;
 /// SI prefix
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Prefix {
+    /// `n`
     Nano,
+    /// `u`
     Micro,
+    /// `m`
     Milli,
+    /// `1`
     One,
+    /// `1i`
     OneButBinary,
+    /// `K`
     Kilo,
+    /// `Ki`
     Kibi,
+    /// `M`
     Mega,
+    /// `Mi`
     Mebi,
+    /// `G`
     Giga,
+    /// `Gi`
     Gibi,
+    /// `T`
     Tera,
+    /// `Ti`
     Tebi,
 }
 
