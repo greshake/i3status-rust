@@ -167,7 +167,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     let dbus_proxy = DBusProxy::new(&dbus_conn)
         .await
-        .error("failed to cerate DBusProxy")?;
+        .error("failed to create DBusProxy")?;
     dbus_proxy.add_match("type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'")
             .await
             .error( "failed to add match")?;
