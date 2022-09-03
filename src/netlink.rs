@@ -14,6 +14,35 @@ use std::path::Path;
 use crate::errors::*;
 use crate::util;
 
+// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
+//
+/// Interface is in unknown state, neither driver nor userspace has set
+/// operational state. Interface must be considered for user data as
+/// setting operational state has not been implemented in every driver.
+#[allow(dead_code)]
+const IF_OPER_UNKNOWN: u8 = 0;
+/// Unused in current kernel (notpresent interfaces normally disappear),
+/// just a numerical placeholder.
+#[allow(dead_code)]
+const IF_OPER_NOTPRESENT: u8 = 1;
+/// Interface is unable to transfer data on L1, f.e. ethernet is not
+/// plugged or interface is ADMIN down.
+#[allow(dead_code)]
+const IF_OPER_DOWN: u8 = 2;
+/// Interfaces stacked on an interface that is IF_OPER_DOWN show this
+/// state (f.e. VLAN).
+#[allow(dead_code)]
+const IF_OPER_LOWERLAYERDOWN: u8 = 3;
+/// Unused in current kernel.
+#[allow(dead_code)]
+const IF_OPER_TESTING: u8 = 4;
+/// Interface is L1 up, but waiting for an external event, f.e. for a
+/// protocol to establish. (802.1X)
+#[allow(dead_code)]
+const IF_OPER_DORMANT: u8 = 5;
+/// Interface is operational up and can be used.
+const IF_OPER_UP: u8 = 6;
+
 #[derive(Debug)]
 pub struct NetDevice {
     pub iface: Interface,
@@ -247,16 +276,18 @@ async fn get_interfaces(
     recv_until_done!(sock, msg: Ifinfomsg => {
         let mut name = None;
         let mut stats = None;
+        let mut is_up = false;
         for attr in msg.rtattrs.iter() {
             match attr.rta_type {
                 Ifla::Ifname => name = Some(attr.get_payload_as_with_len()?),
                 Ifla::Stats64 => stats = Some(InterfaceStats::from_stats64(attr.payload().as_ref())),
+                Ifla::Operstate => is_up = attr.get_payload_as::<u8>()? == IF_OPER_UP,
                 _ => (),
             }
         }
         interfaces.push(Interface {
             index: msg.ifi_index,
-            is_up: msg.ifi_flags.contains(&Iff::Up),
+            is_up,
             name: name.unwrap(),
             stats,
         });
