@@ -381,6 +381,37 @@
 <span id="375">375</span>
 <span id="376">376</span>
 <span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">neli::attr::Attribute</span>;
 <span class="kw">use</span> <span class="ident">neli::consts</span>::{<span class="ident">nl</span>::<span class="kw-2">*</span>, <span class="ident">rtnl</span>::<span class="kw-2">*</span>, <span class="ident">socket</span>::<span class="kw-2">*</span>};
 <span class="kw">use</span> <span class="ident">neli::nl</span>::{<span class="ident">NlPayload</span>, <span class="ident">Nlmsghdr</span>};
@@ -396,6 +427,35 @@
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
+
+<span class="comment">// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt</span>
+<span class="comment">//</span>
+<span class="doccomment">/// Interface is in unknown state, neither driver nor userspace has set</span>
+<span class="doccomment">/// operational state. Interface must be considered for user data as</span>
+<span class="doccomment">/// setting operational state has not been implemented in every driver.</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+<span class="kw">const</span> <span class="ident">IF_OPER_UNKNOWN</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="doccomment">/// Unused in current kernel (notpresent interfaces normally disappear),</span>
+<span class="doccomment">/// just a numerical placeholder.</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+<span class="kw">const</span> <span class="ident">IF_OPER_NOTPRESENT</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">1</span>;
+<span class="doccomment">/// Interface is unable to transfer data on L1, f.e. ethernet is not</span>
+<span class="doccomment">/// plugged or interface is ADMIN down.</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+<span class="kw">const</span> <span class="ident">IF_OPER_DOWN</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">2</span>;
+<span class="doccomment">/// Interfaces stacked on an interface that is IF_OPER_DOWN show this</span>
+<span class="doccomment">/// state (f.e. VLAN).</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+<span class="kw">const</span> <span class="ident">IF_OPER_LOWERLAYERDOWN</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">3</span>;
+<span class="doccomment">/// Unused in current kernel.</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+<span class="kw">const</span> <span class="ident">IF_OPER_TESTING</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">4</span>;
+<span class="doccomment">/// Interface is L1 up, but waiting for an external event, f.e. for a</span>
+<span class="doccomment">/// protocol to establish. (802.1X)</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+<span class="kw">const</span> <span class="ident">IF_OPER_DORMANT</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">5</span>;
+<span class="doccomment">/// Interface is operational up and can be used.</span>
+<span class="kw">const</span> <span class="ident">IF_OPER_UP</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">6</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NetDevice</span> {
@@ -630,16 +690,18 @@
     <span class="macro">recv_until_done!</span>(<span class="ident">sock</span>, <span class="ident">msg</span>: <span class="ident">Ifinfomsg</span> =&gt; {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">name</span> <span class="op">=</span> <span class="prelude-val">None</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">is_up</span> <span class="op">=</span> <span class="bool-val">false</span>;
         <span class="kw">for</span> <span class="ident">attr</span> <span class="kw">in</span> <span class="ident">msg</span>.<span class="ident">rtattrs</span>.<span class="ident">iter</span>() {
             <span class="kw">match</span> <span class="ident">attr</span>.<span class="ident">rta_type</span> {
                 <span class="ident">Ifla::Ifname</span> =&gt; <span class="ident">name</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">attr</span>.<span class="ident">get_payload_as_with_len</span>()<span class="question-mark">?</span>),
                 <span class="ident">Ifla::Stats64</span> =&gt; <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">InterfaceStats::from_stats64</span>(<span class="ident">attr</span>.<span class="ident">payload</span>().<span class="ident">as_ref</span>())),
+                <span class="ident">Ifla::Operstate</span> =&gt; <span class="ident">is_up</span> <span class="op">=</span> <span class="ident">attr</span>.<span class="ident">get_payload_as</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>()<span class="question-mark">?</span> <span class="op">==</span> <span class="ident">IF_OPER_UP</span>,
                 <span class="kw">_</span> =&gt; (),
             }
         }
         <span class="ident">interfaces</span>.<span class="ident">push</span>(<span class="ident">Interface</span> {
             <span class="ident">index</span>: <span class="ident">msg</span>.<span class="ident">ifi_index</span>,
-            <span class="ident">is_up</span>: <span class="ident">msg</span>.<span class="ident">ifi_flags</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">Iff::Up</span>),
+            <span class="ident">is_up</span>,
             <span class="ident">name</span>: <span class="ident">name</span>.<span class="ident">unwrap</span>(),
             <span class="ident">stats</span>,
         });
