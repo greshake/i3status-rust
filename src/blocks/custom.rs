@@ -111,24 +111,30 @@ async fn update_bar(
     api: &mut CommonApi,
     widget: &mut Widget,
 ) -> Result<()> {
-    if stdout.is_empty() && hide_when_empty {
-        api.hide().await
-    } else if json {
+    let text_empty;
+
+    if json {
         match serde_json::from_str::<Input>(stdout).error("Invalid JSON") {
             Ok(input) => {
                 widget.set_icon(&input.icon)?;
                 widget.state = input.state;
+                text_empty = input.text.is_empty();
                 if let Some(short) = input.short_text {
                     widget.set_texts(input.text, short);
                 } else {
                     widget.set_text(input.text);
                 }
-                api.set_widget(widget).await
             }
-            Err(error) => api.set_error(error).await,
+            Err(error) => return api.set_error(error).await,
         }
     } else {
+        text_empty = stdout.is_empty();
         widget.set_text(stdout.into());
+    }
+
+    if text_empty && hide_when_empty {
+        api.hide().await
+    } else {
         api.set_widget(widget).await
     }
 }
