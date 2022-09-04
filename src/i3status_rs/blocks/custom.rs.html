@@ -261,6 +261,12 @@
 <span id="255">255</span>
 <span id="256">256</span>
 <span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  </span>
@@ -374,24 +380,30 @@
     <span class="ident">api</span>: <span class="kw-2">&amp;mut</span> <span class="ident">CommonApi</span>,
     <span class="ident">widget</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Widget</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">if</span> <span class="ident">stdout</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="ident">hide_when_empty</span> {
-        <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span>
-    } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">json</span> {
+    <span class="kw">let</span> <span class="ident">text_empty</span>;
+
+    <span class="kw">if</span> <span class="ident">json</span> {
         <span class="kw">match</span> <span class="ident">serde_json::from_str</span>::<span class="op">&lt;</span><span class="ident">Input</span><span class="op">&gt;</span>(<span class="ident">stdout</span>).<span class="ident">error</span>(<span class="string">&quot;Invalid JSON&quot;</span>) {
             <span class="prelude-val">Ok</span>(<span class="ident">input</span>) =&gt; {
                 <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>.<span class="ident">icon</span>)<span class="question-mark">?</span>;
                 <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">state</span>;
+                <span class="ident">text_empty</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">text</span>.<span class="ident">is_empty</span>();
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">short</span>) <span class="op">=</span> <span class="ident">input</span>.<span class="ident">short_text</span> {
                     <span class="ident">widget</span>.<span class="ident">set_texts</span>(<span class="ident">input</span>.<span class="ident">text</span>, <span class="ident">short</span>);
                 } <span class="kw">else</span> {
                     <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">input</span>.<span class="ident">text</span>);
                 }
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="ident">widget</span>).<span class="kw">await</span>
             }
-            <span class="prelude-val">Err</span>(<span class="ident">error</span>) =&gt; <span class="ident">api</span>.<span class="ident">set_error</span>(<span class="ident">error</span>).<span class="kw">await</span>,
+            <span class="prelude-val">Err</span>(<span class="ident">error</span>) =&gt; <span class="kw">return</span> <span class="ident">api</span>.<span class="ident">set_error</span>(<span class="ident">error</span>).<span class="kw">await</span>,
         }
     } <span class="kw">else</span> {
+        <span class="ident">text_empty</span> <span class="op">=</span> <span class="ident">stdout</span>.<span class="ident">is_empty</span>();
         <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">stdout</span>.<span class="ident">into</span>());
+    }
+
+    <span class="kw">if</span> <span class="ident">text_empty</span> <span class="op">&amp;&amp;</span> <span class="ident">hide_when_empty</span> {
+        <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span>
+    } <span class="kw">else</span> {
         <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="ident">widget</span>).<span class="kw">await</span>
     }
 }
