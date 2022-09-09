@@ -1,8 +1,9 @@
+use zbus::dbus_proxy;
 use zbus::fdo::DBusProxy;
 use zbus::MessageStream;
 use zvariant::ObjectPath;
 
-use super::{zbus_upower::*, BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
+use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
 use crate::util::new_system_dbus_connection;
 
@@ -138,4 +139,57 @@ impl BatteryDevice for Device {
         self.changes.next().await;
         Ok(())
     }
+}
+
+#[dbus_proxy(
+    interface = "org.freedesktop.UPower.Device",
+    default_service = "org.freedesktop.UPower"
+)]
+trait Device {
+    #[dbus_proxy(property)]
+    fn energy_rate(&self) -> zbus::Result<f64>;
+
+    #[dbus_proxy(property)]
+    fn is_present(&self) -> zbus::Result<bool>;
+
+    #[dbus_proxy(property)]
+    fn native_path(&self) -> zbus::Result<String>;
+
+    #[dbus_proxy(property)]
+    fn online(&self) -> zbus::Result<bool>;
+
+    #[dbus_proxy(property)]
+    fn percentage(&self) -> zbus::Result<f64>;
+
+    #[dbus_proxy(property)]
+    fn state(&self) -> zbus::Result<u32>;
+
+    #[dbus_proxy(property)]
+    fn time_to_empty(&self) -> zbus::Result<i64>;
+
+    #[dbus_proxy(property)]
+    fn time_to_full(&self) -> zbus::Result<i64>;
+
+    #[dbus_proxy(property, name = "Type")]
+    fn type_(&self) -> zbus::Result<u32>;
+}
+
+#[dbus_proxy(
+    interface = "org.freedesktop.UPower",
+    default_service = "org.freedesktop.UPower",
+    default_path = "/org/freedesktop/UPower"
+)]
+trait UPower {
+    fn enumerate_devices(&self) -> zbus::Result<Vec<zvariant::OwnedObjectPath>>;
+
+    fn get_display_device(&self) -> zbus::Result<zvariant::OwnedObjectPath>;
+
+    #[dbus_proxy(signal)]
+    fn device_added(&self, device: zvariant::OwnedObjectPath) -> zbus::Result<()>;
+
+    #[dbus_proxy(signal)]
+    fn device_removed(&self, device: zvariant::OwnedObjectPath) -> zbus::Result<()>;
+
+    #[dbus_proxy(property)]
+    fn on_battery(&self) -> zbus::Result<bool>;
 }

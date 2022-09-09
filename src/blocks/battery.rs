@@ -70,7 +70,6 @@ use crate::util::battery_level_icon;
 mod apc_ups;
 mod sysfs;
 mod upower;
-mod zbus_upower;
 
 // make_log_macro!(debug, "battery");
 
