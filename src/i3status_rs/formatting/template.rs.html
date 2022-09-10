@@ -278,9 +278,6 @@
 <span id="272">272</span>
 <span id="273">273</span>
 <span id="274">274</span>
-<span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::formatter</span>::{
     <span class="ident">new_formatter</span>, <span class="ident">Formatter</span>, <span class="ident">DEFAULT_FLAG_FORMATTER</span>, <span class="ident">DEFAULT_NUMBER_FORMATTER</span>,
     <span class="ident">DEFAULT_STRING_FORMATTER</span>,
@@ -360,15 +357,15 @@
                     <span class="kw">if</span> <span class="ident">cur</span>.<span class="ident">metadata</span>.<span class="ident">is_default</span>() {
                         <span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">push_str</span>(<span class="ident">text</span>);
                     } <span class="kw">else</span> {
-                        <span class="kw">let</span> <span class="ident">cur</span> <span class="op">=</span> <span class="ident">std::mem::replace</span>(<span class="kw-2">&amp;mut</span> <span class="ident">cur</span>, <span class="ident">Rendered::new</span>(<span class="ident">text</span>.<span class="ident">clone</span>()));
                         <span class="kw">if</span> <span class="op">!</span><span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">is_empty</span>() {
                             <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">cur</span>);
                         }
+                        <span class="ident">cur</span> <span class="op">=</span> <span class="ident">Rendered::new</span>(<span class="ident">text</span>.<span class="ident">clone</span>());
                     }
                 }
                 <span class="ident">Token::Recursive</span>(<span class="ident">rec</span>) =&gt; {
                     <span class="kw">if</span> <span class="op">!</span><span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">is_empty</span>() {
-                        <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">std::mem::take</span>(<span class="kw-2">&amp;mut</span> <span class="ident">cur</span>));
+                        <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">cur</span>);
                     }
                     <span class="ident">retval</span>.<span class="ident">extend</span>(<span class="ident">rec</span>.<span class="ident">render</span>(<span class="ident">vars</span>)<span class="question-mark">?</span>);
                     <span class="ident">cur</span> <span class="op">=</span> <span class="ident">retval</span>.<span class="ident">pop</span>().<span class="ident">unwrap_or_default</span>();
@@ -388,16 +385,13 @@
                     <span class="kw">if</span> <span class="ident">var</span>.<span class="ident">metadata</span> <span class="op">==</span> <span class="ident">cur</span>.<span class="ident">metadata</span> {
                         <span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="ident">formatted</span>);
                     } <span class="kw">else</span> {
-                        <span class="kw">let</span> <span class="ident">cur</span> <span class="op">=</span> <span class="ident">std::mem::replace</span>(
-                            <span class="kw-2">&amp;mut</span> <span class="ident">cur</span>,
-                            <span class="ident">Rendered</span> {
-                                <span class="ident">text</span>: <span class="ident">formatted</span>,
-                                <span class="ident">metadata</span>: <span class="ident">var</span>.<span class="ident">metadata</span>,
-                            },
-                        );
                         <span class="kw">if</span> <span class="op">!</span><span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">is_empty</span>() {
                             <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">cur</span>);
                         }
+                        <span class="ident">cur</span> <span class="op">=</span> <span class="ident">Rendered</span> {
+                            <span class="ident">text</span>: <span class="ident">formatted</span>,
+                            <span class="ident">metadata</span>: <span class="ident">var</span>.<span class="ident">metadata</span>,
+                        };
                     }
                 }
             }
