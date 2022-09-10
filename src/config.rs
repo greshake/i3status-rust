@@ -75,10 +75,10 @@ impl Config {
     }
 
     fn default_error_format() -> String {
-        "$short_error_message|X".into()
+        " $short_error_message ".into()
     }
 
     fn default_error_fullscreen_format() -> String {
-        "$full_error_message".into()
+        " $full_error_message ".into()
     }
 }
