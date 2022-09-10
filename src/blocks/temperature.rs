@@ -18,7 +18,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | <code>" $icon $average avg, $max max&vert; "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders | <code>"  $icon{ $average avg, $max max|} "</code>
 //! `interval` | Update interval in seconds | `5`
 //! `collapsed` | Whether the block will be collapsed by default | `true`
 //! `scale` | Either `"celsius"` or `"fahrenheit"` | `"celsius"`
@@ -98,14 +98,9 @@ impl TemperatureScale {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TemperatureConfig::deserialize(config).config_error()?;
     let mut collapsed = config.collapsed;
-    let mut format = FormatConfig::default().with_default(" $icon ")?;
-    let mut format_expanded = config.format.with_default(" $icon {$average avg, $max max|} ")?;
-
-    if !collapsed {
-        std::mem::swap(&mut format, &mut format_expanded);
-    }
-
-    let mut widget = api.new_widget().with_format(format.clone());
+    let mut widget = api
+        .new_widget()
+        .with_format(config.format.with_default(" $icon{ $average avg, $max max|} ")?);
 
     let good = config
         .good
@@ -207,7 +202,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         Click(click) => {
                             if click.button == MouseButton::Left  {
                                 collapsed = !collapsed;
-                                std::mem::swap(&mut format, &mut format_expanded);
                                 break;
                             }
                         }
