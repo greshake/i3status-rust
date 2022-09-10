@@ -77,15 +77,15 @@ impl TokenList {
                     if cur.metadata.is_default() {
                         cur.text.push_str(text);
                     } else {
-                        let cur = std::mem::replace(&mut cur, Rendered::new(text.clone()));
                         if !cur.text.is_empty() {
                             retval.push(cur);
                         }
+                        cur = Rendered::new(text.clone());
                     }
                 }
                 Token::Recursive(rec) => {
                     if !cur.text.is_empty() {
-                        retval.push(std::mem::take(&mut cur));
+                        retval.push(cur);
                     }
                     retval.extend(rec.render(vars)?);
                     cur = retval.pop().unwrap_or_default();
@@ -105,16 +105,13 @@ impl TokenList {
                     if var.metadata == cur.metadata {
                         cur.text.push_str(&formatted);
                     } else {
-                        let cur = std::mem::replace(
-                            &mut cur,
-                            Rendered {
-                                text: formatted,
-                                metadata: var.metadata,
-                            },
-                        );
                         if !cur.text.is_empty() {
                             retval.push(cur);
                         }
+                        cur = Rendered {
+                            text: formatted,
+                            metadata: var.metadata,
+                        };
                     }
                 }
             }
