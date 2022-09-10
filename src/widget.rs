@@ -111,7 +111,7 @@ impl Widget {
             template.short_text = "<span/>".into();
         }
 
-        parts.extend(full.into_iter().enumerate().map(|(_i, w)| {
+        parts.extend(full.into_iter().map(|w| {
             let mut data = template.clone();
             data.full_text = w.text;
             data.instance = w.metadata.instance.map(|i| i.to_string());
@@ -124,7 +124,7 @@ impl Widget {
         }));
 
         template.full_text = "<span/>".into();
-        parts.extend(short.into_iter().enumerate().map(|(_i, w)| {
+        parts.extend(short.into_iter().map(|w| {
             let mut data = template.clone();
             data.short_text = w.text;
             data.instance = w.metadata.instance.map(|i| i.to_string());
