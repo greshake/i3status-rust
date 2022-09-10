@@ -13,17 +13,19 @@
 //! `hide_missing` | Whether to hide interfaces that don't exist on the system. | `false`
 //! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | `false`
 //!
-//! Placeholder       | Value                    | Type   | Unit
-//! ------------------|--------------------------|--------|---------------
-//! `speed_down`      | Download speed           | Number | Bytes per second
-//! `speed_up`        | Upload speed             | Number | Bytes per second
-//! `graph_down`      | Download speed graph     | Text   | -
-//! `graph_up`        | Upload speed graph       | Text   | -
-//! `device`          | The name of device       | Text   | -
-//! `ssid`            | Netfork SSID (WiFi only) | Text   | -
-//! `frequency`       | WiFi frequency           | Number | Hz
-//! `signal_strength` | WiFi signal              | Number | %
-//! `bitrate`         | WiFi connection bitrate  | Number | Bits per second
+//! Placeholder       | Value                     | Type   | Unit
+//! ------------------|---------------------------|--------|---------------
+//! `speed_down`      | Download speed            | Number | Bytes per second
+//! `speed_up`        | Upload speed              | Number | Bytes per second
+//! `graph_down`      | Download speed graph      | Text   | -
+//! `graph_up`        | Upload speed graph        | Text   | -
+//! `device`          | The name of device        | Text   | -
+//! `ssid`            | Netfork SSID (WiFi only)  | Text   | -
+//! `frequency`       | WiFi frequency            | Number | Hz
+//! `signal_strength` | WiFi signal               | Number | %
+//! `bitrate`         | WiFi connection bitrate   | Number | Bits per second
+//! `ip`              | IPv4 address of the iface | Text   | -
+//! `ipv6`            | IPv6 address of the iface | Text   | -
 //!
 //! # Example
 //!
