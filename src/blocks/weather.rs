@@ -164,9 +164,9 @@ struct WeatherResult {
 }
 
 impl WeatherResult {
-    fn into_values(self) -> HashMap<Cow<'static, str>, Value> {
-        map! {
-            "icon" => Value::icon(self.icon.to_icon_str().into()),
+    fn into_values(self, api: &CommonApi) -> Result<HashMap<Cow<'static, str>, Value>> {
+        Ok(map! {
+            "icon" => Value::icon(api.get_icon(self.icon.to_icon_str())?),
             "location" => Value::text(self.location),
             "temp" => Value::degrees(self.temp),
             "apparent" => Value::degrees(self.apparent),
@@ -176,7 +176,7 @@ impl WeatherResult {
             "wind" => Value::number(self.wind),
             "wind_kmh" => Value::number(self.wind_kmh),
             "direction" => Value::text(self.wind_direction),
-        }
+        })
     }
 }
 
@@ -205,7 +205,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 let data = api
                     .recoverable(|| provider.get_weather(Some(location)))
                     .await?;
-                widget.set_values(data.into_values());
+                widget.set_values(data.into_values(&api)?);
                 api.set_widget(&widget).await?;
 
                 select! {
@@ -223,7 +223,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             let data = api
                 .recoverable(|| provider.get_weather(Some(location)))
                 .await?;
-            widget.set_values(data.into_values());
+            widget.set_values(data.into_values(&api)?);
             api.set_widget(&widget).await?;
 
             loop {
@@ -236,7 +236,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         let data = api
                             .recoverable(|| provider.get_weather(Some(location)))
                             .await?;
-                        widget.set_values(data.into_values());
+                        widget.set_values(data.into_values(&api)?);
                         api.set_widget(&widget).await?;
                     },
                     // On update request autolocate and update the block.
@@ -246,7 +246,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         let data = api
                             .recoverable(|| provider.get_weather(Some(location)))
                             .await?;
-                        widget.set_values(data.into_values());
+                        widget.set_values(data.into_values(&api)?);
                         api.set_widget(&widget).await?;
 
                         // both intervals should be reset after a manual sync
@@ -259,7 +259,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     } else {
         loop {
             let data = api.recoverable(|| provider.get_weather(None)).await?;
-            widget.set_values(data.into_values());
+            widget.set_values(data.into_values(&api)?);
             api.set_widget(&widget).await?;
 
             select! {
