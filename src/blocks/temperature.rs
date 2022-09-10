@@ -186,13 +186,16 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         'outer: loop {
-            widget.set_format(format.clone());
-            widget.set_values(map! {
-                "icon" => Value::icon(api.get_icon("thermometer")?),
-                "average" => Value::degrees(avg_temp),
-                "min" => Value::degrees(min_temp),
-                "max" => Value::degrees(max_temp),
-            });
+            if collapsed {
+                widget.set_values(map!("icon" => Value::icon(api.get_icon("thermometer")?)));
+            } else {
+                widget.set_values(map! {
+                    "icon" => Value::icon(api.get_icon("thermometer")?),
+                    "average" => Value::degrees(avg_temp),
+                    "min" => Value::degrees(min_temp),
+                    "max" => Value::degrees(max_temp),
+                });
+            }
 
             api.set_widget(&widget).await?;
 
