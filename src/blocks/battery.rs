@@ -11,10 +11,9 @@
 //! `driver` | One of `"sysfs"`, `"apc_ups"`, or `"upower"` | `"sysfs"`
 //! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"` \|\| "apc_ups"`. | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $percentage&vert; "</code>
-//! `full_format` | Same as `format` but for when the battery is full | `""`
-//! `empty_format` | Same as `format` but for when the battery is empty | `""`
+//! `full_format` | Same as `format` but for when the battery is full | `" $icon "`
+//! `empty_format` | Same as `format` but for when the battery is empty | `" $icon "`
 //! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`
-//! `hide_full` | Hide the block if battery is full | `false`
 //! `info` | Minimum battery level, where state is set to info | `60`
 //! `good` | Minimum battery level, where state is set to good | `60`
 //! `warning` | Minimum battery level, where state is set to warning | `30`
@@ -85,7 +84,6 @@ struct BatteryConfig {
     full_format: FormatConfig,
     empty_format: FormatConfig,
     hide_missing: bool,
-    hide_full: bool,
     #[default(60.0)]
     info: f64,
     #[default(60.0)]
@@ -112,8 +110,8 @@ enum BatteryDriver {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = BatteryConfig::deserialize(config).config_error()?;
     let format = config.format.with_default(" $icon $percentage ")?;
-    let format_full = config.full_format.with_default("")?;
-    let format_empty = config.empty_format.with_default("")?;
+    let format_full = config.full_format.with_default(" $icon ")?;
+    let format_empty = config.empty_format.with_default(" $icon ")?;
     let mut widget = api.new_widget();
 
     let dev_name = DeviceName::new(config.device)?;
@@ -135,9 +133,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
 
         match info {
-            Some(info) if info.status == BatteryStatus::Full && config.hide_full => {
-                api.hide().await?;
-            }
             Some(info) => {
                 widget.set_format(match info.status {
                     BatteryStatus::Empty => format_empty.clone(),
