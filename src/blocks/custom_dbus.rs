@@ -12,6 +12,12 @@
 //! .SetText                            method    ss        s            -
 //! ```
 //!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. | `"{ $icon|}{ $text|} "`
+//!
 //! # Example
 //!
 //! Config:
@@ -53,18 +59,40 @@ const DBUS_NAME: &str = "rs.i3status";
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 struct CustomDBusConfig {
+    #[serde(default)]
+    format: FormatConfig,
     path: String,
 }
 
 struct Block {
     widget: Widget,
     api: CommonApi,
+    icon: Option<String>,
+    text: Option<String>,
+    short_text: Option<String>,
+}
+
+fn block_values(block: &Block, api: &CommonApi) -> Result<HashMap<Cow<'static, str>, Value>> {
+    Ok(map! {
+        [if let Some(icon) = &block.icon] "icon" => Value::icon(api.get_icon(icon)?),
+        [if let Some(text) = &block.text] "text" => Value::text(text.to_string()),
+        [if let Some(short_text) = &block.short_text] "short_text" => Value::text(short_text.to_string()),
+    })
 }
 
 #[dbus_interface(name = "rs.i3status.custom")]
 impl Block {
+    async fn set_icon(&mut self, icon: &str) -> fdo::Result<()> {
+        self.icon = Some(icon.to_string());
+        self.widget.set_values(block_values(self, &self.api)?);
+        self.api.set_widget(&self.widget).await?;
+        Ok(())
+    }
+
     async fn set_text(&mut self, full: String, short: String) -> fdo::Result<()> {
-        self.widget.set_texts(full, short);
+        self.text = Some(full);
+        self.short_text = Some(short);
+        self.widget.set_values(block_values(self, &self.api)?);
         self.api.set_widget(&self.widget).await?;
         Ok(())
     }
@@ -89,7 +117,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     // will get blocked while trying to send a new message.
     api.event_receiver.close();
 
-    let path = CustomDBusConfig::deserialize(config).config_error()?.path;
+    let config = CustomDBusConfig::deserialize(config).config_error()?;
+    let widget = api.new_widget().with_format(
+        config.format.with_default("{ $icon|}{ $text|} ")?
+    );
+    // TODO: Add format for default
+
     let dbus_conn = DBUS_CONNECTION
         .get_or_init(dbus_conn())
         .await
@@ -98,10 +131,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     dbus_conn
         .object_server()
         .at(
-            path,
+            config.path,
             Block {
-                widget: api.new_widget(),
+                widget,
                 api,
+                icon: None,
+                text: None,
+                short_text: None
             },
         )
         .await
