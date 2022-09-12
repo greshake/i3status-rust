@@ -119,9 +119,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     let config = CustomDBusConfig::deserialize(config).config_error()?;
     let widget = api.new_widget().with_format(
-        config.format.with_default("{ $icon|}{ $text|} ")?
+        config.format.with_defaults("{ $icon|}{ $text|} ", "{ $icon|}{ $short_text|} ")?
     );
-    // TODO: Add format for default
 
     let dbus_conn = DBUS_CONNECTION
         .get_or_init(dbus_conn())
