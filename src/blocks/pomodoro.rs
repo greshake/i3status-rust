@@ -229,7 +229,7 @@ pub async fn run(block_config: toml::Value, api: CommonApi) -> Result<()> {
     let widget = api.new_widget().with_format(format);
 
     let mut block = Block {
-        widget: widget,
+        widget,
         api,
         block_config,
     };
