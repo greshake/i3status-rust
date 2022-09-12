@@ -13,7 +13,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $percentage&vert; "</code>
 //! `full_format` | Same as `format` but for when the battery is full | `" $icon "`
 //! `empty_format` | Same as `format` but for when the battery is empty | `" $icon "`
-//! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`
+//! `format_missing` | Same as `format` if the battery cannot be found. | `" $icon × "`
 //! `info` | Minimum battery level, where state is set to info | `60`
 //! `good` | Minimum battery level, where state is set to good | `60`
 //! `warning` | Minimum battery level, where state is set to warning | `30`
@@ -42,7 +42,7 @@
 //! ```toml
 //! [block]
 //! block = "battery"
-//! hide_missing = true
+//! format_missing = ""
 //! ```
 //!
 //! # Icons Used
@@ -83,7 +83,7 @@ struct BatteryConfig {
     format: FormatConfig,
     full_format: FormatConfig,
     empty_format: FormatConfig,
-    hide_missing: bool,
+    format_missing: FormatConfig,
     #[default(60.0)]
     info: f64,
     #[default(60.0)]
@@ -112,6 +112,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $percentage ")?;
     let format_full = config.full_format.with_default(" $icon ")?;
     let format_empty = config.empty_format.with_default(" $icon ")?;
+    let format_missing = config.format_missing.with_default(" $icon × ")?;
     let mut widget = api.new_widget();
 
     let dev_name = DeviceName::new(config.device)?;
@@ -183,11 +184,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 widget.state = state;
                 api.set_widget(&widget).await?;
             }
-            None if config.hide_missing => {
-                api.hide().await?;
-            }
             None => {
-                widget.set_format(format.clone());
+                widget.set_format(format_missing.clone());
                 widget.set_values(map!("icon" => Value::icon(api.get_icon("bat_not_available")?)));
                 widget.state = State::Critical;
                 api.set_widget(&widget).await?;

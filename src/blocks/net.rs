@@ -10,7 +10,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $speed_down.eng(3,B,K)$speed_up.eng(3,B,K) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
-//! `hide_missing` | Whether to hide interfaces that don't exist on the system. | `false`
+//! `format_missing` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
 //! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | `false`
 //!
 //! Placeholder       | Value                    | Type   | Unit
@@ -63,9 +63,9 @@ struct NetConfig {
     device: Option<String>,
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
+    format_missing: FormatConfig,
     #[default(2.into())]
     interval: Seconds,
-    hide_missing: bool,
     hide_inactive: bool,
 }
 
@@ -75,6 +75,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut format = config
         .format
         .with_default(" $icon $speed_down.eng(3,B,K)$speed_up.eng(3,B,K) ")?;
+    let format_missing = config
+        .format_missing
+        .with_default(" × ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
@@ -99,18 +102,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
             None => {
-                if config.hide_missing || config.hide_inactive {
-                    api.hide().await?;
-                } else {
-                    widget.set_text("×".to_string());
-                    api.set_widget(&widget).await?;
-                }
+                widget.set_format(format_missing.clone());
+                api.set_widget(&widget).await?;
             }
             Some(device) if !device.iface.is_up => {
                 if config.hide_inactive {
                     api.hide().await?;
                 } else {
-                    widget.set_text("×".to_string());
+                    widget.set_format(format_missing.clone());
                     api.set_widget(&widget).await?;
                 }
             }
