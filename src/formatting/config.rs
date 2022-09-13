@@ -30,13 +30,11 @@ impl Config {
             short.init_intervals(&mut intervals);
         }
 
-        Ok(Format {
-            inner: Arc::new(FormatInner {
-                full,
-                short: self.short,
-                intervals,
-            }),
-        })
+        Ok(Arc::new(FormatInner {
+            full,
+            short: self.short,
+            intervals,
+        }))
     }
 }
 

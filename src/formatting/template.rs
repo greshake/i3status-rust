@@ -1,9 +1,5 @@
-use super::formatter::{
-    new_formatter, Formatter, DEFAULT_FLAG_FORMATTER, DEFAULT_NUMBER_FORMATTER,
-    DEFAULT_STRING_FORMATTER,
-};
-use super::value::ValueInner;
-use super::{Rendered, Values};
+use super::formatter::{new_formatter, Formatter};
+use super::{Fragment, Values};
 use crate::errors::*;
 
 use std::iter::Peekable;
@@ -19,7 +15,7 @@ pub struct TokenList(pub Vec<Token>);
 pub enum Token {
     Text(String),
     Recursive(FormatTemplate),
-    Var {
+    Placeholder {
         name: String,
         formatter: Option<Box<dyn Formatter>>,
     },
@@ -29,16 +25,16 @@ impl FormatTemplate {
     pub fn contains_key(&self, key: &str) -> bool {
         self.0.iter().any(|token_list| {
             token_list.0.iter().any(|token| match token {
-                Token::Var { name, .. } => name == key,
+                Token::Placeholder { name, .. } => name == key,
                 Token::Recursive(rec) => rec.contains_key(key),
                 _ => false,
             })
         })
     }
 
-    pub fn render(&self, vars: &Values) -> Result<Vec<Rendered>> {
+    pub fn render(&self, values: &Values) -> Result<Vec<Fragment>> {
         for (i, token_list) in self.0.iter().enumerate() {
-            match token_list.render(vars) {
+            match token_list.render(values) {
                 Ok(res) => return Ok(res),
                 Err(e) if e.kind != ErrorKind::Format => return Err(e),
                 Err(e) if i == self.0.len() - 1 => return Err(e),
@@ -53,7 +49,7 @@ impl FormatTemplate {
             for t in &tl.0 {
                 match t {
                     Token::Recursive(r) => r.init_intervals(intervals),
-                    Token::Var {
+                    Token::Placeholder {
                         formatter: Some(f), ..
                     } => {
                         if let Some(i) = f.interval() {
@@ -68,9 +64,9 @@ impl FormatTemplate {
 }
 
 impl TokenList {
-    pub fn render(&self, vars: &Values) -> Result<Vec<Rendered>> {
+    pub fn render(&self, values: &Values) -> Result<Vec<Fragment>> {
         let mut retval = Vec::new();
-        let mut cur = Rendered::default();
+        let mut cur = Fragment::default();
         for token in &self.0 {
             match token {
                 Token::Text(text) => {
@@ -80,37 +76,34 @@ impl TokenList {
                         if !cur.text.is_empty() {
                             retval.push(cur);
                         }
-                        cur = Rendered::new(text.clone());
+                        cur = text.clone().into();
                     }
                 }
                 Token::Recursive(rec) => {
                     if !cur.text.is_empty() {
                         retval.push(cur);
                     }
-                    retval.extend(rec.render(vars)?);
+                    retval.extend(rec.render(values)?);
                     cur = retval.pop().unwrap_or_default();
                 }
-                Token::Var { name, formatter } => {
-                    let var = vars
-                        .get(name.as_str())
-                        .format_error(format!("Placeholder with name '{}' not found", name))?;
-                    let formatter = formatter.as_ref().map(|x| x.as_ref()).unwrap_or_else(|| {
-                        match &var.inner {
-                            ValueInner::Text(_) | ValueInner::Icon(_) => &DEFAULT_STRING_FORMATTER,
-                            ValueInner::Number { .. } => &DEFAULT_NUMBER_FORMATTER,
-                            ValueInner::Flag => &DEFAULT_FLAG_FORMATTER,
-                        }
-                    });
-                    let formatted = formatter.format(&var.inner)?;
-                    if var.metadata == cur.metadata {
+                Token::Placeholder { name, formatter } => {
+                    let value = values.get(name.as_str()).or_format_error(|| {
+                        format!("Placeholder with name '{}' not found", name)
+                    })?;
+                    let formatter = formatter
+                        .as_ref()
+                        .map(Box::as_ref)
+                        .unwrap_or_else(|| value.default_formatter());
+                    let formatted = formatter.format(&value.inner)?;
+                    if value.metadata == cur.metadata {
                         cur.text.push_str(&formatted);
                     } else {
                         if !cur.text.is_empty() {
                             retval.push(cur);
                         }
-                        cur = Rendered {
+                        cur = Fragment {
                             text: formatted,
-                            metadata: var.metadata,
+                            metadata: value.metadata,
                         };
                     }
                 }
@@ -168,7 +161,7 @@ fn read_format_template(it: &mut Peekable<impl Iterator<Item = char>>) -> Result
                     }
                     _ => None,
                 };
-                cur_list.push(Token::Var { name, formatter });
+                cur_list.push(Token::Placeholder { name, formatter });
             }
             _ => {
                 cur_list.push(Token::Text(read_text(it)));
@@ -204,19 +197,8 @@ fn read_text(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
 
 fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
     let mut retval = String::new();
-    let mut escaped = false;
     while let Some(&c) = it.peek() {
-        if escaped {
-            escaped = false;
-            retval.push(c);
-            let _ = it.next();
-            continue;
-        }
         match c {
-            '\\' => {
-                let _ = it.next();
-                escaped = true;
-            }
             x if !x.is_alphanumeric() && x != '_' => break,
             x => {
                 let _ = it.next();
@@ -229,15 +211,8 @@ fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> Strin
 
 fn read_formatter(it: &mut impl Iterator<Item = char>) -> Result<String> {
     let mut retval = String::new();
-    let mut escaped = false;
     for c in it {
-        if escaped {
-            escaped = false;
-            retval.push(c);
-            continue;
-        }
         match c {
-            '\\' => escaped = true,
             '(' => return Ok(retval),
             x => retval.push(x),
         }

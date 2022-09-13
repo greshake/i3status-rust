@@ -83,7 +83,6 @@ pub mod value;
 
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::ops::Deref;
 use std::sync::Arc;
 
 use crate::errors::*;
@@ -93,18 +92,7 @@ use value::Value;
 
 pub type Values = HashMap<Cow<'static, str>, Value>;
 
-#[derive(Debug, Clone)]
-pub struct Format {
-    inner: Arc<FormatInner>,
-}
-
-impl Deref for Format {
-    type Target = FormatInner;
-
-    fn deref(&self) -> &Self::Target {
-        self.inner.as_ref()
-    }
-}
+pub type Format = Arc<FormatInner>;
 
 #[derive(Debug)]
 pub struct FormatInner {
@@ -122,7 +110,7 @@ impl FormatInner {
         self.intervals.clone()
     }
 
-    pub fn render(&self, vars: &Values) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
+    pub fn render(&self, vars: &Values) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
         let full = self.full.render(vars).error("Failed to render full text")?;
         let short = self
             .short
@@ -136,21 +124,12 @@ impl FormatInner {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Rendered {
+pub struct Fragment {
     pub text: String,
     pub metadata: Metadata,
 }
 
-impl Rendered {
-    pub fn new(text: impl Into<String>) -> Self {
-        Self {
-            text: text.into(),
-            metadata: Default::default(),
-        }
-    }
-}
-
-impl From<String> for Rendered {
+impl From<String> for Fragment {
     fn from(text: String) -> Self {
         Self {
             text,

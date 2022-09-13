@@ -114,7 +114,7 @@ pub trait OptionExt<T> {
     fn error<M: Into<ErrorMsg>>(self, message: M) -> Result<T>;
     fn or_error<M: Into<ErrorMsg>, F: FnOnce() -> M>(self, f: F) -> Result<T>;
     fn config_error(self) -> Result<T>;
-    fn format_error<M: Into<ErrorMsg>>(self, message: M) -> Result<T>;
+    fn or_format_error<M: Into<ErrorMsg>, F: FnOnce() -> M>(self, f: F) -> Result<T>;
 }
 
 impl<T> OptionExt<T> for Option<T> {
@@ -145,10 +145,10 @@ impl<T> OptionExt<T> for Option<T> {
         })
     }
 
-    fn format_error<M: Into<ErrorMsg>>(self, message: M) -> Result<T> {
+    fn or_format_error<M: Into<ErrorMsg>, F: FnOnce() -> M>(self, f: F) -> Result<T> {
         self.ok_or_else(|| Error {
             kind: ErrorKind::Format,
-            message: Some(message.into()),
+            message: Some(f().into()),
             cause: None,
             block: None,
         })

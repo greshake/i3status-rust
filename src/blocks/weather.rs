@@ -164,7 +164,7 @@ struct WeatherResult {
 }
 
 impl WeatherResult {
-    fn into_values(self) -> HashMap<Cow<'static, str>, Value> {
+    fn into_values(self) -> Values {
         map! {
             "location" => Value::text(self.location),
             "temp" => Value::degrees(self.temp),
