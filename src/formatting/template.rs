@@ -182,6 +182,9 @@ fn read_format_template(it: &mut Peekable<impl Iterator<Item = char>>) -> Result
             }
             '^' => {
                 let _ = it.next();
+                if !consume_exact(it, "icon_") {
+                    return Err(Error::new("^ should be followed by 'icon_<name>'"));
+                }
                 let name = read_ident(it);
                 cur_list.push(Token::Icon { name });
             }
@@ -268,4 +271,13 @@ fn read_args(it: &mut impl Iterator<Item = char>) -> Result<Vec<String>> {
         }
     }
     Err(Error::new("Missing ')'"))
+}
+
+fn consume_exact(it: &mut impl Iterator<Item = char>, tag: &str) -> bool {
+    for c in tag.chars() {
+        if it.next() != Some(c) {
+            return false;
+        }
+    }
+    true
 }

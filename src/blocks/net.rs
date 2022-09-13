@@ -7,7 +7,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"^net_down$speed_down.eng(3,B,K)^net_up$speed_up.eng(3,B,K)"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"^icon_net_down$speed_down.eng(3,B,K)^icon_net_up$speed_up.eng(3,B,K)"`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
 //! `hide_missing` | Whether to hide interfaces that don't exist on the system. | `false`
@@ -76,7 +76,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     let mut format = config
         .format
-        .with_default("^net_down$speed_down.eng(3,B,K)^net_up$speed_up.eng(3,B,K)")?;
+        .with_default("^icon_net_down$speed_down.eng(3,B,K)^icon_net_up$speed_up.eng(3,B,K)")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,

@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"^ping$ping^net_down$speed_down^net_up$speed_up"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"^icon_ping$ping^icon_net_down$speed_down^icon_net_up$speed_up"`
 //! `interval` | Update interval in seconds | `1800`
 //!
 //! Placeholder  | Value          | Type   | Unit
@@ -23,7 +23,7 @@
 //! [[block]]
 //! block = "speedtest"
 //! interval = 1800
-//! format = "^ping$ping"
+//! format = "^icon_ping$ping"
 //! ```
 //!
 //! Hide ping and display speed in bytes per second each using 4 characters (without icons)
@@ -56,7 +56,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api.new_widget().with_format(
         config
             .format
-            .with_default("^ping$ping^net_down$speed_down^net_up$speed_up")?,
+            .with_default("^icon_ping$ping^icon_net_down$speed_down^icon_net_up$speed_up")?,
     );
 
     let mut command = Command::new("speedtest-cli");
