@@ -11,7 +11,6 @@
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
 //! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
-//! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | `false`
 //!
 //! Placeholder       | Value                    | Type   | Unit
 //! ------------------|--------------------------|--------|---------------
@@ -66,7 +65,6 @@ struct NetConfig {
     missing_format: FormatConfig,
     #[default(2.into())]
     interval: Seconds,
-    hide_inactive: bool,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -106,12 +104,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 api.set_widget(&widget).await?;
             }
             Some(device) if !device.iface.is_up => {
-                if config.hide_inactive {
-                    api.hide().await?;
-                } else {
-                    widget.set_format(missing_format.clone());
-                    api.set_widget(&widget).await?;
-                }
+                widget.set_format(missing_format.clone());
+                api.set_widget(&widget).await?;
             }
             Some(device) => {
                 widget.set_format(format.clone());
