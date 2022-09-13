@@ -41,7 +41,10 @@ impl Widget {
     }
 
     pub fn with_icon(mut self, icon: &str) -> Result<Self> {
-        self.icon = self.shared_config.get_icon(icon)?;
+        self.icon = self
+            .shared_config
+            .get_icon(icon)
+            .or_error(|| format!("Icon '{}' not found", icon))?;
         Ok(self)
     }
 
@@ -72,7 +75,10 @@ impl Widget {
     }
 
     pub fn set_icon(&mut self, icon: &str) -> Result<()> {
-        self.icon = self.shared_config.get_icon(icon)?;
+        self.icon = self
+            .shared_config
+            .get_icon(icon)
+            .or_error(|| format!("Icon {icon} not found"))?;
         Ok(())
     }
 
@@ -100,7 +106,7 @@ impl Widget {
     pub fn get_data(&self) -> Result<Vec<I3BarBlock>> {
         // Create a "template" block
         let (key_bg, key_fg) = self.shared_config.theme.get_colors(self.state);
-        let (full, short) = self.source.render()?;
+        let (full, short) = self.source.render(&self.shared_config)?;
         let mut template = I3BarBlock {
             name: Some(self.id.to_string()),
             background: key_bg,
@@ -203,13 +209,13 @@ enum Source {
 }
 
 impl Source {
-    fn render(&self) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
+    fn render(&self, config: &SharedConfig) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
         match self {
             Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
             Self::TextWithShort(full, short) => {
                 Ok((vec![full.clone().into()], vec![short.clone().into()]))
             }
-            Self::Format(format, Some(values)) => format.render(values),
+            Self::Format(format, Some(values)) => format.render(values, config),
             Self::None | Self::Format(_, None) => Ok((vec![], vec![])),
         }
     }

@@ -13,7 +13,7 @@ pub struct Value {
 pub enum ValueInner {
     Text(String),
     Icon(String),
-    Number { val: f64, unit: Unit, icon: String },
+    Number { val: f64, unit: Unit },
     Flag,
 }
 
@@ -59,7 +59,6 @@ impl Value {
         Self::new(ValueInner::Number {
             val: val.into_f64(),
             unit,
-            icon: String::new(),
         })
     }
 
@@ -91,13 +90,6 @@ impl Value {
 
 /// Set options
 impl Value {
-    pub fn with_icon(mut self, i: String) -> Self {
-        if let ValueInner::Number { icon, .. } = &mut self.inner {
-            *icon = i;
-        }
-        self
-    }
-
     pub fn with_instance(mut self, instance: usize) -> Self {
         self.metadata.instance = Some(instance);
         self

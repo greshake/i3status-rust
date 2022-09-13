@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$ping$speed_down$speed_up"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `"^ping$ping^net_down$speed_down^net_up$speed_up"`
 //! `interval` | Update interval in seconds | `1800`
 //!
 //! Placeholder  | Value          | Type   | Unit
@@ -17,7 +17,16 @@
 //!
 //! # Example
 //!
-//! Hide ping and display speed in bytes per second each using 4 characters
+//! Show only ping (with an icon)
+//!
+//! ```toml
+//! [[block]]
+//! block = "speedtest"
+//! interval = 1800
+//! format = "^ping$ping"
+//! ```
+//!
+//! Hide ping and display speed in bytes per second each using 4 characters (without icons)
 //!
 //! ```toml
 //! [[block]]
@@ -44,13 +53,11 @@ struct SpeedtestConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = SpeedtestConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default("$ping$speed_down$speed_up")?);
-
-    let icon_ping = api.get_icon("ping")?;
-    let icon_down = api.get_icon("net_down")?;
-    let icon_up = api.get_icon("net_up")?;
+    let mut widget = api.new_widget().with_format(
+        config
+            .format
+            .with_default("^ping$ping^net_down$speed_down^net_up$speed_up")?,
+    );
 
     let mut command = Command::new("speedtest-cli");
     command.arg("--json");
@@ -67,9 +74,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             serde_json::from_str(output).error("'speedtest-cli' produced wrong JSON")?;
 
         widget.set_values(map! {
-            "ping" => Value::seconds(output.ping * 1e-3).with_icon(icon_ping.clone()),
-            "speed_down" => Value::bits(output.download).with_icon(icon_down.clone()),
-            "speed_up" => Value::bits(output.upload).with_icon(icon_up.clone()),
+            "ping" => Value::seconds(output.ping * 1e-3),
+            "speed_down" => Value::bits(output.download),
+            "speed_up" => Value::bits(output.upload),
         });
         api.set_widget(&widget).await?;
 

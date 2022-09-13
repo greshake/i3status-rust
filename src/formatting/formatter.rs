@@ -362,11 +362,7 @@ pub struct EngFormatter(EngFixConfig);
 impl Formatter for EngFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
-            Value::Number {
-                mut val,
-                mut unit,
-                icon,
-            } => {
+            Value::Number { mut val, mut unit } => {
                 if let Some(new_unit) = self.0.unit.unit {
                     val = unit.convert(val, new_unit)?;
                     unit = new_unit;
@@ -392,12 +388,11 @@ impl Formatter for EngFormatter {
                     digits += 1;
                 }
 
-                let mut retval = icon.clone();
-                retval.push_str(&match self.0.width as isize - digits {
+                let mut retval = match self.0.width as isize - digits {
                     isize::MIN..=0 => format!("{}", val.floor()),
                     1 => format!(" {}", val.floor() as i64),
                     rest => format!("{:.*}", rest as usize - 1, val),
-                });
+                };
 
                 let display_prefix = !self.0.prefix.hidden
                     && prefix != Prefix::One
