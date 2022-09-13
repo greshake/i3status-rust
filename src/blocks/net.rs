@@ -10,7 +10,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $speed_down.eng(3,B,K)$speed_up.eng(3,B,K) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
-//! `format_missing` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
+//! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
 //! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | `false`
 //!
 //! Placeholder       | Value                    | Type   | Unit
@@ -63,7 +63,7 @@ struct NetConfig {
     device: Option<String>,
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
-    format_missing: FormatConfig,
+    missing_format: FormatConfig,
     #[default(2.into())]
     interval: Seconds,
     hide_inactive: bool,
@@ -75,8 +75,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut format = config
         .format
         .with_default(" $icon $speed_down.eng(3,B,K)$speed_up.eng(3,B,K) ")?;
-    let format_missing = config
-        .format_missing
+    let missing_format = config
+        .missing_format
         .with_default(" × ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
@@ -102,14 +102,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
             None => {
-                widget.set_format(format_missing.clone());
+                widget.set_format(missing_format.clone());
                 api.set_widget(&widget).await?;
             }
             Some(device) if !device.iface.is_up => {
                 if config.hide_inactive {
                     api.hide().await?;
                 } else {
-                    widget.set_format(format_missing.clone());
+                    widget.set_format(missing_format.clone());
                     api.set_widget(&widget).await?;
                 }
             }
