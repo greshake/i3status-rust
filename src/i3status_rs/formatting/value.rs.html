@@ -113,7 +113,17 @@
 <span id="107">107</span>
 <span id="108">108</span>
 <span id="109">109</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::unit::Unit</span>;
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::formatter</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::unit::Unit</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::Metadata</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::widget::State</span>;
 
@@ -220,6 +230,14 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_state</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="ident">State</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">state</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>);
         <span class="self">self</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_formatter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw">dyn</span> <span class="ident">formatter::Formatter</span> {
+        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span> {
+            <span class="ident">ValueInner::Text</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ValueInner::Icon</span>(<span class="kw">_</span>) =&gt; <span class="kw-2">&amp;</span><span class="ident">formatter::DEFAULT_STRING_FORMATTER</span>,
+            <span class="ident">ValueInner::Number</span> { .. } =&gt; <span class="kw-2">&amp;</span><span class="ident">formatter::DEFAULT_NUMBER_FORMATTER</span>,
+            <span class="ident">ValueInner::Flag</span> =&gt; <span class="kw-2">&amp;</span><span class="ident">formatter::DEFAULT_FLAG_FORMATTER</span>,
+        }
     }
 }
 </code></pre></div>

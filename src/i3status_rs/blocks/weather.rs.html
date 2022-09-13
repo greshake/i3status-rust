@@ -529,7 +529,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">WeatherResult</span> {
-    <span class="kw">fn</span> <span class="ident">into_values</span>(<span class="self">self</span>) -&gt; <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Cow</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">str</span><span class="op">&gt;</span>, <span class="ident">Value</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">into_values</span>(<span class="self">self</span>) -&gt; <span class="ident">Values</span> {
         <span class="macro">map!</span> {
             <span class="string">&quot;location&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="self">self</span>.<span class="ident">location</span>),
             <span class="string">&quot;temp&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="self">self</span>.<span class="ident">temp</span>),

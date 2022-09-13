@@ -223,7 +223,7 @@
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::escape::CollectEscaped</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Format</span>, <span class="ident">Rendered</span>, <span class="ident">Values</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Format</span>, <span class="ident">Fragment</span>, <span class="ident">Values</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::protocol::i3bar_block::I3BarBlock</span>;
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
 
@@ -425,7 +425,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Source</span> {
-    <span class="kw">fn</span> <span class="ident">render</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Rendered</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Rendered</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">render</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fragment</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fragment</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident"><span class="self">Self</span>::Text</span>(<span class="ident">text</span>) =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[<span class="ident">text</span>.<span class="ident">clone</span>().<span class="ident">into</span>()], <span class="macro">vec!</span>[])),
             <span class="ident"><span class="self">Self</span>::TextWithShort</span>(<span class="ident">full</span>, <span class="ident">short</span>) =&gt; {

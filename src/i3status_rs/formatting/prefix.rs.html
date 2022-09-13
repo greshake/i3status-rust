@@ -122,32 +122,100 @@
 <span id="116">116</span>
 <span id="117">117</span>
 <span id="118">118</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::fmt</span>;
-<span class="kw">use</span> <span class="ident">std::ops::AddAssign</span>;
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">std::fmt</span>;
 <span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
-
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// SI prefix</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Prefix</span> {
     <span class="doccomment">/// `n`</span>
-    <span class="ident">Nano</span> <span class="op">=</span> <span class="op">-</span><span class="number">3</span>,
+    <span class="ident">Nano</span>,
     <span class="doccomment">/// `u`</span>
-    <span class="ident">Micro</span> <span class="op">=</span> <span class="op">-</span><span class="number">2</span>,
+    <span class="ident">Micro</span>,
     <span class="doccomment">/// `m`</span>
-    <span class="ident">Milli</span> <span class="op">=</span> <span class="op">-</span><span class="number">1</span>,
+    <span class="ident">Milli</span>,
     <span class="doccomment">/// `1`</span>
-    <span class="ident">One</span> <span class="op">=</span> <span class="number">0</span>,
+    <span class="ident">One</span>,
+    <span class="doccomment">/// `1i`</span>
+    <span class="ident">OneButBinary</span>,
     <span class="doccomment">/// `K`</span>
-    <span class="ident">Kilo</span> <span class="op">=</span> <span class="number">1</span>,
+    <span class="ident">Kilo</span>,
+    <span class="doccomment">/// `Ki`</span>
+    <span class="ident">Kibi</span>,
     <span class="doccomment">/// `M`</span>
-    <span class="ident">Mega</span> <span class="op">=</span> <span class="number">2</span>,
+    <span class="ident">Mega</span>,
+    <span class="doccomment">/// `Mi`</span>
+    <span class="ident">Mebi</span>,
     <span class="doccomment">/// `G`</span>
-    <span class="ident">Giga</span> <span class="op">=</span> <span class="number">3</span>,
+    <span class="ident">Giga</span>,
+    <span class="doccomment">/// `Gi`</span>
+    <span class="ident">Gibi</span>,
     <span class="doccomment">/// `T`</span>
-    <span class="ident">Tera</span> <span class="op">=</span> <span class="number">4</span>,
+    <span class="ident">Tera</span>,
+    <span class="doccomment">/// `Ti`</span>
+    <span class="ident">Tebi</span>,
 }
+
+<span class="kw">const</span> <span class="ident">MUL</span>: [<span class="ident">f64</span>; <span class="number">13</span>] <span class="op">=</span> [
+    <span class="number">1e-9</span>,
+    <span class="number">1e-6</span>,
+    <span class="number">1e-3</span>,
+    <span class="number">1.0</span>,
+    <span class="number">1.0</span>,
+    <span class="number">1e3</span>,
+    <span class="number">1024.0</span>,
+    <span class="number">1e6</span>,
+    <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span>,
+    <span class="number">1e9</span>,
+    <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span>,
+    <span class="number">1e12</span>,
+    <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span>,
+];
 
 <span class="kw">impl</span> <span class="ident">Prefix</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">min_available</span>() -&gt; <span class="self">Self</span> {
@@ -177,34 +245,45 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">f64</span>) -&gt; <span class="ident">f64</span> {
-        <span class="ident">value</span> <span class="op">/</span> <span class="number">1_000f64</span>.<span class="ident">powi</span>(<span class="self">self</span> <span class="kw">as</span> <span class="ident">i32</span>)
+        <span class="ident">value</span> <span class="op">/</span> <span class="ident">MUL</span>[<span class="self">self</span> <span class="kw">as</span> <span class="ident">usize</span>]
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">eng</span>(<span class="ident">number</span>: <span class="ident">f64</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">if</span> <span class="ident">number</span> <span class="op">==</span> <span class="number">0.0</span> {
             <span class="ident"><span class="self">Self</span>::One</span>
         } <span class="kw">else</span> {
-            <span class="ident"><span class="self">Self</span>::from_exp_level</span>(<span class="ident">number</span>.<span class="ident">abs</span>().<span class="ident">log10</span>().<span class="ident">div_euclid</span>(<span class="number">3.</span>) <span class="kw">as</span> <span class="ident">i32</span>)
+            <span class="kw">match</span> <span class="ident">number</span>.<span class="ident">abs</span>().<span class="ident">log10</span>().<span class="ident">div_euclid</span>(<span class="number">3.</span>) <span class="kw">as</span> <span class="ident">i32</span> {
+                <span class="ident">i32::MIN</span>..<span class="op">=</span><span class="op">-</span><span class="number">3</span> =&gt; <span class="ident">Prefix::Nano</span>,
+                <span class="op">-</span><span class="number">2</span> =&gt; <span class="ident">Prefix::Micro</span>,
+                <span class="op">-</span><span class="number">1</span> =&gt; <span class="ident">Prefix::Milli</span>,
+                <span class="number">0</span> =&gt; <span class="ident">Prefix::One</span>,
+                <span class="number">1</span> =&gt; <span class="ident">Prefix::Kilo</span>,
+                <span class="number">2</span> =&gt; <span class="ident">Prefix::Mega</span>,
+                <span class="number">3</span> =&gt; <span class="ident">Prefix::Giga</span>,
+                <span class="number">4</span>..<span class="op">=</span><span class="ident">i32::MAX</span> =&gt; <span class="ident">Prefix::Tera</span>,
+            }
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_exp_level</span>(<span class="ident">exp_level</span>: <span class="ident">i32</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">match</span> <span class="ident">exp_level</span> {
-            <span class="ident">i32::MIN</span>..<span class="op">=</span><span class="op">-</span><span class="number">3</span> =&gt; <span class="ident">Prefix::Nano</span>,
-            <span class="op">-</span><span class="number">2</span> =&gt; <span class="ident">Prefix::Micro</span>,
-            <span class="op">-</span><span class="number">1</span> =&gt; <span class="ident">Prefix::Milli</span>,
-            <span class="number">0</span> =&gt; <span class="ident">Prefix::One</span>,
-            <span class="number">1</span> =&gt; <span class="ident">Prefix::Kilo</span>,
-            <span class="number">2</span> =&gt; <span class="ident">Prefix::Mega</span>,
-            <span class="number">3</span> =&gt; <span class="ident">Prefix::Giga</span>,
-            <span class="number">4</span>..<span class="op">=</span><span class="ident">i32::MAX</span> =&gt; <span class="ident">Prefix::Tera</span>,
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">eng_binary</span>(<span class="ident">number</span>: <span class="ident">f64</span>) -&gt; <span class="self">Self</span> {
+        <span class="kw">if</span> <span class="ident">number</span> <span class="op">==</span> <span class="number">0.0</span> {
+            <span class="ident"><span class="self">Self</span>::One</span>
+        } <span class="kw">else</span> {
+            <span class="kw">match</span> <span class="ident">number</span>.<span class="ident">abs</span>().<span class="ident">log2</span>().<span class="ident">div_euclid</span>(<span class="number">10.</span>) <span class="kw">as</span> <span class="ident">i32</span> {
+                <span class="ident">i32::MIN</span>..<span class="op">=</span><span class="number">0</span> =&gt; <span class="ident">Prefix::OneButBinary</span>,
+                <span class="number">1</span> =&gt; <span class="ident">Prefix::Kibi</span>,
+                <span class="number">2</span> =&gt; <span class="ident">Prefix::Mebi</span>,
+                <span class="number">3</span> =&gt; <span class="ident">Prefix::Gibi</span>,
+                <span class="number">4</span>..<span class="op">=</span><span class="ident">i32::MAX</span> =&gt; <span class="ident">Prefix::Tebi</span>,
+            }
         }
     }
-}
 
-<span class="kw">impl</span> <span class="ident">AddAssign</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Prefix</span> {
-    <span class="kw">fn</span> <span class="ident">add_assign</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">i32</span>) {
-        <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::from_exp_level</span>(<span class="kw-2">*</span><span class="self">self</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">+</span> <span class="ident">rhs</span>);
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_binary</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
+        <span class="macro">matches!</span>(
+            <span class="self">self</span>,
+            <span class="ident"><span class="self">Self</span>::OneButBinary</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Kibi</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Mebi</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Gibi</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Tebi</span>
+        )
     }
 }
 
@@ -214,11 +293,15 @@
             <span class="ident"><span class="self">Self</span>::Nano</span> =&gt; <span class="string">&quot;n&quot;</span>,
             <span class="ident"><span class="self">Self</span>::Micro</span> =&gt; <span class="string">&quot;u&quot;</span>,
             <span class="ident"><span class="self">Self</span>::Milli</span> =&gt; <span class="string">&quot;m&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::One</span> =&gt; <span class="string">&quot;&quot;</span>,
+            <span class="ident"><span class="self">Self</span>::One</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::OneButBinary</span> =&gt; <span class="string">&quot;&quot;</span>,
             <span class="ident"><span class="self">Self</span>::Kilo</span> =&gt; <span class="string">&quot;K&quot;</span>,
+            <span class="ident"><span class="self">Self</span>::Kibi</span> =&gt; <span class="string">&quot;Ki&quot;</span>,
             <span class="ident"><span class="self">Self</span>::Mega</span> =&gt; <span class="string">&quot;M&quot;</span>,
+            <span class="ident"><span class="self">Self</span>::Mebi</span> =&gt; <span class="string">&quot;Mi&quot;</span>,
             <span class="ident"><span class="self">Self</span>::Giga</span> =&gt; <span class="string">&quot;G&quot;</span>,
+            <span class="ident"><span class="self">Self</span>::Gibi</span> =&gt; <span class="string">&quot;Gi&quot;</span>,
             <span class="ident"><span class="self">Self</span>::Tera</span> =&gt; <span class="string">&quot;T&quot;</span>,
+            <span class="ident"><span class="self">Self</span>::Tebi</span> =&gt; <span class="string">&quot;Ti&quot;</span>,
         })
     }
 }
@@ -232,10 +315,15 @@
             <span class="string">&quot;u&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Micro</span>),
             <span class="string">&quot;m&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Milli</span>),
             <span class="string">&quot;1&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::One</span>),
+            <span class="string">&quot;1i&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::OneButBinary</span>),
             <span class="string">&quot;K&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Kilo</span>),
+            <span class="string">&quot;Ki&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Kibi</span>),
             <span class="string">&quot;M&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Mega</span>),
+            <span class="string">&quot;Mi&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Mebi</span>),
             <span class="string">&quot;G&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Giga</span>),
+            <span class="string">&quot;Gi&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Gibi</span>),
             <span class="string">&quot;T&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Tera</span>),
+            <span class="string">&quot;Ti&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Tebi</span>),
             <span class="ident">x</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown prefix: &#39;{}&#39;&quot;</span>, <span class="ident">x</span>))),
         }
     }

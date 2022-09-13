@@ -253,37 +253,8 @@
 <span id="247">247</span>
 <span id="248">248</span>
 <span id="249">249</span>
-<span id="250">250</span>
-<span id="251">251</span>
-<span id="252">252</span>
-<span id="253">253</span>
-<span id="254">254</span>
-<span id="255">255</span>
-<span id="256">256</span>
-<span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
-<span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
-<span id="274">274</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::formatter</span>::{
-    <span class="ident">new_formatter</span>, <span class="ident">Formatter</span>, <span class="ident">DEFAULT_FLAG_FORMATTER</span>, <span class="ident">DEFAULT_NUMBER_FORMATTER</span>,
-    <span class="ident">DEFAULT_STRING_FORMATTER</span>,
-};
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::value::ValueInner</span>;
-<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">Rendered</span>, <span class="ident">Values</span>};
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::formatter</span>::{<span class="ident">new_formatter</span>, <span class="ident">Formatter</span>};
+<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">Fragment</span>, <span class="ident">Values</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 
 <span class="kw">use</span> <span class="ident">std::iter::Peekable</span>;
@@ -299,7 +270,7 @@
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Token</span> {
     <span class="ident">Text</span>(<span class="ident">String</span>),
     <span class="ident">Recursive</span>(<span class="ident">FormatTemplate</span>),
-    <span class="ident">Var</span> {
+    <span class="ident">Placeholder</span> {
         <span class="ident">name</span>: <span class="ident">String</span>,
         <span class="ident">formatter</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Formatter</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     },
@@ -309,16 +280,16 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">token_list</span><span class="op">|</span> {
             <span class="ident">token_list</span>.<span class="number">0</span>.<span class="ident">iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">token</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">token</span> {
-                <span class="ident">Token::Var</span> { <span class="ident">name</span>, .. } =&gt; <span class="ident">name</span> <span class="op">==</span> <span class="ident">key</span>,
+                <span class="ident">Token::Placeholder</span> { <span class="ident">name</span>, .. } =&gt; <span class="ident">name</span> <span class="op">==</span> <span class="ident">key</span>,
                 <span class="ident">Token::Recursive</span>(<span class="ident">rec</span>) =&gt; <span class="ident">rec</span>.<span class="ident">contains_key</span>(<span class="ident">key</span>),
                 <span class="kw">_</span> =&gt; <span class="bool-val">false</span>,
             })
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">render</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">vars</span>: <span class="kw-2">&amp;</span><span class="ident">Values</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Rendered</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">render</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">values</span>: <span class="kw-2">&amp;</span><span class="ident">Values</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fragment</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">token_list</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-            <span class="kw">match</span> <span class="ident">token_list</span>.<span class="ident">render</span>(<span class="ident">vars</span>) {
+            <span class="kw">match</span> <span class="ident">token_list</span>.<span class="ident">render</span>(<span class="ident">values</span>) {
                 <span class="prelude-val">Ok</span>(<span class="ident">res</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">res</span>),
                 <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">kind</span> <span class="op">!</span><span class="op">=</span> <span class="ident">ErrorKind::Format</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
                 <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="kw">if</span> <span class="ident">i</span> <span class="op">==</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
@@ -333,7 +304,7 @@
             <span class="kw">for</span> <span class="ident">t</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">tl</span>.<span class="number">0</span> {
                 <span class="kw">match</span> <span class="ident">t</span> {
                     <span class="ident">Token::Recursive</span>(<span class="ident">r</span>) =&gt; <span class="ident">r</span>.<span class="ident">init_intervals</span>(<span class="ident">intervals</span>),
-                    <span class="ident">Token::Var</span> {
+                    <span class="ident">Token::Placeholder</span> {
                         <span class="ident">formatter</span>: <span class="prelude-val">Some</span>(<span class="ident">f</span>), ..
                     } =&gt; {
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>) <span class="op">=</span> <span class="ident">f</span>.<span class="ident">interval</span>() {
@@ -348,9 +319,9 @@
 }
 
 <span class="kw">impl</span> <span class="ident">TokenList</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">render</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">vars</span>: <span class="kw-2">&amp;</span><span class="ident">Values</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Rendered</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">render</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">values</span>: <span class="kw-2">&amp;</span><span class="ident">Values</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fragment</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">retval</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cur</span> <span class="op">=</span> <span class="ident">Rendered::default</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cur</span> <span class="op">=</span> <span class="ident">Fragment::default</span>();
         <span class="kw">for</span> <span class="ident">token</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span> {
             <span class="kw">match</span> <span class="ident">token</span> {
                 <span class="ident">Token::Text</span>(<span class="ident">text</span>) =&gt; {
@@ -360,37 +331,34 @@
                         <span class="kw">if</span> <span class="op">!</span><span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">is_empty</span>() {
                             <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">cur</span>);
                         }
-                        <span class="ident">cur</span> <span class="op">=</span> <span class="ident">Rendered::new</span>(<span class="ident">text</span>.<span class="ident">clone</span>());
+                        <span class="ident">cur</span> <span class="op">=</span> <span class="ident">text</span>.<span class="ident">clone</span>().<span class="ident">into</span>();
                     }
                 }
                 <span class="ident">Token::Recursive</span>(<span class="ident">rec</span>) =&gt; {
                     <span class="kw">if</span> <span class="op">!</span><span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">is_empty</span>() {
                         <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">cur</span>);
                     }
-                    <span class="ident">retval</span>.<span class="ident">extend</span>(<span class="ident">rec</span>.<span class="ident">render</span>(<span class="ident">vars</span>)<span class="question-mark">?</span>);
+                    <span class="ident">retval</span>.<span class="ident">extend</span>(<span class="ident">rec</span>.<span class="ident">render</span>(<span class="ident">values</span>)<span class="question-mark">?</span>);
                     <span class="ident">cur</span> <span class="op">=</span> <span class="ident">retval</span>.<span class="ident">pop</span>().<span class="ident">unwrap_or_default</span>();
                 }
-                <span class="ident">Token::Var</span> { <span class="ident">name</span>, <span class="ident">formatter</span> } =&gt; {
-                    <span class="kw">let</span> <span class="ident">var</span> <span class="op">=</span> <span class="ident">vars</span>
-                        .<span class="ident">get</span>(<span class="ident">name</span>.<span class="ident">as_str</span>())
-                        .<span class="ident">format_error</span>(<span class="macro">format!</span>(<span class="string">&quot;Placeholder with name &#39;{}&#39; not found&quot;</span>, <span class="ident">name</span>))<span class="question-mark">?</span>;
-                    <span class="kw">let</span> <span class="ident">formatter</span> <span class="op">=</span> <span class="ident">formatter</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">as_ref</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">var</span>.<span class="ident">inner</span> {
-                            <span class="ident">ValueInner::Text</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ValueInner::Icon</span>(<span class="kw">_</span>) =&gt; <span class="kw-2">&amp;</span><span class="ident">DEFAULT_STRING_FORMATTER</span>,
-                            <span class="ident">ValueInner::Number</span> { .. } =&gt; <span class="kw-2">&amp;</span><span class="ident">DEFAULT_NUMBER_FORMATTER</span>,
-                            <span class="ident">ValueInner::Flag</span> =&gt; <span class="kw-2">&amp;</span><span class="ident">DEFAULT_FLAG_FORMATTER</span>,
-                        }
-                    });
-                    <span class="kw">let</span> <span class="ident">formatted</span> <span class="op">=</span> <span class="ident">formatter</span>.<span class="ident">format</span>(<span class="kw-2">&amp;</span><span class="ident">var</span>.<span class="ident">inner</span>)<span class="question-mark">?</span>;
-                    <span class="kw">if</span> <span class="ident">var</span>.<span class="ident">metadata</span> <span class="op">==</span> <span class="ident">cur</span>.<span class="ident">metadata</span> {
+                <span class="ident">Token::Placeholder</span> { <span class="ident">name</span>, <span class="ident">formatter</span> } =&gt; {
+                    <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">values</span>.<span class="ident">get</span>(<span class="ident">name</span>.<span class="ident">as_str</span>()).<span class="ident">or_format_error</span>(<span class="op">|</span><span class="op">|</span> {
+                        <span class="macro">format!</span>(<span class="string">&quot;Placeholder with name &#39;{}&#39; not found&quot;</span>, <span class="ident">name</span>)
+                    })<span class="question-mark">?</span>;
+                    <span class="kw">let</span> <span class="ident">formatter</span> <span class="op">=</span> <span class="ident">formatter</span>
+                        .<span class="ident">as_ref</span>()
+                        .<span class="ident">map</span>(<span class="ident">Box::as_ref</span>)
+                        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">value</span>.<span class="ident">default_formatter</span>());
+                    <span class="kw">let</span> <span class="ident">formatted</span> <span class="op">=</span> <span class="ident">formatter</span>.<span class="ident">format</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>.<span class="ident">inner</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if</span> <span class="ident">value</span>.<span class="ident">metadata</span> <span class="op">==</span> <span class="ident">cur</span>.<span class="ident">metadata</span> {
                         <span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="ident">formatted</span>);
                     } <span class="kw">else</span> {
                         <span class="kw">if</span> <span class="op">!</span><span class="ident">cur</span>.<span class="ident">text</span>.<span class="ident">is_empty</span>() {
                             <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">cur</span>);
                         }
-                        <span class="ident">cur</span> <span class="op">=</span> <span class="ident">Rendered</span> {
+                        <span class="ident">cur</span> <span class="op">=</span> <span class="ident">Fragment</span> {
                             <span class="ident">text</span>: <span class="ident">formatted</span>,
-                            <span class="ident">metadata</span>: <span class="ident">var</span>.<span class="ident">metadata</span>,
+                            <span class="ident">metadata</span>: <span class="ident">value</span>.<span class="ident">metadata</span>,
                         };
                     }
                 }
@@ -448,7 +416,7 @@
                     }
                     <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
                 };
-                <span class="ident">cur_list</span>.<span class="ident">push</span>(<span class="ident">Token::Var</span> { <span class="ident">name</span>, <span class="ident">formatter</span> });
+                <span class="ident">cur_list</span>.<span class="ident">push</span>(<span class="ident">Token::Placeholder</span> { <span class="ident">name</span>, <span class="ident">formatter</span> });
             }
             <span class="kw">_</span> =&gt; {
                 <span class="ident">cur_list</span>.<span class="ident">push</span>(<span class="ident">Token::Text</span>(<span class="ident">read_text</span>(<span class="ident">it</span>)));
@@ -484,19 +452,8 @@
 
 <span class="kw">fn</span> <span class="ident">read_placeholder_name</span>(<span class="ident">it</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Peekable</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">char</span><span class="op">&gt;</span><span class="op">&gt;</span>) -&gt; <span class="ident">String</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">retval</span> <span class="op">=</span> <span class="ident">String::new</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">escaped</span> <span class="op">=</span> <span class="bool-val">false</span>;
     <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">c</span>) <span class="op">=</span> <span class="ident">it</span>.<span class="ident">peek</span>() {
-        <span class="kw">if</span> <span class="ident">escaped</span> {
-            <span class="ident">escaped</span> <span class="op">=</span> <span class="bool-val">false</span>;
-            <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">c</span>);
-            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">it</span>.<span class="ident">next</span>();
-            <span class="kw">continue</span>;
-        }
         <span class="kw">match</span> <span class="ident">c</span> {
-            <span class="string">&#39;\\&#39;</span> =&gt; {
-                <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">it</span>.<span class="ident">next</span>();
-                <span class="ident">escaped</span> <span class="op">=</span> <span class="bool-val">true</span>;
-            }
             <span class="ident">x</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">x</span>.<span class="ident">is_alphanumeric</span>() <span class="op">&amp;&amp;</span> <span class="ident">x</span> <span class="op">!</span><span class="op">=</span> <span class="string">&#39;_&#39;</span> =&gt; <span class="kw">break</span>,
             <span class="ident">x</span> =&gt; {
                 <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">it</span>.<span class="ident">next</span>();
@@ -509,15 +466,8 @@
 
 <span class="kw">fn</span> <span class="ident">read_formatter</span>(<span class="ident">it</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">char</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">retval</span> <span class="op">=</span> <span class="ident">String::new</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">escaped</span> <span class="op">=</span> <span class="bool-val">false</span>;
     <span class="kw">for</span> <span class="ident">c</span> <span class="kw">in</span> <span class="ident">it</span> {
-        <span class="kw">if</span> <span class="ident">escaped</span> {
-            <span class="ident">escaped</span> <span class="op">=</span> <span class="bool-val">false</span>;
-            <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">c</span>);
-            <span class="kw">continue</span>;
-        }
         <span class="kw">match</span> <span class="ident">c</span> {
-            <span class="string">&#39;\\&#39;</span> =&gt; <span class="ident">escaped</span> <span class="op">=</span> <span class="bool-val">true</span>,
             <span class="string">&#39;(&#39;</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">retval</span>),
             <span class="ident">x</span> =&gt; <span class="ident">retval</span>.<span class="ident">push</span>(<span class="ident">x</span>),
         }

@@ -177,8 +177,6 @@
 <span id="171">171</span>
 <span id="172">172</span>
 <span id="173">173</span>
-<span id="174">174</span>
-<span id="175">175</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">template::FormatTemplate</span>, <span class="ident">Format</span>, <span class="ident">FormatInner</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="ident">MapAccess</span>, <span class="ident">Visitor</span>};
@@ -211,13 +209,11 @@
             <span class="ident">short</span>.<span class="ident">init_intervals</span>(<span class="kw-2">&amp;mut</span> <span class="ident">intervals</span>);
         }
 
-        <span class="prelude-val">Ok</span>(<span class="ident">Format</span> {
-            <span class="ident">inner</span>: <span class="ident">Arc::new</span>(<span class="ident">FormatInner</span> {
-                <span class="ident">full</span>,
-                <span class="ident">short</span>: <span class="self">self</span>.<span class="ident">short</span>,
-                <span class="ident">intervals</span>,
-            }),
-        })
+        <span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident">FormatInner</span> {
+            <span class="ident">full</span>,
+            <span class="ident">short</span>: <span class="self">self</span>.<span class="ident">short</span>,
+            <span class="ident">intervals</span>,
+        }))
     }
 }
 
