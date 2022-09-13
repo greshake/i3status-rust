@@ -14,7 +14,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | The `/sys/class/backlight` device to read brightness information from.  When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.| Default device
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $format $brightness "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $brightness "`
 //! `step_width` | The brightness increment to use when scrolling, in percent | `5`
 //! `minimum` | The minimum brightness that can be scrolled down to | `5`
 //! `maximum` | The maximum brightness that can be scrolled up to | `100`
