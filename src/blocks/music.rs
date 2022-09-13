@@ -237,7 +237,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 api.hide().await?;
             }
             None => {
-                widget.set_values(default());
+                widget.set_values(map!("icon" => Value::icon(api.get_icon("music")?)));
                 widget.state = State::Idle;
                 api.set_widget(&widget).await?;
             }
