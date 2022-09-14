@@ -10,7 +10,7 @@
 //! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `"DisplayDevice"`. Regular expressions can be used. | Any battery device
 //! `driver` | One of `"sysfs"`, `"apc_ups"`, or `"upower"` | `"sysfs"`
 //! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"` \|\| "apc_ups"`. | `10`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $percentage&vert; "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $percentage "`
 //! `full_format` | Same as `format` but for when the battery is full | `" $icon "`
 //! `empty_format` | Same as `format` but for when the battery is empty | `" $icon "`
 //! `missing_format` | Same as `format` if the battery cannot be found. | `" $icon "`
