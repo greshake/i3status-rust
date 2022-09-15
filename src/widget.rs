@@ -1,7 +1,7 @@
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::escape::CollectEscaped;
-use crate::formatting::{Format, Rendered, Values};
+use crate::formatting::{Format, Fragment, Values};
 use crate::protocol::i3bar_block::I3BarBlock;
 use serde::Deserialize;
 
@@ -170,7 +170,7 @@ enum Source {
 }
 
 impl Source {
-    fn render(&self) -> Result<(Vec<Rendered>, Vec<Rendered>)> {
+    fn render(&self) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
         match self {
             Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
             Self::TextWithShort(full, short) => {

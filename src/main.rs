@@ -49,7 +49,7 @@ pub type BoxedStream<T> = Pin<Box<dyn Stream<Item = T>>>;
 
 pub static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
     const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
-    const REQWEST_TIMEOUT: Duration = Duration::from_secs(5);
+    const REQWEST_TIMEOUT: Duration = Duration::from_secs(10);
     reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
         .timeout(REQWEST_TIMEOUT)

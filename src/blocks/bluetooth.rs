@@ -70,7 +70,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut monitor = DeviceMonitor::new(config.mac, config.adapter_mac).await?;
 
     loop {
-        match monitor.device() {
+        match &monitor.device {
             // Available
             Some(device) => {
                 let connected = device.connected().await?;
@@ -112,9 +112,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     res?;
                     break;
                 },
-                Click(click) = api.event() => {
+                event = api.event() => if let Click(click) = event {
                     if click.button == MouseButton::Right {
-                        if let Some(dev) = monitor.device() {
+                        if let Some(dev) = &monitor.device {
                             if let Ok(connected) = dev.connected().await {
                                 if connected {
                                     let _ = dev.device.disconnect().await;
@@ -139,7 +139,6 @@ struct DeviceMonitor {
 
 #[derive(Clone)]
 struct Device {
-    available: bool,
     props: PropertiesProxy<'static>,
     device: Device1Proxy<'static>,
     battery: Battery1Proxy<'static>,
@@ -162,13 +161,6 @@ impl DeviceMonitor {
             manager_proxy,
             device,
         })
-    }
-
-    fn device(&self) -> Option<&Device> {
-        match &self.device {
-            Some(device) if device.available => Some(device),
-            _ => None,
-        }
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
@@ -197,25 +189,6 @@ impl DeviceMonitor {
                     }
                 }
             }
-            Some(device) if !device.available => {
-                let mut interface_added = self
-                    .manager_proxy
-                    .receive_interfaces_added()
-                    .await
-                    .error("Failed to monitor interfaces")?;
-                loop {
-                    let event = interface_added
-                        .next()
-                        .await
-                        .error("Stream ended unexpectedly")?;
-                    let args = event.args().error("Failed to get the args")?;
-                    if args.object_path() == device.device.path() {
-                        device.available = true;
-                        debug!("Device is now available");
-                        return Ok(());
-                    }
-                }
-            }
             Some(device) => {
                 let mut updates = device
                     .props
@@ -240,7 +213,7 @@ impl DeviceMonitor {
                         Some(event) = interface_removed.next() => {
                             let args = event.args().error("Failed to get the args")?;
                             if args.object_path() == device.device.path() {
-                                device.available = false;
+                                self.device = None;
                                 debug!("Device is no longer available");
                                 return Ok(());
                             }
@@ -318,7 +291,6 @@ impl Device {
             debug!("Found device with path {:?}", path);
 
             return Ok(Some(Self {
-                available: true,
                 props: PropertiesProxy::builder(manager_proxy.connection())
                     .destination("org.bluez")
                     .and_then(|x| x.path(path.clone()))

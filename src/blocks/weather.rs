@@ -164,7 +164,7 @@ struct WeatherResult {
 }
 
 impl WeatherResult {
-    fn into_values(self, api: &CommonApi) -> Result<HashMap<Cow<'static, str>, Value>> {
+    fn into_values(self, api: &CommonApi) -> Result<Values> {
         Ok(map! {
             "icon" => Value::icon(api.get_icon(self.icon.to_icon_str())?),
             "location" => Value::text(self.location),

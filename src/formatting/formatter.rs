@@ -378,7 +378,13 @@ impl Formatter for EngFormatter {
                     None => (Prefix::min_available(), Prefix::max_available()),
                 };
 
-                let prefix = unit.clamp_prefix(Prefix::eng(val).clamp(min_prefix, max_prefix));
+                let prefix = unit
+                    .clamp_prefix(if min_prefix.is_binary() {
+                        Prefix::eng_binary(val)
+                    } else {
+                        Prefix::eng(val)
+                    })
+                    .clamp(min_prefix, max_prefix);
                 val = prefix.apply(val);
 
                 let mut digits = (val.max(1.).log10().floor() + 1.0) as isize;
@@ -393,7 +399,9 @@ impl Formatter for EngFormatter {
                     rest => format!("{:.*}", rest as usize - 1, val),
                 });
 
-                let display_prefix = !self.0.prefix.hidden && prefix != Prefix::One;
+                let display_prefix = !self.0.prefix.hidden
+                    && prefix != Prefix::One
+                    && prefix != Prefix::OneButBinary;
                 let display_unit = !self.0.unit.hidden && unit != Unit::None;
 
                 if display_prefix {
