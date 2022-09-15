@@ -39,7 +39,7 @@ impl Config {
 
         Ok(Arc::new(FormatInner {
             full,
-            short: Some(short),
+            short,
             intervals,
         }))
     }
