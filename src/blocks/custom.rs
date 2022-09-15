@@ -148,7 +148,7 @@ async fn update_bar(
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = CustomConfig::deserialize(config).config_error()?;
     let mut widget = api.new_widget().with_format(
-        config.format.with_defaults("{ $icon|} $text ", "{ $icon|}{ $short_text|} ")?
+        config.format.with_defaults("{ $icon|} $text ", "{ $icon|} $short_text |")?
     );
 
     let mut timer = config.interval.timer();
