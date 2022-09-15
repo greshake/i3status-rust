@@ -1,7 +1,6 @@
 use super::formatter;
 use super::unit::Unit;
 use super::Metadata;
-use crate::widget::State;
 
 #[derive(Debug, Clone)]
 pub struct Value {
@@ -103,8 +102,13 @@ impl Value {
         self
     }
 
-    pub fn with_state(mut self, state: State) -> Self {
-        self.metadata.state = Some(state);
+    pub fn underline(mut self, val: bool) -> Self {
+        self.metadata.underline = val;
+        self
+    }
+
+    pub fn italic(mut self, val: bool) -> Self {
+        self.metadata.italic = val;
         self
     }
 

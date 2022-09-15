@@ -139,16 +139,11 @@ impl Widget {
         let full_cnt = full.len();
         parts.extend(full.into_iter().enumerate().map(|(i, w)| {
             let mut data = template.clone();
-            data.full_text = w.text;
+            data.full_text = w.formated_text();
             if i + 1 == full_cnt {
                 data.full_text.push(' ');
             }
             data.instance = w.metadata.instance.map(|i| i.to_string());
-            if let Some(state) = w.metadata.state {
-                let (key_bg, key_fg) = self.shared_config.theme.get_colors(state);
-                data.background = key_bg;
-                data.color = key_fg;
-            }
             data
         }));
 
@@ -156,16 +151,11 @@ impl Widget {
         template.full_text = "<span/>".into();
         parts.extend(short.into_iter().enumerate().map(|(i, w)| {
             let mut data = template.clone();
-            data.short_text = w.text;
+            data.short_text = w.formated_text();
             if i + 1 == short_cnt {
                 data.short_text.push(' ');
             }
             data.instance = w.metadata.instance.map(|i| i.to_string());
-            if let Some(state) = w.metadata.state {
-                let (key_bg, key_fg) = self.shared_config.theme.get_colors(state);
-                data.background = key_bg;
-                data.color = key_fg;
-            }
             data
         }));
 
