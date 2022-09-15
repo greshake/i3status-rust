@@ -598,7 +598,7 @@
         <span class="macro">dbg!</span>(<span class="ident">error</span>);
 
         <span class="comment">// Wait for USR2 signal to restart</span>
-        <span class="ident">signal_hook::iterator::Signals::new</span>(<span class="kw-2">&amp;</span>[<span class="ident">signal_hook::consts::SIGUSR2</span>])
+        <span class="ident">signal_hook::iterator::Signals::new</span>([<span class="ident">signal_hook::consts::SIGUSR2</span>])
             .<span class="ident">unwrap</span>()
             .<span class="ident">forever</span>()
             .<span class="ident">next</span>()

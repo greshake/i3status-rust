@@ -376,7 +376,7 @@
         .<span class="ident">error</span>(<span class="string">&quot;Failed to run `apt update` command&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">stdout</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;sh&quot;</span>)
         .<span class="ident">env</span>(<span class="string">&quot;APT_CONFIG&quot;</span>, <span class="ident">config_path</span>)
-        .<span class="ident">args</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;apt list --upgradable&quot;</span>])
+        .<span class="ident">args</span>([<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;apt list --upgradable&quot;</span>])
         .<span class="ident">output</span>()
         .<span class="kw">await</span>
         .<span class="ident">error</span>(<span class="string">&quot;Problem running apt command&quot;</span>)<span class="question-mark">?</span>

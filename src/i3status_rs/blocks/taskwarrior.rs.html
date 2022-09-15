@@ -298,7 +298,7 @@
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_number_of_tasks</span>(<span class="ident">filter</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;task&quot;</span>)
-        .<span class="ident">args</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;rc.gc=off&quot;</span>, <span class="ident">filter</span>, <span class="string">&quot;count&quot;</span>])
+        .<span class="ident">args</span>([<span class="string">&quot;rc.gc=off&quot;</span>, <span class="ident">filter</span>, <span class="string">&quot;count&quot;</span>])
         .<span class="ident">output</span>()
         .<span class="kw">await</span>
         .<span class="ident">error</span>(<span class="string">&quot;failed to run taskwarrior for getting the number of tasks&quot;</span>)<span class="question-mark">?</span>
