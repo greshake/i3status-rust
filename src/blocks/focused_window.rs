@@ -8,7 +8,6 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $title.str(0,21) &vert;"</code>
-//! `autohide` | Whether to hide the block when no title is available | `true`
 //! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | `"auto"`
 //!
 //! Placeholder     | Value                                                                 | Type | Unit
@@ -26,6 +25,13 @@
 //! full = "$title.rot-str(15)|"
 //! short = "$title.rot-str(10)|"
 //! ```
+//!
+//! This example instead of hiding block when the window's title is empty displays "Missing"
+//!
+//! ```toml
+//! [[block]]
+//! block = "focused_window"
+//! format = " $title.str(0,21) | Missing "
 
 use super::prelude::*;
 use swayipc_async::{Connection, Event, EventStream, EventType, WindowChange, WorkspaceChange};
@@ -40,8 +46,6 @@ use tokio::{
 #[serde(deny_unknown_fields, default)]
 struct FocusedWindowConfig {
     format: FormatConfig,
-    #[default(true)]
-    autohide: bool,
     driver: Driver,
 }
 
@@ -58,7 +62,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = FocusedWindowConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default(" {$title.str(0,21)|} ")?);
+        .with_format(config.format.with_default("{ $title.str(0,21) |}")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         Driver::Auto => match SwayIpc::new().await {
@@ -74,16 +78,16 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             _ = api.event() => (),
             info = backend.get_info() => {
                 let Info { title, marks } = info?;
-                if !title.is_empty() || !config.autohide {
+                if title.is_empty() {
+                    widget.set_values(default());
+                } else {
                     widget.set_values(map! {
                         "title" => Value::text(title.clone()),
                         "marks" => Value::text(marks.iter().map(|m| format!("[{m}]")).collect()),
                         "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{m}]")).collect()),
                     });
-                    api.set_widget(&widget).await?;
-                } else {
-                    api.hide().await?;
                 }
+                api.set_widget(&widget).await?;
             }
         }
     }
