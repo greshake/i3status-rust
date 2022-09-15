@@ -22,7 +22,6 @@
 //! `name`       | Device's name                                                         | Text   | -
 //! `percentage` | Device's battery level (may be absent if the device is not supported) | Number | %
 //! `available`  | Present if the device is available                                    | Flag   | -
-//! `connected`  | Present if the device is connected                                    | Flag   | -
 //!
 //! # Examples
 //!
@@ -78,7 +77,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 let mut values = map! {
                     "icon" => Value::icon(api.get_icon(device.icon().await?)?),
                     "name" => Value::text(device.name().await?),
-                    "available" => Value::flag(),
+                    "available" => Value::flag()
                 };
                 device
                     .percentage()
@@ -86,7 +85,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     .map(|p| values.insert("percentage".into(), Value::percents(p)));
                 if connected {
                     widget.state = State::Good;
-                    values.insert("connected".into(), Value::flag());
                     widget.set_format(format.clone());
                     debug!("Showing device as connected");
                 } else {
