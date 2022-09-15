@@ -136,7 +136,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
 async fn get_number_of_tasks(filter: &str) -> Result<u32> {
     let output = Command::new("task")
-        .args(&["rc.gc=off", filter, "count"])
+        .args(["rc.gc=off", filter, "count"])
         .output()
         .await
         .error("failed to run taskwarrior for getting the number of tasks")?

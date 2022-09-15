@@ -109,7 +109,7 @@ fn main() {
         dbg!(error);
 
         // Wait for USR2 signal to restart
-        signal_hook::iterator::Signals::new(&[signal_hook::consts::SIGUSR2])
+        signal_hook::iterator::Signals::new([signal_hook::consts::SIGUSR2])
             .unwrap()
             .forever()
             .next()

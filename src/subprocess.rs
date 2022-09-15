@@ -29,7 +29,7 @@ pub fn spawn_shell(cmd: &str) -> io::Result<()> {
 
 pub async fn spawn_shell_sync(cmd: &str) -> io::Result<()> {
     tokio::process::Command::new("sh")
-        .args(&["-c", cmd])
+        .args(["-c", cmd])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .spawn()?

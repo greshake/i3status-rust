@@ -381,7 +381,7 @@ async fn get_pacman_available_updates() -> Result<String> {
 
 async fn get_aur_available_updates(aur_command: &str) -> Result<String> {
     let stdout = Command::new("sh")
-        .args(&["-c", aur_command])
+        .args(["-c", aur_command])
         .output()
         .await
         .or_error(|| format!("aur command: {aur_command} failed"))?

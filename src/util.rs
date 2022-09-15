@@ -115,7 +115,7 @@ pub async fn read_file(path: impl AsRef<Path>) -> io::Result<String> {
 
 pub async fn has_command(command: &str) -> Result<bool> {
     Command::new("sh")
-        .args(&[
+        .args([
             "-c",
             format!("command -v {command} >/dev/null 2>&1").as_ref(),
         ])

@@ -65,7 +65,7 @@ impl SoundDevice for Device {
         if self.natural_mapping {
             args.push("-M");
         };
-        args.extend(&["-D", &self.device, "get", &self.name]);
+        args.extend(["-D", &self.device, "get", &self.name]);
 
         let output: String = Command::new("amixer")
             .args(&args)
@@ -105,7 +105,7 @@ impl SoundDevice for Device {
             args.push("-M");
         };
         let vol_str = format!("{capped_volume}%");
-        args.extend(&["-D", &self.device, "set", &self.name, &vol_str]);
+        args.extend(["-D", &self.device, "set", &self.name, &vol_str]);
 
         Command::new("amixer")
             .args(&args)
@@ -123,7 +123,7 @@ impl SoundDevice for Device {
         if self.natural_mapping {
             args.push("-M");
         };
-        args.extend(&["-D", &self.device, "set", &self.name, "toggle"]);
+        args.extend(["-D", &self.device, "set", &self.name, "toggle"]);
 
         Command::new("amixer")
             .args(&args)

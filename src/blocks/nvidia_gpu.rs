@@ -88,7 +88,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     // Run `nvidia-smi` command
     let mut child = Command::new("nvidia-smi")
-        .args(&[
+        .args([
             "-l",
             &config.interval.seconds().to_string(),
             "-i",
@@ -237,14 +237,14 @@ async fn set_fan_speed(id: u64, speed: Option<u32>) -> Result<()> {
     const ERR_MSG: &str = "Failed to execute nvidia-settings";
     let mut cmd = Command::new("nvidia-settings");
     if let Some(speed) = speed {
-        cmd.args(&[
+        cmd.args([
             "-a",
             &format!("[gpu:{id}]/GPUFanControlState=1"),
             "-a",
             &format!("[fan:{id}]/GPUTargetFanSpeed={speed}"),
         ]);
     } else {
-        cmd.args(&["-a", &format!("[gpu:{id}]/GPUFanControlState=0")]);
+        cmd.args(["-a", &format!("[gpu:{id}]/GPUFanControlState=0")]);
     }
     if cmd
         .spawn()
