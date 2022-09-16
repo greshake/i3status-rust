@@ -33,7 +33,7 @@
 //! ```toml
 //! [[block]]
 //! block = "kdeconnect"
-//! format = "{$bat_icon $bat_charge|}{ $notif_icon|}"
+//! format = " $icon {$bat_icon $bat_charge|}{ $notif_icon|} "
 //! bat_good = 101
 //! ```
 //!

@@ -25,7 +25,7 @@
 //! ```toml
 //! [[block]]
 //! block = "xrandr"
-//! format = "$brightness $resolution"
+//! format = " $icon $brightness $resolution "
 //! ```
 //!
 //! # Used Icons

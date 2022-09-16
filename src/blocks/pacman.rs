@@ -62,9 +62,9 @@
 //! [[block]]
 //! block = "pacman"
 //! interval = 600
-//! format = "$pacman updates available"
-//! format_singular = "$pacman update available"
-//! format_up_to_date = "system up to date"
+//! format = " $icon $pacman updates available "
+//! format_singular = " $icon $pacman update available "
+//! format_up_to_date = " $icon system up to date "
 //! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! [[block.click]]
 //! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
@@ -78,9 +78,9 @@
 //! [[block]]
 //! block = "pacman"
 //! interval = 600
-//! format = "$pacman updates available"
-//! format_singular = "$pacman update available"
-//! format_up_to_date = "system up to date"
+//! format = " $icon $pacman updates available "
+//! format_singular = " $icon $pacman update available "
+//! format_up_to_date = " $icon system up to date "
 //! # If a linux update is availble, but no ZFS package, it won't be possible to
 //! # actually perform a system upgrade, so we show a warning.
 //! warning_updates_regex = "(linux|linux-lts|linux-zen)"
@@ -95,9 +95,9 @@
 //! [[block]]
 //! block = "pacman"
 //! interval = 600
-//! format = "$pacman + $aur = $both updates available"
-//! format_singular = "$both update available"
-//! format_up_to_date = "system up to date"
+//! format = " $icon $pacman + $aur = $both updates available "
+//! format_singular = " $icon $both update available "
+//! format_up_to_date = " $icon system up to date "
 //! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
 //! aur_command = "yay -Qua"

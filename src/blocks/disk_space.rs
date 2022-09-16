@@ -30,7 +30,7 @@
 //! alert_unit = "GB"
 //! alert = 10.0
 //! warning = 15.0
-//! format = "$available.eng(2)"
+//! format = " $icon $available.eng(2) "
 //! ```
 //!
 //! Update block on right click:

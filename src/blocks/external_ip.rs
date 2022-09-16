@@ -44,7 +44,7 @@
 //! ```toml
 //! [[block]]
 //! block = "external_ip"
-//! format = "$ip $country_code"
+//! format = " $ip $country_code "
 //! ```
 //!
 //! # Notes

@@ -14,7 +14,7 @@
 //! ----|--------|--------
 //! `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | `"setxkbmap"`
 //! `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | `60`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$layout"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $layout "`
 //! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found
 //! `mappings` | Map `layout (variant)` to custom short name. | `None`
 //!
@@ -45,7 +45,7 @@
 //! Listen to kbdd for changes, the text is in the following format:
 //! "English (US)" - {$layout ($variant)}
 //! use block.mappings to override with shorter names as shown below.
-//! Also use format = "$layout ($variant)" to see the full text to map,
+//! Also use format = " $layout ($variant) " to see the full text to map,
 //! or you can use:
 //! dbus-monitor interface=ru.gentoo.kbdd
 //! to see the exact variant spelling
@@ -73,7 +73,7 @@
 //! [[block]]
 //! block = "keyboard_layout"
 //! driver = "sway"
-//! format = "$layout"
+//! format = " $layout "
 //! [block.mappings]
 //! "English (Workman)" = "EN"
 //! "Russian (N/A)" = "RU"
@@ -109,7 +109,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = KeyboardLayoutConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("$layout")?);
+        .with_format(config.format.with_default(" $layout ")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap(config.interval)),

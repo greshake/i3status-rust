@@ -33,7 +33,7 @@
 //! ```toml
 //! [[block]]
 //! block = "net"
-//! format = "{$signal_strength $ssid $frequency|Wired connection} via $device"
+//! format = " $icon {$signal_strength $ssid $frequency|Wired connection} via $device "
 //! ```
 //!
 //! Display exact device

@@ -38,7 +38,7 @@
 //! [[block]]
 //! block = "nvidia_gpu"
 //! interval = 1
-//! format = "GT 1030 $utilization $temperature $clocks"
+//! format = " $icon GT 1030 $utilization $temperature $clocks "
 //! ```
 //!
 //! # Icons Used

@@ -21,7 +21,7 @@
 //! ```toml
 //! [[block]]
 //! block = "load"
-//! format = "1min avg: $1m"
+//! format = " $icon 1min avg: $1m "
 //! interval = 1
 //! ```
 //!

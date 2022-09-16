@@ -9,9 +9,9 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Update interval in seconds. | `600`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$count.eng(1)"`
-//! `format_singular` | Same as `format`, but for when exactly one update is available. | `"$count.eng(1)"`
-//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `"$count.eng(1)"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $count.eng(1) "`
+//! `format_singular` | Same as `format`, but for when exactly one update is available. | `" $icon $count.eng(1) "`
+//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $count.eng(1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `hide_when_uptodate` | Hides the block when there are no updates available | `false`
@@ -28,9 +28,9 @@
 //! [[block]]
 //! block = "apt"
 //! interval = 1800
-//! format = "$count updates available"
-//! format_singular = "One update available"
-//! format_up_to_date = "system up to date"
+//! format = " $icon $count updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
 //! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! [[block.click]]
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.

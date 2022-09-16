@@ -34,7 +34,7 @@
 //! ```toml
 //! [block]
 //! block = "battery"
-//! format = "$percentage|N/A"
+//! format = " $icon $percentage| $icon N/A "
 //! ```
 //!
 //! Hide missing battery:
