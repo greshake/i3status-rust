@@ -74,6 +74,12 @@ This is a major release which rewrites the core code to be asynchronous.
   [[block]]
   block = "cpu"
   format = " $icon $utilization "
+- **battery**: `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
+- **battery**: `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
+- **bluetooth**: hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
+- **focused_window**: `autohide` is removed. You can format to `" $title.str(0,21) | Missing "` to display the block when title is missing
+- **net**: `hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
+- **toggle**: `text` option is removed and now you can use `format` to set the text
   ```
 
 ### New features and bugfixes
@@ -82,6 +88,7 @@ This is a major release which rewrites the core code to be asynchronous.
 - `custom` block has new config option `"persistent"` which runs a command in the background and updates the block text for each received output line.
 - `focused_window` block now supports the river window manager if ristate (https://gitlab.com/snakedye/ristate) is installed
 - `battery` now supports `empty_threshold` to specify below which percentage the battery is considered empty, and `empty_format` to use a custom format when the battery is empty
+- more blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
 
 ### Dependencies that are no longer required
 
