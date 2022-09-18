@@ -61,6 +61,8 @@ use tokio::fs::read_dir;
 use super::prelude::*;
 use crate::util::read_file;
 
+make_log_macro!(debug, "backlight");
+
 #[zbus::dbus_proxy(
     interface = "org.freedesktop.login1.Session",
     default_service = "org.freedesktop.login1",
@@ -160,34 +162,33 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         widget.set_values(map! { "brightness" => Value::percents(brightness) });
         api.set_widget(&widget).await?;
 
-        select! {
-            _ = file_changes.next() => (),
-            Click(click) = api.event() => {
-                let brightness = device.brightness().await?;
-                match click.button {
-                    MouseButton::Left => {
-                        if let Some(brightness) = cycle.next() {
-                            device.set_brightness(brightness).await?;
+        loop {
+            select! {
+                _ = file_changes.next() => break,
+                event = api.event() => match event {
+                    UpdateRequest => (),
+                    Click(click) => {
+                        match click.button {
+                            MouseButton::Left => {
+                                if let Some(brightness) = cycle.next() {
+                                    device.set_brightness(brightness).await?;
+                                }
+                            }
+                            MouseButton::WheelUp => {
+                                device.set_brightness(
+                                    (brightness + config.step_width) .clamp(config.minimum, config.maximum)
+                                ).await?;
+                            }
+                            MouseButton::WheelDown => {
+                                device.set_brightness(
+                                    brightness
+                                        .saturating_sub(config.step_width)
+                                        .clamp(config.minimum, config.maximum)
+                                ).await?;
+                            }
+                            _ => (),
                         }
                     }
-                    MouseButton::WheelUp => {
-                        device
-                            .set_brightness(
-                                (brightness + config.step_width)
-                                    .clamp(config.minimum, config.maximum)
-                            )
-                            .await?;
-                    }
-                    MouseButton::WheelDown => {
-                        device
-                            .set_brightness(
-                                brightness
-                                    .saturating_sub(config.step_width)
-                                    .clamp(config.minimum, config.maximum)
-                            )
-                            .await?;
-                    }
-                    _ => (),
                 }
             }
         }
@@ -196,10 +197,17 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
 /// Read a brightness value from the given path.
 async fn read_brightness_raw(device_file: &Path) -> Result<u64> {
-    read_file(device_file)
-        .await
-        .error("Failed to read brightness file")?
-        .parse::<u64>()
+    let val = match read_file(device_file).await {
+        Ok(v) => Ok(v),
+        Err(_) => {
+            // HACK: Try to read file a scond time if the first fails. For some reason, when using `ddcci`
+            // the first read fails with "Error 74: Bad Message".
+            debug!("First read of brightness file failed, retrying");
+            read_file(device_file).await
+        }
+    };
+    val.error("Failed to read brightness file")?
+        .parse()
         .error("Failed to read value from brightness file")
 }
 
