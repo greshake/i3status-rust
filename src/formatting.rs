@@ -86,7 +86,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::errors::*;
-use crate::widget::State;
 use template::FormatTemplate;
 use value::Value;
 
@@ -135,10 +134,22 @@ impl From<String> for Fragment {
     }
 }
 
+impl Fragment {
+    pub fn formated_text(&self) -> String {
+        match (self.metadata.italic, self.metadata.underline) {
+            (true, true) => format!("<i><u>{}</u></i>", self.text),
+            (false, true) => format!("<u>{}</u>", self.text),
+            (true, false) => format!("<i>{}</i>", self.text),
+            (false, false) => self.text.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Metadata {
     pub instance: Option<usize>,
-    pub state: Option<State>,
+    pub underline: bool,
+    pub italic: bool,
 }
 
 impl Metadata {

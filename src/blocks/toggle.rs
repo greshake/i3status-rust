@@ -74,7 +74,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         // Check state
         let output = Command::new(&shell)
-            .args(&["-c", &config.command_state])
+            .args(["-c", &config.command_state])
             .output()
             .await
             .error("Failed to run command_state")?;
@@ -107,7 +107,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                                         &config.command_on
                                     };
                                     let output = Command::new(&shell)
-                                        .args(&["-c", cmd])
+                                        .args(["-c", cmd])
                                         .output()
                                         .await
                                         .error("Failed to run command")?;
@@ -132,7 +132,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                                 &config.command_on
                             };
                             let output = Command::new(&shell)
-                                .args(&["-c", cmd])
+                                .args(["-c", cmd])
                                 .output()
                                 .await
                                 .error("Failed to run command")?;

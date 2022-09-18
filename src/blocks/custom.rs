@@ -182,7 +182,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     if config.persistent {
         let mut process = Command::new(&shell)
-            .args(&[
+            .args([
                 "-c",
                 config
                     .command
@@ -225,7 +225,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         loop {
             // Run command
             let output = Command::new(&shell)
-                .args(&["-c", &cmd])
+                .args(["-c", &cmd])
                 .output()
                 .await
                 .error("failed to run command")?;
