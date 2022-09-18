@@ -122,10 +122,13 @@
 <span id="116">116</span>
 <span id="117">117</span>
 <span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::formatter</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::unit::Unit</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::Metadata</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::widget::State</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Value</span> {
@@ -227,8 +230,13 @@
         <span class="self">self</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_state</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="ident">State</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">state</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>);
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">underline</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">val</span>: <span class="ident">bool</span>) -&gt; <span class="self">Self</span> {
+        <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">underline</span> <span class="op">=</span> <span class="ident">val</span>;
+        <span class="self">self</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">italic</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">val</span>: <span class="ident">bool</span>) -&gt; <span class="self">Self</span> {
+        <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">italic</span> <span class="op">=</span> <span class="ident">val</span>;
         <span class="self">self</span>
     }
 

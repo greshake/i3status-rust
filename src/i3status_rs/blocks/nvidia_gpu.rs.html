@@ -261,10 +261,6 @@
 <span id="255">255</span>
 <span id="256">256</span>
 <span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Display the stats of your NVidia GPU</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! By default `show_temperature` shows the used memory. Clicking the left mouse on the</span>
@@ -375,28 +371,24 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fan_controlled</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
     <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">temp_state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">info</span>.<span class="ident">temperature</span> {
+        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">info</span>.<span class="ident">temperature</span> {
             <span class="ident">t</span> <span class="kw">if</span> <span class="ident">t</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">idle</span> =&gt; <span class="ident">State::Idle</span>,
             <span class="ident">t</span> <span class="kw">if</span> <span class="ident">t</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">good</span> =&gt; <span class="ident">State::Good</span>,
             <span class="ident">t</span> <span class="kw">if</span> <span class="ident">t</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">info</span> =&gt; <span class="ident">State::Info</span>,
             <span class="ident">t</span> <span class="kw">if</span> <span class="ident">t</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">warning</span> =&gt; <span class="ident">State::Warning</span>,
             <span class="kw">_</span> =&gt; <span class="ident">State::Critical</span>,
         };
-        <span class="kw">let</span> <span class="ident">fan_state</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">fan_controlled</span> {
-            <span class="ident">State::Warning</span>
-        } <span class="kw">else</span> {
-            <span class="ident">State::Idle</span>
-        };
 
         <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
             <span class="string">&quot;name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">info</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
             <span class="string">&quot;utilization&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">utilization</span>),
             <span class="string">&quot;memory&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="kw">if</span> <span class="ident">show_mem_total</span> {<span class="ident">info</span>.<span class="ident">mem_total</span>} <span class="kw">else</span> {<span class="ident">info</span>.<span class="ident">mem_used</span>}).<span class="ident">with_instance</span>(<span class="ident">MEM_BTN</span>),
-            <span class="string">&quot;temperature&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">info</span>.<span class="ident">temperature</span>).<span class="ident">with_state</span>(<span class="ident">temp_state</span>),
-            <span class="string">&quot;fan_speed&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">fan_speed</span>).<span class="ident">with_instance</span>(<span class="ident">FAN_BTN</span>).<span class="ident">with_state</span>(<span class="ident">fan_state</span>),
+            <span class="string">&quot;temperature&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">info</span>.<span class="ident">temperature</span>),
+            <span class="string">&quot;fan_speed&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">fan_speed</span>).<span class="ident">with_instance</span>(<span class="ident">FAN_BTN</span>).<span class="ident">underline</span>(<span class="ident">fan_controlled</span>).<span class="ident">italic</span>(<span class="ident">fan_controlled</span>),
             <span class="string">&quot;clocks&quot;</span> =&gt; <span class="ident">Value::hertz</span>(<span class="ident">info</span>.<span class="ident">clocks</span>),
             <span class="string">&quot;power&quot;</span> =&gt; <span class="ident">Value::watts</span>(<span class="ident">info</span>.<span class="ident">power_draw</span>),
         });
+
         <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop</span> {
