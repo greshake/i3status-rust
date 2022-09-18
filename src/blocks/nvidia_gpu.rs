@@ -108,28 +108,24 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut fan_controlled = false;
 
     loop {
-        let temp_state = match info.temperature {
+        widget.state = match info.temperature {
             t if t <= config.idle => State::Idle,
             t if t <= config.good => State::Good,
             t if t <= config.info => State::Info,
             t if t <= config.warning => State::Warning,
             _ => State::Critical,
         };
-        let fan_state = if fan_controlled {
-            State::Warning
-        } else {
-            State::Idle
-        };
 
         widget.set_values(map! {
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
             "memory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
-            "temperature" => Value::degrees(info.temperature).with_state(temp_state),
-            "fan_speed" => Value::percents(info.fan_speed).with_instance(FAN_BTN).with_state(fan_state),
+            "temperature" => Value::degrees(info.temperature),
+            "fan_speed" => Value::percents(info.fan_speed).with_instance(FAN_BTN).underline(fan_controlled).italic(fan_controlled),
             "clocks" => Value::hertz(info.clocks),
             "power" => Value::watts(info.power_draw),
         });
+
         api.set_widget(&widget).await?;
 
         loop {
