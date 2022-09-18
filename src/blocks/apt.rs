@@ -14,7 +14,6 @@
 //! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $count.eng(1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
-//! `hide_when_uptodate` | Hides the block when there are no updates available | `false`
 //!
 //! Key | Value | Type | Unit
 //! ----|-------|------|------
@@ -61,7 +60,6 @@ struct AptConfig {
     format_up_to_date: FormatConfig,
     warning_updates_regex: Option<String>,
     critical_updates_regex: Option<String>,
-    hide_when_uptodate: bool,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -116,40 +114,36 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let updates = get_updates_list(config_file.to_str().unwrap()).await?;
         let count = get_update_count(&updates);
 
-        if count == 0 && config.hide_when_uptodate {
-            api.hide().await?;
-        } else {
-            widget.set_format(match count {
-                0 => format_up_to_date.clone(),
-                1 => format_singular.clone(),
-                _ => format.clone(),
-            });
-            widget.set_values(map!(
-                "count" => Value::number(count),
-                "icon" => Value::icon(api.get_icon("update")?)
-            ));
+        widget.set_format(match count {
+            0 => format_up_to_date.clone(),
+            1 => format_singular.clone(),
+            _ => format.clone(),
+        });
+        widget.set_values(map!(
+            "count" => Value::number(count),
+            "icon" => Value::icon(api.get_icon("update")?)
+        ));
 
-            let warning = warning_updates_regex
-                .as_ref()
-                .map_or(false, |regex| has_matching_update(&updates, regex));
-            let critical = critical_updates_regex
-                .as_ref()
-                .map_or(false, |regex| has_matching_update(&updates, regex));
-            widget.state = match count {
-                0 => State::Idle,
-                _ => {
-                    if critical {
-                        State::Critical
-                    } else if warning {
-                        State::Warning
-                    } else {
-                        State::Info
-                    }
+        let warning = warning_updates_regex
+            .as_ref()
+            .map_or(false, |regex| has_matching_update(&updates, regex));
+        let critical = critical_updates_regex
+            .as_ref()
+            .map_or(false, |regex| has_matching_update(&updates, regex));
+        widget.state = match count {
+            0 => State::Idle,
+            _ => {
+                if critical {
+                    State::Critical
+                } else if warning {
+                    State::Warning
+                } else {
+                    State::Info
                 }
-            };
+            }
+        };
 
-            api.set_widget(&widget).await?;
-        }
+        api.set_widget(&widget).await?;
 
         loop {
             select! {

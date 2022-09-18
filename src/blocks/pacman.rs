@@ -46,7 +46,6 @@
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used
-//! `hide_when_uptodate` | Hides the block when there are no updates available | `false`
 //!
 //!  Key    | Value | Type | Unit
 //! --------|-------|------|-----
@@ -154,7 +153,6 @@ struct PacmanConfig {
     warning_updates_regex: Option<String>,
     critical_updates_regex: Option<String>,
     aur_command: Option<String>,
-    hide_when_uptodate: bool,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -270,29 +268,25 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
         values.insert("icon".into(),  Value::icon(api.get_icon("update")?));
 
-        if total == 0 && config.hide_when_uptodate {
-            api.hide().await?;
-        } else {
-            widget.set_format(match total {
-                0 => format_up_to_date.clone(),
-                1 => format_singular.clone(),
-                _ => format.clone(),
-            });
-            widget.set_values(values);
-            widget.state = match total {
-                0 => State::Idle,
-                _ => {
-                    if critical {
-                        State::Critical
-                    } else if warning {
-                        State::Warning
-                    } else {
-                        State::Info
-                    }
+        widget.set_format(match total {
+            0 => format_up_to_date.clone(),
+            1 => format_singular.clone(),
+            _ => format.clone(),
+        });
+        widget.set_values(values);
+        widget.state = match total {
+            0 => State::Idle,
+            _ => {
+                if critical {
+                    State::Critical
+                } else if warning {
+                    State::Warning
+                } else {
+                    State::Info
                 }
-            };
-            api.set_widget(&widget).await?;
-        }
+            }
+        };
+        api.set_widget(&widget).await?;
 
         loop {
             select! {

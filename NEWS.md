@@ -74,13 +74,15 @@ This is a major release which rewrites the core code to be asynchronous.
   [[block]]
   block = "cpu"
   format = " $icon $utilization "
+  ```
+
 - **battery**: `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
 - **battery**: `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
 - **bluetooth**: hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
 - **focused_window**: `autohide` is removed. You can format to `" $title.str(0,21) | Missing "` to display the block when title is missing
 - **net**: `hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
 - **toggle**: `text` option is removed and now you can use `format` to set the text
-  ```
+- **{apt, dnf, pacman}**: `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block
 
 ### New features and bugfixes
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
