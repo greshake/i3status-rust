@@ -285,6 +285,14 @@
 <span id="279">279</span>
 <span id="280">280</span>
 <span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block reads brightness information directly from the filesystem, so it works under both</span>
@@ -347,6 +355,8 @@
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::read_file</span>;
+
+<span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;backlight&quot;</span>);
 
 <span class="attribute">#[<span class="ident">zbus::dbus_proxy</span>(
     <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.login1.Session&quot;</span>,
@@ -447,34 +457,33 @@
         <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> { <span class="string">&quot;brightness&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">brightness</span>) });
         <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">file_changes</span>.<span class="ident">next</span>() =&gt; (),
-            <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; {
-                <span class="kw">let</span> <span class="ident">brightness</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">brightness</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                    <span class="ident">MouseButton::Left</span> =&gt; {
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">brightness</span>) <span class="op">=</span> <span class="ident">cycle</span>.<span class="ident">next</span>() {
-                            <span class="ident">device</span>.<span class="ident">set_brightness</span>(<span class="ident">brightness</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">loop</span> {
+            <span class="macro">select!</span> {
+                <span class="kw">_</span> <span class="op">=</span> <span class="ident">file_changes</span>.<span class="ident">next</span>() =&gt; <span class="kw">break</span>,
+                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
+                    <span class="ident">UpdateRequest</span> =&gt; (),
+                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
+                        <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
+                            <span class="ident">MouseButton::Left</span> =&gt; {
+                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">brightness</span>) <span class="op">=</span> <span class="ident">cycle</span>.<span class="ident">next</span>() {
+                                    <span class="ident">device</span>.<span class="ident">set_brightness</span>(<span class="ident">brightness</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                                }
+                            }
+                            <span class="ident">MouseButton::WheelUp</span> =&gt; {
+                                <span class="ident">device</span>.<span class="ident">set_brightness</span>(
+                                    (<span class="ident">brightness</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">step_width</span>) .<span class="ident">clamp</span>(<span class="ident">config</span>.<span class="ident">minimum</span>, <span class="ident">config</span>.<span class="ident">maximum</span>)
+                                ).<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="ident">MouseButton::WheelDown</span> =&gt; {
+                                <span class="ident">device</span>.<span class="ident">set_brightness</span>(
+                                    <span class="ident">brightness</span>
+                                        .<span class="ident">saturating_sub</span>(<span class="ident">config</span>.<span class="ident">step_width</span>)
+                                        .<span class="ident">clamp</span>(<span class="ident">config</span>.<span class="ident">minimum</span>, <span class="ident">config</span>.<span class="ident">maximum</span>)
+                                ).<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="kw">_</span> =&gt; (),
                         }
                     }
-                    <span class="ident">MouseButton::WheelUp</span> =&gt; {
-                        <span class="ident">device</span>
-                            .<span class="ident">set_brightness</span>(
-                                (<span class="ident">brightness</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">step_width</span>)
-                                    .<span class="ident">clamp</span>(<span class="ident">config</span>.<span class="ident">minimum</span>, <span class="ident">config</span>.<span class="ident">maximum</span>)
-                            )
-                            .<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="ident">MouseButton::WheelDown</span> =&gt; {
-                        <span class="ident">device</span>
-                            .<span class="ident">set_brightness</span>(
-                                <span class="ident">brightness</span>
-                                    .<span class="ident">saturating_sub</span>(<span class="ident">config</span>.<span class="ident">step_width</span>)
-                                    .<span class="ident">clamp</span>(<span class="ident">config</span>.<span class="ident">minimum</span>, <span class="ident">config</span>.<span class="ident">maximum</span>)
-                            )
-                            .<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="kw">_</span> =&gt; (),
                 }
             }
         }
@@ -483,10 +492,17 @@
 
 <span class="doccomment">/// Read a brightness value from the given path.</span>
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_brightness_raw</span>(<span class="ident">device_file</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-    <span class="ident">read_file</span>(<span class="ident">device_file</span>)
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to read brightness file&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>()
+    <span class="kw">let</span> <span class="ident">val</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">read_file</span>(<span class="ident">device_file</span>).<span class="kw">await</span> {
+        <span class="prelude-val">Ok</span>(<span class="ident">v</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">v</span>),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
+            <span class="comment">// HACK: Try to read file a scond time if the first fails. For some reason, when using `ddcci`</span>
+            <span class="comment">// the first read fails with &quot;Error 74: Bad Message&quot;.</span>
+            <span class="macro">debug!</span>(<span class="string">&quot;First read of brightness file failed, retrying&quot;</span>);
+            <span class="ident">read_file</span>(<span class="ident">device_file</span>).<span class="kw">await</span>
+        }
+    };
+    <span class="ident">val</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to read brightness file&quot;</span>)<span class="question-mark">?</span>
+        .<span class="ident">parse</span>()
         .<span class="ident">error</span>(<span class="string">&quot;Failed to read value from brightness file&quot;</span>)
 }
 
