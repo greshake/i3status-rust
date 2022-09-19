@@ -355,6 +355,8 @@
 <span id="349">349</span>
 <span id="350">350</span>
 <span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
@@ -616,7 +618,9 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">get_icon</span>(<span class="ident">icon</span>)
+        <span class="self">self</span>.<span class="ident">shared_config</span>
+            .<span class="ident">get_icon</span>(<span class="ident">icon</span>)
+            .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{}&#39; not found&quot;</span>, <span class="ident">icon</span>))
     }
 
     <span class="doccomment">/// Repeatedly call provided async function until it succeeds.</span>

@@ -9,7 +9,7 @@
 <p>This block uses <code>sysfs</code> and <code>netlink</code> and thus does not require any external dependencies.</p>
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>device</code></td><td>Network interface to monitor (as specified in <code>/sys/class/net/</code>). Supports regex.</td><td>If not set, device will be automatically selected every <code>interval</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;$speed_down.eng(3,B,K)$speed_up.eng(3,B,K)&quot;</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot;^icon_net_down$speed_down.eng(3,B,K)^icon_net_up$speed_up.eng(3,B,K)&quot;</code></td></tr>
 <tr><td><code>format_alt</code></td><td>If set, block will switch between <code>format</code> and <code>format_alt</code> on every click</td><td><code>None</code></td></tr>
 <tr><td><code>interval</code></td><td>Update interval in seconds</td><td><code>2</code></td></tr>
 <tr><td><code>hide_missing</code></td><td>Whether to hide interfaces that don’t exist on the system.</td><td><code>false</code></td></tr>
