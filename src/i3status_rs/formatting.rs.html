@@ -174,6 +174,10 @@
 <span id="168">168</span>
 <span id="169">169</span>
 <span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
 </pre><pre class="rust"><code><span class="doccomment">//! # Formatting system</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Many blocks have a `format` configuration option, which allows to heavily customize the block&#39;s</span>
@@ -181,6 +185,10 @@
 <span class="doccomment">//! displayed according to `format`. `format`&#39;s value is just a text with embeded variables.</span>
 <span class="doccomment">//! Simialrly to PHP and shell, variable name must start with a `$`:</span>
 <span class="doccomment">//! `this is a variable: -&gt; $var &lt;-`.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Also, format strings can embed icons. For example, `^icon_ping` in `&quot; ^icon_ping $ping &quot;` gets</span>
+<span class="doccomment">//! substituted with a &quot;ping&quot; icon from your icon set. For a complete list of icons, see</span>
+<span class="doccomment">//! [this](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-overrides).</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Types</span>
 <span class="doccomment">//!</span>
