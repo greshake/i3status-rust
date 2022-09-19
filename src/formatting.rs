@@ -85,6 +85,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::config::SharedConfig;
 use crate::errors::*;
 use template::FormatTemplate;
 use value::Value;
@@ -109,12 +110,19 @@ impl FormatInner {
         self.intervals.clone()
     }
 
-    pub fn render(&self, vars: &Values) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
-        let full = self.full.render(vars).error("Failed to render full text")?;
+    pub fn render(
+        &self,
+        values: &Values,
+        config: &SharedConfig,
+    ) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
+        let full = self
+            .full
+            .render(values, config)
+            .error("Failed to render full text")?;
         let short = self
             .short
             .as_ref()
-            .map(|s| s.render(vars))
+            .map(|s| s.render(values, config))
             .transpose()
             .error("Failed to render short text")?
             .unwrap_or_default();

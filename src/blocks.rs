@@ -259,7 +259,9 @@ impl CommonApi {
     }
 
     pub fn get_icon(&self, icon: &str) -> Result<String> {
-        self.shared_config.get_icon(icon)
+        self.shared_config
+            .get_icon(icon)
+            .or_error(|| format!("Icon '{}' not found", icon))
     }
 
     /// Repeatedly call provided async function until it succeeds.

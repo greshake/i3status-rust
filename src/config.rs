@@ -2,7 +2,6 @@ use serde::Deserialize;
 use std::sync::Arc;
 use toml::value;
 
-use crate::errors::*;
 use crate::icons::Icons;
 use crate::themes::Theme;
 use crate::util::default;
@@ -18,17 +17,11 @@ pub struct SharedConfig {
 }
 
 impl SharedConfig {
-    pub fn get_icon(&self, icon: &str) -> Result<String> {
+    pub fn get_icon(&self, icon: &str) -> Option<String> {
         if icon.is_empty() {
-            Ok(String::new())
+            Some(String::new())
         } else {
-            Ok(self.icons_format.replace(
-                "{icon}",
-                self.icons
-                    .0
-                    .get(icon)
-                    .or_error(|| format!("Icon '{icon}' not found: please check your icons file or open a new issue on GitHub if you use precompiled icons"))?,
-            ))
+            Some(self.icons_format.replace("{icon}", self.icons.0.get(icon)?))
         }
     }
 }
