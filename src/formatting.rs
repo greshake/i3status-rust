@@ -6,6 +6,10 @@
 //! Simialrly to PHP and shell, variable name must start with a `$`:
 //! `this is a variable: -> $var <-`.
 //!
+//! Also, format strings can embed icons. For example, `^icon_ping` in `" ^icon_ping $ping "` gets
+//! substituted with a "ping" icon from your icon set. For a complete list of icons, see
+//! [this](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-overrides).
+//!
 //! # Types
 //!
 //! The allowed types of variables are:
