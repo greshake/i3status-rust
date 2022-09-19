@@ -1,11 +1,11 @@
 [theme]
-theme = "solarized-dark"
+name = "solarized-dark"
 [theme.overrides]
 idle_bg = "#123456"
 idle_fg = "#abcdef"
 
 [icons]
-icons = "awesome"
+name = "awesome"
 [icons.overrides]
 bat = " | | "
 bat_full = " |X| "
@@ -23,19 +23,17 @@ unit = "GB"
 interval = 20
 warning = 20.0
 alert = 10.0
-format = "root: $available.eng(2)"
+format = "root: {available}"
 
 [[block]]
 block = "memory"
 display_type = "memory"
-format_mem = "$mem_total_used_percents.eng(2)"
-format_swap = "$swap_used_percents.eng(2)"
+format_mem = "{mem_total_used_percents}"
+format_swap = "{swap_used_percents}"
 
 [[block]]
 block = "sound"
-[[block.click]]
-button = "left"
-cmd = "pavucontrol"
+on_click = "pavucontrol"
 
 [[block]]
 block = "time"
