@@ -77,10 +77,6 @@
 <span id="71">71</span>
 <span id="72">72</span>
 <span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
-<span id="76">76</span>
-<span id="77">77</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">toml::value</span>;
@@ -129,7 +125,7 @@
     <span class="kw">pub</span> <span class="ident">invert_scrolling</span>: <span class="ident">bool</span>,
 
     <span class="doccomment">/// The maximum delay (ms) between two clicks that are considered as doulble click</span>
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Config::default_double_click_delay&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
     <span class="kw">pub</span> <span class="ident">double_click_delay</span>: <span class="ident">u64</span>,
 
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Config::default_error_format&quot;</span>)]</span>
@@ -144,10 +140,6 @@
 <span class="kw">impl</span> <span class="ident">Config</span> {
     <span class="kw">fn</span> <span class="ident">default_icons_format</span>() -&gt; <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
         <span class="ident">Arc::new</span>(<span class="string">&quot; {icon} &quot;</span>.<span class="ident">into</span>())
-    }
-
-    <span class="kw">fn</span> <span class="ident">default_double_click_delay</span>() -&gt; <span class="ident">u64</span> {
-        <span class="number">200</span>
     }
 
     <span class="kw">fn</span> <span class="ident">default_error_format</span>() -&gt; <span class="ident">String</span> {
