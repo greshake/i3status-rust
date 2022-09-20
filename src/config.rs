@@ -46,7 +46,7 @@ pub struct Config {
     pub invert_scrolling: bool,
 
     /// The maximum delay (ms) between two clicks that are considered as doulble click
-    #[serde(default = "Config::default_double_click_delay")]
+    #[serde(default)]
     pub double_click_delay: u64,
 
     #[serde(default = "Config::default_error_format")]
@@ -61,10 +61,6 @@ pub struct Config {
 impl Config {
     fn default_icons_format() -> Arc<String> {
         Arc::new(" {icon} ".into())
-    }
-
-    fn default_double_click_delay() -> u64 {
-        200
     }
 
     fn default_error_format() -> String {
