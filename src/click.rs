@@ -6,6 +6,12 @@ use serde::Deserialize;
 use crate::errors::{Result, ResultExt};
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 
+/// Can be one of `left`, `middle`, `right`, `wheel_up`, `wheel_down`, `forward`, `back`, or
+/// `double_left`.
+///
+/// Note that in order for double clicks to be registered, you have to set `double_click_delay` to a
+/// non-zero value. `200` might be a good choice. Note that enabling this functionality will
+/// make left clicks less responsive and feel a bit laggy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MouseButton {
     Left,
@@ -16,7 +22,6 @@ pub enum MouseButton {
     Forward,
     Back,
     Unknown,
-    /// Experemental
     DoubleLeft,
 }
 

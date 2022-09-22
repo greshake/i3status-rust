@@ -1,5 +1,6 @@
 use super::formatter::{new_formatter, Formatter};
 use super::{Fragment, Values};
+use crate::config::SharedConfig;
 use crate::errors::*;
 
 use std::iter::Peekable;
@@ -19,6 +20,9 @@ pub enum Token {
         name: String,
         formatter: Option<Box<dyn Formatter>>,
     },
+    Icon {
+        name: String,
+    },
 }
 
 impl FormatTemplate {
@@ -32,9 +36,9 @@ impl FormatTemplate {
         })
     }
 
-    pub fn render(&self, values: &Values) -> Result<Vec<Fragment>> {
+    pub fn render(&self, values: &Values, config: &SharedConfig) -> Result<Vec<Fragment>> {
         for (i, token_list) in self.0.iter().enumerate() {
-            match token_list.render(values) {
+            match token_list.render(values, config) {
                 Ok(res) => return Ok(res),
                 Err(e) if e.kind != ErrorKind::Format => return Err(e),
                 Err(e) if i == self.0.len() - 1 => return Err(e),
@@ -64,7 +68,7 @@ impl FormatTemplate {
 }
 
 impl TokenList {
-    pub fn render(&self, values: &Values) -> Result<Vec<Fragment>> {
+    pub fn render(&self, values: &Values, config: &SharedConfig) -> Result<Vec<Fragment>> {
         let mut retval = Vec::new();
         let mut cur = Fragment::default();
         for token in &self.0 {
@@ -83,13 +87,13 @@ impl TokenList {
                     if !cur.text.is_empty() {
                         retval.push(cur);
                     }
-                    retval.extend(rec.render(values)?);
+                    retval.extend(rec.render(values, config)?);
                     cur = retval.pop().unwrap_or_default();
                 }
                 Token::Placeholder { name, formatter } => {
-                    let value = values.get(name.as_str()).or_format_error(|| {
-                        format!("Placeholder with name '{}' not found", name)
-                    })?;
+                    let value = values
+                        .get(name.as_str())
+                        .or_format_error(|| format!("Placeholder '{}' not found", name))?;
                     let formatter = formatter
                         .as_ref()
                         .map(Box::as_ref)
@@ -105,6 +109,19 @@ impl TokenList {
                             text: formatted,
                             metadata: value.metadata,
                         };
+                    }
+                }
+                Token::Icon { name } => {
+                    let icon = config
+                        .get_icon(name)
+                        .or_format_error(|| format!("Icon '{}' not found", name))?;
+                    if cur.metadata.is_default() {
+                        cur.text.push_str(&icon);
+                    } else {
+                        if !cur.text.is_empty() {
+                            retval.push(cur);
+                        }
+                        cur = icon.into();
                     }
                 }
             }
@@ -153,7 +170,7 @@ fn read_format_template(it: &mut Peekable<impl Iterator<Item = char>>) -> Result
             }
             '$' => {
                 let _ = it.next();
-                let name = read_placeholder_name(it);
+                let name = read_ident(it);
                 let formatter = match it.peek() {
                     Some('.') => {
                         let _ = it.next();
@@ -162,6 +179,14 @@ fn read_format_template(it: &mut Peekable<impl Iterator<Item = char>>) -> Result
                     _ => None,
                 };
                 cur_list.push(Token::Placeholder { name, formatter });
+            }
+            '^' => {
+                let _ = it.next();
+                if !consume_exact(it, "icon_") {
+                    return Err(Error::new("^ should be followed by 'icon_<name>'"));
+                }
+                let name = read_ident(it);
+                cur_list.push(Token::Icon { name });
             }
             _ => {
                 cur_list.push(Token::Text(read_text(it)));
@@ -185,7 +210,7 @@ fn read_text(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
                 let _ = it.next();
                 escaped = true;
             }
-            '{' | '}' | '$' | '|' => break,
+            '{' | '}' | '$' | '^' | '|' => break,
             x => {
                 let _ = it.next();
                 retval.push(x);
@@ -195,7 +220,7 @@ fn read_text(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
     retval
 }
 
-fn read_placeholder_name(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
+fn read_ident(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
     let mut retval = String::new();
     while let Some(&c) = it.peek() {
         match c {
@@ -246,4 +271,13 @@ fn read_args(it: &mut impl Iterator<Item = char>) -> Result<Vec<String>> {
         }
     }
     Err(Error::new("Missing ')'"))
+}
+
+fn consume_exact(it: &mut impl Iterator<Item = char>, tag: &str) -> bool {
+    for c in tag.chars() {
+        if it.next() != Some(c) {
+            return false;
+        }
+    }
+    true
 }

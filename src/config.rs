@@ -2,7 +2,6 @@ use serde::Deserialize;
 use std::sync::Arc;
 use toml::value;
 
-use crate::errors::*;
 use crate::icons::Icons;
 use crate::themes::Theme;
 use crate::util::default;
@@ -18,17 +17,11 @@ pub struct SharedConfig {
 }
 
 impl SharedConfig {
-    pub fn get_icon(&self, icon: &str) -> Result<String> {
+    pub fn get_icon(&self, icon: &str) -> Option<String> {
         if icon.is_empty() {
-            Ok(String::new())
+            Some(String::new())
         } else {
-            Ok(self.icons_format.replace(
-                "{icon}",
-                self.icons
-                    .0
-                    .get(icon)
-                    .or_error(|| format!("Icon '{icon}' not found: please check your icons file or open a new issue on GitHub if you use precompiled icons"))?,
-            ))
+            Some(self.icons_format.replace("{icon}", self.icons.0.get(icon)?))
         }
     }
 }
@@ -53,7 +46,7 @@ pub struct Config {
     pub invert_scrolling: bool,
 
     /// The maximum delay (ms) between two clicks that are considered as doulble click
-    #[serde(default = "Config::default_double_click_delay")]
+    #[serde(default)]
     pub double_click_delay: u64,
 
     #[serde(default = "Config::default_error_format")]
@@ -68,10 +61,6 @@ pub struct Config {
 impl Config {
     fn default_icons_format() -> Arc<String> {
         Arc::new("{icon}".into())
-    }
-
-    fn default_double_click_delay() -> u64 {
-        200
     }
 
     fn default_error_format() -> String {

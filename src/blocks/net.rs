@@ -7,7 +7,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $speed_down.eng(3,B,K)$speed_up.eng(3,B,K) "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
 //! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
@@ -72,12 +72,10 @@ struct NetConfig {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NetConfig::deserialize(config).config_error()?;
 
-    let mut format = config
-        .format
-        .with_default(" $icon $speed_down.eng(3,B,K)$speed_up.eng(3,B,K) ")?;
-    let missing_format = config
-        .missing_format
-        .with_default(" × ")?;
+    let mut format = config.format.with_default(
+        " $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) ",
+    )?;
+    let missing_format = config.missing_format.with_default(" × ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
@@ -136,8 +134,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
                 let values = map! {
                     "icon" => Value::icon(api.get_icon(device.icon)?),
-                    "speed_down" => Value::bytes(speed_down).with_icon(api.get_icon("net_down")?),
-                    "speed_up" => Value::bytes(speed_up).with_icon(api.get_icon("net_up")?),
+                    "speed_down" => Value::bytes(speed_down),
+                    "speed_up" => Value::bytes(speed_up),
                     "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
                     "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
                     [if let Some(v) = device.ip] "ip" => Value::text(v.to_string()),

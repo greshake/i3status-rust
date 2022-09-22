@@ -60,7 +60,7 @@ Per block click configuration `[[block.click]]`:
 
 Key | Description | Default
 ----|-------------|----------
-`button` | One of "Left", "Middle", "Right", "WheelUp", "WheelDown", "Forward", "Back" or "DoubleLeft". | -
+`button` | `left`, `right`, etc. For more info see [here](https://greshake.github.io/i3status-rust/i3status_rs/click/enum.MouseButton.html). | -
 `cmd` | Command to run when mouse button event is detected. | None
 `sync` | Whether to wait for command to exit or not. | `false`
 `update` | Whether to update the block on click. | `false`

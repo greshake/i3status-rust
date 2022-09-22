@@ -6,6 +6,10 @@
 //! Simialrly to PHP and shell, variable name must start with a `$`:
 //! `this is a variable: -> $var <-`.
 //!
+//! Also, format strings can embed icons. For example, `^icon_ping` in `" ^icon_ping $ping "` gets
+//! substituted with a "ping" icon from your icon set. For a complete list of icons, see
+//! [this](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-overrides).
+//!
 //! # Types
 //!
 //! The allowed types of variables are:
@@ -85,6 +89,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::config::SharedConfig;
 use crate::errors::*;
 use template::FormatTemplate;
 use value::Value;
@@ -109,11 +114,18 @@ impl FormatInner {
         self.intervals.clone()
     }
 
-    pub fn render(&self, vars: &Values) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
-        let full = self.full.render(vars).error("Failed to render full text")?;
+    pub fn render(
+        &self,
+        values: &Values,
+        config: &SharedConfig,
+    ) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
+        let full = self
+            .full
+            .render(values, config)
+            .error("Failed to render full text")?;
         let short = self
             .short
-            .render(vars)
+            .render(values, config)
             .error("Failed to render short text")?;
         Ok((full, short))
     }
