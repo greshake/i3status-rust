@@ -29,6 +29,7 @@
 //! ```toml
 //! [[block]]
 //! block = "toggle"
+//! format = " $icon 4k "
 //! command_state = "xrandr | grep 'DP1 connected 38' | grep -v eDP1"
 //! command_on = "~/.screenlayout/4kmon_default.sh"
 //! command_off = "~/.screenlayout/builtin.sh"
