@@ -22,8 +22,8 @@
 //! [[block]]
 //! block = "focused_window"
 //! [block.format]
-//! full = "$title.rot-str(15)|"
-//! short = "$title.rot-str(10)|"
+//! full = "{ $title.str(0,15) |}"
+//! short = "{ $title.str(0,10) |}"
 //! ```
 //!
 //! This example instead of hiding block when the window's title is empty displays "Missing"
