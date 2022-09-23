@@ -7,7 +7,7 @@
 //!
 //! Key        | Values                     | Default
 //! -----------|----------------------------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon "`
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon $text "`
 //! `interval` | Update interval in seconds | `60`
 //!
 //! # Example
@@ -37,9 +37,8 @@ struct UptimeConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = UptimeConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(config.format.with_default(" $icon ")?);
+    let mut widget = api.new_widget().with_format(config.format.with_default(" $icon $text ")?);
 
-    widget.set_values(map!("icon" => Value::icon(api.get_icon("uptime")?)));
     loop {
         let uptime = read_to_string("/proc/uptime")
             .await
@@ -69,7 +68,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             format!("{minutes}m {seconds}s")
         };
 
-        widget.set_text(text);
+        widget.set_values(map! {
+          "icon" => Value::icon(api.get_icon("uptime")?),
+          "text" => Value::text(text)
+        });
         api.set_widget(&widget).await?;
 
         select! {
