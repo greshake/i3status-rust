@@ -23,13 +23,13 @@ unit = "GB"
 interval = 20
 warning = 20.0
 alert = 10.0
-format = "root: $available.eng(2)"
+format = " $icon root: $available.eng(2) "
 
 [[block]]
 block = "memory"
 display_type = "memory"
-format_mem = "$mem_total_used_percents.eng(2)"
-format_swap = "$swap_used_percents.eng(2)"
+format_mem = " $icon $mem_total_used_percents.eng(2) "
+format_swap = " $icon $swap_used_percents.eng(2) "
 
 [[block]]
 block = "sound"
@@ -40,6 +40,4 @@ cmd = "pavucontrol"
 [[block]]
 block = "time"
 interval = 5
-format = "%a %d/%m %R"
-[block.icons_overrides]
-time = ""
+format = " %a %d/%m %R "
