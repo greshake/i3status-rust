@@ -13,6 +13,7 @@
 //!
 //! Placeholder | Value                                      | Type   | Unit
 //! ------------|--------------------------------------------|--------|-----
+//! `icon`      | A static icon                              | Icon   | -
 //! `paused`    | Present only if notifications are disabled | Flag   | -
 //!
 //! # Examples

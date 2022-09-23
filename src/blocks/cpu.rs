@@ -10,6 +10,7 @@
 //!
 //! Placeholder      | Value                                                          | Type   | Unit
 //! -----------------|----------------------------------------------------------------|--------|---------------
+//! `icon`           | A static icon                                                  | Icon   | -
 //! `utilization`    | Average CPU utilization                                        | Number | %
 //! `utilization<N>` | Utilization of Nth logical CPU                                 | Number | %
 //! `barchart`       | Utilization of all logical CPUs presented as a barchart        | Text   | -

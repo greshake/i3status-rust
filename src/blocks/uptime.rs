@@ -10,6 +10,11 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon $text "`
 //! `interval` | Update interval in seconds | `60`
 //!
+//! Placeholder   | Value                   | Type   | Unit
+//! --------------|-------------------------|--------|-----
+//! `icon`        | A static icon           | Icon   | -
+//! `text`        | Current uptime          | Text   | -
+//!
 //! # Example
 //!
 //! ```toml

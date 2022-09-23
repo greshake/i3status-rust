@@ -10,6 +10,7 @@
 //!
 //! Key       | Value                          | Type   | Unit
 //! ----------|--------------------------------|--------|-----
+//! `icon`    | A static icon                  | Icon   | -
 //! `total`   | Total containers on the host   | Number | -
 //! `running` | Containers running on the host | Number | -
 //! `stopped` | Containers stopped on the host | Number | -

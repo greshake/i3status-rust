@@ -14,6 +14,7 @@
 //!
 //! Placeholder       | Value                     | Type   | Unit
 //! ------------------|---------------------------|--------|---------------
+//! `icon`            | A static icon             | Icon   | -
 //! `speed_down`      | Download speed            | Number | Bytes per second
 //! `speed_up`        | Upload speed              | Number | Bytes per second
 //! `graph_down`      | Download speed graph      | Text   | -

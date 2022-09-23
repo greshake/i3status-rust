@@ -18,6 +18,10 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. | `"{ $icon|}{ $text|} "`
 //!
+//! Placeholder  | Value              | Type   | Unit
+//! -------------|--------------------|--------|---------------
+//! `icon`       | A static icon      | Icon   | -
+//!
 //! # Example
 //!
 //! Config:

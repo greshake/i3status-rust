@@ -14,6 +14,7 @@
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
 //! -------------|--------------------------------------------------------------------|--------|-------
+//! `icon`       | A static icon                                                      | Icon   | -
 //! `path`       | The value of `path` option                                         | Text   | -
 //! `percentage` | Free or used percentage. Depends on `info_type`                    | Number | %
 //! `total`      | Total disk space                                                   | Number | Bytes

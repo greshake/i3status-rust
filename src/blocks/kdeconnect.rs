@@ -19,6 +19,7 @@
 //!
 //! Placeholder   | Value                                                                    | Type   | Unit
 //! --------------|--------------------------------------------------------------------------|--------|-----
+//! `icon`        | A static icon                                                            | Icon   | -
 //! `bat_icon`    | Battery level indicator (only when connected and if supported)           | Icon   | -
 //! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %
 //! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -

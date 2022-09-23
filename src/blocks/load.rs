@@ -12,6 +12,7 @@
 //!
 //! Placeholder  | Value                  | Type   | Unit
 //! -------------|------------------------|--------|-----
+//! `icon`       | A static icon          | Icon   | -
 //! `1m`         | 1 minute load average  | Number | -
 //! `5m`         | 5 minute load average  | Number | -
 //! `15m`        | 15 minute load average | Number | -

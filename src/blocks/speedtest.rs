@@ -11,6 +11,7 @@
 //!
 //! Placeholder  | Value          | Type   | Unit
 //! -------------|----------------|--------|---------------
+//! `icon`       | A static icon  | Icon   | -
 //! `ping`       | Ping delay     | Number | Seconds
 //! `speed_down` | Download speed | Number | Bits per second
 //! `speed_up`   | Upload speed   | Number | Bits per second

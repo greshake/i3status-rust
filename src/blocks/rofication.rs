@@ -10,9 +10,10 @@
 //! `format` | A string to customise the output of this block. See below for placeholders. | `" $icon $num.eng(1) "`
 //! `socket_path` | Socket path for the rofication daemon. Supports path expansions e.g. `~`. | `"/tmp/rofi_notification_daemon"`
 //!
-//!  Key | Value | Type | Unit
-//! -----|-------|------|-----
-//! `num` | Number of pending notifications | Number | -
+//!  Placeholder | Value | Type | Unit
+//! -------------|-------|------|-----
+//! `icon`       | A static icon  | Icon | -
+//! `num`        | Number of pending notifications | Number | -
 //!
 //! # Example
 //!

@@ -22,6 +22,10 @@
 //! `icon_off` | Icon override for the toggle button while off | `"toggle_off"`
 //! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None
 //!
+//! Placeholder   | Value                                       | Type   | Unit
+//! --------------|---------------------------------------------|--------|-----
+//! `icon`        | A static icon                               | Icon   | -
+//!
 //! # Examples
 //!
 //! This is what can be used to toggle an external monitor configuration:

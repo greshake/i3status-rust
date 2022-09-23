@@ -20,6 +20,7 @@
 //!
 //! Placeholder        | Value
 //! -------------------|------
+//! `icon`             | A static icon
 //! `total`            | The total number of notifications
 //! `assign`           | You were assigned to the issue
 //! `author`           | You created the thread

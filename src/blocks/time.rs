@@ -9,6 +9,10 @@
 //! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | Local timezone
 //! `locale` | Locale to apply when formatting the time | System locale
 //!
+//! Placeholder   | Value                                       | Type   | Unit
+//! --------------|---------------------------------------------|--------|-----
+//! `icon`        | A static icon                               | Icon   | -
+//!
 //! # Example
 //!
 //! ```toml

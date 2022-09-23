@@ -24,6 +24,7 @@
 //!
 //! Placeholder   | Type   | Unit
 //! --------------|--------|---------------
+//! `icon`        | Icon   | -
 //! `name`        | Text   | -
 //! `utilization` | Number | Percents
 //! `memory`      | Number | Bytes

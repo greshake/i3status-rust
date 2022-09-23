@@ -23,6 +23,10 @@
 //! `name` | Label to show before the mail count. | `None`
 //! `interval` | Update interval in seconds. | `10`
 //!
+//! Placeholder | Value                                      | Type   | Unit
+//! ------------|--------------------------------------------|--------|-----
+//! `icon`      | A static icon                              | Icon   | -
+//!
 //! # Example
 //!
 //! ```toml

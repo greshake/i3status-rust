@@ -17,7 +17,7 @@
 //!
 //! Placeholder           | Value                        | Type   | Unit
 //! ----------------------|------------------------------|--------|---------------
-//! `temperature`         | Current temperature          | Number   | -
+//! `temperature`         | Current temperature          | Number | -
 //!
 //! # Available Hue Shifters
 //!

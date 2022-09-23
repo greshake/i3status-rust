@@ -15,9 +15,10 @@
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //!
-//! Key | Value | Type | Unit
-//! ----|-------|------|------
-//! `count` | Number of updates available | Number | -
+//! Placeholder | Value                       | Type   | Unit
+//! ------------|-----------------------------|--------|------
+//! `icon`      | A static icon               | Icon   | -
+//! `count`     | Number of updates available | Number | -
 //!
 //! # Example
 //!

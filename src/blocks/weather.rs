@@ -54,6 +54,7 @@
 //!
 //!  Key              | Value                                                              | Type   | Unit
 //! ------------------|--------------------------------------------------------------------|--------|-----
+//! `icon`            | A static icon                                                      | Icon   | -
 //! `location`        | Location name (exact format depends on the service)                | Text   | -
 //! `temp`            | Temperature                                                        | Number | degrees
 //! `apparent`        | Australian Apparent Temperature                                    | Number | degrees

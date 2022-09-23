@@ -47,10 +47,11 @@
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
 //! `mappings` | Map `output_name` to custom name. | `None`
 //!
-//!  Key | Value | Type | Unit
-//! -----|-------|------|-----
-//! `volume` | Current volume. Missing if muted. | Number | %
-//! `output_name` | PulseAudio or ALSA device name | Text | -
+//! Placeholder          | Value                             | Type   | Unit
+//! ---------------------|-----------------------------------|--------|---------------
+//! `icon`               | A static icon                     | Icon   | -
+//! `volume`             | Current volume. Missing if muted. | Number | %
+//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
 //!
 //! #  Icons Used

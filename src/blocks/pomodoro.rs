@@ -21,6 +21,10 @@
 //! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | `None`
 //! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | `false`
 //!
+//! Placeholder | Value          | Type
+//! ------------|----------------|------
+//! `icon`      | A static icon  | Icon
+//!
 //! # Example
 //!
 //! Use `swaynag` as a notifier:

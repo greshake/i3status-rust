@@ -16,6 +16,10 @@
 //! `interval` | Update interval, in seconds. | `5`
 //! `display_type` | Which part of the maildir to count: `"new"`, `"cur"`, or `"all"`. | `"new"`
 //!
+//! Placeholder  | Value                  | Type   | Unit
+//! -------------|------------------------|--------|-----
+//! `icon`       | A static icon          | Icon   | -
+//!
 //! # Examples
 //!
 //! ```toml

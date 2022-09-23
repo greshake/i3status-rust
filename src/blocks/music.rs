@@ -29,6 +29,7 @@
 //!
 //! Placeholder | Value          | Type
 //! ------------|----------------|------
+//! `icon`      | A static icon  | Icon
 //! `artist`    | Current artist | Text
 //! `title`     | Current title  | Text
 //! `url`       | Current song url | Text

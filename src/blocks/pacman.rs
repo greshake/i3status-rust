@@ -47,11 +47,12 @@
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used
 //!
-//!  Key    | Value | Type | Unit
-//! --------|-------|------|-----
-//! `pacman`| Number of updates available according to `pacman` | Number | -
-//! `aur`   | Number of updates available according to `<aur_command>` | Number | -
-//! `both`  | Cumulative number of updates available according to `pacman` and `<aur_command>` | Number | -
+//!  Placeholder | Value | Type | Unit
+//! -------------|----------------------------------------------------------------------------------|--------|-----
+//! `icon`       | A static icon                                                                    | Icon   | -
+//! `pacman`     | Number of updates available according to `pacman`                                | Number | -
+//! `aur`        | Number of updates available according to `<aur_command>`                         | Number | -
+//! `both`       | Cumulative number of updates available according to `pacman` and `<aur_command>` | Number | -
 //!
 //! # Examples
 //!

@@ -24,6 +24,7 @@
 //!
 //! Placeholder      | Value                                                      | Type   | Unit
 //! -----------------|------------------------------------------------------------|--------|---------------
+//! `icon`           | A static icon                                              | Icon   | -
 //! `text`           | Output of the script or text field from JSON output.       | String |
 //! `short_text`     | short_text field from JSON output                          | String |
 //!

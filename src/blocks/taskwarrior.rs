@@ -16,6 +16,7 @@
 //!
 //! Placeholder   | Value                                       | Type   | Unit
 //! --------------|---------------------------------------------|--------|-----
+//! `icon`        | A static icon                               | Icon   | -
 //! `count`       | The number of tasks matching current filter | Number | -
 //! `filter_name` | The name of current filter                  | Text   | -
 //! `done`        | Present only if `count` is zero             | Flag   | -

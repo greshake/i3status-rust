@@ -24,6 +24,7 @@
 //!
 //! Placeholder  | Value              | Type   | Unit
 //! -------------|--------------------|--------|---------------
+//! `icon`       | A static icon      | Icon   | -
 //! `brightness` | Current brightness | Number | %
 //!
 //! # Example

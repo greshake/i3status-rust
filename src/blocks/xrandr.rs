@@ -14,6 +14,7 @@
 //!
 //! Placeholder       | Value                        | Type   | Unit
 //! ------------------|------------------------------|--------|---------------
+//! `icon`            | A static icon                | Icon   | -
 //! `display`         | The name of a monitor        | Text   | -
 //! `brightness`      | The brightness of a monitor  | Number | %
 //! `brightness_icon` | A static icon                | Icon   | -
