@@ -11,7 +11,6 @@
 //!
 //! Placeholder  | Value          | Type   | Unit
 //! -------------|----------------|--------|---------------
-//! `icon`       | A static icon  | Icon   | -
 //! `ping`       | Ping delay     | Number | Seconds
 //! `speed_down` | Download speed | Number | Bits per second
 //! `speed_up`   | Upload speed   | Number | Bits per second
@@ -33,7 +32,7 @@
 //! [[block]]
 //! block = "speedtest"
 //! interval = 1800
-//! format = " $icon $speed_down.eng(4,B)$speed_up(4,B) "
+//! format = " $speed_down.eng(4,B)$speed_up(4,B) "
 //! ```
 //!
 //! # Icons Used
