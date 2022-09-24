@@ -23,7 +23,7 @@
 //! [[block]]
 //! block = "speedtest"
 //! interval = 1800
-//! format = "^icon_ping$ping"
+//! format = " ^icon_ping$ping "
 //! ```
 //!
 //! Hide ping and display speed in bytes per second each using 4 characters (without icons)
