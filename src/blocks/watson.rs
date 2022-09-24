@@ -6,9 +6,14 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $text |"`
 //! `show_time` | Whether to show recorded time. | `false`
 //! `state_path` | Path to the Watson state file. Supports path expansions e.g. `~`. | `$XDG_CONFIG_HOME/watson/state`
 //! `interval` | Update interval, in seconds. | `60`
+//!
+//! Placeholder   | Value                   | Type   | Unit
+//! --------------|-------------------------|--------|-----
+//! `text`        | Current activity        | Text   | -
 //!
 //! # Example
 //!
@@ -26,14 +31,15 @@ use chrono::{offset::Local, DateTime};
 use dirs_next::config_dir;
 use inotify::{Inotify, WatchMask};
 use serde::de::Deserializer;
-use std::path::PathBuf;
+use std::{path::PathBuf};
 use tokio::fs::read_to_string;
 
 use super::prelude::*;
 
-#[derive(Deserialize, Debug, Clone, SmartDefault)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct WatsonConfig {
+    format: FormatConfig,
     state_path: Option<ShellString>,
     #[default(60.into())]
     interval: Seconds,
@@ -42,7 +48,7 @@ struct WatsonConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = WatsonConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget();
+    let mut widget = api.new_widget().with_format(config.format.with_default(" $text |")?);
 
     let mut show_time = config.show_time;
 
@@ -82,7 +88,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         match state {
             state @ WatsonState::Active { .. } => {
                 widget.state = State::Good;
-                widget.set_text(state.format(show_time, "started", format_delta_past));
+                widget.set_values(map!(
+                  "text" => Value::text(state.format(show_time, "started", format_delta_past))
+                ));
                 prev_state = Some(state);
             }
             WatsonState::Idle {} => {
@@ -90,13 +98,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     // The previous state was active, which means that we just now stopped the time
                     // tracking. This means that we could show some statistics.
                     widget.state = State::Idle;
-                    widget.set_text(prev.format(true, "stopped", format_delta_after));
+                    widget.set_values(map!(
+                      "text" => Value::text(prev.format(true, "stopped", format_delta_after))
+                    ));
                 } else {
                     // File is empty which means that there is currently no active time tracking,
                     // and the previous state wasn't time tracking neither so we reset the
                     // contents.
                     widget.state = State::Idle;
-                    widget.set_text(String::new());
+                    widget.set_values(Values::default());
                 }
                 prev_state = Some(state);
             }
