@@ -19,6 +19,7 @@
 //! Placeholder  | Value                  | Type   | Unit
 //! -------------|------------------------|--------|-----
 //! `icon`       | A static icon          | Icon   | -
+//! `status`     | Number of emails       | Number | -
 //!
 //! # Examples
 //!
@@ -82,7 +83,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon("mail")?,
-            "status" => Value::text(newmails.to_string())
+            "status" => Value::number(newmails)
         )));
         api.set_widget(&widget).await?;
 
