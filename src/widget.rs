@@ -60,10 +60,6 @@ impl Widget {
         }
     }
 
-    pub fn set_texts(&mut self, short: String, full: String) {
-        self.source = Source::TextWithShort(short, full);
-    }
-
     pub fn set_format(&mut self, format: Format) {
         match &mut self.source {
             Source::Format(old, _) => *old = format,
@@ -153,8 +149,6 @@ enum Source {
     None,
     /// Simple text
     Text(String),
-    /// Full and short texts
-    TextWithShort(String, String),
     /// A format template
     Format(Format, Option<Values>),
 }
@@ -163,9 +157,6 @@ impl Source {
     fn render(&self, config: &SharedConfig) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
         match self {
             Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
-            Self::TextWithShort(full, short) => {
-                Ok((vec![full.clone().into()], vec![short.clone().into()]))
-            }
             Self::Format(format, Some(values)) => format.render(values, config),
             Self::None | Self::Format(_, None) => Ok((vec![], vec![])),
         }
