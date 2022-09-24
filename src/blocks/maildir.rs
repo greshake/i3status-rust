@@ -56,7 +56,7 @@ struct MaildirConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut config = MaildirConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(config.with_default(" $icon $status ")?);
+    let mut widget = api.new_widget().with_format(config.format.with_default(" $icon $status ")?);
 
     for inbox in &mut config.inboxes {
         *inbox = shellexpand::full(inbox).error("Failed to expand string")?.to_string();
@@ -82,9 +82,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             State::Idle
         };
         widget.set_values(map!(
-            "icon" => Value::icon(api.get_icon("mail")?,
+            "icon" => Value::icon(api.get_icon("mail")?),
             "status" => Value::number(newmails)
-        )));
+        ));
         api.set_widget(&widget).await?;
 
         select! {
