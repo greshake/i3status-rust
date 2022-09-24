@@ -23,7 +23,7 @@
 //! ```toml
 //! [[block]]
 //! block = "notify"
-//! format = " $icon $paused{Off}|On "
+//! format = " $icon {$paused{Off}|On} "
 //! ```
 //!
 //! # Icons Used
