@@ -18,9 +18,9 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. | `"{ $icon|}{ $text|} "`
 //!
-//! Placeholder  | Value              | Type   | Unit
-//! -------------|--------------------|--------|---------------
-//! `icon`       | A static icon      | Icon   | -
+//! Placeholder  | Value                                  | Type   | Unit
+//! -------------|----------------------------------------|--------|---------------
+//! `icon`       | Value of icon set via `SetIcon`        | Icon   | -
 //!
 //! # Example
 //!

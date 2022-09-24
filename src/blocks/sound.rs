@@ -49,7 +49,7 @@
 //!
 //! Placeholder          | Value                             | Type   | Unit
 //! ---------------------|-----------------------------------|--------|---------------
-//! `icon`               | A static icon                     | Icon   | -
+//! `icon`               | Icon based on volume              | Icon   | -
 //! `volume`             | Current volume. Missing if muted. | Number | %
 //! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -

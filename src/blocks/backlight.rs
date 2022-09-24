@@ -22,10 +22,10 @@
 //! `root_scaling` | Scaling exponent reciprocal (ie. root) | `1.0`
 //! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | `false`
 //!
-//! Placeholder  | Value              | Type   | Unit
-//! -------------|--------------------|--------|---------------
-//! `icon`       | A static icon      | Icon   | -
-//! `brightness` | Current brightness | Number | %
+//! Placeholder  | Value                                     | Type   | Unit
+//! -------------|-------------------------------------------|--------|---------------
+//! `icon`       | Icon based on backlight's state           | Icon   | -
+//! `brightness` | Current brightness                        | Number | %
 //!
 //! # Example
 //!

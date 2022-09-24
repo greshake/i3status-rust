@@ -19,7 +19,7 @@
 //!
 //! Placeholder  | Value                                                                 | Type   | Unit
 //! -------------|-----------------------------------------------------------------------|--------|------
-//! `icon`       | A static icon                                                         | Icon   | -
+//! `icon`       | Icon based on what type of device is connected                        | Icon   | -
 //! `name`       | Device's name                                                         | Text   | -
 //! `percentage` | Device's battery level (may be absent if the device is not supported) | Number | %
 //! `available`  | Present if the device is available                                    | Flag   | -

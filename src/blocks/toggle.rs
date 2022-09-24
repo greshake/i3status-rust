@@ -24,7 +24,7 @@
 //!
 //! Placeholder   | Value                                       | Type   | Unit
 //! --------------|---------------------------------------------|--------|-----
-//! `icon`        | A static icon                               | Icon   | -
+//! `icon`        | Icon based on toggle's state                | Icon   | -
 //!
 //! # Examples
 //!

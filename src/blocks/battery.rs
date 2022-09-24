@@ -23,7 +23,7 @@
 //!
 //! Placeholder  | Value                                                                   | Type              | Unit
 //! -------------|-------------------------------------------------------------------------|-------------------|-----
-//! `icon`       | A static icon                                                           | Icon   | -
+//! `icon`       | Icon based on battery's state                                           | Icon   | -
 //! `percentage` | Battery level, in percent                                               | String or Integer | Percents
 //! `time`       | Time remaining until (dis)charge is complete. Presented only if battery's status is (dis)charging. | String | -
 //! `power`      | Power consumption by the battery or from the power supply when charging | String or Float   | Watts

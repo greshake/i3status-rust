@@ -18,7 +18,7 @@
 //!
 //! Placeholder               | Value                                                                         | Type   | Unit
 //! --------------------------|-------------------------------------------------------------------------------|--------|-------
-//! `icon`                    | A static icon                                                                 | Icon   | -
+//! `icon`                    | Icon based on displayed type of memory                                        | Icon   | -
 //! `mem_total`               | Memory total                                                                  | Number | Bytes
 //! `mem_free`                | Memory free                                                                   | Number | Bytes
 //! `mem_free_percents`       | Memory free                                                                   | Number | Percents
