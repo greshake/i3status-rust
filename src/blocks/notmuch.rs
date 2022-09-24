@@ -13,7 +13,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon{ $name|} $count "`
 //! `maildir` | Path to the directory containing the notmuch database. Supports path expansions e.g. `~`. | `~/.mail`
 //! `query` | Query to run on the database. | `""`
 //! `threshold_critical` | Mail count that triggers `critical` state. | `99999`
@@ -26,6 +26,8 @@
 //! Placeholder | Value                                      | Type   | Unit
 //! ------------|--------------------------------------------|--------|-----
 //! `icon`      | A static icon                              | Icon   | -
+//! `count`     | Number of messages for the query           | Number | -
+//! `name`      | Value from config (if set)                 | Text   | -
 //!
 //! # Example
 //!
@@ -66,10 +68,8 @@ struct NotmuchConfig {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NotmuchConfig::deserialize(config).config_error()?;
     let mut widget = api.new_widget().with_format(
-        config.format.with_default(" $icon ")?,
+        config.format.with_default(" $icon{ $name|} $count ")?,
     );
-
-    widget.set_values(map!("icon" => Value::icon(api.get_icon("mail")?)));
 
     let db = config.maildir.expand()?;
     let mut timer = config.interval.timer();
@@ -78,9 +78,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         // TODO: spawn_blocking?
         let count = run_query(&db, &config.query).error("Failed to get count")?;
 
-        widget.set_text(match &config.name {
-            Some(s) => format!("{s}:{count}"),
-            None => format!("{count}"),
+        widget.set_values(map! {
+            "icon" => Value::icon(api.get_icon("mail")?),
+            "count" => Value::number(count),
+            [if let Some(name) = &config.name] "name" => Value::text(name.to_string())
         });
 
         widget.state = if count >= config.threshold_critical {
