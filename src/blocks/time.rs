@@ -81,15 +81,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
 
         let full_time = get_time(format, timezone, locale);
-        let short_time = format_short.map(|f| get_time(f, timezone, locale));
+        let short_time = format_short.map(|f| get_time(f, timezone, locale)).unwrap_or("".into());
 
-        let format = if let Some(short) = short_time {
-          FormatConfig { full: Some(full_time.parse()?), short: Some(short.parse()?) }.with_default("")?
-        } else {
-          FormatConfig { full: Some(full_time.parse()?), short: None }.with_default("")?
-        };
-
-        widget.set_format(format);
+        widget.set_format(
+            FormatConfig::default().with_defaults(&full_time, &short_time)?
+        );
         widget.set_values(map!("icon" => Value::icon(api.get_icon("time")?)));
 
         api.set_widget(&widget).await?;
