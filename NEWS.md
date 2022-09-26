@@ -82,6 +82,7 @@ This is a major release which rewrites the core code to be asynchronous.
 - **focused_window**: `autohide` is removed. You can format to `" $title.str(0,21) | Missing "` to display the block when title is missing
 - **net**: `hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
 - **toggle**: `text` option is removed and now you can use `format` to set the text
+- **notmuch**: `name` option is removed and now you can use `format` to set the name
 - **{apt, dnf, pacman}**: `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block
 
 ### New features and bugfixes
