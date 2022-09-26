@@ -22,8 +22,8 @@
 //! [[block]]
 //! block = "focused_window"
 //! [block.format]
-//! full = "{ $title.str(0,15) |}"
-//! short = "{ $title.str(0,10) |}"
+//! full = " $title.str(0,15) |"
+//! short = " $title.str(0,10) |"
 //! ```
 //!
 //! This example instead of hiding block when the window's title is empty displays "Missing"
@@ -62,7 +62,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = FocusedWindowConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("{ $title.str(0,21) |}")?);
+        .with_format(config.format.with_default(" $title.str(0,21) |")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         Driver::Auto => match SwayIpc::new().await {
