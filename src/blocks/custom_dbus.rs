@@ -16,7 +16,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. | `"{ $icon|}{ $text|} "`
+//! `format` | A string to customise the output of this block. | `"{ $icon&vert;}{ $text&vert;} "`
 //!
 //! Placeholder  | Value                                  | Type   | Unit
 //! -------------|----------------------------------------|--------|---------------

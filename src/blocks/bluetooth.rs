@@ -15,7 +15,7 @@
 //! `mac` | MAC address of the Bluetooth device | **Required**
 //! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $name{ $percentage&vert;} "</code>
-//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon{ $name|} "</code>
+//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon{ $name&vert;} "</code>
 //!
 //! Placeholder  | Value                                                                 | Type   | Unit
 //! -------------|-----------------------------------------------------------------------|--------|------
