@@ -18,7 +18,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon {$combo.rot-str() $play&vert;} "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon {$combo.rot-str() $play &vert;}"</code>
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
 //! `separator` | String to insert between artist and title. | `" - "`
@@ -58,7 +58,7 @@
 //! ```toml
 //! [[block]]
 //! block = "music"
-//! format = " $icon {$combo.str(0,20) $play $next|} "
+//! format = " $icon {$combo.str(0,20) $play $next |}"
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
@@ -67,7 +67,7 @@
 //! ```toml
 //! [[block]]
 //! block = "music"
-//! format = " $icon {$combo.rot-str(20) $play $next|} "
+//! format = " $icon {$combo.rot-str(20) $play $next |}"
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
