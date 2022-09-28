@@ -135,7 +135,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = api.new_widget().with_format(
         config
             .format
-            .with_default(" $icon {$combo.rot-str() $play|} ")?,
+            .with_default(" $icon {$combo.rot-str() $play |}")?,
     );
 
     let new_btn = |icon: &str, id: usize, api: &mut CommonApi| -> Result<Value> {
