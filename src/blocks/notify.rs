@@ -63,15 +63,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     loop {
         let is_paused = driver.is_paused().await?;
-        let mut values = map!(
-            "icon" => Value::icon(api.get_icon(if is_paused { ICON_OFF } else { ICON_ON })?)
-        );
-
-        if is_paused {
-            values.insert("paused".into(), Value::flag());
-        }
-
-        widget.set_values(values);
+        widget.set_values(map!(
+            "icon" => Value::icon(api.get_icon(if is_paused { ICON_OFF } else { ICON_ON })?),
+            [if is_paused] "paused" => Value::flag(),
+        ));
         api.set_widget(&widget).await?;
 
         loop {
