@@ -24,9 +24,9 @@
 //!
 //! Placeholder      | Value                                                      | Type   | Unit
 //! -----------------|------------------------------------------------------------|--------|---------------
-//! `icon`           | Value of icon field from JSON output                       | Icon   | -
-//! `text`           | Output of the script or text field from JSON output.       | String |
-//! `short_text`     | short_text field from JSON output                          | String |
+//! `icon`           | Value of icon field from JSON output when it's non-empty   | Icon   | -
+//! `text`           | Output of the script or text field from JSON output        | Text   |
+//! `short_text`     | short_text field from JSON output                          | Text   |
 //!
 //! # Examples
 //!
@@ -126,8 +126,8 @@ async fn update_bar(
             Ok(input) => {
                 text_empty = input.text.is_empty();
                 widget.set_values(map!{
-                    "icon" => Value::icon(api.get_icon(&input.icon)?),
                     "text" => Value::text(input.text),
+                    [if !input.icon.is_empty()] "icon" => Value::icon(api.get_icon(&input.icon)?),
                     [if let Some(t) = input.short_text] "short_text" => Value::text(t)
                 });
                 widget.state = input.state;
