@@ -19,8 +19,10 @@
 //! `format` | A string to customise the output of this block. | <code>"{ $icon&vert;}{ $text&vert;} "</code>
 //!
 //! Placeholder  | Value                                  | Type   | Unit
-//! -------------|----------------------------------------|--------|---------------
-//! `icon`       | Value of icon set via `SetIcon`        | Icon   | -
+//! -------------|-------------------------------------------------------------------|--------|---------------
+//! `icon`       | Value of icon set via `SetIcon` if the value is non-empty string. | Icon   | -
+//! `text`       | Value of the first string from SetText                            | Text   | -
+//! `short_text` | Value of the second string from SetText                           | Text   | -
 //!
 //! # Example
 //!
@@ -87,7 +89,7 @@ fn block_values(block: &Block, api: &CommonApi) -> Result<HashMap<Cow<'static, s
 #[dbus_interface(name = "rs.i3status.custom")]
 impl Block {
     async fn set_icon(&mut self, icon: &str) -> fdo::Result<()> {
-        self.icon = Some(icon.to_string());
+        self.icon = if icon.is_empty() { None } else { Some(icon.to_string()) };
         self.widget.set_values(block_values(self, &self.api)?);
         self.api.set_widget(&self.widget).await?;
         Ok(())
