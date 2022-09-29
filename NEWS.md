@@ -1,6 +1,6 @@
 # i3status-rust 0.30.0 [unreleased]
 
-Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html  
+Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html
 Formatter documentation is available here: https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html
 
 ### Breaking changes
@@ -61,12 +61,37 @@ This is a major release which rewrites the core code to be asynchronous.
   ```
 - `theme` and `icons`: `name` and `file` options have been merged into `theme`/`icons`. See above for an example.
 
+- Major icons and whitespace change. Icons are now part of `format` option as a placeholder in blocks where format is customizable.
+  If you've modified `format` and would like to keep the same behaviour (icon, whitespace)
+  you need to update the value. For example,
+  ```toml
+  [[block]]
+  block = "cpu"
+  format = "cpu:{utilization}"
+  ```
+  needs to be changed to:
+  ```toml
+  [[block]]
+  block = "cpu"
+  format = " $icon $utilization "
+  ```
+
+- **battery**: `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
+- **battery**: `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
+- **bluetooth**: hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
+- **focused_window**: `autohide` is removed. You can format to `" $title.str(0,21) | Missing "` to display the block when title is missing
+- **net**: `hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
+- **toggle**: `text` option is removed and now you can use `format` to set the text
+- **notmuch**: `name` option is removed and now you can use `format` to set the name
+- **{apt, dnf, pacman}**: `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block
+
 ### New features and bugfixes
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
 - `custom_dbus` block can now be used more than once in your config
 - `custom` block has new config option `"persistent"` which runs a command in the background and updates the block text for each received output line.
 - `focused_window` block now supports the river window manager if ristate (https://gitlab.com/snakedye/ristate) is installed
 - `battery` now supports `empty_threshold` to specify below which percentage the battery is considered empty, and `empty_format` to use a custom format when the battery is empty
+- more blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
 
 ### Dependencies that are no longer required
 

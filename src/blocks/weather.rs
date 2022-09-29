@@ -14,7 +14,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `service` | The configuration of a weather service (see below). | **Required**
-//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `"$weather $temp"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `" $icon $weather $temp "`
 //! `interval` | Update interval, in seconds. | `600`
 //! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | `false`
 //! `autolocate_interval` | Update interval for `autolocate` in seconds or "once" | `interval`
@@ -54,6 +54,7 @@
 //!
 //!  Key              | Value                                                              | Type   | Unit
 //! ------------------|--------------------------------------------------------------------|--------|-----
+//! `icon`            | Icon representing the weather                                      | Icon   | -
 //! `location`        | Location name (exact format depends on the service)                | Text   | -
 //! `temp`            | Temperature                                                        | Number | degrees
 //! `apparent`        | Australian Apparent Temperature                                    | Number | degrees
@@ -71,7 +72,7 @@
 //! ```toml
 //! [[block]]
 //! block = "weather"
-//! format = "$weather ($location) $temp, $wind m/s $direction"
+//! format = " $icon $weather ($location) $temp, $wind m/s $direction "
 //! [block.service]
 //! name = "openweathermap"
 //! api_key = "XXX"
@@ -164,8 +165,9 @@ struct WeatherResult {
 }
 
 impl WeatherResult {
-    fn into_values(self) -> Values {
-        map! {
+    fn into_values(self, api: &CommonApi) -> Result<Values> {
+        Ok(map! {
+            "icon" => Value::icon(api.get_icon(self.icon.to_icon_str())?),
             "location" => Value::text(self.location),
             "temp" => Value::degrees(self.temp),
             "apparent" => Value::degrees(self.apparent),
@@ -175,7 +177,7 @@ impl WeatherResult {
             "wind" => Value::number(self.wind),
             "wind_kmh" => Value::number(self.wind_kmh),
             "direction" => Value::text(self.wind_direction),
-        }
+        })
     }
 }
 
@@ -183,7 +185,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = WeatherConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("$weather $temp")?);
+        .with_format(config.format.with_default(" $icon $weather $temp ")?);
 
     let provider: Box<dyn WeatherProvider + Send + Sync> = match config.service {
         WeatherService::MetNo(config) => Box::new(met_no::Service::new(&mut api, config).await?),
@@ -204,8 +206,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 let data = api
                     .recoverable(|| provider.get_weather(Some(location)))
                     .await?;
-                widget.set_icon(data.icon.to_icon_str())?;
-                widget.set_values(data.into_values());
+                widget.set_values(data.into_values(&api)?);
                 api.set_widget(&widget).await?;
 
                 select! {
@@ -223,8 +224,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             let data = api
                 .recoverable(|| provider.get_weather(Some(location)))
                 .await?;
-            widget.set_icon(data.icon.to_icon_str())?;
-            widget.set_values(data.into_values());
+            widget.set_values(data.into_values(&api)?);
             api.set_widget(&widget).await?;
 
             loop {
@@ -237,8 +237,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         let data = api
                             .recoverable(|| provider.get_weather(Some(location)))
                             .await?;
-                        widget.set_icon(data.icon.to_icon_str())?;
-                        widget.set_values(data.into_values());
+                        widget.set_values(data.into_values(&api)?);
                         api.set_widget(&widget).await?;
                     },
                     // On update request autolocate and update the block.
@@ -248,8 +247,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         let data = api
                             .recoverable(|| provider.get_weather(Some(location)))
                             .await?;
-                        widget.set_icon(data.icon.to_icon_str())?;
-                        widget.set_values(data.into_values());
+                        widget.set_values(data.into_values(&api)?);
                         api.set_widget(&widget).await?;
 
                         // both intervals should be reset after a manual sync
@@ -262,8 +260,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     } else {
         loop {
             let data = api.recoverable(|| provider.get_weather(None)).await?;
-            widget.set_icon(data.icon.to_icon_str())?;
-            widget.set_values(data.into_values());
+            widget.set_values(data.into_values(&api)?);
             api.set_widget(&widget).await?;
 
             select! {

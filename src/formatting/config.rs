@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 #[derive(Debug, Default)]
 pub struct Config {
-    full: Option<FormatTemplate>,
-    short: Option<FormatTemplate>,
+    pub full: Option<FormatTemplate>,
+    pub short: Option<FormatTemplate>,
 }
 
 #[derive(Debug, Default)]
@@ -19,20 +19,27 @@ pub struct DummyConfig {
 
 impl Config {
     pub fn with_default(self, default_full: &str) -> Result<Format> {
+        self.with_defaults(default_full, "")
+    }
+
+    pub fn with_defaults(self, default_full: &str, default_short: &str) -> Result<Format> {
         let full = match self.full {
             Some(full) => full,
             None => default_full.parse()?,
         };
 
+        let short = match self.short {
+            Some(short) => short,
+            None => default_short.parse()?,
+        };
+
         let mut intervals = Vec::new();
         full.init_intervals(&mut intervals);
-        if let Some(short) = &self.short {
-            short.init_intervals(&mut intervals);
-        }
+        short.init_intervals(&mut intervals);
 
         Ok(Arc::new(FormatInner {
             full,
-            short: self.short,
+            short,
             intervals,
         }))
     }

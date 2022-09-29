@@ -1,17 +1,18 @@
 //! The output of a custom shell command
 //!
-//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:  
+//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
 //! ```json
 //! {"icon": "...", "state": "...", "text": "...", "short_text": "..."}
 //! ```
-//! `icon` is optional (default "")  
-//! `state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)  
+//! `icon` is optional (default "")
+//! `state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)
 //! `short_text` is optional.
 //!
 //! # Configuration
 //!
 //! Key | Values | Default
 //! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"{ $icon&vert} $text "</code>
 //! `command` | Shell command to execute & display | `None`
 //! `persistent` | Run command in the background; update display for each output line of the command | `false`
 //! `cycle` | Commands to execute and change when the button is clicked | `None`
@@ -20,6 +21,12 @@
 //! `watch_files` | Watch files to trigger update on file modification | `None`
 //! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | `false`
 //! `shell` | Specify the shell to use when running commands | `$SHELL` if set, otherwise fallback to `sh`
+//!
+//! Placeholder      | Value                                                      | Type   | Unit
+//! -----------------|------------------------------------------------------------|--------|---------------
+//! `icon`           | Value of icon field from JSON output when it's non-empty   | Icon   | -
+//! `text`           | Output of the script or text field from JSON output        | Text   |
+//! `short_text`     | short_text field from JSON output                          | Text   |
 //!
 //! # Examples
 //!
@@ -93,6 +100,7 @@ use tokio::process::Command;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct CustomConfig {
+    format: FormatConfig,
     command: Option<String>,
     persistent: bool,
     cycle: Option<Vec<String>>,
@@ -116,20 +124,19 @@ async fn update_bar(
     if json {
         match serde_json::from_str::<Input>(stdout).error("Invalid JSON") {
             Ok(input) => {
-                widget.set_icon(&input.icon)?;
-                widget.state = input.state;
                 text_empty = input.text.is_empty();
-                if let Some(short) = input.short_text {
-                    widget.set_texts(input.text, short);
-                } else {
-                    widget.set_text(input.text);
-                }
+                widget.set_values(map!{
+                    "text" => Value::text(input.text),
+                    [if !input.icon.is_empty()] "icon" => Value::icon(api.get_icon(&input.icon)?),
+                    [if let Some(t) = input.short_text] "short_text" => Value::text(t)
+                });
+                widget.state = input.state;
             }
             Err(error) => return api.set_error(error).await,
         }
     } else {
         text_empty = stdout.is_empty();
-        widget.set_text(stdout.into());
+        widget.set_values(map!("text" => Value::text(stdout.into())));
     }
 
     if text_empty && hide_when_empty {
@@ -141,7 +148,9 @@ async fn update_bar(
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = CustomConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget();
+    let mut widget = api.new_widget().with_format(
+        config.format.with_defaults("{ $icon|} $text ", "{ $icon|} $short_text |")?
+    );
 
     let mut timer = config.interval.timer();
 

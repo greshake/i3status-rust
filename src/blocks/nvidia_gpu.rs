@@ -15,7 +15,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `gpu_id` | GPU id in system. | `0`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$utilization $memory $temperature"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization $memory $temperature "`
 //! `interval` | Update interval in seconds. | `1`
 //! `idle` | Maximum temperature, below which state is set to idle | `50`
 //! `good` | Maximum temperature, below which state is set to good | `70`
@@ -24,6 +24,7 @@
 //!
 //! Placeholder   | Type   | Unit
 //! --------------|--------|---------------
+//! `icon`        | Icon   | -
 //! `name`        | Text   | -
 //! `utilization` | Number | Percents
 //! `memory`      | Number | Bytes
@@ -38,7 +39,7 @@
 //! [[block]]
 //! block = "nvidia_gpu"
 //! interval = 1
-//! format = "GT 1030 $utilization $temperature $clocks"
+//! format = " $icon GT 1030 $utilization $temperature $clocks "
 //! ```
 //!
 //! # Icons Used
@@ -80,10 +81,10 @@ struct NvidiaGpuConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NvidiaGpuConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_icon("gpu")?.with_format(
+    let mut widget = api.new_widget().with_format(
         config
             .format
-            .with_default("$utilization $memory $temperature")?,
+            .with_default(" $icon $utilization $memory $temperature ")?,
     );
 
     // Run `nvidia-smi` command
@@ -117,6 +118,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         widget.set_values(map! {
+            "icon" => Value::icon(api.get_icon("gpu")?),
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
             "memory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),

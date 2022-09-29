@@ -7,7 +7,6 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone)]
 pub struct Widget {
-    pub icon: String,
     pub shared_config: SharedConfig,
     pub state: State,
     id: usize,
@@ -17,7 +16,6 @@ pub struct Widget {
 impl Widget {
     pub fn new(id: usize, shared_config: SharedConfig) -> Self {
         Widget {
-            icon: String::new(),
             shared_config,
             state: State::Idle,
             id,
@@ -40,14 +38,6 @@ impl Widget {
         self
     }
 
-    pub fn with_icon(mut self, icon: &str) -> Result<Self> {
-        self.icon = self
-            .shared_config
-            .get_icon(icon)
-            .or_error(|| format!("Icon '{}' not found", icon))?;
-        Ok(self)
-    }
-
     pub fn with_state(mut self, state: State) -> Self {
         self.state = state;
         self
@@ -68,18 +58,6 @@ impl Widget {
         } else {
             self.source = Source::Text(text);
         }
-    }
-
-    pub fn set_texts(&mut self, short: String, full: String) {
-        self.source = Source::TextWithShort(short, full);
-    }
-
-    pub fn set_icon(&mut self, icon: &str) -> Result<()> {
-        self.icon = self
-            .shared_config
-            .get_icon(icon)
-            .or_error(|| format!("Icon {icon} not found"))?;
-        Ok(())
     }
 
     pub fn set_format(&mut self, format: Format) {
@@ -117,21 +95,8 @@ impl Widget {
         // Collect all the pieces into "parts"
         let mut parts = Vec::new();
 
-        // Icon block
-        if !self.icon.is_empty() {
-            let mut data = template.clone();
-            data.full_text = self.icon.clone();
-            parts.push(data);
-        }
-
         if full.is_empty() {
             return Ok(parts);
-        }
-
-        if self.icon.is_empty() {
-            let mut padding = template.clone();
-            padding.full_text = " ".into();
-            parts.push(padding);
         }
 
         // If short text is available, it's necessary to hide all full blocks. `swaybar`/`i3bar`
@@ -142,25 +107,17 @@ impl Widget {
             template.short_text = "<span/>".into();
         }
 
-        let full_cnt = full.len();
-        parts.extend(full.into_iter().enumerate().map(|(i, w)| {
+        parts.extend(full.into_iter().map(|w| {
             let mut data = template.clone();
             data.full_text = w.formated_text();
-            if i + 1 == full_cnt {
-                data.full_text.push(' ');
-            }
             data.instance = w.metadata.instance.map(|i| i.to_string());
             data
         }));
 
-        let short_cnt = short.len();
         template.full_text = "<span/>".into();
-        parts.extend(short.into_iter().enumerate().map(|(i, w)| {
+        parts.extend(short.into_iter().map(|w| {
             let mut data = template.clone();
             data.short_text = w.formated_text();
-            if i + 1 == short_cnt {
-                data.short_text.push(' ');
-            }
             data.instance = w.metadata.instance.map(|i| i.to_string());
             data
         }));
@@ -192,8 +149,6 @@ enum Source {
     None,
     /// Simple text
     Text(String),
-    /// Full and short texts
-    TextWithShort(String, String),
     /// A format template
     Format(Format, Option<Values>),
 }
@@ -202,9 +157,6 @@ impl Source {
     fn render(&self, config: &SharedConfig) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
         match self {
             Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
-            Self::TextWithShort(full, short) => {
-                Ok((vec![full.clone().into()], vec![short.clone().into()]))
-            }
             Self::Format(format, Some(values)) => format.render(values, config),
             Self::None | Self::Format(_, None) => Ok((vec![], vec![])),
         }

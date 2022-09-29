@@ -9,10 +9,11 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` | `"dunst"`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `""`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon "`
 //!
 //! Placeholder | Value                                      | Type   | Unit
 //! ------------|--------------------------------------------|--------|-----
+//! `icon`      | Icon based on notification's state         | Icon   | -
 //! `paused`    | Present only if notifications are disabled | Flag   | -
 //!
 //! # Examples
@@ -22,7 +23,7 @@
 //! ```toml
 //! [[block]]
 //! block = "notify"
-//! format = "$paused{Off}|On"
+//! format = " $icon {$paused{Off}|On} "
 //! ```
 //!
 //! # Icons Used
@@ -54,7 +55,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NotifyConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("")?);
+        .with_format(config.format.with_default(" $icon ")?);
 
     let mut driver: Box<dyn Driver + Send + Sync> = match config.driver {
         DriverType::Dunst => Box::new(MakoDriver::new().await?),
@@ -62,13 +63,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     loop {
         let is_paused = driver.is_paused().await?;
-
-        widget.set_icon(if is_paused { ICON_OFF } else { ICON_ON })?;
-        widget.set_values(if is_paused {
-            map!("paused" => Value::flag())
-        } else {
-            default()
-        });
+        widget.set_values(map!(
+            "icon" => Value::icon(api.get_icon(if is_paused { ICON_OFF } else { ICON_ON })?),
+            [if is_paused] "paused" => Value::flag(),
+        ));
         api.set_widget(&widget).await?;
 
         loop {

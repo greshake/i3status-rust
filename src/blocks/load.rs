@@ -4,7 +4,7 @@
 //!
 //! Key        | Values                                                                                | Default
 //! -----------|---------------------------------------------------------------------------------------|--------
-//! `format`   | A string to customise the output of this block. See below for available placeholders. | `"$1m.eng(3)"`
+//! `format`   | A string to customise the output of this block. See below for available placeholders. | `" $icon $1m.eng(3) "`
 //! `interval` | Update interval in seconds                                                            | `3`
 //! `info`     | Minimum load, where state is set to info                                              | `0.3`
 //! `warning`  | Minimum load, where state is set to warning                                           | `0.6`
@@ -12,6 +12,7 @@
 //!
 //! Placeholder  | Value                  | Type   | Unit
 //! -------------|------------------------|--------|-----
+//! `icon`       | A static icon          | Icon   | -
 //! `1m`         | 1 minute load average  | Number | -
 //! `5m`         | 5 minute load average  | Number | -
 //! `15m`        | 15 minute load average | Number | -
@@ -21,7 +22,7 @@
 //! ```toml
 //! [[block]]
 //! block = "load"
-//! format = "1min avg: $1m"
+//! format = " $icon 1min avg: $1m "
 //! interval = 1
 //! ```
 //!
@@ -49,8 +50,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = LoadConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_icon("cogs")?
-        .with_format(config.format.with_default("$1m.eng(3)")?);
+        .with_format(config.format.with_default(" $icon $1m.eng(3) ")?);
 
     // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
     let logical_cores = util::read_file("/proc/cpuinfo")
@@ -85,6 +85,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             _ => State::Idle,
         };
         widget.set_values(map! {
+            "icon" => Value::icon(api.get_icon("cogs")?),
             "1m" => Value::number(m1),
             "5m" => Value::number(m5),
             "15m" => Value::number(m15),

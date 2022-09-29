@@ -8,11 +8,16 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
+//! `format`      | A string to customise the output of this block. See below for available placeholders. | `" $temperature "`
 //! `step`        | The step color temperature is in/decreased in Kelvin. | `100`
 //! `hue_shifter` | Program used to control screen color. | Detect automatically
 //! `max_temp`    | Max color temperature in Kelvin. | `10000`
 //! `min_temp`    | Min color temperature in Kelvin. | `1000`
 //! `click_temp`  | Left click color temperature in Kelvin. | `6500`
+//!
+//! Placeholder           | Value                        | Type   | Unit
+//! ----------------------|------------------------------|--------|---------------
+//! `temperature`         | Current temperature          | Number | -
 //!
 //! # Available Hue Shifters
 //!
@@ -51,6 +56,7 @@ use futures::future::pending;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct HueshiftConfig {
+    format: FormatConfig,
     #[default(5.into())]
     interval: Seconds,
     #[default(10_000)]
@@ -69,7 +75,7 @@ struct HueshiftConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = HueshiftConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget();
+    let mut widget = api.new_widget().with_format(config.format.with_default(" $temperature ")?);
 
     // limit too big steps at 500K to avoid too brutal changes
     let step = config.step.max(500);
@@ -109,7 +115,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut current_temp = config.current_temp;
 
     loop {
-        widget.set_text(current_temp.to_string());
+        widget.set_values(map!("temperature" => Value::number(current_temp)));
         api.set_widget(&widget).await?;
 
         select! {

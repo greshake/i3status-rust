@@ -40,19 +40,19 @@
 //! Key | Values | Default
 //! ----|--------|---------
 //! `interval` | Update interval, in seconds. If setting `aur_command` then set interval appropriately as to not exceed the AUR's daily rate limit. | `600`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$pacman.eng(1)"`
-//! `format_singular` | Same as `format` but for when exactly one update is available. | `"$pacman.eng(1)"`
-//! `format_up_to_date` | Same as `format` but for when no updates are available. | `"$pacman.eng(1)"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $pacman.eng(1) "`
+//! `format_singular` | Same as `format` but for when exactly one update is available. | `" $icon $pacman.eng(1) "`
+//! `format_up_to_date` | Same as `format` but for when no updates are available. | `" $icon $pacman.eng(1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used
-//! `hide_when_uptodate` | Hides the block when there are no updates available | `false`
 //!
-//!  Key    | Value | Type | Unit
-//! --------|-------|------|-----
-//! `pacman`| Number of updates available according to `pacman` | Number | -
-//! `aur`   | Number of updates available according to `<aur_command>` | Number | -
-//! `both`  | Cumulative number of updates available according to `pacman` and `<aur_command>` | Number | -
+//!  Placeholder | Value | Type | Unit
+//! -------------|----------------------------------------------------------------------------------|--------|-----
+//! `icon`       | A static icon                                                                    | Icon   | -
+//! `pacman`     | Number of updates available according to `pacman`                                | Number | -
+//! `aur`        | Number of updates available according to `<aur_command>`                         | Number | -
+//! `both`       | Cumulative number of updates available according to `pacman` and `<aur_command>` | Number | -
 //!
 //! # Examples
 //!
@@ -62,9 +62,9 @@
 //! [[block]]
 //! block = "pacman"
 //! interval = 600
-//! format = "$pacman updates available"
-//! format_singular = "$pacman update available"
-//! format_up_to_date = "system up to date"
+//! format = " $icon $pacman updates available "
+//! format_singular = " $icon $pacman update available "
+//! format_up_to_date = " $icon system up to date "
 //! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! [[block.click]]
 //! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
@@ -78,9 +78,9 @@
 //! [[block]]
 //! block = "pacman"
 //! interval = 600
-//! format = "$pacman updates available"
-//! format_singular = "$pacman update available"
-//! format_up_to_date = "system up to date"
+//! format = " $icon $pacman updates available "
+//! format_singular = " $icon $pacman update available "
+//! format_up_to_date = " $icon system up to date "
 //! # If a linux update is availble, but no ZFS package, it won't be possible to
 //! # actually perform a system upgrade, so we show a warning.
 //! warning_updates_regex = "(linux|linux-lts|linux-zen)"
@@ -95,9 +95,9 @@
 //! [[block]]
 //! block = "pacman"
 //! interval = 600
-//! format = "$pacman + $aur = $both updates available"
-//! format_singular = "$both update available"
-//! format_up_to_date = "system up to date"
+//! format = " $icon $pacman + $aur = $both updates available "
+//! format_singular = " $icon $both update available "
+//! format_up_to_date = " $icon system up to date "
 //! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
 //! aur_command = "yay -Qua"
@@ -154,16 +154,15 @@ struct PacmanConfig {
     warning_updates_regex: Option<String>,
     critical_updates_regex: Option<String>,
     aur_command: Option<String>,
-    hide_when_uptodate: bool,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = PacmanConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_icon("update")?;
+    let mut widget = api.new_widget();
 
-    let format = config.format.with_default("$pacman.eng(1)")?;
-    let format_singular = config.format_singular.with_default("$pacman.eng(1)")?;
-    let format_up_to_date = config.format_up_to_date.with_default("$pacman.eng(1)")?;
+    let format = config.format.with_default(" $icon $pacman.eng(1) ")?;
+    let format_singular = config.format_singular.with_default(" $icon $pacman.eng(1) ")?;
+    let format_up_to_date = config.format_up_to_date.with_default(" $icon $pacman.eng(1) ")?;
 
     macro_rules! any_format_contains {
         ($name:expr) => {
@@ -211,7 +210,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         .error("invalid critical updates regex")?;
 
     loop {
-        let (values, warning, critical, total) = match &watched {
+        let (mut values, warning, critical, total) = match &watched {
             Watched::Pacman => {
                 let updates = api.recoverable(get_pacman_available_updates).await?;
                 let count = get_update_count(&updates);
@@ -268,30 +267,27 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             Watched::None => (HashMap::new(), false, false, 0),
         };
+        values.insert("icon".into(),  Value::icon(api.get_icon("update")?));
 
-        if total == 0 && config.hide_when_uptodate {
-            api.hide().await?;
-        } else {
-            widget.set_format(match total {
-                0 => format_up_to_date.clone(),
-                1 => format_singular.clone(),
-                _ => format.clone(),
-            });
-            widget.set_values(values);
-            widget.state = match total {
-                0 => State::Idle,
-                _ => {
-                    if critical {
-                        State::Critical
-                    } else if warning {
-                        State::Warning
-                    } else {
-                        State::Info
-                    }
+        widget.set_format(match total {
+            0 => format_up_to_date.clone(),
+            1 => format_singular.clone(),
+            _ => format.clone(),
+        });
+        widget.set_values(values);
+        widget.state = match total {
+            0 => State::Idle,
+            _ => {
+                if critical {
+                    State::Critical
+                } else if warning {
+                    State::Warning
+                } else {
+                    State::Info
                 }
-            };
-            api.set_widget(&widget).await?;
-        }
+            }
+        };
+        api.set_widget(&widget).await?;
 
         loop {
             select! {

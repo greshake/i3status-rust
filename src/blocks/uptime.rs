@@ -7,7 +7,13 @@
 //!
 //! Key        | Values                     | Default
 //! -----------|----------------------------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon $text "`
 //! `interval` | Update interval in seconds | `60`
+//!
+//! Placeholder   | Value                   | Type   | Unit
+//! --------------|-------------------------|--------|-----
+//! `icon`        | A static icon           | Icon   | -
+//! `text`        | Current uptime          | Text   | -
 //!
 //! # Example
 //!
@@ -29,13 +35,14 @@ use tokio::fs::read_to_string;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct UptimeConfig {
+    format: FormatConfig,
     #[default(60.into())]
     interval: Seconds,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = UptimeConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_icon("uptime")?;
+    let mut widget = api.new_widget().with_format(config.format.with_default(" $icon $text ")?);
 
     loop {
         let uptime = read_to_string("/proc/uptime")
@@ -66,7 +73,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             format!("{minutes}m {seconds}s")
         };
 
-        widget.set_text(text);
+        widget.set_values(map! {
+          "icon" => Value::icon(api.get_icon("uptime")?),
+          "text" => Value::text(text)
+        });
         api.set_widget(&widget).await?;
 
         select! {

@@ -4,10 +4,14 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `"%a %d/%m %R"`
+//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `" $icon %a %d/%m %R "`
 //! `interval` | Update interval in seconds | `10`
 //! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | Local timezone
 //! `locale` | Locale to apply when formatting the time | System locale
+//!
+//! Placeholder   | Value                                       | Type   | Unit
+//! --------------|---------------------------------------------|--------|-----
+//! `icon`        | A static icon                               | Icon   | -
 //!
 //! # Example
 //!
@@ -17,8 +21,8 @@
 //! interval = 60
 //! locale = "fr_BE"
 //! [block.format]
-//! full = "%d/%m %R"
-//! short = "%R"
+//! full = " $icon %d/%m %R "
+//! short = " $icon %R "
 //! ```
 //!
 //! # Icons Used
@@ -29,12 +33,12 @@ use chrono::Locale;
 use chrono_tz::Tz;
 
 use super::prelude::*;
-use crate::formatting::config::DummyConfig as FormatConfig;
+use crate::formatting::config::DummyConfig;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct TimeConfig {
-    format: FormatConfig,
+    format: DummyConfig,
     // format_alt: Option<FormatConfig>,
     #[default(1.into())]
     interval: Seconds,
@@ -44,9 +48,9 @@ struct TimeConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TimeConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_icon("time")?;
+    let mut widget = api.new_widget();
 
-    let /*mut*/ format = config.format.full.as_deref().unwrap_or("%a %d/%m %R");
+    let /*mut*/ format = config.format.full.as_deref().unwrap_or(" $icon %a %d/%m %R ");
     let /*mut*/ format_short = config.format.short.as_deref();
 
     // let mut format_alt = config.format_alt.as_ref().map(|a| {
@@ -77,13 +81,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
 
         let full_time = get_time(format, timezone, locale);
-        let short_time = format_short.map(|f| get_time(f, timezone, locale));
+        let short_time = format_short.map(|f| get_time(f, timezone, locale))
+            .unwrap_or_else(|| "".into());
 
-        if let Some(short) = short_time {
-            widget.set_texts(full_time, short);
-        } else {
-            widget.set_text(full_time);
-        }
+        widget.set_format(
+            FormatConfig::default().with_defaults(&full_time, &short_time)?
+        );
+        widget.set_values(map!("icon" => Value::icon(api.get_icon("time")?)));
 
         api.set_widget(&widget).await?;
 

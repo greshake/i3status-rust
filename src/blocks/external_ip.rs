@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$ip $country_flag"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $ip $country_flag "`
 //! `interval` | Interval in seconds for automatic updates | `300`
 //! `with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | `true`
 //!
@@ -44,7 +44,7 @@
 //! ```toml
 //! [[block]]
 //! block = "external_ip"
-//! format = "$ip $country_code"
+//! format = " $ip $country_code "
 //! ```
 //!
 //! # Notes
@@ -78,7 +78,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = ExternalIpConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("$ip $country_flag")?);
+        .with_format(config.format.with_default(" $ip $country_flag ")?);
 
     type UpdatesStream = Pin<Box<dyn Stream<Item = ()>>>;
     let mut stream: UpdatesStream = if config.with_network_manager {

@@ -7,12 +7,13 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Refresh rate in seconds. | `1`
-//! `format` | A string to customise the output of this block. See below for placeholders. | `"$num.eng(1)"`
+//! `format` | A string to customise the output of this block. See below for placeholders. | `" $icon $num.eng(1) "`
 //! `socket_path` | Socket path for the rofication daemon. Supports path expansions e.g. `~`. | `"/tmp/rofi_notification_daemon"`
 //!
-//!  Key | Value | Type | Unit
-//! -----|-------|------|-----
-//! `num` | Number of pending notifications | Number | -
+//!  Placeholder | Value | Type | Unit
+//! -------------|-------|------|-----
+//! `icon`       | A static icon  | Icon | -
+//! `num`        | Number of pending notifications | Number | -
 //!
 //! # Example
 //!
@@ -45,8 +46,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = RoficationConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_icon("bell")?
-        .with_format(config.format.with_default("$num.eng(1)")?);
+        .with_format(config.format.with_default(" $icon $num.eng(1) ")?);
 
     let path = config.socket_path.expand()?;
     let mut timer = config.interval.timer();
@@ -54,7 +54,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         let (num, crit) = api.recoverable(|| rofication_status(&path)).await?;
 
-        widget.set_values(map!("num" => Value::number(num)));
+        widget.set_values(map!(
+            "icon" => Value::icon(api.get_icon("bell")?),
+            "num" => Value::number(num)
+        ));
+
         widget.state = if crit > 0 {
             State::Warning
         } else if num > 0 {

@@ -162,7 +162,7 @@ impl CommonApi {
     /// let mut widget = api
     ///     .new_widget()
     ///     .with_icon("docker")?
-    ///     .with_format(config.format.with_default("$running.eng(1)")?);
+    ///     .with_format(config.format.with_default(" $icon $running.eng(1) ")?);
     /// ```
     pub fn new_widget(&self) -> Widget {
         Widget::new(self.id, self.shared_config.clone())

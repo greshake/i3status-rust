@@ -9,11 +9,17 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $status "`
 //! `inboxes` | List of maildir inboxes to look for mails in. Supports path expansions e.g. `~`. | **Required**
 //! `threshold_warning` | Number of unread mails where state is set to warning. | `1`
 //! `threshold_critical` | Number of unread mails where state is set to critical. | `10`
 //! `interval` | Update interval, in seconds. | `5`
 //! `display_type` | Which part of the maildir to count: `"new"`, `"cur"`, or `"all"`. | `"new"`
+//!
+//! Placeholder  | Value                  | Type   | Unit
+//! -------------|------------------------|--------|-----
+//! `icon`       | A static icon          | Icon   | -
+//! `status`     | Number of emails       | Number | -
 //!
 //! # Examples
 //!
@@ -27,9 +33,6 @@
 //! display_type = "new"
 //! ```
 //!
-//! # TODO
-//! - Add `format` option.
-//!
 //! # Icons Used
 //! - `mail`
 
@@ -39,6 +42,7 @@ use maildir::Maildir;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct MaildirConfig {
+    format: FormatConfig,
     #[default(5.into())]
     interval: Seconds,
     inboxes: Vec<String>,
@@ -52,7 +56,7 @@ struct MaildirConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut config = MaildirConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_icon("mail")?;
+    let mut widget = api.new_widget().with_format(config.format.with_default(" $icon $status ")?);
 
     for inbox in &mut config.inboxes {
         *inbox = shellexpand::full(inbox).error("Failed to expand string")?.to_string();
@@ -77,7 +81,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         } else {
             State::Idle
         };
-        widget.set_text(newmails.to_string());
+        widget.set_values(map!(
+            "icon" => Value::icon(api.get_icon("mail")?),
+            "status" => Value::number(newmails)
+        ));
         api.set_widget(&widget).await?;
 
         select! {

@@ -6,7 +6,7 @@
 //! ----|--------|--------
 //! `path` | Path to collect information from. Supports path expansions e.g. `~`. | `"/"`
 //! `interval` | Update time in seconds | `20`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$available"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $available "`
 //! `warning` | A value which will trigger warning block state | `20.0`
 //! `alert` | A value which will trigger critical block state | `10.0`
 //! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
@@ -14,6 +14,7 @@
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
 //! -------------|--------------------------------------------------------------------|--------|-------
+//! `icon`       | A static icon                                                      | Icon   | -
 //! `path`       | The value of `path` option                                         | Text   | -
 //! `percentage` | Free or used percentage. Depends on `info_type`                    | Number | %
 //! `total`      | Total disk space                                                   | Number | Bytes
@@ -30,7 +31,7 @@
 //! alert_unit = "GB"
 //! alert = 10.0
 //! warning = 15.0
-//! format = "$available.eng(2)"
+//! format = " $icon $available.eng(2) "
 //! ```
 //!
 //! Update block on right click:
@@ -81,8 +82,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = DiskSpaceConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_icon("disk_drive")?
-        .with_format(config.format.with_default("$available")?);
+        .with_format(config.format.with_default(" $icon $available ")?);
 
     let unit = match config.alert_unit.as_deref() {
         Some("TB") => Some(Prefix::Tera),
@@ -113,6 +113,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         let percentage = result / (total as f64) * 100.;
         widget.set_values(map! {
+            "icon" => Value::icon(api.get_icon("disk_drive")?),
             "path" => Value::text(path.to_string()),
             "percentage" => Value::percents(percentage),
             "total" => Value::bytes(total as f64),

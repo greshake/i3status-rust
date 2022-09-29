@@ -18,7 +18,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"$combo.rot-str() $play&vert;"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon {$combo.rot-str() $play &vert;}"</code>
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
 //! `separator` | String to insert between artist and title. | `" - "`
@@ -29,6 +29,7 @@
 //!
 //! Placeholder | Value          | Type
 //! ------------|----------------|------
+//! `icon`      | A static icon  | Icon
 //! `artist`    | Current artist | Text
 //! `title`     | Current title  | Text
 //! `url`       | Current song url | Text
@@ -48,7 +49,7 @@
 //! ```toml
 //! [[block]]
 //! block = "music"
-//! format = "$combo.str(0,20) $play $next|"
+//! format = " $icon {$combo.str(0,20) $play $next |}"
 //! player = "spotify"
 //! ```
 //!
@@ -57,7 +58,7 @@
 //! ```toml
 //! [[block]]
 //! block = "music"
-//! format = "$combo.str(0,20) $play $next|"
+//! format = " $icon {$combo.str(0,20) $play $next |}"
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
@@ -66,7 +67,7 @@
 //! ```toml
 //! [[block]]
 //! block = "music"
-//! format = "$combo.rot-str(20) $play $next|"
+//! format = " $icon {$combo.rot-str(20) $play $next |}"
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
@@ -131,16 +132,18 @@ struct OwnerChange {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = MusicConfig::deserialize(config).config_error()?;
     let dbus_conn = new_dbus_connection().await?;
-    let mut widget = api
-        .new_widget()
-        .with_icon("music")?
-        .with_format(config.format.with_default("$combo.rot-str() $play|")?);
+    let mut widget = api.new_widget().with_format(
+        config
+            .format
+            .with_default(" $icon {$combo.rot-str() $play |}")?,
+    );
 
     let new_btn = |icon: &str, id: usize, api: &mut CommonApi| -> Result<Value> {
         Ok(Value::icon(api.get_icon(icon)?).with_instance(id))
     };
 
     let values = map! {
+        "icon" => Value::icon(api.get_icon("music")?),
         "next" => new_btn("music_next", NEXT_BTN, &mut api)?,
         "prev" => new_btn("music_prev", PREV_BTN, &mut api)?,
     };
@@ -235,7 +238,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 api.hide().await?;
             }
             None => {
-                widget.set_values(default());
+                widget.set_values(map!("icon" => Value::icon(api.get_icon("music")?)));
                 widget.state = State::Idle;
                 api.set_widget(&widget).await?;
             }

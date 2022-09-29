@@ -15,10 +15,16 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
+//! `format` | A string to customise the output of this block. | <code>" $icon{ $message&vert;} "</code>
 //! `message` | Message when timer expires | `"Pomodoro over! Take a break!"`
 //! `break_message` | Message when break is over | `"Break over! Time to work!"`
 //! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | `None`
 //! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | `false`
+//!
+//! Placeholder | Value                               | Type
+//! ------------|-------------------------------------|------
+//! `icon`      | A static icon                       | Icon
+//! `message`   | Current message                     | Text
 //!
 //! # Example
 //!
@@ -58,6 +64,7 @@ use std::time::Instant;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct PomodoroConfig {
+    format: FormatConfig,
     #[default("Pomodoro over! Take a break!".into())]
     message: String,
     #[default("Break over! Time to work!".into())]
@@ -74,7 +81,13 @@ struct Block {
 
 impl Block {
     async fn set_text(&mut self, text: String) -> Result<()> {
-        self.widget.set_text(text);
+        let mut values = map!(
+            "icon" => Value::icon(self.api.get_icon("pomodoro")?),
+        );
+        if !text.is_empty() {
+            values.insert("message".into(), Value::text(text));
+        }
+        self.widget.set_values(values);
         self.api.set_widget(&self.widget).await
     }
 
@@ -217,8 +230,11 @@ impl Block {
 
 pub async fn run(block_config: toml::Value, api: CommonApi) -> Result<()> {
     let block_config = PomodoroConfig::deserialize(block_config).config_error()?;
+    let format = FormatConfig::default().with_default(" $icon{ $message|} ")?;
+    let widget = api.new_widget().with_format(format);
+
     let mut block = Block {
-        widget: api.new_widget().with_icon("pomodoro")?,
+        widget,
         api,
         block_config,
     };

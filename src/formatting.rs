@@ -101,13 +101,13 @@ pub type Format = Arc<FormatInner>;
 #[derive(Debug)]
 pub struct FormatInner {
     full: FormatTemplate,
-    short: Option<FormatTemplate>,
+    short: FormatTemplate,
     intervals: Vec<u64>,
 }
 
 impl FormatInner {
     pub fn contains_key(&self, key: &str) -> bool {
-        self.full.contains_key(key) || self.short.as_ref().map_or(false, |x| x.contains_key(key))
+        self.full.contains_key(key) || self.short.contains_key(key)
     }
 
     pub fn intervals(&self) -> Vec<u64> {
@@ -125,11 +125,8 @@ impl FormatInner {
             .error("Failed to render full text")?;
         let short = self
             .short
-            .as_ref()
-            .map(|s| s.render(values, config))
-            .transpose()
-            .error("Failed to render short text")?
-            .unwrap_or_default();
+            .render(values, config)
+            .error("Failed to render short text")?;
         Ok((full, short))
     }
 }

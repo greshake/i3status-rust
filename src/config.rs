@@ -31,7 +31,7 @@ impl Default for SharedConfig {
         Self {
             theme: default(),
             icons: default(),
-            icons_format: Arc::new(" {icon} ".into()),
+            icons_format: Arc::new("{icon}".into()),
         }
     }
 }
@@ -60,14 +60,14 @@ pub struct Config {
 
 impl Config {
     fn default_icons_format() -> Arc<String> {
-        Arc::new(" {icon} ".into())
+        Arc::new("{icon}".into())
     }
 
     fn default_error_format() -> String {
-        "$short_error_message|X".into()
+        " {$short_error_message|X} ".into()
     }
 
     fn default_error_fullscreen_format() -> String {
-        "$full_error_message".into()
+        " $full_error_message ".into()
     }
 }

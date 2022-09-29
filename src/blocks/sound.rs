@@ -19,13 +19,13 @@
 //! ```toml
 //! [[block]]
 //! block = "sound"
-//! format = "$output_description{ $volume|}"
+//! format = " $icon $output_description{ $volume|} "
 //! ```
 //!
 //! ```toml
 //! [[block]]
 //! block = "sound"
-//! format = "$output_name{ $volume|}"
+//! format = " $icon $output_name{ $volume|} "
 //! [block.mappings]
 //! "alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "🔈"
 //! "alsa_output.pci-0000_00_1b.0.analog-stereo" = "🎧"
@@ -36,7 +36,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>$volume.eng(2)&vert;</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code> $icon {$volume.eng(2) &vert;}</code>
 //! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 //! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
 //! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
@@ -47,10 +47,11 @@
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
 //! `mappings` | Map `output_name` to custom name. | `None`
 //!
-//!  Key | Value | Type | Unit
-//! -----|-------|------|-----
-//! `volume` | Current volume. Missing if muted. | Number | %
-//! `output_name` | PulseAudio or ALSA device name | Text | -
+//! Placeholder          | Value                             | Type   | Unit
+//! ---------------------|-----------------------------------|--------|---------------
+//! `icon`               | Icon based on volume              | Icon   | -
+//! `volume`             | Current volume. Missing if muted. | Number | %
+//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
 //!
 //! #  Icons Used
@@ -92,7 +93,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = SoundConfig::deserialize(config).config_error()?;
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default("$volume.eng(2)|")?);
+        .with_format(config.format.with_default(" $icon {$volume.eng(2)|} ")?);
 
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;
@@ -186,13 +187,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         if device.muted() {
-            widget.set_icon(&icon(0, &*device))?;
+            values.insert("icon".into(), Value::icon(api.get_icon(&icon(0, &*device))?));
             widget.state = State::Warning;
             if !config.show_volume_when_muted {
                 values.remove("volume");
             }
         } else {
-            widget.set_icon(&icon(volume, &*device))?;
+            values.insert("icon".into(), Value::icon(api.get_icon(&icon(volume, &*device))?));
             widget.state = State::Idle;
         }
 

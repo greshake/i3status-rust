@@ -7,25 +7,25 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"^icon_net_down$speed_down.eng(3,B,K)^icon_net_up$speed_up.eng(3,B,K)"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
-//! `hide_missing` | Whether to hide interfaces that don't exist on the system. | `false`
-//! `hide_inactive` | Whether to hide interfaces that are not connected (or missing). | `false`
+//! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
 //!
-//! Placeholder       | Value                     | Type   | Unit
-//! ------------------|---------------------------|--------|---------------
-//! `speed_down`      | Download speed            | Number | Bytes per second
-//! `speed_up`        | Upload speed              | Number | Bytes per second
-//! `graph_down`      | Download speed graph      | Text   | -
-//! `graph_up`        | Upload speed graph        | Text   | -
-//! `device`          | The name of device        | Text   | -
-//! `ssid`            | Netfork SSID (WiFi only)  | Text   | -
-//! `frequency`       | WiFi frequency            | Number | Hz
-//! `signal_strength` | WiFi signal               | Number | %
-//! `bitrate`         | WiFi connection bitrate   | Number | Bits per second
-//! `ip`              | IPv4 address of the iface | Text   | -
-//! `ipv6`            | IPv6 address of the iface | Text   | -
+//! Placeholder       | Value                       | Type   | Unit
+//! ------------------|-----------------------------|--------|---------------
+//! `icon`            | Icon based on device's type | Icon   | -
+//! `speed_down`      | Download speed              | Number | Bytes per second
+//! `speed_up`        | Upload speed                | Number | Bytes per second
+//! `graph_down`      | Download speed graph        | Text   | -
+//! `graph_up`        | Upload speed graph          | Text   | -
+//! `device`          | The name of device          | Text   | -
+//! `ssid`            | Netfork SSID (WiFi only)    | Text   | -
+//! `frequency`       | WiFi frequency              | Number | Hz
+//! `signal_strength` | WiFi signal                 | Number | %
+//! `bitrate`         | WiFi connection bitrate     | Number | Bits per second
+//! `ip`              | IPv4 address of the iface   | Text   | -
+//! `ipv6`            | IPv6 address of the iface   | Text   | -
 //!
 //! # Example
 //!
@@ -34,7 +34,7 @@
 //! ```toml
 //! [[block]]
 //! block = "net"
-//! format = "{$signal_strength $ssid $frequency|Wired connection} via $device"
+//! format = " $icon {$signal_strength $ssid $frequency|Wired connection} via $device "
 //! ```
 //!
 //! Display exact device
@@ -65,18 +65,18 @@ struct NetConfig {
     device: Option<String>,
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
+    missing_format: FormatConfig,
     #[default(2.into())]
     interval: Seconds,
-    hide_missing: bool,
-    hide_inactive: bool,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NetConfig::deserialize(config).config_error()?;
 
-    let mut format = config
-        .format
-        .with_default("^icon_net_down$speed_down.eng(3,B,K)^icon_net_up$speed_up.eng(3,B,K)")?;
+    let mut format = config.format.with_default(
+        " $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) ",
+    )?;
+    let missing_format = config.missing_format.with_default(" × ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
@@ -101,20 +101,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
             None => {
-                if config.hide_missing || config.hide_inactive {
-                    api.hide().await?;
-                } else {
-                    widget.set_text("×".to_string());
-                    api.set_widget(&widget).await?;
-                }
+                widget.set_format(missing_format.clone());
+                api.set_widget(&widget).await?;
             }
             Some(device) if !device.iface.is_up => {
-                if config.hide_inactive {
-                    api.hide().await?;
-                } else {
-                    widget.set_text("×".to_string());
-                    api.set_widget(&widget).await?;
-                }
+                widget.set_format(missing_format.clone());
+                api.set_widget(&widget).await?;
             }
             Some(device) => {
                 widget.set_format(format.clone());
@@ -142,6 +134,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 push_to_hist(&mut tx_hist, speed_up);
 
                 let values = map! {
+                    "icon" => Value::icon(api.get_icon(device.icon)?),
                     "speed_down" => Value::bytes(speed_down),
                     "speed_up" => Value::bytes(speed_up),
                     "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
@@ -156,7 +149,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 };
 
                 widget.set_values(values);
-                widget.set_icon(device.icon)?;
                 api.set_widget(&widget).await?;
             }
         }

@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"^icon_ping$ping^icon_net_down$speed_down^icon_net_up$speed_up"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up "`
 //! `interval` | Update interval in seconds | `1800`
 //!
 //! Placeholder  | Value          | Type   | Unit
@@ -23,7 +23,7 @@
 //! [[block]]
 //! block = "speedtest"
 //! interval = 1800
-//! format = "^icon_ping$ping"
+//! format = " ^icon_ping $ping "
 //! ```
 //!
 //! Hide ping and display speed in bytes per second each using 4 characters (without icons)
@@ -32,7 +32,7 @@
 //! [[block]]
 //! block = "speedtest"
 //! interval = 1800
-//! format = "$speed_down.eng(4,B)$speed_up(4,B)"
+//! format = " $speed_down.eng(4,B) $speed_up(4,B) "
 //! ```
 //!
 //! # Icons Used
@@ -53,11 +53,10 @@ struct SpeedtestConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = SpeedtestConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(
-        config
-            .format
-            .with_default("^icon_ping$ping^icon_net_down$speed_down^icon_net_up$speed_up")?,
-    );
+    let mut widget =
+        api.new_widget().with_format(config.format.with_default(
+            " ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ",
+        )?);
 
     let mut command = Command::new("speedtest-cli");
     command.arg("--json");

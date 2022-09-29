@@ -18,7 +18,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | <code>"$average avg, $max max&vert;"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders | <code>" $icon{ $average avg, $max max&vert;} "</code>
 //! `interval` | Update interval in seconds | `5`
 //! `collapsed` | Whether the block will be collapsed by default | `true`
 //! `scale` | Either `"celsius"` or `"fahrenheit"` | `"celsius"`
@@ -42,7 +42,7 @@
 //! ```toml
 //! [[block]]
 //! block = "temperature"
-//! format = "$min min, $max max, $average avg|"
+//! format = " $icon {$min min, $max max, $average avg |}"
 //! interval = 10
 //! chip = "*-isa-*"
 //! ```
@@ -100,8 +100,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut collapsed = config.collapsed;
     let mut widget = api
         .new_widget()
-        .with_icon("thermometer")?
-        .with_format(config.format.with_default("$average avg, $max max|")?);
+        .with_format(config.format.with_default(" $icon{ $average avg, $max max|} ")?);
 
     let good = config
         .good
@@ -183,9 +182,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         'outer: loop {
             if collapsed {
-                widget.set_values(default());
+                widget.set_values(map!("icon" => Value::icon(api.get_icon("thermometer")?)));
             } else {
                 widget.set_values(map! {
+                    "icon" => Value::icon(api.get_icon("thermometer")?),
                     "average" => Value::degrees(avg_temp),
                     "min" => Value::degrees(min_temp),
                     "max" => Value::degrees(max_temp),

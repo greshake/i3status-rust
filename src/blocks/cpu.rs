@@ -4,12 +4,13 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `"$utilization"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //!
 //! Placeholder      | Value                                                          | Type   | Unit
 //! -----------------|----------------------------------------------------------------|--------|---------------
+//! `icon`           | A static icon                                                  | Icon   | -
 //! `utilization`    | Average CPU utilization                                        | Number | %
 //! `utilization<N>` | Utilization of Nth logical CPU                                 | Number | %
 //! `barchart`       | Utilization of all logical CPUs presented as a barchart        | Text   | -
@@ -23,8 +24,8 @@
 //! [[block]]
 //! block = "cpu"
 //! interval = 1
-//! format = "$barchart.str() $utilization.eng()"
-//! format_alt = "$frequency.eng(){ $boost.str()|}"
+//! format = " $icon $barchart.str() $utilization.eng() "
+//! format_alt = " $icon $frequency.eng(){ $boost.str()|} "
 //! ```
 //!
 //! # Icons Used
@@ -55,7 +56,7 @@ struct CpuConfig {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = CpuConfig::deserialize(config).config_error()?;
 
-    let mut format = config.format.with_default("$utilization")?;
+    let mut format = config.format.with_default(" $icon $utilization ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
@@ -63,7 +64,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     let mut widget = api
         .new_widget()
-        .with_icon("cpu")?
         .with_format(format.clone());
 
     let boost_icon_on = api.get_icon("cpu_boost_on")?;
@@ -105,6 +105,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         });
 
         let mut values = map!(
+            "icon" => Value::icon(api.get_icon("cpu")?),
             "barchart" => Value::text(barchart),
             "frequency" => Value::hertz(freq_avg),
             "utilization" => Value::percents(utilization_avg * 100.),
