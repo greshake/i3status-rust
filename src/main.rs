@@ -100,10 +100,10 @@ fn main() {
             bar.run_event_loop().await
         });
     if let Err(error) = result {
-        let error_widget = Widget::new_error(0, Default::default(), &error);
+        let error_widget = Widget::new_error(0, &error);
         println!(
             "{},",
-            serde_json::to_string(&error_widget.get_data().unwrap()).unwrap()
+            serde_json::to_string(&error_widget.get_data(&Default::default()).unwrap()).unwrap()
         );
         eprintln!("\n\n{}\n\n", error);
         dbg!(error);
@@ -153,7 +153,7 @@ impl Block {
     }
 
     fn set_error(&mut self, fullscreen: bool, error: Error) {
-        let mut widget = Widget::new(self.id, self.shared_config.clone())
+        let mut widget = Widget::new(self.id)
             .with_state(State::Critical)
             .with_format(if fullscreen {
                 self.error_fullscreen_format.clone()
@@ -338,7 +338,9 @@ impl BarState {
                 data.clear();
             }
             BlockState::Normal { widget } | BlockState::Error { widget, .. } => {
-                *data = widget.get_data().in_block(*block_type, id)?;
+                *data = widget
+                    .get_data(&block.shared_config)
+                    .in_block(*block_type, id)?;
             }
         }
         Ok(())

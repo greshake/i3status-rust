@@ -7,24 +7,22 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone)]
 pub struct Widget {
-    pub shared_config: SharedConfig,
     pub state: State,
     id: usize,
     source: Source,
 }
 
 impl Widget {
-    pub fn new(id: usize, shared_config: SharedConfig) -> Self {
+    pub fn new(id: usize) -> Self {
         Widget {
-            shared_config,
             state: State::Idle,
             id,
             source: Source::Text(String::new()),
         }
     }
 
-    pub fn new_error(id: usize, shared_config: SharedConfig, error: &Error) -> Self {
-        Self::new(id, shared_config)
+    pub fn new_error(id: usize, error: &Error) -> Self {
+        Self::new(id)
             .with_text(error.to_string().chars().collect_pango())
             .with_state(State::Critical)
     }
@@ -81,10 +79,10 @@ impl Widget {
     }
 
     /// Constuct `I3BarBlock` from this widget
-    pub fn get_data(&self) -> Result<Vec<I3BarBlock>> {
+    pub fn get_data(&self, shared_config: &SharedConfig) -> Result<Vec<I3BarBlock>> {
         // Create a "template" block
-        let (key_bg, key_fg) = self.shared_config.theme.get_colors(self.state);
-        let (full, short) = self.source.render(&self.shared_config)?;
+        let (key_bg, key_fg) = shared_config.theme.get_colors(self.state);
+        let (full, short) = self.source.render(shared_config)?;
         let mut template = I3BarBlock {
             name: Some(self.id.to_string()),
             background: key_bg,
