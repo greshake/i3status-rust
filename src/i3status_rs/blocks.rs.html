@@ -350,7 +350,6 @@
 <span id="350">350</span>
 <span id="351">351</span>
 <span id="352">352</span>
-<span id="353">353</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
@@ -514,11 +513,10 @@
     <span class="doccomment">/// ```</span>
     <span class="doccomment">/// let mut widget = api</span>
     <span class="doccomment">///     .new_widget()</span>
-    <span class="doccomment">///     .with_icon(&quot;docker&quot;)?</span>
     <span class="doccomment">///     .with_format(config.format.with_default(&quot; $icon $running.eng(1) &quot;)?);</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Widget</span> {
-        <span class="ident">Widget::new</span>(<span class="self">self</span>.<span class="ident">id</span>, <span class="self">self</span>.<span class="ident">shared_config</span>.<span class="ident">clone</span>())
+        <span class="ident">Widget::new</span>(<span class="self">self</span>.<span class="ident">id</span>)
     }
 
     <span class="doccomment">/// Sends the widget to be displayed.</span>
