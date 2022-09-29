@@ -211,6 +211,16 @@
 <span id="211">211</span>
 <span id="212">212</span>
 <span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Watson statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.</span>
@@ -219,9 +229,14 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $text |&quot;`</span>
 <span class="doccomment">//! `show_time` | Whether to show recorded time. | `false`</span>
 <span class="doccomment">//! `state_path` | Path to the Watson state file. Supports path expansions e.g. `~`. | `$XDG_CONFIG_HOME/watson/state`</span>
 <span class="doccomment">//! `interval` | Update interval, in seconds. | `60`</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Placeholder   | Value                   | Type   | Unit</span>
+<span class="doccomment">//! --------------|-------------------------|--------|-----</span>
+<span class="doccomment">//! `text`        | Current activity        | Text   | -</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Example</span>
 <span class="doccomment">//!</span>
@@ -239,14 +254,15 @@
 <span class="kw">use</span> <span class="ident">dirs_next::config_dir</span>;
 <span class="kw">use</span> <span class="ident">inotify</span>::{<span class="ident">Inotify</span>, <span class="ident">WatchMask</span>};
 <span class="kw">use</span> <span class="ident">serde::de::Deserializer</span>;
-<span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">path::PathBuf</span>};
 <span class="kw">use</span> <span class="ident">tokio::fs::read_to_string</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">SmartDefault</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">WatsonConfig</span> {
+    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">state_path</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ShellString</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">default</span>(<span class="number">60</span>.<span class="ident">into</span>())]</span>
     <span class="ident">interval</span>: <span class="ident">Seconds</span>,
@@ -255,7 +271,7 @@
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">WatsonConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $text |&quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">show_time</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">show_time</span>;
 
@@ -295,7 +311,9 @@
         <span class="kw">match</span> <span class="ident">state</span> {
             <span class="ident">state</span> @ <span class="ident">WatsonState::Active</span> { .. } =&gt; {
                 <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Good</span>;
-                <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">state</span>.<span class="ident">format</span>(<span class="ident">show_time</span>, <span class="string">&quot;started&quot;</span>, <span class="ident">format_delta_past</span>));
+                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
+                  <span class="string">&quot;text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">state</span>.<span class="ident">format</span>(<span class="ident">show_time</span>, <span class="string">&quot;started&quot;</span>, <span class="ident">format_delta_past</span>))
+                ));
                 <span class="ident">prev_state</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>);
             }
             <span class="ident">WatsonState::Idle</span> {} =&gt; {
@@ -303,13 +321,15 @@
                     <span class="comment">// The previous state was active, which means that we just now stopped the time</span>
                     <span class="comment">// tracking. This means that we could show some statistics.</span>
                     <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-                    <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">prev</span>.<span class="ident">format</span>(<span class="bool-val">true</span>, <span class="string">&quot;stopped&quot;</span>, <span class="ident">format_delta_after</span>));
+                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
+                      <span class="string">&quot;text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">prev</span>.<span class="ident">format</span>(<span class="bool-val">true</span>, <span class="string">&quot;stopped&quot;</span>, <span class="ident">format_delta_after</span>))
+                    ));
                 } <span class="kw">else</span> {
                     <span class="comment">// File is empty which means that there is currently no active time tracking,</span>
                     <span class="comment">// and the previous state wasn&#39;t time tracking neither so we reset the</span>
                     <span class="comment">// contents.</span>
                     <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-                    <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">String::new</span>());
+                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">Values::default</span>());
                 }
                 <span class="ident">prev_state</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>);
             }

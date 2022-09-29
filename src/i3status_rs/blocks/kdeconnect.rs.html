@@ -337,9 +337,6 @@
 <span id="337">337</span>
 <span id="338">338</span>
 <span id="339">339</span>
-<span id="340">340</span>
-<span id="341">341</span>
-<span id="342">342</span>
 </pre><pre class="rust"><code><span class="doccomment">//! [KDEConnect](https://community.kde.org/KDEConnect) indicator</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Display info from the currently connected device in KDEConnect, updated asynchronously.</span>
@@ -352,7 +349,7 @@
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
 <span class="doccomment">//! `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | Chooses the first found device, if any.</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$name{ $bat_icon $bat_charge&amp;vert;}{ $notif_icon&amp;vert;}&quot;&lt;/code&gt;</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon $name{ $bat_icon $bat_charge&amp;vert;}{ $notif_icon&amp;vert;} &quot;&lt;/code&gt;</span>
 <span class="doccomment">//! `bat_info` | Min battery level below which state is set to info. | `60`</span>
 <span class="doccomment">//! `bat_good` | Min battery level below which state is set to good. | `60`</span>
 <span class="doccomment">//! `bat_warning` | Min battery level below which state is set to warning. | `30`</span>
@@ -361,6 +358,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder   | Value                                                                    | Type   | Unit</span>
 <span class="doccomment">//! --------------|--------------------------------------------------------------------------|--------|-----</span>
+<span class="doccomment">//! `icon`        | Icon based on connection&#39;s status                                        | Icon   | -</span>
 <span class="doccomment">//! `bat_icon`    | Battery level indicator (only when connected and if supported)           | Icon   | -</span>
 <span class="doccomment">//! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %</span>
 <span class="doccomment">//! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -</span>
@@ -375,7 +373,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;kdeconnect&quot;</span>
-<span class="doccomment">//! format = &quot;{$bat_icon $bat_charge|}{ $notif_icon|}&quot;</span>
+<span class="doccomment">//! format = &quot; $icon {$bat_icon $bat_charge|}{ $notif_icon|} &quot;</span>
 <span class="doccomment">//! bat_good = 101</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
@@ -423,7 +421,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(
         <span class="ident">config</span>
             .<span class="ident">format</span>
-            .<span class="ident">with_default</span>(<span class="string">&quot;$name{ $bat_icon $bat_charge|}{ $notif_icon|}&quot;</span>)<span class="question-mark">?</span>,
+            .<span class="ident">with_default</span>(<span class="string">&quot; $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} &quot;</span>)<span class="question-mark">?</span>,
     );
 
     <span class="kw">let</span> <span class="ident">battery_state</span> <span class="op">=</span> (
@@ -455,7 +453,7 @@
             }
 
             <span class="kw">if</span> <span class="ident">connected</span> {
-                <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;phone&quot;</span>)<span class="question-mark">?</span>;
+                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;phone&quot;</span>)<span class="question-mark">?</span>));
                 <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;connected&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::flag</span>());
 
                 <span class="kw">let</span> (<span class="ident">level</span>, <span class="ident">charging</span>) <span class="op">=</span> <span class="ident">device</span>.<span class="ident">battery</span>().<span class="kw">await</span>;
@@ -463,11 +461,7 @@
                     <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;bat_charge&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::percents</span>(<span class="ident">level</span>));
                     <span class="ident">values</span>.<span class="ident">insert</span>(
                         <span class="string">&quot;bat_icon&quot;</span>.<span class="ident">into</span>(),
-                        <span class="ident">Value::icon</span>(
-                            <span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">battery_level_icon</span>(<span class="ident">level</span>, <span class="ident">charging</span>))<span class="question-mark">?</span>
-                                .<span class="ident">trim</span>()
-                                .<span class="ident">into</span>(),
-                        ),
+                        <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">battery_level_icon</span>(<span class="ident">level</span>, <span class="ident">charging</span>))<span class="question-mark">?</span>),
                     );
                     <span class="kw">if</span> <span class="ident">battery_state</span> {
                         <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">charging</span> {
@@ -500,7 +494,7 @@
                     };
                 }
             } <span class="kw">else</span> {
-                <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;phone_disconnected&quot;</span>)<span class="question-mark">?</span>;
+                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;phone_disconnected&quot;</span>)<span class="question-mark">?</span>));
             }
 
             <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);

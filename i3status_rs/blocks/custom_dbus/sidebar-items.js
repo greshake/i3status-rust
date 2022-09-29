@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["DBUS_NAME",""]],"fn":[["dbus_conn",""],["run",""]],"static":[["DBUS_CONNECTION",""]],"struct":[["Block",""],["CustomDBusConfig",""]]};
+window.SIDEBAR_ITEMS = {"constant":[["DBUS_NAME",""]],"fn":[["block_values",""],["dbus_conn",""],["run",""]],"static":[["DBUS_CONNECTION",""]],"struct":[["Block",""],["CustomDBusConfig",""]]};

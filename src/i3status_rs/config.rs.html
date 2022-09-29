@@ -104,7 +104,7 @@
         <span class="self">Self</span> {
             <span class="ident">theme</span>: <span class="ident">default</span>(),
             <span class="ident">icons</span>: <span class="ident">default</span>(),
-            <span class="ident">icons_format</span>: <span class="ident">Arc::new</span>(<span class="string">&quot; {icon} &quot;</span>.<span class="ident">into</span>()),
+            <span class="ident">icons_format</span>: <span class="ident">Arc::new</span>(<span class="string">&quot;{icon}&quot;</span>.<span class="ident">into</span>()),
         }
     }
 }
@@ -133,15 +133,15 @@
 
 <span class="kw">impl</span> <span class="ident">Config</span> {
     <span class="kw">fn</span> <span class="ident">default_icons_format</span>() -&gt; <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="ident">Arc::new</span>(<span class="string">&quot; {icon} &quot;</span>.<span class="ident">into</span>())
+        <span class="ident">Arc::new</span>(<span class="string">&quot;{icon}&quot;</span>.<span class="ident">into</span>())
     }
 
     <span class="kw">fn</span> <span class="ident">default_error_format</span>() -&gt; <span class="ident">String</span> {
-        <span class="string">&quot;$short_error_message|X&quot;</span>.<span class="ident">into</span>()
+        <span class="string">&quot; {$short_error_message|X} &quot;</span>.<span class="ident">into</span>()
     }
 
     <span class="kw">fn</span> <span class="ident">default_error_fullscreen_format</span>() -&gt; <span class="ident">String</span> {
-        <span class="string">&quot;$full_error_message&quot;</span>.<span class="ident">into</span>()
+        <span class="string">&quot; $full_error_message &quot;</span>.<span class="ident">into</span>()
     }
 }
 </code></pre></div>

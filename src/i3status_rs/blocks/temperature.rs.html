@@ -231,7 +231,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders | &lt;code&gt;&quot;$average avg, $max max&amp;vert;&quot;&lt;/code&gt;</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders | &lt;code&gt;&quot; $icon{ $average avg, $max max&amp;vert;} &quot;&lt;/code&gt;</span>
 <span class="doccomment">//! `interval` | Update interval in seconds | `5`</span>
 <span class="doccomment">//! `collapsed` | Whether the block will be collapsed by default | `true`</span>
 <span class="doccomment">//! `scale` | Either `&quot;celsius&quot;` or `&quot;fahrenheit&quot;` | `&quot;celsius&quot;`</span>
@@ -255,7 +255,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;temperature&quot;</span>
-<span class="doccomment">//! format = &quot;$min min, $max max, $average avg|&quot;</span>
+<span class="doccomment">//! format = &quot; $icon {$min min, $max max, $average avg |}&quot;</span>
 <span class="doccomment">//! interval = 10</span>
 <span class="doccomment">//! chip = &quot;*-isa-*&quot;</span>
 <span class="doccomment">//! ```</span>
@@ -313,8 +313,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">collapsed</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">collapsed</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
         .<span class="ident">new_widget</span>()
-        .<span class="ident">with_icon</span>(<span class="string">&quot;thermometer&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$average avg, $max max|&quot;</span>)<span class="question-mark">?</span>);
+        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon{ $average avg, $max max|} &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let</span> <span class="ident">good</span> <span class="op">=</span> <span class="ident">config</span>
         .<span class="ident">good</span>
@@ -396,9 +395,10 @@
 
         <span class="lifetime">&#39;outer</span>: <span class="kw">loop</span> {
             <span class="kw">if</span> <span class="ident">collapsed</span> {
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
+                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(<span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;thermometer&quot;</span>)<span class="question-mark">?</span>)));
             } <span class="kw">else</span> {
                 <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
+                    <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;thermometer&quot;</span>)<span class="question-mark">?</span>),
                     <span class="string">&quot;average&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">avg_temp</span>),
                     <span class="string">&quot;min&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">min_temp</span>),
                     <span class="string">&quot;max&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">max_temp</span>),

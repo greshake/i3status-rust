@@ -396,10 +396,6 @@
 <span id="396">396</span>
 <span id="397">397</span>
 <span id="398">398</span>
-<span id="399">399</span>
-<span id="400">400</span>
-<span id="401">401</span>
-<span id="402">402</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available on pacman or an AUR helper.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Requires fakeroot to be installed (only required for pacman).</span>
@@ -442,19 +438,19 @@
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|---------</span>
 <span class="doccomment">//! `interval` | Update interval, in seconds. If setting `aur_command` then set interval appropriately as to not exceed the AUR&#39;s daily rate limit. | `600`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot;$pacman.eng(1)&quot;`</span>
-<span class="doccomment">//! `format_singular` | Same as `format` but for when exactly one update is available. | `&quot;$pacman.eng(1)&quot;`</span>
-<span class="doccomment">//! `format_up_to_date` | Same as `format` but for when no updates are available. | `&quot;$pacman.eng(1)&quot;`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $pacman.eng(1) &quot;`</span>
+<span class="doccomment">//! `format_singular` | Same as `format` but for when exactly one update is available. | `&quot; $icon $pacman.eng(1) &quot;`</span>
+<span class="doccomment">//! `format_up_to_date` | Same as `format` but for when no updates are available. | `&quot; $icon $pacman.eng(1) &quot;`</span>
 <span class="doccomment">//! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`</span>
 <span class="doccomment">//! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`</span>
 <span class="doccomment">//! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used</span>
-<span class="doccomment">//! `hide_when_uptodate` | Hides the block when there are no updates available | `false`</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//!  Key    | Value | Type | Unit</span>
-<span class="doccomment">//! --------|-------|------|-----</span>
-<span class="doccomment">//! `pacman`| Number of updates available according to `pacman` | Number | -</span>
-<span class="doccomment">//! `aur`   | Number of updates available according to `&lt;aur_command&gt;` | Number | -</span>
-<span class="doccomment">//! `both`  | Cumulative number of updates available according to `pacman` and `&lt;aur_command&gt;` | Number | -</span>
+<span class="doccomment">//!  Placeholder | Value | Type | Unit</span>
+<span class="doccomment">//! -------------|----------------------------------------------------------------------------------|--------|-----</span>
+<span class="doccomment">//! `icon`       | A static icon                                                                    | Icon   | -</span>
+<span class="doccomment">//! `pacman`     | Number of updates available according to `pacman`                                | Number | -</span>
+<span class="doccomment">//! `aur`        | Number of updates available according to `&lt;aur_command&gt;`                         | Number | -</span>
+<span class="doccomment">//! `both`       | Cumulative number of updates available according to `pacman` and `&lt;aur_command&gt;` | Number | -</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Examples</span>
 <span class="doccomment">//!</span>
@@ -464,9 +460,9 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;pacman&quot;</span>
 <span class="doccomment">//! interval = 600</span>
-<span class="doccomment">//! format = &quot;$pacman updates available&quot;</span>
-<span class="doccomment">//! format_singular = &quot;$pacman update available&quot;</span>
-<span class="doccomment">//! format_up_to_date = &quot;system up to date&quot;</span>
+<span class="doccomment">//! format = &quot; $icon $pacman updates available &quot;</span>
+<span class="doccomment">//! format_singular = &quot; $icon $pacman update available &quot;</span>
+<span class="doccomment">//! format_up_to_date = &quot; $icon system up to date &quot;</span>
 <span class="doccomment">//! critical_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;</span>
 <span class="doccomment">//! [[block.click]]</span>
 <span class="doccomment">//! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.</span>
@@ -480,9 +476,9 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;pacman&quot;</span>
 <span class="doccomment">//! interval = 600</span>
-<span class="doccomment">//! format = &quot;$pacman updates available&quot;</span>
-<span class="doccomment">//! format_singular = &quot;$pacman update available&quot;</span>
-<span class="doccomment">//! format_up_to_date = &quot;system up to date&quot;</span>
+<span class="doccomment">//! format = &quot; $icon $pacman updates available &quot;</span>
+<span class="doccomment">//! format_singular = &quot; $icon $pacman update available &quot;</span>
+<span class="doccomment">//! format_up_to_date = &quot; $icon system up to date &quot;</span>
 <span class="doccomment">//! # If a linux update is availble, but no ZFS package, it won&#39;t be possible to</span>
 <span class="doccomment">//! # actually perform a system upgrade, so we show a warning.</span>
 <span class="doccomment">//! warning_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;</span>
@@ -497,9 +493,9 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;pacman&quot;</span>
 <span class="doccomment">//! interval = 600</span>
-<span class="doccomment">//! format = &quot;$pacman + $aur = $both updates available&quot;</span>
-<span class="doccomment">//! format_singular = &quot;$both update available&quot;</span>
-<span class="doccomment">//! format_up_to_date = &quot;system up to date&quot;</span>
+<span class="doccomment">//! format = &quot; $icon $pacman + $aur = $both updates available &quot;</span>
+<span class="doccomment">//! format_singular = &quot; $icon $both update available &quot;</span>
+<span class="doccomment">//! format_up_to_date = &quot; $icon system up to date &quot;</span>
 <span class="doccomment">//! critical_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;</span>
 <span class="doccomment">//! # aur_command should output available updates to stdout (ie behave as echo -ne &quot;update\n&quot;)</span>
 <span class="doccomment">//! aur_command = &quot;yay -Qua&quot;</span>
@@ -556,16 +552,15 @@
     <span class="ident">warning_updates_regex</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">critical_updates_regex</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">aur_command</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">hide_when_uptodate</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">PacmanConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_icon</span>(<span class="string">&quot;update&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>();
 
-    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$pacman.eng(1)&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_singular</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format_singular</span>.<span class="ident">with_default</span>(<span class="string">&quot;$pacman.eng(1)&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_up_to_date</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format_up_to_date</span>.<span class="ident">with_default</span>(<span class="string">&quot;$pacman.eng(1)&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format_singular</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format_singular</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format_up_to_date</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format_up_to_date</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="macro">macro_rules!</span> <span class="ident">any_format_contains</span> {
         (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">expr</span>) =&gt; {
@@ -613,7 +608,7 @@
         .<span class="ident">error</span>(<span class="string">&quot;invalid critical updates regex&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop</span> {
-        <span class="kw">let</span> (<span class="ident">values</span>, <span class="ident">warning</span>, <span class="ident">critical</span>, <span class="ident">total</span>) <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">watched</span> {
+        <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">values</span>, <span class="ident">warning</span>, <span class="ident">critical</span>, <span class="ident">total</span>) <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">watched</span> {
             <span class="ident">Watched::Pacman</span> =&gt; {
                 <span class="kw">let</span> <span class="ident">updates</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">recoverable</span>(<span class="ident">get_pacman_available_updates</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="ident">get_update_count</span>(<span class="kw-2">&amp;</span><span class="ident">updates</span>);
@@ -670,30 +665,27 @@
             }
             <span class="ident">Watched::None</span> =&gt; (<span class="ident">HashMap::new</span>(), <span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="number">0</span>),
         };
+        <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(),  <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;update&quot;</span>)<span class="question-mark">?</span>));
 
-        <span class="kw">if</span> <span class="ident">total</span> <span class="op">==</span> <span class="number">0</span> <span class="op">&amp;&amp;</span> <span class="ident">config</span>.<span class="ident">hide_when_uptodate</span> {
-            <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        } <span class="kw">else</span> {
-            <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="kw">match</span> <span class="ident">total</span> {
-                <span class="number">0</span> =&gt; <span class="ident">format_up_to_date</span>.<span class="ident">clone</span>(),
-                <span class="number">1</span> =&gt; <span class="ident">format_singular</span>.<span class="ident">clone</span>(),
-                <span class="kw">_</span> =&gt; <span class="ident">format</span>.<span class="ident">clone</span>(),
-            });
-            <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
-            <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">total</span> {
-                <span class="number">0</span> =&gt; <span class="ident">State::Idle</span>,
-                <span class="kw">_</span> =&gt; {
-                    <span class="kw">if</span> <span class="ident">critical</span> {
-                        <span class="ident">State::Critical</span>
-                    } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">warning</span> {
-                        <span class="ident">State::Warning</span>
-                    } <span class="kw">else</span> {
-                        <span class="ident">State::Info</span>
-                    }
+        <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="kw">match</span> <span class="ident">total</span> {
+            <span class="number">0</span> =&gt; <span class="ident">format_up_to_date</span>.<span class="ident">clone</span>(),
+            <span class="number">1</span> =&gt; <span class="ident">format_singular</span>.<span class="ident">clone</span>(),
+            <span class="kw">_</span> =&gt; <span class="ident">format</span>.<span class="ident">clone</span>(),
+        });
+        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
+        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">total</span> {
+            <span class="number">0</span> =&gt; <span class="ident">State::Idle</span>,
+            <span class="kw">_</span> =&gt; {
+                <span class="kw">if</span> <span class="ident">critical</span> {
+                    <span class="ident">State::Critical</span>
+                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">warning</span> {
+                    <span class="ident">State::Warning</span>
+                } <span class="kw">else</span> {
+                    <span class="ident">State::Info</span>
                 }
-            };
-            <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        }
+            }
+        };
+        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop</span> {
             <span class="macro">select!</span> {

@@ -151,6 +151,9 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A Toggle block</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! You can add commands to be executed to disable the toggle (`command_off`), and to enable it</span>
@@ -167,13 +170,17 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `text` | A label next to the icon | `&quot;&quot;`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $icon &quot;`</span>
 <span class="doccomment">//! `command_on` | Shell command to enable the toggle | Yes | N/A</span>
 <span class="doccomment">//! `command_off` | Shell command to disable the toggle | Yes | N/A</span>
 <span class="doccomment">//! `command_state` | Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes. | **Required**</span>
 <span class="doccomment">//! `icon_on` | Icon override for the toggle button while on | `&quot;toggle_on&quot;`</span>
 <span class="doccomment">//! `icon_off` | Icon override for the toggle button while off | `&quot;toggle_off&quot;`</span>
 <span class="doccomment">//! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Placeholder   | Value                                       | Type   | Unit</span>
+<span class="doccomment">//! --------------|---------------------------------------------|--------|-----</span>
+<span class="doccomment">//! `icon`        | Icon based on toggle&#39;s state                | Icon   | -</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Examples</span>
 <span class="doccomment">//!</span>
@@ -182,7 +189,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;toggle&quot;</span>
-<span class="doccomment">//! text = &quot;4k&quot;</span>
+<span class="doccomment">//! format = &quot; $icon 4k &quot;</span>
 <span class="doccomment">//! command_state = &quot;xrandr | grep &#39;DP1 connected 38&#39; | grep -v eDP1&quot;</span>
 <span class="doccomment">//! command_on = &quot;~/.screenlayout/4kmon_default.sh&quot;</span>
 <span class="doccomment">//! command_off = &quot;~/.screenlayout/builtin.sh&quot;</span>
@@ -200,8 +207,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ToggleConfig</span> {
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">text</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">command_on</span>: <span class="ident">String</span>,
     <span class="ident">command_off</span>: <span class="ident">String</span>,
     <span class="ident">command_state</span>: <span class="ident">String</span>,
@@ -216,11 +222,7 @@
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ToggleConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">map</span>(<span class="ident">Duration::from_secs</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>();
-
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">text</span>) <span class="op">=</span> <span class="ident">config</span>.<span class="ident">text</span> {
-        <span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">text</span>);
-    }
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let</span> <span class="ident">icon_on</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">icon_on</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;toggle_on&quot;</span>.<span class="ident">into</span>());
     <span class="kw">let</span> <span class="ident">icon_off</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">icon_off</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;toggle_off&quot;</span>.<span class="ident">into</span>());
@@ -242,8 +244,12 @@
             .<span class="ident">trim</span>()
             .<span class="ident">is_empty</span>();
 
-        <span class="comment">// Update widget</span>
-        <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="kw">if</span> <span class="ident">is_toggled</span> { <span class="kw-2">&amp;</span><span class="ident">icon_on</span> } <span class="kw">else</span> { <span class="kw-2">&amp;</span><span class="ident">icon_off</span> })<span class="question-mark">?</span>;
+
+        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(
+                <span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="kw">if</span> <span class="ident">is_toggled</span> { <span class="kw-2">&amp;</span><span class="ident">icon_on</span> } <span class="kw">else</span> { <span class="kw-2">&amp;</span><span class="ident">icon_off</span> })<span class="question-mark">?</span>
+            )
+        ));
         <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="comment">// TODO: try not to duplicate code</span>

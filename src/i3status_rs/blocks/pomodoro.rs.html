@@ -238,6 +238,22 @@
 <span id="238">238</span>
 <span id="239">239</span>
 <span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique)</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Technique</span>
@@ -255,10 +271,16 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. | &lt;code&gt;&quot; $icon{ $message&amp;vert;} &quot;&lt;/code&gt;</span>
 <span class="doccomment">//! `message` | Message when timer expires | `&quot;Pomodoro over! Take a break!&quot;`</span>
 <span class="doccomment">//! `break_message` | Message when break is over | `&quot;Break over! Time to work!&quot;`</span>
 <span class="doccomment">//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | `None`</span>
 <span class="doccomment">//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | `false`</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Placeholder | Value                               | Type</span>
+<span class="doccomment">//! ------------|-------------------------------------|------</span>
+<span class="doccomment">//! `icon`      | A static icon                       | Icon</span>
+<span class="doccomment">//! `message`   | Current message                     | Text</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Example</span>
 <span class="doccomment">//!</span>
@@ -298,6 +320,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">PomodoroConfig</span> {
+    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;Pomodoro over! Take a break!&quot;</span>.<span class="ident">into</span>())]</span>
     <span class="ident">message</span>: <span class="ident">String</span>,
     <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;Break over! Time to work!&quot;</span>.<span class="ident">into</span>())]</span>
@@ -314,7 +337,13 @@
 
 <span class="kw">impl</span> <span class="ident">Block</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_text</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">text</span>: <span class="ident">String</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">set_text</span>(<span class="ident">text</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="self">self</span>.<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;pomodoro&quot;</span>)<span class="question-mark">?</span>),
+        );
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">text</span>.<span class="ident">is_empty</span>() {
+            <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;message&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::text</span>(<span class="ident">text</span>));
+        }
+        <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
         <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span>
     }
 
@@ -457,8 +486,11 @@
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">block_config</span>: <span class="ident">toml::Value</span>, <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">block_config</span> <span class="op">=</span> <span class="ident">PomodoroConfig::deserialize</span>(<span class="ident">block_config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">FormatConfig::default</span>().<span class="ident">with_default</span>(<span class="string">&quot; $icon{ $message|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(<span class="ident">format</span>);
+
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">Block</span> {
-        <span class="ident">widget</span>: <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_icon</span>(<span class="string">&quot;pomodoro&quot;</span>)<span class="question-mark">?</span>,
+        <span class="ident">widget</span>,
         <span class="ident">api</span>,
         <span class="ident">block_config</span>,
     };

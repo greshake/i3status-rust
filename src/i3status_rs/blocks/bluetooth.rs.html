@@ -368,15 +368,6 @@
 <span id="368">368</span>
 <span id="369">369</span>
 <span id="370">370</span>
-<span id="371">371</span>
-<span id="372">372</span>
-<span id="373">373</span>
-<span id="374">374</span>
-<span id="375">375</span>
-<span id="376">376</span>
-<span id="377">377</span>
-<span id="378">378</span>
-<span id="379">379</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the connectivity of a given Bluetooth device and the battery level if this</span>
@@ -393,15 +384,15 @@
 <span class="doccomment">//! ----|--------|--------</span>
 <span class="doccomment">//! `mac` | MAC address of the Bluetooth device | **Required**</span>
 <span class="doccomment">//! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$name{ $percentage&amp;vert;}&amp;vert;Unavailable&quot;&lt;/code&gt;</span>
-<span class="doccomment">//! `hide_disconnected` | Whether to hide the block when disconnected | `false`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon $name{ $percentage&amp;vert;} &quot;&lt;/code&gt;</span>
+<span class="doccomment">//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon{ $name&amp;vert;} &quot;&lt;/code&gt;</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder  | Value                                                                 | Type   | Unit</span>
 <span class="doccomment">//! -------------|-----------------------------------------------------------------------|--------|------</span>
+<span class="doccomment">//! `icon`       | Icon based on what type of device is connected                        | Icon   | -</span>
 <span class="doccomment">//! `name`       | Device&#39;s name                                                         | Text   | -</span>
 <span class="doccomment">//! `percentage` | Device&#39;s battery level (may be absent if the device is not supported) | Number | %</span>
 <span class="doccomment">//! `available`  | Present if the device is available                                    | Flag   | -</span>
-<span class="doccomment">//! `connected`  | Present if the device is connected                                    | Flag   | -</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Examples</span>
 <span class="doccomment">//!</span>
@@ -411,8 +402,8 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;bluetooth&quot;</span>
 <span class="doccomment">//! mac = &quot;00:18:09:92:1B:BA&quot;</span>
-<span class="doccomment">//! hide_disconnected = true</span>
-<span class="doccomment">//! format = &quot;&quot;</span>
+<span class="doccomment">//! disconnected_format = &quot;&quot;</span>
+<span class="doccomment">//! format = &quot; $icon &quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
@@ -436,16 +427,16 @@
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">hide_disconnected</span>: <span class="ident">bool</span>,
+    <span class="ident">disconnected_format</span>: <span class="ident">FormatConfig</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">BluetoothConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(
-        <span class="ident">config</span>
+    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>
             .<span class="ident">format</span>
-            .<span class="ident">with_default</span>(<span class="string">&quot;$name{ $percentage|}|Unavailable&quot;</span>)<span class="question-mark">?</span>,
-    );
+            .<span class="ident">with_default</span>(<span class="string">&quot; $icon $name{ $percentage|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">disconnected_format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">disconnected_format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon{ $name|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>();
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">monitor</span> <span class="op">=</span> <span class="ident">DeviceMonitor::new</span>(<span class="ident">config</span>.<span class="ident">mac</span>, <span class="ident">config</span>.<span class="ident">adapter_mac</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -454,44 +445,35 @@
             <span class="comment">// Available</span>
             <span class="prelude-val">Some</span>(<span class="ident">device</span>) =&gt; {
                 <span class="kw">let</span> <span class="ident">connected</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">connected</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">if</span> <span class="ident">connected</span> <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">hide_disconnected</span> {
-                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span> {
-                        <span class="string">&quot;name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">device</span>.<span class="ident">name</span>().<span class="kw">await</span><span class="question-mark">?</span>),
-                        <span class="string">&quot;available&quot;</span> =&gt; <span class="ident">Value::flag</span>(),
-                    };
-                    <span class="ident">device</span>
-                        .<span class="ident">percentage</span>()
-                        .<span class="kw">await</span>
-                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;percentage&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::percents</span>(<span class="ident">p</span>)));
-                    <span class="kw">if</span> <span class="ident">connected</span> {
-                        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Good</span>;
-                        <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;connected&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::flag</span>());
-                        <span class="macro">debug!</span>(<span class="string">&quot;Showing device as connected&quot;</span>);
-                    } <span class="kw">else</span> {
-                        <span class="macro">debug!</span>(<span class="string">&quot;Showing device as disconnected&quot;</span>);
-                        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-                    }
-                    <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">device</span>.<span class="ident">icon</span>().<span class="kw">await</span><span class="question-mark">?</span>)<span class="question-mark">?</span>;
-                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
-
-                    <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span> {
+                    <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">device</span>.<span class="ident">icon</span>().<span class="kw">await</span><span class="question-mark">?</span>)<span class="question-mark">?</span>),
+                    <span class="string">&quot;name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">device</span>.<span class="ident">name</span>().<span class="kw">await</span><span class="question-mark">?</span>),
+                    <span class="string">&quot;available&quot;</span> =&gt; <span class="ident">Value::flag</span>()
+                };
+                <span class="ident">device</span>
+                    .<span class="ident">percentage</span>()
+                    .<span class="kw">await</span>
+                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;percentage&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::percents</span>(<span class="ident">p</span>)));
+                <span class="kw">if</span> <span class="ident">connected</span> {
+                    <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Good</span>;
+                    <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+                    <span class="macro">debug!</span>(<span class="string">&quot;Showing device as connected&quot;</span>);
                 } <span class="kw">else</span> {
-                    <span class="macro">debug!</span>(<span class="string">&quot;Hiding block since device is not connected&quot;</span>);
-                    <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+                    <span class="macro">debug!</span>(<span class="string">&quot;Showing device as disconnected&quot;</span>);
+                    <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">disconnected_format</span>.<span class="ident">clone</span>());
+                    <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
                 }
+                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
+
+                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }
             <span class="comment">// Unavailable</span>
             <span class="prelude-val">None</span> =&gt; {
                 <span class="macro">debug!</span>(<span class="string">&quot;Showing device as unavailable&quot;</span>);
-                <span class="kw">if</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">hide_disconnected</span> {
-                    <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-                    <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;bluetooth&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
-                    <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                } <span class="kw">else</span> {
-                    <span class="macro">debug!</span>(<span class="string">&quot;Hiding block since block is unavailable&quot;</span>);
-                    <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-                }
+                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
+                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">disconnected_format</span>.<span class="ident">clone</span>());
+                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(<span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;bluetooth&quot;</span>)<span class="question-mark">?</span>)));
+                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
 

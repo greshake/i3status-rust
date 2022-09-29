@@ -109,6 +109,7 @@
 <span id="109">109</span>
 <span id="110">110</span>
 <span id="111">111</span>
+<span id="112">112</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Local docker daemon status</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -116,11 +117,12 @@
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
 <span class="doccomment">//! `interval` | Update interval, in seconds. | `5`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot;$running.eng(1)&quot;`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $running.eng(1) &quot;`</span>
 <span class="doccomment">//! `socket_path` | The path to the docker socket. Supports path expansions e.g. `~`. | `&quot;/var/run/docker.sock&quot;`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key       | Value                          | Type   | Unit</span>
 <span class="doccomment">//! ----------|--------------------------------|--------|-----</span>
+<span class="doccomment">//! `icon`    | A static icon                  | Icon   | -</span>
 <span class="doccomment">//! `total`   | Total containers on the host   | Number | -</span>
 <span class="doccomment">//! `running` | Containers running on the host | Number | -</span>
 <span class="doccomment">//! `stopped` | Containers stopped on the host | Number | -</span>
@@ -133,7 +135,7 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;docker&quot;</span>
 <span class="doccomment">//! interval = 2</span>
-<span class="doccomment">//! format = &quot;$running/$total&quot;</span>
+<span class="doccomment">//! format = &quot; $icon $running/$total &quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
@@ -158,14 +160,14 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">DockerConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
         .<span class="ident">new_widget</span>()
-        .<span class="ident">with_icon</span>(<span class="string">&quot;docker&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$running.eng(1)&quot;</span>)<span class="question-mark">?</span>);
+        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $running.eng(1) &quot;</span>)<span class="question-mark">?</span>);
     <span class="kw">let</span> <span class="ident">socket_path</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">socket_path</span>.<span class="ident">expand</span>()<span class="question-mark">?</span>;
 
     <span class="kw">loop</span> {
         <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Status::new</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">socket_path</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
+            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;docker&quot;</span>)<span class="question-mark">?</span>),
             <span class="string">&quot;total&quot;</span> =&gt;   <span class="ident">Value::number</span>(<span class="ident">status</span>.<span class="ident">total</span>),
             <span class="string">&quot;running&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">status</span>.<span class="ident">running</span>),
             <span class="string">&quot;paused&quot;</span> =&gt;  <span class="ident">Value::number</span>(<span class="ident">status</span>.<span class="ident">paused</span>),

@@ -409,7 +409,7 @@
 <span class="doccomment">//! ----|--------|--------</span>
 <span class="doccomment">//! `driver` | One of `&quot;setxkbmap&quot;`, `&quot;localebus&quot;`, `&quot;kbddbus&quot;` or `&quot;sway&quot;`, depending on your system. | `&quot;setxkbmap&quot;`</span>
 <span class="doccomment">//! `interval` | Update interval, in seconds. Only used by the `&quot;setxkbmap&quot;` driver. | `60`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot;$layout&quot;`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $layout &quot;`</span>
 <span class="doccomment">//! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found</span>
 <span class="doccomment">//! `mappings` | Map `layout (variant)` to custom short name. | `None`</span>
 <span class="doccomment">//!</span>
@@ -440,7 +440,7 @@
 <span class="doccomment">//! Listen to kbdd for changes, the text is in the following format:</span>
 <span class="doccomment">//! &quot;English (US)&quot; - {$layout ($variant)}</span>
 <span class="doccomment">//! use block.mappings to override with shorter names as shown below.</span>
-<span class="doccomment">//! Also use format = &quot;$layout ($variant)&quot; to see the full text to map,</span>
+<span class="doccomment">//! Also use format = &quot; $layout ($variant) &quot; to see the full text to map,</span>
 <span class="doccomment">//! or you can use:</span>
 <span class="doccomment">//! dbus-monitor interface=ru.gentoo.kbdd</span>
 <span class="doccomment">//! to see the exact variant spelling</span>
@@ -468,7 +468,7 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;keyboard_layout&quot;</span>
 <span class="doccomment">//! driver = &quot;sway&quot;</span>
-<span class="doccomment">//! format = &quot;$layout&quot;</span>
+<span class="doccomment">//! format = &quot; $layout &quot;</span>
 <span class="doccomment">//! [block.mappings]</span>
 <span class="doccomment">//! &quot;English (Workman)&quot; = &quot;EN&quot;</span>
 <span class="doccomment">//! &quot;Russian (N/A)&quot; = &quot;RU&quot;</span>
@@ -504,7 +504,7 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">KeyboardLayoutConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
         .<span class="ident">new_widget</span>()
-        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$layout&quot;</span>)<span class="question-mark">?</span>);
+        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $layout &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">backend</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Backend</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
         <span class="ident">KeyboardLayoutDriver::SetXkbMap</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">SetXkbMap</span>(<span class="ident">config</span>.<span class="ident">interval</span>)),

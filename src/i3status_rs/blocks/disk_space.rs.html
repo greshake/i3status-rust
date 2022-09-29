@@ -163,6 +163,7 @@
 <span id="163">163</span>
 <span id="164">164</span>
 <span id="165">165</span>
+<span id="166">166</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -171,7 +172,7 @@
 <span class="doccomment">//! ----|--------|--------</span>
 <span class="doccomment">//! `path` | Path to collect information from. Supports path expansions e.g. `~`. | `&quot;/&quot;`</span>
 <span class="doccomment">//! `interval` | Update time in seconds | `20`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot;$available&quot;`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $available &quot;`</span>
 <span class="doccomment">//! `warning` | A value which will trigger warning block state | `20.0`</span>
 <span class="doccomment">//! `alert` | A value which will trigger critical block state | `10.0`</span>
 <span class="doccomment">//! `info_type` | Determines which information will affect the block state. Possible values are `&quot;available&quot;`, `&quot;free&quot;` and `&quot;used&quot;` | `&quot;available&quot;`</span>
@@ -179,6 +180,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder  | Value                                                              | Type   | Unit</span>
 <span class="doccomment">//! -------------|--------------------------------------------------------------------|--------|-------</span>
+<span class="doccomment">//! `icon`       | A static icon                                                      | Icon   | -</span>
 <span class="doccomment">//! `path`       | The value of `path` option                                         | Text   | -</span>
 <span class="doccomment">//! `percentage` | Free or used percentage. Depends on `info_type`                    | Number | %</span>
 <span class="doccomment">//! `total`      | Total disk space                                                   | Number | Bytes</span>
@@ -195,7 +197,7 @@
 <span class="doccomment">//! alert_unit = &quot;GB&quot;</span>
 <span class="doccomment">//! alert = 10.0</span>
 <span class="doccomment">//! warning = 15.0</span>
-<span class="doccomment">//! format = &quot;$available.eng(2)&quot;</span>
+<span class="doccomment">//! format = &quot; $icon $available.eng(2) &quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Update block on right click:</span>
@@ -246,8 +248,7 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">DiskSpaceConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
         .<span class="ident">new_widget</span>()
-        .<span class="ident">with_icon</span>(<span class="string">&quot;disk_drive&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$available&quot;</span>)<span class="question-mark">?</span>);
+        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $available &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let</span> <span class="ident">unit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">alert_unit</span>.<span class="ident">as_deref</span>() {
         <span class="prelude-val">Some</span>(<span class="string">&quot;TB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Prefix::Tera</span>),
@@ -278,6 +279,7 @@
 
         <span class="kw">let</span> <span class="ident">percentage</span> <span class="op">=</span> <span class="ident">result</span> <span class="op">/</span> (<span class="ident">total</span> <span class="kw">as</span> <span class="ident">f64</span>) <span class="op">*</span> <span class="number">100.</span>;
         <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
+            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;disk_drive&quot;</span>)<span class="question-mark">?</span>),
             <span class="string">&quot;path&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">path</span>.<span class="ident">to_string</span>()),
             <span class="string">&quot;percentage&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">percentage</span>),
             <span class="string">&quot;total&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">total</span> <span class="kw">as</span> <span class="ident">f64</span>),

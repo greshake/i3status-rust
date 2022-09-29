@@ -215,6 +215,10 @@
 <span id="215">215</span>
 <span id="216">216</span>
 <span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Currently focused window</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently</span>
@@ -224,8 +228,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$title.str(0,21)&amp;vert;&quot;&lt;/code&gt;</span>
-<span class="doccomment">//! `autohide` | Whether to hide the block when no title is available | `true`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $title.str(0,21) &amp;vert;&quot;&lt;/code&gt;</span>
 <span class="doccomment">//! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | `&quot;auto&quot;`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder     | Value                                                                 | Type | Unit</span>
@@ -240,9 +243,16 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;focused_window&quot;</span>
 <span class="doccomment">//! [block.format]</span>
-<span class="doccomment">//! full = &quot;$title.rot-str(15)|&quot;</span>
-<span class="doccomment">//! short = &quot;$title.rot-str(10)|&quot;</span>
+<span class="doccomment">//! full = &quot; $title.str(0,15) |&quot;</span>
+<span class="doccomment">//! short = &quot; $title.str(0,10) |&quot;</span>
 <span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! This example instead of hiding block when the window&#39;s title is empty displays &quot;Missing&quot;</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```toml</span>
+<span class="doccomment">//! [[block]]</span>
+<span class="doccomment">//! block = &quot;focused_window&quot;</span>
+<span class="doccomment">//! format = &quot; $title.str(0,21) | Missing &quot;</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">swayipc_async</span>::{<span class="ident">Connection</span>, <span class="ident">Event</span>, <span class="ident">EventStream</span>, <span class="ident">EventType</span>, <span class="ident">WindowChange</span>, <span class="ident">WorkspaceChange</span>};
@@ -257,8 +267,6 @@
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">FocusedWindowConfig</span> {
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="bool-val">true</span>)]</span>
-    <span class="ident">autohide</span>: <span class="ident">bool</span>,
     <span class="ident">driver</span>: <span class="ident">Driver</span>,
 }
 
@@ -275,7 +283,7 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">FocusedWindowConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
         .<span class="ident">new_widget</span>()
-        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$title.str(0,21)|&quot;</span>)<span class="question-mark">?</span>);
+        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $title.str(0,21) |&quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">backend</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Backend</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
         <span class="ident">Driver::Auto</span> =&gt; <span class="kw">match</span> <span class="ident">SwayIpc::new</span>().<span class="kw">await</span> {
@@ -291,16 +299,16 @@
             <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
             <span class="ident">info</span> <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">get_info</span>() =&gt; {
                 <span class="kw">let</span> <span class="ident">Info</span> { <span class="ident">title</span>, <span class="ident">marks</span> } <span class="op">=</span> <span class="ident">info</span><span class="question-mark">?</span>;
-                <span class="kw">if</span> <span class="op">!</span><span class="ident">title</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">autohide</span> {
+                <span class="kw">if</span> <span class="ident">title</span>.<span class="ident">is_empty</span>() {
+                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
+                } <span class="kw">else</span> {
                     <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
                         <span class="string">&quot;title&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">title</span>.<span class="ident">clone</span>()),
                         <span class="string">&quot;marks&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">marks</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).<span class="ident">collect</span>()),
                         <span class="string">&quot;visible_marks&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">marks</span>.<span class="ident">iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="op">!</span><span class="ident">m</span>.<span class="ident">starts_with</span>(<span class="string">&#39;_&#39;</span>)).<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).<span class="ident">collect</span>()),
                     });
-                    <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                } <span class="kw">else</span> {
-                    <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
                 }
+                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
     }

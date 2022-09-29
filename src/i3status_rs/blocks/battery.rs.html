@@ -272,10 +272,6 @@
 <span id="272">272</span>
 <span id="273">273</span>
 <span id="274">274</span>
-<span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
-<span id="278">278</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This block can display the current battery state (Full, Charging or Discharging), percentage</span>
@@ -288,11 +284,10 @@
 <span class="doccomment">//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `&quot;DisplayDevice&quot;`. Regular expressions can be used. | Any battery device</span>
 <span class="doccomment">//! `driver` | One of `&quot;sysfs&quot;`, `&quot;apc_ups&quot;`, or `&quot;upower&quot;` | `&quot;sysfs&quot;`</span>
 <span class="doccomment">//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;` \|\| &quot;apc_ups&quot;`. | `10`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;$percentage&amp;vert;&quot;&lt;/code&gt;</span>
-<span class="doccomment">//! `full_format` | Same as `format` but for when the battery is full | `&quot;&quot;`</span>
-<span class="doccomment">//! `empty_format` | Same as `format` but for when the battery is empty | `&quot;&quot;`</span>
-<span class="doccomment">//! `hide_missing` | Completely hide this block if the battery cannot be found. | `false`</span>
-<span class="doccomment">//! `hide_full` | Hide the block if battery is full | `false`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $percentage &quot;`</span>
+<span class="doccomment">//! `full_format` | Same as `format` but for when the battery is full | `&quot; $icon &quot;`</span>
+<span class="doccomment">//! `empty_format` | Same as `format` but for when the battery is empty | `&quot; $icon &quot;`</span>
+<span class="doccomment">//! `missing_format` | Same as `format` if the battery cannot be found. | `&quot; $icon &quot;`</span>
 <span class="doccomment">//! `info` | Minimum battery level, where state is set to info | `60`</span>
 <span class="doccomment">//! `good` | Minimum battery level, where state is set to good | `60`</span>
 <span class="doccomment">//! `warning` | Minimum battery level, where state is set to warning | `30`</span>
@@ -302,6 +297,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder  | Value                                                                   | Type              | Unit</span>
 <span class="doccomment">//! -------------|-------------------------------------------------------------------------|-------------------|-----</span>
+<span class="doccomment">//! `icon`       | Icon based on battery&#39;s state                                           | Icon   | -</span>
 <span class="doccomment">//! `percentage` | Battery level, in percent                                               | String or Integer | Percents</span>
 <span class="doccomment">//! `time`       | Time remaining until (dis)charge is complete. Presented only if battery&#39;s status is (dis)charging. | String | -</span>
 <span class="doccomment">//! `power`      | Power consumption by the battery or from the power supply when charging | String or Float   | Watts</span>
@@ -313,7 +309,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [block]</span>
 <span class="doccomment">//! block = &quot;battery&quot;</span>
-<span class="doccomment">//! format = &quot;$percentage|N/A&quot;</span>
+<span class="doccomment">//! format = &quot; $icon $percentage &quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Hide missing battery:</span>
@@ -321,7 +317,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [block]</span>
 <span class="doccomment">//! block = &quot;battery&quot;</span>
-<span class="doccomment">//! hide_missing = true</span>
+<span class="doccomment">//! missing_format = &quot;&quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
@@ -361,8 +357,7 @@
     <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">full_format</span>: <span class="ident">FormatConfig</span>,
     <span class="ident">empty_format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">hide_missing</span>: <span class="ident">bool</span>,
-    <span class="ident">hide_full</span>: <span class="ident">bool</span>,
+    <span class="ident">missing_format</span>: <span class="ident">FormatConfig</span>,
     <span class="attribute">#[<span class="ident">default</span>(<span class="number">60.0</span>)]</span>
     <span class="ident">info</span>: <span class="ident">f64</span>,
     <span class="attribute">#[<span class="ident">default</span>(<span class="number">60.0</span>)]</span>
@@ -388,9 +383,10 @@
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">BatteryConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$percentage&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_full</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">full_format</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_empty</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">empty_format</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $percentage &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format_full</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">full_format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format_empty</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">empty_format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">missing_format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">missing_format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>();
 
     <span class="kw">let</span> <span class="ident">dev_name</span> <span class="op">=</span> <span class="ident">DeviceName::new</span>(<span class="ident">config</span>.<span class="ident">device</span>)<span class="question-mark">?</span>;
@@ -412,9 +408,6 @@
         }
 
         <span class="kw">match</span> <span class="ident">info</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">info</span>) <span class="kw">if</span> <span class="ident">info</span>.<span class="ident">status</span> <span class="op">==</span> <span class="ident">BatteryStatus::Full</span> <span class="op">&amp;&amp;</span> <span class="ident">config</span>.<span class="ident">hide_full</span> =&gt; {
-                <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-            }
             <span class="prelude-val">Some</span>(<span class="ident">info</span>) =&gt; {
                 <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">status</span> {
                     <span class="ident">BatteryStatus::Empty</span> =&gt; <span class="ident">format_empty</span>.<span class="ident">clone</span>(),
@@ -422,7 +415,10 @@
                     <span class="kw">_</span> =&gt; <span class="ident">format</span>.<span class="ident">clone</span>(),
                 });
 
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span>(<span class="string">&quot;percentage&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">capacity</span>));
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span>(
+                    <span class="string">&quot;percentage&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">capacity</span>)
+                );
+
                 <span class="ident">info</span>.<span class="ident">power</span>
                     .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;power&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::watts</span>(<span class="ident">p</span>)));
                 <span class="ident">info</span>.<span class="ident">time_remaining</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> {
@@ -435,7 +431,6 @@
                         )),
                     )
                 });
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
 
                 <span class="kw">let</span> (<span class="ident">icon</span>, <span class="ident">state</span>) <span class="op">=</span> <span class="kw">match</span> (<span class="ident">info</span>.<span class="ident">status</span>, <span class="ident">info</span>.<span class="ident">capacity</span>) {
                     (<span class="ident">BatteryStatus::Empty</span>, <span class="kw">_</span>) =&gt; (<span class="ident">battery_level_icon</span>(<span class="number">0</span>, <span class="bool-val">false</span>), <span class="ident">State::Critical</span>),
@@ -457,18 +452,15 @@
                         },
                     ),
                 };
+                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">icon</span>)<span class="question-mark">?</span>));
 
-                <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="ident">icon</span>)<span class="question-mark">?</span>;
+                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
                 <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">state</span>;
                 <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }
-            <span class="prelude-val">None</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">hide_missing</span> =&gt; {
-                <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-            }
             <span class="prelude-val">None</span> =&gt; {
-                <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;bat_not_available&quot;</span>)<span class="question-mark">?</span>;
-                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
+                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">missing_format</span>.<span class="ident">clone</span>());
+                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(<span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;bat_not_available&quot;</span>)<span class="question-mark">?</span>)));
                 <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Critical</span>;
                 <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }

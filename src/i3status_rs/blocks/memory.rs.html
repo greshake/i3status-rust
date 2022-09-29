@@ -264,7 +264,6 @@
 <span id="264">264</span>
 <span id="265">265</span>
 <span id="266">266</span>
-<span id="267">267</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Memory and swap usage</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! This module keeps track of both Swap and Memory. By default, a click switches between them.</span>
@@ -273,8 +272,8 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format_mem` | A string to customise the output of this block when in &quot;Memory&quot; view. See below for available placeholders. | `&quot;$mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2))&quot;`</span>
-<span class="doccomment">//! `format_swap` | A string to customise the output of this block when in &quot;Swap&quot; view. See below for available placeholders. | `&quot;$swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2))&quot;`</span>
+<span class="doccomment">//! `format_mem` | A string to customise the output of this block when in &quot;Memory&quot; view. See below for available placeholders. | `&quot; $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) &quot;`</span>
+<span class="doccomment">//! `format_swap` | A string to customise the output of this block when in &quot;Swap&quot; view. See below for available placeholders. | `&quot; $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) &quot;`</span>
 <span class="doccomment">//! `display_type` | Default view displayed on startup: &quot;`memory`&quot; or &quot;`swap`&quot; | `&quot;memory&quot;`</span>
 <span class="doccomment">//! `clickable` | Whether the view should switch between memory and swap on click | `true`</span>
 <span class="doccomment">//! `interval` | Update interval in seconds | `5`</span>
@@ -285,6 +284,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder               | Value                                                                         | Type   | Unit</span>
 <span class="doccomment">//! --------------------------|-------------------------------------------------------------------------------|--------|-------</span>
+<span class="doccomment">//! `icon`                    | Icon based on displayed type of memory                                        | Icon   | -</span>
 <span class="doccomment">//! `mem_total`               | Memory total                                                                  | Number | Bytes</span>
 <span class="doccomment">//! `mem_free`                | Memory free                                                                   | Number | Bytes</span>
 <span class="doccomment">//! `mem_free_percents`       | Memory free                                                                   | Number | Percents</span>
@@ -309,7 +309,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;memory&quot;</span>
-<span class="doccomment">//! format_mem = &quot;mem_used_percents.eng(1)&quot;</span>
+<span class="doccomment">//! format_mem = &quot; $icon $mem_used_percents.eng(1) &quot;</span>
 <span class="doccomment">//! clickable = false</span>
 <span class="doccomment">//! interval = 30</span>
 <span class="doccomment">//! warning_mem = 70</span>
@@ -353,25 +353,22 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>();
 
     <span class="kw">let</span> <span class="ident">format_mem</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format_mem</span>.<span class="ident">with_default</span>(
-        <span class="string">&quot;$mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2))&quot;</span>,
+        <span class="string">&quot; $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) &quot;</span>,
     )<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">format_swap</span> <span class="op">=</span> <span class="ident">config</span>
         .<span class="ident">format_swap</span>
-        .<span class="ident">with_default</span>(<span class="string">&quot;$swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2))&quot;</span>)<span class="question-mark">?</span>;
+        .<span class="ident">with_default</span>(<span class="string">&quot; $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">clickable</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">clickable</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">memtype</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">display_type</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">memtype</span> {
+    <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">icon</span>, <span class="kw-2">mut</span> <span class="ident">format</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">memtype</span> {
         <span class="ident">Memtype::Memory</span> =&gt; {
-            <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;memory_mem&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw-2">&amp;</span><span class="ident">format_mem</span>
+            (<span class="string">&quot;memory_mem&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">format_mem</span>)
         }
         <span class="ident">Memtype::Swap</span> =&gt; {
-            <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;memory_swap&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw-2">&amp;</span><span class="ident">format_swap</span>
+            (<span class="string">&quot;memory_swap&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">format_swap</span>)
         }
     };
-    <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
 
@@ -389,7 +386,9 @@
         <span class="kw">let</span> <span class="ident">mem_used</span> <span class="op">=</span> <span class="ident">mem_total_used</span> <span class="op">-</span> (<span class="ident">buffers</span> <span class="op">+</span> <span class="ident">cached</span>);
         <span class="kw">let</span> <span class="ident">mem_avail</span> <span class="op">=</span> <span class="ident">mem_total</span> <span class="op">-</span> <span class="ident">mem_used</span>;
 
+        <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
         <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
+            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">icon</span>)<span class="question-mark">?</span>),
             <span class="string">&quot;mem_total&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">mem_total</span>),
             <span class="string">&quot;mem_free&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">mem_free</span>),
             <span class="string">&quot;mem_free_percents&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">mem_free</span> <span class="op">/</span> <span class="ident">mem_total</span> <span class="op">*</span> <span class="number">100.</span>),
@@ -407,7 +406,7 @@
             <span class="string">&quot;buffers&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">buffers</span>),
             <span class="string">&quot;buffers_percent&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">buffers</span> <span class="op">/</span> <span class="ident">mem_total</span> <span class="op">*</span> <span class="number">100.</span>),
             <span class="string">&quot;cached&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">cached</span>),
-            <span class="string">&quot;cached_percent&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">cached</span> <span class="op">/</span> <span class="ident">mem_total</span> <span class="op">*</span> <span class="number">100.</span>),
+            <span class="string">&quot;cached_percent&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">cached</span> <span class="op">/</span> <span class="ident">mem_total</span> <span class="op">*</span> <span class="number">100.</span>)
         });
 
         <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">memtype</span> {
@@ -436,15 +435,14 @@
                                 <span class="ident">Memtype::Swap</span> =&gt; {
                                     <span class="ident">format</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">format_mem</span>;
                                     <span class="ident">memtype</span> <span class="op">=</span> <span class="ident">Memtype::Memory</span>;
-                                    <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;memory_mem&quot;</span>)<span class="question-mark">?</span>;
+                                    <span class="ident">icon</span> <span class="op">=</span> <span class="string">&quot;memory_mem&quot;</span>;
                                 }
                                 <span class="ident">Memtype::Memory</span> =&gt; {
                                     <span class="ident">format</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">format_swap</span>;
                                     <span class="ident">memtype</span> <span class="op">=</span> <span class="ident">Memtype::Swap</span>;
-                                    <span class="ident">widget</span>.<span class="ident">set_icon</span>(<span class="string">&quot;memory_swap&quot;</span>)<span class="question-mark">?</span>;
+                                    <span class="ident">icon</span> <span class="op">=</span> <span class="string">&quot;memory_swap&quot;</span>;
                                 }
                             }
-                            <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
                             <span class="kw">break</span>;
                         }
                     }

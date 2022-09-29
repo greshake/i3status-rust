@@ -225,7 +225,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot;$ip $country_flag&quot;`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $ip $country_flag &quot;`</span>
 <span class="doccomment">//! `interval` | Interval in seconds for automatic updates | `300`</span>
 <span class="doccomment">//! `with_network_manager` | If &#39;true&#39;, listen for NetworkManager events and update the IP immediately if there was a change | `true`</span>
 <span class="doccomment">//!</span>
@@ -265,7 +265,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;external_ip&quot;</span>
-<span class="doccomment">//! format = &quot;$ip $country_code&quot;</span>
+<span class="doccomment">//! format = &quot; $ip $country_code &quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Notes</span>
@@ -299,7 +299,7 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ExternalIpConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
         .<span class="ident">new_widget</span>()
-        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$ip $country_flag&quot;</span>)<span class="question-mark">?</span>);
+        .<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $ip $country_flag &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">type</span> <span class="ident">UpdatesStream</span> <span class="op">=</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> ()<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stream</span>: <span class="ident">UpdatesStream</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">with_network_manager</span> {

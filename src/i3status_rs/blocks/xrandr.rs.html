@@ -200,6 +200,8 @@
 <span id="200">200</span>
 <span id="201">201</span>
 <span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
 </pre><pre class="rust"><code><span class="doccomment">//! X11 screen information</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.</span>
@@ -210,12 +212,13 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot;$display $brightness_icon $brightness&quot;`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $display $brightness_icon $brightness &quot;`</span>
 <span class="doccomment">//! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`</span>
 <span class="doccomment">//! `interval` | Update interval in seconds. | `5`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder       | Value                        | Type   | Unit</span>
 <span class="doccomment">//! ------------------|------------------------------|--------|---------------</span>
+<span class="doccomment">//! `icon`            | A static icon                | Icon   | -</span>
 <span class="doccomment">//! `display`         | The name of a monitor        | Text   | -</span>
 <span class="doccomment">//! `brightness`      | The brightness of a monitor  | Number | %</span>
 <span class="doccomment">//! `brightness_icon` | A static icon                | Icon   | -</span>
@@ -227,7 +230,7 @@
 <span class="doccomment">//! ```toml</span>
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;xrandr&quot;</span>
-<span class="doccomment">//! format = &quot;$brightness $resolution&quot;</span>
+<span class="doccomment">//! format = &quot; $icon $brightness $resolution &quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Used Icons</span>
@@ -252,10 +255,10 @@
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">XrandrConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_icon</span>(<span class="string">&quot;xrandr&quot;</span>)<span class="question-mark">?</span>.<span class="ident">with_format</span>(
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(
         <span class="ident">config</span>
             .<span class="ident">format</span>
-            .<span class="ident">with_default</span>(<span class="string">&quot;$display $brightness_icon $brightness&quot;</span>)<span class="question-mark">?</span>,
+            .<span class="ident">with_default</span>(<span class="string">&quot; $icon $display $brightness_icon $brightness &quot;</span>)<span class="question-mark">?</span>,
     );
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cur_indx</span> <span class="op">=</span> <span class="number">0</span>;
@@ -275,6 +278,7 @@
                     <span class="comment">//TODO: change `brightness_icon` based on `brightness`</span>
                     <span class="string">&quot;brightness_icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;backlight_full&quot;</span>)<span class="question-mark">?</span>),
                     <span class="string">&quot;resolution&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">mon</span>.<span class="ident">resolution</span>.<span class="ident">clone</span>()),
+                    <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;xrandr&quot;</span>)<span class="question-mark">?</span>),
                     <span class="string">&quot;res_icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;resolution&quot;</span>)<span class="question-mark">?</span>),
                 }
             } <span class="kw">else</span> {

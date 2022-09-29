@@ -243,18 +243,20 @@
 <span id="243">243</span>
 <span id="244">244</span>
 <span id="245">245</span>
+<span id="246">246</span>
 </pre><pre class="rust"><code><span class="doccomment">//! CPU statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Key | Values | Default</span>
 <span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot;$utilization&quot;`</span>
+<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $utilization &quot;`</span>
 <span class="doccomment">//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`</span>
 <span class="doccomment">//! `interval` | Update interval in seconds | `5`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Placeholder      | Value                                                          | Type   | Unit</span>
 <span class="doccomment">//! -----------------|----------------------------------------------------------------|--------|---------------</span>
+<span class="doccomment">//! `icon`           | A static icon                                                  | Icon   | -</span>
 <span class="doccomment">//! `utilization`    | Average CPU utilization                                        | Number | %</span>
 <span class="doccomment">//! `utilization&lt;N&gt;` | Utilization of Nth logical CPU                                 | Number | %</span>
 <span class="doccomment">//! `barchart`       | Utilization of all logical CPUs presented as a barchart        | Text   | -</span>
@@ -268,8 +270,8 @@
 <span class="doccomment">//! [[block]]</span>
 <span class="doccomment">//! block = &quot;cpu&quot;</span>
 <span class="doccomment">//! interval = 1</span>
-<span class="doccomment">//! format = &quot;$barchart.str() $utilization.eng()&quot;</span>
-<span class="doccomment">//! format_alt = &quot;$frequency.eng(){ $boost.str()|}&quot;</span>
+<span class="doccomment">//! format = &quot; $icon $barchart.str() $utilization.eng() &quot;</span>
+<span class="doccomment">//! format_alt = &quot; $icon $frequency.eng(){ $boost.str()|} &quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Icons Used</span>
@@ -300,7 +302,7 @@
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">CpuConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot;$utilization&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $utilization &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">format_alt</span> {
         <span class="prelude-val">Some</span>(<span class="ident">f</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">f</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
         <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
@@ -308,7 +310,6 @@
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
         .<span class="ident">new_widget</span>()
-        .<span class="ident">with_icon</span>(<span class="string">&quot;cpu&quot;</span>)<span class="question-mark">?</span>
         .<span class="ident">with_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
 
     <span class="kw">let</span> <span class="ident">boost_icon_on</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;cpu_boost_on&quot;</span>)<span class="question-mark">?</span>;
@@ -350,6 +351,7 @@
         });
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;cpu&quot;</span>)<span class="question-mark">?</span>),
             <span class="string">&quot;barchart&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">barchart</span>),
             <span class="string">&quot;frequency&quot;</span> =&gt; <span class="ident">Value::hertz</span>(<span class="ident">freq_avg</span>),
             <span class="string">&quot;utilization&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">utilization_avg</span> <span class="op">*</span> <span class="number">100.</span>),
