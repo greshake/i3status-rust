@@ -67,7 +67,7 @@ This is a major release which rewrites the core code to be asynchronous.
   ```toml
   [[block]]
   block = "cpu"
-  format = "cpu:{utilization}"
+  format = "{utilization}"
   ```
   needs to be changed to:
   ```toml
