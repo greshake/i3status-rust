@@ -24,8 +24,8 @@
 //! [[block]]
 //! block = "cpu"
 //! interval = 1
-//! format = " $icon $barchart.str() $utilization.eng() "
-//! format_alt = " $icon $frequency.eng(){ $boost.str()|} "
+//! format = " $icon $barchart $utilization "
+//! format_alt = " $icon $frequency{ $boost|} "
 //! ```
 //!
 //! # Icons Used
@@ -62,9 +62,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let mut widget = api
-        .new_widget()
-        .with_format(format.clone());
+    let mut widget = api.new_widget().with_format(format.clone());
 
     let boost_icon_on = api.get_icon("cpu_boost_on")?;
     let boost_icon_off = api.get_icon("cpu_boost_off")?;
