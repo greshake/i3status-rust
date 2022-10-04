@@ -50,6 +50,7 @@ pub struct NetDevice {
     pub ip: Option<Ipv4Addr>,
     pub ipv6: Option<Ipv6Addr>,
     pub icon: &'static str,
+    pub tun_wg_ppp: bool,
 }
 
 #[derive(Debug, Default)]
@@ -120,7 +121,12 @@ impl NetDevice {
             ip,
             ipv6,
             icon,
+            tun_wg_ppp: tun | wg | ppp,
         }))
+    }
+
+    pub fn is_up(&self) -> bool {
+        self.iface.is_up || self.tun_wg_ppp
     }
 
     pub fn ssid(&self) -> Option<String> {

@@ -105,7 +105,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 widget.set_values(default());
                 api.set_widget(&widget).await?;
             }
-            Some(device) if !device.iface.is_up => {
+            Some(device) if !device.is_up() => {
                 widget.set_format(missing_format.clone());
                 widget.set_values(default());
                 api.set_widget(&widget).await?;
