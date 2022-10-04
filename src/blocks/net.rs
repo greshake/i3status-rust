@@ -102,10 +102,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         match NetDevice::new(device_re.as_ref()).await? {
             None => {
                 widget.set_format(missing_format.clone());
+                widget.set_values(default());
                 api.set_widget(&widget).await?;
             }
             Some(device) if !device.iface.is_up => {
                 widget.set_format(missing_format.clone());
+                widget.set_values(default());
                 api.set_widget(&widget).await?;
             }
             Some(device) => {
@@ -133,7 +135,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 push_to_hist(&mut rx_hist, speed_down);
                 push_to_hist(&mut tx_hist, speed_up);
 
-                let values = map! {
+                widget.set_values(map! {
                     "icon" => Value::icon(api.get_icon(device.icon)?),
                     "speed_down" => Value::bytes(speed_down),
                     "speed_up" => Value::bytes(speed_up),
@@ -146,9 +148,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     [if let Some(v) = device.bitrate()] "bitrate" => Value::bits(v),
                     [if let Some(v) = device.signal()] "signal_strength" => Value::percents(v),
                     "device" => Value::text(device.iface.name),
-                };
+                });
 
-                widget.set_values(values);
                 api.set_widget(&widget).await?;
             }
         }

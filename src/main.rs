@@ -118,6 +118,7 @@ fn main() {
     }
 }
 
+#[derive(Debug)]
 pub struct Block {
     id: usize,
 
@@ -168,6 +169,7 @@ impl Block {
     }
 }
 
+#[derive(Debug)]
 pub enum BlockState {
     None,
     Normal { widget: Widget },
