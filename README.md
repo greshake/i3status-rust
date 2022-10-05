@@ -39,8 +39,8 @@ Global variables:
 Key | Description | Default
 ----|-------------|----------
 `scrolling` | The direction of scrolling, either `natural` or `reverse`. | `"reverse"`
-`error_format` | A string to customise how block errors are displayed. See below for available placeholders. | `$short_error_message\|X`
-`error_fullscreen_format` | A string to customise how block errors are displayed when clicked. See below for available placeholders. | `$full_error_message`
+`error_format` | A string to customise how block errors are displayed. See below for available placeholders. | `"$short_error_message\|X"`
+`error_fullscreen_format` | A string to customise how block errors are displayed when clicked. See below for available placeholders. | `"$full_error_message"`
 
 Available `error_format` and `error_fullscreen_format` placeholders:
 
