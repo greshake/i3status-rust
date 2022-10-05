@@ -21,7 +21,7 @@ Otherwise refer to [manual install](https://github.com/greshake/i3status-rust/bl
 After installing `i3status-rust`, edit the [example configuration](https://raw.githubusercontent.com/greshake/i3status-rust/master/examples/config.toml) to your liking.
 The default location is `$XDG_CONFIG_HOME/i3status-rust/config.toml`.
 
-There are some optional top-level configuration variables.
+There are some optional global configuration variables, defined either at the top-level or in a [TOML table](https://github.com/toml-lang/toml/blob/main/toml.md#table).
 
 `[icons]` table:
 Key | Description | Default
@@ -49,7 +49,7 @@ Placeholder         | Value
 full_error_message  | The full error message
 short_error_message | The short error message, if available
 
-Blocks are defined as a TOML array of tables: `[[block]]`
+Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
 Key | Description | Default
 ----|-------------|----------
 `block` | Name of the i3status-rs block you want to use | -
