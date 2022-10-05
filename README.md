@@ -52,7 +52,7 @@ short_error_message | The short error message, if available
 Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
 Key | Description | Default
 ----|-------------|----------
-`block` | Name of the i3status-rs block you want to use | -
+`block` | Name of the i3status-rs block you want to use. See `Blocks` below for valid block names. | -
 `signal` | Signal value that causes an update for this block with `0` corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | None
 `if_command` | Only display the block if the supplied command returns 0 on startup. | None
 `icons_format` | Overrides global `icons_format` | None 
