@@ -1,3 +1,5 @@
+icons_format = "{icon}"
+
 [theme]
 theme = "solarized-dark"
 [theme.overrides]
