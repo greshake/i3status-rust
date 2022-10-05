@@ -54,11 +54,11 @@ Key | Description | Default
 ----|-------------|----------
 `block` | Name of the i3status-rs block you want to use | -
 `signal` | Signal value that causes an update for this block with `0` corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | None
+`if_command` | Only display the block if the supplied command returns 0 on startup. | None
 `icons_format` | Overrides global `icons_format` | None 
-`if_command` | Only display the block if the supplied command returns 0 on startup. | None 
-`error_interval` | How long to wait until restarting the block after an error occurred. | `5`
 `error_format` | Overrides global `error_format` | None
 `error_fullscreen_format` | Overrides global `error_fullscreen_format` | None
+`error_interval` | How long to wait until restarting the block after an error occurred. | `5`
 `[block.theme_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `[block.icons_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `[[block.click]]` | Set or override click action for the block. See below for details. | Block default / None
