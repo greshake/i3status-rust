@@ -84,7 +84,7 @@ struct DiskSpaceConfig {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = DiskSpaceConfig::deserialize(config).config_error()?;
 
-    let mut format = config.format.with_default(" $icon $$available ")?;
+    let mut format = config.format.with_default(" $icon $available ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
