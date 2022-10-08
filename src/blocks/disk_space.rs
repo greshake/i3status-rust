@@ -7,6 +7,7 @@
 //! `path` | Path to collect information from. Supports path expansions e.g. `~`. | `"/"`
 //! `interval` | Update time in seconds | `20`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $available "`
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `warning` | A value which will trigger warning block state | `20.0`
 //! `alert` | A value which will trigger critical block state | `10.0`
 //! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
@@ -32,6 +33,7 @@
 //! alert = 10.0
 //! warning = 15.0
 //! format = " $icon $available.eng(2) "
+//! format_alt = " $icon $available.eng(2) / $total.eng(2) "
 //! ```
 //!
 //! Update block on right click:
@@ -69,6 +71,7 @@ struct DiskSpaceConfig {
     path: ShellString,
     info_type: InfoType,
     format: FormatConfig,
+    format_alt: Option<FormatConfig>,
     alert_unit: Option<String>,
     #[default(20.into())]
     interval: Seconds,
@@ -80,9 +83,16 @@ struct DiskSpaceConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = DiskSpaceConfig::deserialize(config).config_error()?;
+
+    let mut format = config.format.with_default(" $icon $$available ")?;
+    let mut format_alt = match config.format_alt {
+        Some(f) => Some(f.with_default("")?),
+        None => None,
+    };
+
     let mut widget = api
         .new_widget()
-        .with_format(config.format.with_default(" $icon $available ")?);
+        .with_format(format.clone());
 
     let unit = match config.alert_unit.as_deref() {
         Some("TB") => Some(Prefix::Tera),
@@ -95,6 +105,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     };
 
     let path = config.path.expand()?;
+
+    let mut timer = config.interval.timer();
 
     loop {
         let statvfs = statvfs(&*path).error("failed to retrieve statvfs")?;
@@ -158,9 +170,23 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         api.set_widget(&widget).await?;
 
-        tokio::select! {
-            _ = sleep(config.interval.0) => (),
-            _ = api.wait_for_update_request() => (),
+        loop {
+            select! {
+                _ = timer.tick() => break,
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Click(click) => {
+                        if click.button == MouseButton::Left {
+                            if let Some(ref mut format_alt) = format_alt {
+                                std::mem::swap(format_alt, &mut format);
+                                widget.set_format(format.clone());
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
+
     }
 }
