@@ -32,8 +32,8 @@
 //! alert_unit = "GB"
 //! alert = 10.0
 //! warning = 15.0
-//! format = " $icon $available.eng(2) "
-//! format_alt = " $icon $available.eng(2) / $total.eng(2) "
+//! format = " $icon $available "
+//! format_alt = " $icon $available / $total "
 //! ```
 //!
 //! Update block on right click:
@@ -49,7 +49,7 @@
 //! # Icons Used
 //! - `disk_drive`
 
-make_log_macro!(debug, "disk_space");
+// make_log_macro!(debug, "disk_space");
 
 use super::prelude::*;
 use crate::formatting::prefix::Prefix;
@@ -90,9 +90,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let mut widget = api
-        .new_widget()
-        .with_format(format.clone());
+    let mut widget = api.new_widget().with_format(format.clone());
 
     let unit = match config.alert_unit.as_deref() {
         Some("TB") => Some(Prefix::Tera),
@@ -144,8 +142,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             None => percentage,
         };
 
-        debug!("alert_val_in_config_units = {alert_val_in_config_units}");
-
         // Compute state
         widget.state = match config.info_type {
             InfoType::Used => {
@@ -187,6 +183,5 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 }
             }
         }
-
     }
 }
